@@ -57,24 +57,20 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot, final String path) {
-    try {
-      final String requestBody = createSigningRequest(signingRoot);
-      final HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(signingServiceUrl.toURI().resolve(path))
-              .timeout(timeout)
-              .POST(BodyPublishers.ofString(requestBody))
-              .build();
-      return SafeFuture.of(
-          HttpClient.newHttpClient()
-              .sendAsync(request, BodyHandlers.ofString())
-              .handleAsync(this::getBlsSignature));
-    } catch (final ExternalSignerException e) {
-      return SafeFuture.failedFuture(e);
-    } catch (final Exception e) {
-      return SafeFuture.failedFuture(
-          new ExternalSignerException("External signer failed to sign", e));
-    }
+    return SafeFuture.ofComposed(
+        () -> {
+          final String requestBody = createSigningRequest(signingRoot);
+          final HttpRequest request =
+              HttpRequest.newBuilder()
+                  .uri(signingServiceUrl.toURI().resolve(path))
+                  .timeout(timeout)
+                  .POST(BodyPublishers.ofString(requestBody))
+                  .build();
+          return SafeFuture.of(
+              HttpClient.newHttpClient()
+                  .sendAsync(request, BodyHandlers.ofString())
+                  .handleAsync(this::getBlsSignature));
+        });
   }
 
   private String createSigningRequest(final Bytes signingRoot) {
