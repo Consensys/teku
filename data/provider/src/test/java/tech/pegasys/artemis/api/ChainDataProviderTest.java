@@ -91,10 +91,10 @@ public class ChainDataProviderTest {
 
     when(historicalChainData.getFinalizedStateAtSlot(ZERO))
         .thenReturn(completedFuture(Optional.empty()));
-    SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(ZERO);
+    SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(ZERO);
 
     verify(historicalChainData).getFinalizedStateAtSlot(ZERO);
-    assertEquals(future.get(), List.of());
+    assertThat(future.get()).isEmpty();
   }
 
   @Test
@@ -103,8 +103,8 @@ public class ChainDataProviderTest {
     ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
     UnsignedLong futureEpoch = slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
 
-    SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(futureEpoch);
-    assertEquals(future.get(), List.of());
+    SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(futureEpoch);
+    assertThat(future.get()).isEmpty();
   }
 
   @Test
@@ -116,15 +116,17 @@ public class ChainDataProviderTest {
         new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
     when(mockCombinedChainDataClient.getCommitteeAssignmentAtEpoch(beaconStateInternal.getSlot()))
-        .thenReturn(completedFuture(committeeAssignments));
-    SafeFuture<List<Committee>> future =
+        .thenReturn(completedFuture(Optional.of(committeeAssignments)));
+    SafeFuture<Optional<List<Committee>>> future =
         provider.getCommitteesAtEpoch(beaconStateInternal.getSlot());
 
     verify(mockCombinedChainDataClient).isStoreAvailable();
     verify(mockCombinedChainDataClient)
         .getCommitteeAssignmentAtEpoch(beaconStateInternal.getSlot());
-    Committee result = future.get().get(0);
+    Committee result = future.get().get().get(0);
     assertEquals(ONE, result.slot);
     assertEquals(ZERO, result.index);
     assertEquals(List.of(1), result.committee);
@@ -134,7 +136,7 @@ public class ChainDataProviderTest {
   public void getCommitteeAssignmentAtEpoch_shouldThrowIfStoreNotAvailable() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
-    SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(ZERO);
+    SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(ZERO);
     verify(historicalChainData, never()).getFinalizedStateAtSlot(any());
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }

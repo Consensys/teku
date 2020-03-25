@@ -83,14 +83,16 @@ public class ChainDataProvider {
     return new Fork(bestBlockRootState.getFork());
   }
 
-  public SafeFuture<List<Committee>> getCommitteesAtEpoch(UnsignedLong epoch) {
-    if (!isStoreAvailable()) {
+  public SafeFuture<Optional<List<Committee>>> getCommitteesAtEpoch(UnsignedLong epoch) {
+    if (!isStoreAvailable() || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return combinedChainDataClient
         .getCommitteeAssignmentAtEpoch(epoch)
-        .thenApply(result -> result.stream().map(Committee::new).collect(Collectors.toList()))
-        .exceptionally(err -> List.of());
+        .thenApply(
+            maybeResult ->
+                maybeResult.map(
+                    result -> result.stream().map(Committee::new).collect(Collectors.toList())));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(UnsignedLong slot) {
