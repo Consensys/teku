@@ -14,5 +14,5 @@
 package tech.pegasys.artemis.util.async;
 
 public interface ExceptionThrowingSupplier<O> {
-  O get() throws Exception;
+  O get() throws Throwable;
 }

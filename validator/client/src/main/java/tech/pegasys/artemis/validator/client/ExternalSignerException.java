@@ -11,17 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.validator;
+package tech.pegasys.artemis.validator.client;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+public class ExternalSignerException extends RuntimeException {
 
-public interface MessageSignerService {
+  public ExternalSignerException(final String message) {
+    super(message);
+  }
 
-  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
+  public ExternalSignerException(final String message, final Throwable cause) {
+    super(message, cause);
+  }
 }
