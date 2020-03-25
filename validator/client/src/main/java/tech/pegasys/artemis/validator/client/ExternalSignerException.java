@@ -11,21 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.keystore.model;
+package tech.pegasys.artemis.validator.client;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+public class ExternalSignerException extends RuntimeException {
 
-public enum CipherFunction {
-  AES_128_CTR("aes-128-ctr");
-
-  private final String jsonValue;
-
-  CipherFunction(final String jsonValue) {
-    this.jsonValue = jsonValue;
+  public ExternalSignerException(final String message) {
+    super(message);
   }
 
-  @JsonValue
-  public String getJsonValue() {
-    return this.jsonValue;
+  public ExternalSignerException(final String message, final Throwable cause) {
+    super(message, cause);
   }
 }

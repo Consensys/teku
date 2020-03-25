@@ -9,7 +9,6 @@ dependencies {
   implementation project(':util')
   implementation project(':logging')
   implementation project(':pow')
-  implementation project(':data:keystore')
   implementation project(':ssz')
   implementation project(':events')
 
@@ -22,6 +21,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'tech.pegasys.signers.internal:bls-keystore'
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 

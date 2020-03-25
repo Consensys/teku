@@ -19,10 +19,14 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 final class ArtemisConfigurationTest {
 
@@ -257,5 +261,61 @@ final class ArtemisConfigurationTest {
   void loggingFileNamePatternShouldDefault() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
     assertThat(config.getLoggingFileNamePattern()).isEqualTo("teku_%d{yyyy-MM-dd}.log");
+  }
+
+  @Test
+  void validatorExternalSignerPublicKeysCanBeSet() {
+    final String publicKey1 =
+        "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";
+    final String publicKey2 =
+        "0xb89bebc699769726a318c8e9971bd3171297c61aea4a6578a7a4f94b547dcba5bac16a89108b6b6a1fe3695d1a874a0b";
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString(
+            "validator.externalSignerPublicKeys=[\"" + publicKey1 + "\",\"" + publicKey2 + "\"]");
+    assertThat(config.getValidatorExternalSigningPublicKeys()).size().isEqualTo(2);
+    assertThat(config.getValidatorExternalSigningPublicKeys())
+        .containsExactlyInAnyOrder(
+            BLSPublicKey.fromBytes(Bytes.fromHexString(publicKey1)),
+            BLSPublicKey.fromBytes(Bytes.fromHexString(publicKey2)));
+  }
+
+  @Test
+  void invalidValidatorExternalSignerPublicKeysThrowsException() {
+    final String publicKey1 = "invalidPublicKey";
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString(
+            "validator.externalSignerPublicKeys=[" + "\"" + publicKey1 + "\"]");
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(config::getValidatorExternalSigningPublicKeys)
+        .withMessage("Invalid configuration. Signer public key is invalid");
+  }
+
+  @Test
+  void validatorExternalSignerUrlCanBeSet() throws MalformedURLException {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("validator.externalSignerUrl=\"http://localhost:9000\"");
+    assertThat(config.getValidatorExternalSigningUrl()).isEqualTo(new URL("http://localhost:9000"));
+  }
+
+  @Test
+  void invalidValidatorExternalSignerUrlThrowsException() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("validator.externalSignerUrl=\"invalid_url\"");
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(config::getValidatorExternalSigningUrl)
+        .withMessage("Invalid configuration. Signer URL has invalid syntax");
+  }
+
+  @Test
+  void validatorExternalSignerTimeoutCanBeSet() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("validator.externalSignerTimeout=5000");
+    assertThat(config.getValidatorExternalSigningTimeout()).isEqualTo(5000);
+  }
+
+  @Test
+  void validatorExternalSignerTimeoutCanReturnsDefault() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString(EMPTY);
+    assertThat(config.getValidatorExternalSigningTimeout()).isEqualTo(1000);
   }
 }

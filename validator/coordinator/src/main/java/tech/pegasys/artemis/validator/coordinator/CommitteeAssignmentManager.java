@@ -152,7 +152,7 @@ public class CommitteeAssignmentManager {
   BLSSignature get_slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
     Bytes domain = get_domain(state, DOMAIN_BEACON_ATTESTER, compute_epoch_at_slot(slot));
     Bytes signing_root = compute_signing_root(slot.longValue(), domain);
-    return validators.get(signer).sign(signing_root).join();
+    return validators.get(signer).getSignerService().signAttestation(signing_root).join();
   }
 
   boolean is_aggregator(

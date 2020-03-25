@@ -141,6 +141,38 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void ofComposedWithExceptionThrowingSupplier_propagatesSuccessfulResult() {
+    final SafeFuture<Void> suppliedFuture = new SafeFuture<>();
+    final AtomicBoolean supplierWasProcessed = new AtomicBoolean(false);
+    final SafeFuture<Void> future =
+        SafeFuture.ofComposed(
+            () -> {
+              supplierWasProcessed.set(true);
+              return suppliedFuture;
+            });
+
+    assertThat(supplierWasProcessed).isTrue();
+    assertThat(future).isNotDone();
+    suppliedFuture.complete(null);
+    assertThat(future).isCompleted();
+  }
+
+  @Test
+  public void ofComposedWithExceptionThrowingSupplier_propagatesExceptionFromSupplier() {
+    final AtomicBoolean supplierWasProcessed = new AtomicBoolean(false);
+    final Throwable error = new IOException("failed");
+    final SafeFuture<Void> future =
+        SafeFuture.ofComposed(
+            () -> {
+              supplierWasProcessed.set(true);
+              throw error;
+            });
+
+    assertThat(supplierWasProcessed).isTrue();
+    assertExceptionallyCompletedWith(future, error);
+  }
+
+  @Test
   void completedFuture_isCompletedWithValue() {
     assertThat(SafeFuture.completedFuture("Yay")).isCompletedWithValue("Yay");
   }
