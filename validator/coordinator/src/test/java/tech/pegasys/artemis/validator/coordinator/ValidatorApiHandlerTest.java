@@ -151,6 +151,7 @@ class ValidatorApiHandlerTest {
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(chainDataClient.getBestSlot()).thenReturn(UnsignedLong.valueOf(24));
     when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE), blockRoot))
         .thenReturn(
             SafeFuture.completedFuture(
