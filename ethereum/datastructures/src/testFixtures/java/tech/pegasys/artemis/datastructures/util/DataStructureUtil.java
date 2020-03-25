@@ -362,7 +362,7 @@ public final class DataStructureUtil {
         randomBeaconBlockHeader(),
         randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
         randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
-        randomSSZList(Bytes32.class, Constants.HISTORICAL_ROOTS_LIMIT, this::randomBytes32),
+        randomSSZList(Bytes32.class, 100, Constants.HISTORICAL_ROOTS_LIMIT, this::randomBytes32),
         randomEth1Data(),
         randomSSZList(Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD, this::randomEth1Data),
         randomUnsignedLong(),
@@ -381,10 +381,12 @@ public final class DataStructureUtil {
             UnsignedLong.ZERO, Constants.EPOCHS_PER_SLASHINGS_VECTOR, this::randomUnsignedLong),
         randomSSZList(
             PendingAttestation.class,
+            100,
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
             this::randomPendingAttestation),
         randomSSZList(
             PendingAttestation.class,
+            100,
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
             this::randomPendingAttestation),
         randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH),
