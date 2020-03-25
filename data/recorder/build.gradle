@@ -11,7 +11,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'com.google.guava:guava'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
 
   test {
