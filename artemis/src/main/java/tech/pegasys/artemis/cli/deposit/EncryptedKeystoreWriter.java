@@ -22,15 +22,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.keystore.KeyStore;
-import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
-import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.artemis.bls.keystore.model.Cipher;
-import tech.pegasys.artemis.bls.keystore.model.CipherFunction;
-import tech.pegasys.artemis.bls.keystore.model.KdfParam;
-import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
-import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.signers.bls.keystore.model.Cipher;
+import tech.pegasys.signers.bls.keystore.model.CipherFunction;
+import tech.pegasys.signers.bls.keystore.model.KdfParam;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
+import tech.pegasys.signers.bls.keystore.model.SCryptParam;
 
 public class EncryptedKeystoreWriter implements KeysWriter {
   private final String validatorKeyPassword;
@@ -82,7 +82,12 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     final Cipher cipher =
         new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16, createSecureRandom()));
     return KeyStore.encrypt(
-        key.getSecretKey().getSecretKey().toBytes(), password, "", kdfParam, cipher);
+        key.getSecretKey().getSecretKey().toBytes(),
+        key.getPublicKey().toBytesCompressed(),
+        password,
+        "",
+        kdfParam,
+        cipher);
   }
 
   private void saveKeyStore(final Path outputPath, final KeyStoreData keyStoreData) {
