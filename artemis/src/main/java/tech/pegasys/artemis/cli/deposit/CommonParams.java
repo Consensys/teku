@@ -154,6 +154,10 @@ public class CommonParams implements Closeable {
     return amount;
   }
 
+  public boolean isDisplayConfirmation() {
+    return displayConfirmation;
+  }
+
   Credentials getEth1Credentials() {
     if (eth1PrivateKeyOptions.eth1PrivateKey != null) {
       return Credentials.create(eth1PrivateKeyOptions.eth1PrivateKey);
