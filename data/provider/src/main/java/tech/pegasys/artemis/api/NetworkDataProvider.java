@@ -16,6 +16,7 @@ package tech.pegasys.artemis.api;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -78,5 +79,9 @@ public class NetworkDataProvider {
 
   P2PNetwork<?> getP2pNetwork() {
     return p2pNetwork;
+  }
+
+  public List<String> getListeningAddresses() {
+    return List.of(LibP2PNetwork.getAdvertisedAddrString(p2pNetwork.getConfig()));
   }
 }

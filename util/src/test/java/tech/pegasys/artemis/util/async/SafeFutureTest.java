@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.async;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -112,7 +113,62 @@ public class SafeFutureTest {
 
     final SafeFuture<Void> future = SafeFuture.of(futureSupplier);
 
-    assertThat(future).isCompletedExceptionally();
+    assertExceptionallyCompletedWith(future, error);
+  }
+
+  @Test
+  public void ofWithExceptionThrowingSupplier_propagatesSuccessfulResult() {
+
+    final ExceptionThrowingSupplier<String> supplier = () -> "Yay";
+
+    final SafeFuture<String> future = SafeFuture.of(supplier);
+
+    assertThat(future).isCompletedWithValue("Yay");
+  }
+
+  @Test
+  public void ofWithExceptionThrowingSupplier_propagatesExceptionFromSupplier() {
+
+    final IOException error = new IOException("whoops");
+    final ExceptionThrowingSupplier<Void> supplier =
+        () -> {
+          throw error;
+        };
+
+    final SafeFuture<Void> future = SafeFuture.of(supplier);
+
+    assertExceptionallyCompletedWith(future, error);
+  }
+
+  @Test
+  public void ofComposedWithExceptionThrowingSupplier_propagatesSuccessfulResult() {
+    final SafeFuture<Void> suppliedFuture = new SafeFuture<>();
+    final AtomicBoolean supplierWasProcessed = new AtomicBoolean(false);
+    final SafeFuture<Void> future =
+        SafeFuture.ofComposed(
+            () -> {
+              supplierWasProcessed.set(true);
+              return suppliedFuture;
+            });
+
+    assertThat(supplierWasProcessed).isTrue();
+    assertThat(future).isNotDone();
+    suppliedFuture.complete(null);
+    assertThat(future).isCompleted();
+  }
+
+  @Test
+  public void ofComposedWithExceptionThrowingSupplier_propagatesExceptionFromSupplier() {
+    final AtomicBoolean supplierWasProcessed = new AtomicBoolean(false);
+    final Throwable error = new IOException("failed");
+    final SafeFuture<Void> future =
+        SafeFuture.ofComposed(
+            () -> {
+              supplierWasProcessed.set(true);
+              throw error;
+            });
+
+    assertThat(supplierWasProcessed).isTrue();
     assertExceptionallyCompletedWith(future, error);
   }
 
@@ -489,7 +545,7 @@ public class SafeFutureTest {
   }
 
   static void assertExceptionallyCompletedWith(
-      final SafeFuture<?> safeFuture, final RuntimeException exception) {
+      final SafeFuture<?> safeFuture, final Throwable exception) {
     assertThat(safeFuture).isCompletedExceptionally();
     assertThatThrownBy(safeFuture::join)
         .isInstanceOf(CompletionException.class)

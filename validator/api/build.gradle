@@ -1,0 +1,6 @@
+dependencies {
+  implementation project(':bls')
+  implementation project(':util')
+  implementation project(':ethereum:datastructures')
+  implementation 'org.apache.tuweni:tuweni-bytes'
+}

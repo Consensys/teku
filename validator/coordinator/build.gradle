@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':bls')
+  implementation project(':validator:api')
   implementation project(':validator:client')
   implementation project(':storage')
   implementation project(':services:serviceutils')
@@ -8,8 +9,8 @@ dependencies {
   implementation project(':util')
   implementation project(':logging')
   implementation project(':pow')
-  implementation project(':data:keystore')
   implementation project(':ssz')
+  implementation project(':events')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3'
@@ -20,12 +21,13 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'tech.pegasys.signers.internal:bls-keystore'
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:statetransition'))
+  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
 }

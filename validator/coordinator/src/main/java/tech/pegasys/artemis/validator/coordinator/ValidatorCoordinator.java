@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -72,7 +73,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
@@ -80,10 +80,11 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
+import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
-public class ValidatorCoordinator extends Service {
+public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -95,6 +96,7 @@ public class ValidatorCoordinator extends Service {
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
   private final DepositProvider depositProvider;
+  private final ValidatorApiChannel validatorApiChannel;
   private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
 
@@ -105,14 +107,16 @@ public class ValidatorCoordinator extends Service {
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
 
   public ValidatorCoordinator(
-      TimeProvider timeProvider,
       EventBus eventBus,
+      ValidatorApiChannel validatorApiChannel,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
       DepositProvider depositProvider,
+      Eth1DataCache eth1DataCache,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
+    this.validatorApiChannel = validatorApiChannel;
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition();
     this.blockCreator = new BlockProposalUtil(stateTransition);
@@ -120,12 +124,12 @@ public class ValidatorCoordinator extends Service {
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.depositProvider = depositProvider;
-    this.eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
-    this.eventBus.register(this);
+    this.eth1DataCache = eth1DataCache;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
+    this.eventBus.register(this);
     chainStorageClient.subscribeBestBlockInitialized(this::onBestBlockInitialized);
     return SafeFuture.COMPLETE;
   }
@@ -155,18 +159,15 @@ public class ValidatorCoordinator extends Service {
         headState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
   }
 
-  @Subscribe
-  // TODO: make sure blocks that are produced right even after new slot to be pushed.
-  public void onNewSlot(SlotEvent slotEvent) {
-    UnsignedLong slot = slotEvent.getSlot();
-    eth1DataCache.onSlot(slotEvent);
-
+  @Override
+  public void onSlot(UnsignedLong slot) {
     final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
     if (!isGenesis(slot) && headRoot.isPresent()) {
       BeaconState headState = chainStorageClient.getStore().getBlockState(headRoot.get());
-      BeaconBlock headBlock = chainStorageClient.getStore().getBlock(headRoot.get());
-      createBlockIfNecessary(headState, headBlock, slot);
+      createBlockIfNecessary(headState, slot);
     }
+
+    eth1DataCache.onSlot(slot);
   }
 
   @Subscribe
@@ -264,15 +265,13 @@ public class ValidatorCoordinator extends Service {
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
     Bytes signing_root = compute_signing_root(attestationData, domain);
 
-    BLSSignature signature = validators.get(attester).sign(signing_root).join();
+    BLSSignature signature = getSigner(attester).signAttestation(signing_root).join();
     Attestation attestation = new Attestation(aggregationBitfield, attestationData, signature);
     postSignedAttestation(attestation, false);
   }
 
-  private void createBlockIfNecessary(
-      BeaconState previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
+  private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {
     try {
-
       MutableBeaconState newState = previousState.createWritableCopy();
       // Process empty slots up to the new slot
       stateTransition.process_slots(newState, newSlot);
@@ -284,31 +283,24 @@ public class ValidatorCoordinator extends Service {
         return;
       }
 
-      SignedBeaconBlock newBlock;
-      // Collect attestations to include
-      SSZList<Attestation> attestations = blockAttestationsPool.getAttestationsForSlot(newSlot);
-      // Collect slashing to include
-      final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(newState);
-      // Collect deposits
-      final SSZList<Deposit> deposits = depositProvider.getDeposits(newState);
-
       final MessageSignerService signer = getSigner(proposer);
-      Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
-      final Bytes32 parentRoot = previousBlock.hash_tree_root();
-      newBlock =
-          blockCreator.createNewBlock(
-              signer,
-              newSlot,
-              newState,
-              parentRoot,
-              eth1Data,
-              attestations,
-              slashingsInBlock,
-              deposits);
+      final BLSSignature randaoReveal =
+          blockCreator.get_epoch_signature(newState, compute_epoch_at_slot(newSlot), signer);
+      final BeaconBlock unsignedBlock =
+          validatorApiChannel
+              .createUnsignedBlock(newSlot, randaoReveal)
+              .orTimeout(10, TimeUnit.SECONDS)
+              .join()
+              .orElseThrow();
+
+      final BLSSignature blockSignature =
+          blockCreator.get_block_signature(newState, unsignedBlock, signer);
+
+      final SignedBeaconBlock newBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
 
       this.eventBus.post(new ProposedBlockEvent(newBlock));
       LOG.debug("Local validator produced a new block");
-    } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
+    } catch (final Exception e) {
       STATUS_LOG.blockCreationFailure(e);
     }
   }
@@ -360,10 +352,6 @@ public class ValidatorCoordinator extends Service {
       slashing = slashings.poll();
     }
     return slashingsForBlock;
-  }
-
-  public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
-    return blockCreator.getProposerForSlot(preState, slot);
   }
 
   private MessageSignerService getSigner(BLSPublicKey signer) {

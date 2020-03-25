@@ -7,6 +7,7 @@ dependencies {
   implementation project(':bls')
   implementation project(':ssz')
   implementation project(':util')
+  implementation project(':events')
 
   api 'org.web3j:core'
   
@@ -20,7 +21,7 @@ dependencies {
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
 }
