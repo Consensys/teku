@@ -33,11 +33,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
-import tech.pegasys.artemis.bls.keystore.KeyStore;
-import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
 import tech.pegasys.artemis.cli.deposit.DepositGenerateCommand.ValidatorPasswordOptions;
 import tech.pegasys.artemis.cli.deposit.DepositGenerateCommand.WithdrawalPasswordOptions;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 
 class DepositGenerateCommandTest {
   private static final int VALIDATORS_COUNT = 2;

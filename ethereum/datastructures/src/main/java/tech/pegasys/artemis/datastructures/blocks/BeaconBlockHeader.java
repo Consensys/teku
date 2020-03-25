@@ -162,10 +162,10 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("slot", slot)
-        .add("parent_root", parent_root)
-        .add("state_root", state_root)
-        .add("body_root", body_root)
+        .add("slot", getSlot())
+        .add("parent_root", getParent_root())
+        .add("state_root", getState_root())
+        .add("body_root", getBody_root())
         .toString();
   }
 }

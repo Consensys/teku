@@ -67,7 +67,24 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   public static <U> SafeFuture<U> of(final Supplier<CompletionStage<U>> futureSupplier) {
     try {
       return SafeFuture.of(futureSupplier.get());
-    } catch (Exception e) {
+    } catch (Throwable e) {
+      return SafeFuture.failedFuture(e);
+    }
+  }
+
+  public static <U> SafeFuture<U> of(final ExceptionThrowingSupplier<U> supplier) {
+    try {
+      return SafeFuture.completedFuture(supplier.get());
+    } catch (final Throwable e) {
+      return SafeFuture.failedFuture(e);
+    }
+  }
+
+  public static <U> SafeFuture<U> ofComposed(
+      final ExceptionThrowingSupplier<CompletionStage<U>> futureSupplier) {
+    try {
+      return SafeFuture.of(futureSupplier.get());
+    } catch (final Throwable e) {
       return SafeFuture.failedFuture(e);
     }
   }
@@ -228,7 +245,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
           try {
             final U result = function.apply(value);
             return SafeFuture.completedFuture(result);
-          } catch (final Exception e) {
+          } catch (final Throwable e) {
             return SafeFuture.failedFuture(e);
           }
         });

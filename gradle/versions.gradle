@@ -33,6 +33,8 @@ dependencyManagement {
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
+    dependency 'org.mock-server:mockserver-junit-jupiter:5.9.0'
+
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2'
     dependency 'io.swagger.core.v3:swagger-core:2.1.1'
     dependency 'org.webjars:swagger-ui:3.24.3'
@@ -109,5 +111,7 @@ dependencyManagement {
     dependency "org.testcontainers:junit-jupiter:1.12.3"
 
     dependency 'tech.pegasys.discovery:discovery:0.3.1'
+
+    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.0'
   }
 }

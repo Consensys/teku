@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -25,7 +24,6 @@ import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.cr
 import static tech.pegasys.artemis.util.Waiter.ensureConditionRemainsMet;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,25 +32,22 @@ import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
-import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.StubTimeProvider;
+import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 public class ValidatorCoordinatorTest {
 
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
-  private BlockAttestationsPool blockAttestationsPool;
-  private AttestationAggregator attestationAggregator;
-  private DepositProvider depositProvider;
+  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  private final BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
+  private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
+  private final DepositProvider depositProvider = mock(DepositProvider.class);
+  private final ArtemisConfiguration config = mock(ArtemisConfiguration.class);
   private EventBus eventBus;
-  private List<ProposedBlockEvent> proposedBlockEvents;
   private ChainStorageClient storageClient;
-  private ArtemisConfiguration config;
   private BeaconChainUtil chainUtil;
 
   private static final int NUM_VALIDATORS = 12;
@@ -61,23 +56,17 @@ public class ValidatorCoordinatorTest {
   void setup() {
     Constants.GENESIS_SLOT = 0;
     Constants.MIN_ATTESTATION_INCLUSION_DELAY = 0;
-    config = mock(ArtemisConfiguration.class);
     when(config.getNumValidators()).thenReturn(NUM_VALIDATORS);
     when(config.getValidatorsKeyFile()).thenReturn(null);
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(null);
     when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);
     when(config.getInteropOwnedValidatorCount()).thenReturn(NUM_VALIDATORS);
 
-    attestationAggregator = mock(AttestationAggregator.class);
-    blockAttestationsPool = mock(BlockAttestationsPool.class);
-    depositProvider = mock(DepositProvider.class);
-
     when(depositProvider.getDeposits(any())).thenReturn(createDeposits());
 
     when(blockAttestationsPool.getAttestationsForSlot(any())).thenReturn(createAttestations());
 
     eventBus = new EventBus();
-    proposedBlockEvents = EventSink.capture(eventBus, ProposedBlockEvent.class);
     storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, NUM_VALIDATORS);
@@ -86,7 +75,7 @@ public class ValidatorCoordinatorTest {
 
   @Test
   void onAttestationEvent_noAttestationAssignments() throws Exception {
-    ValidatorCoordinator vc = spy(createValidatorCoordinator(0));
+    ValidatorCoordinator vc = spy(createValidatorCoordinator());
     eventBus.post(
         new BroadcastAttestationEvent(
             storageClient.getBestBlockRoot().orElseThrow(), storageClient.getBestSlot()));
@@ -97,40 +86,17 @@ public class ValidatorCoordinatorTest {
         () -> verify(vc, never()).asyncProduceAttestations(any(), any(), any()));
   }
 
-  @Test
-  void createBlockAfterNormalSlot() {
-    createValidatorCoordinator(NUM_VALIDATORS);
-    UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
-    eventBus.post(new SlotEvent(newBlockSlot));
-    assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
-  }
-
-  @Test
-  void createBlockAfterSkippedSlot() {
-    createValidatorCoordinator(NUM_VALIDATORS);
-    UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.valueOf(2));
-    eventBus.post(new SlotEvent(newBlockSlot));
-    assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
-  }
-
-  @Test
-  void createBlockAfterMultipleSkippedSlots() {
-    createValidatorCoordinator(NUM_VALIDATORS);
-    UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.valueOf(10));
-    eventBus.post(new SlotEvent(newBlockSlot));
-    assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
-  }
-
-  private ValidatorCoordinator createValidatorCoordinator(final int ownedValidatorCount) {
-    when(config.getInteropOwnedValidatorCount()).thenReturn(ownedValidatorCount);
+  private ValidatorCoordinator createValidatorCoordinator() {
+    when(config.getInteropOwnedValidatorCount()).thenReturn(0);
     ValidatorCoordinator vc =
         new ValidatorCoordinator(
-            timeProvider,
             eventBus,
+            validatorApiChannel,
             storageClient,
             attestationAggregator,
             blockAttestationsPool,
             depositProvider,
+            eth1DataCache,
             config);
 
     chainUtil.initializeStorage();

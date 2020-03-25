@@ -27,13 +27,13 @@ import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.keystore.KeyStore;
-import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
-import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 

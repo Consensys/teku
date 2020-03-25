@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSI
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -36,12 +37,13 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconChainUtil {
 
   private final StateTransition stateTransition = new StateTransition();
-  private final BlockProposalUtil blockCreator = new BlockProposalUtil(stateTransition);
+  private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil(stateTransition);
   private final ChainStorageClient storageClient;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
@@ -220,7 +222,34 @@ public class BeaconChainUtil {
   }
 
   private MessageSignerService getSigner(final int proposerIndex) {
-    BLSKeyPair proposerKey = validatorKeys.get(proposerIndex);
-    return (message) -> SafeFuture.completedFuture(BLS.sign(proposerKey.getSecretKey(), message));
+    return new TestMessageSignerService(validatorKeys.get(proposerIndex));
+  }
+
+  private static class TestMessageSignerService implements MessageSignerService {
+
+    private BLSKeyPair blsKeyPair;
+
+    public TestMessageSignerService(final BLSKeyPair blsKeyPair) {
+      this.blsKeyPair = blsKeyPair;
+    }
+
+    @Override
+    public SafeFuture<BLSSignature> signBlock(final Bytes signingRoot) {
+      return sign(signingRoot);
+    }
+
+    @Override
+    public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
+      return sign(signingRoot);
+    }
+
+    @Override
+    public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
+      return sign(signingRoot);
+    }
+
+    private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
+      return SafeFuture.completedFuture(BLS.sign(blsKeyPair.getSecretKey(), signingRoot));
+    }
   }
 }
