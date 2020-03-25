@@ -19,25 +19,29 @@ import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
+import tech.pegasys.artemis.services.timer.TimerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ServiceController extends Service {
   private final BeaconChainService beaconChainService;
-  private final Optional<PowchainService> powchainService;
   private final ChainStorageService chainStorageService;
+  private final TimerService timerService;
+  private final Optional<PowchainService> powchainService;
 
   public ServiceController(final ServiceConfig config) {
+    timerService = new TimerService(config);
     beaconChainService = new BeaconChainService(config);
+    chainStorageService = new ChainStorageService(config);
     powchainService =
         config.getConfig().getDepositMode().equals("test")
             ? Optional.empty()
             : Optional.of(new PowchainService(config));
-    chainStorageService = new ChainStorageService(config);
   }
 
   @Override
   protected SafeFuture<?> doStart() {
     return SafeFuture.allOfFailFast(
+        timerService.start(),
         chainStorageService.start(),
         beaconChainService.start(),
         powchainService.map(PowchainService::start).orElse(SafeFuture.completedFuture(null)));
@@ -46,6 +50,7 @@ public class ServiceController extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(
+        timerService.stop(),
         chainStorageService.stop(),
         beaconChainService.stop(),
         powchainService.map(PowchainService::stop).orElse(SafeFuture.completedFuture(null)));
