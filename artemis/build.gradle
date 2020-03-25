@@ -1,7 +1,6 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data')
-  implementation project(':data:keystore')
   implementation project(':data:metrics')
   implementation project(':data:recorder')
   implementation project(':ethereum:datastructures')
@@ -34,6 +33,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-toml'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.hyperledger.besu:plugin-api'
+  implementation 'tech.pegasys.signers.internal:bls-keystore'
 
   testImplementation testFixtures(project(':util'))
 
