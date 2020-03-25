@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -50,14 +49,17 @@ class DepositRegisterCommandTest {
   private static final Function<String, String> envSupplier =
       s -> EXPECTED_ENV_VARIABLE.equals(s) ? PASSWORD : null;
   private static final Bytes BLS_PRIVATE_KEY =
-      Bytes48.fromHexStringLenient("19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+      Bytes.fromHexString("0x19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+  private static final Bytes BLS_PUB_KEY =
+      Bytes.fromHexString(
+          "9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07");
   private static final Bytes32 SALT =
       Bytes32.fromHexString("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
   private static final Bytes AES_IV_PARAM = Bytes.fromHexString("264daa3f303d7259501c93d997d84fe6");
   private static final Cipher CIPHER = new Cipher(AES_IV_PARAM);
   private static final KdfParam KDF_PARAM = new SCryptParam(32, 262144, 1, 8, SALT);
   private static final KeyStoreData VALIDATOR_KEYSTORE =
-      KeyStore.encrypt(BLS_PRIVATE_KEY, Bytes32.random(), PASSWORD, "", KDF_PARAM, CIPHER);
+      KeyStore.encrypt(BLS_PRIVATE_KEY, BLS_PUB_KEY, PASSWORD, "", KDF_PARAM, CIPHER);
   private CommonParams commonParams;
   private CommandLine.Model.CommandSpec commandSpec;
   private DepositTransactionSender depositTransactionSender;
