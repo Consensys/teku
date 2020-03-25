@@ -11,14 +11,7 @@ dependencies {
 
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'org.apache.commons:commons-lang3'
   referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
   referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
-  referenceTestImplementation 'org.assertj:assertj-core'
-  referenceTestImplementation 'org.junit.jupiter:junit-jupiter-api'
-  referenceTestImplementation 'org.junit.jupiter:junit-jupiter-params'
   referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
-  referenceTestImplementation 'org.mockito:mockito-core'
-
-  referenceTestRuntime 'org.junit.jupiter:junit-jupiter-engine'
 }
