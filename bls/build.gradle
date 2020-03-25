@@ -3,13 +3,10 @@ dependencies {
 
   api 'org.bouncycastle:bcprov-jdk15on'
 
-  implementation 'com.google.guava:guava'
-
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 
-  testImplementation 'org.mockito:mockito-core'
+  testImplementation project(':logging')
 }

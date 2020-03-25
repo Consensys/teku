@@ -23,13 +23,13 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.logging.LoggingConfigurator;
 
 // This test is disabled by default so that it doesn't slow down other tests
 @Disabled
@@ -37,7 +37,7 @@ public class BLSPerformanceRunner {
   private static final Logger LOG = LogManager.getLogger();
 
   public BLSPerformanceRunner() {
-    Configurator.setRootLevel(Level.INFO);
+    LoggingConfigurator.setAllLevels(Level.INFO);
   }
 
   private Long executeRun(Runnable r, Integer count) {
