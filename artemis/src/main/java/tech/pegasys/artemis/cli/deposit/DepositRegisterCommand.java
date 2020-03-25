@@ -28,15 +28,15 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
-import tech.pegasys.artemis.bls.keystore.KeyStore;
-import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
-import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 
 @Command(
     name = "register",
