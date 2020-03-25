@@ -10,6 +10,9 @@ dependencies {
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+  integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 
   testSupportImplementation testFixtures(project(':util'))
 }

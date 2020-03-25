@@ -18,6 +18,8 @@ import static java.util.Arrays.asList;
 import com.google.common.base.Strings;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -25,10 +27,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.config.Configuration;
 import org.apache.tuweni.config.PropertyValidator;
 import org.apache.tuweni.config.Schema;
 import org.apache.tuweni.config.SchemaBuilder;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
@@ -77,6 +81,15 @@ public class ArtemisConfiguration {
         Collections.emptyList(),
         "The list of password files to decrypt the validator keystore files",
         null);
+    builder.addListOfString(
+        "validator.externalSignerPublicKeys",
+        Collections.emptyList(),
+        "The list of external signer public keys",
+        null);
+    builder.addString(
+        "validator.externalSignerUrl", null, "URL for the external signing service", null);
+    builder.addInteger(
+        "validator.externalSignerTimeout", 1000, "Timeout for the external signing service", null);
 
     builder.addInteger(
         "deposit.numValidators",
@@ -333,6 +346,32 @@ public class ArtemisConfiguration {
       return Collections.emptyList();
     }
     return list;
+  }
+
+  public List<BLSPublicKey> getValidatorExternalSigningPublicKeys() {
+    final List<String> publicKeys = config.getListOfString("validator.externalSignerPublicKeys");
+    if (publicKeys == null) {
+      return Collections.emptyList();
+    }
+    try {
+      return publicKeys.stream()
+          .map(key -> BLSPublicKey.fromBytes(Bytes.fromHexString(key)))
+          .collect(Collectors.toList());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Invalid configuration. Signer public key is invalid", e);
+    }
+  }
+
+  public URL getValidatorExternalSigningUrl() {
+    try {
+      return new URL(config.getString("validator.externalSignerUrl"));
+    } catch (MalformedURLException e) {
+      throw new IllegalArgumentException("Invalid configuration. Signer URL has invalid syntax", e);
+    }
+  }
+
+  public int getValidatorExternalSigningTimeout() {
+    return config.getInteger("validator.externalSignerTimeout");
   }
 
   /** @return the Deposit simulation flag, w/ optional input file */

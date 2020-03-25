@@ -13,10 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ValidatorInfo {
 
@@ -29,10 +26,6 @@ public class ValidatorInfo {
 
   public MessageSignerService getSignerService() {
     return signerService;
-  }
-
-  public SafeFuture<BLSSignature> sign(final Bytes message) {
-    return signerService.sign(message);
   }
 
   public int getValidatorIndex() {
