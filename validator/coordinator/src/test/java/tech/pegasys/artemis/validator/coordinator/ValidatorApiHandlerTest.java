@@ -142,7 +142,6 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedBlock_shouldCreateBlock() throws Exception {
-    final Store store = mock(Store.class);
     final UnsignedLong newSlot = UnsignedLong.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final BeaconState previousState = dataStructureUtil.randomBeaconState();
