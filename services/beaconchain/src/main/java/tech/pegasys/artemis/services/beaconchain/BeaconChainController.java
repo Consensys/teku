@@ -373,7 +373,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         chainStorageClient
             .getGenesisTime()
             .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0 || !syncService.isSyncActive()) {
+    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0
+        || !syncService.isSyncActive()) {
       processSlot();
     }
   }
