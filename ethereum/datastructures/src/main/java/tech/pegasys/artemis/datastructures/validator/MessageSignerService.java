@@ -19,5 +19,9 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public interface MessageSignerService {
 
-  SafeFuture<BLSSignature> sign(Bytes message);
+  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
+
+  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
+
+  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
 }
