@@ -14,10 +14,13 @@
 package tech.pegasys.artemis.util.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class BLSSecretKeyTest {
   private static final String PRIVATE_KEY_32_BYTES =
@@ -42,5 +45,15 @@ class BLSSecretKeyTest {
 
     final BLSSecretKey secretKey = BLSSecretKey.fromBytes(keyBytes);
     assertThat(secretKey.getSecretKey().toBytes()).isEqualTo(keyBytes);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, 30, 31, 33, 47, 49})
+  void keyCannotBeSizeOtherThan32Or48Bytes(int size) {
+    final Bytes bytes = Bytes.wrap(new byte[size]);
+    assertThat(bytes.size()).isEqualTo(size);
+    assertThatThrownBy(() -> BLSSecretKey.fromBytes(bytes))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Expected 32 or 48 bytes but received " + size + ".");
   }
 }
