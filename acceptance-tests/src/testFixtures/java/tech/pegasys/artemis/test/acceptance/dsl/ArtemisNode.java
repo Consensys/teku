@@ -143,6 +143,13 @@ public class ArtemisNode extends Node {
     waitFor(() -> assertThat(fetchBeaconHead().get().block_root).isNotEqualTo(startingBlockRoot));
   }
 
+  public void waitForNewBlock(int timeoutSeconds) {
+    final Bytes32 startingBlockRoot = waitForBeaconHead().block_root;
+    waitFor(
+        () -> assertThat(fetchBeaconHead().get().block_root).isNotEqualTo(startingBlockRoot),
+        timeoutSeconds);
+  }
+
   public void waitForNewFinalization() {
     UnsignedLong startingFinalizedEpoch = waitForChainHead().finalized_epoch;
     LOG.debug("Wait for finalized block");

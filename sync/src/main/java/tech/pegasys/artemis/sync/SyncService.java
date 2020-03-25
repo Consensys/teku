@@ -53,4 +53,8 @@ public class SyncService extends Service {
   public SyncingStatus getSyncStatus() {
     return syncManager.getSyncStatus();
   }
+
+  public boolean isSyncActive() {
+    return syncManager.isSyncActive();
+  }
 }
