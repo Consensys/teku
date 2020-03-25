@@ -66,10 +66,9 @@ public class ExternalMessageSignerService implements MessageSignerService {
                   .timeout(timeout)
                   .POST(BodyPublishers.ofString(requestBody))
                   .build();
-          return SafeFuture.of(
-              HttpClient.newHttpClient()
-                  .sendAsync(request, BodyHandlers.ofString())
-                  .handleAsync(this::getBlsSignature));
+          return HttpClient.newHttpClient()
+              .sendAsync(request, BodyHandlers.ofString())
+              .handleAsync(this::getBlsSignature);
         });
   }
 
