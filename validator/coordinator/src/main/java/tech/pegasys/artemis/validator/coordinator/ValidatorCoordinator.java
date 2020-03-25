@@ -269,7 +269,7 @@ public class ValidatorCoordinator extends Service {
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
     Bytes signing_root = compute_signing_root(attestationData, domain);
 
-    BLSSignature signature = validators.get(attester).sign(signing_root).join();
+    BLSSignature signature = getSigner(attester).signAttestation(signing_root).join();
     Attestation attestation = new Attestation(aggregationBitfield, attestationData, signature);
     postSignedAttestation(attestation, false);
   }
