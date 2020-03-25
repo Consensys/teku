@@ -32,16 +32,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
-import tech.pegasys.artemis.bls.keystore.KeyStore;
-import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
-import tech.pegasys.artemis.bls.keystore.model.Cipher;
-import tech.pegasys.artemis.bls.keystore.model.KdfParam;
-import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
-import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 import tech.pegasys.artemis.cli.deposit.DepositRegisterCommand.ValidatorKeyOptions;
 import tech.pegasys.artemis.cli.deposit.DepositRegisterCommand.ValidatorKeyStoreOptions;
 import tech.pegasys.artemis.cli.deposit.DepositRegisterCommand.ValidatorPasswordOptions;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.model.Cipher;
+import tech.pegasys.signers.bls.keystore.model.KdfParam;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
+import tech.pegasys.signers.bls.keystore.model.SCryptParam;
 
 class DepositRegisterCommandTest {
   private static final Consumer<Integer> shutdownFunction = status -> {};
@@ -57,7 +57,7 @@ class DepositRegisterCommandTest {
   private static final Cipher CIPHER = new Cipher(AES_IV_PARAM);
   private static final KdfParam KDF_PARAM = new SCryptParam(32, 262144, 1, 8, SALT);
   private static final KeyStoreData VALIDATOR_KEYSTORE =
-      KeyStore.encrypt(BLS_PRIVATE_KEY, PASSWORD, "", KDF_PARAM, CIPHER);
+      KeyStore.encrypt(BLS_PRIVATE_KEY, Bytes32.random(), PASSWORD, "", KDF_PARAM, CIPHER);
   private CommonParams commonParams;
   private CommandLine.Model.CommandSpec commandSpec;
   private DepositTransactionSender depositTransactionSender;
