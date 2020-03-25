@@ -63,9 +63,11 @@ public class BLSPubKey {
 
   public static BLSPubKey fromHexString(String value) {
     BLSPublicKey blsPublicKey = BLSPublicKey.fromBytes(Bytes.fromHexString(value));
-    // force validation early - this will throw IllegalArgumentException if not valid
-    blsPublicKey.getPublicKey().g1Point();
-    return new BLSPubKey(blsPublicKey);
+    if (BLSPublicKey.isValid(blsPublicKey)) {
+      return new BLSPubKey(blsPublicKey);
+    } else {
+      return null;
+    }
   }
 
   public String toHexString() {
