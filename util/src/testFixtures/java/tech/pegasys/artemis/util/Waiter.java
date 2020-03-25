@@ -28,7 +28,7 @@ import org.awaitility.pollinterval.IterativePollInterval;
  */
 public class Waiter {
 
-  private static final int DEFAULT_TIMEOUT_SECONDS = 60;
+  private static final int DEFAULT_TIMEOUT_SECONDS = 90;
   private static final Duration INITIAL_POLL_INTERVAL = Duration.ofMillis(200);
   private static final Duration MAX_POLL_INTERVAL = Duration.ofSeconds(5);
 
