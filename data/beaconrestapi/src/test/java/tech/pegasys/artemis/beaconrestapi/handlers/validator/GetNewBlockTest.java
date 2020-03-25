@@ -15,9 +15,10 @@ package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
@@ -25,16 +26,18 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.DataProviderException;
+import org.mockito.ArgumentMatcher;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.storage.ChainDataUnavailableException;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetNewBlockTest {
 
@@ -52,15 +55,20 @@ public class GetNewBlockTest {
   }
 
   @Test
-  void shouldGetNoContentIfBlockCreationReturnsEmptyObject() throws Exception {
+  void shouldPropagateChainDataUnavailableExceptionToGlobalExceptionHandler() throws Exception {
     final Map<String, List<String>> params =
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature)).thenReturn(Optional.empty());
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+        .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
 
-    verify(context).status(SC_NO_CONTENT);
+    // Exeception should just be propagated up via the future
+    verify(context, never()).status(anyInt());
+    verify(context)
+        .result(
+            argThat((ArgumentMatcher<SafeFuture<?>>) CompletableFuture::isCompletedExceptionally));
   }
 
   @Test
@@ -75,16 +83,33 @@ public class GetNewBlockTest {
   }
 
   @Test
-  void shouldReturnServerErrorWhenDataProviderErrorReceived() throws Exception {
+  void shouldReturnServerErrorWhenRuntimeExceptionReceived() throws Exception {
     final Map<String, List<String>> params =
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
-        .thenThrow(new DataProviderException("TEST"));
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("TEST")));
     handler.handle(context);
 
-    verify(context).status(SC_INTERNAL_SERVER_ERROR);
+    // Exeception should just be propagated up via the future
+    verify(context, never()).status(anyInt());
+    verify(context)
+        .result(
+            argThat((ArgumentMatcher<SafeFuture<?>>) CompletableFuture::isCompletedExceptionally));
+  }
+
+  @Test
+  void shouldReturnBadRequestErrorWhenIllegalArgumentExceptionReceived() throws Exception {
+    final Map<String, List<String>> params =
+        Map.of(
+            RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
+    when(context.queryParamMap()).thenReturn(params);
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("TEST")));
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
   }
 
   private void badRequestParamsTest(final Map<String, List<String>> params, String message)

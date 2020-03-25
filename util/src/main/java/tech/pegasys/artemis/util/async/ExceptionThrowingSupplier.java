@@ -11,10 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.api;
+package tech.pegasys.artemis.util.async;
 
-import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-
-public interface BlockEventChannel {
-  void onImportedBlock(ImportedBlockEvent event);
+public interface ExceptionThrowingSupplier<O> {
+  O get() throws Exception;
 }
