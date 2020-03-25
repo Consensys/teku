@@ -35,6 +35,7 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -44,8 +45,9 @@ public class PostValidatorsTest {
   private final Context context = mock(Context.class);;
   private final ChainDataProvider provider = mock(ChainDataProvider.class);;
   private final JsonProvider jsonProvider = new JsonProvider();
+  private final BLSPubKey pubKey = new BLSPubKey(new DataStructureUtil().randomPublicKey());
   private final ValidatorsRequest smallRequest =
-      new ValidatorsRequest(UnsignedLong.ZERO, List.of(BLSPubKey.empty()));
+      new ValidatorsRequest(UnsignedLong.ZERO, List.of(pubKey));
 
   private PostValidators handler;
 
