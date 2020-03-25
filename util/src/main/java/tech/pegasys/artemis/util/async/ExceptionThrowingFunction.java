@@ -14,5 +14,5 @@
 package tech.pegasys.artemis.util.async;
 
 public interface ExceptionThrowingFunction<I, O> {
-  O apply(I value) throws Exception;
+  O apply(I value) throws Throwable;
 }
