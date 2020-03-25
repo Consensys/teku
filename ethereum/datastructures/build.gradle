@@ -6,7 +6,6 @@ dependencies {
   implementation project(':util')
 
   implementation 'com.google.code.gson:gson'
-  implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'

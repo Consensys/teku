@@ -7,7 +7,6 @@ dependencies {
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 
-  implementation 'org.apache.commons:commons-lang3'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
 
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'

@@ -2,7 +2,6 @@ dependencies {
   implementation project(':data:metrics')
   implementation project(':util')
 
-  implementation 'org.apache.commons:commons-lang3'
   implementation 'org.hyperledger.besu:plugin-api'
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
