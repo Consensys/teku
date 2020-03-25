@@ -224,7 +224,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             chainStorageClient,
             attestationAggregator,
             blockAttestationsPool,
-            depositProvider,
             eth1DataCache,
             config);
     eventChannels.subscribe(SlotEventsChannel.class, validatorCoordinator);

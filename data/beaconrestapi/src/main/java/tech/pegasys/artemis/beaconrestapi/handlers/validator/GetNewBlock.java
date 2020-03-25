@@ -91,7 +91,7 @@ public class GetNewBlock implements Handler {
                     if (maybeBlock.isEmpty()) {
                       throw new ChainDataUnavailableException();
                     }
-                    return jsonProvider.objectToJSON(maybeBlock);
+                    return jsonProvider.objectToJSON(maybeBlock.get());
                   })
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
