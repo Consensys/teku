@@ -27,7 +27,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final ArtemisNode node = createArtemisNode();
     node.start();
     node.waitForGenesis();
-    node.waitForNewBlock(200);
+    node.waitForNewBlock(50);
   }
 
   @Test
@@ -44,7 +44,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     node2.copyDatabaseVersionFileToContainer(tempDatabaseVersionFile);
     node2.start();
     node2.waitForGenesisTime(genesisTime);
-    node2.waitForNewBlock(200);
+    node2.waitForNewBlock(50);
   }
 
   @Test
