@@ -27,7 +27,6 @@ dependencies {
     integrationTestImplementation testFixtures(project(':util'))
 
     integrationTestImplementation 'org.mockito:mockito-core'
-//    integrationTestImplementation 'org.hyperledger.besu:plugin-api'
 
     testFixturesImplementation project(':services:serviceutils')
     testFixturesImplementation project(':util')
