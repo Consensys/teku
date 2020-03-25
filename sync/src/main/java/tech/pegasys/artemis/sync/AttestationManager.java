@@ -15,6 +15,7 @@ package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,10 +30,10 @@ import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregat
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
-public class AttestationManager extends Service {
+public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -82,10 +83,9 @@ public class AttestationManager extends Service {
             aggregate, () -> eventBus.post(new ProcessedAggregateEvent(aggregate))));
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onSlot(final SlotEvent slotEvent) {
-    futureAttestations.prune(slotEvent.getSlot()).forEach(this::processAttestation);
+  @Override
+  public void onSlot(final UnsignedLong slot) {
+    futureAttestations.prune(slot).forEach(this::processAttestation);
   }
 
   @Subscribe
