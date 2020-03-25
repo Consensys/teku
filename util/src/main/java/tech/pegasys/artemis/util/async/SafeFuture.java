@@ -84,7 +84,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
       final ExceptionThrowingSupplier<CompletionStage<U>> futureSupplier) {
     try {
       return SafeFuture.of(futureSupplier.get());
-    } catch (Throwable e) {
+    } catch (final Throwable e) {
       return SafeFuture.failedFuture(e);
     }
   }
