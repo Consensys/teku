@@ -18,15 +18,15 @@ import java.util.Objects;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public class BeaconBlockAndState {
-  private final SignedBeaconBlock block;
+  private final BeaconBlock block;
   private final BeaconState state;
 
-  public BeaconBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
+  public BeaconBlockAndState(final BeaconBlock block, final BeaconState state) {
     this.block = block;
     this.state = state;
   }
 
-  public SignedBeaconBlock getBlock() {
+  public BeaconBlock getBlock() {
     return block;
   }
 

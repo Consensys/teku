@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
@@ -150,10 +151,11 @@ class ValidatorApiHandlerTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
-    when(chainDataClient.getStore()).thenReturn(store);
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(store.getBlockState(blockRoot)).thenReturn(previousState);
-    when(store.getBlock(blockRoot)).thenReturn(previousBlock);
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE), blockRoot))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new BeaconBlockAndState(previousBlock, previousState))));
     when(blockFactory.createUnsignedBlock(previousState, previousBlock, newSlot, randaoReveal))
         .thenReturn(createdBlock);
 

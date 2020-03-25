@@ -20,7 +20,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.createAttestations;
-import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.createDeposits;
 import static tech.pegasys.artemis.util.Waiter.ensureConditionRemainsMet;
 
 import com.google.common.eventbus.EventBus;
@@ -36,17 +35,14 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.StubTimeProvider;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 public class ValidatorCoordinatorTest {
 
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
   private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
-  private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final ArtemisConfiguration config = mock(ArtemisConfiguration.class);
   private EventBus eventBus;
   private ChainStorageClient storageClient;
@@ -63,8 +59,6 @@ public class ValidatorCoordinatorTest {
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(null);
     when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);
     when(config.getInteropOwnedValidatorCount()).thenReturn(NUM_VALIDATORS);
-
-    when(depositProvider.getDeposits(any())).thenReturn(createDeposits());
 
     when(blockAttestationsPool.getAttestationsForSlot(any())).thenReturn(createAttestations());
 
@@ -92,13 +86,11 @@ public class ValidatorCoordinatorTest {
     when(config.getInteropOwnedValidatorCount()).thenReturn(0);
     ValidatorCoordinator vc =
         new ValidatorCoordinator(
-            timeProvider,
             eventBus,
             validatorApiChannel,
             storageClient,
             attestationAggregator,
             blockAttestationsPool,
-            depositProvider,
             eth1DataCache,
             config);
 

@@ -229,13 +229,11 @@ public class BeaconChainController extends Service {
     LOG.debug("BeaconChainController.initValidatorCoordinator()");
     this.validatorCoordinator =
         new ValidatorCoordinator(
-            timeProvider,
             eventBus,
             eventChannels.getPublisher(ValidatorApiChannel.class),
             chainStorageClient,
             attestationAggregator,
             blockAttestationsPool,
-            depositProvider,
             eth1DataCache,
             config);
   }

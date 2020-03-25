@@ -32,6 +32,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -117,13 +118,13 @@ public class CombinedChainDataClient {
         .thenCompose(
             maybeBlock ->
                 maybeBlock
+                    .map(SignedBeaconBlock::getMessage)
                     .map(this::getStateForBlock)
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
 
-  private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(
-      final SignedBeaconBlock block) {
-    return getStateByBlockRoot(block.getMessage().hash_tree_root())
+  private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(final BeaconBlock block) {
+    return getStateByBlockRoot(block.hash_tree_root())
         .thenApply(maybeState -> maybeState.map(state -> new BeaconBlockAndState(block, state)));
   }
 

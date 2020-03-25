@@ -329,7 +329,8 @@ class CombinedChainDataClientTest {
     final SafeFuture<Optional<BeaconBlockAndState>> result =
         client.getBlockAndStateInEffectAtSlot(requestedSlot, headBlockRoot);
 
-    assertThat(result).isCompletedWithValue(Optional.of(new BeaconBlockAndState(block, state)));
+    assertThat(result)
+        .isCompletedWithValue(Optional.of(new BeaconBlockAndState(block.getMessage(), state)));
   }
 
   @Test

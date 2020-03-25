@@ -30,13 +30,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -77,18 +77,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UnsignedLong slot, final BLSSignature randaoReveal) {
-    Store store = combinedChainDataClient.getStore();
+    final UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
     final Optional<Bytes32> headRoot = combinedChainDataClient.getBestBlockRoot();
-    if (headRoot.isEmpty() || store == null) {
+    if (headRoot.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    final BeaconState previousState = store.getBlockState(headRoot.get());
-    final BeaconBlock previousBlock = store.getBlock(headRoot.get());
-    return SafeFuture.of(
-        () ->
-            Optional.of(
-                blockFactory.createUnsignedBlock(
-                    previousState, previousBlock, slot, randaoReveal)));
+    // We need to request the block on the canonical chain which is strictly before slot
+    // If slot is past the end of our canonical chain, we need the last block from our chain.
+    final UnsignedLong parentBlockSlot =
+        bestSlot.compareTo(slot) >= 0 ? slot.minus(UnsignedLong.ONE) : bestSlot;
+    return combinedChainDataClient
+        .getBlockAndStateInEffectAtSlot(parentBlockSlot, headRoot.get())
+        .thenApplyChecked(
+            maybeBlockAndState -> {
+              if (maybeBlockAndState.isEmpty()) {
+                return Optional.empty();
+              }
+              final BeaconBlockAndState blockAndState = maybeBlockAndState.get();
+              return Optional.of(
+                  blockFactory.createUnsignedBlock(
+                      blockAndState.getState(), blockAndState.getBlock(), slot, randaoReveal));
+            });
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(
