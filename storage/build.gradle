@@ -5,7 +5,6 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
 
-  implementation 'com.google.guava:guava'
   implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-kv'

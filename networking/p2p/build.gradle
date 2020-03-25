@@ -10,7 +10,6 @@ dependencies {
   implementation project(':util')
   implementation project(':validator:coordinator')
 
-  implementation 'com.google.guava:guava'
   implementation 'de.undercouch:bson4jackson'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.projectreactor:reactor-core'

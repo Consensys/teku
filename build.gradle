@@ -467,6 +467,7 @@ subprojects {
 
   dependencies {
     implementation 'org.apache.logging.log4j:log4j-api'
+    implementation 'com.google.guava:guava'
 
     runtimeOnly 'org.apache.logging.log4j:log4j-core'
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'

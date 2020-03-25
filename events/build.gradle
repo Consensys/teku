@@ -2,7 +2,6 @@ dependencies {
   implementation project(':data:metrics')
   implementation project(':util')
 
-  implementation 'com.google.guava:guava'
   implementation 'org.apache.commons:commons-lang3'
   implementation 'org.hyperledger.besu:plugin-api'
 

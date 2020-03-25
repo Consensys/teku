@@ -19,7 +19,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  implementation 'com.google.guava:guava'
 
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:statetransition'))

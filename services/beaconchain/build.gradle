@@ -19,7 +19,6 @@ dependencies {
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
 
-  implementation 'com.google.guava:guava'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'

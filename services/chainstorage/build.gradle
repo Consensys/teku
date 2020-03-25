@@ -4,6 +4,5 @@ dependencies {
   implementation project(':storage')
   implementation project(':util')
 
-  implementation 'com.google.guava:guava'
   implementation 'org.apache.tuweni:tuweni-config'
  }

@@ -10,7 +10,6 @@ dependencies {
   implementation project(':validator:client')
 
   implementation 'com.google.code.gson:gson'
-  implementation 'com.google.guava:guava'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
