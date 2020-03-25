@@ -11,18 +11,11 @@ dependencies {
   implementation project(':util')
 
   implementation 'com.google.code.gson:gson'
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.hyperledger.besu:plugin-api'
-
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
-  testImplementation 'org.mockito:mockito-core'
 
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
