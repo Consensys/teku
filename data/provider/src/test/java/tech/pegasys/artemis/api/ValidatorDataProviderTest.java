@@ -134,6 +134,25 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
+  void getValidatorsDutiesByRequest_shouldThrowIllegalArgumentExceptionIfKeyIsNotOnTheCurve() {
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    // modify the bytes to make an invalid key that is the correct length
+    final BLSPubKey invalidPubKey = new BLSPubKey(publicKey.toBytes().shiftLeft(1));
+
+    ValidatorDutiesRequest smallRequest =
+        new ValidatorDutiesRequest(compute_epoch_at_slot(beaconState.slot), List.of(invalidPubKey));
+    when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey))));
+
+    SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(smallRequest);
+
+    assertThatThrownBy(() -> future.get()).hasCauseInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   void getValidatorDutiesByRequest_shouldIncludeValidatorDuties()
       throws ExecutionException, InterruptedException {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
