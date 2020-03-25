@@ -23,15 +23,12 @@ dependencies {
     testImplementation testFixtures(project(':bls'))
     testImplementation testFixtures(project(':ethereum:datastructures'))
 
-    testImplementation 'org.assertj:assertj-core'
-
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
 
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
 
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
-    integrationTestImplementation 'org.assertj:assertj-core'
 }
 
 test {

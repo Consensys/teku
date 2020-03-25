@@ -32,17 +32,13 @@ dependencies {
 
   integrationTestImplementation testFixtures(project(':util'))
 
-  integrationTestImplementation 'org.assertj:assertj-core'
-
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
 
   testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
 
   testFixturesImplementation testFixtures(project(':util'))
 
-  testFixturesImplementation 'org.assertj:assertj-core'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
-  testFixturesImplementation 'io.projectreactor:reactor-core'
 }

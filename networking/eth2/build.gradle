@@ -41,6 +41,4 @@ dependencies {
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
-
-  testFixturesCompileOnly 'org.assertj:assertj-core'
 }

@@ -7,7 +7,5 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-bytes'
     implementation 'org.apache.tuweni:tuweni-crypto'
 
-    testImplementation 'org.assertj:assertj-core'
-
     testRuntimeOnly testFixtures(project(':logging'))
 }
