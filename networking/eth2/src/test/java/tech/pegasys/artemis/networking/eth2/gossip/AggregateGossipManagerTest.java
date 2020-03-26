@@ -30,12 +30,14 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 
 public class AggregateGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(
+          eventBus, mock(DiskUpdateChannel.class));
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 

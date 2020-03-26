@@ -46,6 +46,10 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.DiskGenesisUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
@@ -65,13 +69,7 @@ class MapDbDatabaseTest {
   private Checkpoint checkpoint3;
 
   private Database database = MapDbDatabase.createInMemory(StateStorageMode.ARCHIVE);
-  private final List<DatabaseUpdateResult> updateResults = new ArrayList<>();
-  private final TransactionPrecommit databaseTransactionPrecommit =
-      updateEvent -> {
-        final DatabaseUpdateResult result = database.update(updateEvent);
-        updateResults.add(result);
-        return SafeFuture.completedFuture(result);
-      };
+  private final List<DiskUpdateResult> updateResults = new ArrayList<>();
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
   private final BeaconBlock genesisBlock =
       store.getBlockRoots().stream()
@@ -118,7 +116,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldGetHotBlockByRoot() {
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     final SignedBeaconBlock block1 = blockAtSlot(1);
     final SignedBeaconBlock block2 = blockAtSlot(2);
     final Bytes32 block1Root = block1.getMessage().hash_tree_root();
@@ -138,7 +136,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldGetHotStateByRoot() {
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     final BeaconState state1 = dataStructureUtil.randomBeaconState();
     final BeaconState state2 = dataStructureUtil.randomBeaconState();
     final Bytes32 block1Root = Bytes32.fromHexString("0x1234");
@@ -156,7 +154,7 @@ class MapDbDatabaseTest {
   public void shouldStoreSingleValueFields() {
     addBlocks(checkpoint1Block, checkpoint2Block, checkpoint3Block);
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.setGenesis_time(UnsignedLong.valueOf(3));
     transaction.setFinalizedCheckpoint(checkpoint1);
     transaction.setJustifiedCheckpoint(checkpoint2);
@@ -179,7 +177,7 @@ class MapDbDatabaseTest {
     // Sanity check
     assertThat(store.getGenesisTime()).isNotEqualTo(newGenesisTime);
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.setGenesis_time(newGenesisTime);
     commit(transaction);
 
@@ -193,7 +191,7 @@ class MapDbDatabaseTest {
     // Sanity check
     assertThat(store.getJustifiedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.setJustifiedCheckpoint(newValue);
     commit(transaction);
 
@@ -207,7 +205,7 @@ class MapDbDatabaseTest {
     // Sanity check
     assertThat(store.getFinalizedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.setFinalizedCheckpoint(newValue);
     commit(transaction);
 
@@ -221,7 +219,7 @@ class MapDbDatabaseTest {
     // Sanity check
     assertThat(store.getBestJustifiedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.setBestJustifiedCheckpoint(newValue);
     commit(transaction);
 
@@ -236,7 +234,7 @@ class MapDbDatabaseTest {
     // Sanity check
     assertThat(store.getBlock(newBlockRoot)).isNull();
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.putBlock(newBlockRoot, newBlock);
     commit(transaction);
 
@@ -251,7 +249,7 @@ class MapDbDatabaseTest {
     // Sanity check
     assertThat(store.getBlockState(blockRoot)).isNull();
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.putBlockState(blockRoot, newState);
     commit(transaction);
 
@@ -266,7 +264,7 @@ class MapDbDatabaseTest {
     // Sanity check
     assertThat(store.getCheckpointState(checkpoint)).isNull();
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.putCheckpointState(checkpoint, newState);
     commit(transaction);
 
@@ -281,7 +279,7 @@ class MapDbDatabaseTest {
     // Sanity check
     assertThat(store.getLatestMessage(validatorIndex)).isNull();
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.putLatestMessage(validatorIndex, latestMessage);
     commit(transaction);
 
@@ -297,7 +295,7 @@ class MapDbDatabaseTest {
 
     addBlocks(checkpoint1Block, checkpoint2Block, checkpoint3Block);
 
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.putLatestMessage(validator1, checkpoint1);
     transaction.putLatestMessage(validator2, checkpoint2);
     transaction.putLatestMessage(validator3, checkpoint1);
@@ -309,7 +307,7 @@ class MapDbDatabaseTest {
     assertThat(result1.getLatestMessage(validator3)).isEqualTo(checkpoint1);
 
     // Should overwrite when later changes are made.
-    final Transaction transaction2 = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction2 = store.startTransaction(new StubDiskUpdateChannel());
     transaction2.putLatestMessage(validator3, checkpoint2);
     commit(transaction2);
 
@@ -321,7 +319,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldStoreCheckpointStates() {
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
 
     addBlocks(checkpoint1Block, checkpoint2Block, checkpoint3Block);
 
@@ -349,7 +347,7 @@ class MapDbDatabaseTest {
     final Checkpoint laterCheckpoint = createCheckpoint(3);
 
     // First store the initial checkpoints.
-    final Transaction transaction1 = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction1 = store.startTransaction(new StubDiskUpdateChannel());
     transaction1.putCheckpointState(earlyCheckpoint, dataStructureUtil.randomBeaconState());
     transaction1.putCheckpointState(middleCheckpoint, dataStructureUtil.randomBeaconState());
     transaction1.putCheckpointState(laterCheckpoint, dataStructureUtil.randomBeaconState());
@@ -359,7 +357,7 @@ class MapDbDatabaseTest {
     // Now update the finalized checkpoint
     final Set<BeaconBlock> blocksToPrune =
         Set.of(genesisBlock, store.getBlock(earlyCheckpoint.getRoot()));
-    final Transaction transaction2 = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction2 = store.startTransaction(new StubDiskUpdateChannel());
     transaction2.setFinalizedCheckpoint(middleCheckpoint);
     commit(transaction2);
 
@@ -383,7 +381,7 @@ class MapDbDatabaseTest {
   @Test
   public void shouldLoadHotBlocksAndStatesIntoMemoryStore() {
     final Bytes32 genesisRoot = store.getFinalizedCheckpoint().getRoot();
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     final SignedBeaconBlock block1 = blockAtSlot(1);
     final SignedBeaconBlock block2 = blockAtSlot(2);
     final BeaconState state1 = dataStructureUtil.randomBeaconState();
@@ -408,7 +406,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     final SignedBeaconBlock block1 = blockAtSlot(1);
     final SignedBeaconBlock block2 = blockAtSlot(2);
     final SignedBeaconBlock unfinalizedBlock =
@@ -726,14 +724,14 @@ class MapDbDatabaseTest {
 
   private void assertLatestUpdateResultContains(
       final Set<Bytes32> blockRoots, final Set<Checkpoint> checkpoints) {
-    final DatabaseUpdateResult latestResult = getLatestUpdateResult();
+    final DiskUpdateResult latestResult = getLatestUpdateResult();
     assertThat(latestResult.getPrunedBlockRoots()).containsExactlyInAnyOrderElementsOf(blockRoots);
     assertThat(latestResult.getPrunedCheckpoints())
         .containsExactlyInAnyOrderElementsOf(checkpoints);
   }
 
   private void assertLatestUpdateResultPrunedCollectionsAreEmpty() {
-    final DatabaseUpdateResult latestResult = getLatestUpdateResult();
+    final DiskUpdateResult latestResult = getLatestUpdateResult();
     assertThat(latestResult.getPrunedBlockRoots()).isEmpty();
     assertThat(latestResult.getPrunedCheckpoints()).isEmpty();
   }
@@ -751,7 +749,7 @@ class MapDbDatabaseTest {
   }
 
   private void addBlocks(final SignedBeaconBlock... blocks) {
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     for (SignedBeaconBlock block : blocks) {
       transaction.putBlock(block.getMessage().hash_tree_root(), block);
     }
@@ -759,7 +757,7 @@ class MapDbDatabaseTest {
   }
 
   private void add(final Map<Bytes32, BeaconState> states, final SignedBeaconBlock... blocks) {
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     // Add states
     for (Bytes32 blockRoot : states.keySet()) {
       transaction.putBlockState(blockRoot, states.get(blockRoot));
@@ -772,7 +770,7 @@ class MapDbDatabaseTest {
   }
 
   private void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {
-    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    final Transaction transaction = store.startTransaction(new StubDiskUpdateChannel());
     transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
     commit(transaction);
   }
@@ -803,7 +801,19 @@ class MapDbDatabaseTest {
         BLSSignature.empty());
   }
 
-  private DatabaseUpdateResult getLatestUpdateResult() {
+  private DiskUpdateResult getLatestUpdateResult() {
     return updateResults.get(updateResults.size() - 1);
+  }
+
+  public class StubDiskUpdateChannel implements DiskUpdateChannel {
+    @Override
+    public SafeFuture<DiskUpdateResult> onDiskUpdate(DiskUpdate event) {
+      final DiskUpdateResult result = database.update(event);
+      updateResults.add(result);
+      return SafeFuture.completedFuture(result);
+    }
+
+    @Override
+    public void onDiskGenesisUpdate(DiskGenesisUpdate event){}
   }
 }

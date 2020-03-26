@@ -37,6 +37,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -63,7 +64,8 @@ public class Generator {
     System.out.println("Keypairs done.");
 
     EventBus localEventBus = mock(EventBus.class);
-    ChainStorageClient localStorage = ChainStorageClient.memoryOnlyClient(localEventBus);
+    DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+    ChainStorageClient localStorage = ChainStorageClient.memoryOnlyClient(localEventBus, diskUpdateChannel);
     BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
     localChain.initializeStorage();
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);

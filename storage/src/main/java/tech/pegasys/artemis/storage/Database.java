@@ -19,13 +19,14 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdateResult;
 
 public interface Database extends Closeable {
 
   void storeGenesis(Store store);
 
-  DatabaseUpdateResult update(StoreDiskUpdateEvent event);
+  DiskUpdateResult update(DiskUpdate event);
 
   Optional<Store> createMemoryStore();
 

@@ -16,8 +16,13 @@ package tech.pegasys.artemis.storage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Collections;
 import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -26,6 +31,9 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 class StoreTest {
   private static final Checkpoint INITIAL_FINALIZED_CHECKPOINT = new Checkpoint();
@@ -37,7 +45,6 @@ class StoreTest {
       new Checkpoint(UnsignedLong.valueOf(33), dataStructureUtil.randomBytes32());
   private UnsignedLong INITIAL_GENESIS_TIME = UnsignedLong.ZERO;
   private UnsignedLong INITIAL_TIME = UnsignedLong.ONE;
-  private final TransactionPrecommit transactionPrecommit = TransactionPrecommit.memoryOnly();
   private final Store store =
       new Store(
           INITIAL_TIME,
@@ -52,7 +59,11 @@ class StoreTest {
 
   @Test
   public void shouldApplyChangesWhenTransactionCommits() {
-    final Transaction transaction = store.startTransaction(transactionPrecommit);
+    DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+    when(diskUpdateChannel.onDiskUpdate(any()))
+            .thenReturn(SafeFuture.completedFuture(
+                    new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+    final Transaction transaction = store.startTransaction(diskUpdateChannel);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);

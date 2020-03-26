@@ -29,6 +29,7 @@ import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
@@ -69,7 +70,8 @@ public class SyncingNodeManager {
     final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(
+            eventBus, eventChannels.getPublisher(DiskUpdateChannel.class));
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
 

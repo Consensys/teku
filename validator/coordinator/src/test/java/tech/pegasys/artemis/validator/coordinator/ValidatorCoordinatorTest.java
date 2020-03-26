@@ -32,6 +32,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
@@ -63,7 +64,7 @@ public class ValidatorCoordinatorTest {
     when(blockAttestationsPool.getAttestationsForSlot(any())).thenReturn(createAttestations());
 
     eventBus = new EventBus();
-    storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+    storageClient = ChainStorageClient.memoryOnlyClient(eventBus, mock(DiskUpdateChannel.class));
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, NUM_VALIDATORS);
     chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);

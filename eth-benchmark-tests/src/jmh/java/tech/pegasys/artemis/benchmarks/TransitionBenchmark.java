@@ -39,6 +39,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -77,7 +78,8 @@ public abstract class TransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
-    localStorage = ChainStorageClient.memoryOnlyClient(localEventBus);
+    DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+    localStorage = ChainStorageClient.memoryOnlyClient(localEventBus, diskUpdateChannel);
     localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
     localChain.initializeStorage();
 

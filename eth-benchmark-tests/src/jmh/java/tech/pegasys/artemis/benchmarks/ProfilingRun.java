@@ -33,6 +33,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -66,7 +67,8 @@ public class ProfilingRun {
             .readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
-    ChainStorageClient localStorage = ChainStorageClient.memoryOnlyClient(localEventBus);
+    DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+    ChainStorageClient localStorage = ChainStorageClient.memoryOnlyClient(localEventBus, diskUpdateChannel);
     BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
     localChain.initializeStorage();
 

@@ -33,8 +33,9 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
-import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
+import tech.pegasys.artemis.storage.events.diskupdates.DiskGenesisUpdate;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -45,7 +46,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   protected final EventBus eventBus;
-  private final TransactionPrecommit transactionPrecommit;
+  private final DiskUpdateChannel diskUpdateChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -59,32 +60,38 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   // Time
   private volatile UnsignedLong genesisTime;
 
-  public static ChainStorageClient memoryOnlyClient(final EventBus eventBus) {
+  public static ChainStorageClient memoryOnlyClient(final EventBus eventBus,
+                                                    final DiskUpdateChannel diskUpdateChannel) {
     final ChainStorageClient client =
-        new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
+        new ChainStorageClient(diskUpdateChannel, eventBus);
     eventBus.register(client);
     return client;
   }
 
-  public static SafeFuture<ChainStorageClient> storageBackedClient(final EventBus eventBus) {
+  public static SafeFuture<ChainStorageClient> storageBackedClient(final EventBus eventBus,
+                                                                   final DiskUpdateChannel diskUpdateChannel) {
     final StorageBackedChainStorageClientFactory factory =
-        new StorageBackedChainStorageClientFactory(eventBus);
+        new StorageBackedChainStorageClientFactory(diskUpdateChannel, eventBus);
     eventBus.register(factory);
     return factory.get();
   }
 
   @VisibleForTesting
-  static ChainStorageClient memoryOnlyClientWithStore(final EventBus eventBus, final Store store) {
+  static ChainStorageClient memoryOnlyClientWithStore(final EventBus eventBus,
+                                                      final Store store,
+                                                      final DiskUpdateChannel diskUpdateChannel) {
     final ChainStorageClient client =
-        new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
+        new ChainStorageClient(diskUpdateChannel, eventBus);
     eventBus.register(client);
     client.setStore(store);
     return client;
   }
 
-  ChainStorageClient(EventBus eventBus, final TransactionPrecommit transactionPrecommit) {
+  ChainStorageClient(
+          final DiskUpdateChannel diskUpdateChannel,
+          final EventBus eventBus) {
     this.eventBus = eventBus;
-    this.transactionPrecommit = transactionPrecommit;
+    this.diskUpdateChannel = diskUpdateChannel;
   }
 
   public void subscribeStoreInitialized(Runnable runnable) {
@@ -103,7 +110,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
           "Failed to set genesis state: store has already been initialized");
     }
 
-    eventBus.post(new StoreGenesisDiskUpdateEvent(store));
+    diskUpdateChannel.onDiskGenesisUpdate(new DiskGenesisUpdate(store));
+    eventBus.post(new DiskGenesisUpdate(store));
 
     // The genesis state is by definition finalised so just get the root from there.
     Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
@@ -134,7 +142,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   public Store.Transaction startStoreTransaction() {
-    return store.startTransaction(transactionPrecommit, this);
+    return store.startTransaction(diskUpdateChannel, this);
   }
 
   // NETWORKING RELATED INFORMATION METHODS:

@@ -14,9 +14,11 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -29,16 +31,27 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
+import tech.pegasys.artemis.util.async.SafeFuture;
+
+import java.util.Collections;
 
 public class BlockTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+  private final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(
+          eventBus, diskUpdateChannel);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, storageClient);
   private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, storageClient);
 
   @BeforeEach
   public void setup() {
+    when(diskUpdateChannel.onDiskUpdate(any()))
+            .thenReturn(SafeFuture.completedFuture(
+                    new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
     beaconChainUtil.initializeStorage();
   }
 

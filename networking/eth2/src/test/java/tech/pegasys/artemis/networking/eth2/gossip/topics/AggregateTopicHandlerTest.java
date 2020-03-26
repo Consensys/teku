@@ -27,11 +27,13 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+  private final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
   private final AggregateTopicHandler topicHandler =
       new AggregateTopicHandler(eventBus, storageClient);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(12, storageClient);

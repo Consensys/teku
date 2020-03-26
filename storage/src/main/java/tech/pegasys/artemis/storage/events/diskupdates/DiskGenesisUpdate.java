@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.artemis.storage.events.diskupdates;
 
 import tech.pegasys.artemis.storage.Store;
 
-public class StoreGenesisDiskUpdateEvent {
+public class DiskGenesisUpdate {
 
   private final Store store;
 
-  public StoreGenesisDiskUpdateEvent(final Store store) {
+  public DiskGenesisUpdate(final Store store) {
     this.store = store;
   }
 

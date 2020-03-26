@@ -33,6 +33,7 @@ import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.services.ServiceController;
+import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
@@ -70,7 +71,8 @@ public class BeaconNode {
 
     final String transitionRecordDir = config.getTransitionRecordDirectory();
     if (transitionRecordDir != null) {
-      eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
+      SSZTransitionRecorder sszTransitionRecorder = new SSZTransitionRecorder(Path.of(transitionRecordDir));
+      eventBus.register(sszTransitionRecorder);
     }
 
     this.serviceController = new ServiceController(serviceConfig);
