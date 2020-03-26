@@ -84,7 +84,8 @@ public class SyncingNodeManager {
     BlockPropagationManager blockPropagationManager =
         BlockPropagationManager.create(eventBus, eth2Network, storageClient, blockImporter);
     SyncManager syncManager = SyncManager.create(eth2Network, storageClient, blockImporter);
-    SyncService syncService = new SyncService(blockPropagationManager, syncManager, storageClient);
+    SyncService syncService =
+        new DefaultSyncService(blockPropagationManager, syncManager, storageClient);
 
     eventChannels.subscribe(SlotEventsChannel.class, blockPropagationManager);
 
