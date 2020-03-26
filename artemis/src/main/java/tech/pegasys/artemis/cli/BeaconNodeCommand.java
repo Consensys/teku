@@ -16,6 +16,7 @@ package tech.pegasys.artemis.cli;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
@@ -28,6 +29,7 @@ import tech.pegasys.artemis.cli.subcommand.GenesisCommand;
 import tech.pegasys.artemis.cli.subcommand.PeerCommand;
 import tech.pegasys.artemis.cli.subcommand.TransitionCommand;
 import tech.pegasys.artemis.cli.util.CascadingDefaultProvider;
+import tech.pegasys.artemis.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.artemis.cli.util.TomlConfigFileDefaultProvider;
 import tech.pegasys.artemis.storage.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
@@ -399,8 +401,13 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       arity = "1")
   private String restApiInterface = DEFAULT_REST_API_INTERFACE;
 
+  private final Map<String, String> environment;
   private ArtemisConfiguration artemisConfiguration;
   private BeaconNode node;
+
+  public BeaconNodeCommand(final Map<String, String> environment) {
+    this.environment = environment;
+  }
 
   public String getConfigFile() {
     return configFile;
@@ -410,13 +417,18 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
     final CommandLine commandLine = new CommandLine(this).setCaseInsensitiveEnumValuesAllowed(true);
 
     final Optional<File> maybeConfigFile = maybeFindConfigFile(commandLine, args);
+    final EnvironmentVariableDefaultProvider environmentVariableDefaultProvider =
+        new EnvironmentVariableDefaultProvider(environment);
+    final CommandLine.IDefaultValueProvider defaultValueProvider;
     if (maybeConfigFile.isPresent()) {
-      final CommandLine.IDefaultValueProvider defaultValueProvider =
+      defaultValueProvider =
           new CascadingDefaultProvider(
+              environmentVariableDefaultProvider,
               new TomlConfigFileDefaultProvider(commandLine, maybeConfigFile.get()));
-      commandLine.setDefaultValueProvider(defaultValueProvider);
+    } else {
+      defaultValueProvider = environmentVariableDefaultProvider;
     }
-    commandLine.execute(args);
+    commandLine.setDefaultValueProvider(defaultValueProvider).execute(args);
   }
 
   @Override
