@@ -18,11 +18,13 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
@@ -56,6 +58,19 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
 
     final Response response = post(epoch.intValue(), keys);
     assertNoContent(response);
+  }
+
+  @Test
+  public void shouldReturnEmptyListWhenNoPubKeysSupplied() throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
+    final Bytes32 root = dataStructureUtil.randomBytes32();
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+
+    final Response response = post(epoch.intValue(), Collections.emptyList());
+    assertBodyEquals(response, "[]");
   }
 
   private Response post(final int epoch, final List<BLSKeyPair> publicKeys) throws IOException {

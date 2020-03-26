@@ -87,6 +87,10 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
     assertThat(response.body().string()).isEmpty();
   }
 
+  protected void assertBodyEquals(final Response response, final String body) throws IOException {
+    assertThat(response.body().string()).isEqualTo(body);
+  }
+
   protected Response getResponse(final String path) throws IOException {
     final String url = "http://localhost:" + beaconRestApi.getListenPort();
     final Request request = new Request.Builder().url(url + path).build();

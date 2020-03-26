@@ -26,6 +26,7 @@ import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -112,5 +113,22 @@ public class PostDutiesTest {
     verify(context).status(SC_NOT_FOUND);
     SafeFuture<String> data = args.getValue();
     assertThat(data.get()).isNull();
+  }
+
+  @Test
+  public void shouldReturnEmptyListWhenNoValidatorDuties() throws Exception {
+    final String body = "{\"epoch\":0,\"pubkeys\":[]}";
+
+    PostDuties handler = new PostDuties(provider, jsonProvider);
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(context.body()).thenReturn(body);
+    when(provider.getValidatorDutiesByRequest(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(Collections.emptyList())));
+    handler.handle(context);
+
+    verify(context).result(args.capture());
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
+    SafeFuture<String> data = args.getValue();
+    assertThat(data.get()).isEqualTo("[]");
   }
 }

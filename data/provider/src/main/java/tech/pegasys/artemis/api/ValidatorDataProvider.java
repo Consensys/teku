@@ -81,6 +81,10 @@ public class ValidatorDataProvider {
         || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
+    if (validatorDutiesRequest.pubkeys.isEmpty()) {
+      // Short-cut if there's nothing to look up
+      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
+    }
     return SafeFuture.of(
             () -> {
               final List<BLSPublicKey> publicKeys =
