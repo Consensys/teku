@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi;
 
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -84,6 +85,11 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
 
   protected void assertGone(final Response response) throws IOException {
     assertThat(response.code()).isEqualTo(SC_GONE);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertNotFound(final Response response) throws IOException {
+    assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
     assertThat(response.body().string()).isEmpty();
   }
 

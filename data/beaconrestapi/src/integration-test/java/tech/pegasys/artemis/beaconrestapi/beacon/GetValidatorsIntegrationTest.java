@@ -62,12 +62,13 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final Response response = getLatest();
-    assertGone(response);
+    assertNotFound(response);
   }
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByEpoch() throws Exception {
     when(chainStorageClient.getStore()).thenReturn(null);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
 
     final Response response = getByEpoch(1);
     assertNoContent(response);
@@ -77,6 +78,7 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
   public void shouldReturnNoContentIfHeadRootMissing_queryByEpoch() throws Exception {
     final Store store = mock(Store.class);
     when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getByEpoch(1);
@@ -84,11 +86,12 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
   }
 
   @Test
-  public void handleMissingState_queryByEpoch() throws Exception {
+  public void handleMissingFinalizedState_queryByEpoch() throws Exception {
     final int epoch = 1;
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
 
     final Store store = mock(Store.class);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
     when(chainStorageClient.getStore()).thenReturn(store);
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
     when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
@@ -97,6 +100,22 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
 
     final Response response = getByEpoch(epoch);
     assertGone(response);
+  }
+
+  @Test
+  public void handleMissingNonFinalizedState_queryByEpoch() throws Exception {
+    final int epoch = 1;
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(store.getBlockState(headRoot)).thenReturn(dataStructureUtil.randomBeaconState(100));
+    when(chainStorageClient.getStateBySlot(any())).thenReturn(Optional.empty());
+
+    final Response response = getByEpoch(epoch);
+    assertNotFound(response);
   }
 
   private Response getLatest() throws IOException {
