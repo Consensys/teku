@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
@@ -35,7 +34,7 @@ import tech.pegasys.artemis.statetransition.ImportedBlocks;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
+import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -79,9 +78,7 @@ public class BlockPropagationManagerTest {
   @BeforeEach
   public void setup() {
     when(diskUpdateChannel.onDiskUpdate(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+        .thenReturn(SafeFuture.completedFuture(DiskUpdateResult.successfulWithNothingPruned()));
     localChain.initializeStorage();
     remoteChain.initializeStorage();
     when(recentBlockFetcher.start()).thenReturn(SafeFuture.completedFuture(null));
