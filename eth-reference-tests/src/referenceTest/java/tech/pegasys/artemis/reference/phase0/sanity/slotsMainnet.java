@@ -39,8 +39,7 @@ public class slotsMainnet extends TestSuite {
     StateTransition stateTransition = new StateTransition();
 
     BeaconState state =
-        assertDoesNotThrow(
-            () -> stateTransition.process_slots(pre, pre.getSlot().plus(slot)));
+        assertDoesNotThrow(() -> stateTransition.process_slots(pre, pre.getSlot().plus(slot)));
     assertEquals(post, state);
   }
 
