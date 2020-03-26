@@ -40,7 +40,7 @@ public class slotsMinimal extends TestSuite {
 
     BeaconState state =
         assertDoesNotThrow(
-            () -> pre.updated(s -> stateTransition.process_slots(s, pre.getSlot().plus(slot))));
+            () -> stateTransition.process_slots(pre, pre.getSlot().plus(slot)));
     assertEquals(post, state);
   }
 
