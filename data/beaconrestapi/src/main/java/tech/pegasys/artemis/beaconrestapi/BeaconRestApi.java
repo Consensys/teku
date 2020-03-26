@@ -188,7 +188,7 @@ public class BeaconRestApi {
   private void addValidatorHandlers(DataProvider dataProvider) {
     ChainDataProvider provider = dataProvider.getChainDataProvider();
     ValidatorDataProvider validatorDataProvider = dataProvider.getValidatorDataProvider();
-    app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
+    app.get(GetAttestation.ROUTE, new GetAttestation(validatorDataProvider, jsonProvider));
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
     app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
 
