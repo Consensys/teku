@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -77,7 +78,7 @@ public class GetStateTest {
 
     handler.handle(context);
 
-    verify(context).status(SC_GONE);
+    verify(context).status(SC_NOT_FOUND);
   }
 
   @Test
@@ -188,16 +189,34 @@ public class GetStateTest {
   }
 
   @Test
-  public void shouldReturnNotFoundWhenQueryByMissingSlot() throws Exception {
+  public void shouldHandleMissingStateAtFinalizedSlot() throws Exception {
     final GetState handler = new GetState(dataProvider, jsonProvider);
+    final UnsignedLong slot = UnsignedLong.valueOf(11223344L);
 
     when(dataProvider.isStoreAvailable()).thenReturn(true);
-    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
+    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));
+    when(dataProvider.isFinalized(slot)).thenReturn(true);
     when(dataProvider.getStateAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);
 
     verify(context).status(SC_GONE);
+  }
+
+  @Test
+  public void shouldHandleMissingStateAtNonFinalSlot() throws Exception {
+    final GetState handler = new GetState(dataProvider, jsonProvider);
+    final UnsignedLong slot = UnsignedLong.valueOf(11223344L);
+
+    when(dataProvider.isStoreAvailable()).thenReturn(true);
+    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));
+    when(dataProvider.isFinalized(slot)).thenReturn(false);
+    when(dataProvider.getStateAtSlot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    handler.handle(context);
+
+    verify(context).status(SC_NOT_FOUND);
   }
 }

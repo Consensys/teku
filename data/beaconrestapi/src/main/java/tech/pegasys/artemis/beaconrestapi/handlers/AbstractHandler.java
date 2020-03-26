@@ -35,6 +35,11 @@ public abstract class AbstractHandler implements Handler {
     handleOptionalResult(ctx, future, SC_NOT_FOUND);
   }
 
+  protected <T> void handlePossiblyMissingResult(
+    final Context ctx, SafeFuture<Optional<T>> future, ResultProcessor<T> resultProcessor) {
+    handleOptionalResult(ctx, future, resultProcessor, SC_NOT_FOUND);
+  }
+
   protected <T> void handlePossiblyGoneResult(final Context ctx, SafeFuture<Optional<T>> future) {
     handleOptionalResult(ctx, future, SC_GONE);
   }

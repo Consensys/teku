@@ -28,6 +28,7 @@ import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getPa
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -85,17 +86,24 @@ public class GetState extends AbstractHandler implements Handler {
         throw new IllegalArgumentException("No query parameters specified");
       }
 
+      boolean isFinalizedState = false;
       if (parameters.containsKey(ROOT)) {
         future = provider.getStateByBlockRoot(getParameterValueAsBytes32(parameters, ROOT));
       } else if (parameters.containsKey(SLOT)) {
+        final UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
         future = provider.getStateAtSlot(getParameterValueAsUnsignedLong(parameters, SLOT));
+        isFinalizedState = provider.isFinalized(slot);
       } else {
         ctx.result(
             jsonProvider.objectToJSON(new BadRequest("expected one of " + SLOT + " or " + ROOT)));
         ctx.status(SC_BAD_REQUEST);
         return;
       }
-      this.handlePossiblyGoneResult(ctx, future, this::handleResult);
+      if (isFinalizedState) {
+        this.handlePossiblyGoneResult(ctx, future, this::handleResult);
+      } else {
+        this.handlePossiblyMissingResult(ctx, future, this::handleResult);
+      }
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
