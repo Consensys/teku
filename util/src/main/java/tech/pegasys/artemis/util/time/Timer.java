@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.timer;
+package tech.pegasys.artemis.util.time;
 
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
-import static tech.pegasys.artemis.util.config.Constants.TIME_TICKER_REFRESH_RATE;
 
+import com.google.common.eventbus.EventBus;
+import java.util.UUID;
 import org.quartz.DateBuilder;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -25,58 +26,56 @@ import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.quartz.SimpleTrigger;
 import org.quartz.impl.StdSchedulerFactory;
-import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
-public class TimerService extends Service {
-
-  public static final String TIME_EVENTS_CHANNEL = "TimeEventsChannel";
-
+public class Timer {
   private final Scheduler sched;
   private final JobDetail job;
-  private static int START_DELAY = 0;
+  private final UUID uuid;
+  private int startDelay;
   private int interval;
 
-  public TimerService(ServiceConfig config) {
+  public Timer(EventBus eventBus, Integer startDelay, Integer interval)
+      throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
-    this.interval = (int) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000); // Tick interval
+    this.startDelay = startDelay;
+    this.interval = interval;
     try {
       sched = sf.getScheduler();
-      job = newJob(ScheduledTimeEvent.class).withIdentity("Timer").build();
-      job.getJobDataMap()
-          .put(TIME_EVENTS_CHANNEL, config.getEventChannels().getPublisher(TimeTickChannel.class));
+      uuid = UUID.randomUUID();
+      job =
+          newJob(ScheduledEvent.class)
+              .withIdentity(EventBus.class.getSimpleName() + uuid.toString(), "group")
+              .build();
+      job.getJobDataMap().put(EventBus.class.getSimpleName(), eventBus);
 
     } catch (SchedulerException e) {
-      throw new IllegalArgumentException("TimerService failed to initialize", e);
+      throw new IllegalArgumentException(
+          "In QuartzTimer a SchedulerException was thrown: " + e.toString());
     }
   }
 
-  @Override
-  public SafeFuture<?> doStart() {
+  public void start() throws IllegalArgumentException {
     try {
       SimpleTrigger trigger =
           newTrigger()
-              .withIdentity("TimerTrigger")
-              .startAt(DateBuilder.futureDate(START_DELAY, DateBuilder.IntervalUnit.MILLISECOND))
+              .withIdentity("trigger-" + EventBus.class.getSimpleName() + uuid.toString(), "group")
+              .startAt(DateBuilder.futureDate(startDelay, DateBuilder.IntervalUnit.MILLISECOND))
               .withSchedule(simpleSchedule().withIntervalInMilliseconds(interval).repeatForever())
               .build();
       sched.scheduleJob(job, trigger);
       sched.start();
-      return SafeFuture.COMPLETE;
     } catch (SchedulerException e) {
-      return SafeFuture.failedFuture(new RuntimeException("TimerService failed to start", e));
+      throw new IllegalArgumentException(
+          "In QuartzTimer a SchedulerException was thrown: " + e.toString());
     }
   }
 
-  @Override
-  public SafeFuture<?> doStop() {
+  public void stop() {
     try {
       sched.shutdown();
-      return SafeFuture.COMPLETE;
     } catch (SchedulerException e) {
-      return SafeFuture.failedFuture(new RuntimeException("TimerService failed to stop", e));
+      throw new IllegalArgumentException(
+          "In QuartzTimer a SchedulerException was thrown: " + e.toString());
     }
   }
 }

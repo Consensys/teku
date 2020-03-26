@@ -13,7 +13,6 @@ dependencies {
   implementation project(':services:chainstorage')
   implementation project(':services:powchain')
   implementation project(':services:serviceutils')
-  implementation project(':services:timer')
   implementation project(':storage')
   implementation project(':util')
   implementation project(':validator:coordinator')

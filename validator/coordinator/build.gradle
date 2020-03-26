@@ -10,7 +10,6 @@ dependencies {
   implementation project(':logging')
   implementation project(':pow')
   implementation project(':ssz')
-  implementation project(':events')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.tuweni:tuweni-kv'
