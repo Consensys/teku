@@ -37,6 +37,9 @@ public class ArtemisConfigurationBuilder {
   private String validatorsKeyFile;
   private List<String> validatorKeystoreFiles;
   private List<String> validatorKeystorePasswordFiles;
+  private List<String> validatorExternalSignerPublicKeys;
+  private String validatorExternalSignerUrl;
+  private int validatorExternalSignerTimeout;
   private String eth1DepositContractAddress;
   private String eth1Endpoint;
   private boolean logColourEnabled;
@@ -150,20 +153,38 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setValidatorsKeyFile(final String validatorsKeyFile) {
+  public ArtemisConfigurationBuilder setValidatorKeyFile(final String validatorsKeyFile) {
     this.validatorsKeyFile = validatorsKeyFile;
     return this;
   }
 
-  public ArtemisConfigurationBuilder setValidatorsKeystoreFiles(
+  public ArtemisConfigurationBuilder setValidatorKeystoreFiles(
       final List<String> validatorKeystoreFiles) {
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     return this;
   }
 
-  public ArtemisConfigurationBuilder setValidatorsKeystorePasswordFiles(
+  public ArtemisConfigurationBuilder setValidatorKeystorePasswordFiles(
       final List<String> validatorKeystorePasswordFiles) {
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setValidatorExternalSignerPublicKeys(
+      final List<String> validatorsExternalSignerPublicKeys) {
+    this.validatorExternalSignerPublicKeys = validatorsExternalSignerPublicKeys;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setValidatorExternalSignerUrl(
+      final String validatorsExternalSignerUrl) {
+    this.validatorExternalSignerUrl = validatorsExternalSignerUrl;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setValidatorExternalSignerTimeout(
+      final int validatorsExternalSignerTimeout) {
+    this.validatorExternalSignerTimeout = validatorsExternalSignerTimeout;
     return this;
   }
 
@@ -283,6 +304,9 @@ public class ArtemisConfigurationBuilder {
         validatorsKeyFile,
         validatorKeystoreFiles,
         validatorKeystorePasswordFiles,
+        validatorExternalSignerPublicKeys,
+        validatorExternalSignerUrl,
+        validatorExternalSignerTimeout,
         eth1DepositContractAddress,
         eth1Endpoint,
         logColourEnabled,

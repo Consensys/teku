@@ -45,6 +45,10 @@ public interface OptionNames {
   String VALIDATORS_KEY_FILE_OPTION_NAME = "--validators-key-file";
   String VALIDATORS_KEYSTORE_FILES_OPTION_NAME = "--validators-key-files";
   String VALIDATORS_KEYSTORE_PASSWORD_FILES_OPTION_NAME = "--validators-key-password-files";
+  String VALIDATORS_EXTERNAL_SIGNER_PUBLIC_KEYS_OPTION_NAME =
+      "--validators-external-signer-public-keys";
+  String VALIDATORS_EXTERNAL_SIGNER_URL_OPTION_NAME = "--validators-external-signer-url";
+  String VALIDATORS_EXTERNAL_SIGNER_TIMEOUT_OPTION_NAME = "--validators-external-signer-timeout";
 
   // Deposit
   String ETH1_DEPOSIT_CONTRACT_ADDRESS_OPTION_NAME = "--eth1-deposit-contract-address";

@@ -279,8 +279,8 @@ final class ArtemisConfigurationDeprecatedTest {
         "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";
     final String publicKey2 =
         "0xb89bebc699769726a318c8e9971bd3171297c61aea4a6578a7a4f94b547dcba5bac16a89108b6b6a1fe3695d1a874a0b";
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString(
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString(
             "validator.externalSignerPublicKeys=[\"" + publicKey1 + "\",\"" + publicKey2 + "\"]");
     assertThat(config.getValidatorExternalSigningPublicKeys()).size().isEqualTo(2);
     assertThat(config.getValidatorExternalSigningPublicKeys())
@@ -292,8 +292,8 @@ final class ArtemisConfigurationDeprecatedTest {
   @Test
   void invalidValidatorExternalSignerPublicKeysThrowsException() {
     final String publicKey1 = "invalidPublicKey";
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString(
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString(
             "validator.externalSignerPublicKeys=[" + "\"" + publicKey1 + "\"]");
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(config::getValidatorExternalSigningPublicKeys)
@@ -302,15 +302,16 @@ final class ArtemisConfigurationDeprecatedTest {
 
   @Test
   void validatorExternalSignerUrlCanBeSet() throws MalformedURLException {
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString("validator.externalSignerUrl=\"http://localhost:9000\"");
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString(
+            "validator.externalSignerUrl=\"http://localhost:9000\"");
     assertThat(config.getValidatorExternalSigningUrl()).isEqualTo(new URL("http://localhost:9000"));
   }
 
   @Test
   void invalidValidatorExternalSignerUrlThrowsException() {
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString("validator.externalSignerUrl=\"invalid_url\"");
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString("validator.externalSignerUrl=\"invalid_url\"");
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(config::getValidatorExternalSigningUrl)
         .withMessage("Invalid configuration. Signer URL has invalid syntax");
@@ -318,14 +319,14 @@ final class ArtemisConfigurationDeprecatedTest {
 
   @Test
   void validatorExternalSignerTimeoutCanBeSet() {
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString("validator.externalSignerTimeout=5000");
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString("validator.externalSignerTimeout=5000");
     assertThat(config.getValidatorExternalSigningTimeout()).isEqualTo(5000);
   }
 
   @Test
   void validatorExternalSignerTimeoutCanReturnsDefault() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString(EMPTY);
+    final ArtemisConfigurationDeprecated config = ArtemisConfigurationDeprecated.fromString(EMPTY);
     assertThat(config.getValidatorExternalSigningTimeout()).isEqualTo(1000);
   }
 }

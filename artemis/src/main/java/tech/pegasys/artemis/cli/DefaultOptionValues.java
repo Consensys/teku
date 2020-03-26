@@ -47,6 +47,9 @@ public interface DefaultOptionValues {
   String DEFAULT_VALIDATORS_KEY_FILE = null;
   ArrayList<String> DEFAULT_VALIDATORS_KEYSTORE_FILES = new ArrayList<>();
   ArrayList<String> DEFAULT_VALIDATORS_KEYSTORE_PASSWORD_FILES = new ArrayList<>();
+  ArrayList<String> DEFAULT_VALIDATORS_EXTERNAL_SIGNER_PUBLIC_KEYS = new ArrayList<>();
+  String DEFAULT_VALIDATORS_EXTERNAL_SIGNER_URL = null;
+  int DEFAULT_VALIDATORS_EXTERNAL_SIGNER_TIMEOUT = 1000;
 
   // Deposit
   String DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS = null; // depends on network option

@@ -215,7 +215,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       paramLabel = "<FILENAME>",
       description = "The file to load validator keys from",
       arity = "1")
-  private String validatorsKeyFile = DEFAULT_VALIDATORS_KEY_FILE;
+  private String validatorKeyFile = DEFAULT_VALIDATORS_KEY_FILE;
 
   @Option(
       names = {VALIDATORS_KEYSTORE_FILES_OPTION_NAME},
@@ -223,7 +223,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       description = "The list of encrypted keystore files to load the validator keys from",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> validatorsKeystoreFiles = DEFAULT_VALIDATORS_KEYSTORE_FILES;
+  private ArrayList<String> validatorKeystoreFiles = DEFAULT_VALIDATORS_KEYSTORE_FILES;
 
   @Option(
       names = {VALIDATORS_KEYSTORE_PASSWORD_FILES_OPTION_NAME},
@@ -231,8 +231,31 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       description = "The list of password files to decrypt the validator keystore files",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> validatorsKeystorePasswordFiles =
+  private ArrayList<String> validatorKeystorePasswordFiles =
       DEFAULT_VALIDATORS_KEYSTORE_PASSWORD_FILES;
+
+  @Option(
+      names = {VALIDATORS_EXTERNAL_SIGNER_PUBLIC_KEYS_OPTION_NAME},
+      paramLabel = "<STRINGS>",
+      description = "The list of external signer public keys",
+      split = ",",
+      arity = "0..*")
+  private ArrayList<String> validatorExternalSignerPublicKeys =
+      DEFAULT_VALIDATORS_EXTERNAL_SIGNER_PUBLIC_KEYS;
+
+  @Option(
+      names = {VALIDATORS_EXTERNAL_SIGNER_URL_OPTION_NAME},
+      paramLabel = "<NETWORK>",
+      description = "URL for the external signing service",
+      arity = "1")
+  private String validatorExternalSignerUrl = DEFAULT_VALIDATORS_EXTERNAL_SIGNER_URL;
+
+  @Option(
+      names = {VALIDATORS_EXTERNAL_SIGNER_TIMEOUT_OPTION_NAME},
+      paramLabel = "<INTEGER>",
+      description = "Timeout for the external signing service",
+      arity = "1")
+  private int validatorExternalSignerTimeout = DEFAULT_VALIDATORS_EXTERNAL_SIGNER_TIMEOUT;
 
   // Deposit
 
@@ -476,9 +499,12 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
         .setInteropStartState(interopStartState)
         .setInteropNumberOfValidators(interopNumberOfValidators)
         .setInteropEnabled(interopEnabled)
-        .setValidatorsKeyFile(validatorsKeyFile)
-        .setValidatorsKeystoreFiles(validatorsKeystoreFiles)
-        .setValidatorsKeystorePasswordFiles(validatorsKeystorePasswordFiles)
+        .setValidatorKeyFile(validatorKeyFile)
+        .setValidatorKeystoreFiles(validatorKeystoreFiles)
+        .setValidatorKeystorePasswordFiles(validatorKeystorePasswordFiles)
+        .setValidatorExternalSignerPublicKeys(validatorExternalSignerPublicKeys)
+        .setValidatorExternalSignerUrl(validatorExternalSignerUrl)
+        .setValidatorExternalSignerTimeout(validatorExternalSignerTimeout)
         .setEth1DepositContractAddress(eth1DepositContractAddress)
         .setEth1Endpoint(eth1Endpoint)
         .setLogColourEnabled(logColourEnabled)

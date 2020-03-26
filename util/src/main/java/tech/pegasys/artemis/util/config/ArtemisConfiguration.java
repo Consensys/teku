@@ -13,10 +13,16 @@
 
 package tech.pegasys.artemis.util.config;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
@@ -49,6 +55,9 @@ public class ArtemisConfiguration {
   // TODO: The following two options will eventually be moved to the validator subcommand
   private final List<String> validatorKeystoreFiles;
   private final List<String> validatorKeystorePasswordFiles;
+  private final List<String> validatorExternalSignerPublicKeys;
+  private final String validatorExternalSignerUrl;
+  private final int validatorExternalSignerTimeout;
 
   // Deposit
   private final String eth1DepositContractAddress;
@@ -106,6 +115,9 @@ public class ArtemisConfiguration {
       final String validatorsKeyFile,
       final List<String> validatorKeystoreFiles,
       final List<String> validatorKeystorePasswordFiles,
+      final List<String> validatorExternalSignerPublicKeys,
+      final String validatorExternalSignerUrl,
+      final int validatorExternalSignerTimeout,
       final String eth1DepositContractAddress,
       final String eth1Endpoint,
       final boolean logColourEnabled,
@@ -145,6 +157,9 @@ public class ArtemisConfiguration {
     this.validatorsKeyFile = validatorsKeyFile;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
+    this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
+    this.validatorExternalSignerUrl = validatorExternalSignerUrl;
+    this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.logColourEnabled = logColourEnabled;
@@ -251,6 +266,31 @@ public class ArtemisConfiguration {
 
   public List<String> getValidatorKeystorePasswordFiles() {
     return validatorKeystorePasswordFiles;
+  }
+
+  public List<BLSPublicKey> getValidatorExternalSignerPublicKeys() {
+    if (validatorExternalSignerPublicKeys == null) {
+      return Collections.emptyList();
+    }
+    try {
+      return validatorExternalSignerPublicKeys.stream()
+          .map(key -> BLSPublicKey.fromBytes(Bytes.fromHexString(key)))
+          .collect(Collectors.toList());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Invalid configuration. Signer public key is invalid", e);
+    }
+  }
+
+  public URL getValidatorExternalSignerUrl() {
+    try {
+      return new URL(validatorExternalSignerUrl);
+    } catch (MalformedURLException e) {
+      throw new IllegalArgumentException("Invalid configuration. Signer URL has invalid syntax", e);
+    }
+  }
+
+  public int getValidatorExternalSignerTimeout() {
+    return validatorExternalSignerTimeout;
   }
 
   public String getEth1DepositContractAddress() {
