@@ -28,6 +28,7 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class PendingPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -55,7 +56,7 @@ public class PendingPoolTest {
 
   private void setSlot(final UnsignedLong slot) {
     currentSlot = slot;
-    pendingPool.onSlot(slot);
+    eventBus.post(new SlotEvent(slot));
   }
 
   @AfterEach
@@ -370,13 +371,13 @@ public class PendingPoolTest {
     UnsignedLong newSlot = currentSlot;
     for (int i = 0; i < historicalTolerance.intValue() - 1; i++) {
       newSlot = newSlot.plus(UnsignedLong.ONE);
-      pendingPool.onSlot(newSlot);
+      pendingPool.onSlot(new SlotEvent(newSlot));
       assertThat(pendingPool.contains(blockA)).isTrue();
       assertThat(pendingPool.contains(blockB)).isTrue();
     }
 
     // Next slot should prune blockA
-    pendingPool.onSlot(newSlot.plus(UnsignedLong.ONE));
+    pendingPool.onSlot(new SlotEvent(newSlot.plus(UnsignedLong.ONE)));
 
     assertThat(pendingPool.contains(blockA)).isFalse();
     assertThat(pendingPool.contains(blockB)).isTrue();

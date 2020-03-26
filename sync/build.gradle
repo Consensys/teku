@@ -9,7 +9,6 @@ dependencies {
     implementation project(':ssz')
     implementation project(':storage')
     implementation project(':util')
-    implementation project(':events')
 
     implementation 'org.apache.tuweni:tuweni-bytes'
 
@@ -21,7 +20,6 @@ dependencies {
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
     integrationTestImplementation testFixtures(project('::networking:eth2'))
-    integrationTestImplementation testFixtures(project(':sync'))
     integrationTestImplementation testFixtures(project(':util'))
 
     testFixturesImplementation project(':services:serviceutils')
@@ -30,9 +28,6 @@ dependencies {
     testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
     testFixturesImplementation testFixtures(project('::networking:eth2'))
     testFixturesImplementation testFixtures(project('::networking:p2p'))
-    testFixturesImplementation testFixtures(project('::events'))
 
-    testFixturesImplementation 'org.hyperledger.besu:plugin-api'
-    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
     testFixturesImplementation 'com.google.guava:guava'
 }

@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.math.LongMath;
 import com.google.common.primitives.UnsignedLong;
 import java.math.RoundingMode;
@@ -38,7 +39,6 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
 /*
 
@@ -90,7 +90,7 @@ Search Eth1 Blocks to find blocks in the cache range:
 
  */
 
-public class Eth1DataManager implements TimeTickChannel {
+public class Eth1DataManager {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -102,7 +102,7 @@ public class Eth1DataManager implements TimeTickChannel {
 
   private AtomicReference<EthBlock.Block> latestBlockReference = new AtomicReference<>();
   private AtomicInteger cacheStartupRetry = new AtomicInteger(0);
-  private AtomicBoolean subscriptionModeOn = new AtomicBoolean(false);
+  private AtomicBoolean cacheStartupDone = new AtomicBoolean(false);
 
   public Eth1DataManager(
       Eth1Provider eth1Provider,
@@ -122,19 +122,17 @@ public class Eth1DataManager implements TimeTickChannel {
         .finish(
             () -> {
               LOG.info("Eth1DataManager successfully ran cache startup logic");
-              subscriptionModeOn.set(true);
+              cacheStartupDone.set(true);
+              eventBus.register(this);
             });
   }
 
   public void stop() {
-    subscriptionModeOn.set(false);
+    eventBus.unregister(this);
   }
 
-  @Override
+  @Subscribe
   public void onTick(Date date) {
-    if (!subscriptionModeOn.get()) {
-      return;
-    }
 
     // Fetch new Eth1 blocks every SECONDS_PER_ETH1_BLOCK seconds
     // (can't use slot events here as an approximation due to this needing to be run pre-genesis)
