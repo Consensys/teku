@@ -61,6 +61,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.BlockPropagationManager;
+import tech.pegasys.artemis.sync.DefaultSyncService;
 import tech.pegasys.artemis.sync.SyncManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
@@ -326,13 +327,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
     if ("mock".equals(config.getNetworkMode())) {
-      syncService = new NoopSyncService(null, null, null);
+      syncService = new NoopSyncService();
     } else {
       BlockImporter blockImporter = new BlockImporter(chainStorageClient, eventBus);
       BlockPropagationManager blockPropagationManager =
           BlockPropagationManager.create(eventBus, p2pNetwork, chainStorageClient, blockImporter);
       SyncManager syncManager = SyncManager.create(p2pNetwork, chainStorageClient, blockImporter);
-      syncService = new SyncService(blockPropagationManager, syncManager, chainStorageClient);
+      syncService =
+          new DefaultSyncService(blockPropagationManager, syncManager, chainStorageClient);
       eventChannels.subscribe(SlotEventsChannel.class, blockPropagationManager);
     }
   }
@@ -361,7 +363,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   @Override
   public void onTick(Date date) {
-    if (chainStorageClient.isPreGenesis()) {
+    if (chainStorageClient.isPreGenesis() || syncService.isSyncActive()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
@@ -372,8 +374,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         chainStorageClient
             .getGenesisTime()
             .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0
-        || !syncService.isSyncActive()) {
+    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
       processSlot();
     }
   }
