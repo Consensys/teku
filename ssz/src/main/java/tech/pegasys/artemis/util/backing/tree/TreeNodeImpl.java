@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.backing.tree;
 
 import java.util.Objects;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,6 +30,16 @@ abstract class TreeNodeImpl implements TreeNode {
     @Override
     public Bytes32 getRoot() {
       return root;
+    }
+
+    @Override
+    public TreeNode updated(TreeNodes newNodes) {
+      if (newNodes.size() == 0) {
+        return this;
+      } else {
+        newNodes.checkLeaf();
+        return newNodes.getNode(0);
+      }
     }
 
     @Override
@@ -79,6 +90,19 @@ abstract class TreeNodeImpl implements TreeNode {
     @Override
     public BranchNode rebind(boolean left, TreeNode newNode) {
       return left ? new BranchNodeImpl(newNode, right()) : new BranchNodeImpl(left(), newNode);
+    }
+
+    @Override
+    public TreeNode updated(TreeNodes newNodes) {
+      if (newNodes.size() == 0) {
+        return this;
+      } else if (newNodes.isFinal()) {
+        return newNodes.getNode(0);
+      } else {
+        Pair<TreeNodes, TreeNodes> children = newNodes.splitAtPivot();
+        return new BranchNodeImpl(
+            left().updated(children.getLeft()), right().updated(children.getRight()));
+      }
     }
 
     @Override

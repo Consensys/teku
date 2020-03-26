@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.backing.view;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
@@ -57,12 +58,15 @@ public class VectorViewWriteImpl<R extends ViewRead, W extends R>
     VectorViewType<R> type = getType();
     ViewType elementType = type.getElementType();
     int elementsPerChunk = type.getElementsPerChunk();
-    TreeNodes ret = new TreeNodes();
 
-    newChildValues.stream()
+    return newChildValues.stream()
         .collect(Collectors.groupingBy(e -> e.getKey() / elementsPerChunk))
-        .forEach(
-            (nodeIndex, nodeVals) -> {
+        .entrySet()
+        .stream()
+        .map(
+            e -> {
+              int nodeIndex = e.getKey();
+              List<Entry<Integer, R>> nodeVals = e.getValue();
               long gIndex = type.getGeneralizedIndex(nodeIndex);
               // optimization: when all packed values changed no need to retrieve original node to
               // merge with
@@ -73,9 +77,9 @@ public class VectorViewWriteImpl<R extends ViewRead, W extends R>
                     elementType.updateBackingNode(
                         node, entry.getKey() % elementsPerChunk, entry.getValue());
               }
-              ret.add(gIndex, node);
-            });
-    return ret;
+              return Pair.of(gIndex, node);
+            })
+        .collect(TreeNodes.collector());
   }
 
   @Override

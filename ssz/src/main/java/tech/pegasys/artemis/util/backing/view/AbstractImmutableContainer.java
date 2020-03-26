@@ -15,6 +15,8 @@ package tech.pegasys.artemis.util.backing.view;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.cache.ArrayCache;
@@ -60,10 +62,10 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
   }
 
   private static TreeNode createBackingTree(ContainerViewType<?> type, ViewRead... memberValues) {
-    TreeNodes nodes = new TreeNodes();
-    for (int i = 0; i < memberValues.length; i++) {
-      nodes.add(type.getGeneralizedIndex(i), memberValues[i].getBackingNode());
-    }
+    TreeNodes nodes =
+        IntStream.range(0, memberValues.length)
+            .mapToObj(i -> Pair.of(type.getGeneralizedIndex(i), memberValues[i].getBackingNode()))
+            .collect(TreeNodes.collector());
     return type.getDefaultTree().updated(nodes);
   }
 
