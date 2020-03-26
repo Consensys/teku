@@ -56,7 +56,7 @@ public class ValidatorCoordinatorTest {
   void setup() {
     Constants.GENESIS_SLOT = 0;
     Constants.MIN_ATTESTATION_INCLUSION_DELAY = 0;
-    when(config.getNumValidators()).thenReturn(NUM_VALIDATORS);
+    when(config.getInteropNumberOfValidators()).thenReturn(NUM_VALIDATORS);
     when(config.getValidatorsKeyFile()).thenReturn(null);
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(null);
     when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);

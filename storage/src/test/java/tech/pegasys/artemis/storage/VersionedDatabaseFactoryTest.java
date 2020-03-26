@@ -102,9 +102,10 @@ public class VersionedDatabaseFactoryTest {
   }
 
   private ArtemisConfiguration createConfig(final Path dataPath) {
-    final StringBuilder configBuilder = new StringBuilder();
-    configBuilder.append(String.format("database.dataPath=\"%s\"", dataPath.toAbsolutePath()));
 
-    return ArtemisConfiguration.fromString(configBuilder.toString());
+    return ArtemisConfiguration.builder()
+        .setDataPath(dataPath.toAbsolutePath().toString())
+        .setDataStorageMode("prune")
+        .build();
   }
 }
