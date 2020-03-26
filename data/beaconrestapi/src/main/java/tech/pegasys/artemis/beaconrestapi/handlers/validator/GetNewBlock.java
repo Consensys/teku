@@ -68,7 +68,7 @@ public class GetNewBlock implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "Slot for which the beacon block is to be produced.",
+            description = "Slot in which to create the beacon block.",
             required = true),
         @OpenApiParam(
             name = RANDAO_REVEAL,
