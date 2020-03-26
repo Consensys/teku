@@ -39,7 +39,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     File tempDatabaseVersionFile = node1.getDatabaseVersionFileFromContainer();
     node1.stop();
 
-    final ArtemisNode node2 = createArtemisNode(ArtemisNode.Config::startFromDisk);
+    final ArtemisNode node2 = createArtemisNode();
     node2.copyDatabaseFileToContainer(tempDatabaseFile);
     node2.copyDatabaseVersionFileToContainer(tempDatabaseVersionFile);
     node2.start();

@@ -35,12 +35,10 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.StubTimeProvider;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 public class ValidatorCoordinatorTest {
 
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
@@ -56,7 +54,7 @@ public class ValidatorCoordinatorTest {
   void setup() {
     Constants.GENESIS_SLOT = 0;
     Constants.MIN_ATTESTATION_INCLUSION_DELAY = 0;
-    when(config.getNumValidators()).thenReturn(NUM_VALIDATORS);
+    when(config.getInteropNumberOfValidators()).thenReturn(NUM_VALIDATORS);
     when(config.getValidatorsKeyFile()).thenReturn(null);
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(null);
     when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);
@@ -88,7 +86,6 @@ public class ValidatorCoordinatorTest {
     when(config.getInteropOwnedValidatorCount()).thenReturn(0);
     ValidatorCoordinator vc =
         new ValidatorCoordinator(
-            timeProvider,
             eventBus,
             validatorApiChannel,
             storageClient,

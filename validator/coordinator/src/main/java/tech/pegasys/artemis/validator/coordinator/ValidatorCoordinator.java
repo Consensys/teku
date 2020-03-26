@@ -66,18 +66,17 @@ import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
-public class ValidatorCoordinator extends Service {
+public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -97,7 +96,6 @@ public class ValidatorCoordinator extends Service {
   private Map<UnsignedLong, List<AttesterInformation>> committeeAssignments = new HashMap<>();
 
   public ValidatorCoordinator(
-      TimeProvider timeProvider,
       EventBus eventBus,
       ValidatorApiChannel validatorApiChannel,
       ChainStorageClient chainStorageClient,
@@ -114,11 +112,11 @@ public class ValidatorCoordinator extends Service {
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.eth1DataCache = eth1DataCache;
-    this.eventBus.register(this);
   }
 
   @Override
   protected SafeFuture<?> doStart() {
+    this.eventBus.register(this);
     chainStorageClient.subscribeBestBlockInitialized(this::onBestBlockInitialized);
     return SafeFuture.COMPLETE;
   }
@@ -148,17 +146,15 @@ public class ValidatorCoordinator extends Service {
         headState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
   }
 
-  @Subscribe
-  // TODO: make sure blocks that are produced right even after new slot to be pushed.
-  public void onNewSlot(SlotEvent slotEvent) {
-    UnsignedLong slot = slotEvent.getSlot();
-    eth1DataCache.onSlot(slotEvent);
-
+  @Override
+  public void onSlot(UnsignedLong slot) {
     final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
     if (!isGenesis(slot) && headRoot.isPresent()) {
       BeaconState headState = chainStorageClient.getStore().getBlockState(headRoot.get());
       createBlockIfNecessary(headState, slot);
     }
+
+    eth1DataCache.onSlot(slot);
   }
 
   @Subscribe
