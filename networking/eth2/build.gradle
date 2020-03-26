@@ -33,16 +33,12 @@ dependencies {
   integrationTestImplementation testFixtures(project(':util'))
   integrationTestImplementation testFixtures(project(':events'))
 
-  integrationTestImplementation 'org.mockito:mockito-core'
-  integrationTestImplementation 'org.hyperledger.besu.internal:metrics-core'
-
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
   testFixturesImplementation testFixtures(project(':networking:p2p'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation testFixtures(project(':events'))
 
-  testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'

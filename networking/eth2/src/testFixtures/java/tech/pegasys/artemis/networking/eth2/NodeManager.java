@@ -13,19 +13,15 @@
 
 package tech.pegasys.artemis.networking.eth2;
 
-import static tech.pegasys.artemis.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
-
 import com.google.common.eventbus.EventBus;
 import java.util.List;
 import java.util.function.Consumer;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.StubDiskUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -57,11 +53,8 @@ public class NodeManager {
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final EventBus eventBus = new EventBus();
-    final EventChannels eventChannels =
-        EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final ChainStorageClient storageClient =
-        ChainStorageClient.memoryOnlyClient(
-            eventBus, eventChannels.getPublisher(DiskUpdateChannel.class));
+        ChainStorageClient.memoryOnlyClient(eventBus, new StubDiskUpdateChannel());
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
 

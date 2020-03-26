@@ -29,10 +29,7 @@ import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskGenesisUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdateResult;
+import tech.pegasys.artemis.storage.StubDiskUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
@@ -74,7 +71,7 @@ public class SyncingNodeManager {
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final ChainStorageClient storageClient =
-        ChainStorageClient.memoryOnlyClient(eventBus, STUB_DISK_UPDATE_CHANNEL);
+        ChainStorageClient.memoryOnlyClient(eventBus, new StubDiskUpdateChannel());
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
 
@@ -133,15 +130,4 @@ public class SyncingNodeManager {
     eventChannels().getPublisher(SlotEventsChannel.class).onSlot(slot);
     chainUtil().setSlot(slot);
   }
-
-  private static DiskUpdateChannel STUB_DISK_UPDATE_CHANNEL =
-      new DiskUpdateChannel() {
-        @Override
-        public SafeFuture<DiskUpdateResult> onDiskUpdate(DiskUpdate event) {
-          return SafeFuture.completedFuture(DiskUpdateResult.successfulWithNothingPruned());
-        }
-
-        @Override
-        public void onDiskGenesisUpdate(DiskGenesisUpdate event) {}
-      };
 }
