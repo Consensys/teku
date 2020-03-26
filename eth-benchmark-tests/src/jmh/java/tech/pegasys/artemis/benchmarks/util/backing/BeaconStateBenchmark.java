@@ -28,7 +28,6 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
-//@Fork(0)
 @State(Scope.Thread)
 public class BeaconStateBenchmark {
 
@@ -82,7 +81,7 @@ public class BeaconStateBenchmark {
     int size = stateW.getBalances().size();
     UnsignedLong balance = UnsignedLong.valueOf(777);
     for (int i = 0; i < size; i++) {
-        stateW.getBalances().set(i, balance);
+      stateW.getBalances().set(i, balance);
     }
     bh.consume(stateW.commitChanges().hashTreeRoot());
   }
