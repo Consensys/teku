@@ -134,6 +134,11 @@ public class CombinedChainDataClient {
     return finalizedSlot.compareTo(slot) >= 0;
   }
 
+  public boolean isFinalizedEpoch(final UnsignedLong epoch) {
+    final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
+    return finalizedEpoch.compareTo(epoch) >= 0;
+  }
+
   public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
     return recentChainData.getBlockState(blockRoot);
   }

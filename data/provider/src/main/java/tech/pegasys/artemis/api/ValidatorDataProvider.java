@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.api.schema.Attestation;
@@ -52,6 +53,10 @@ public class ValidatorDataProvider {
 
   public boolean isStoreAvailable() {
     return combinedChainDataClient.isStoreAvailable();
+  }
+
+  public boolean isEpochFinalized(final UnsignedLong epoch) {
+    return combinedChainDataClient.isFinalizedEpoch(epoch);
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(

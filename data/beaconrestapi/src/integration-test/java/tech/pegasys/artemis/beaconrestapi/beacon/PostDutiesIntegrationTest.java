@@ -16,6 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.beacon;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -36,19 +37,24 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
     when(chainStorageClient.getStore()).thenReturn(null);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
 
-    final Response response = post(1, keys);
+    final Response response = post(epoch.intValue(), keys);
     assertNoContent(response);
   }
 
   @Test
   public void shouldReturnNoContentWhenBestBlockRootMissing() throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
+
     final Store store = mock(Store.class);
     when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
-    final Response response = post(1, keys);
+    final Response response = post(epoch.intValue(), keys);
     assertNoContent(response);
   }
 
