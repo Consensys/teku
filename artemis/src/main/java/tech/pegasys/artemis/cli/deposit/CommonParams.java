@@ -106,12 +106,8 @@ public class CommonParams implements Closeable {
   }
 
   public void displayConfirmation() {
-    if (!displayConfirmation) {
+    if (!displayConfirmation || !consoleAdapter.isConsoleAvailable()) {
       return;
-    }
-
-    if (!consoleAdapter.isConsoleAvailable()) {
-      throw new ParameterException(spec.commandLine(), "Console not available");
     }
 
     // gwei to eth
@@ -152,6 +148,10 @@ public class CommonParams implements Closeable {
 
   public UnsignedLong getAmount() {
     return amount;
+  }
+
+  public boolean isDisplayConfirmation() {
+    return displayConfirmation;
   }
 
   Credentials getEth1Credentials() {
