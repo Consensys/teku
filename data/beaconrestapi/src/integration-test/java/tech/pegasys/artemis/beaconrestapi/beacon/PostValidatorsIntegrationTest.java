@@ -41,6 +41,7 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
     when(chainStorageClient.getStore()).thenReturn(null);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
 
     final Response response = post(1, keys);
     assertNoContent(response);
@@ -50,6 +51,7 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
   public void shouldReturnNoContentWhenBestBlockRootMissing() throws Exception {
     final Store store = mock(Store.class);
     when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = post(1, keys);
@@ -57,18 +59,33 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
   }
 
   @Test
-  public void shouldHandleMissingState() throws Exception {
+  public void shouldHandleMissingFinalizedState() throws Exception {
     final int epoch = 1;
     final Bytes32 root = dataStructureUtil.randomBytes32();
     final Store store = mock(Store.class);
     when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
     when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
     when(historicalChainData.getFinalizedStateAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final Response response = post(1, keys);
     assertGone(response);
+  }
+
+  @Test
+  public void shouldHandleMissingNonFinalizedState() throws Exception {
+    final int epoch = 1;
+    final Bytes32 root = dataStructureUtil.randomBytes32();
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
+    when(store.getBlockState(root)).thenReturn(dataStructureUtil.randomBeaconState());
+    when(chainStorageClient.getStateBySlot(any())).thenReturn(Optional.empty());
+
+    final Response response = post(epoch, keys);
+    assertNotFound(response);
   }
 
   private Response post(final int epoch, final List<BLSKeyPair> publicKeys) throws IOException {

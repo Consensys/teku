@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -81,10 +82,12 @@ public class PostValidators extends AbstractHandler implements Handler {
       ValidatorsRequest request = jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
       final SafeFuture<Optional<BeaconValidators>> validatorsFuture =
           chainDataProvider.getValidatorsByValidatorsRequest(request);
-      handlePossiblyGoneResult(
-          ctx,
-          validatorsFuture,
-          (__, res) -> Optional.of(jsonProvider.objectToJSON(res.validators)));
+
+      if (chainDataProvider.isFinalizedEpoch(request.epoch)) {
+        handlePossiblyGoneResult(ctx, validatorsFuture, this::processResult);
+      } else {
+        handlePossiblyMissingResult(ctx, validatorsFuture, this::processResult);
+      }
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
@@ -93,5 +96,11 @@ public class PostValidators extends AbstractHandler implements Handler {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
+  }
+
+  private Optional<String> processResult(
+      final Context context, final BeaconValidators beaconValidators)
+      throws JsonProcessingException {
+    return Optional.of(jsonProvider.objectToJSON(beaconValidators.validators));
   }
 }

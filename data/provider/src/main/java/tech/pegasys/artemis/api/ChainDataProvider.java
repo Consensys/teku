@@ -229,6 +229,10 @@ public class ChainDataProvider {
     return combinedChainDataClient.isFinalized(slot);
   }
 
+  public boolean isFinalizedEpoch(final UnsignedLong epoch) {
+    return combinedChainDataClient.isFinalizedEpoch(epoch);
+  }
+
   public Optional<BeaconChainHead> getHeadState() {
     return combinedChainDataClient.getHeadStateFromStore().map(BeaconChainHead::new);
   }

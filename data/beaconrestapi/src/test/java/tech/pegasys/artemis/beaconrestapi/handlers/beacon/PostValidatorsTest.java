@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -60,13 +61,25 @@ public class PostValidatorsTest {
   }
 
   @Test
-  void shouldHandleMissingData() throws Exception {
+  void shouldHandleMissingFinalizedData() throws Exception {
     when(provider.getValidatorsByValidatorsRequest(any()))
         .thenReturn(completedFuture(Optional.empty()));
     when(context.body()).thenReturn(jsonProvider.objectToJSON(smallRequest));
+    when(provider.isFinalizedEpoch(smallRequest.epoch)).thenReturn(true);
     handler.handle(context);
 
     verify(context).status(SC_GONE);
+  }
+
+  @Test
+  void shouldHandleMissingNonFinalData() throws Exception {
+    when(provider.getValidatorsByValidatorsRequest(any()))
+        .thenReturn(completedFuture(Optional.empty()));
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(smallRequest));
+    when(provider.isFinalizedEpoch(smallRequest.epoch)).thenReturn(false);
+    handler.handle(context);
+
+    verify(context).status(SC_NOT_FOUND);
   }
 
   @Test
