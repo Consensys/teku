@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.artemis.util.time.channels;
 
 import com.google.common.primitives.UnsignedLong;
 
-public class SlotEvent {
-
-  private final UnsignedLong slot;
-
-  public SlotEvent(UnsignedLong slot) {
-    this.slot = slot;
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
-    return slot;
-  }
+public interface SlotEventsChannel {
+  void onSlot(UnsignedLong slot);
 }

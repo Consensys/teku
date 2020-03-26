@@ -30,6 +30,12 @@ public class EventChannels {
             EventChannel.createAsync(channelInterface, exceptionHandler, metricsSystem));
   }
 
+  public static EventChannels createSyncChannels(
+      final ChannelExceptionHandler exceptionHandler, final MetricsSystem metricsSystem) {
+    return new EventChannels(
+        channelInterface -> EventChannel.create(channelInterface, exceptionHandler, metricsSystem));
+  }
+
   EventChannels(final Function<Class<?>, EventChannel<?>> eventChannelFactory) {
     this.eventChannelFactory = eventChannelFactory;
   }
