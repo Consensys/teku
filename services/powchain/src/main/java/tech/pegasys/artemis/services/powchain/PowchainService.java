@@ -43,14 +43,15 @@ public class PowchainService extends Service {
 
     AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
-    Web3j web3j = Web3j.build(new HttpService(artemisConfig.getNodeUrl()));
+    Web3j web3j = Web3j.build(new HttpService(artemisConfig.getEth1Endpoint()));
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new Web3jEth1Provider(web3j, asyncRunner), MAXIMUM_CONCURRENT_ETH1_REQUESTS);
 
     DepositContractAccessor depositContractAccessor =
-        DepositContractAccessor.create(eth1Provider, web3j, config.getConfig().getContractAddr());
+        DepositContractAccessor.create(
+            eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress());
 
     DepositObjectsFactory depositsObjectFactory =
         new DepositObjectsFactory(

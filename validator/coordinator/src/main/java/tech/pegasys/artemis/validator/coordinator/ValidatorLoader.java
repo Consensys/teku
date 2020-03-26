@@ -63,16 +63,16 @@ class ValidatorLoader {
 
   private static Map<BLSPublicKey, ValidatorInfo> createExternalSignerValidatorInfo(
       final ArtemisConfiguration config) {
-    return config.getValidatorExternalSigningPublicKeys().stream()
+    return config.getValidatorExternalSignerPublicKeys().stream()
         .collect(
             Collectors.toMap(
                 identity(),
                 publicKey ->
                     new ValidatorInfo(
                         new ExternalMessageSignerService(
-                            config.getValidatorExternalSigningUrl(),
+                            config.getValidatorExternalSignerUrl(),
                             publicKey,
-                            Duration.ofMillis(config.getValidatorExternalSigningTimeout())))));
+                            Duration.ofMillis(config.getValidatorExternalSignerTimeout())))));
   }
 
   private static Collection<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {

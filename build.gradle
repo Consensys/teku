@@ -382,7 +382,7 @@ subprojects {
     return result
   }
 
-  if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testSupport")) {
+  if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testFixtures")) {
     apply plugin: 'com.jfrog.bintray'
     apply plugin: 'maven-publish'
 
@@ -396,9 +396,6 @@ subprojects {
             artifact sourcesJar
           }
 
-          if (sourceSetIsPopulated("testSupport")) {
-            artifact testSupportJar
-          }
           versionMapping {
             usage('java-api') { fromResolutionOf('runtimeClasspath') }
             usage('java-runtime') { fromResolutionResult() }
@@ -436,11 +433,15 @@ subprojects {
   }
 
   configurations {
-    integrationTestImplementation.extendsFrom implementation
-    acceptanceTestImplementation.extendsFrom implementation
-    compatibilityTestImplementation.extendsFrom implementation
-    referenceTestImplementation.extendsFrom implementation
-    testSupportArtifacts.extendsFrom testSupportImplementation
+    integrationTestImplementation.extendsFrom testImplementation
+    acceptanceTestImplementation.extendsFrom testImplementation
+    compatibilityTestImplementation.extendsFrom testImplementation
+    referenceTestImplementation.extendsFrom testImplementation
+
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+    acceptanceTestRuntimeOnly.extendsFrom testRuntimeOnly
+    compatibilityTestRuntimeOnly.extendsFrom testRuntimeOnly
+    referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
   }
 
   def jarName = project.name
@@ -465,43 +466,24 @@ subprojects {
   }
 
   dependencies {
-    implementation 'org.apache.logging.log4j:log4j-core'
+    implementation 'com.google.guava:guava'
+    implementation 'org.apache.commons:commons-lang3'
+    implementation 'org.apache.logging.log4j:log4j-api'
+
+    runtimeOnly 'org.apache.logging.log4j:log4j-core'
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
 
-    testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.apache.tuweni:tuweni-junit'
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.mockito:mockito-core'
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     testRuntimeOnly testFixtures(project(':logging'))
 
-    integrationTestImplementation sourceSets.testFixtures.output
-    integrationTestImplementation 'org.assertj:assertj-core'
-    integrationTestImplementation 'org.apache.tuweni:tuweni-junit'
-    integrationTestImplementation 'org.junit.jupiter:junit-jupiter-api'
-    integrationTestImplementation 'org.junit.jupiter:junit-jupiter-params'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
-    integrationTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    integrationTestRuntimeOnly testFixtures(project(':logging'))
-
-    acceptanceTestImplementation sourceSets.testFixtures.output
-    acceptanceTestImplementation sourceSets.testFixtures.runtimeClasspath
-    acceptanceTestImplementation 'org.assertj:assertj-core'
-    acceptanceTestImplementation 'org.junit.jupiter:junit-jupiter-api'
-    acceptanceTestImplementation 'org.junit.jupiter:junit-jupiter-params'
-    acceptanceTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    acceptanceTestRuntimeOnly testFixtures(project(':logging'))
-    acceptanceTestRuntimeOnly 'org.apache.logging.log4j:log4j-core'
-    acceptanceTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
-
-    compatibilityTestImplementation 'org.assertj:assertj-core'
-    compatibilityTestImplementation 'org.junit.jupiter:junit-jupiter-api'
-    compatibilityTestImplementation 'org.junit.jupiter:junit-jupiter-params'
-    compatibilityTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    compatibilityTestRuntimeOnly testFixtures(project(':logging'))
-    compatibilityTestRuntimeOnly 'org.apache.logging.log4j:log4j-core'
-    compatibilityTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
+    testFixturesImplementation 'org.assertj:assertj-core'
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){

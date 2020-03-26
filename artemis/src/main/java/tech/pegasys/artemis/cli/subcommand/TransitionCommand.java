@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis;
+package tech.pegasys.artemis.cli.subcommand;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.io.ByteStreams;
@@ -37,7 +37,7 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.ArtemisConfigurationDeprecated;
 import tech.pegasys.artemis.util.config.Constants;
 
 @Command(
@@ -113,7 +113,8 @@ public class TransitionCommand implements Runnable {
 
   private void processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
-    Constants.setConstants(ArtemisConfiguration.fromFile(params.configFile).getConstants());
+    Constants.setConstants(
+        ArtemisConfigurationDeprecated.fromFile(params.configFile).getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));

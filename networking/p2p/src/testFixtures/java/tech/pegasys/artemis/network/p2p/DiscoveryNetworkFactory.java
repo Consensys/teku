@@ -81,7 +81,7 @@ public class DiscoveryNetworkFactory {
                 port,
                 port,
                 staticPeers,
-                "discv5",
+                true,
                 bootnodes,
                 new TargetPeerRange(20, 30),
                 false,

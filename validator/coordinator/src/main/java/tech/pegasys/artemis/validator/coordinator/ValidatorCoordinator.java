@@ -32,9 +32,9 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
@@ -42,14 +42,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -61,20 +57,16 @@ import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -94,7 +86,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
-  private final DepositProvider depositProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
@@ -103,15 +94,12 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   //  (which contain information for our validators to produce attestations)
   private Map<UnsignedLong, List<AttesterInformation>> committeeAssignments = new HashMap<>();
 
-  private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
-
   public ValidatorCoordinator(
       EventBus eventBus,
       ValidatorApiChannel validatorApiChannel,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
-      DepositProvider depositProvider,
       Eth1DataCache eth1DataCache,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
@@ -122,7 +110,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
-    this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
   }
 
@@ -290,7 +277,8 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
               .createUnsignedBlock(newSlot, randaoReveal)
               .orTimeout(10, TimeUnit.SECONDS)
               .join()
-              .orElseThrow();
+              .orElseThrow(
+                  () -> new NoSuchElementException("No block created for slot " + newSlot));
 
       final BLSSignature blockSignature =
           blockCreator.get_block_signature(newState, unsignedBlock, signer);
@@ -302,54 +290,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     } catch (final Exception e) {
       STATUS_LOG.blockCreationFailure(e);
     }
-  }
-
-  public Optional<BeaconBlock> createUnsignedBlock(UnsignedLong newSlot, BLSSignature randao_reveal)
-      throws EpochProcessingException, SlotProcessingException, StateTransitionException {
-    Store store = chainStorageClient.getStore();
-    final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
-    if (headRoot.isEmpty() || store == null) {
-      return Optional.empty();
-    }
-    BeaconState previousState = store.getBlockState(headRoot.get());
-    BeaconBlock previousBlock = store.getBlock(headRoot.get());
-
-    // Process empty slots up to the new slot
-    BeaconState newState = stateTransition.process_slots(previousState, newSlot);
-    Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
-    SSZList<Attestation> attestations = blockAttestationsPool.getAttestationsForSlot(newSlot);
-    // Collect slashing to include
-    final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(newState);
-    // Collect deposits
-    final SSZList<Deposit> deposits = depositProvider.getDeposits(newState);
-    final Bytes32 parentRoot = previousBlock.hash_tree_root();
-
-    return Optional.of(
-        blockCreator.createNewUnsignedBlock(
-            newSlot,
-            randao_reveal,
-            newState,
-            parentRoot,
-            eth1Data,
-            attestations,
-            slashingsInBlock,
-            deposits));
-  }
-
-  private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
-    SSZMutableList<ProposerSlashing> slashingsForBlock =
-        BeaconBlockBodyLists.createProposerSlashings();
-    ProposerSlashing slashing = slashings.poll();
-    while (slashing != null) {
-      if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
-        slashingsForBlock.add(slashing);
-      }
-      if (slashingsForBlock.size() >= slashingsForBlock.getMaxSize()) {
-        break;
-      }
-      slashing = slashings.poll();
-    }
-    return slashingsForBlock;
   }
 
   private MessageSignerService getSigner(BLSPublicKey signer) {

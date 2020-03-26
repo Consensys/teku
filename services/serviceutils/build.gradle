@@ -4,13 +4,9 @@ dependencies {
   implementation project(':storage')
   implementation project(':util')
 
-  implementation 'com.google.guava:guava'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.hyperledger.besu:plugin-api'
-
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 }

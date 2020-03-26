@@ -104,10 +104,10 @@ public class VersionedDatabaseFactoryTest {
   }
 
   private ArtemisConfiguration createConfig(final Path dataPath) {
-    final StringBuilder configBuilder = new StringBuilder();
-    String escapedPath = dataPath.toAbsolutePath().toString().replace("\\", "\\\\");
-    configBuilder.append(String.format("database.dataPath=\"%s\"", escapedPath));
 
-    return ArtemisConfiguration.fromString(configBuilder.toString());
+    return ArtemisConfiguration.builder()
+        .setDataPath(dataPath.toAbsolutePath().toString())
+        .setDataStorageMode("prune")
+        .build();
   }
 }
