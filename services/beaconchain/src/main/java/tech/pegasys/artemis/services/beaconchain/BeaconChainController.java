@@ -15,7 +15,6 @@ package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
-import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
@@ -25,7 +24,11 @@ import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -61,6 +64,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.BlockPropagationManager;
+import tech.pegasys.artemis.sync.DefaultSyncService;
 import tech.pegasys.artemis.sync.SyncManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
@@ -114,9 +118,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.eventChannels = eventChannels;
     this.config = config;
     this.metricsSystem = metricsSystem;
-    this.setupInitialState =
-        config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
+    this.setupInitialState = config.isInteropEnabled() || config.getInteropStartState() != null;
   }
 
   @Override
@@ -150,7 +153,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return ChainStorageClient.storageBackedClient(eventBus)
         .thenAccept(
             client -> {
-              eventChannels.subscribe(TimeTickChannel.class, this);
               // Setup chain storage
               this.chainStorageClient = client;
               if (setupInitialState && chainStorageClient.getStore() == null) {
@@ -159,6 +161,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               chainStorageClient.subscribeStoreInitialized(this::onStoreInitialized);
               // Init other services
               this.initAll();
+              eventChannels.subscribe(TimeTickChannel.class, this);
             });
   }
 
@@ -263,27 +266,25 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
-    if ("mock".equals(config.getNetworkMode())) {
+    if (!config.isP2pEnabled()) {
       this.p2pNetwork = new MockP2PNetwork<>(eventBus);
-    } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
-      Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
+    } else {
+      final Optional<Bytes> bytes = getP2pPrivateKeyBytes();
       PrivKey pk =
           bytes.isEmpty()
               ? KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()
-              : KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
+              : KeyKt.unmarshalPrivateKey(bytes.get().toArrayUnsafe());
       NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
-              config.getNetworkInterface(),
-              config.getAdvertisedIp(),
-              config.getPort(),
-              config.getAdvertisedPort(),
-              config.getStaticPeers(),
-              config.getDiscovery(),
-              config.getBootnodes(),
-              new TargetPeerRange(
-                  config.getTargetPeerCountRangeLowerBound(),
-                  config.getTargetPeerCountRangeUpperBound()),
+              config.getP2pInterface(),
+              config.getP2pAdvertisedIp(),
+              config.getP2pPort(),
+              config.getP2pAdvertisedPort(),
+              config.getP2pStaticPeers(),
+              config.isP2pDiscoveryEnabled(),
+              config.getP2pDiscoveryBootnodes(),
+              new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
               true,
               true,
               true);
@@ -295,9 +296,23 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .build();
-    } else {
-      throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
+  }
+
+  private Optional<Bytes> getP2pPrivateKeyBytes() {
+    final Optional<Bytes> bytes;
+    final String p2pPrivateKeyFile = config.getP2pPrivateKeyFile();
+    if (p2pPrivateKeyFile != null) {
+      try {
+        bytes = Optional.of(Bytes.fromHexString(Files.readString(Paths.get(p2pPrivateKeyFile))));
+      } catch (IOException e) {
+        throw new RuntimeException("p2p private key file not found - " + p2pPrivateKeyFile);
+      }
+    } else {
+      LOG.info("Private key file not supplied. A private key will be generated");
+      bytes = Optional.empty();
+    }
+    return bytes;
   }
 
   public void initBlockAttestationsPool() {
@@ -325,14 +340,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
-    if ("mock".equals(config.getNetworkMode())) {
-      syncService = new NoopSyncService(null, null, null);
+    if (!config.isP2pEnabled()) {
+      syncService = new NoopSyncService();
     } else {
       BlockImporter blockImporter = new BlockImporter(chainStorageClient, eventBus);
       BlockPropagationManager blockPropagationManager =
           BlockPropagationManager.create(eventBus, p2pNetwork, chainStorageClient, blockImporter);
       SyncManager syncManager = SyncManager.create(p2pNetwork, chainStorageClient, blockImporter);
-      syncService = new SyncService(blockPropagationManager, syncManager, chainStorageClient);
+      syncService =
+          new DefaultSyncService(blockPropagationManager, syncManager, chainStorageClient);
       eventChannels.subscribe(SlotEventsChannel.class, blockPropagationManager);
     }
   }
@@ -340,9 +356,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void setupInitialState() {
     StartupUtil.setupInitialState(
         chainStorageClient,
-        config.getGenesisTime(),
-        config.getStartState(),
-        config.getNumValidators());
+        config.getInteropGenesisTime(),
+        config.getInteropStartState(),
+        config.getInteropNumberOfValidators());
   }
 
   private void onStoreInitialized() {
@@ -361,7 +377,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   @Override
   public void onTick(Date date) {
-    if (chainStorageClient.isPreGenesis()) {
+    if (chainStorageClient.isPreGenesis() || syncService.isSyncActive()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
@@ -372,8 +388,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         chainStorageClient
             .getGenesisTime()
             .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0
-        || !syncService.isSyncActive()) {
+    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
       processSlot();
     }
   }
