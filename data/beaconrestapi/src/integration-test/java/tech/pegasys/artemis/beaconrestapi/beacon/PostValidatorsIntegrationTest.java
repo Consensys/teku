@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,6 +87,21 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
 
     final Response response = post(epoch, keys);
     assertNotFound(response);
+  }
+
+  @Test
+  public void shouldReturnEmptyListIfWhenPubKeysIsEmpty() throws Exception {
+    final int epoch = 1;
+    final Bytes32 root = dataStructureUtil.randomBytes32();
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
+    when(historicalChainData.getFinalizedStateAtSlot(any()))
+      .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final Response response = post(1, Collections.emptyList());
+    assertBodyEquals(response, "[]");
   }
 
   private Response post(final int epoch, final List<BLSKeyPair> publicKeys) throws IOException {

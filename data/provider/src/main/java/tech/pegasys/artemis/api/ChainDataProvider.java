@@ -203,6 +203,11 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(
       final ValidatorsRequest request) {
+    if (request.pubkeys.isEmpty()) {
+      // Short-circuit if we're not requesting anything
+      return SafeFuture.completedFuture(Optional.of(BeaconValidators.emptySet()));
+    }
+
     return SafeFuture.of(
         () -> {
           final Bytes32 bestBlockRoot =
