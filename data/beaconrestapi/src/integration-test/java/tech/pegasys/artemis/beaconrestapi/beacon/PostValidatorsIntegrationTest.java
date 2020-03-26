@@ -98,7 +98,7 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
     when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
     when(historicalChainData.getFinalizedStateAtSlot(any()))
-      .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final Response response = post(1, Collections.emptyList());
     assertBodyEquals(response, "[]");
