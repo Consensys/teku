@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
@@ -26,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 import tech.pegasys.artemis.validator.client.ExternalMessageSignerService;
 import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
 
@@ -42,7 +40,8 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalMessageSignerWhenConfigHasExternalSigningPublicKeys() {
-    final ArtemisConfiguration artemisConfiguration = ArtemisConfiguration.builder()
+    final ArtemisConfiguration artemisConfiguration =
+        ArtemisConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .setValidatorKeystoreFiles(Collections.emptyList())
@@ -64,7 +63,8 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final ArtemisConfiguration artemisConfiguration = ArtemisConfiguration.builder()
+    final ArtemisConfiguration artemisConfiguration =
+        ArtemisConfiguration.builder()
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
             .setValidatorKeystoreFiles(Collections.emptyList())
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
@@ -85,7 +85,8 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final ArtemisConfiguration artemisConfiguration = ArtemisConfiguration.builder()
+    final ArtemisConfiguration artemisConfiguration =
+        ArtemisConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY2))
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
@@ -115,7 +116,8 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final ArtemisConfiguration artemisConfiguration = ArtemisConfiguration.builder()
+    final ArtemisConfiguration artemisConfiguration =
+        ArtemisConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
