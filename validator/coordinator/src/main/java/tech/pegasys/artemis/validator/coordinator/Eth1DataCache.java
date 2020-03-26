@@ -33,12 +33,13 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
-public class Eth1DataCache implements TimeTickChannel {
+public class Eth1DataCache {
 
+  private final EventBus eventBus;
   private final TimeProvider timeProvider;
   private volatile Optional<UnsignedLong> genesisTime = Optional.empty();
 
@@ -47,13 +48,14 @@ public class Eth1DataCache implements TimeTickChannel {
 
   public Eth1DataCache(EventBus eventBus, TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
-    eventBus.register(this);
+    this.eventBus = eventBus;
+    this.eventBus.register(this);
   }
 
   public void startBeaconChainMode(BeaconState genesisState) {
     this.genesisTime = Optional.of(genesisState.getGenesis_time());
     this.currentVotingPeriodStartTime = getVotingPeriodStartTime(genesisState.getSlot());
-    this.onSlot(genesisState.getSlot());
+    this.onSlot(new SlotEvent(genesisState.getSlot()));
   }
 
   @Subscribe
@@ -62,7 +64,7 @@ public class Eth1DataCache implements TimeTickChannel {
         cacheEth1BlockEvent.getBlockTimestamp(), createEth1Data(cacheEth1BlockEvent));
   }
 
-  @Override
+  @Subscribe
   public void onTick(Date date) {
     if (genesisTime.isPresent()
         || !hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, timeProvider.getTimeInSeconds())) {
@@ -72,11 +74,12 @@ public class Eth1DataCache implements TimeTickChannel {
   }
 
   // Called by ValidatorCoordinator not the event bus to ensure we process slot events in sync
-  public void onSlot(UnsignedLong slot) {
+  public void onSlot(SlotEvent slotEvent) {
     if (genesisTime.isEmpty()) {
       return;
     }
 
+    UnsignedLong slot = slotEvent.getSlot();
     UnsignedLong voting_period_start_time = getVotingPeriodStartTime(slot);
 
     if (voting_period_start_time.equals(currentVotingPeriodStartTime)) {
