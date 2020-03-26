@@ -72,7 +72,7 @@ public class GetNewBlock implements Handler {
             required = true),
         @OpenApiParam(
             name = RANDAO_REVEAL,
-            description = "Randao to create the beacon block.",
+            description = "BLS12-381 signature for the current epoch.",
             required = true)
       },
       description =
