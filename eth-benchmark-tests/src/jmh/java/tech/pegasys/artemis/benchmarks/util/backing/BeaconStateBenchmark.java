@@ -22,7 +22,6 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -76,12 +75,15 @@ public class BeaconStateBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void updateBalancesAndHash(Blackhole bh) {
-    MutableBeaconState stateW = beaconState.createWritableCopy();
-    int size = stateW.getBalances().size();
-    UnsignedLong balance = UnsignedLong.valueOf(777);
-    for (int i = 0; i < size; i++) {
-      stateW.getBalances().set(i, balance);
-    }
-    bh.consume(stateW.commitChanges().hashTreeRoot());
+    BeaconState stateW =
+        beaconState.updated(
+            state -> {
+              int size = state.getBalances().size();
+              UnsignedLong balance = UnsignedLong.valueOf(777);
+              for (int i = 0; i < size; i++) {
+                state.getBalances().set(i, balance);
+              }
+            });
+    bh.consume(stateW.hashTreeRoot());
   }
 }

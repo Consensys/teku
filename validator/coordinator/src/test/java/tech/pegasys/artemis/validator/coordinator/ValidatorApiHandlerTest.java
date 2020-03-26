@@ -26,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -169,19 +168,22 @@ class ValidatorApiHandlerTest {
   }
 
   private BeaconState createStateWithActiveValidators() {
-    final MutableBeaconState state = dataStructureUtil.randomBeaconState(32).createWritableCopy();
-    state.setSlot(START_SLOT);
-    final SSZMutableList<Validator> validators = state.getValidators();
-    for (int i = 0; i < validators.size(); i++) {
-      validators.update(
-          i,
-          validator ->
-              validator
-                  .withActivation_eligibility_epoch(UnsignedLong.ZERO)
-                  .withActivation_epoch(UnsignedLong.ZERO)
-                  .withExit_epoch(Constants.FAR_FUTURE_EPOCH)
-                  .withWithdrawable_epoch(Constants.FAR_FUTURE_EPOCH));
-    }
-    return state.commitChanges();
+    return dataStructureUtil
+        .randomBeaconState(32)
+        .updated(
+            state -> {
+              state.setSlot(START_SLOT);
+              final SSZMutableList<Validator> validators = state.getValidators();
+              for (int i = 0; i < validators.size(); i++) {
+                validators.update(
+                    i,
+                    validator ->
+                        validator
+                            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
+                            .withActivation_epoch(UnsignedLong.ZERO)
+                            .withExit_epoch(Constants.FAR_FUTURE_EPOCH)
+                            .withWithdrawable_epoch(Constants.FAR_FUTURE_EPOCH));
+              }
+            });
   }
 }

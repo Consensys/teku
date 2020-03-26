@@ -52,7 +52,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
@@ -273,10 +272,8 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {
     try {
 
-      MutableBeaconState mutableState = previousState.createWritableCopy();
       // Process empty slots up to the new slot
-      stateTransition.process_slots(mutableState, newSlot);
-      BeaconState newState = mutableState.commitChanges();
+      BeaconState newState = stateTransition.process_slots(previousState, newSlot);
 
       // Check if we should be proposing
       final BLSPublicKey proposer = blockCreator.getProposerForSlot(newState, newSlot);
@@ -317,9 +314,8 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     BeaconState previousState = store.getBlockState(headRoot.get());
     BeaconBlock previousBlock = store.getBlock(headRoot.get());
 
-    MutableBeaconState newState = previousState.createWritableCopy();
     // Process empty slots up to the new slot
-    stateTransition.process_slots(newState, newSlot);
+    BeaconState newState = stateTransition.process_slots(previousState, newSlot);
     Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
     SSZList<Attestation> attestations = blockAttestationsPool.getAttestationsForSlot(newSlot);
     // Collect slashing to include
@@ -332,7 +328,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
         blockCreator.createNewUnsignedBlock(
             newSlot,
             randao_reveal,
-            newState.commitChanges(),
+            newState,
             parentRoot,
             eth1Data,
             attestations,

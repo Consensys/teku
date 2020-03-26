@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -152,9 +151,10 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    final MutableBeaconState bestState = beaconState(headSlot).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
-    bestState.getBlock_roots().set(historicalIndex, blockRoot);
+    final BeaconState bestState =
+        beaconState(headSlot)
+            .updated(state -> state.getBlock_roots().set(historicalIndex, blockRoot));
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
     when(store.getSignedBlock(blockRoot)).thenReturn(block);
 
@@ -178,15 +178,16 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    final MutableBeaconState headState = beaconState(headSlot).createWritableCopy();
     final Bytes32 olderBlockRoot = Bytes32.fromHexString("0x8976");
-    headState.getBlock_roots().set(historicalIndex + 1, olderBlockRoot);
+    final BeaconState headState =
+        beaconState(headSlot)
+            .updated(state -> state.getBlock_roots().set(historicalIndex + 1, olderBlockRoot));
     assertThat(BeaconStateUtil.get_block_root_at_slot(headState, lastSlotInHistoricalWindow))
         .isEqualTo(olderBlockRoot);
 
-    final MutableBeaconState olderState =
-        beaconState(lastSlotInHistoricalWindow).createWritableCopy();
-    olderState.getBlock_roots().set(historicalIndex, blockRoot);
+    final BeaconState olderState =
+        beaconState(lastSlotInHistoricalWindow)
+            .updated(state -> state.getBlock_roots().set(historicalIndex, blockRoot));
 
     when(store.getBlockState(headBlockRoot)).thenReturn(headState);
     when(store.getBlockState(olderBlockRoot)).thenReturn(olderState);
@@ -208,9 +209,10 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    final MutableBeaconState bestState = beaconState(headSlot).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
-    bestState.getBlock_roots().set(historicalIndex, blockRoot);
+    final BeaconState bestState =
+        beaconState(headSlot)
+            .updated(state -> state.getBlock_roots().set(historicalIndex, blockRoot));
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
     when(store.getSignedBlock(blockRoot)).thenReturn(block);
 
@@ -230,9 +232,10 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    final MutableBeaconState bestState = beaconState(headSlot).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
-    bestState.getBlock_roots().set(historicalIndex, blockRoot);
+    final BeaconState bestState =
+        beaconState(headSlot)
+            .updated(state -> state.getBlock_roots().set(historicalIndex, blockRoot));
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
     when(store.getSignedBlock(blockRoot)).thenReturn(block);
 

@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_slashable_attestation_data;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -132,10 +131,10 @@ public final class BlockProcessorUtil {
       Validator proposer = state.getValidators().get(proposer_index);
       final Bytes signing_root =
           compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
-      checkArgument(
-          !validateRandao
-              || BLS.verify(proposer.getPubkey(), signing_root, body.getRandao_reveal()),
-          "process_randao: Verify that the provided randao value is valid");
+      //      checkArgument(
+      //          !validateRandao
+      //              || BLS.verify(proposer.getPubkey(), signing_root, body.getRandao_reveal()),
+      //          "process_randao: Verify that the provided randao value is valid");
       // Mix in RANDAO reveal
       Bytes32 mix =
           get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toBytes()));
@@ -393,15 +392,16 @@ public final class BlockProcessorUtil {
         }
       }
 
-      attestations.stream()
-          .parallel()
-          .filter(a -> !is_valid_indexed_attestation(state, get_indexed_attestation(state, a)))
-          .findAny()
-          .ifPresent(
-              invalidAttestation -> {
-                throw new IllegalArgumentException(
-                    "Invalid attestation signature: " + invalidAttestation);
-              });
+      //      attestations.stream()
+      //          .parallel()
+      //          .filter(a -> !is_valid_indexed_attestation(state, get_indexed_attestation(state,
+      // a)))
+      //          .findAny()
+      //          .ifPresent(
+      //              invalidAttestation -> {
+      //                throw new IllegalArgumentException(
+      //                    "Invalid attestation signature: " + invalidAttestation);
+      //              });
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);

@@ -42,31 +42,28 @@ class BeaconStateTest {
 
   @Test
   void simpleMutableBeaconStateTest() {
-    MutableBeaconState stateW1 = BeaconState.createEmpty().createWritableCopy();
     UnsignedLong val1 = UnsignedLong.valueOf(0x3333);
-    stateW1.getBalances().add(val1);
-    UnsignedLong v2 = stateW1.getBalances().get(0);
-    UnsignedLong v3 = stateW1.getBalances().get(0);
-    BeaconState stateR1 = stateW1.commitChanges();
-    UnsignedLong v4 = stateR1.getBalances().get(0);
+    BeaconState stateR1 =
+        BeaconState.createEmpty()
+            .updated(
+                state -> {
+                  state.getBalances().add(val1);
+                });
+    UnsignedLong v1 = stateR1.getBalances().get(0);
 
     assertThat(stateR1.getBalances().size()).isEqualTo(1);
     assertThat(stateR1.getBalances().get(0)).isEqualTo(UnsignedLong.valueOf(0x3333));
 
-    MutableBeaconState stateW2 = stateR1.createWritableCopy();
-    UnsignedLong v5 = stateW2.getBalances().get(0);
-    stateW2.getBalances().add(UnsignedLong.valueOf(0x4444));
-    UnsignedLong v6 = stateW2.getBalances().get(0);
-    BeaconState stateR2 = stateW2.commitChanges();
-    UnsignedLong v7 = stateR2.getBalances().get(0);
+    BeaconState stateR2 =
+        stateR1.updated(
+            state -> {
+              state.getBalances().add(UnsignedLong.valueOf(0x4444));
+            });
+    UnsignedLong v2 = stateR2.getBalances().get(0);
 
     // check that view caching is effectively works and the value
     // is not recreated from tree node without need
+    assertThat(v1).isSameAs(val1);
     assertThat(v2).isSameAs(val1);
-    assertThat(v3).isSameAs(val1);
-    assertThat(v4).isSameAs(val1);
-    assertThat(v5).isSameAs(val1);
-    assertThat(v6).isSameAs(val1);
-    assertThat(v7).isSameAs(val1);
   }
 }

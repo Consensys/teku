@@ -302,6 +302,14 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   }
 
   @Override
+  public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
+      Mutator<E1, E2, E3> mutator) throws E1, E2, E3 {
+    MutableBeaconState writableCopy = createWritableCopyPriv();
+    mutator.mutate(writableCopy);
+    return writableCopy.commitChanges();
+  }
+
+  @Override
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT
         + getFork().getSSZFieldCount()
@@ -445,8 +453,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
     return toString(this);
   }
 
-  @Override
-  public MutableBeaconState createWritableCopy() {
+  private MutableBeaconState createWritableCopyPriv() {
     return new MutableBeaconStateImpl(this);
   }
 

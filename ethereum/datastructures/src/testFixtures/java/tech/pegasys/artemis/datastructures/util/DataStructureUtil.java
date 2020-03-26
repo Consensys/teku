@@ -47,7 +47,6 @@ import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -402,8 +401,6 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState(UnsignedLong slot) {
-    MutableBeaconState randomBeaconState = randomBeaconState().createWritableCopy();
-    randomBeaconState.setSlot(slot);
-    return randomBeaconState.commitChanges();
+    return randomBeaconState().updated(state -> state.setSlot(slot));
   }
 }

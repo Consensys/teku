@@ -25,7 +25,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
@@ -36,8 +35,7 @@ public class slashings extends TestSuite {
   @MethodSource("mainnetSlashingsSetup")
   void mainnetProcessSlashings(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    MutableBeaconState wState = pre.createWritableCopy();
-    EpochProcessorUtil.process_slashings(wState);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_slashings);
     assertEquals(post, wState);
   }
 
@@ -45,8 +43,7 @@ public class slashings extends TestSuite {
   @MethodSource("minimalSlashingsSetup")
   void minimalProcessSlashings(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    MutableBeaconState wState = pre.createWritableCopy();
-    EpochProcessorUtil.process_slashings(wState);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_slashings);
     assertEquals(post, wState);
   }
 

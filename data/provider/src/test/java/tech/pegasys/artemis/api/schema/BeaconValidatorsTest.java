@@ -21,7 +21,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -155,18 +154,16 @@ class BeaconValidatorsTest {
 
     System.out.println(beaconState.hashTreeRoot());
 
-    MutableBeaconState beaconStateW = beaconState.createWritableCopy();
-
     SSZList<Validator> allValidators = beaconState.getValidators();
     long originalActiveValidatorCount =
         BeaconValidators.getEffectiveListSize(
             getValidators(beaconState),
             true,
-            BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
+            BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
     int originalValidatorCount = allValidators.size();
 
     assertThat(originalActiveValidatorCount)
-        .isLessThanOrEqualTo(beaconStateW.getValidators().size());
+        .isLessThanOrEqualTo(beaconState.getValidators().size());
 
     // create one validator which IS active and add it to the list
     Validator v =
@@ -175,8 +172,7 @@ class BeaconValidatorsTest {
             .withActivation_eligibility_epoch(UnsignedLong.ZERO)
             .withActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
-    beaconStateW.getValidators().add(v);
-    beaconStateW.commitChanges();
+    BeaconState beaconStateW = beaconState.updated(state -> state.getValidators().add(v));
 
     int updatedValidatorCount = beaconStateW.getValidators().size();
     long updatedActiveValidatorCount =

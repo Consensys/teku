@@ -169,4 +169,10 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   public int hashCode() {
     return BeaconStateImpl.hashCode(this);
   }
+
+  @Override
+  public <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
+      Mutator<E1, E2, E3> mutator) {
+    throw new UnsupportedOperationException();
+  }
 }

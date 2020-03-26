@@ -39,7 +39,6 @@ import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLS;
@@ -163,8 +162,9 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
-    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
-    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
+    BeaconState beaconState =
+        createBeaconState()
+            .updated(state -> state.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT)));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
         BeaconStateUtil.get_previous_epoch(beaconState));
@@ -172,8 +172,12 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot2() {
-    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
-    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH));
+    BeaconState beaconState =
+        createBeaconState()
+            .updated(
+                state ->
+                    state.setSlot(
+                        UnsignedLong.valueOf(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH)));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
         BeaconStateUtil.get_previous_epoch(beaconState));
@@ -181,9 +185,13 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlotPlusOne() {
-    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
-    beaconState.setSlot(
-        UnsignedLong.valueOf(Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH));
+    BeaconState beaconState =
+        createBeaconState()
+            .updated(
+                state ->
+                    state.setSlot(
+                        UnsignedLong.valueOf(
+                            Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH)));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
         BeaconStateUtil.get_previous_epoch(beaconState));
@@ -191,8 +199,9 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
-    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
-    beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
+    BeaconState beaconState =
+        createBeaconState()
+            .updated(state -> state.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT)));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
         BeaconStateUtil.get_next_epoch(beaconState));
@@ -278,40 +287,43 @@ class BeaconStateUtilTest {
 
   private BeaconState createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
-    MutableBeaconState beaconState = BeaconState.createEmpty().createWritableCopy();
-    beaconState.setSlot(dataStructureUtil.randomUnsignedLong());
-    beaconState.setFork(
-        new Fork(
-            Constants.GENESIS_FORK_VERSION,
-            Constants.GENESIS_FORK_VERSION,
-            UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
+    return BeaconState.createEmpty()
+        .updated(
+            beaconState -> {
+              beaconState.setSlot(dataStructureUtil.randomUnsignedLong());
+              beaconState.setFork(
+                  new Fork(
+                      Constants.GENESIS_FORK_VERSION,
+                      Constants.GENESIS_FORK_VERSION,
+                      UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
-    List<Validator> validatorList =
-        new ArrayList<>(
-            Arrays.asList(
-                dataStructureUtil.randomValidator(),
-                dataStructureUtil.randomValidator(),
-                dataStructureUtil.randomValidator()));
-    List<UnsignedLong> balanceList =
-        new ArrayList<>(
-            Collections.nCopies(3, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE)));
+              List<Validator> validatorList =
+                  new ArrayList<>(
+                      Arrays.asList(
+                          dataStructureUtil.randomValidator(),
+                          dataStructureUtil.randomValidator(),
+                          dataStructureUtil.randomValidator()));
+              List<UnsignedLong> balanceList =
+                  new ArrayList<>(
+                      Collections.nCopies(
+                          3, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE)));
 
-    if (addToList) {
-      validatorList.add(knownValidator);
-      balanceList.add(amount);
-    }
+              if (addToList) {
+                validatorList.add(knownValidator);
+                balanceList.add(amount);
+              }
 
-    beaconState
-        .getValidators()
-        .addAll(
-            SSZList.createMutable(
-                validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, Validator.class));
-    beaconState
-        .getBalances()
-        .addAll(
-            SSZList.createMutable(
-                balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
-    return beaconState.commitChanges();
+              beaconState
+                  .getValidators()
+                  .addAll(
+                      SSZList.createMutable(
+                          validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, Validator.class));
+              beaconState
+                  .getBalances()
+                  .addAll(
+                      SSZList.createMutable(
+                          balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
+            });
   }
 
   // *************** START Shuffling Tests ***************

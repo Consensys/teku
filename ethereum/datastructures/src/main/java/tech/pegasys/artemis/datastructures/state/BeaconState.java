@@ -25,6 +25,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
+import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.view.AbstractBasicView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
@@ -77,30 +78,30 @@ public interface BeaconState
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
 
-    MutableBeaconState state = createEmpty().createWritableCopy();
-
-    state.setGenesis_time(genesis_time);
-    state.setSlot(slot);
-    state.setFork(fork);
-    state.setLatest_block_header(latest_block_header);
-    state.getBlock_roots().setAll(block_roots);
-    state.getState_roots().setAll(state_roots);
-    state.getHistorical_roots().setAll(historical_roots);
-    state.setEth1_data(eth1_data);
-    state.getEth1_data_votes().setAll(eth1_data_votes);
-    state.setEth1_deposit_index(eth1_deposit_index);
-    state.getValidators().setAll(validators);
-    state.getBalances().setAll(balances);
-    state.getRandao_mixes().setAll(randao_mixes);
-    state.getSlashings().setAll(slashings);
-    state.getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
-    state.getCurrent_epoch_attestations().setAll(current_epoch_attestations);
-    state.setJustification_bits(justification_bits);
-    state.setPrevious_justified_checkpoint(previous_justified_checkpoint);
-    state.setCurrent_justified_checkpoint(current_justified_checkpoint);
-    state.setFinalized_checkpoint(finalized_checkpoint);
-
-    return state.commitChanges();
+    return createEmpty()
+        .updated(
+            state -> {
+              state.setGenesis_time(genesis_time);
+              state.setSlot(slot);
+              state.setFork(fork);
+              state.setLatest_block_header(latest_block_header);
+              state.getBlock_roots().setAll(block_roots);
+              state.getState_roots().setAll(state_roots);
+              state.getHistorical_roots().setAll(historical_roots);
+              state.setEth1_data(eth1_data);
+              state.getEth1_data_votes().setAll(eth1_data_votes);
+              state.setEth1_deposit_index(eth1_deposit_index);
+              state.getValidators().setAll(validators);
+              state.getBalances().setAll(balances);
+              state.getRandao_mixes().setAll(randao_mixes);
+              state.getSlashings().setAll(slashings);
+              state.getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
+              state.getCurrent_epoch_attestations().setAll(current_epoch_attestations);
+              state.setJustification_bits(justification_bits);
+              state.setPrevious_justified_checkpoint(previous_justified_checkpoint);
+              state.setCurrent_justified_checkpoint(current_justified_checkpoint);
+              state.setFinalized_checkpoint(finalized_checkpoint);
+            });
   }
 
   static void setConstants() {
@@ -204,5 +205,14 @@ public interface BeaconState
   }
 
   @Override
-  MutableBeaconState createWritableCopy();
+  default ViewWrite createWritableCopy() {
+    throw new UnsupportedOperationException("Use BeaconState.updated() to modify");
+  }
+
+  <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
+      Mutator<E1, E2, E3> mutator) throws E1, E2, E3;
+
+  interface Mutator<E1 extends Exception, E2 extends Exception, E3 extends Exception> {
+    void mutate(MutableBeaconState state) throws E1, E2, E3;
+  }
 }

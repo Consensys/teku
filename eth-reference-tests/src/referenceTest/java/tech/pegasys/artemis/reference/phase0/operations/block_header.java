@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
@@ -40,8 +39,8 @@ public class block_header extends TestSuite {
   @MethodSource({"mainnetBeaconBlockHeaderSuccessSetup", "minimalBeaconBlockHeaderSuccessSetup"})
   void mainnetProcessBeaconBlockHeaderSuccess(
       BeaconBlock block, BeaconState pre, BeaconState post) {
-    MutableBeaconState wState = pre.createWritableCopy();
-    assertDoesNotThrow(() -> process_block_header(wState, block));
+    BeaconState wState =
+        assertDoesNotThrow(() -> pre.updated(state -> process_block_header(state, block)));
     assertEquals(post, wState);
   }
 
@@ -50,7 +49,7 @@ public class block_header extends TestSuite {
   void mainnetProcessBeaconBlockHeader(BeaconBlock block, BeaconState pre) {
     assertThrows(
         BlockProcessingException.class,
-        () -> process_block_header(pre.createWritableCopy(), block));
+        () -> pre.updated(state -> process_block_header(state, block)));
   }
 
   @MustBeClosed

@@ -37,7 +37,7 @@ public class TreeNodes {
         nodes.stream().map(Pair::getRight).collect(Collectors.toList()));
   }
 
-  public TreeNodes(List<Long> gIndexes, List<TreeNode> nodes) {
+  private TreeNodes(List<Long> gIndexes, List<TreeNode> nodes) {
     this(gIndexes, nodes, 1, depth(gIndexes));
   }
 
