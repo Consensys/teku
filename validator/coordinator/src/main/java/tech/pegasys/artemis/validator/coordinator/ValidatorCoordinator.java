@@ -332,7 +332,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
         blockCreator.createNewUnsignedBlock(
             newSlot,
             randao_reveal,
-            newState,
+            newState.commitChanges(),
             parentRoot,
             eth1Data,
             attestations,
