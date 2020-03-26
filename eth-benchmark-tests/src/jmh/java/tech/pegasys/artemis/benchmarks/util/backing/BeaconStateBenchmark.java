@@ -16,28 +16,27 @@ package tech.pegasys.artemis.benchmarks.util.backing;
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
-@Fork(0)
+//@Fork(0)
 @State(Scope.Thread)
 public class BeaconStateBenchmark {
 
   private static final BLSPublicKey pubkey = BLSPublicKey.random(0);
   private static final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(0).withPubKeyGenerator(() -> pubkey);
-  private static final BeaconState beaconState =
-      dataStructureUtil.randomBeaconState(32 * 1024).createWritableCopy();
-  //  private static MutableBeaconState mutableBeaconState = beaconState.createWritableCopy();
+  private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(32 * 1024);
+  private static MutableBeaconState mutableBeaconState = beaconState.createWritableCopy();
 
   public BeaconStateBenchmark() {
     Constants.setConstants("mainnet");
@@ -73,5 +72,18 @@ public class BeaconStateBenchmark {
     for (UnsignedLong balance : beaconState.getBalances()) {
       bh.consume(balance);
     }
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void updateBalancesAndHash(Blackhole bh) {
+    MutableBeaconState stateW = beaconState.createWritableCopy();
+    int size = stateW.getBalances().size();
+    UnsignedLong balance = UnsignedLong.valueOf(777);
+    for (int i = 0; i < size; i++) {
+        stateW.getBalances().set(i, balance);
+    }
+    bh.consume(stateW.commitChanges().hashTreeRoot());
   }
 }
