@@ -15,7 +15,6 @@ package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,19 +31,18 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.Failur
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
-import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
-public class BlockPropagationManager extends Service implements SlotEventsChannel {
+public class BlockPropagationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventBus eventBus;
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
-
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final FetchRecentBlocksService recentBlockFetcher;
   private final Set<Bytes32> invalidBlockRoots =
@@ -98,10 +96,9 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
     importBlock(gossipedBlockEvent.getBlock());
   }
 
-  @Override
-  public void onSlot(final UnsignedLong slot) {
-    pendingBlocks.onSlot(slot);
-    futureBlocks.prune(slot).forEach(this::importBlock);
+  @Subscribe
+  void onSlot(final SlotEvent slotEvent) {
+    futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
   }
 
   @Subscribe

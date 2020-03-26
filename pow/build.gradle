@@ -7,7 +7,6 @@ dependencies {
   implementation project(':bls')
   implementation project(':ssz')
   implementation project(':util')
-  implementation project(':events')
 
   api 'org.web3j:core'
   
