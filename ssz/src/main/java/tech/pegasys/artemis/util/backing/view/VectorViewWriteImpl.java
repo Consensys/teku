@@ -63,6 +63,7 @@ public class VectorViewWriteImpl<R extends ViewRead, W extends R>
         .collect(Collectors.groupingBy(e -> e.getKey() / elementsPerChunk))
         .entrySet()
         .stream()
+        .sorted(Entry.comparingByKey())
         .map(
             e -> {
               int nodeIndex = e.getKey();
