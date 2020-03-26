@@ -26,14 +26,16 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -117,20 +119,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedBlock_shouldFailWithChainDataUnavailableWhenStoreIsNotSet() {
-    when(chainDataClient.getStore()).thenReturn(null);
-
-    final SafeFuture<Optional<BeaconBlock>> result =
-        validatorApiHandler.createUnsignedBlock(
-            UnsignedLong.ONE, dataStructureUtil.randomSignature());
-
-    assertThat(result).isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
   public void createUnsignedBlock_shouldReturnEmptyWhenBestBlockNotSet() {
-    final Store store = mock(Store.class);
-    when(chainDataClient.getStore()).thenReturn(store);
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -163,6 +152,43 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal);
 
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
+  }
+
+  @Test
+  public void createUnsignedAttestation_shouldReturnEmptyWhenBestBlockNotSet() {
+    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
+
+    final SafeFuture<Optional<Attestation>> result =
+        validatorApiHandler.createUnsignedAttestation(UnsignedLong.ONE, 3);
+
+    assertThat(result).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void createUnsignedAttestation_shouldCreateAttestation() {
+    final UnsignedLong slot = UnsignedLong.valueOf(26);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final BeaconState state = createStateWithActiveValidators();
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(state.getSlot().longValue());
+
+    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(chainDataClient.getBestSlot()).thenReturn(slot);
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(slot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(new BeaconBlockAndState(block, state))));
+
+    final SafeFuture<Optional<Attestation>> result =
+        validatorApiHandler.createUnsignedAttestation(slot, 0);
+
+    assertThat(result).isCompleted();
+    final Optional<Attestation> maybeAttestation = result.join();
+    assertThat(maybeAttestation).isPresent();
+    final Attestation attestation = maybeAttestation.orElseThrow();
+    assertThat(attestation.getAggregation_bits())
+        .isEqualTo(new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
+    assertThat(attestation.getData())
+        .isEqualTo(AttestationUtil.getGenericAttestationData(state, block));
+    assertThat(attestation.getAggregate_signature().toBytes())
+        .isEqualTo(BLSSignature.empty().toBytes());
   }
 
   private List<ValidatorDuties> assertCompletedSuccessfully(
