@@ -58,13 +58,14 @@ class BeaconRestApiTest {
   private final Javalin app = mock(Javalin.class);
   private final SyncService syncService = mock(SyncService.class);
   private static final Integer THE_PORT = 12345;
-  private static final String THE_CONFIG =
-      String.format(
-          "beaconrestapi.portNumber=%d\nbeaconrestapi.enableSwagger=%s", THE_PORT, "false");
 
   @BeforeEach
   public void setup() {
-    ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
+    ArtemisConfiguration config =
+        ArtemisConfiguration.builder()
+            .setRestApiPort(THE_PORT)
+            .setRestApiDocsEnabled(false)
+            .build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(storageClient, combinedChainDataClient, null, syncService, null, null),

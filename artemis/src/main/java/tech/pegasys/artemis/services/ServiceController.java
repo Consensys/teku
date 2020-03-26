@@ -29,7 +29,7 @@ public class ServiceController extends Service {
   public ServiceController(final ServiceConfig config) {
     beaconChainService = new BeaconChainService(config);
     powchainService =
-        config.getConfig().getDepositMode().equals("test")
+        config.getConfig().isInteropEnabled()
             ? Optional.empty()
             : Optional.of(new PowchainService(config));
     chainStorageService = new ChainStorageService(config);
