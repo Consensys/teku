@@ -1,110 +1,46 @@
-## CURRENT VALID TOML FILE
+# valid toml file
 
-[node]
-# networkMode options:
-# "mock": use MockP2PNetwork
-# "jvmlibp2p" : use JvmLibP2PNetwork
-networkMode = "mock"
-networkInterface = "0.0.0.0"
-port = 9000
-advertisedIp = "127.0.0.1"
-# discovery options:
-# "static" - no discovery, only connect to static peers
-# "discv5" - Enable discovery v5
-discovery = "static"
-bootnodes=[]
-advertisedPort = 9000
-constants = "minimal"
+# network
+network="minimal"
 
-[interop]
-# when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
-genesisTime = 1
-ownedValidatorStartIndex = 0
-ownedValidatorCount = 64
-startState = ""
-#this.privKey.bytes().toHexString() who's corresponding sha2(publicKey) == 16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ
-privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A8F53B52EDF"
+# p2p
+p2p-enabled=false
+p2p-interface="1.2.3.4"
+p2p-port=1234
+p2p-discovery-enabled=false
+p2p-advertised-port=9000
+p2p-private-key-file="path/to/file"
 
-[validator]
-#validatorsKeyFile = "keys.yaml"
+# interop
+x-interop-genesis-time=1
+x-interop-owned-validator-start-index= 0
+x-interop-owned-validator-count=64
+x-interop-start-state=""
+x-interop-number-of-validators=64
+x-interop-enabled=true
 
-[deposit]
-# normal, test
-# "test" pre-production
-# "normal" production, must include contractAddr and nodeUrl
-mode = "test"
-inputFile = "" #"validator_test_data.json"
-numValidators = 64
-contractAddr = "0x77f7bED277449F51505a4C54550B074030d989bC"
-nodeUrl = "http://localhost:8545"
-
-[output]
-#transitionRecordDir = "/tmp/teku"
-
-[metrics]
-enabled = false
-port = 8008
-metricsNetworkInterface = "127.0.0.1"
-#metricsCategories = [ "BEACONCHAIN", "JVM", "PROCESS" ]
-
-[database]
-dataPath="."
-stateStorageMode = "prune"
-
-[beaconrestapi]
-portNumber = 5051
-enableSwagger = false
-
-## This is the TOML config we want in the future
-#
-## network
-#network="minimal"
-#
-## p2p
-#p2p-enabled=false
-#p2p-interface="1.2.3.4"
-#p2p-port=1234
-#p2p-discovery-enabled=false
-#p2p-discovery-bootnodes=[
-#  "enode://6f8a80d14311c39f35f516fa664deaaaa13e85b2f7493f37f6144d86991ec012937307647bd3b9a82abe2974e1407241d54947bbb39763a4cac9f77166ad92a0@192.168.0.1:4567",
-#  "enode://6f8a80d14311c39f35f516fa664deaaaa13e85b2f7493f37f6144d86991ec012937307647bd3b9a82abe2974e1407241d54947bbb39763a4cac9f77166ad92a0@192.168.0.1:4567",
-#  "enode://6f8a80d14311c39f35f516fa664deaaaa13e85b2f7493f37f6144d86991ec012937307647bd3b9a82abe2974e1407241d54947bbb39763a4cac9f77166ad92a0@192.168.0.1:4567"
-#]
-#p2p-advertised-port=2345
-#p2p-private-key="path/to/file"
-##p2p-target-peer-range= (probably should be two values denoting min/max)
-#
-## interop
-#X-interop-genesis-time=0
-#X-interop-owned-validator-start-index= 0
-#X-interop-owned-validator-count=64
-#X-interop-start-state=""
-#X-interop-number-of-validators=64
-#X-interop-enabled=false
-#
-## validator
+# validator
 #validators-key-file="path/to/keys.yaml"
-#
-## deposit
-#eth1-deposit-contract-address="0x77f7bED277449F51505a4C54550B074030d989bC"
-#eth1-endpoint="http://localhost:8545"
-#
-## output
-#X-transaction-record-directory="path/to/directory"
-#
-## metrics
-#metrics-enabled=false
-#metrics-port=8008
-#metrics-interface="127.0.0.1"
-#metrics-categories=["beaconchain", "jvm", "process"]
-#
-## database
-#data-path="path/to/directory"
-#
-## beacon rest api
-#rest-api-port=false
-#rest-api-docs-enabled=false
-#rest-api-enabled=false
-#rest-api-interface="127.0.0.1"
-#
-## validator subcommand (probably not needed here)
+
+# deposit
+eth1-deposit-contract-address="0x77f7bED277449F51505a4C54550B074030d989bC"
+eth1-endpoint="http://localhost:8545"
+
+# output
+#x-transaction-record-directory="/tmp/teku"
+
+# metrics
+metrics-enabled=false
+metrics-port=8008
+metrics-interface="127.0.0.1"
+metrics-categories=["BEACONCHAIN","JVM","PROCESS"]
+
+# database
+data-path="."
+data-storage-mode="prune"
+
+# beacon rest api
+rest-api-port=5051
+rest-api-docs-enabled=false
+rest-api-enabled=false
+rest-api-interface="127.0.0.1"

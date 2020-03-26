@@ -70,7 +70,7 @@ public class BeaconRestApi {
 
   private void initialise(
       final DataProvider dataProvider, final ArtemisConfiguration configuration) {
-    app.server().setServerPort(configuration.getBeaconRestAPIPortNumber());
+    app.server().setServerPort(configuration.getRestApiPort());
 
     addExceptionHandlers();
     addBeaconHandlers(dataProvider);
@@ -81,7 +81,7 @@ public class BeaconRestApi {
   }
 
   private void addCustomErrorPages(final ArtemisConfiguration configuration) {
-    if (configuration.getBeaconRestAPIEnableSwagger()) {
+    if (configuration.isRestApiDocsEnabled()) {
       try {
         String content = readResource(FILE_NOT_FOUND_HTML, Charsets.UTF_8);
         app.error(
@@ -159,7 +159,7 @@ public class BeaconRestApi {
                     .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
     final OpenApiOptions options =
         new OpenApiOptions(applicationInfo).modelConverterFactory(factory);
-    if (config.getBeaconRestAPIEnableSwagger()) {
+    if (config.isRestApiDocsEnabled()) {
       options.path("/swagger-docs").swagger(new SwaggerOptions("/swagger-ui"));
     }
     return options;
@@ -188,7 +188,7 @@ public class BeaconRestApi {
   private void addValidatorHandlers(DataProvider dataProvider) {
     ChainDataProvider provider = dataProvider.getChainDataProvider();
     ValidatorDataProvider validatorDataProvider = dataProvider.getValidatorDataProvider();
-    app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
+    app.get(GetAttestation.ROUTE, new GetAttestation(validatorDataProvider, jsonProvider));
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
     app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
 

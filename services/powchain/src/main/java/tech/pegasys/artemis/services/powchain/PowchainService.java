@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -31,6 +31,7 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
 public class PowchainService extends Service {
 
@@ -42,14 +43,15 @@ public class PowchainService extends Service {
 
     AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
-    Web3j web3j = Web3j.build(new HttpService(artemisConfig.getNodeUrl()));
+    Web3j web3j = Web3j.build(new HttpService(artemisConfig.getEth1Endpoint()));
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
             new Web3jEth1Provider(web3j, asyncRunner), MAXIMUM_CONCURRENT_ETH1_REQUESTS);
 
     DepositContractAccessor depositContractAccessor =
-        DepositContractAccessor.create(eth1Provider, web3j, config.getConfig().getContractAddr());
+        DepositContractAccessor.create(
+            eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress());
 
     DepositObjectsFactory depositsObjectFactory =
         new DepositObjectsFactory(
@@ -59,6 +61,7 @@ public class PowchainService extends Service {
             asyncRunner);
 
     eth1DepositManager = depositsObjectFactory.createEth1DepositsManager();
+
     eth1DataManager =
         new Eth1DataManager(
             eth1Provider,
@@ -66,6 +69,8 @@ public class PowchainService extends Service {
             depositContractAccessor,
             asyncRunner,
             config.getTimeProvider());
+
+    config.getEventChannels().subscribe(TimeTickChannel.class, eth1DataManager);
   }
 
   @Override
