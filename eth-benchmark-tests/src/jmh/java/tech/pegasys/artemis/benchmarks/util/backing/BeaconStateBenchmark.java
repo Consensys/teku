@@ -35,7 +35,6 @@ public class BeaconStateBenchmark {
   private static final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(0).withPubKeyGenerator(() -> pubkey);
   private static final BeaconState beaconState = dataStructureUtil.randomBeaconState(32 * 1024);
-  private static MutableBeaconState mutableBeaconState = beaconState.createWritableCopy();
 
   public BeaconStateBenchmark() {
     Constants.setConstants("mainnet");
