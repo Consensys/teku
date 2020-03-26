@@ -42,8 +42,6 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public abstract class AbstractBeaconRestAPIIntegrationTest {
-  private static final String THE_CONFIG =
-      String.format("beaconrestapi.portNumber=%d\nbeaconrestapi.enableSwagger=%s", 0, "false");
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
 
@@ -72,7 +70,8 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
 
   @BeforeEach
   public void setup() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient();

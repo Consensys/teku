@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis;
+package tech.pegasys.artemis.cli.subcommand;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;

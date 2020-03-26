@@ -20,7 +20,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.createAttestations;
-import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.createDeposits;
 import static tech.pegasys.artemis.util.Waiter.ensureConditionRemainsMet;
 
 import com.google.common.eventbus.EventBus;
@@ -44,7 +43,6 @@ public class ValidatorCoordinatorTest {
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
   private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
-  private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final ArtemisConfiguration config = mock(ArtemisConfiguration.class);
   private EventBus eventBus;
   private ChainStorageClient storageClient;
@@ -56,13 +54,11 @@ public class ValidatorCoordinatorTest {
   void setup() {
     Constants.GENESIS_SLOT = 0;
     Constants.MIN_ATTESTATION_INCLUSION_DELAY = 0;
-    when(config.getNumValidators()).thenReturn(NUM_VALIDATORS);
+    when(config.getInteropNumberOfValidators()).thenReturn(NUM_VALIDATORS);
     when(config.getValidatorsKeyFile()).thenReturn(null);
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(null);
     when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);
     when(config.getInteropOwnedValidatorCount()).thenReturn(NUM_VALIDATORS);
-
-    when(depositProvider.getDeposits(any())).thenReturn(createDeposits());
 
     when(blockAttestationsPool.getAttestationsForSlot(any())).thenReturn(createAttestations());
 
@@ -95,7 +91,6 @@ public class ValidatorCoordinatorTest {
             storageClient,
             attestationAggregator,
             blockAttestationsPool,
-            depositProvider,
             eth1DataCache,
             config);
 
