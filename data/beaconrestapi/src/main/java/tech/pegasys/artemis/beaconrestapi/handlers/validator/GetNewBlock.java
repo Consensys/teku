@@ -63,17 +63,26 @@ public class GetNewBlock implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Create and return an unsigned `BeaconBlock` at a given slot.",
+      summary = "Create and return an unsigned beacon block at the specified slot.",
       tags = {TAG_VALIDATOR},
       queryParams = {
-        @OpenApiParam(name = SLOT, description = "Slot to create the beacon block for."),
-        @OpenApiParam(name = RANDAO_REVEAL, description = "Randao to use to create the block.")
+        @OpenApiParam(
+            name = SLOT,
+            description = "Slot in which to create the beacon block.",
+            required = true),
+        @OpenApiParam(
+            name = RANDAO_REVEAL,
+            description = "BLS12-381 signature for the current epoch.",
+            required = true)
       },
       description =
-          "Create and return an unsigned `BeaconBlock` at a given slot. "
-              + "Both the `randao_reveal` and `slot` must be provided so that a block can be produced.",
+          "Create and return an unsigned beacon block at the specified slot. "
+              + "The `randao_reveal` and `slot` must be provided to create the block.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconBlock.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = BeaconBlock.class),
+            description = "`BeaconBlock` object for the specified slot."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied")
       })
