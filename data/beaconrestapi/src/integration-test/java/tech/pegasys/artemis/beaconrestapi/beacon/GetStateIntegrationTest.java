@@ -35,6 +35,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByRoot() throws Exception {
     when(chainStorageClient.getStore()).thenReturn(null);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
 
     final Response response = getByRoot(Bytes32.ZERO);
     assertNoContent(response);
@@ -43,6 +44,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
     when(chainStorageClient.getStore()).thenReturn(null);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
 
     final Response response = getBySlot(1);
     assertNoContent(response);
@@ -52,6 +54,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   public void shouldReturnNoContentIfHeadRootMissing_queryBySlot() throws Exception {
     final Store store = mock(Store.class);
     when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getBySlot(1);
@@ -59,7 +62,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   }
 
   @Test
-  public void handleMissingState_queryBySlot() throws Exception {
+  public void handleMissingFinalizedState_queryBySlot() throws Exception {
     final int slot = 1;
     final int finalizedEpoch = 2;
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
@@ -78,6 +81,24 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   }
 
   @Test
+  public void handleMissingNonFinalizedState_queryBySlot() throws Exception {
+    final int slot = 1;
+    final int finalizedEpoch = 0;
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(finalizedEpoch));
+    when(store.getBlockState(headRoot)).thenReturn(dataStructureUtil.randomBeaconState(100));
+    when(chainStorageClient.getStateBySlot(UnsignedLong.valueOf(slot)))
+        .thenReturn(Optional.empty());
+
+    final Response response = getBySlot(slot);
+    assertNotFound(response);
+  }
+
+  @Test
   public void handleMissingState_queryByRoot() throws Exception {
     final Bytes32 root = dataStructureUtil.randomBytes32();
     final SafeFuture<Optional<BeaconState>> emptyStateResult =
@@ -89,7 +110,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
     when(historicalChainData.getFinalizedStateByBlockRoot(root)).thenReturn(emptyStateResult);
 
     final Response response = getByRoot(root);
-    assertGone(response);
+    assertNotFound(response);
   }
 
   private Response getByRoot(final Bytes32 root) throws IOException {
