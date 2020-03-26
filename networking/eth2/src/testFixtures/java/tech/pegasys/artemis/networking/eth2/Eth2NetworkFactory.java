@@ -143,7 +143,7 @@ public class Eth2NetworkFactory {
           port,
           port,
           peerAddresses,
-          "static",
+          false,
           emptyList(),
           new TargetPeerRange(20, 30),
           false,

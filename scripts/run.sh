@@ -4,7 +4,7 @@
 
 usage() {
   echo "Runs a simulation of teku with NODES number of nodes, where NODES > 0 and NODES < 256 and VALIDATORS number of validators divided equally among nodes"
-  echo "Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]"
+  echo "Usage: sh run.sh [--numNodes, -n=NODES]  [--config-file=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]"
   echo "                 [--help, -h] [--numValidators, -v=VALIDATORS]"
   echo "Note: "
   echo "- If config files are specifed for specific nodes, those input files will be used to"
@@ -43,7 +43,7 @@ do
       MODE="${arg#*=}" ;;
 
     # Match the -i or --inputFile option and update the INPUTS array with the output file path
-    "--config"*)
+    "--config-file"*)
       FILE="${arg#*=}"
       IDX=$(echo $FILE | sed -E "s/.*[a-zA-Z0-9]+\.([0-9]+)\.toml/\1/")
       INPUTS[$IDX]="$FILE" ;;
@@ -70,12 +70,12 @@ then
   usage >&2; exit 3
 fi
 
-# If MODE is undefined default to jvmlibp2p
-[[ -z "$MODE" ]] && MODE="jvmlibp2p"
+# If MODE is undefined default to true which uses jvmlibp2p
+[[ -z "$MODE" ]] && MODE=true
 
 # If MODE is not a valid input pipe the usage statement to stderr and exit
 # with exit code 3
-if [ "$MODE" != "jvmlibp2p" ]
+if [ "$MODE" != true ] && [ "$MODE" != false ]
 then
   usage >&2; exit 3
 fi

@@ -71,13 +71,13 @@ public class MetricsEndpoint {
     return MetricsConfiguration.builder()
         .enabled(artemisConfig.isMetricsEnabled())
         .port(artemisConfig.getMetricsPort())
-        .host(artemisConfig.getMetricsNetworkInterface())
+        .host(artemisConfig.getMetricsInterface())
         .metricCategories(getEnabledMetricCategories(artemisConfig))
         .build();
   }
 
   private Set<MetricCategory> getEnabledMetricCategories(final ArtemisConfiguration artemisConfig) {
-    return artemisConfig.getMetricCategories().stream()
+    return artemisConfig.getMetricsCategories().stream()
         .map(SUPPORTED_CATEGORIES::get)
         .filter(Objects::nonNull)
         .collect(toSet());
