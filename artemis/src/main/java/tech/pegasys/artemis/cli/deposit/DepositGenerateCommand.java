@@ -65,7 +65,7 @@ public class DepositGenerateCommand implements Runnable {
   @Mixin private CommonParams params;
 
   @Option(
-      names = {"--X-number-of-validators"},
+      names = {"--Xnumber-of-validators"},
       paramLabel = "<NUMBER>",
       description = "The number of validators to create keys for and register",
       hidden = true,

@@ -33,13 +33,12 @@ public interface OptionNames {
   String P2P_STATIC_PEERS_OPTION_NAME = "--p2p-static-peers";
 
   // Interop
-  String X_INTEROP_GENESIS_TIME_OPTION_NAME = "--x-interop-genesis-time";
-  String X_INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME =
-      "--x-interop-owned-validator-start-index";
-  String X_INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME = "--x-interop-owned-validator-count";
-  String X_INTEROP_START_STATE_OPTION_NAME = "--x-interop-start-state";
-  String X_INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME = "--x-interop-number-of-validators";
-  String X_INTEROP_ENABLED_OPTION_NAME = "--x-interop-enabled";
+  String INTEROP_GENESIS_TIME_OPTION_NAME = "--Xinterop-genesis-time";
+  String INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME = "--Xinterop-owned-validator-start-index";
+  String INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME = "--Xinterop-owned-validator-count";
+  String INTEROP_START_STATE_OPTION_NAME = "--Xinterop-start-state";
+  String INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME = "--Xinterop-number-of-validators";
+  String INTEROP_ENABLED_OPTION_NAME = "--Xinterop-enabled";
 
   // Validator
   String VALIDATORS_KEY_FILE_OPTION_NAME = "--validators-key-file";
@@ -62,7 +61,7 @@ public interface OptionNames {
   String LOG_FILE_NAME_PATTERN_OPTION_NAME = "--log-file-name-pattern";
 
   // Output
-  String X_TRANSITION_RECORD_DIRECTORY_OPTION_NAME = "--x-transaction-record-directory";
+  String TRANSITION_RECORD_DIRECTORY_OPTION_NAME = "--Xtransaction-record-directory";
 
   // Metrics
   String METRICS_ENABLED_OPTION_NAME = "--metrics-enabled";

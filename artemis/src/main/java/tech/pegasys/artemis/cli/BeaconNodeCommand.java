@@ -163,7 +163,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_GENESIS_TIME_OPTION_NAME},
+      names = {INTEROP_GENESIS_TIME_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Time of mocked genesis",
       arity = "1")
@@ -171,7 +171,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME},
+      names = {INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Index of first validator owned by this node",
       arity = "1")
@@ -179,7 +179,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME},
+      names = {INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Number of validators owned by this node",
       arity = "1")
@@ -187,7 +187,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_START_STATE_OPTION_NAME},
+      names = {INTEROP_START_STATE_OPTION_NAME},
       paramLabel = "<STRING>",
       description = "Initial BeaconState to load",
       arity = "1")
@@ -195,14 +195,14 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME},
+      names = {INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Represents the total number of validators in the network")
   private int interopNumberOfValidators = DEFAULT_X_INTEROP_NUMBER_OF_VALIDATORS;
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_ENABLED_OPTION_NAME},
+      names = {INTEROP_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables developer options for testing",
       arity = "1")
@@ -315,7 +315,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_TRANSITION_RECORD_DIRECTORY_OPTION_NAME},
+      names = {TRANSITION_RECORD_DIRECTORY_OPTION_NAME},
       paramLabel = "<FILENAME>",
       description = "Directory to record transition pre and post states",
       arity = "1")
