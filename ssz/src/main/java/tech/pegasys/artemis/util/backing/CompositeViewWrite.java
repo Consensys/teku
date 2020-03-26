@@ -19,9 +19,9 @@ import java.util.function.Function;
 /**
  * Represents composite mutable view which has descendant views
  *
- * @param <C> the type of children
+ * @param <ChildType> the type of children
  */
-public interface CompositeViewWrite<C> extends ViewWrite, CompositeViewRead<C> {
+public interface CompositeViewWrite<ChildType> extends ViewWrite, CompositeViewRead<ChildType> {
 
   /**
    * Sets the function which should called by the implementation on any changes in this view or its
@@ -39,13 +39,13 @@ public interface CompositeViewWrite<C> extends ViewWrite, CompositeViewRead<C> {
    *
    * @throws IndexOutOfBoundsException if index > size() or if index == size() but size() == maxSize
    */
-  void set(int index, C value);
+  void set(int index, ChildType value);
 
   /**
    * Similar to {@link #set(int, Object)} but using modifier function which may consider old value
    * to calculate new value The implementation may potentially optimize this case
    */
-  default void update(int index, Function<C, C> mutator) {
+  default void update(int index, Function<ChildType, ChildType> mutator) {
     set(index, mutator.apply(get(index)));
   }
 }

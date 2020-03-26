@@ -30,27 +30,42 @@ import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNodes;
+import tech.pegasys.artemis.util.backing.tree.TreeUpdates;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 
+/**
+ * Base backing view class for mutable composite views (lists, vectors, containers)
+ *
+ * <p>It has corresponding backing immutable view and the set of changed children. When the {@link
+ * #commitChanges()} is called a new immutable view is created where changes accumulated in this
+ * instance are merged with cached backing view instance which weren't changed.
+ *
+ * <p>If this view is get by reference from its parent composite view ({@link
+ * CompositeViewWriteRef#getByRef(int)} then all the changes are notified to the parent view (see
+ * {@link CompositeViewWrite#setInvalidator(Consumer)}
+ *
+ * <p>The mutable views based on this class are inherently NOT thread safe
+ */
 public abstract class AbstractCompositeViewWrite<
-        C extends AbstractCompositeViewWrite<C, R, W>, R extends ViewRead, W extends R>
-    implements CompositeViewWriteRef<R, W> {
+        ChildReadType extends ViewRead, ChildWriteType extends ChildReadType>
+    implements CompositeViewWriteRef<ChildReadType, ChildWriteType> {
 
-  protected AbstractCompositeViewRead<?, R> backingImmutableView;
+  protected AbstractCompositeViewRead<ChildReadType> backingImmutableView;
   private Consumer<ViewWrite> invalidator;
-  private final Map<Integer, R> childrenChanges = new HashMap<>();
-  private final Map<Integer, W> childrenRefs = new HashMap<>();
+  private final Map<Integer, ChildReadType> childrenChanges = new HashMap<>();
+  private final Map<Integer, ChildWriteType> childrenRefs = new HashMap<>();
   private final Set<Integer> childrenRefsChanged = new HashSet<>();
   private Integer sizeCache;
 
-  public AbstractCompositeViewWrite(AbstractCompositeViewRead<?, R> backingImmutableView) {
+  /** Creates a new mutable instance with backing immutable view */
+  protected AbstractCompositeViewWrite(
+      AbstractCompositeViewRead<ChildReadType> backingImmutableView) {
     this.backingImmutableView = backingImmutableView;
     sizeCache = backingImmutableView.size();
   }
 
   @Override
-  public void set(int index, R value) {
+  public void set(int index, ChildReadType value) {
     checkIndex(index, true);
     if (childrenRefs.containsKey(index)) {
       throw new IllegalStateException(
@@ -62,9 +77,9 @@ public abstract class AbstractCompositeViewWrite<
   }
 
   @Override
-  public R get(int index) {
+  public ChildReadType get(int index) {
     checkIndex(index, false);
-    R ret = childrenChanges.get(index);
+    ChildReadType ret = childrenChanges.get(index);
     if (ret != null) {
       return ret;
     } else if (childrenRefs.containsKey(index)) {
@@ -75,13 +90,13 @@ public abstract class AbstractCompositeViewWrite<
   }
 
   @Override
-  public W getByRef(int index) {
-    W ret = childrenRefs.get(index);
+  public ChildWriteType getByRef(int index) {
+    ChildWriteType ret = childrenRefs.get(index);
     if (ret == null) {
-      R readView = get(index);
+      ChildReadType readView = get(index);
       childrenChanges.remove(index);
       @SuppressWarnings("unchecked")
-      W w = (W) readView.createWritableCopy();
+      ChildWriteType w = (ChildWriteType) readView.createWritableCopy();
       if (w instanceof CompositeViewWrite) {
         ((CompositeViewWrite<?>) w)
             .setInvalidator(
@@ -104,7 +119,7 @@ public abstract class AbstractCompositeViewWrite<
   @Override
   @SuppressWarnings("unchecked")
   public void clear() {
-    backingImmutableView = (AbstractCompositeViewRead<?, R>) getType().getDefault();
+    backingImmutableView = (AbstractCompositeViewRead<ChildReadType>) getType().getDefault();
     childrenChanges.clear();
     childrenRefs.clear();
     childrenRefsChanged.clear();
@@ -123,44 +138,55 @@ public abstract class AbstractCompositeViewWrite<
     if (childrenChanges.isEmpty() && childrenRefsChanged.isEmpty()) {
       return backingImmutableView;
     } else {
-      IntCache<R> cache = backingImmutableView.transferCache();
-      List<Entry<Integer, R>> changesList =
+      IntCache<ChildReadType> cache = backingImmutableView.transferCache();
+      List<Entry<Integer, ChildReadType>> changesList =
           Stream.concat(
                   childrenChanges.entrySet().stream(),
                   childrenRefsChanged.stream()
                       .map(
                           idx ->
                               new SimpleImmutableEntry<>(
-                                  idx, (R) ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
+                                  idx,
+                                  (ChildReadType)
+                                      ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
               .sorted(Entry.comparingByKey())
               .collect(Collectors.toList());
       // pre-fill the read cache with changed values
       changesList.forEach(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
       TreeNode originalBackingTree = backingImmutableView.getBackingNode();
-      TreeNodes changes = changesToNewNodes(changesList, originalBackingTree);
+      TreeUpdates changes = changesToNewNodes(changesList, originalBackingTree);
       TreeNode newBackingTree = originalBackingTree.updated(changes);
       return createViewRead(newBackingTree, cache);
     }
   }
 
-  protected TreeNodes changesToNewNodes(List<Entry<Integer, R>> newChildValues, TreeNode original) {
+  /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
+  protected TreeUpdates changesToNewNodes(
+      List<Entry<Integer, ChildReadType>> newChildValues, TreeNode original) {
     CompositeViewType type = getType();
     int elementsPerChunk = type.getElementsPerChunk();
     if (elementsPerChunk == 1) {
       return newChildValues.stream()
           .map(e -> Pair.of(type.getGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
-          .collect(TreeNodes.collector());
+          .collect(TreeUpdates.collector());
     } else {
       return packChanges(newChildValues, original);
     }
   }
 
-  protected TreeNodes packChanges(List<Entry<Integer, R>> newChildValues, TreeNode original) {
-    throw new UnsupportedOperationException("Packed values are not supported");
-  }
+  /**
+   * Converts a set of changed view with their indexes to the {@link TreeUpdates} instance for views
+   * which support packed values (i.e. several child views per backing tree node)
+   */
+  protected abstract TreeUpdates packChanges(
+      List<Entry<Integer, ChildReadType>> newChildValues, TreeNode original);
 
-  protected abstract AbstractCompositeViewRead<?, R> createViewRead(
-      TreeNode backingNode, IntCache<R> viewCache);
+  /**
+   * Should be implemented by subclasses to create respectful immutable view with backing tree and
+   * views cache
+   */
+  protected abstract AbstractCompositeViewRead<ChildReadType> createViewRead(
+      TreeNode backingNode, IntCache<ChildReadType> viewCache);
 
   @Override
   public void setInvalidator(Consumer<ViewWrite> listener) {
@@ -173,16 +199,26 @@ public abstract class AbstractCompositeViewWrite<
     }
   }
 
+  /**
+   * Backing node is assumed to be retrieved from committed immutable view only for the sake of
+   * speed to restrict accidental non-optimal usages
+   */
   @Override
   public TreeNode getBackingNode() {
     throw new IllegalStateException("Call commitChanges().getBackingNode()");
   }
 
+  /** Creating nested mutable copies is not supported yet */
   @Override
   public ViewWrite createWritableCopy() {
     throw new UnsupportedOperationException(
         "createWritableCopy() is now implemented for immutable views only");
   }
 
+  /**
+   * Checks the child index for get or set
+   *
+   * @throws IndexOutOfBoundsException is index is not valid
+   */
   protected abstract void checkIndex(int index, boolean set);
 }

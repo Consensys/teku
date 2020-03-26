@@ -27,9 +27,13 @@ import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ListViewWriteImpl.ListContainerWrite;
 
-public class ListViewReadImpl<C extends ViewRead> implements ListViewRead<C> {
+/**
+ * View of SSZ List type. This view is compatible with and implemented as a <code>
+ * Container[Vector(maxLength), size]</code> under the cover.
+ */
+public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewRead<ElementType> {
 
-  static class ListContainerRead<C extends ViewRead> extends ContainerViewReadImpl {
+  static class ListContainerRead<ElementType extends ViewRead> extends ContainerViewReadImpl {
 
     private static <C extends ViewRead>
         ContainerViewType<ListContainerRead<C>> vectorTypeToContainerType(
@@ -38,16 +42,17 @@ public class ListViewReadImpl<C extends ViewRead> implements ListViewRead<C> {
           Arrays.asList(vectorType, BasicViewTypes.UINT64_TYPE), ListContainerRead::new);
     }
 
-    public ListContainerRead(VectorViewType<C> vectorType) {
+    public ListContainerRead(VectorViewType<ElementType> vectorType) {
       super(vectorTypeToContainerType(vectorType));
     }
 
-    ListContainerRead(ContainerViewType<ListContainerRead<C>> containerType, TreeNode backingNode) {
+    ListContainerRead(
+        ContainerViewType<ListContainerRead<ElementType>> containerType, TreeNode backingNode) {
       super(containerType, backingNode);
     }
 
     public ListContainerRead(
-        VectorViewType<C> vectorType, TreeNode backingNode, IntCache<ViewRead> cache) {
+        VectorViewType<ElementType> vectorType, TreeNode backingNode, IntCache<ViewRead> cache) {
       super(vectorTypeToContainerType(vectorType), backingNode, cache);
     }
 
@@ -55,58 +60,59 @@ public class ListViewReadImpl<C extends ViewRead> implements ListViewRead<C> {
       return (int) ((UInt64View) get(1)).longValue();
     }
 
-    public VectorViewRead<C> getData() {
+    public VectorViewRead<ElementType> getData() {
       return getAny(0);
     }
 
     @Override
-    public ListContainerWrite<C, ?> createWritableCopy() {
+    public ListContainerWrite<ElementType, ?> createWritableCopy() {
       return new ListContainerWrite<>(this);
     }
 
     @SuppressWarnings("unchecked")
-    VectorViewType<C> getVectorType() {
-      return (VectorViewType<C>) getType().getChildType(0);
+    VectorViewType<ElementType> getVectorType() {
+      return (VectorViewType<ElementType>) getType().getChildType(0);
     }
   }
 
-  private final ListViewType<C> type;
-  private final ListContainerRead<C> container;
+  private final ListViewType<ElementType> type;
+  private final ListContainerRead<ElementType> container;
   private final int cachedSize;
   //  private final int size;
   //  private final VectorViewRead<C> vector;
 
-  public ListViewReadImpl(ListViewType<C> type, TreeNode node) {
+  public ListViewReadImpl(ListViewType<ElementType> type, TreeNode node) {
     this.type = type;
     this.container = new ListContainerRead<>(type.getCompatibleVectorType(), node, null);
     this.cachedSize = container.getSize();
   }
 
-  public ListViewReadImpl(ListViewType<C> type) {
+  public ListViewReadImpl(ListViewType<ElementType> type) {
     this.type = type;
     this.container = new ListContainerRead<>(type.getCompatibleVectorType());
     this.cachedSize = container.getSize();
   }
 
-  public ListViewReadImpl(ListViewType<C> type, ListContainerRead<C> container) {
+  public ListViewReadImpl(
+      ListViewType<ElementType> type, ListContainerRead<ElementType> container) {
     this.type = type;
     this.container = container;
     this.cachedSize = container.getSize();
   }
 
   @Override
-  public C get(int index) {
+  public ElementType get(int index) {
     checkIndex(index);
     return container.getData().get(index);
   }
 
   @Override
-  public ListViewWrite<C> createWritableCopy() {
+  public ListViewWrite<ElementType> createWritableCopy() {
     return new ListViewWriteImpl<>(getType(), container.createWritableCopy());
   }
 
   @Override
-  public ListViewType<C> getType() {
+  public ListViewType<ElementType> getType() {
     return type;
   }
 

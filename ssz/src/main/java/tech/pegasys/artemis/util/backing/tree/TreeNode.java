@@ -153,7 +153,8 @@ public interface TreeNode {
    */
   TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
 
-  default TreeNode updated(TreeNodes newNodes) {
+  /** Updates the tree in a batch */
+  default TreeNode updated(TreeUpdates newNodes) {
     TreeNode ret = this;
     for (int i = 0; i < newNodes.size(); i++) {
       ret = ret.updated(newNodes.getGIndex(i), newNodes.getNode(i));

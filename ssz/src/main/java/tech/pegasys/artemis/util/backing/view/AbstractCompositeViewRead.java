@@ -20,45 +20,71 @@ import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 
-public abstract class AbstractCompositeViewRead<
-        C extends AbstractCompositeViewRead<C, R>, R extends ViewRead>
-    implements CompositeViewRead<R> {
+/**
+ * Base backing view class for immutable composite views (lists, vectors, containers)
+ *
+ * <p>It caches it's child view instances so that if the underlying tree nodes are not changed (in
+ * the corresponding mutable classes) the instances are not recreated from tree nodes on later
+ * access.
+ *
+ * <p>Thought internally this class has a mutable cache it may be thought of as immutable instance
+ * and used safely across threads
+ *
+ * @param <ChildType> the type of children. For heterogeneous composites (like container) this type
+ *     would be just generic {@link ViewRead}
+ */
+public abstract class AbstractCompositeViewRead<ChildType extends ViewRead>
+    implements CompositeViewRead<ChildType> {
 
-  private IntCache<R> childrenViewCache;
+  private IntCache<ChildType> childrenViewCache;
   private final int sizeCache;
   private final CompositeViewType type;
   private final TreeNode backingNode;
 
-  public AbstractCompositeViewRead(CompositeViewType type, TreeNode backingNode) {
-    this.type = type;
-    this.backingNode = backingNode;
-    sizeCache = sizeImpl();
-    childrenViewCache = createCache();
+  /** Creates an instance from a type and a backing node */
+  protected AbstractCompositeViewRead(CompositeViewType type, TreeNode backingNode) {
+    this(type, backingNode, null);
   }
 
-  public AbstractCompositeViewRead(
-      CompositeViewType type, TreeNode backingNode, IntCache<R> cache) {
+  /**
+   * Creates an instance from a type and a backing node Optionally the view instances cache can be
+   * supplied for optimization to shortcut children views creation from backing nodes. The cache
+   * should correspond to the supplied backing tree.
+   */
+  protected AbstractCompositeViewRead(
+      CompositeViewType type, TreeNode backingNode, IntCache<ChildType> cache) {
     this.type = type;
     this.backingNode = backingNode;
     sizeCache = sizeImpl();
     childrenViewCache = cache == null ? createCache() : cache;
   }
 
-  synchronized IntCache<R> transferCache() {
+  /**
+   * 'Transfers' the cache to a new Cache instance eliminating all the cached values from the
+   * current view cache. This is made under assumption that the view instance this cache is
+   * transferred to would be used further with high probability and this view instance would be
+   * either GCed or used with lower probability
+   */
+  IntCache<ChildType> transferCache() {
     return childrenViewCache.transfer();
   }
 
-  protected IntCache<R> createCache() {
+  /**
+   * Creates a new empty children views cache. Could be overridden by subclasses for fine tuning of
+   * the initial cache size
+   */
+  protected IntCache<ChildType> createCache() {
     return new ArrayCache<>();
   }
 
   @Override
-  public final R get(int index) {
+  public final ChildType get(int index) {
     checkIndex(index);
     return childrenViewCache.getInt(index, this::getImpl);
   }
 
-  protected abstract R getImpl(int index);
+  /** Cache miss fallback child getter. This is where child is created from the backing tree node */
+  protected abstract ChildType getImpl(int index);
 
   @Override
   public CompositeViewType getType() {
@@ -75,7 +101,13 @@ public abstract class AbstractCompositeViewRead<
     return sizeCache;
   }
 
+  /** Size value is normally cached. This method calculates the size from backing tree */
   protected abstract int sizeImpl();
 
+  /**
+   * Checks the child index
+   *
+   * @throws IndexOutOfBoundsException if index is invalid
+   */
   protected abstract void checkIndex(int index);
 }

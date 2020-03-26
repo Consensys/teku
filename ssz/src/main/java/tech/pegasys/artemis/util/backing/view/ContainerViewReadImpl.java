@@ -22,8 +22,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
-public class ContainerViewReadImpl
-    extends AbstractCompositeViewRead<ContainerViewReadImpl, ViewRead>
+public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
     implements ContainerViewRead {
 
   public ContainerViewReadImpl(ContainerViewType<?> type) {

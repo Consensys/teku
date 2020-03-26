@@ -27,12 +27,16 @@ import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ListViewReadImpl.ListContainerRead;
 
-public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListViewWriteRef<R, W> {
+public class ListViewWriteImpl<
+        ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+    implements ListViewWriteRef<ElementReadType, ElementWriteType> {
 
-  static class ListContainerWrite<R extends ViewRead, W extends R> extends ContainerViewWriteImpl {
-    private final VectorViewType<R> vectorType;
+  static class ListContainerWrite<
+          ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+      extends ContainerViewWriteImpl {
+    private final VectorViewType<ElementReadType> vectorType;
 
-    public ListContainerWrite(ListContainerRead<R> backingImmutableView) {
+    public ListContainerWrite(ListContainerRead<ElementReadType> backingImmutableView) {
       super(backingImmutableView);
       vectorType = backingImmutableView.getVectorType();
     }
@@ -45,35 +49,37 @@ public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListV
       set(1, UInt64View.fromLong(size));
     }
 
-    public VectorViewWriteRef<R, W> getData() {
+    public VectorViewWriteRef<ElementReadType, ElementWriteType> getData() {
       return getAnyByRef(0);
     }
 
     @Override
-    protected AbstractCompositeViewRead<?, ViewRead> createViewRead(
+    protected AbstractCompositeViewRead<ViewRead> createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
-      return new ListContainerRead<R>(vectorType, backingNode, viewCache);
+      return new ListContainerRead<ElementReadType>(vectorType, backingNode, viewCache);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public ListContainerRead<R> commitChanges() {
-      return (ListContainerRead<R>) super.commitChanges();
+    public ListContainerRead<ElementReadType> commitChanges() {
+      return (ListContainerRead<ElementReadType>) super.commitChanges();
     }
   }
 
-  private final ListViewType<R> type;
-  private final ListContainerWrite<R, W> container;
+  private final ListViewType<ElementReadType> type;
+  private final ListContainerWrite<ElementReadType, ElementWriteType> container;
   private int cachedSize;
 
-  public ListViewWriteImpl(ListViewType<R> type, ListContainerWrite<R, W> container) {
+  public ListViewWriteImpl(
+      ListViewType<ElementReadType> type,
+      ListContainerWrite<ElementReadType, ElementWriteType> container) {
     this.type = type;
     this.container = container;
     this.cachedSize = this.container.getSize();
   }
 
   @Override
-  public ListViewType<R> getType() {
+  public ListViewType<ElementReadType> getType() {
     return type;
   }
 
@@ -83,20 +89,20 @@ public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListV
   }
 
   @Override
-  public R get(int index) {
+  public ElementReadType get(int index) {
     checkIndex(index, false);
     return container.getData().get(index);
   }
 
   @Override
-  public W getByRef(int index) {
+  public ElementWriteType getByRef(int index) {
     checkIndex(index, false);
     return container.getData().getByRef(index);
   }
 
   @Override
-  public ListViewRead<R> commitChanges() {
-    return new ListViewReadImpl<R>(getType(), container.commitChanges());
+  public ListViewRead<ElementReadType> commitChanges() {
+    return new ListViewReadImpl<ElementReadType>(getType(), container.commitChanges());
   }
 
   @Override
@@ -105,7 +111,7 @@ public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListV
   }
 
   @Override
-  public void set(int index, R value) {
+  public void set(int index, ElementReadType value) {
     checkIndex(index, true);
     if (index == size()) {
       cachedSize++;
@@ -129,7 +135,7 @@ public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListV
   }
 
   @Override
-  public ListViewWrite<R> createWritableCopy() {
+  public ListViewWrite<ElementReadType> createWritableCopy() {
     throw new UnsupportedOperationException("Creating a copy from writable list is not supported");
   }
 }

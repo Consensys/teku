@@ -22,9 +22,10 @@ import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.cache.ArrayCache;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNodes;
+import tech.pegasys.artemis.util.backing.tree.TreeUpdates;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
+/** Handy base class for immutable containers */
 public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
 
   public AbstractImmutableContainer(ContainerViewType<? extends AbstractImmutableContainer> type) {
@@ -62,10 +63,10 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
   }
 
   private static TreeNode createBackingTree(ContainerViewType<?> type, ViewRead... memberValues) {
-    TreeNodes nodes =
+    TreeUpdates nodes =
         IntStream.range(0, memberValues.length)
             .mapToObj(i -> Pair.of(type.getGeneralizedIndex(i), memberValues[i].getBackingNode()))
-            .collect(TreeNodes.collector());
+            .collect(TreeUpdates.collector());
     return type.getDefaultTree().updated(nodes);
   }
 

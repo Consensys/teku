@@ -22,25 +22,27 @@ import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.type.ViewType;
 
-public class VectorViewReadImpl<R extends ViewRead>
-    extends AbstractCompositeViewRead<VectorViewReadImpl<R>, R> implements VectorViewRead<R> {
+public class VectorViewReadImpl<ElementReadType extends ViewRead>
+    extends AbstractCompositeViewRead<ElementReadType> implements VectorViewRead<ElementReadType> {
 
   public VectorViewReadImpl(CompositeViewType type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public VectorViewReadImpl(CompositeViewType type, TreeNode backingNode, IntCache<R> cache) {
+  public VectorViewReadImpl(
+      CompositeViewType type, TreeNode backingNode, IntCache<ElementReadType> cache) {
     super(type, backingNode, cache);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  protected R getImpl(int index) {
-    VectorViewType<R> type = getType();
+  protected ElementReadType getImpl(int index) {
+    VectorViewType<ElementReadType> type = getType();
     ViewType elementType = type.getElementType();
     TreeNode node =
         getBackingNode().get(type.getGeneralizedIndex(index / type.getElementsPerChunk()));
-    return (R) elementType.createFromBackingNode(node, index % type.getElementsPerChunk());
+    return (ElementReadType)
+        elementType.createFromBackingNode(node, index % type.getElementsPerChunk());
   }
 
   @Override
@@ -49,18 +51,18 @@ public class VectorViewReadImpl<R extends ViewRead>
   }
 
   @Override
-  public VectorViewWriteImpl<R, ?> createWritableCopy() {
+  public VectorViewWriteImpl<ElementReadType, ?> createWritableCopy() {
     return new VectorViewWriteImpl<>(this);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public VectorViewType<R> getType() {
-    return (VectorViewType<R>) super.getType();
+  public VectorViewType<ElementReadType> getType() {
+    return (VectorViewType<ElementReadType>) super.getType();
   }
 
   @Override
-  protected IntCache<R> createCache() {
+  protected IntCache<ElementReadType> createCache() {
     return size() > 16384 ? new ArrayCache<>() : new ArrayCache<>(size());
   }
 

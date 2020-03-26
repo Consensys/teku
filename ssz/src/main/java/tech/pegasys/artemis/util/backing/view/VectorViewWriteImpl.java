@@ -22,40 +22,42 @@ import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNodes;
+import tech.pegasys.artemis.util.backing.tree.TreeUpdates;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.type.ViewType;
 
-public class VectorViewWriteImpl<R extends ViewRead, W extends R>
-    extends AbstractCompositeViewWrite<VectorViewWriteImpl<R, W>, R, W>
-    implements VectorViewWriteRef<R, W> {
+public class VectorViewWriteImpl<
+        ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+    extends AbstractCompositeViewWrite<ElementReadType, ElementWriteType>
+    implements VectorViewWriteRef<ElementReadType, ElementWriteType> {
 
-  public VectorViewWriteImpl(AbstractCompositeViewRead<?, R> backingImmutableView) {
+  public VectorViewWriteImpl(AbstractCompositeViewRead<ElementReadType> backingImmutableView) {
     super(backingImmutableView);
   }
 
   @Override
-  protected AbstractCompositeViewRead<?, R> createViewRead(
-      TreeNode backingNode, IntCache<R> viewCache) {
+  protected AbstractCompositeViewRead<ElementReadType> createViewRead(
+      TreeNode backingNode, IntCache<ElementReadType> viewCache) {
     return new VectorViewReadImpl<>(getType(), backingNode, viewCache);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public VectorViewType<R> getType() {
-    return (VectorViewType<R>) super.getType();
+  public VectorViewType<ElementReadType> getType() {
+    return (VectorViewType<ElementReadType>) super.getType();
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public VectorViewReadImpl<R> commitChanges() {
-    return (VectorViewReadImpl<R>) super.commitChanges();
+  public VectorViewReadImpl<ElementReadType> commitChanges() {
+    return (VectorViewReadImpl<ElementReadType>) super.commitChanges();
   }
 
   @Override
-  protected TreeNodes packChanges(List<Entry<Integer, R>> newChildValues, TreeNode original) {
-    VectorViewType<R> type = getType();
+  protected TreeUpdates packChanges(
+      List<Entry<Integer, ElementReadType>> newChildValues, TreeNode original) {
+    VectorViewType<ElementReadType> type = getType();
     ViewType elementType = type.getElementType();
     int elementsPerChunk = type.getElementsPerChunk();
 
@@ -67,20 +69,20 @@ public class VectorViewWriteImpl<R extends ViewRead, W extends R>
         .map(
             e -> {
               int nodeIndex = e.getKey();
-              List<Entry<Integer, R>> nodeVals = e.getValue();
+              List<Entry<Integer, ElementReadType>> nodeVals = e.getValue();
               long gIndex = type.getGeneralizedIndex(nodeIndex);
               // optimization: when all packed values changed no need to retrieve original node to
               // merge with
               TreeNode node =
                   nodeVals.size() == elementsPerChunk ? TreeUtil.ZERO_LEAF : original.get(gIndex);
-              for (Entry<Integer, R> entry : nodeVals) {
+              for (Entry<Integer, ElementReadType> entry : nodeVals) {
                 node =
                     elementType.updateBackingNode(
                         node, entry.getKey() % elementsPerChunk, entry.getValue());
               }
               return Pair.of(gIndex, node);
             })
-        .collect(TreeNodes.collector());
+        .collect(TreeUpdates.collector());
   }
 
   @Override
@@ -92,7 +94,7 @@ public class VectorViewWriteImpl<R extends ViewRead, W extends R>
   }
 
   @Override
-  public VectorViewWrite<R> createWritableCopy() {
+  public VectorViewWrite<ElementReadType> createWritableCopy() {
     throw new UnsupportedOperationException();
   }
 }

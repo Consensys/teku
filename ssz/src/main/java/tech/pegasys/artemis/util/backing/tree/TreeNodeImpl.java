@@ -33,7 +33,7 @@ abstract class TreeNodeImpl implements TreeNode {
     }
 
     @Override
-    public TreeNode updated(TreeNodes newNodes) {
+    public TreeNode updated(TreeUpdates newNodes) {
       if (newNodes.size() == 0) {
         return this;
       } else {
@@ -93,13 +93,13 @@ abstract class TreeNodeImpl implements TreeNode {
     }
 
     @Override
-    public TreeNode updated(TreeNodes newNodes) {
+    public TreeNode updated(TreeUpdates newNodes) {
       if (newNodes.size() == 0) {
         return this;
       } else if (newNodes.isFinal()) {
         return newNodes.getNode(0);
       } else {
-        Pair<TreeNodes, TreeNodes> children = newNodes.splitAtPivot();
+        Pair<TreeUpdates, TreeUpdates> children = newNodes.splitAtPivot();
         return new BranchNodeImpl(
             left().updated(children.getLeft()), right().updated(children.getRight()));
       }

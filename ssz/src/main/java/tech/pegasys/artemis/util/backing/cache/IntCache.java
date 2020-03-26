@@ -17,7 +17,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 
 /**
- * Cache
+ * Optimized int keys cache. Eliminate int boxing/unboxing
  *
  * @param <V> type of values
  */

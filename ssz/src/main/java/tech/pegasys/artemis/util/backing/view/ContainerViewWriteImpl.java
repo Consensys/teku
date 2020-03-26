@@ -13,23 +13,25 @@
 
 package tech.pegasys.artemis.util.backing.view;
 
+import java.util.List;
+import java.util.Map.Entry;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.tree.TreeUpdates;
 
-public class ContainerViewWriteImpl
-    extends AbstractCompositeViewWrite<ContainerViewWriteImpl, ViewRead, ViewWrite>
+public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<ViewRead, ViewWrite>
     implements ContainerViewWriteRef {
 
-  public ContainerViewWriteImpl(AbstractCompositeViewRead<?, ViewRead> backingImmutableView) {
+  public ContainerViewWriteImpl(AbstractCompositeViewRead<ViewRead> backingImmutableView) {
     super(backingImmutableView);
   }
 
   @Override
-  protected AbstractCompositeViewRead<?, ViewRead> createViewRead(
+  protected AbstractCompositeViewRead<ViewRead> createViewRead(
       TreeNode backingNode, IntCache<ViewRead> viewCache) {
     return new ContainerViewReadImpl(getType(), backingNode, viewCache);
   }
@@ -50,5 +52,11 @@ public class ContainerViewWriteImpl
       throw new IndexOutOfBoundsException(
           "Invalid index " + index + " for container with size " + size());
     }
+  }
+
+  @Override
+  protected TreeUpdates packChanges(
+      List<Entry<Integer, ViewRead>> newChildValues, TreeNode original) {
+    throw new UnsupportedOperationException("Packed values are not supported");
   }
 }

@@ -19,10 +19,17 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class TreeNodes {
+/**
+ * The collection of nodes and their target generalized indexes to be updated The class also
+ * contains the target generalized index this set of changes is applicable to.
+ *
+ * @see TreeNode#updated(TreeUpdates)
+ */
+public class TreeUpdates {
 
-  public static Collector<Pair<Long, TreeNode>, ?, TreeNodes> collector() {
-    return Collectors.collectingAndThen(Collectors.toList(), TreeNodes::new);
+  /** Convenient collector for the stream with <code>Pair<Long, TreeNode></code> elements */
+  public static Collector<Pair<Long, TreeNode>, ?, TreeUpdates> collector() {
+    return Collectors.collectingAndThen(Collectors.toList(), TreeUpdates::new);
   }
 
   private final List<Long> gIndexes;
@@ -31,24 +38,38 @@ public class TreeNodes {
   private final long prefix;
   private final int heightFromLeaf;
 
-  public TreeNodes(List<Pair<Long, TreeNode>> nodes) {
+  /**
+   * Creates a new instance of TreeNodes
+   *
+   * @param nodes the list of [[target generalized index], [new node value]] pairs <b>NOTE: the list
+   *     should be sorted by target index</b> The ordering is not checked for performance reasons
+   *     For unsorted list the behavior may be undefined but normally the {@link
+   *     TreeNode#updated(TreeUpdates)} call would fail in this case
+   */
+  public TreeUpdates(List<Pair<Long, TreeNode>> nodes) {
     this(
         nodes.stream().map(Pair::getLeft).collect(Collectors.toList()),
         nodes.stream().map(Pair::getRight).collect(Collectors.toList()));
   }
 
-  private TreeNodes(List<Long> gIndexes, List<TreeNode> nodes) {
+  private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes) {
     this(gIndexes, nodes, 1, depth(gIndexes));
   }
 
-  public TreeNodes(List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
+  private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
     this.gIndexes = gIndexes;
     this.nodes = nodes;
     this.prefix = prefix;
     this.heightFromLeaf = heightFromLeaf;
   }
 
-  public Pair<TreeNodes, TreeNodes> splitAtPivot() {
+  /**
+   * Split the nodes to left and right subtree subsets according the target generalized index
+   *
+   * @return the pair of node updates for left and right subtrees with accordingly adjusted target
+   *     generalized indexes
+   */
+  public Pair<TreeUpdates, TreeUpdates> splitAtPivot() {
     long lPrefix = prefix << 1;
     long rPrefix = lPrefix | 1;
     long pivotGIndex = rPrefix << (heightFromLeaf - 1);
@@ -56,9 +77,9 @@ public class TreeNodes {
     int idx = Collections.binarySearch(gIndexes, pivotGIndex);
     int insIdx = idx < 0 ? -idx - 1 : idx;
     return Pair.of(
-        new TreeNodes(
+        new TreeUpdates(
             gIndexes.subList(0, insIdx), nodes.subList(0, insIdx), lPrefix, heightFromLeaf - 1),
-        new TreeNodes(
+        new TreeUpdates(
             gIndexes.subList(insIdx, gIndexes.size()),
             nodes.subList(insIdx, nodes.size()),
             rPrefix,
@@ -70,23 +91,26 @@ public class TreeNodes {
     return Long.bitCount(Long.highestOneBit(gIndexes.get(0)) - 1);
   }
 
+  /** Number of updated nodes in this set */
   public int size() {
     return gIndexes.size();
   }
 
+  /** Gets generalized index for update at position [index] */
   public long getGIndex(int index) {
     return gIndexes.get(index);
   }
 
+  /** Gets new tree node for update at position [index] */
   public TreeNode getNode(int index) {
     return nodes.get(index);
   }
 
-  public void add(long gIndex, TreeNode node) {
-    gIndexes.add(gIndex);
-    nodes.add(node);
-  }
-
+  /**
+   * Checks if this instance is correct for the leaf node
+   *
+   * @throws IllegalArgumentException if not correct
+   */
   public void checkLeaf() {
     if (heightFromLeaf != 0) {
       throw new IllegalArgumentException(
@@ -102,6 +126,7 @@ public class TreeNodes {
     }
   }
 
+  /** Indicates that this update should be applied to the node target generalized index */
   public boolean isFinal() {
     return (gIndexes.size() == 1 && gIndexes.get(0) == prefix);
   }
