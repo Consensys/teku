@@ -61,7 +61,7 @@ public interface OptionNames {
   String LOG_FILE_NAME_PATTERN_OPTION_NAME = "--log-file-name-pattern";
 
   // Output
-  String TRANSITION_RECORD_DIRECTORY_OPTION_NAME = "--Xtransaction-record-directory";
+  String TRANSITION_RECORD_DIRECTORY_OPTION_NAME = "--Xtransition-record-directory";
 
   // Metrics
   String METRICS_ENABLED_OPTION_NAME = "--metrics-enabled";
