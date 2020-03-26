@@ -49,5 +49,4 @@ public interface DiskUpdateResult {
    *     storage. Otherwise, returns an empty collection.
    */
   Set<Checkpoint> getPrunedCheckpoints();
-
 }

@@ -72,7 +72,8 @@ public class ChainDataProviderTest {
   @BeforeAll
   public static void setup() {
     localEventBus = new EventBus();
-    chainStorageClient = ChainStorageClient.memoryOnlyClient(localEventBus, mock(DiskUpdateChannel.class));
+    chainStorageClient =
+        ChainStorageClient.memoryOnlyClient(localEventBus, mock(DiskUpdateChannel.class));
     beaconStateInternal = dataStructureUtil.randomBeaconState();
     beaconState = new BeaconState(beaconStateInternal);
     chainStorageClient.initializeFromGenesis(beaconStateInternal);

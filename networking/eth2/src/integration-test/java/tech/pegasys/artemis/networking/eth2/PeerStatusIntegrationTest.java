@@ -47,8 +47,9 @@ public class PeerStatusIntegrationTest {
   public void shouldExchangeStatusMessagesOnConnection() throws Exception {
     final EventBus eventBus2 = new EventBus();
     final EventChannels eventChannels =
-            EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(
+        EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
+    final ChainStorageClient storageClient2 =
+        ChainStorageClient.memoryOnlyClient(
             eventBus2, eventChannels.getPublisher(DiskUpdateChannel.class));
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network1 = networkFactory.builder().startNetwork();
@@ -77,8 +78,9 @@ public class PeerStatusIntegrationTest {
   public void shouldUpdatePeerStatus() throws Exception {
     final EventBus eventBus1 = new EventBus();
     final EventChannels eventChannels1 =
-            EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(
+        EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
+    final ChainStorageClient storageClient1 =
+        ChainStorageClient.memoryOnlyClient(
             eventBus1, eventChannels1.getPublisher(DiskUpdateChannel.class));
     final Eth2Network network1 =
         networkFactory
@@ -89,8 +91,9 @@ public class PeerStatusIntegrationTest {
 
     final EventBus eventBus2 = new EventBus();
     final EventChannels eventChannels2 =
-            EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(
+        EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
+    final ChainStorageClient storageClient2 =
+        ChainStorageClient.memoryOnlyClient(
             eventBus2, eventChannels2.getPublisher(DiskUpdateChannel.class));
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network2 =

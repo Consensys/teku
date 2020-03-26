@@ -59,7 +59,8 @@ public class GetStateTest {
   @BeforeAll
   public static void setup() {
     final EventBus localEventBus = new EventBus();
-    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus, mock(DiskUpdateChannel.class));
+    final ChainStorageClient storageClient =
+        ChainStorageClient.memoryOnlyClient(localEventBus, mock(DiskUpdateChannel.class));
     beaconStateInternal = dataStructureUtil.randomBeaconState();
     storageClient.initializeFromGenesis(beaconStateInternal);
     blockRoot = storageClient.getBestBlockRoot().orElseThrow();

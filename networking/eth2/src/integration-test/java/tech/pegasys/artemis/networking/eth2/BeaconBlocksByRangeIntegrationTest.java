@@ -51,8 +51,9 @@ public class BeaconBlocksByRangeIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
     when(diskUpdateChannel.onDiskUpdate(any()))
-            .thenReturn(SafeFuture.completedFuture(
-                    new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
     storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1, diskUpdateChannel);
     final Eth2Network network1 =
         networkFactory

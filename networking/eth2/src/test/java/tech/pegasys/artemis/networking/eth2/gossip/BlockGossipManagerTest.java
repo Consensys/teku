@@ -38,7 +38,8 @@ public class BlockGossipManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
-  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
+  private final ChainStorageClient storageClient =
+      ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 

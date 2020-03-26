@@ -25,7 +25,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -80,8 +79,9 @@ public class BlockImporterTest {
   @BeforeEach
   public void setup() {
     when(diskUpdateChannel.onDiskUpdate(any()))
-            .thenReturn(SafeFuture.completedFuture(
-                    new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
     otherChain.initializeStorage();
     localChain.initializeStorage();
   }

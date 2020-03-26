@@ -109,7 +109,7 @@ public class Store implements ReadOnlyStore {
   }
 
   Transaction startTransaction(
-          final DiskUpdateChannel diskUpdateChannel, final StoreUpdateHandler updateHandler) {
+      final DiskUpdateChannel diskUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new Transaction(diskUpdateChannel, updateHandler);
   }
 
@@ -273,9 +273,7 @@ public class Store implements ReadOnlyStore {
     private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
     private final StoreUpdateHandler updateHandler;
 
-    Transaction(
-        final DiskUpdateChannel diskUpdateChannel,
-        final StoreUpdateHandler updateHandler) {
+    Transaction(final DiskUpdateChannel diskUpdateChannel, final StoreUpdateHandler updateHandler) {
       this.diskUpdateChannel = diskUpdateChannel;
       this.updateHandler = updateHandler;
     }

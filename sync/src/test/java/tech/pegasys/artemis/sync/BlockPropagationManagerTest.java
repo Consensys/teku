@@ -79,8 +79,9 @@ public class BlockPropagationManagerTest {
   @BeforeEach
   public void setup() {
     when(diskUpdateChannel.onDiskUpdate(any()))
-            .thenReturn(SafeFuture.completedFuture(
-                    new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
     localChain.initializeStorage();
     remoteChain.initializeStorage();
     when(recentBlockFetcher.start()).thenReturn(SafeFuture.completedFuture(null));

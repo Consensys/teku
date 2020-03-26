@@ -67,7 +67,8 @@ public class GetCommitteesTest {
   @BeforeAll
   public static void setup() {
     final EventBus localEventBus = new EventBus();
-    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus, mock(DiskUpdateChannel.class));
+    final ChainStorageClient storageClient =
+        ChainStorageClient.memoryOnlyClient(localEventBus, mock(DiskUpdateChannel.class));
     beaconState = dataStructureUtil.randomBeaconState();
     storageClient.initializeFromGenesis(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);

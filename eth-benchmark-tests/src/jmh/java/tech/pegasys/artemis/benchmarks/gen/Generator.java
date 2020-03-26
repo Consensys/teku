@@ -65,7 +65,8 @@ public class Generator {
 
     EventBus localEventBus = mock(EventBus.class);
     DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
-    ChainStorageClient localStorage = ChainStorageClient.memoryOnlyClient(localEventBus, diskUpdateChannel);
+    ChainStorageClient localStorage =
+        ChainStorageClient.memoryOnlyClient(localEventBus, diskUpdateChannel);
     BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
     localChain.initializeStorage();
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);

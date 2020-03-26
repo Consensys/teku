@@ -70,7 +70,8 @@ public class SyncingNodeManager {
     final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(
+    final ChainStorageClient storageClient =
+        ChainStorageClient.memoryOnlyClient(
             eventBus, eventChannels.getPublisher(DiskUpdateChannel.class));
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);

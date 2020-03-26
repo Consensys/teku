@@ -158,7 +158,7 @@ public class Eth2NetworkFactory {
     private void setDefaults() {
       if (diskUpdateChannel == null) {
         final EventChannels eventChannels =
-                EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
+            EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
         diskUpdateChannel = eventChannels.getPublisher(DiskUpdateChannel.class);
       }
       if (eventBus == null) {

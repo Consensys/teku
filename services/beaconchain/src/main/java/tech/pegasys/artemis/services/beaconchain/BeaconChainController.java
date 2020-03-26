@@ -151,7 +151,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private SafeFuture<?> initialize() {
-    return ChainStorageClient.storageBackedClient(eventBus, eventChannels.getPublisher(DiskUpdateChannel.class))
+    return ChainStorageClient.storageBackedClient(
+            eventBus, eventChannels.getPublisher(DiskUpdateChannel.class))
         .thenAccept(
             client -> {
               // Setup chain storage
@@ -175,7 +176,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initEth1DataCache();
     initValidatorCoordinator();
     initPreGenesisDepositHandler();
-    initStateProcessor()
+    initStateProcessor();
     initAttestationPropagationManager();
     initP2PNetwork();
     initSyncManager();

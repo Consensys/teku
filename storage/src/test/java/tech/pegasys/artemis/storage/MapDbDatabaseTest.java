@@ -814,6 +814,6 @@ class MapDbDatabaseTest {
     }
 
     @Override
-    public void onDiskGenesisUpdate(DiskGenesisUpdate event){}
+    public void onDiskGenesisUpdate(DiskGenesisUpdate event) {}
   }
 }

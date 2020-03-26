@@ -27,11 +27,7 @@ import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
 import tech.pegasys.artemis.storage.events.diskupdates.DiskGenesisUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdateResult;
-import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 

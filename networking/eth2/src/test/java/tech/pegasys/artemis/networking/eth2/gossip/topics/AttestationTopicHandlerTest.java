@@ -38,7 +38,8 @@ public class AttestationTopicHandlerTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
   private final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
-  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
+  private final ChainStorageClient storageClient =
+      ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
   private final AttestationTopicHandler topicHandler =
       new AttestationTopicHandler(eventBus, storageClient, 1);
 
@@ -85,7 +86,8 @@ public class AttestationTopicHandlerTest {
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     // Set up state to be missing
-    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
+    final ChainStorageClient storageClient =
+        ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
     storageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(eventBus, storageClient, 1);

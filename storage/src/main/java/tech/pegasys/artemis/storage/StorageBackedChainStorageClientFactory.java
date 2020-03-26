@@ -34,11 +34,9 @@ class StorageBackedChainStorageClientFactory {
   private final SafeFuture<ChainStorageClient> initializationCompleted = new SafeFuture<>();
   private volatile OptionalLong getStoreRequestId = OptionalLong.empty();
 
-  public StorageBackedChainStorageClientFactory(final DiskUpdateChannel diskUpdateChannel,
-                                                final EventBus eventBus) {
-    this.client = new ChainStorageClient(
-            diskUpdateChannel,
-            eventBus);
+  public StorageBackedChainStorageClientFactory(
+      final DiskUpdateChannel diskUpdateChannel, final EventBus eventBus) {
+    this.client = new ChainStorageClient(diskUpdateChannel, eventBus);
     this.eventBus = eventBus;
     eventBus.register(client);
   }

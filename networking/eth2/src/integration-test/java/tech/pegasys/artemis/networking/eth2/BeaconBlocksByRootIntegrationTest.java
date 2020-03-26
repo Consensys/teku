@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
@@ -30,14 +29,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
@@ -45,7 +42,6 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
 import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -61,10 +57,10 @@ public class BeaconBlocksByRootIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
     when(diskUpdateChannel.onDiskUpdate(any()))
-            .thenReturn(SafeFuture.completedFuture(
-                    new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
-    storageClient1 = ChainStorageClient.memoryOnlyClient(
-            eventBus1, diskUpdateChannel);
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1, diskUpdateChannel);
     final Eth2Network network1 =
         networkFactory
             .builder()

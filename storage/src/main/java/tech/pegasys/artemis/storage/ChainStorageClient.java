@@ -60,16 +60,15 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   // Time
   private volatile UnsignedLong genesisTime;
 
-  public static ChainStorageClient memoryOnlyClient(final EventBus eventBus,
-                                                    final DiskUpdateChannel diskUpdateChannel) {
-    final ChainStorageClient client =
-        new ChainStorageClient(diskUpdateChannel, eventBus);
+  public static ChainStorageClient memoryOnlyClient(
+      final EventBus eventBus, final DiskUpdateChannel diskUpdateChannel) {
+    final ChainStorageClient client = new ChainStorageClient(diskUpdateChannel, eventBus);
     eventBus.register(client);
     return client;
   }
 
-  public static SafeFuture<ChainStorageClient> storageBackedClient(final EventBus eventBus,
-                                                                   final DiskUpdateChannel diskUpdateChannel) {
+  public static SafeFuture<ChainStorageClient> storageBackedClient(
+      final EventBus eventBus, final DiskUpdateChannel diskUpdateChannel) {
     final StorageBackedChainStorageClientFactory factory =
         new StorageBackedChainStorageClientFactory(diskUpdateChannel, eventBus);
     eventBus.register(factory);
@@ -77,19 +76,15 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   @VisibleForTesting
-  static ChainStorageClient memoryOnlyClientWithStore(final EventBus eventBus,
-                                                      final Store store,
-                                                      final DiskUpdateChannel diskUpdateChannel) {
-    final ChainStorageClient client =
-        new ChainStorageClient(diskUpdateChannel, eventBus);
+  static ChainStorageClient memoryOnlyClientWithStore(
+      final EventBus eventBus, final Store store, final DiskUpdateChannel diskUpdateChannel) {
+    final ChainStorageClient client = new ChainStorageClient(diskUpdateChannel, eventBus);
     eventBus.register(client);
     client.setStore(store);
     return client;
   }
 
-  ChainStorageClient(
-          final DiskUpdateChannel diskUpdateChannel,
-          final EventBus eventBus) {
+  ChainStorageClient(final DiskUpdateChannel diskUpdateChannel, final EventBus eventBus) {
     this.eventBus = eventBus;
     this.diskUpdateChannel = diskUpdateChannel;
   }

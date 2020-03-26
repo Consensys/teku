@@ -21,7 +21,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.Collections;
 import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
@@ -61,8 +60,9 @@ class StoreTest {
   public void shouldApplyChangesWhenTransactionCommits() {
     DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
     when(diskUpdateChannel.onDiskUpdate(any()))
-            .thenReturn(SafeFuture.completedFuture(
-                    new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
     final Transaction transaction = store.startTransaction(diskUpdateChannel);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);

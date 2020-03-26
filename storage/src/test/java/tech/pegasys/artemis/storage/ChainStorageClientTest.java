@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -69,8 +68,9 @@ class ChainStorageClientTest {
   @BeforeEach
   void setUp() {
     when(diskUpdateChannel.onDiskUpdate(any()))
-            .thenReturn(SafeFuture.completedFuture(
-                    new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
   }
 
   @Test
@@ -79,7 +79,8 @@ class ChainStorageClientTest {
     final EventBus eventBus = new EventBus();
     final List<GetStoreRequest> getStoreRequests =
         EventSink.capture(eventBus, GetStoreRequest.class);
-    final SafeFuture<ChainStorageClient> client = ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
+    final SafeFuture<ChainStorageClient> client =
+        ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
 
     // We should have posted a request to get the store from storage
     assertThat(getStoreRequests.size()).isEqualTo(1);
@@ -114,7 +115,8 @@ class ChainStorageClientTest {
     final EventBus eventBus = new EventBus();
     final List<GetStoreRequest> getStoreRequests =
         EventSink.capture(eventBus, GetStoreRequest.class);
-    final SafeFuture<ChainStorageClient> client = ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
+    final SafeFuture<ChainStorageClient> client =
+        ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
 
     // We should have posted a request to get the store from storage
     assertThat(getStoreRequests.size()).isEqualTo(1);
@@ -141,7 +143,8 @@ class ChainStorageClientTest {
     final EventBus eventBus = new EventBus();
     final List<GetStoreRequest> getStoreRequests =
         EventSink.capture(eventBus, GetStoreRequest.class);
-    final SafeFuture<ChainStorageClient> client = ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
+    final SafeFuture<ChainStorageClient> client =
+        ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
 
     // We should have posted a request to get the store from storage
     assertThat(getStoreRequests.size()).isEqualTo(1);
@@ -171,7 +174,8 @@ class ChainStorageClientTest {
     final EventBus eventBus = new EventBus();
     final List<GetStoreRequest> getStoreRequests =
         EventSink.capture(eventBus, GetStoreRequest.class);
-    final SafeFuture<ChainStorageClient> client = ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
+    final SafeFuture<ChainStorageClient> client =
+        ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
 
     // We should have posted a request to get the store from storage
     assertThat(getStoreRequests.size()).isEqualTo(1);
