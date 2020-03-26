@@ -150,7 +150,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return ChainStorageClient.storageBackedClient(eventBus)
         .thenAccept(
             client -> {
-              eventChannels.subscribe(TimeTickChannel.class, this);
               // Setup chain storage
               this.chainStorageClient = client;
               if (setupInitialState && chainStorageClient.getStore() == null) {
@@ -159,6 +158,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               chainStorageClient.subscribeStoreInitialized(this::onStoreInitialized);
               // Init other services
               this.initAll();
+              eventChannels.subscribe(TimeTickChannel.class, this);
             });
   }
 
@@ -359,8 +359,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     nodeSlot = currentSlot;
   }
 
+  private volatile Date lastDate = new Date(0);
+
   @Override
   public void onTick(Date date) {
+    if (date.before(lastDate)) {
+      LOG.fatal("TIME MOVED BACKWARDS!!!! {} to {}", lastDate, date);
+    } else {
+      lastDate = date;
+    }
     if (chainStorageClient.isPreGenesis() || syncService.getSyncStatus().isSyncing()) {
       return;
     }
