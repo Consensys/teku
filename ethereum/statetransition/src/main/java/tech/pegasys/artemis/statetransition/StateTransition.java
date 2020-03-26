@@ -88,9 +88,9 @@ public class StateTransition {
 
       // Verify signature
       if (validateStateRootAndSignatures) {
-        //        checkArgument(
-        //            verify_block_signature(state, signed_block), "state_transition: Verify
-        // signature");
+        checkArgument(
+            verify_block_signature(postSlotState, signed_block),
+            "state_transition: Verify signature");
       }
       // Process_block
       BeaconState postState = process_block(postSlotState, block, validateStateRootAndSignatures);
