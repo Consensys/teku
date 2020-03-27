@@ -76,14 +76,16 @@ public class ChainDataProvider {
     return new Fork(bestBlockRootState.getFork());
   }
 
-  public SafeFuture<List<Committee>> getCommitteesAtEpoch(UnsignedLong epoch) {
-    if (!isStoreAvailable()) {
+  public SafeFuture<Optional<List<Committee>>> getCommitteesAtEpoch(UnsignedLong epoch) {
+    if (!isStoreAvailable() || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return combinedChainDataClient
         .getCommitteeAssignmentAtEpoch(epoch)
-        .thenApply(result -> result.stream().map(Committee::new).collect(Collectors.toList()))
-        .exceptionally(err -> List.of());
+        .thenApply(
+            maybeResult ->
+                maybeResult.map(
+                    result -> result.stream().map(Committee::new).collect(Collectors.toList())));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(UnsignedLong slot) {
@@ -118,48 +120,64 @@ public class ChainDataProvider {
     }
     return combinedChainDataClient
         .getStateByBlockRoot(blockRoot)
-        .thenApply(state -> state.map(BeaconState::new))
-        .exceptionally(err -> Optional.empty());
+        .thenApply(state -> state.map(BeaconState::new));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(UnsignedLong slot) {
-    if (!isStoreAvailable()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
-    }
-    return combinedChainDataClient
-        .getStateAtSlot(slot)
-        .thenApply(state -> state.map(BeaconState::new))
-        .exceptionally(err -> Optional.empty());
+    return SafeFuture.of(
+        () -> {
+          if (!isStoreAvailable()) {
+            return SafeFuture.failedFuture(new ChainDataUnavailableException());
+          }
+          final Bytes32 bestRoot =
+              combinedChainDataClient
+                  .getBestBlockRoot()
+                  .orElseThrow(ChainDataUnavailableException::new);
+          return combinedChainDataClient
+              .getStateAtSlot(slot, bestRoot)
+              .thenApply(state -> state.map(BeaconState::new));
+        });
   }
 
   public SafeFuture<Optional<Bytes32>> getHashTreeRootAtSlot(UnsignedLong slot) {
-    if (!isStoreAvailable()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
-    }
-    return combinedChainDataClient
-        .getStateAtSlot(slot)
-        .thenApply(state -> Optional.of(state.get().hash_tree_root()))
-        .exceptionally(err -> Optional.empty());
+    return SafeFuture.of(
+        () -> {
+          if (!isStoreAvailable()) {
+            return SafeFuture.failedFuture(new ChainDataUnavailableException());
+          }
+          final Bytes32 headRoot =
+              combinedChainDataClient
+                  .getBestBlockRoot()
+                  .orElseThrow(ChainDataUnavailableException::new);
+          return combinedChainDataClient
+              .getBlockAtSlotExact(slot, headRoot)
+              .thenApply(block -> block.map(b -> b.getMessage().getState_root()));
+        });
   }
 
   public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(
       final ValidatorsRequest request) {
-    UnsignedLong slot =
-        request.epoch == null
-            ? combinedChainDataClient.getBestSlot()
-            : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
+    if (request.pubkeys.isEmpty()) {
+      // Short-circuit if we're not requesting anything
+      return SafeFuture.completedFuture(Optional.of(BeaconValidators.emptySet()));
+    }
 
-    return combinedChainDataClient
-        .getStateAtSlot(slot)
-        .thenApply(
-            optionalBeaconState -> {
-              if (optionalBeaconState.isEmpty()) {
-                return Optional.empty();
-              }
-              return Optional.of(
-                  new BeaconValidators(
-                      new BeaconState(optionalBeaconState.get()), request.pubkeys));
-            });
+    return SafeFuture.of(
+        () -> {
+          final Bytes32 bestBlockRoot =
+              chainStorageClient.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
+          UnsignedLong slot =
+              request.epoch == null
+                  ? combinedChainDataClient.getBestSlot()
+                  : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
+
+          return combinedChainDataClient
+              .getStateAtSlot(slot, bestBlockRoot)
+              .thenApply(
+                  optionalState ->
+                      optionalState.map(
+                          state -> new BeaconValidators(new BeaconState(state), request.pubkeys)));
+        });
   }
 
   public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
@@ -168,6 +186,10 @@ public class ChainDataProvider {
 
   public boolean isFinalized(final UnsignedLong slot) {
     return combinedChainDataClient.isFinalized(slot);
+  }
+
+  public boolean isFinalizedEpoch(final UnsignedLong epoch) {
+    return combinedChainDataClient.isFinalizedEpoch(epoch);
   }
 
   public Optional<BeaconChainHead> getHeadState() {
