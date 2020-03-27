@@ -289,8 +289,9 @@ public class ForkChoiceUtil {
       return maybeFailure.get();
     }
 
+    Bytes32 blockRoot = block.hash_tree_root();
     // Add new block to the store
-    store.putBlock(block.hash_tree_root(), signed_block);
+    store.putBlock(blockRoot, signed_block);
 
     // Make a copy of the state to avoid mutability issues
     BeaconState state;
@@ -303,7 +304,7 @@ public class ForkChoiceUtil {
     }
 
     // Add new state for this block to the store
-    store.putBlockState(block.hash_tree_root(), state);
+    store.putBlockState(blockRoot, state);
 
     // Update justified checkpoint
     final Checkpoint justifiedCheckpoint = state.getCurrent_justified_checkpoint();
