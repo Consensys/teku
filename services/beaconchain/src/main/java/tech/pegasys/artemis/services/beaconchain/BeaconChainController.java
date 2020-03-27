@@ -62,6 +62,7 @@ import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.BlockPropagationManager;
 import tech.pegasys.artemis.sync.DefaultSyncService;
@@ -150,7 +151,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private SafeFuture<?> initialize() {
-    return ChainStorageClient.storageBackedClient(eventBus)
+    return ChainStorageClient.storageBackedClient(
+            eventBus, eventChannels.getPublisher(StorageUpdateChannel.class))
         .thenAccept(
             client -> {
               // Setup chain storage
@@ -243,7 +245,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             depositProvider,
             eth1DataCache);
     eventChannels.subscribe(
-        ValidatorApiChannel.class, new ValidatorApiHandler(combinedChainDataClient, blockFactory));
+        ValidatorApiChannel.class,
+        new ValidatorApiHandler(
+            combinedChainDataClient, blockFactory, attestationAggregator, eventBus));
   }
 
   public void initStateProcessor() {
@@ -333,8 +337,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             combinedChainDataClient,
             p2pNetwork,
             syncService,
-            eventChannels.getPublisher(ValidatorApiChannel.class),
-            validatorCoordinator);
+            eventChannels.getPublisher(ValidatorApiChannel.class));
     beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 

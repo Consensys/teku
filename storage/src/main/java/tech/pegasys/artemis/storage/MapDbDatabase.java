@@ -38,7 +38,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
 import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
@@ -170,14 +171,14 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public DatabaseUpdateResult update(final StoreDiskUpdateEvent event) {
+  public StorageUpdateResult update(final StorageUpdate event) {
     if (event.isEmpty()) {
-      return DatabaseUpdateResult.successfulWithNothingPruned();
+      return StorageUpdateResult.successfulWithNothingPruned();
     }
     return doUpdate(event);
   }
 
-  private synchronized DatabaseUpdateResult doUpdate(final StoreDiskUpdateEvent event) {
+  private synchronized StorageUpdateResult doUpdate(final StorageUpdate event) {
     try {
       final Checkpoint previousFinalizedCheckpoint = finalizedCheckpoint.get();
       final Checkpoint newFinalizedCheckpoint =
@@ -192,21 +193,21 @@ public class MapDbDatabase implements Database {
       event.getBlocks().forEach(this::addHotBlock);
       hotStatesByRoot.putAll(event.getBlockStates());
 
-      final DatabaseUpdateResult result;
+      final StorageUpdateResult result;
       if (previousFinalizedCheckpoint == null
           || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
         recordFinalizedBlocks(newFinalizedCheckpoint);
         final Set<Checkpoint> prunedCheckpoints = pruneCheckpointStates(newFinalizedCheckpoint);
         final Set<Bytes32> prunedBlockRoots = pruneHotBlocks(newFinalizedCheckpoint);
-        result = DatabaseUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
+        result = StorageUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
       } else {
-        result = DatabaseUpdateResult.successfulWithNothingPruned();
+        result = StorageUpdateResult.successfulWithNothingPruned();
       }
       db.commit();
       return result;
     } catch (final RuntimeException | Error e) {
       db.rollback();
-      return DatabaseUpdateResult.failed(new RuntimeException(e));
+      return StorageUpdateResult.failed(new RuntimeException(e));
     }
   }
 

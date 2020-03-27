@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +33,8 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.ImportedBlocks;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -50,10 +53,11 @@ public class BlockPropagationManagerTest {
       new FutureItems<>(SignedBeaconBlock::getSlot);
   private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
 
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final ChainStorageClient localStorage =
-      ChainStorageClient.memoryOnlyClient(localEventBus);
+      ChainStorageClient.memoryOnlyClient(localEventBus, storageUpdateChannel);
   private final ChainStorageClient remoteStorage =
-      ChainStorageClient.memoryOnlyClient(remoteEventBus);
+      ChainStorageClient.memoryOnlyClient(remoteEventBus, storageUpdateChannel);
   private final BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys);
   private final BeaconChainUtil remoteChain = BeaconChainUtil.create(remoteStorage, validatorKeys);
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
@@ -73,6 +77,8 @@ public class BlockPropagationManagerTest {
 
   @BeforeEach
   public void setup() {
+    when(storageUpdateChannel.onStorageUpdate(any()))
+        .thenReturn(SafeFuture.completedFuture(StorageUpdateResult.successfulWithNothingPruned()));
     localChain.initializeStorage();
     remoteChain.initializeStorage();
     when(recentBlockFetcher.start()).thenReturn(SafeFuture.completedFuture(null));

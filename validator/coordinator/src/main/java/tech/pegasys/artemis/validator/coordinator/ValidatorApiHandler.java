@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beaco
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,13 +33,17 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -54,15 +59,28 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
   private final BlockFactory blockFactory;
+  private final AttestationAggregator attestationAggregator;
+  private final EventBus eventBus;
 
   public ValidatorApiHandler(
-      final CombinedChainDataClient combinedChainDataClient, final BlockFactory blockFactory) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final BlockFactory blockFactory,
+      final AttestationAggregator attestationAggregator,
+      final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.blockFactory = blockFactory;
+    this.attestationAggregator = attestationAggregator;
+    this.eventBus = eventBus;
   }
 
   @Override
-  public SafeFuture<List<ValidatorDuties>> getDuties(
+  public SafeFuture<Optional<Fork>> getFork() {
+    return SafeFuture.completedFuture(
+        combinedChainDataClient.getHeadStateFromStore().map(BeaconState::getFork));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
     final UnsignedLong slot =
         compute_start_slot_at_epoch(
@@ -72,15 +90,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .getStateAtSlot(slot)
         .thenApply(
             optionalState ->
-                optionalState
-                    .map(state -> getValidatorDutiesFromState(state, epoch, publicKeys))
-                    .orElseGet(
-                        () -> {
-                          LOG.warn(
-                              "Unable to calculate validator duties for epoch {} because state was unavailable",
-                              epoch);
-                          return emptyList();
-                        }));
+                optionalState.map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
   }
 
   @Override
@@ -143,6 +153,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
           return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
         });
+  }
+
+  @Override
+  public void sendSignedAttestation(final Attestation attestation) {
+    attestationAggregator.addOwnValidatorAttestation(attestation);
+    eventBus.post(attestation);
+  }
+
+  @Override
+  public void sendSignedBlock(final SignedBeaconBlock block) {
+    eventBus.post(new ProposedBlockEvent(block));
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

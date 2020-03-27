@@ -77,7 +77,7 @@ public class CommonParams implements Closeable {
   private UnsignedLong amount;
 
   @Option(
-      names = {"--X-confirm-enabled"},
+      names = {"--Xconfirm-enabled"},
       arity = "1",
       defaultValue = "true",
       hidden = true)
