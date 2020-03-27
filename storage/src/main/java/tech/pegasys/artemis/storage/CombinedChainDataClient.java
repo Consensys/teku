@@ -104,7 +104,7 @@ public class CombinedChainDataClient {
       LOG.trace("Block root at slot {} is the specified head block root", slot);
       return getBlockByBlockRoot(headBlockRoot);
     }
-    if (isFinalized(slot)) {
+    if (isHistoricalData(slot)) {
       LOG.trace("Block at slot {} is in a finalized epoch. Retrieving from historical data", slot);
       return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
     }
@@ -146,6 +146,11 @@ public class CombinedChainDataClient {
     return getBlockByBlockRoot(get_block_root_at_slot(state, slot));
   }
 
+  private boolean isHistoricalData(final UnsignedLong slot) {
+    final boolean finalizedPastFirstEpoch = !recentChainData.getFinalizedEpoch().equals(ZERO);
+    return finalizedPastFirstEpoch && isFinalized(slot);
+  }
+
   public boolean isFinalized(final UnsignedLong slot) {
     final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
@@ -182,7 +187,7 @@ public class CombinedChainDataClient {
       return STATE_NOT_AVAILABLE;
     }
 
-    if (isFinalized(slot)) {
+    if (isHistoricalData(slot)) {
       return historicalChainData.getFinalizedStateAtSlot(slot);
     }
 
