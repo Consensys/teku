@@ -41,7 +41,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 public class ExternalMessageSignerServiceIntegrationTest {
   private static final String PRIVATE_KEY =
       "0x25295f0d1d592a90b333e26e85149708208e9f8e8bc18f6c77bd62f8ad7a6866";
-  private static final int KEY_LENGTH = 48;
   private static final String UNKNOWN_PUBLIC_KEY =
       "0x989d34725a2bfc3f15105f3f5fc8741f436c25ee1ee4f948e425d6bcb8c56bce6e06c269635b7e985a7ffa639e2409bf";
   private static final Duration TIMEOUT = Duration.ofMillis(500);
