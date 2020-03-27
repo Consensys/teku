@@ -37,6 +37,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
@@ -61,6 +62,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final CombinedChainDataClient combinedChainDataClient, final BlockFactory blockFactory) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.blockFactory = blockFactory;
+  }
+
+  @Override
+  public SafeFuture<Optional<Fork>> getFork() {
+    return SafeFuture.completedFuture(
+        combinedChainDataClient.getHeadStateFromStore().map(BeaconState::getFork));
   }
 
   @Override

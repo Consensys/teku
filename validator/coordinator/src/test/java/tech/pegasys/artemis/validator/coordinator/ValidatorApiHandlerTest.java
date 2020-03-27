@@ -191,6 +191,21 @@ class ValidatorApiHandlerTest {
         .isEqualTo(BLSSignature.empty().toBytes());
   }
 
+  @Test
+  public void getFork_shouldReturnEmptyWhenHeadStateNotAvailable() {
+    when(chainDataClient.getHeadStateFromStore()).thenReturn(Optional.empty());
+
+    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void getFork_shouldReturnForkFromHeadState() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    when(chainDataClient.getHeadStateFromStore()).thenReturn(Optional.of(state));
+
+    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.of(state.getFork()));
+  }
+
   private List<ValidatorDuties> assertCompletedSuccessfully(
       final SafeFuture<List<ValidatorDuties>> result) {
     assertThat(result).isCompleted();
