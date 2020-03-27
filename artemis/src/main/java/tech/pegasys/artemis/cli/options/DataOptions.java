@@ -34,7 +34,7 @@ public class DataOptions {
       names = {DATA_STORAGE_MODE_OPTION_NAME},
       paramLabel = "<STORAGE_MODE>",
       description =
-          "Sets the strategy for handling historical chain state.  Supported values include: 'prune', and 'archive'",
+          "Sets the strategy for handling historical chain data.  Supported values include: 'prune', and 'archive'",
       arity = "1")
   private String dataStorageMode = DEFAULT_DATA_STORAGE_MODE;
 
