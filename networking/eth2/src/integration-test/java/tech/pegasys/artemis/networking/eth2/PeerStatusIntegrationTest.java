@@ -14,15 +14,13 @@
 package tech.pegasys.artemis.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
+import static org.mockito.Mockito.mock;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -46,11 +44,8 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldExchangeStatusMessagesOnConnection() throws Exception {
     final EventBus eventBus2 = new EventBus();
-    final EventChannels eventChannels =
-        EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final ChainStorageClient storageClient2 =
-        ChainStorageClient.memoryOnlyClient(
-            eventBus2, eventChannels.getPublisher(DiskUpdateChannel.class));
+        ChainStorageClient.memoryOnlyClient(eventBus2, mock(DiskUpdateChannel.class));
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network1 = networkFactory.builder().startNetwork();
     final Eth2Network network2 =
@@ -77,11 +72,8 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldUpdatePeerStatus() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    final EventChannels eventChannels1 =
-        EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final ChainStorageClient storageClient1 =
-        ChainStorageClient.memoryOnlyClient(
-            eventBus1, eventChannels1.getPublisher(DiskUpdateChannel.class));
+        ChainStorageClient.memoryOnlyClient(eventBus1, mock(DiskUpdateChannel.class));
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -90,11 +82,8 @@ public class PeerStatusIntegrationTest {
             .startNetwork();
 
     final EventBus eventBus2 = new EventBus();
-    final EventChannels eventChannels2 =
-        EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final ChainStorageClient storageClient2 =
-        ChainStorageClient.memoryOnlyClient(
-            eventBus2, eventChannels2.getPublisher(DiskUpdateChannel.class));
+        ChainStorageClient.memoryOnlyClient(eventBus2, mock(DiskUpdateChannel.class));
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network2 =
         networkFactory

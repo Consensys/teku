@@ -35,7 +35,7 @@ eth1-endpoint = "http://localhost:8545"
 # logging
 #log-colour-enabled = false
 #log-include-events-enabled = false
-#log-destination =  'fileOnly' or 'consoleOly'
+#log-destination =  'fileOnly' or 'consoleOnly'
 #log-file = 'teku.log'
 #log-file-name-pattern = 'tekuL_%d{yyyy-MM-dd}.log'
 
