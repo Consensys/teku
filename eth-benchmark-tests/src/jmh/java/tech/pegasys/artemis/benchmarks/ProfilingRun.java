@@ -63,7 +63,7 @@ public class ProfilingRun {
     //    List<BLSKeyPair> validatorKeys =
     // BlsKeyPairIO.createReaderWithDefaultSource().readAll(validatorsCount);
     List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")
+        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz")
             .readAll(validatorsCount);
 
     BeaconState initialState =

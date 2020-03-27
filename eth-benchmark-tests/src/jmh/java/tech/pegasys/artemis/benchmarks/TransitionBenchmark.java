@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -45,7 +44,6 @@ import tech.pegasys.artemis.util.config.Constants;
 /** JMH base class for measuring state transitions performance */
 @BenchmarkMode(Mode.SingleShotTime)
 @State(Scope.Thread)
-@Fork(0)
 @Threads(1)
 public abstract class TransitionBenchmark {
 
@@ -56,10 +54,7 @@ public abstract class TransitionBenchmark {
   BlockImportResult lastResult;
   SignedBeaconBlock prefetchedBlock;
 
-  @Param({
-    /*"16384", */
-    "32768"
-  })
+  @Param({"16384", "32768"})
   int validatorsCount;
 
   @Setup(Level.Trial)
@@ -73,7 +68,7 @@ public abstract class TransitionBenchmark {
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
-    String keysFile = "/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz";
+    String keysFile = "/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz";
 
     System.out.println("Generating keypairs from " + keysFile);
     List<BLSKeyPair> validatorKeys =
