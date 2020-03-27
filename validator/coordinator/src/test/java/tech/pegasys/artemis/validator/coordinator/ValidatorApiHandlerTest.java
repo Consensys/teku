@@ -125,7 +125,9 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldUseGenesisStateForFirstEpoch() {
     when(chainDataClient.getStateAtSlot(any())).thenReturn(new SafeFuture<>());
-    validatorApiHandler.getDuties(UnsignedLong.ZERO, List.of(dataStructureUtil.randomPublicKey()));
+    validatorApiHandler
+        .getDuties(UnsignedLong.ZERO, List.of(dataStructureUtil.randomPublicKey()))
+        .join();
 
     verify(chainDataClient).getStateAtSlot(UnsignedLong.ZERO);
   }
