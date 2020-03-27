@@ -49,7 +49,6 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.service.serviceutils.Service;
@@ -263,9 +262,8 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       final BeaconState state,
       final Attestation unsignedAttestation,
       final AttesterInformation attester) {
-    final Bitlist aggregationBitlist =
-        AttestationUtil.getAggregationBits(
-            attester.getCommittee().getCommitteeSize(), attester.getIndexIntoCommittee());
+    final Bitlist aggregationBitlist = new Bitlist(unsignedAttestation.getAggregation_bits());
+    aggregationBitlist.setBit(attester.getIndexIntoCommittee());
     final AttestationData attestationData =
         unsignedAttestation.getData().withIndex(attester.getCommittee().getIndex());
     return signAttestation(state, attester.getPublicKey(), attestationData)
