@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.cli.subcommand;
 
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.UnsignedLong;
@@ -127,11 +129,10 @@ public class TransitionCommand implements Runnable {
       } catch (final StateTransitionException
           | EpochProcessingException
           | SlotProcessingException e) {
-        System.err.println("State transition failed");
-        e.printStackTrace();
+        SUB_COMMAND_LOG.error("State transition failed", e);
       }
     } catch (final IOException e) {
-      System.err.println("I/O error: " + e.toString());
+      SUB_COMMAND_LOG.error("I/O error: " + e.toString());
     }
   }
 

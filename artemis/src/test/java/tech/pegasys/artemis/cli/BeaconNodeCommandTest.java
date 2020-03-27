@@ -15,7 +15,6 @@ package tech.pegasys.artemis.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_DATA_PATH;
 import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
 import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_ETH1_ENDPOINT;
 import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_METRICS_CATEGORIES;
@@ -35,6 +34,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ public class BeaconNodeCommandTest {
 
   @BeforeEach
   void setUp() {
-    beaconNodeCommand = new BeaconNodeCommand();
+    beaconNodeCommand = new BeaconNodeCommand(Collections.emptyMap());
   }
 
   @AfterEach
@@ -60,27 +60,43 @@ public class BeaconNodeCommandTest {
   @Test
   public void loadDefaultsWhenNoArgsArePassed() {
     // p2p-enabled default is "true" which require p2p-private-key-file to be non-null
-    final String[] args = {"--p2p-enabled", "false"};
+    final String[] args = {"--data-path", dataPath.toString(), "--p2p-enabled", "false"};
+
+    beaconNodeCommand.parse(args);
+
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
+
+    assertArtemisConfiguration(artemisConfiguration, expectedDefaultConfigurationBuilder().build());
+  }
+
+  @Test
+  public void overrideEnvironmentValuesIfKeyIsPresentInCLIOptions() {
+    final String[] args = createCliArgs();
+    args[5] = "1.2.3.5";
+    beaconNodeCommand =
+        new BeaconNodeCommand(Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"));
 
     beaconNodeCommand.parse(args);
 
     final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
-        artemisConfiguration,
-        expectedConfigurationBuilder(DEFAULT_DATA_PATH)
-            .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
-            .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
-            .setMetricsCategories(DEFAULT_METRICS_CATEGORIES)
-            .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
-            .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
-            .setP2pInterface(DEFAULT_P2P_INTERFACE)
-            .setP2pPort(DEFAULT_P2P_PORT)
-            .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
-            .setInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
-            .setInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
-            .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT)
-            .build());
+        artemisConfiguration, expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+  }
+
+  @Test
+  public void overrideConfigFileValuesIfKeyIsPresentInEnvironmentVariables() throws IOException {
+    final Path toml = createConfigFile();
+    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString()};
+    beaconNodeCommand =
+        new BeaconNodeCommand(Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"));
+
+    beaconNodeCommand.parse(args);
+
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
+
+    assertArtemisConfiguration(
+        artemisConfiguration, expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
   }
 
   @Test
@@ -93,13 +109,55 @@ public class BeaconNodeCommandTest {
     final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
-        artemisConfiguration,
-        expectedConfigurationBuilder(dataPath).setP2pInterface("1.2.3.5").build());
+        artemisConfiguration, expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+  }
+
+  @Test
+  public void overrideDefaultValuesIfKeyIsPresentInEnvironmentVariables() {
+    beaconNodeCommand =
+        new BeaconNodeCommand(
+            Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"));
+
+    beaconNodeCommand.parse(new String[] {});
+
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
+
+    assertArtemisConfiguration(artemisConfiguration, expectedDefaultConfigurationBuilder().build());
   }
 
   @Test
   public void overrideDefaultValuesIfKeyIsPresentInCLIOptions() {
-    final String[] args = {
+    final String[] args = createCliArgs();
+
+    beaconNodeCommand.parse(args);
+
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
+
+    assertArtemisConfiguration(artemisConfiguration, expectedConfigurationBuilder().build());
+  }
+
+  @Test
+  public void overrideDefaultValuesIfKeyIsPresentInConfigFile() throws IOException {
+    final Path toml = createConfigFile();
+    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString()};
+
+    beaconNodeCommand.parse(args);
+
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
+
+    assertArtemisConfiguration(artemisConfiguration, expectedConfigurationBuilder().build());
+  }
+
+  private Path createConfigFile() throws IOException {
+    final URL configFile = this.getClass().getResource("/complete_config.toml");
+    final String updatedConfig =
+        Resources.toString(configFile, UTF_8)
+            .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
+    return createTempFile("toml", updatedConfig.getBytes(UTF_8));
+  }
+
+  private String[] createCliArgs() {
+    return new String[] {
       "--network", "minimal",
       "--p2p-enabled", "false",
       "--p2p-interface", "1.2.3.4",
@@ -107,12 +165,12 @@ public class BeaconNodeCommandTest {
       "--p2p-discovery-enabled", "false",
       "--p2p-advertised-port", "9000",
       "--p2p-private-key-file", "path/to/file",
-      "--x-interop-genesis-time", "1",
-      "--x-interop-owned-validator-start-index", "0",
-      "--x-interop-owned-validator-count", "64",
-      "--x-interop-start-state", "",
-      "--x-interop-number-of-validators", "64",
-      "--x-interop-enabled", "true",
+      "--Xinterop-genesis-time", "1",
+      "--Xinterop-owned-validator-start-index", "0",
+      "--Xinterop-owned-validator-count", "64",
+      "--Xinterop-start-state", "",
+      "--Xinterop-number-of-validators", "64",
+      "--Xinterop-enabled", "true",
       "--eth1-deposit-contract-address", "0x77f7bED277449F51505a4C54550B074030d989bC",
       "--eth1-endpoint", "http://localhost:8545",
       "--metrics-enabled", "false",
@@ -126,41 +184,24 @@ public class BeaconNodeCommandTest {
       "--rest-api-enabled", "false",
       "--rest-api-interface", "127.0.0.1"
     };
-
-    beaconNodeCommand.parse(args);
-
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
-    assertArtemisConfiguration(
-        artemisConfiguration, expectedConfigurationBuilder(dataPath).build());
   }
 
-  @Test
-  public void overrideDefaultValuesIfKeyIsPresentInConfigFile() throws IOException {
-    final Path toml = createConfigFile();
-    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString()};
-
-    beaconNodeCommand.parse(args);
-
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
-    assertArtemisConfiguration(
-        artemisConfiguration, expectedConfigurationBuilder(dataPath).build());
+  private ArtemisConfigurationBuilder expectedDefaultConfigurationBuilder() {
+    return expectedConfigurationBuilder()
+        .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
+        .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
+        .setMetricsCategories(DEFAULT_METRICS_CATEGORIES)
+        .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
+        .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
+        .setP2pInterface(DEFAULT_P2P_INTERFACE)
+        .setP2pPort(DEFAULT_P2P_PORT)
+        .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
+        .setInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
+        .setInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
+        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT);
   }
 
-  private Path createConfigFile() throws IOException {
-    final URL configFile = this.getClass().getResource("/complete_config.toml");
-    final String updatedConfig =
-        Resources.toString(configFile, UTF_8)
-            .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
-    return createTempFile("toml", updatedConfig.getBytes(UTF_8));
-  }
-
-  private ArtemisConfigurationBuilder expectedConfigurationBuilder(final Path dataPath) {
-    return expectedConfigurationBuilder(dataPath.toString());
-  }
-
-  private ArtemisConfigurationBuilder expectedConfigurationBuilder(final String dataPath) {
+  private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
     return ArtemisConfiguration.builder()
         .setNetwork("minimal")
         .setP2pEnabled(false)
@@ -194,7 +235,7 @@ public class BeaconNodeCommandTest {
         .setValidatorKeystoreFiles(Collections.emptyList())
         .setValidatorKeystorePasswordFiles(Collections.emptyList())
         .setValidatorExternalSignerTimeout(1000)
-        .setDataPath(dataPath)
+        .setDataPath(dataPath.toString())
         .setDataStorageMode("prune")
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)

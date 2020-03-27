@@ -16,6 +16,7 @@ package tech.pegasys.artemis.cli;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
@@ -28,6 +29,7 @@ import tech.pegasys.artemis.cli.subcommand.GenesisCommand;
 import tech.pegasys.artemis.cli.subcommand.PeerCommand;
 import tech.pegasys.artemis.cli.subcommand.TransitionCommand;
 import tech.pegasys.artemis.cli.util.CascadingDefaultProvider;
+import tech.pegasys.artemis.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.artemis.cli.util.TomlConfigFileDefaultProvider;
 import tech.pegasys.artemis.storage.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
@@ -163,7 +165,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_GENESIS_TIME_OPTION_NAME},
+      names = {INTEROP_GENESIS_TIME_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Time of mocked genesis",
       arity = "1")
@@ -171,7 +173,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME},
+      names = {INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Index of first validator owned by this node",
       arity = "1")
@@ -179,7 +181,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME},
+      names = {INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Number of validators owned by this node",
       arity = "1")
@@ -187,7 +189,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_START_STATE_OPTION_NAME},
+      names = {INTEROP_START_STATE_OPTION_NAME},
       paramLabel = "<STRING>",
       description = "Initial BeaconState to load",
       arity = "1")
@@ -195,14 +197,14 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME},
+      names = {INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Represents the total number of validators in the network")
   private int interopNumberOfValidators = DEFAULT_X_INTEROP_NUMBER_OF_VALIDATORS;
 
   @Option(
       hidden = true,
-      names = {X_INTEROP_ENABLED_OPTION_NAME},
+      names = {INTEROP_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables developer options for testing",
       arity = "1")
@@ -315,7 +317,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       hidden = true,
-      names = {X_TRANSITION_RECORD_DIRECTORY_OPTION_NAME},
+      names = {TRANSITION_RECORD_DIRECTORY_OPTION_NAME},
       paramLabel = "<FILENAME>",
       description = "Directory to record transition pre and post states",
       arity = "1")
@@ -399,8 +401,13 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       arity = "1")
   private String restApiInterface = DEFAULT_REST_API_INTERFACE;
 
+  private final Map<String, String> environment;
   private ArtemisConfiguration artemisConfiguration;
   private BeaconNode node;
+
+  public BeaconNodeCommand(final Map<String, String> environment) {
+    this.environment = environment;
+  }
 
   public String getConfigFile() {
     return configFile;
@@ -410,13 +417,18 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
     final CommandLine commandLine = new CommandLine(this).setCaseInsensitiveEnumValuesAllowed(true);
 
     final Optional<File> maybeConfigFile = maybeFindConfigFile(commandLine, args);
+    final EnvironmentVariableDefaultProvider environmentVariableDefaultProvider =
+        new EnvironmentVariableDefaultProvider(environment);
+    final CommandLine.IDefaultValueProvider defaultValueProvider;
     if (maybeConfigFile.isPresent()) {
-      final CommandLine.IDefaultValueProvider defaultValueProvider =
+      defaultValueProvider =
           new CascadingDefaultProvider(
+              environmentVariableDefaultProvider,
               new TomlConfigFileDefaultProvider(commandLine, maybeConfigFile.get()));
-      commandLine.setDefaultValueProvider(defaultValueProvider);
+    } else {
+      defaultValueProvider = environmentVariableDefaultProvider;
     }
-    commandLine.execute(args);
+    commandLine.setDefaultValueProvider(defaultValueProvider).execute(args);
   }
 
   @Override
