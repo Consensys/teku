@@ -84,10 +84,13 @@ public class ExternalMessageSignerServiceIntegrationTest {
             "External signer failed to sign and returned invalid response status code: 404");
 
     final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(UNKNOWN_PUBLIC_KEY, SIGNING_ROOT.toHexString());
+        new SigningRequestBody(SIGNING_ROOT.toHexString());
 
     client.verify(
-        request().withMethod("POST").withBody(json(signingRequestBody)).withPath("/signer/block"));
+        request()
+            .withMethod("POST")
+            .withBody(json(signingRequestBody))
+            .withPath("/signer/block/" + UNKNOWN_PUBLIC_KEY));
   }
 
   @Test
@@ -121,10 +124,14 @@ public class ExternalMessageSignerServiceIntegrationTest {
     final BLSSignature signature = externalMessageSignerService.signBlock(SIGNING_ROOT).join();
     assertThat(signature).isEqualTo(expectedSignature);
 
+    final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(keyPair.getPublicKey().toString(), SIGNING_ROOT.toHexString());
+        new SigningRequestBody(SIGNING_ROOT.toHexString());
     client.verify(
-        request().withMethod("POST").withBody(json(signingRequestBody)).withPath("/signer/block"));
+        request()
+            .withMethod("POST")
+            .withBody(json(signingRequestBody))
+            .withPath("/signer/block/" + publicKey));
   }
 
   @Test
@@ -135,13 +142,14 @@ public class ExternalMessageSignerServiceIntegrationTest {
         externalMessageSignerService.signAttestation(SIGNING_ROOT).join();
     assertThat(signature).isEqualTo(expectedSignature);
 
+    final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(keyPair.getPublicKey().toString(), SIGNING_ROOT.toHexString());
+        new SigningRequestBody(SIGNING_ROOT.toHexString());
     client.verify(
         request()
             .withMethod("POST")
             .withBody(json(signingRequestBody))
-            .withPath("/signer/attestation"));
+            .withPath("/signer/attestation/" + publicKey));
   }
 
   @Test
@@ -152,13 +160,14 @@ public class ExternalMessageSignerServiceIntegrationTest {
         externalMessageSignerService.signRandaoReveal(SIGNING_ROOT).join();
     assertThat(signature).isEqualTo(expectedSignature);
 
+    final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(keyPair.getPublicKey().toString(), SIGNING_ROOT.toHexString());
+        new SigningRequestBody(SIGNING_ROOT.toHexString());
     client.verify(
         request()
             .withMethod("POST")
             .withBody(json(signingRequestBody))
-            .withPath("/signer/randao_reveal"));
+            .withPath("/signer/randao_reveal/" + publicKey));
   }
 
   private Bytes padLeft(Bytes input) {
