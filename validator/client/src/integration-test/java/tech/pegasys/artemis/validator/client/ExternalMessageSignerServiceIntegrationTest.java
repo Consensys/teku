@@ -169,5 +169,4 @@ public class ExternalMessageSignerServiceIntegrationTest {
             .withBody(json(signingRequestBody))
             .withPath("/signer/randao_reveal/" + publicKey));
   }
-
 }
