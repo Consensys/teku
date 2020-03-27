@@ -67,7 +67,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UnsignedLong slot =
         compute_start_slot_at_epoch(
             epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
-    LOG.info("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
+    LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlot(slot)
         .thenApply(
