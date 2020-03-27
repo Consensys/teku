@@ -62,6 +62,7 @@ import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.BlockPropagationManager;
 import tech.pegasys.artemis.sync.DefaultSyncService;
@@ -150,7 +151,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private SafeFuture<?> initialize() {
-    return ChainStorageClient.storageBackedClient(eventBus)
+    return ChainStorageClient.storageBackedClient(
+            eventBus, eventChannels.getPublisher(StorageUpdateChannel.class))
         .thenAccept(
             client -> {
               // Setup chain storage

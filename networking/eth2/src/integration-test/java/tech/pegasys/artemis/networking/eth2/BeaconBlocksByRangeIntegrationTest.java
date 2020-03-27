@@ -15,11 +15,15 @@ package tech.pegasys.artemis.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
@@ -31,6 +35,8 @@ import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.Disconn
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeIntegrationTest {
@@ -43,7 +49,12 @@ public class BeaconBlocksByRangeIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
+    StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+    when(storageUpdateChannel.onStorageUpdate(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
+    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1, storageUpdateChannel);
     final Eth2Network network1 =
         networkFactory
             .builder()

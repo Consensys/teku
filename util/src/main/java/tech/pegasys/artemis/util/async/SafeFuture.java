@@ -233,6 +233,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
+  public static <U> SafeFuture<U> supplyAsync(final Supplier<U> supplier) {
+    return SafeFuture.of(CompletableFuture.supplyAsync(supplier));
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public <U> SafeFuture<U> thenApply(final Function<? super T, ? extends U> fn) {

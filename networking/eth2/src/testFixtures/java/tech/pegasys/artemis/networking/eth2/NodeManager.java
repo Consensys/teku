@@ -21,6 +21,7 @@ import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.StubStorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -52,7 +53,8 @@ public class NodeManager {
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final EventBus eventBus = new EventBus();
-    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+    final ChainStorageClient storageClient =
+        ChainStorageClient.memoryOnlyClient(eventBus, new StubStorageUpdateChannel());
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
 
