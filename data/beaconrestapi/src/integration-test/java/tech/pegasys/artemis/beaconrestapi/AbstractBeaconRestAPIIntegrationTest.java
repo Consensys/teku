@@ -39,31 +39,23 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public abstract class AbstractBeaconRestAPIIntegrationTest {
-  private static final String THE_CONFIG =
+  static final String THE_CONFIG =
       String.format("beaconrestapi.portNumber=%d\nbeaconrestapi.enableSwagger=%s", 0, "false");
-  private static final okhttp3.MediaType JSON =
-      okhttp3.MediaType.parse("application/json; charset=utf-8");
+  static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
 
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  protected final ObjectMapper objectMapper = new ObjectMapper();
   protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
-  protected final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
-  protected final ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
-  protected final CombinedChainDataClient combinedChainDataClient =
+  protected HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
+  protected ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
+  protected CombinedChainDataClient combinedChainDataClient =
       new CombinedChainDataClient(chainStorageClient, historicalChainData);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   protected final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
 
-  private final DataProvider dataProvider =
-      new DataProvider(
-          chainStorageClient,
-          combinedChainDataClient,
-          p2PNetwork,
-          syncService,
-          validatorApiChannel,
-          validatorCoordinator);
+  protected DataProvider dataProvider;
 
-  private BeaconRestApi beaconRestApi;
+  protected BeaconRestApi beaconRestApi;
   protected OkHttpClient client;
 
   @BeforeEach
@@ -72,6 +64,14 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient();
+    dataProvider =
+        new DataProvider(
+            chainStorageClient,
+            combinedChainDataClient,
+            p2PNetwork,
+            syncService,
+            validatorApiChannel,
+            validatorCoordinator);
   }
 
   protected void assertNoContent(final Response response) throws IOException {
