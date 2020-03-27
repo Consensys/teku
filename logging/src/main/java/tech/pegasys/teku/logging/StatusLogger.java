@@ -72,8 +72,8 @@ public class StatusLogger {
     log.error("Error during block creation", cause);
   }
 
-  public void attestationFailure(final IllegalArgumentException cause) {
-    log.warn("Cannot produce attestations or create a block", cause);
+  public void attestationFailure(final Throwable cause) {
+    log.error("Error during attestation creation", cause);
   }
 
   public void validatorDepositYamlKeyWriterFailure(final Path file) {
