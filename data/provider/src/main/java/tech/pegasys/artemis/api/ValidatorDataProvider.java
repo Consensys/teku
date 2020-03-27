@@ -113,10 +113,7 @@ public class ValidatorDataProvider {
 
   public void submitAttestation(Attestation attestation) {
     // TODO extra validation for the attestation we're posting?
-    if (attestation
-        .signature
-        .asInternalBLSSignature()
-        .equals(tech.pegasys.artemis.util.bls.BLSSignature.empty())) {
+    if (attestation.signature.asInternalBLSSignature().toBytes().isZero()) {
       throw new IllegalArgumentException("Signed attestations must have a non zero signature");
     }
     validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());
