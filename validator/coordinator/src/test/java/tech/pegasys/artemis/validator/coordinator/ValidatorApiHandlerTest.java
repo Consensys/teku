@@ -58,9 +58,9 @@ class ValidatorApiHandlerTest {
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
     when(chainDataClient.getStateAtSlot(START_SLOT)).thenReturn(completedFuture(Optional.empty()));
 
-    final SafeFuture<List<ValidatorDuties>> duties =
+    final SafeFuture<Optional<List<ValidatorDuties>>> duties =
         validatorApiHandler.getDuties(EPOCH, List.of(dataStructureUtil.randomPublicKey()));
-    assertThat(duties).isCompletedWithValue(emptyList());
+    assertThat(duties).isCompletedWithValue(Optional.empty());
   }
 
   @Test
@@ -69,10 +69,10 @@ class ValidatorApiHandlerTest {
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
-    final SafeFuture<List<ValidatorDuties>> result =
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
         validatorApiHandler.getDuties(EPOCH, List.of(unknownPublicKey));
-    final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
-    assertThat(duties).containsExactly(ValidatorDuties.noDuties(unknownPublicKey));
+    final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get()).containsExactly(ValidatorDuties.noDuties(unknownPublicKey));
   }
 
   @Test
@@ -83,10 +83,10 @@ class ValidatorApiHandlerTest {
 
     final int validatorIndex = 3;
     final BLSPublicKey publicKey = state.getValidators().get(validatorIndex).getPubkey();
-    final SafeFuture<List<ValidatorDuties>> result =
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
         validatorApiHandler.getDuties(EPOCH, List.of(publicKey));
-    final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
-    assertThat(duties)
+    final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get())
         .containsExactly(
             ValidatorDuties.withDuties(
                 publicKey, validatorIndex, 0, emptyList(), UnsignedLong.valueOf(110)));
@@ -101,10 +101,10 @@ class ValidatorApiHandlerTest {
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
     final BLSPublicKey validator3Key = state.getValidators().get(3).getPubkey();
     final BLSPublicKey validator31Key = state.getValidators().get(31).getPubkey();
-    final SafeFuture<List<ValidatorDuties>> result =
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
         validatorApiHandler.getDuties(
             EPOCH, List.of(validator3Key, unknownPublicKey, validator31Key));
-    final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
+    final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
     final ValidatorDuties validator3Duties =
         ValidatorDuties.withDuties(validator3Key, 3, 0, emptyList(), UnsignedLong.valueOf(110));
     final ValidatorDuties unknownValidatorDuties = ValidatorDuties.noDuties(unknownPublicKey);
@@ -115,7 +115,8 @@ class ValidatorApiHandlerTest {
             0,
             List.of(UnsignedLong.valueOf(107), UnsignedLong.valueOf(111)),
             UnsignedLong.valueOf(104));
-    assertThat(duties).containsExactly(validator3Duties, unknownValidatorDuties, validator6Duties);
+    assertThat(duties.get())
+        .containsExactly(validator3Duties, unknownValidatorDuties, validator6Duties);
   }
 
   @Test
@@ -191,8 +192,8 @@ class ValidatorApiHandlerTest {
         .isEqualTo(BLSSignature.empty().toBytes());
   }
 
-  private List<ValidatorDuties> assertCompletedSuccessfully(
-      final SafeFuture<List<ValidatorDuties>> result) {
+  private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(
+      final SafeFuture<Optional<List<ValidatorDuties>>> result) {
     assertThat(result).isCompleted();
     return result.join();
   }
