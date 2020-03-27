@@ -19,17 +19,20 @@ import java.util.function.IntFunction;
 
 public final class ArrayCache<V> implements IntCache<V> {
   private V[] values;
+  private final int initSize;
 
   public ArrayCache() {
     this(16);
   }
 
   public ArrayCache(int initialSize) {
+    this.initSize = initialSize;
     this.values = createArray(initialSize);
   }
 
-  private ArrayCache(V[] values) {
+  private ArrayCache(V[] values, int initSize) {
     this.values = values;
+    this.initSize = initSize;
   }
 
   @SuppressWarnings("unchecked")
@@ -48,30 +51,32 @@ public final class ArrayCache<V> implements IntCache<V> {
   }
 
   @Override
-  public synchronized V getInt(int key, IntFunction<V> fallback) {
-    extend(key);
-    V val = values[key];
+  public V getInt(int key, IntFunction<V> fallback) {
+    V val = key >= values.length ? null : values[key];
     if (val == null) {
       val = fallback.apply(key);
-      values[key] = val;
+      synchronized (this) {
+        extend(key);
+        values[key] = val;
+      }
     }
     return val;
   }
 
   @Override
-  public synchronized Optional<V> getCached(Integer key) {
+  public Optional<V> getCached(Integer key) {
     return key >= values.length ? Optional.empty() : Optional.ofNullable(values[key]);
   }
 
   @Override
-  public synchronized IntCache<V> copy() {
-    return new ArrayCache<>(Arrays.copyOf(values, values.length));
+  public IntCache<V> copy() {
+    return new ArrayCache<>(Arrays.copyOf(values, values.length), initSize);
   }
 
   @Override
   public synchronized IntCache<V> transfer() {
-    ArrayCache<V> ret = new ArrayCache<>(values);
-    values = createArray(16);
+    ArrayCache<V> ret = new ArrayCache<>(values, initSize);
+    values = createArray(initSize);
     return ret;
   }
 
@@ -89,6 +94,6 @@ public final class ArrayCache<V> implements IntCache<V> {
 
   @Override
   public synchronized void clear() {
-    values = createArray(16);
+    values = createArray(initSize);
   }
 }
