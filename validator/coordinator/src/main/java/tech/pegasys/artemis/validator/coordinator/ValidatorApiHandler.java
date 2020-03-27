@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -44,6 +45,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -164,6 +166,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void sendSignedAttestation(final Attestation attestation) {
     attestationAggregator.addOwnValidatorAttestation(attestation);
     eventBus.post(attestation);
+  }
+
+  @Override
+  public void sendSignedBlock(final SignedBeaconBlock block) {
+    eventBus.post(new ProposedBlockEvent(block));
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

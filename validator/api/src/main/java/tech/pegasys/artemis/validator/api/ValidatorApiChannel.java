@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -37,4 +38,6 @@ public interface ValidatorApiChannel {
       UnsignedLong slot, int committeeIndex);
 
   void sendSignedAttestation(Attestation attestation);
+
+  void sendSignedBlock(SignedBeaconBlock block);
 }

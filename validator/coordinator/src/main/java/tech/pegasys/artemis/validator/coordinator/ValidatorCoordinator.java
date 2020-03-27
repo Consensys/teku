@@ -61,7 +61,6 @@ import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestat
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -317,7 +316,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
       final SignedBeaconBlock newBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
 
-      this.eventBus.post(new ProposedBlockEvent(newBlock));
+      validatorApiChannel.sendSignedBlock(newBlock);
       LOG.debug("Local validator produced a new block");
     } catch (final Exception e) {
       STATUS_LOG.blockCreationFailure(e);

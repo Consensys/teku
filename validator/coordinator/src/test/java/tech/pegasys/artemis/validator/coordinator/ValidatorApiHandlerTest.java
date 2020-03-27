@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
@@ -37,6 +38,7 @@ import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
@@ -218,6 +220,14 @@ class ValidatorApiHandlerTest {
 
     verify(attestationAggregator).addOwnValidatorAttestation(attestation);
     verify(eventBus).post(attestation);
+  }
+
+  @Test
+  public void sendSignedBlock_shouldPostProposedBlockEvent() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    validatorApiHandler.sendSignedBlock(block);
+
+    verify(eventBus).post(new ProposedBlockEvent(block));
   }
 
   private List<ValidatorDuties> assertCompletedSuccessfully(
