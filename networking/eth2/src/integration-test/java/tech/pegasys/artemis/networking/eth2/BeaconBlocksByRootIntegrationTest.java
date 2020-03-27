@@ -40,6 +40,7 @@ import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.Disconn
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
@@ -55,12 +56,7 @@ public class BeaconBlocksByRootIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-    when(storageUpdateChannel.onStorageUpdate(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
-    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1, storageUpdateChannel);
+    storageClient1 = MemoryOnlyChainStorageClient.create(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()

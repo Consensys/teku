@@ -37,6 +37,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 
 public class AttestationGossipManagerTest {
@@ -44,9 +45,7 @@ public class AttestationGossipManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final String topicRegex = "/eth2/index\\d+_beacon_attestation/ssz";
   private final EventBus eventBus = new EventBus();
-  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-  private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
+  private final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 

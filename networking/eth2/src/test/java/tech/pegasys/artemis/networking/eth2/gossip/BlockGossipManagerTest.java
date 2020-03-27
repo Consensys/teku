@@ -31,15 +31,14 @@ import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 
 public class BlockGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-  private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
+  private final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 

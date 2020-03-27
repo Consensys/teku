@@ -42,6 +42,7 @@ import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -60,8 +61,7 @@ public class GetStateTest {
   @BeforeAll
   public static void setup() {
     final EventBus localEventBus = new EventBus();
-    final ChainStorageClient storageClient =
-        ChainStorageClient.memoryOnlyClient(localEventBus, mock(StorageUpdateChannel.class));
+    final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(localEventBus);
     beaconStateInternal = dataStructureUtil.randomBeaconState();
     storageClient.initializeFromGenesis(beaconStateInternal);
     blockRoot = storageClient.getBestBlockRoot().orElseThrow();

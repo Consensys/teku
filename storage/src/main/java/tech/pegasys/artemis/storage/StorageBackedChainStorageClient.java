@@ -25,30 +25,29 @@ import tech.pegasys.artemis.storage.events.GetStoreResponse;
 import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-class StorageBackedChainStorageClientFactory {
+class StorageBackedChainStorageClient extends ChainStorageClient {
   private static final Logger LOG = LogManager.getLogger();
-  private final ChainStorageClient client;
   private final EventBus eventBus;
 
   private final AtomicBoolean initializationStarted = new AtomicBoolean(false);
   private final SafeFuture<ChainStorageClient> initializationCompleted = new SafeFuture<>();
   private volatile OptionalLong getStoreRequestId = OptionalLong.empty();
 
-  public StorageBackedChainStorageClientFactory(
+  public StorageBackedChainStorageClient(
       final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
-    this.client = new ChainStorageClient(storageUpdateChannel, eventBus);
+    super(storageUpdateChannel, eventBus);
     this.eventBus = eventBus;
-    eventBus.register(client);
+    eventBus.register(this);
   }
 
-  public SafeFuture<ChainStorageClient> get() {
+  public SafeFuture<ChainStorageClient> create() {
     initializeFromStorage();
     return initializationCompleted;
   }
 
   private void initializeFromStorage() {
     if (initializationStarted.compareAndSet(false, true)) {
-      LOG.trace("Begin initializing {} from storage", client.getClass().getSimpleName());
+      LOG.trace("Begin initializing {} from storage", "ChainStorageClient");
       final GetStoreRequest storeRequest = new GetStoreRequest();
       this.getStoreRequestId = OptionalLong.of(storeRequest.getId());
       eventBus.post(storeRequest);
@@ -62,19 +61,9 @@ class StorageBackedChainStorageClientFactory {
       // This isn't a response to our query
       return;
     }
-    response.getStore().ifPresent(client::setStore);
-    if (initializationCompleted.complete(client)) {
-      LOG.trace("Finish initializing {} from storage", client.getClass().getSimpleName());
-    }
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onStoreInitializedFromStorage(
-      final StoreInitializedFromStorageEvent storeInitializedEvent) {
-    storeInitializedEvent.getStore().ifPresent(client::setStore);
-    if (initializationCompleted.complete(client)) {
-      LOG.trace("Finish initializing {} from storage", client.getClass().getSimpleName());
+    response.getStore().ifPresent(this::setStore);
+    if (initializationCompleted.complete(this)) {
+      LOG.trace("Finish initializing {} from storage");
     }
   }
 }

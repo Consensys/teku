@@ -51,6 +51,7 @@ import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -73,8 +74,7 @@ public class ChainDataProviderTest {
   @BeforeAll
   public static void setup() {
     localEventBus = new EventBus();
-    chainStorageClient =
-        ChainStorageClient.memoryOnlyClient(localEventBus, mock(StorageUpdateChannel.class));
+    chainStorageClient = MemoryOnlyChainStorageClient.create(localEventBus);
     beaconStateInternal = dataStructureUtil.randomBeaconState();
     beaconState = new BeaconState(beaconStateInternal);
     chainStorageClient.initializeFromGenesis(beaconStateInternal);

@@ -58,20 +58,11 @@ class ChainStorageClientTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClientWithStore(eventBus, store, storageUpdateChannel);
+          MemoryOnlyChainStorageClient.createWithStore(eventBus, store);
   private final ChainStorageClient preGenesisStorageClient =
-      ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
-
-  @BeforeEach
-  void setUp() {
-    when(storageUpdateChannel.onStorageUpdate(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
-  }
+          MemoryOnlyChainStorageClient.create(eventBus);
 
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()

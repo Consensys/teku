@@ -45,6 +45,7 @@ import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.Waiter;
@@ -73,7 +74,6 @@ public class Eth2NetworkFactory {
 
     protected List<Eth2Network> peers = new ArrayList<>();
     protected EventBus eventBus;
-    protected StorageUpdateChannel storageUpdateChannel;
     protected ChainStorageClient chainStorageClient;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
@@ -159,17 +159,11 @@ public class Eth2NetworkFactory {
     }
 
     private void setDefaults() {
-      if (storageUpdateChannel == null) {
-        storageUpdateChannel = mock(StorageUpdateChannel.class);
-        when(storageUpdateChannel.onStorageUpdate(any()))
-            .thenReturn(
-                SafeFuture.completedFuture(StorageUpdateResult.successfulWithNothingPruned()));
-      }
       if (eventBus == null) {
         eventBus = new EventBus();
       }
       if (chainStorageClient == null) {
-        chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
+        chainStorageClient = MemoryOnlyChainStorageClient.create(eventBus);
       }
     }
 

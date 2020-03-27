@@ -46,13 +46,14 @@ import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 class BeaconRestApiTest {
   private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(new EventBus(), mock(StorageUpdateChannel.class));
+          MemoryOnlyChainStorageClient.create(new EventBus());
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
