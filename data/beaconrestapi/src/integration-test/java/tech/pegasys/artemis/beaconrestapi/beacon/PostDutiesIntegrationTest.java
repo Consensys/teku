@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
@@ -63,10 +62,6 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
   @Test
   public void shouldReturnEmptyListWhenNoPubKeysSupplied() throws Exception {
     final UnsignedLong epoch = UnsignedLong.ONE;
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
     when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
 
     final Response response = post(epoch.intValue(), Collections.emptyList());

@@ -29,6 +29,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.api.schema.Attestation;
@@ -235,7 +237,8 @@ public class ValidatorDataProviderTest {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
 
     final SafeFuture<Optional<List<ValidatorDuties>>> result =
-        provider.getValidatorDutiesByRequest(new ValidatorDutiesRequest(ONE, emptyList()));
+        provider.getValidatorDutiesByRequest(
+            new ValidatorDutiesRequest(ONE, generatePublicKeys(1)));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
@@ -251,5 +254,13 @@ public class ValidatorDataProviderTest {
 
     verify(validatorCoordinator).postSignedAttestation(args.capture(), eq(true));
     assertThat(args.getValue()).usingRecursiveComparison().isEqualTo(internalAttestation);
+  }
+
+  private List<BLSPubKey> generatePublicKeys(final int count) {
+    return Stream.generate(dataStructureUtil::randomPublicKey)
+        .map(BLSPublicKey::toBytesCompressed)
+        .map(BLSPubKey::new)
+        .limit(count)
+        .collect(Collectors.toList());
   }
 }

@@ -93,13 +93,13 @@ public class ValidatorDataProvider {
   public SafeFuture<Optional<List<ValidatorDuties>>> getValidatorDutiesByRequest(
       final ValidatorDutiesRequest validatorDutiesRequest) {
     checkArgument(validatorDutiesRequest != null, "Must supply a valid request");
-    if (!combinedChainDataClient.isStoreAvailable()
-        || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
-    }
     if (validatorDutiesRequest.pubkeys.isEmpty()) {
       // Short-cut if there's nothing to look up
       return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
+    }
+    if (!combinedChainDataClient.isStoreAvailable()
+        || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return SafeFuture.of(
             () -> {

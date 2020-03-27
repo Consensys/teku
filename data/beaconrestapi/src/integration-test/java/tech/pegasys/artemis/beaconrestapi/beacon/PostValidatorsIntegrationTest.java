@@ -92,13 +92,7 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
   @Test
   public void shouldReturnEmptyListIfWhenPubKeysIsEmpty() throws Exception {
     final int epoch = 1;
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
     when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
-    when(historicalChainData.getFinalizedStateAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final Response response = post(1, Collections.emptyList());
     assertBodyEquals(response, "[]");
