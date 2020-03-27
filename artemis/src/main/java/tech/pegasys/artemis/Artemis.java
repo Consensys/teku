@@ -20,6 +20,6 @@ import tech.pegasys.artemis.cli.BeaconNodeCommand;
 public final class Artemis {
   public static void main(final String... args) {
     Security.addProvider(new BouncyCastleProvider());
-    new BeaconNodeCommand(System.getenv()).parse(args);
+    new BeaconNodeCommand().parse(args);
   }
 }
