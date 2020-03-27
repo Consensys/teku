@@ -57,7 +57,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     this.client = client;
     signingServiceUri = new URL("http://127.0.0.1:" + client.getLocalPort());
 
-    final Bytes privateKey = padLeft(Bytes.fromHexString(PRIVATE_KEY));
+    final Bytes privateKey = Bytes.fromHexString(PRIVATE_KEY);
     keyPair = new BLSKeyPair(BLSSecretKey.fromBytes(privateKey));
     expectedSignature = BLS.sign(keyPair.getSecretKey(), SIGNING_ROOT);
 
@@ -170,7 +170,4 @@ public class ExternalMessageSignerServiceIntegrationTest {
             .withPath("/signer/randao_reveal/" + publicKey));
   }
 
-  private Bytes padLeft(Bytes input) {
-    return Bytes.concatenate(Bytes.wrap(new byte[KEY_LENGTH - input.size()]), input);
-  }
 }
