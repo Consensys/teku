@@ -69,19 +69,19 @@ class MapDbDatabaseTest {
 
   private Database database = MapDbDatabase.createInMemory(StateStorageMode.ARCHIVE);
   private final List<StorageUpdateResult> updateResults = new ArrayList<>();
-  private final StorageUpdateChannel storageUpdateChannel = new StorageUpdateChannel() {
-    @Override
-    public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {
-      final StorageUpdateResult result = database.update(event);
-      updateResults.add(result);
-      return SafeFuture.completedFuture(result);
-    }
+  private final StorageUpdateChannel storageUpdateChannel =
+      new StorageUpdateChannel() {
+        @Override
+        public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {
+          final StorageUpdateResult result = database.update(event);
+          updateResults.add(result);
+          return SafeFuture.completedFuture(result);
+        }
 
-    @Override
-    public void onGenesis(Store store) {
-    }
-  };
-          
+        @Override
+        public void onGenesis(Store store) {}
+      };
+
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
   private final BeaconBlock genesisBlock =
       store.getBlockRoots().stream()

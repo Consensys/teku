@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
@@ -163,7 +162,8 @@ public class Eth2NetworkFactory {
       if (storageUpdateChannel == null) {
         storageUpdateChannel = mock(StorageUpdateChannel.class);
         when(storageUpdateChannel.onStorageUpdate(any()))
-                .thenReturn(SafeFuture.completedFuture(StorageUpdateResult.successfulWithNothingPruned()));
+            .thenReturn(
+                SafeFuture.completedFuture(StorageUpdateResult.successfulWithNothingPruned()));
       }
       if (eventBus == null) {
         eventBus = new EventBus();

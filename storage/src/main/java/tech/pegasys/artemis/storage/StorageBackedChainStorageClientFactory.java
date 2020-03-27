@@ -35,7 +35,7 @@ class StorageBackedChainStorageClientFactory {
   private volatile OptionalLong getStoreRequestId = OptionalLong.empty();
 
   public StorageBackedChainStorageClientFactory(
-          final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
+      final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
     this.client = new ChainStorageClient(storageUpdateChannel, eventBus);
     this.eventBus = eventBus;
     eventBus.register(client);
