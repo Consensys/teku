@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beaco
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,14 +32,18 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -53,11 +58,24 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private final CombinedChainDataClient combinedChainDataClient;
   private final BlockFactory blockFactory;
+  private final AttestationAggregator attestationAggregator;
+  private final EventBus eventBus;
 
   public ValidatorApiHandler(
-      final CombinedChainDataClient combinedChainDataClient, final BlockFactory blockFactory) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final BlockFactory blockFactory,
+      final AttestationAggregator attestationAggregator,
+      final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.blockFactory = blockFactory;
+    this.attestationAggregator = attestationAggregator;
+    this.eventBus = eventBus;
+  }
+
+  @Override
+  public SafeFuture<Optional<Fork>> getFork() {
+    return SafeFuture.completedFuture(
+        combinedChainDataClient.getHeadStateFromStore().map(BeaconState::getFork));
   }
 
   @Override
@@ -131,6 +149,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
           return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
         });
+  }
+
+  @Override
+  public void sendSignedAttestation(final Attestation attestation) {
+    attestationAggregator.addOwnValidatorAttestation(attestation);
+    eventBus.post(attestation);
+  }
+
+  @Override
+  public void sendSignedBlock(final SignedBeaconBlock block) {
+    eventBus.post(new ProposedBlockEvent(block));
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

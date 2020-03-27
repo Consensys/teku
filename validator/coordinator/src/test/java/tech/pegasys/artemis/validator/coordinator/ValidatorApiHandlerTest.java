@@ -16,9 +16,11 @@ package tech.pegasys.artemis.validator.coordinator;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
@@ -34,6 +37,8 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
@@ -50,9 +55,11 @@ class ValidatorApiHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
+  private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
+  private final EventBus eventBus = mock(EventBus.class);
 
   private final ValidatorApiHandler validatorApiHandler =
-      new ValidatorApiHandler(chainDataClient, blockFactory);
+      new ValidatorApiHandler(chainDataClient, blockFactory, attestationAggregator, eventBus);
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
@@ -190,6 +197,38 @@ class ValidatorApiHandlerTest {
         .isEqualTo(AttestationUtil.getGenericAttestationData(state, block));
     assertThat(attestation.getAggregate_signature().toBytes())
         .isEqualTo(BLSSignature.empty().toBytes());
+  }
+
+  @Test
+  public void getFork_shouldReturnEmptyWhenHeadStateNotAvailable() {
+    when(chainDataClient.getHeadStateFromStore()).thenReturn(Optional.empty());
+
+    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void getFork_shouldReturnForkFromHeadState() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    when(chainDataClient.getHeadStateFromStore()).thenReturn(Optional.of(state));
+
+    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.of(state.getFork()));
+  }
+
+  @Test
+  public void sendSignedAttestation_shouldAddAttestationToAggregatorAndEventBus() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    validatorApiHandler.sendSignedAttestation(attestation);
+
+    verify(attestationAggregator).addOwnValidatorAttestation(attestation);
+    verify(eventBus).post(attestation);
+  }
+
+  @Test
+  public void sendSignedBlock_shouldPostProposedBlockEvent() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    validatorApiHandler.sendSignedBlock(block);
+
+    verify(eventBus).post(new ProposedBlockEvent(block));
   }
 
   private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(

@@ -48,7 +48,7 @@ public class BeaconRestApiWithSwaggerTest {
         ArtemisConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(true).build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
-        new DataProvider(storageClient, combinedChainDataClient, null, syncService, null, null),
+        new DataProvider(storageClient, combinedChainDataClient, null, syncService, null),
         config,
         app);
   }
