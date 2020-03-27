@@ -57,8 +57,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -309,8 +311,9 @@ public final class EpochProcessorUtil {
       penalties.set(i, UnsignedLong.ZERO);
     }
 
-    List<Integer> eligible_validator_indices =
+    Map<Integer, UnsignedLong> eligible_validator_base_rewards =
         IntStream.range(0, state.getValidators().size())
+            .parallel()
             .filter(
                 index -> {
                   Validator validator = state.getValidators().get(index);
@@ -322,7 +325,7 @@ public final class EpochProcessorUtil {
                               < 0);
                 })
             .boxed()
-            .collect(Collectors.toList());
+            .collect(Collectors.toMap(i -> i, i -> get_base_reward(state, i)));
 
     // Micro-incentives for matching FFG source, FFG target, and head
     SSZList<PendingAttestation> matching_source_attestations =
@@ -339,18 +342,21 @@ public final class EpochProcessorUtil {
       Set<Integer> unslashed_attesting_indices =
           get_unslashed_attesting_indices(state, attestations, HashSet::new);
       UnsignedLong attesting_balance = get_total_balance(state, unslashed_attesting_indices);
-      for (Integer index : eligible_validator_indices) {
+      for (Entry<Integer, UnsignedLong> index_base_reward :
+          eligible_validator_base_rewards.entrySet()) {
+        int index = index_base_reward.getKey();
         if (unslashed_attesting_indices.contains(index)) {
           rewards.set(
               index,
               rewards
                   .get(index)
                   .plus(
-                      get_base_reward(state, index)
+                      index_base_reward
+                          .getValue()
                           .times(attesting_balance)
                           .dividedBy(total_balance)));
         } else {
-          penalties.set(index, penalties.get(index).plus(get_base_reward(state, index)));
+          penalties.set(index, penalties.get(index).plus(index_base_reward.getValue()));
         }
       }
     }
@@ -367,6 +373,17 @@ public final class EpochProcessorUtil {
                 Collectors.groupingBy(
                     Pair::getLeft, Collectors.mapping(Pair::getRight, Collectors.toList())));
 
+    // in theory attestation can be be from non eligible validator
+    // so we need to fall back to reward calculation in this case
+    IntFunction<UnsignedLong> base_reward_func =
+        index -> {
+          UnsignedLong ret = eligible_validator_base_rewards.get(index);
+          if (ret == null) {
+            ret = get_base_reward(state, index);
+          }
+          return ret;
+        };
+
     validator_source_attestations.forEach(
         (index, attestations) ->
             attestations.stream()
@@ -374,7 +391,8 @@ public final class EpochProcessorUtil {
                 .ifPresent(
                     attestation -> {
                       UnsignedLong proposer_reward =
-                          get_base_reward(state, index)
+                          base_reward_func
+                              .apply(index)
                               .dividedBy(UnsignedLong.valueOf(PROPOSER_REWARD_QUOTIENT));
                       rewards.set(
                           attestation.getProposer_index().intValue(),
@@ -382,7 +400,7 @@ public final class EpochProcessorUtil {
                               .get(attestation.getProposer_index().intValue())
                               .plus(proposer_reward));
                       UnsignedLong max_attester_reward =
-                          get_base_reward(state, index).minus(proposer_reward);
+                          base_reward_func.apply(index).minus(proposer_reward);
                       rewards.set(
                           index,
                           rewards
@@ -397,14 +415,16 @@ public final class EpochProcessorUtil {
       Set<Integer> matching_target_attesting_indices =
           get_unslashed_attesting_indices(state, matching_target_attestations, HashSet::new);
 
-      for (Integer index : eligible_validator_indices) {
+      for (Entry<Integer, UnsignedLong> index_base_reward :
+          eligible_validator_base_rewards.entrySet()) {
+        int index = index_base_reward.getKey();
         penalties.set(
             index,
             penalties
                 .get(index)
                 .plus(
                     UnsignedLong.valueOf(BASE_REWARDS_PER_EPOCH)
-                        .times(get_base_reward(state, index))));
+                        .times(index_base_reward.getValue())));
         if (!matching_target_attesting_indices.contains(index)) {
           penalties.set(
               index,
