@@ -19,7 +19,6 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,13 +39,15 @@ import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProviderTest {
 
@@ -54,11 +55,10 @@ public class ValidatorDataProviderTest {
       ArgumentCaptor.forClass(tech.pegasys.artemis.datastructures.operations.Attestation.class);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
   private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider =
-      new ValidatorDataProvider(validatorCoordinator, validatorApiChannel, combinedChainDataClient);
+      new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
@@ -252,8 +252,23 @@ public class ValidatorDataProviderTest {
 
     provider.submitAttestation(attestation);
 
-    verify(validatorCoordinator).postSignedAttestation(args.capture(), eq(true));
+    verify(validatorApiChannel).sendSignedAttestation(args.capture());
     assertThat(args.getValue()).usingRecursiveComparison().isEqualTo(internalAttestation);
+  }
+
+  @Test
+  public void submitAttestation_shouldThrowIllegalArgumentExceptionWhenSignatureIsEmpty() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final tech.pegasys.artemis.datastructures.operations.Attestation internalAttestation =
+        new tech.pegasys.artemis.datastructures.operations.Attestation(
+            new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+            attestationData,
+            tech.pegasys.artemis.util.bls.BLSSignature.empty());
+
+    final Attestation attestation = new Attestation(internalAttestation);
+
+    assertThatThrownBy(() -> provider.submitAttestation(attestation))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   private List<BLSPubKey> generatePublicKeys(final int count) {
