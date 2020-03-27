@@ -152,6 +152,11 @@ public class CombinedChainDataClient {
     return finalizedSlot.compareTo(slot) >= 0;
   }
 
+  public boolean isFinalizedEpoch(final UnsignedLong epoch) {
+    final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
+    return finalizedEpoch.compareTo(epoch) >= 0;
+  }
+
   public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
     return recentChainData.getBlockState(blockRoot);
   }
@@ -234,16 +239,15 @@ public class CombinedChainDataClient {
    * @param epoch - the current or historic epoch
    * @return list of CommitteeAssignments
    */
-  public SafeFuture<List<CommitteeAssignment>> getCommitteeAssignmentAtEpoch(UnsignedLong epoch) {
+  public SafeFuture<Optional<List<CommitteeAssignment>>> getCommitteeAssignmentAtEpoch(
+      UnsignedLong epoch) {
     final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
     final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
 
     SafeFuture<Optional<BeaconState>> future = getStateAtSlot(startingSlot);
 
-    return future
-        .thenApply(
-            optionalState -> getCommitteesFromState(optionalState.orElseThrow(), startingSlot))
-        .exceptionally(err -> List.of());
+    return future.thenApply(
+        optionalState -> optionalState.map(state -> getCommitteesFromState(state, startingSlot)));
   }
 
   public List<CommitteeAssignment> getCommitteesFromState(

@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.api;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.api.schema.Attestation;
@@ -52,6 +54,10 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
+  public boolean isEpochFinalized(final UnsignedLong epoch) {
+    return combinedChainDataClient.isFinalizedEpoch(epoch);
+  }
+
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
       UnsignedLong slot, BLSSignature randao) {
     if (slot == null) {
@@ -84,9 +90,15 @@ public class ValidatorDataProvider {
                             new BLSSignature(attestation.getAggregate_signature()))));
   }
 
-  public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
+  public SafeFuture<Optional<List<ValidatorDuties>>> getValidatorDutiesByRequest(
       final ValidatorDutiesRequest validatorDutiesRequest) {
-    if (validatorDutiesRequest == null || !combinedChainDataClient.isStoreAvailable()) {
+    checkArgument(validatorDutiesRequest != null, "Must supply a valid request");
+    if (validatorDutiesRequest.pubkeys.isEmpty()) {
+      // Short-cut if there's nothing to look up
+      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
+    }
+    if (!combinedChainDataClient.isStoreAvailable()
+        || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return SafeFuture.of(
@@ -97,7 +109,9 @@ public class ValidatorDataProvider {
                       .collect(toList());
               return validatorApiChannel.getDuties(validatorDutiesRequest.epoch, publicKeys);
             })
-        .thenApply(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList()));
+        .thenApply(
+            res ->
+                res.map(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList())));
   }
 
   private ValidatorDuties mapToSchemaDuties(

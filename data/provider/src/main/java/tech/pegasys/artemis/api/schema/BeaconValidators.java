@@ -31,6 +31,10 @@ public class BeaconValidators {
   public final Long total_size;
   public final Integer next_page_token;
 
+  public static BeaconValidators emptySet() {
+    return new BeaconValidators();
+  }
+
   @VisibleForTesting
   public BeaconValidators(tech.pegasys.artemis.datastructures.state.BeaconState state) {
     this(state, false, FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
