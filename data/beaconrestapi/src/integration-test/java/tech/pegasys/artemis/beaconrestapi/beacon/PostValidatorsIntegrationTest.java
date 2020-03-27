@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,47 +25,76 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
-import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
-public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
+public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
   private static final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(1);
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    final UnsignedLong epoch = UnsignedLong.ONE;
     when(chainStorageClient.getStore()).thenReturn(null);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
 
-    final Response response = post(epoch.intValue(), keys);
+    final Response response = post(1, keys);
     assertNoContent(response);
   }
 
   @Test
   public void shouldReturnNoContentWhenBestBlockRootMissing() throws Exception {
-    final UnsignedLong epoch = UnsignedLong.ONE;
-
     final Store store = mock(Store.class);
     when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
-    final Response response = post(epoch.intValue(), keys);
+    final Response response = post(1, keys);
     assertNoContent(response);
   }
 
   @Test
-  public void shouldReturnEmptyListWhenNoPubKeysSupplied() throws Exception {
-    final UnsignedLong epoch = UnsignedLong.ONE;
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+  public void shouldHandleMissingFinalizedState() throws Exception {
+    final int epoch = 1;
+    final Bytes32 root = dataStructureUtil.randomBytes32();
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
+    when(historicalChainData.getFinalizedStateAtSlot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    final Response response = post(epoch.intValue(), Collections.emptyList());
+    final Response response = post(1, keys);
+    assertGone(response);
+  }
+
+  @Test
+  public void shouldHandleMissingNonFinalizedState() throws Exception {
+    final int epoch = 1;
+    final Bytes32 root = dataStructureUtil.randomBytes32();
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
+    when(store.getBlockState(root)).thenReturn(dataStructureUtil.randomBeaconState());
+    when(chainStorageClient.getStateBySlot(any())).thenReturn(Optional.empty());
+
+    final Response response = post(epoch, keys);
+    assertNotFound(response);
+  }
+
+  @Test
+  public void shouldReturnEmptyListIfWhenPubKeysIsEmpty() throws Exception {
+    final int epoch = 1;
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+
+    final Response response = post(1, Collections.emptyList());
     assertBodyEquals(response, "[]");
   }
 
@@ -76,6 +106,6 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
 
     final Map<String, Object> params =
         Map.of(RestApiConstants.EPOCH, epoch, "pubkeys", publicKeyStrings);
-    return post(PostDuties.ROUTE, mapToJson(params));
+    return post(PostValidators.ROUTE, mapToJson(params));
   }
 }

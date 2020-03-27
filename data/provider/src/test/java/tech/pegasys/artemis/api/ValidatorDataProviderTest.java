@@ -29,6 +29,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.api.schema.Attestation;
@@ -136,6 +138,8 @@ public class ValidatorDataProviderTest {
   void getValidatorsDutiesByRequest_shouldIncludeMissingValidators()
       throws ExecutionException, InterruptedException {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(combinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     ValidatorDutiesRequest smallRequest =
         new ValidatorDutiesRequest(
@@ -144,10 +148,14 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(
-                List.of(tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey))));
+                Optional.of(
+                    List.of(
+                        tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey)))));
 
-    SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(smallRequest);
-    List<ValidatorDuties> validatorDuties = future.get();
+    SafeFuture<Optional<List<ValidatorDuties>>> future =
+        provider.getValidatorDutiesByRequest(smallRequest);
+    assertThat(future.get().get()).isNotEmpty();
+    List<ValidatorDuties> validatorDuties = future.get().get();
 
     assertThat(validatorDuties.size()).isEqualTo(1);
     ValidatorDuties expected =
@@ -159,6 +167,8 @@ public class ValidatorDataProviderTest {
   @Test
   void getValidatorsDutiesByRequest_shouldThrowIllegalArgumentExceptionIfKeyIsNotOnTheCurve() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(combinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     // modify the bytes to make an invalid key that is the correct length
     final BLSPubKey invalidPubKey = new BLSPubKey(publicKey.toBytes().shiftLeft(1));
@@ -168,9 +178,12 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(
-                List.of(tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey))));
+                Optional.of(
+                    List.of(
+                        tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey)))));
 
-    SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(smallRequest);
+    SafeFuture<Optional<List<ValidatorDuties>>> future =
+        provider.getValidatorDutiesByRequest(smallRequest);
 
     assertThatThrownBy(() -> future.get()).hasCauseInstanceOf(IllegalArgumentException.class);
   }
@@ -179,6 +192,8 @@ public class ValidatorDataProviderTest {
   void getValidatorDutiesByRequest_shouldIncludeValidatorDuties()
       throws ExecutionException, InterruptedException {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(combinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     ValidatorDutiesRequest smallRequest =
         new ValidatorDutiesRequest(
@@ -192,16 +207,19 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(
-                List.of(
-                    tech.pegasys.artemis.validator.api.ValidatorDuties.withDuties(
-                        publicKey,
-                        validatorIndex,
-                        attestationCommitteeIndex,
-                        blockProposalSlots,
-                        attestationSlot))));
+                Optional.of(
+                    List.of(
+                        tech.pegasys.artemis.validator.api.ValidatorDuties.withDuties(
+                            publicKey,
+                            validatorIndex,
+                            attestationCommitteeIndex,
+                            blockProposalSlots,
+                            attestationSlot)))));
 
-    SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(smallRequest);
-    List<ValidatorDuties> validatorDuties = future.get();
+    SafeFuture<Optional<List<ValidatorDuties>>> future =
+        provider.getValidatorDutiesByRequest(smallRequest);
+    assertThat(future.get().get()).isNotEmpty();
+    List<ValidatorDuties> validatorDuties = future.get().get();
 
     assertThat(validatorDuties.size()).isEqualTo(1);
     ValidatorDuties expected =
@@ -218,8 +236,9 @@ public class ValidatorDataProviderTest {
   void getValidatorDutiesByRequest_shouldReturnChainDataUnavailableExceptionWhenStoreIsNotSet() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
 
-    final SafeFuture<List<ValidatorDuties>> result =
-        provider.getValidatorDutiesByRequest(new ValidatorDutiesRequest(ONE, emptyList()));
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
+        provider.getValidatorDutiesByRequest(
+            new ValidatorDutiesRequest(ONE, generatePublicKeys(1)));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
@@ -235,5 +254,13 @@ public class ValidatorDataProviderTest {
 
     verify(validatorCoordinator).postSignedAttestation(args.capture(), eq(true));
     assertThat(args.getValue()).usingRecursiveComparison().isEqualTo(internalAttestation);
+  }
+
+  private List<BLSPubKey> generatePublicKeys(final int count) {
+    return Stream.generate(dataStructureUtil::randomPublicKey)
+        .map(BLSPublicKey::toBytesCompressed)
+        .map(BLSPubKey::new)
+        .limit(count)
+        .collect(Collectors.toList());
   }
 }

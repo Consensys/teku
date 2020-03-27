@@ -13,21 +13,34 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
+import tech.pegasys.artemis.storage.Store;
 
 public class GetStateRootIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
     when(chainStorageClient.getStore()).thenReturn(null);
+
+    final Response response = getBySlot(1);
+    assertNoContent(response);
+  }
+
+  @Test
+  public void shouldReturnNoContentIfHeadRootUnavailable_queryBySlot() throws Exception {
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getBySlot(1);
     assertNoContent(response);

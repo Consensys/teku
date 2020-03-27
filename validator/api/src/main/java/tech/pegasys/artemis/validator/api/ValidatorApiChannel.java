@@ -24,7 +24,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public interface ValidatorApiChannel {
-  SafeFuture<List<ValidatorDuties>> getDuties(
+  SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       UnsignedLong epoch, Collection<BLSPublicKey> publicKeys);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(

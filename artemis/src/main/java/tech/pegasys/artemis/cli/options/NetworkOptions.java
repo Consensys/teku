@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis;
+package tech.pegasys.artemis.cli.options;
 
-import java.security.Security;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import tech.pegasys.artemis.cli.BeaconNodeCommand;
+import picocli.CommandLine;
 
-public final class Artemis {
-  public static void main(final String... args) {
-    Security.addProvider(new BouncyCastleProvider());
-    new BeaconNodeCommand(System.getenv()).parse(args);
+public class NetworkOptions {
+
+  public static final String NETWORK_OPTION_NAME = "--network";
+
+  public static final String DEFAULT_NETWORK = "minimal";
+
+  @CommandLine.Option(
+      names = {"-n", NETWORK_OPTION_NAME},
+      paramLabel = "<NETWORK>",
+      description = "Represents which network to use",
+      arity = "1")
+  private String network = DEFAULT_NETWORK;
+
+  public String getNetwork() {
+    return network;
   }
 }
