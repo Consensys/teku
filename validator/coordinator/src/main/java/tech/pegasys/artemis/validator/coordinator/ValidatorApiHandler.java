@@ -18,6 +18,8 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -29,12 +31,17 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.ExceptionThrowingFunction;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -77,11 +84,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private <T> SafeFuture<Optional<T>> createFromBlockAndState(
       final UnsignedLong maximumSlot,
       final ExceptionThrowingFunction<BeaconBlockAndState, T> creator) {
-    final UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
     final Optional<Bytes32> headRoot = combinedChainDataClient.getBestBlockRoot();
     if (headRoot.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
+    final UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
+
     // We need to request the block on the canonical chain which is strictly before slot
     // If slot is past the end of our canonical chain, we need the last block from our chain.
     final UnsignedLong parentBlockSlot =
@@ -95,6 +103,34 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               }
               return Optional.of(creator.apply(maybeBlockAndState.get()));
             });
+  }
+
+  @Override
+  public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
+      final UnsignedLong slot, final int committeeIndex) {
+    return createFromBlockAndState(
+        slot,
+        blockAndState -> {
+          final BeaconState state = blockAndState.getState();
+          final BeaconBlock block = blockAndState.getBlock();
+          final int committeeCount = get_committee_count_at_slot(state, slot).intValue();
+
+          if (committeeIndex < 0 || committeeIndex >= committeeCount) {
+            throw new IllegalArgumentException(
+                "Invalid committee index "
+                    + committeeIndex
+                    + " - expected between 0 and "
+                    + (committeeCount - 1));
+          }
+          final AttestationData attestationData =
+              AttestationUtil.getGenericAttestationData(state, block);
+          final List<Integer> committee =
+              CommitteeUtil.get_beacon_committee(state, slot, UnsignedLong.valueOf(committeeIndex));
+
+          final Bitlist aggregationBits =
+              new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
+          return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
+        });
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

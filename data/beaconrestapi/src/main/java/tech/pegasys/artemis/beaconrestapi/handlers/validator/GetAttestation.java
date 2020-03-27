@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -35,18 +36,20 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import tech.pegasys.artemis.api.ChainDataProvider;
+import java.util.concurrent.CompletionStage;
+import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetAttestation implements Handler {
   public static final String ROUTE = "/validator/attestation";
 
-  private final ChainDataProvider provider;
+  private final ValidatorDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public GetAttestation(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public GetAttestation(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.provider = provider;
   }
@@ -95,16 +98,32 @@ public class GetAttestation implements Handler {
             String.format("'%s' needs to be greater than or equal to 0.", COMMITTEE_INDEX));
       }
 
-      Optional<Attestation> optionalAttestation =
-          provider.getUnsignedAttestationAtSlot(slot, committeeIndex);
-      if (optionalAttestation.isPresent()) {
-        ctx.result(jsonProvider.objectToJSON(optionalAttestation.get()));
-      } else {
-        ctx.status(SC_NOT_FOUND);
-      }
+      ctx.result(
+          provider
+              .createUnsignedAttestationAtSlot(slot, committeeIndex)
+              .thenApplyChecked(optionalAttestation -> serializeResult(ctx, optionalAttestation))
+              .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
+  }
+
+  private String serializeResult(final Context ctx, final Optional<Attestation> optionalAttestation)
+      throws com.fasterxml.jackson.core.JsonProcessingException {
+    if (optionalAttestation.isPresent()) {
+      return jsonProvider.objectToJSON(optionalAttestation.get());
+    } else {
+      ctx.status(SC_NOT_FOUND);
+      return "";
+    }
+  }
+
+  private CompletionStage<String> handleError(final Context ctx, final Throwable error) {
+    if (Throwables.getRootCause(error) instanceof IllegalArgumentException) {
+      ctx.status(SC_BAD_REQUEST);
+      return SafeFuture.of(() -> jsonProvider.objectToJSON(new BadRequest(error.getMessage())));
+    }
+    return SafeFuture.failedFuture(error);
   }
 }

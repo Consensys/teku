@@ -17,18 +17,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.api.schema.Attestation;
+import tech.pegasys.artemis.api.schema.AttestationData;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
-import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -74,6 +73,23 @@ public class ValidatorDataProvider {
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 
+  public SafeFuture<Optional<Attestation>> createUnsignedAttestationAtSlot(
+      UnsignedLong slot, int committeeIndex) {
+    if (!isStoreAvailable()) {
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+    }
+    return validatorApiChannel
+        .createUnsignedAttestation(slot, committeeIndex)
+        .thenApply(
+            maybeAttestation ->
+                maybeAttestation.map(
+                    attestation ->
+                        new Attestation(
+                            attestation.getAggregation_bits(),
+                            new AttestationData(attestation.getData()),
+                            new BLSSignature(attestation.getAggregate_signature()))));
+  }
+
   public SafeFuture<Optional<List<ValidatorDuties>>> getValidatorDutiesByRequest(
       final ValidatorDutiesRequest validatorDutiesRequest) {
     checkArgument(validatorDutiesRequest != null, "Must supply a valid request");
@@ -111,19 +127,6 @@ public class ValidatorDataProvider {
         duties.getAttestationCommitteeIndex(),
         duties.getBlockProposalSlots(),
         duties.getAttestationSlot());
-  }
-
-  @VisibleForTesting
-  protected Integer getCommitteeIndex(List<CommitteeAssignment> committees, int validatorIndex) {
-    Optional<CommitteeAssignment> matchingCommittee =
-        committees.stream()
-            .filter(committee -> committee.getCommittee().contains(validatorIndex))
-            .findFirst();
-    if (matchingCommittee.isPresent()) {
-      return committees.indexOf(matchingCommittee.get());
-    } else {
-      return null;
-    }
   }
 
   public void submitAttestation(Attestation attestation) {

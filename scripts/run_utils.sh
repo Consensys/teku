@@ -52,15 +52,15 @@ create_config() {
     sed "s/p2p-port\ =.*/p2p-port\ =\ $PORT/"                                 |# Update the port field to the value set above
     sed "s/rest-api-port\ =.*/rest-api-port\ =\ $RPC_PORT/"                 |# Update the REST API port field to the value set above
     sed "s/rest-api-docs-enabled\ =.*/rest-api-docs-enabled\ =\ true/"                |# Update the REST API to enable the SWAGGER endpoint
-    sed "s/x-interop-genesis-time\ =.*/x-interop-genesis-time\ =\ $GENESIS_TIME/"           |# Update the genesis time
+    sed "s/Xinterop-genesis-time\ =.*/Xinterop-genesis-time\ =\ $GENESIS_TIME/"           |# Update the genesis time
     awk -v peers="$PEERS" '/p2p-port/{print;print "p2p-static-peers = "peers;next}1' |# Update the peer list
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
     sed "s/data-storage-mode\ =.*/data-storage-mode\ =\ \"archive\"/"   |# Update state storage mode to archive
     sed "s/p2p-interface\ =.*/p2p-interface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
     sed "s/p2p-enabled\ =.*/p2p-enabled\ =\ $MODE/"               |# Update the network mode
     sed "s/X-interop-number-of-validators\ =.*/X-interop-number-of-validators\ =\ $NUM_VALIDATORS/"     | # Update validator count
-    sed "s/x-interop-owned-validator-start-index\ =.*/x-interop-owned-validator-start-index\ =\ $START_INDEX/" | # Update the validator start index
-    sed "s/x-interop-owned-validator-count\ =.*/x-interop-owned-validator-count\ =\ $OWNED_VALIDATOR_COUNT/" \
+    sed "s/Xinterop-owned-validator-start-index\ =.*/Xinterop-owned-validator-start-index\ =\ $START_INDEX/" | # Update the validator start index
+    sed "s/Xinterop-owned-validator-count\ =.*/Xinterop-owned-validator-count\ =\ $OWNED_VALIDATOR_COUNT/" \
     > ../config/runConfig.$NODE.toml
 }
 

@@ -18,7 +18,6 @@ import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -37,9 +36,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
-import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
@@ -352,59 +349,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  void getUnsignedAttestationAtSlot_shouldThrowIfStoreNotFound() {
-    ChainDataProvider provider =
-        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
-    assertThatThrownBy(() -> provider.getUnsignedAttestationAtSlot(ZERO, 0))
-        .isInstanceOf(ChainDataUnavailableException.class);
-    verify(mockCombinedChainDataClient).isStoreAvailable();
-  }
-
-  @Test
-  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfSlotIsFinalized() {
-    getUnsignedAttestationAtSlot_throwsIllegalArgumentException(0, true);
-  }
-
-  @Test
-  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfCommitteeBelowRange() {
-    getUnsignedAttestationAtSlot_throwsIllegalArgumentException(-1, false);
-  }
-
-  @Test
-  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfCommitteeAboveRange() {
-    getUnsignedAttestationAtSlot_throwsIllegalArgumentException(1, false);
-  }
-
-  @Test
-  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfBlockNotFound() {
-    ChainDataProvider provider =
-        new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
-    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.isFinalized(ZERO)).thenReturn(false);
-    when(mockChainStorageClient.getBlockBySlot(ZERO)).thenReturn(Optional.empty());
-    Optional<Attestation> optional = provider.getUnsignedAttestationAtSlot(ZERO, 0);
-    verify(mockChainStorageClient).getBlockBySlot(ZERO);
-    assertTrue(optional.isEmpty());
-  }
-
-  @Test
-  void getUnsignedAttestationAtSlot_shouldReturnAttestation() {
-    ChainDataProvider provider =
-        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.isFinalized(slot)).thenReturn(false);
-    Optional<Attestation> optional = provider.getUnsignedAttestationAtSlot(slot, 0);
-    verify(mockCombinedChainDataClient).isStoreAvailable();
-    assertTrue(optional.isPresent());
-    Attestation attestation = optional.get();
-    assertEquals(ZERO, attestation.data.index);
-    assertEquals(BLSSignature.empty(), attestation.signature);
-    assertEquals(beaconState.slot, attestation.data.slot);
-    assertEquals(blockRoot, attestation.data.beacon_block_root);
-  }
-
-  @Test
   void getValidatorsByValidatorsRequest_shouldIncludeMissingValidators()
       throws ExecutionException, InterruptedException {
     ChainDataProvider provider =
@@ -477,18 +421,5 @@ public class ChainDataProviderTest {
     Fork result = provider.getFork();
     verify(mockCombinedChainDataClient).isStoreAvailable();
     assertThat(result).isEqualToComparingFieldByField(beaconState.fork);
-  }
-
-  private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(
-      int failingBlock, boolean isFinalized) {
-    ChainDataProvider provider =
-        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.isFinalized(ZERO)).thenReturn(isFinalized);
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> provider.getUnsignedAttestationAtSlot(ZERO, failingBlock));
-    verify(mockCombinedChainDataClient).isStoreAvailable();
-    verify(mockCombinedChainDataClient).isFinalized(ZERO);
   }
 }
