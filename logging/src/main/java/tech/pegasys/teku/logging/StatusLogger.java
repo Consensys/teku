@@ -72,7 +72,7 @@ public class StatusLogger {
     log.error("Error during block creation", cause);
   }
 
-  public void attestationFailure(final IllegalArgumentException cause) {
+  public void attestationFailure(final Throwable cause) {
     log.warn("Cannot produce attestations or create a block", cause);
   }
 
