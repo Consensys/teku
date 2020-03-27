@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,19 +30,25 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.ChainDataProvider;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.storage.ChainDataUnavailableException;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
-  private ChainDataProvider provider = mock(ChainDataProvider.class);
+  private ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private GetAttestation handler;
   private Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
+
+  @SuppressWarnings("unchecked")
+  final ArgumentCaptor<SafeFuture<String>> resultCaptor = ArgumentCaptor.forClass(SafeFuture.class);
 
   @BeforeEach
   public void setup() {
@@ -77,8 +85,14 @@ public class GetAttestationTest {
     Map<String, List<String>> params = Map.of(SLOT, List.of("1"), COMMITTEE_INDEX, List.of("1"));
 
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.isStoreAvailable()).thenReturn(false);
+    when(provider.createUnsignedAttestationAtSlot(UnsignedLong.ONE, 1))
+        .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
+
+    verify(context).result(resultCaptor.capture());
+    final SafeFuture<String> result = resultCaptor.getValue();
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -87,11 +101,13 @@ public class GetAttestationTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(provider.isStoreAvailable()).thenReturn(true);
-    when(provider.getUnsignedAttestationAtSlot(UnsignedLong.ONE, 1))
-        .thenReturn(Optional.of(attestation));
+    when(provider.createUnsignedAttestationAtSlot(UnsignedLong.ONE, 1))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
     handler.handle(context);
 
-    verify(context).result(jsonProvider.objectToJSON(attestation));
+    verify(context).result(resultCaptor.capture());
+    final SafeFuture<String> result = resultCaptor.getValue();
+    assertThat(result).isCompletedWithValue(jsonProvider.objectToJSON(attestation));
   }
 
   private void badRequestParamsTest(final Map<String, List<String>> params, String message)
