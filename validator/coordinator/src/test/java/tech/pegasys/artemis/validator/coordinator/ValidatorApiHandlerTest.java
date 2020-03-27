@@ -127,7 +127,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getStateAtSlot(any())).thenReturn(new SafeFuture<>());
     validatorApiHandler
         .getDuties(UnsignedLong.ZERO, List.of(dataStructureUtil.randomPublicKey()))
-        .join();
+        .reportExceptions();
 
     verify(chainDataClient).getStateAtSlot(UnsignedLong.ZERO);
   }
