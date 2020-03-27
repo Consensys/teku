@@ -28,7 +28,7 @@ public class P2POptions {
   public static final String P2P_PRIVATE_KEY_FILE_OPTION_NAME = "--p2p-private-key-file";
   public static final String P2P_PEER_LOWER_BOUND_OPTION_NAME = "--p2p-peer-lower-bound";
   public static final String P2P_PEER_UPPER_BOUND_OPTION_NAME = "--p2p-peer-upper-bound";
-  public static final String P2P_STATIC_PEERS_OPTION_NAME = "--p2p-public static-peers";
+  public static final String P2P_STATIC_PEERS_OPTION_NAME = "--p2p-static-peers";
 
   public static final boolean DEFAULT_P2P_ENABLED = true;
   public static final String DEFAULT_P2P_INTERFACE = "0.0.0.0";
