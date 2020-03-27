@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -38,7 +38,7 @@ class AttestationAggregatorTest {
 
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(mock(EventBus.class), mock(DiskUpdateChannel.class));
+      ChainStorageClient.memoryOnlyClient(mock(EventBus.class), mock(StorageUpdateChannel.class));
   private AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
   private AttestationAggregator aggregator;
 

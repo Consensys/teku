@@ -19,7 +19,7 @@ import com.google.common.eventbus.Subscribe;
 import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.GetBlockByBlockRootRequest;
 import tech.pegasys.artemis.storage.events.GetBlockByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
@@ -33,13 +33,12 @@ import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse
 import tech.pegasys.artemis.storage.events.GetStoreRequest;
 import tech.pegasys.artemis.storage.events.GetStoreResponse;
 import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskGenesisUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdateResult;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-public class ChainStorageServer implements DiskUpdateChannel {
+public class ChainStorageServer implements StorageUpdateChannel {
   private final EventBus eventBus;
   private final VersionedDatabaseFactory databaseFactory;
 
@@ -72,7 +71,7 @@ public class ChainStorageServer implements DiskUpdateChannel {
     return cachedStore;
   }
 
-  private synchronized void handleStoreUpdate(final DiskUpdateResult result) {
+  private synchronized void handleStoreUpdate(final StorageUpdateResult result) {
     if (result.isSuccessful()) {
       cachedStore = Optional.empty();
     }
@@ -84,18 +83,18 @@ public class ChainStorageServer implements DiskUpdateChannel {
   }
 
   @Override
-  public SafeFuture<DiskUpdateResult> onDiskUpdate(final DiskUpdate event) {
-    return SafeFuture.supplyAsync(
+  public SafeFuture<StorageUpdateResult> onStorageUpdate(final StorageUpdate event) {
+    return SafeFuture.of(
         () -> {
-          DiskUpdateResult result = database.update(event);
+          StorageUpdateResult result = database.update(event);
           handleStoreUpdate(result);
           return result;
         });
   }
 
   @Override
-  public void onDiskGenesisUpdate(final DiskGenesisUpdate event) {
-    database.storeGenesis(event.getStore());
+  public void onGenesis(final Store store) {
+    database.storeGenesis(store);
   }
 
   @Subscribe

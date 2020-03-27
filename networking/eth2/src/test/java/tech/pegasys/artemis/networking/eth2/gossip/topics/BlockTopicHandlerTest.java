@@ -32,25 +32,25 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BlockTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
+      ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, storageClient);
   private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, storageClient);
 
   @BeforeEach
   public void setup() {
-    when(diskUpdateChannel.onDiskUpdate(any()))
+    when(storageUpdateChannel.onStorageUpdate(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
     beaconChainUtil.initializeStorage();
   }
 

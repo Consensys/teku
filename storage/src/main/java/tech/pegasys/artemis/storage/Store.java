@@ -37,8 +37,8 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -104,13 +104,13 @@ public class Store implements ReadOnlyStore {
         latest_messages);
   }
 
-  Transaction startTransaction(final DiskUpdateChannel diskUpdateChannel) {
-    return startTransaction(diskUpdateChannel, StoreUpdateHandler.NOOP);
+  Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
+    return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP);
   }
 
   Transaction startTransaction(
-      final DiskUpdateChannel diskUpdateChannel, final StoreUpdateHandler updateHandler) {
-    return new Transaction(diskUpdateChannel, updateHandler);
+          final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
+    return new Transaction(storageUpdateChannel, updateHandler);
   }
 
   @Override
@@ -261,7 +261,7 @@ public class Store implements ReadOnlyStore {
 
   public class Transaction implements ReadOnlyStore {
 
-    private final DiskUpdateChannel diskUpdateChannel;
+    private final StorageUpdateChannel storageUpdateChannel;
     private Optional<UnsignedLong> time = Optional.empty();
     private Optional<UnsignedLong> genesis_time = Optional.empty();
     private Optional<Checkpoint> justified_checkpoint = Optional.empty();
@@ -273,8 +273,8 @@ public class Store implements ReadOnlyStore {
     private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
     private final StoreUpdateHandler updateHandler;
 
-    Transaction(final DiskUpdateChannel diskUpdateChannel, final StoreUpdateHandler updateHandler) {
-      this.diskUpdateChannel = diskUpdateChannel;
+    Transaction(final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
+      this.storageUpdateChannel = storageUpdateChannel;
       this.updateHandler = updateHandler;
     }
 
@@ -316,8 +316,8 @@ public class Store implements ReadOnlyStore {
 
     @CheckReturnValue
     public SafeFuture<Void> commit() {
-      final DiskUpdate updateEvent =
-          new DiskUpdate(
+      final StorageUpdate updateEvent =
+          new StorageUpdate(
               genesis_time,
               justified_checkpoint,
               finalized_checkpoint,
@@ -326,8 +326,8 @@ public class Store implements ReadOnlyStore {
               block_states,
               checkpoint_states,
               latest_messages);
-      return diskUpdateChannel
-          .onDiskUpdate(updateEvent)
+      return storageUpdateChannel
+          .onStorageUpdate(updateEvent)
           .thenAccept(
               updateResult -> {
                 if (!updateResult.isSuccessful()) {

@@ -29,7 +29,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -37,9 +37,9 @@ public class AttestationTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
-  private final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
+      ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
   private final AttestationTopicHandler topicHandler =
       new AttestationTopicHandler(eventBus, storageClient, 1);
 
@@ -87,7 +87,7 @@ public class AttestationTopicHandlerTest {
 
     // Set up state to be missing
     final ChainStorageClient storageClient =
-        ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
+        ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
     storageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(eventBus, storageClient, 1);

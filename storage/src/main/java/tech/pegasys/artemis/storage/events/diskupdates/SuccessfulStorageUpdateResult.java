@@ -17,11 +17,11 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
-public class SuccessfulDiskUpdateResult implements DiskUpdateResult {
+public class SuccessfulStorageUpdateResult implements StorageUpdateResult {
   private final Set<Bytes32> prunedBlockRoots;
   private final Set<Checkpoint> prunedCheckpoints;
 
-  public SuccessfulDiskUpdateResult(
+  public SuccessfulStorageUpdateResult(
       final Set<Bytes32> prunedBlockRoots, final Set<Checkpoint> prunedCheckpoints) {
     this.prunedBlockRoots = prunedBlockRoots;
     this.prunedCheckpoints = prunedCheckpoints;

@@ -44,7 +44,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetCommitteesTest {
@@ -68,7 +68,7 @@ public class GetCommitteesTest {
   public static void setup() {
     final EventBus localEventBus = new EventBus();
     final ChainStorageClient storageClient =
-        ChainStorageClient.memoryOnlyClient(localEventBus, mock(DiskUpdateChannel.class));
+        ChainStorageClient.memoryOnlyClient(localEventBus, mock(StorageUpdateChannel.class));
     beaconState = dataStructureUtil.randomBeaconState();
     storageClient.initializeFromGenesis(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);

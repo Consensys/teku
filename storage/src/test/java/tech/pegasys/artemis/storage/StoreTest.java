@@ -30,8 +30,8 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 class StoreTest {
@@ -58,12 +58,12 @@ class StoreTest {
 
   @Test
   public void shouldApplyChangesWhenTransactionCommits() {
-    DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
-    when(diskUpdateChannel.onDiskUpdate(any()))
+    StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+    when(storageUpdateChannel.onStorageUpdate(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
-    final Transaction transaction = store.startTransaction(diskUpdateChannel);
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
+    final Transaction transaction = store.startTransaction(storageUpdateChannel);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);

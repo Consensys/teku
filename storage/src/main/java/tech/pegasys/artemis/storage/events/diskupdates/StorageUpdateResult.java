@@ -18,19 +18,19 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
-public interface DiskUpdateResult {
+public interface StorageUpdateResult {
 
-  static DiskUpdateResult failed(final RuntimeException error) {
-    return new FailedDiskUpdateResult(error);
+  static StorageUpdateResult failed(final RuntimeException error) {
+    return new FailedStorageUpdateResult(error);
   }
 
-  static DiskUpdateResult successful(
+  static StorageUpdateResult successful(
       final Set<Bytes32> prunedBlockRoots, final Set<Checkpoint> prunedCheckpoints) {
-    return new SuccessfulDiskUpdateResult(prunedBlockRoots, prunedCheckpoints);
+    return new SuccessfulStorageUpdateResult(prunedBlockRoots, prunedCheckpoints);
   }
 
-  static DiskUpdateResult successfulWithNothingPruned() {
-    return new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet());
+  static StorageUpdateResult successfulWithNothingPruned() {
+    return new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet());
   }
 
   /** @return {@code true} if the update was successfully processed */

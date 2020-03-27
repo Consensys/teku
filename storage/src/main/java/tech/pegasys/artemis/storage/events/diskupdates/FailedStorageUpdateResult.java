@@ -18,10 +18,10 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
-public class FailedDiskUpdateResult implements DiskUpdateResult {
+public class FailedStorageUpdateResult implements StorageUpdateResult {
   private final RuntimeException error;
 
-  FailedDiskUpdateResult(final RuntimeException error) {
+  FailedStorageUpdateResult(final RuntimeException error) {
     this.error = error;
   }
 

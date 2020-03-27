@@ -16,7 +16,7 @@ package tech.pegasys.artemis.services.chainstorage;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.storage.ChainStorageServer;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainStorageService extends Service {
@@ -24,7 +24,7 @@ public class ChainStorageService extends Service {
 
   public ChainStorageService(final ServiceConfig serviceConfig) {
     this.server = ChainStorageServer.create(serviceConfig.getEventBus(), serviceConfig.getConfig());
-    serviceConfig.getEventChannels().subscribe(DiskUpdateChannel.class, server);
+    serviceConfig.getEventChannels().subscribe(StorageUpdateChannel.class, server);
   }
 
   @Override

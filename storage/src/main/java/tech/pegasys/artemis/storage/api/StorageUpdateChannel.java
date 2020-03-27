@@ -11,21 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.api;
 
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskGenesisUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskUpdateResult;
+import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class StubDiskUpdateChannel implements DiskUpdateChannel {
+public interface StorageUpdateChannel {
 
-  @Override
-  public SafeFuture<DiskUpdateResult> onDiskUpdate(DiskUpdate event) {
-    return SafeFuture.completedFuture(DiskUpdateResult.successfulWithNothingPruned());
-  }
+  SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event);
 
-  @Override
-  public void onDiskGenesisUpdate(DiskGenesisUpdate event) {}
+  void onGenesis(Store store);
 }

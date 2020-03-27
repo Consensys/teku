@@ -35,8 +35,8 @@ import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.Disconn
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeIntegrationTest {
@@ -49,12 +49,12 @@ public class BeaconBlocksByRangeIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
-    when(diskUpdateChannel.onDiskUpdate(any()))
+    StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+    when(storageUpdateChannel.onStorageUpdate(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
-    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1, diskUpdateChannel);
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
+    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1, storageUpdateChannel);
     final Eth2Network network1 =
         networkFactory
             .builder()

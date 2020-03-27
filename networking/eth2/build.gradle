@@ -40,6 +40,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':events'))
 
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
+  testFixturesImplementation 'org.mockito:mockito-core'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
 }

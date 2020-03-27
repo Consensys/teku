@@ -17,7 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -32,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import tech.pegasys.artemis.events.EventChannels;
+
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
@@ -44,8 +46,10 @@ import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.Waiter;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
 
@@ -70,7 +74,7 @@ public class Eth2NetworkFactory {
 
     protected List<Eth2Network> peers = new ArrayList<>();
     protected EventBus eventBus;
-    protected DiskUpdateChannel diskUpdateChannel;
+    protected StorageUpdateChannel storageUpdateChannel;
     protected ChainStorageClient chainStorageClient;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
@@ -156,16 +160,16 @@ public class Eth2NetworkFactory {
     }
 
     private void setDefaults() {
-      if (diskUpdateChannel == null) {
-        final EventChannels eventChannels =
-            EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-        diskUpdateChannel = eventChannels.getPublisher(DiskUpdateChannel.class);
+      if (storageUpdateChannel == null) {
+        storageUpdateChannel = mock(StorageUpdateChannel.class);
+        when(storageUpdateChannel.onStorageUpdate(any()))
+                .thenReturn(SafeFuture.completedFuture(StorageUpdateResult.successfulWithNothingPruned()));
       }
       if (eventBus == null) {
         eventBus = new EventBus();
       }
       if (chainStorageClient == null) {
-        chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
+        chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
       }
     }
 

@@ -27,7 +27,6 @@ import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.diskupdates.DiskGenesisUpdate;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -42,8 +41,7 @@ public class SSZTransitionRecorder {
   }
 
   @Subscribe
-  public void onDiskGenesisUpdate(final DiskGenesisUpdate genesisEvent) {
-    final Store store = genesisEvent.getStore();
+  public void onGenesis(final Store store) {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
     if (isNotGenesis(finalizedCheckpoint)) {
       return;

@@ -40,8 +40,8 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -51,15 +51,15 @@ import tech.pegasys.artemis.util.config.Constants;
 public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
-  private final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final ChainStorageClient localStorage =
-      ChainStorageClient.memoryOnlyClient(localEventBus, diskUpdateChannel);
+      ChainStorageClient.memoryOnlyClient(localEventBus, storageUpdateChannel);
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(localStorage, validatorKeys, false);
 
   private final EventBus otherEventBus = mock(EventBus.class);
   private final ChainStorageClient otherStorage =
-      ChainStorageClient.memoryOnlyClient(otherEventBus, diskUpdateChannel);
+      ChainStorageClient.memoryOnlyClient(otherEventBus, storageUpdateChannel);
   private final BeaconChainUtil otherChain =
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
@@ -78,10 +78,10 @@ public class BlockImporterTest {
 
   @BeforeEach
   public void setup() {
-    when(diskUpdateChannel.onDiskUpdate(any()))
+    when(storageUpdateChannel.onStorageUpdate(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
     otherChain.initializeStorage();
     localChain.initializeStorage();
   }

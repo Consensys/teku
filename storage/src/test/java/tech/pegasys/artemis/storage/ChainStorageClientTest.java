@@ -38,12 +38,12 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
-import tech.pegasys.artemis.storage.api.DiskUpdateChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.GetStoreRequest;
 import tech.pegasys.artemis.storage.events.GetStoreResponse;
 import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
-import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulDiskUpdateResult;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -58,19 +58,19 @@ class ChainStorageClientTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final DiskUpdateChannel diskUpdateChannel = mock(DiskUpdateChannel.class);
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClientWithStore(eventBus, store, diskUpdateChannel);
+      ChainStorageClient.memoryOnlyClientWithStore(eventBus, store, storageUpdateChannel);
   private final ChainStorageClient preGenesisStorageClient =
-      ChainStorageClient.memoryOnlyClient(eventBus, diskUpdateChannel);
+      ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
 
   @BeforeEach
   void setUp() {
-    when(diskUpdateChannel.onDiskUpdate(any()))
+    when(storageUpdateChannel.onStorageUpdate(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                new SuccessfulDiskUpdateResult(Collections.emptySet(), Collections.emptySet())));
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
   }
 
   @Test
@@ -80,7 +80,7 @@ class ChainStorageClientTest {
     final List<GetStoreRequest> getStoreRequests =
         EventSink.capture(eventBus, GetStoreRequest.class);
     final SafeFuture<ChainStorageClient> client =
-        ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
+        ChainStorageClient.storageBackedClient(eventBus, storageUpdateChannel);
 
     // We should have posted a request to get the store from storage
     assertThat(getStoreRequests.size()).isEqualTo(1);
@@ -116,7 +116,7 @@ class ChainStorageClientTest {
     final List<GetStoreRequest> getStoreRequests =
         EventSink.capture(eventBus, GetStoreRequest.class);
     final SafeFuture<ChainStorageClient> client =
-        ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
+        ChainStorageClient.storageBackedClient(eventBus, storageUpdateChannel);
 
     // We should have posted a request to get the store from storage
     assertThat(getStoreRequests.size()).isEqualTo(1);
@@ -144,7 +144,7 @@ class ChainStorageClientTest {
     final List<GetStoreRequest> getStoreRequests =
         EventSink.capture(eventBus, GetStoreRequest.class);
     final SafeFuture<ChainStorageClient> client =
-        ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
+        ChainStorageClient.storageBackedClient(eventBus, storageUpdateChannel);
 
     // We should have posted a request to get the store from storage
     assertThat(getStoreRequests.size()).isEqualTo(1);
@@ -175,7 +175,7 @@ class ChainStorageClientTest {
     final List<GetStoreRequest> getStoreRequests =
         EventSink.capture(eventBus, GetStoreRequest.class);
     final SafeFuture<ChainStorageClient> client =
-        ChainStorageClient.storageBackedClient(eventBus, diskUpdateChannel);
+        ChainStorageClient.storageBackedClient(eventBus, storageUpdateChannel);
 
     // We should have posted a request to get the store from storage
     assertThat(getStoreRequests.size()).isEqualTo(1);

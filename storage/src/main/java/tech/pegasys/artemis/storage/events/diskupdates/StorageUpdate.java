@@ -21,7 +21,7 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
-public class DiskUpdate {
+public class StorageUpdate {
 
   private final Optional<UnsignedLong> genesisTime;
   private final Optional<Checkpoint> justifiedCheckpoint;
@@ -32,7 +32,7 @@ public class DiskUpdate {
   private final Map<Checkpoint, BeaconState> checkpointStates;
   private final Map<UnsignedLong, Checkpoint> latestMessages;
 
-  public DiskUpdate(
+  public StorageUpdate(
       final Optional<UnsignedLong> genesisTime,
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> finalizedCheckpoint,
