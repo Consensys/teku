@@ -15,12 +15,12 @@ p2p-private-key-file = "path/to/file"
 
 # interop
 # when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
-x-interop-genesis-time = 0
-x-interop-owned-validator-start-index =  0
-x-interop-owned-validator-count = 64
-x-interop-start-state = ""
-x-interop-number-of-validators = 64
-x-interop-enabled = true
+Xinterop-genesis-time = 0
+Xinterop-owned-validator-start-index =  0
+Xinterop-owned-validator-count = 64
+Xinterop-start-state = ""
+Xinterop-number-of-validators = 64
+Xinterop-enabled = true
 
 # validator
 #validators-key-file="path/to/keys.yaml"
@@ -30,7 +30,7 @@ eth1-deposit-contract-address = "0x77f7bED277449F51505a4C54550B074030d989bC"
 eth1-endpoint = "http://localhost:8545"
 
 # output
-#x-transaction-record-directory="/tmp/teku"
+#Xtransaction-record-directory="/tmp/teku"
 
 # logging
 #log-colour-enabled = false

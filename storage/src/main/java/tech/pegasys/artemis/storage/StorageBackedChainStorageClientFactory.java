@@ -19,6 +19,7 @@ import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.GetStoreRequest;
 import tech.pegasys.artemis.storage.events.GetStoreResponse;
 import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
@@ -33,8 +34,9 @@ class StorageBackedChainStorageClientFactory {
   private final SafeFuture<ChainStorageClient> initializationCompleted = new SafeFuture<>();
   private volatile OptionalLong getStoreRequestId = OptionalLong.empty();
 
-  public StorageBackedChainStorageClientFactory(final EventBus eventBus) {
-    this.client = new ChainStorageClient(eventBus, TransactionPrecommit.storageEnabled(eventBus));
+  public StorageBackedChainStorageClientFactory(
+      final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
+    this.client = new ChainStorageClient(storageUpdateChannel, eventBus);
     this.eventBus = eventBus;
     eventBus.register(client);
   }

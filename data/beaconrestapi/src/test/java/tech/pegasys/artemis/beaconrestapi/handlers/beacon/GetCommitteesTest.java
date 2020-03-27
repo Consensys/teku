@@ -15,13 +15,18 @@ package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_FINALIZED;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.eventbus.EventBus;
@@ -44,6 +49,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetCommitteesTest {
@@ -54,7 +60,6 @@ public class GetCommitteesTest {
   private static UnsignedLong epoch;
   private static CombinedChainDataClient combinedChainDataClient;
   private static HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
-  private String EMPTY_LIST = "[]";
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
@@ -66,29 +71,14 @@ public class GetCommitteesTest {
   @BeforeAll
   public static void setup() {
     final EventBus localEventBus = new EventBus();
-    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
+    final ChainStorageClient storageClient =
+        ChainStorageClient.memoryOnlyClient(localEventBus, mock(StorageUpdateChannel.class));
     beaconState = dataStructureUtil.randomBeaconState();
     storageClient.initializeFromGenesis(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
     blockRoot = storageClient.getBestBlockRoot().orElseThrow();
     slot = storageClient.getBlockState(blockRoot).get().getSlot();
     epoch = slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-  }
-
-  @Test
-  public void shouldReturnEmptyListWhenStateAtSlotIsNotFound() throws Exception {
-    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
-
-    when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of("0")));
-    when(provider.isStoreAvailable()).thenReturn(true);
-    when(provider.getCommitteesAtEpoch(ZERO)).thenReturn(SafeFuture.completedFuture(List.of()));
-    handler.handle(context);
-
-    verify(context).result(args.capture());
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    verify(provider).getCommitteesAtEpoch(ZERO);
-    SafeFuture<String> future = args.getValue();
-    assertEquals(future.get(), EMPTY_LIST);
   }
 
   @Test
@@ -101,20 +91,43 @@ public class GetCommitteesTest {
   }
 
   @Test
-  public void shouldReturnEmptyListWhenAFutureEpochIsRequested() throws Exception {
+  public void shouldHandleFutureEpoch() throws Exception {
     final GetCommittees handler = new GetCommittees(provider, jsonProvider);
-    final UnsignedLong futureEpoch = slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
 
-    when(provider.isStoreAvailable()).thenReturn(true);
-    when(provider.getCommitteesAtEpoch(futureEpoch))
-        .thenReturn(SafeFuture.completedFuture(List.of()));
+    final UnsignedLong futureEpoch = epoch.plus(UnsignedLong.ONE);
+    final UnsignedLong epochSlot = compute_start_slot_at_epoch(futureEpoch);
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(futureEpoch.toString())));
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(provider.isFinalized(epochSlot)).thenReturn(false);
+    when(provider.getCommitteesAtEpoch(futureEpoch))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     handler.handle(context);
 
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    SafeFuture<String> data = args.getValue();
-    assertEquals(data.get(), EMPTY_LIST);
+    verify(provider).getCommitteesAtEpoch(futureEpoch);
+    SafeFuture<String> future = args.getValue();
+    verify(context).status(SC_NOT_FOUND);
+    assertThat(future.get()).isNull();
+  }
+
+  @Test
+  public void shouldHandleMissingFinalizedState() throws Exception {
+    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
+
+    when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of("0")));
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(provider.isFinalized(ZERO)).thenReturn(true);
+    when(provider.getCommitteesAtEpoch(ZERO))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    handler.handle(context);
+
+    verify(context).result(args.capture());
+    verify(context).header(Header.CACHE_CONTROL, CACHE_FINALIZED);
+    verify(provider).getCommitteesAtEpoch(ZERO);
+    SafeFuture<String> future = args.getValue();
+    verify(context).status(SC_GONE);
+    assertThat(future.get()).isNull();
   }
 
   @Test

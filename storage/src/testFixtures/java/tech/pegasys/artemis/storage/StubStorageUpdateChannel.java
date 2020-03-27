@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,21 +13,18 @@
 
 package tech.pegasys.artemis.storage;
 
-import com.google.common.eventbus.EventBus;
-import javax.annotation.CheckReturnValue;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public interface TransactionPrecommit {
+public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
-  static TransactionPrecommit memoryOnly() {
-    return event -> SafeFuture.completedFuture(DatabaseUpdateResult.successfulWithNothingPruned());
+  @Override
+  public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {
+    return SafeFuture.completedFuture(StorageUpdateResult.successfulWithNothingPruned());
   }
 
-  static TransactionPrecommit storageEnabled(final EventBus eventBus) {
-    return new StoreToDiskTransactionPrecommit(eventBus);
-  }
-
-  @CheckReturnValue
-  SafeFuture<DatabaseUpdateResult> precommit(StoreDiskUpdateEvent updateEvent);
+  @Override
+  public void onGenesis(Store store) {}
 }
