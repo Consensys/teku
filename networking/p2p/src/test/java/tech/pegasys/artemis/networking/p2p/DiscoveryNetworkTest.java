@@ -109,7 +109,7 @@ class DiscoveryNetworkTest {
   }
 
   @Test
-  public void shouldNotEnableDiscoveryWhenMethodIsStatic() {
+  public void shouldNotEnableDiscoveryWhenDiscoveryIsDisabled() {
     final DiscoveryNetwork<Peer> network =
         DiscoveryNetwork.create(
             p2pNetwork,
@@ -121,7 +121,7 @@ class DiscoveryNetworkTest {
                 0,
                 0,
                 Collections.emptyList(),
-                "static",
+                false,
                 Collections.emptyList(),
                 new TargetPeerRange(20, 30),
                 false,

@@ -60,7 +60,8 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
 
   @BeforeEach
   public void setup() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient();

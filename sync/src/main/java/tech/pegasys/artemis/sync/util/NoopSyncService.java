@@ -15,35 +15,30 @@ package tech.pegasys.artemis.sync.util;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.sync.BlockPropagationManager;
-import tech.pegasys.artemis.sync.SyncManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.SyncStatus;
 import tech.pegasys.artemis.sync.SyncingStatus;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class NoopSyncService extends SyncService {
-
-  public NoopSyncService(
-      final BlockPropagationManager blockPropagationManager,
-      final SyncManager syncManager,
-      final ChainStorageClient storageClient) {
-    super(blockPropagationManager, syncManager, storageClient);
-  }
+public class NoopSyncService implements SyncService {
 
   @Override
-  protected SafeFuture<?> doStart() {
+  public SafeFuture<?> start() {
     return SafeFuture.completedFuture(null);
   }
 
   @Override
-  protected SafeFuture<?> doStop() {
+  public SafeFuture<?> stop() {
     return SafeFuture.completedFuture(null);
   }
 
   @Override
   public SyncingStatus getSyncStatus() {
     return new SyncingStatus(false, new SyncStatus(ZERO, ZERO, ZERO));
+  }
+
+  @Override
+  public boolean isSyncActive() {
+    return false;
   }
 }

@@ -11,34 +11,22 @@ dependencies {
     implementation project(':validator:coordinator')
 
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
-    implementation 'com.google.guava:guava'
     implementation 'io.swagger.core.v3:swagger-core'
     implementation 'io.github.classgraph:classgraph'
     implementation 'io.javalin:javalin'
-    implementation 'org.apache.commons:commons-lang3'
-    implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.tuweni:tuweni-crypto'
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'org.webjars:swagger-ui'
 
-    runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
     testImplementation testFixtures(project(':bls'))
     testImplementation testFixtures(project(':ethereum:datastructures'))
-
-    testImplementation 'org.assertj:assertj-core'
-    testImplementation 'org.mockito:mockito-core'
 
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
 
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
 
-    integrationTestImplementation 'org.mockito:mockito-core'
-
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
-    integrationTestImplementation 'org.assertj:assertj-core'
-    integrationTestImplementation 'org.mockito:mockito-core'
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
 }
 
