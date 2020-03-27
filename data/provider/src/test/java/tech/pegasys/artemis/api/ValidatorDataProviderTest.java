@@ -19,7 +19,6 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,7 +43,6 @@ import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProviderTest {
 
@@ -52,11 +50,10 @@ public class ValidatorDataProviderTest {
       ArgumentCaptor.forClass(tech.pegasys.artemis.datastructures.operations.Attestation.class);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
   private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider =
-      new ValidatorDataProvider(validatorCoordinator, validatorApiChannel, combinedChainDataClient);
+      new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
@@ -233,7 +230,7 @@ public class ValidatorDataProviderTest {
 
     provider.submitAttestation(attestation);
 
-    verify(validatorCoordinator).postSignedAttestation(args.capture(), eq(true));
+    verify(validatorApiChannel).sendSignedAttestation(args.capture());
     assertThat(args.getValue()).usingRecursiveComparison().isEqualTo(internalAttestation);
   }
 }

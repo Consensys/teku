@@ -36,7 +36,6 @@ import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   private static final okhttp3.MediaType JSON =
@@ -50,7 +49,6 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
       new CombinedChainDataClient(chainStorageClient, historicalChainData);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  protected final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
 
   private final DataProvider dataProvider =
       new DataProvider(
@@ -58,8 +56,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
           combinedChainDataClient,
           p2PNetwork,
           syncService,
-          validatorApiChannel,
-          validatorCoordinator);
+          validatorApiChannel);
 
   private BeaconRestApi beaconRestApi;
   protected OkHttpClient client;

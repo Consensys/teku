@@ -243,7 +243,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             depositProvider,
             eth1DataCache);
     eventChannels.subscribe(
-        ValidatorApiChannel.class, new ValidatorApiHandler(combinedChainDataClient, blockFactory));
+        ValidatorApiChannel.class,
+        new ValidatorApiHandler(
+            combinedChainDataClient, blockFactory, attestationAggregator, eventBus));
   }
 
   public void initStateProcessor() {
@@ -333,8 +335,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             combinedChainDataClient,
             p2pNetwork,
             syncService,
-            eventChannels.getPublisher(ValidatorApiChannel.class),
-            validatorCoordinator);
+            eventChannels.getPublisher(ValidatorApiChannel.class));
     beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 

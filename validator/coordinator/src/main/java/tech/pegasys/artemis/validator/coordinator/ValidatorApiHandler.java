@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beaco
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +43,7 @@ import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -57,11 +59,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
   private final BlockFactory blockFactory;
+  private final AttestationAggregator attestationAggregator;
+  private final EventBus eventBus;
 
   public ValidatorApiHandler(
-      final CombinedChainDataClient combinedChainDataClient, final BlockFactory blockFactory) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final BlockFactory blockFactory,
+      final AttestationAggregator attestationAggregator,
+      final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.blockFactory = blockFactory;
+    this.attestationAggregator = attestationAggregator;
+    this.eventBus = eventBus;
   }
 
   @Override
@@ -149,6 +158,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
           return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
         });
+  }
+
+  @Override
+  public void sendSignedAttestation(final Attestation attestation) {
+    attestationAggregator.addOwnValidatorAttestation(attestation);
+    eventBus.post(attestation);
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

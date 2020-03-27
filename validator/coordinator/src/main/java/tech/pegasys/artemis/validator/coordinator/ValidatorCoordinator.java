@@ -250,7 +250,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
             attester ->
                 createSignedAttestation(state, unsignedAttestation, attester)
                     .finish(
-                        attestation -> postSignedAttestation(attestation, false),
+                        validatorApiChannel::sendSignedAttestation,
                         error ->
                             LOG.error(
                                 "Failed to sign attestation for slot {} and validator {}",
@@ -286,17 +286,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     Bytes signing_root = compute_signing_root(attestationData, domain);
 
     return getSigner(attester).signAttestation(signing_root);
-  }
-
-  public void postSignedAttestation(final Attestation attestation, boolean validate) {
-    // TODO extra validation for the attestation we're posting?
-    if (validate) {
-      if (attestation.getAggregate_signature().equals(BLSSignature.empty())) {
-        throw new IllegalArgumentException("Signed attestations must have a non zero signature");
-      }
-    }
-    attestationAggregator.addOwnValidatorAttestation(attestation);
-    this.eventBus.post(attestation);
   }
 
   private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {

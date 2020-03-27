@@ -32,18 +32,14 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties.Duties;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProvider {
-  private final ValidatorCoordinator validatorCoordinator;
   private final ValidatorApiChannel validatorApiChannel;
   private CombinedChainDataClient combinedChainDataClient;
 
   public ValidatorDataProvider(
-      final ValidatorCoordinator validatorCoordinator,
       final ValidatorApiChannel validatorApiChannel,
       final CombinedChainDataClient combinedChainDataClient) {
-    this.validatorCoordinator = validatorCoordinator;
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
   }
@@ -116,6 +112,13 @@ public class ValidatorDataProvider {
   }
 
   public void submitAttestation(Attestation attestation) {
-    validatorCoordinator.postSignedAttestation(attestation.asInternalAttestation(), true);
+    // TODO extra validation for the attestation we're posting?
+    if (attestation
+        .signature
+        .asInternalBLSSignature()
+        .equals(tech.pegasys.artemis.util.bls.BLSSignature.empty())) {
+      throw new IllegalArgumentException("Signed attestations must have a non zero signature");
+    }
+    validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());
   }
 }
