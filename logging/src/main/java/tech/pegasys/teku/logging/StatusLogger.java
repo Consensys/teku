@@ -73,7 +73,7 @@ public class StatusLogger {
   }
 
   public void attestationFailure(final Throwable cause) {
-    log.warn("Cannot produce attestations or create a block", cause);
+    log.error("Error during attestation creation", cause);
   }
 
   public void validatorDepositYamlKeyWriterFailure(final Path file) {
