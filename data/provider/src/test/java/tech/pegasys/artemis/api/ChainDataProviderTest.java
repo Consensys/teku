@@ -91,7 +91,6 @@ public class ChainDataProviderTest {
     SafeFuture<Optional<List<Committee>>> future =
         provider.getCommitteesAtEpoch(UnsignedLong.valueOf(50));
 
-    verify(historicalChainData).getFinalizedStateAtSlot(ZERO);
     assertThat(future.get()).isEmpty();
   }
 
