@@ -15,6 +15,7 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,7 +52,8 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 class ValidatorApiHandlerTest {
 
   private static final UnsignedLong EPOCH = UnsignedLong.valueOf(13);
-  private static final UnsignedLong START_SLOT = BeaconStateUtil.compute_start_slot_at_epoch(EPOCH);
+  private static final UnsignedLong PREVIOUS_EPOCH_START_SLOT =
+      BeaconStateUtil.compute_start_slot_at_epoch(EPOCH.minus(UnsignedLong.ONE));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
@@ -63,7 +65,8 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
-    when(chainDataClient.getStateAtSlot(START_SLOT)).thenReturn(completedFuture(Optional.empty()));
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<List<ValidatorDuties>>> duties =
         validatorApiHandler.getDuties(EPOCH, List.of(dataStructureUtil.randomPublicKey()));
@@ -72,7 +75,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldReturnDutiesForUnknownValidator() {
-    when(chainDataClient.getStateAtSlot(START_SLOT))
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
@@ -85,7 +88,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldReturnDutiesForKnownValidator() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlot(START_SLOT))
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
 
     final int validatorIndex = 3;
@@ -102,7 +105,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldReturnDutiesForMixOfKnownAndUnknownValidators() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlot(START_SLOT))
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
@@ -124,6 +127,16 @@ class ValidatorApiHandlerTest {
             UnsignedLong.valueOf(104));
     assertThat(duties.get())
         .containsExactly(validator3Duties, unknownValidatorDuties, validator6Duties);
+  }
+
+  @Test
+  public void getDuties_shouldUseGenesisStateForFirstEpoch() {
+    when(chainDataClient.getStateAtSlot(any())).thenReturn(new SafeFuture<>());
+    validatorApiHandler
+        .getDuties(UnsignedLong.ZERO, List.of(dataStructureUtil.randomPublicKey()))
+        .reportExceptions();
+
+    verify(chainDataClient).getStateAtSlot(UnsignedLong.ZERO);
   }
 
   @Test
@@ -239,7 +252,7 @@ class ValidatorApiHandlerTest {
 
   private BeaconState createStateWithActiveValidators() {
     final MutableBeaconState state = dataStructureUtil.randomBeaconState(32).createWritableCopy();
-    state.setSlot(START_SLOT);
+    state.setSlot(PREVIOUS_EPOCH_START_SLOT);
     final SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
     for (int i = 0; i < validators.size(); i++) {
       final MutableValidator validator = validators.get(i);
