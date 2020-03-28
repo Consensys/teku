@@ -86,13 +86,11 @@ public class ChainDataProviderTest {
   @Test
   public void getCommitteeAssignmentAtEpoch_shouldReturnEmptyListWhenStateAtSlotIsNotFound()
       throws Exception {
-    ChainDataProvider provider = new ChainDataProvider(null, combinedChainDataClient);
+    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
 
-    when(historicalChainData.getFinalizedStateAtSlot(ZERO))
-        .thenReturn(completedFuture(Optional.empty()));
-    SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(ZERO);
+    SafeFuture<Optional<List<Committee>>> future =
+        provider.getCommitteesAtEpoch(UnsignedLong.valueOf(50));
 
-    verify(historicalChainData).getFinalizedStateAtSlot(ZERO);
     assertThat(future.get()).isEmpty();
   }
 
