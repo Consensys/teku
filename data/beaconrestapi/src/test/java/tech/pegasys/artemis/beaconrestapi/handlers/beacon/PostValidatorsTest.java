@@ -14,8 +14,9 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -60,13 +61,25 @@ public class PostValidatorsTest {
   }
 
   @Test
-  void shouldReturnNoContentIfNoStore() throws Exception {
+  void shouldHandleMissingFinalizedData() throws Exception {
     when(provider.getValidatorsByValidatorsRequest(any()))
         .thenReturn(completedFuture(Optional.empty()));
     when(context.body()).thenReturn(jsonProvider.objectToJSON(smallRequest));
+    when(provider.isFinalizedEpoch(smallRequest.epoch)).thenReturn(true);
     handler.handle(context);
 
-    verify(context).status(SC_NO_CONTENT);
+    verify(context).status(SC_GONE);
+  }
+
+  @Test
+  void shouldHandleMissingNonFinalData() throws Exception {
+    when(provider.getValidatorsByValidatorsRequest(any()))
+        .thenReturn(completedFuture(Optional.empty()));
+    when(context.body()).thenReturn(jsonProvider.objectToJSON(smallRequest));
+    when(provider.isFinalizedEpoch(smallRequest.epoch)).thenReturn(false);
+    handler.handle(context);
+
+    verify(context).status(SC_NOT_FOUND);
   }
 
   @Test
@@ -89,6 +102,6 @@ public class PostValidatorsTest {
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> data = args.getValue();
-    assertEquals(data.get(), EMPTY_LIST);
+    assertThat(data.get()).isEqualTo(EMPTY_LIST);
   }
 }

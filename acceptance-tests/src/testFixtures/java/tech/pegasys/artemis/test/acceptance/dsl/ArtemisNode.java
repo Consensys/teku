@@ -292,22 +292,22 @@ public class ArtemisNode extends Node {
       configMap.put("p2p-port", P2P_PORT);
       configMap.put("p2p-advertised-port", P2P_PORT);
       configMap.put("p2p-interface", NetworkUtility.INADDR_ANY);
-      configMap.put("x-interop-genesis-time", 0);
-      configMap.put("x-interop-owned-validator-start-index", 0);
-      configMap.put("x-interop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("x-interop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("x-interop-enabled", true);
+      configMap.put("Xinterop-genesis-time", 0);
+      configMap.put("Xinterop-owned-validator-start-index", 0);
+      configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
+      configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
+      configMap.put("Xinterop-enabled", true);
       configMap.put("rest-api-enabled", true);
       configMap.put("rest-api-port", REST_API_PORT);
       configMap.put("rest-api-docs-enabled", false);
-      configMap.put("x-transaction-record-directory", ARTIFACTS_PATH + "transitions/");
+      configMap.put("Xtransition-record-directory", ARTIFACTS_PATH + "transitions/");
       configMap.put("data-path", ARTIFACTS_PATH + "data/");
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
-      configMap.put("x-interop-enabled", false);
+      configMap.put("Xinterop-enabled", false);
       configMap.put("eth1-deposit-contract-address", eth1Node.getDepositContractAddress());
       configMap.put("eth1-endpoint", eth1Node.getInternalJsonRpcUrl());
       return this;
@@ -319,8 +319,8 @@ public class ArtemisNode extends Node {
     }
 
     public Config withInteropValidators(final int startIndex, final int validatorCount) {
-      configMap.put("x-interop-owned-validator-start-index", startIndex);
-      configMap.put("x-interop-owned-validator-count", validatorCount);
+      configMap.put("Xinterop-owned-validator-start-index", startIndex);
+      configMap.put("Xinterop-owned-validator-count", validatorCount);
       return this;
     }
 
@@ -331,7 +331,7 @@ public class ArtemisNode extends Node {
 
     public Config withGenesisState(String pathToGenesisState) {
       checkNotNull(pathToGenesisState);
-      configMap.put("x-interop-start-state", pathToGenesisState);
+      configMap.put("Xinterop-start-state", pathToGenesisState);
       return this;
     }
 

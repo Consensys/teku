@@ -27,7 +27,6 @@ dependencies {
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
-  testImplementation 'org.mockito:mockito-core'
 
   integrationTestImplementation testFixtures(project(':util'))
 

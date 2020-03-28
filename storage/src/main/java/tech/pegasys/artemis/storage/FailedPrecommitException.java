@@ -13,9 +13,11 @@
 
 package tech.pegasys.artemis.storage;
 
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
+
 public class FailedPrecommitException extends RuntimeException {
 
-  public FailedPrecommitException(final DatabaseUpdateResult result) {
+  public FailedPrecommitException(final StorageUpdateResult result) {
     super(result.getError());
   }
 }
