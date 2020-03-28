@@ -56,11 +56,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
 
   private final DataProvider dataProvider =
       new DataProvider(
-          recentChainData,
-          combinedChainDataClient,
-          p2PNetwork,
-          syncService,
-          validatorApiChannel);
+          recentChainData, combinedChainDataClient, p2PNetwork, syncService, validatorApiChannel);
 
   private BeaconRestApi beaconRestApi;
   protected OkHttpClient client;
