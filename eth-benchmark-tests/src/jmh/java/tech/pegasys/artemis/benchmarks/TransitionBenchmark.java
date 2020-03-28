@@ -38,9 +38,8 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -51,7 +50,7 @@ import tech.pegasys.artemis.util.config.Constants;
 @Threads(1)
 public abstract class TransitionBenchmark {
 
-  ChainStorageClient localStorage;
+  RecentChainData localStorage;
   BeaconChainUtil localChain;
   BlockImporter blockImporter;
   Iterator<SignedBeaconBlock> blockIterator;
@@ -79,7 +78,7 @@ public abstract class TransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
-    localStorage = MemoryOnlyChainStorageClient.create(localEventBus);
+    localStorage = MemoryOnlyRecentChainData.create(localEventBus);
     localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
     localChain.initializeStorage();
 

@@ -28,9 +28,8 @@ import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.StubStorageUpdateChannel;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
@@ -38,7 +37,7 @@ import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 public class SyncingNodeManager {
   private final EventBus eventBus;
   private final EventChannels eventChannels;
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
   private final Eth2Network eth2Network;
   private final SyncService syncService;
@@ -46,7 +45,7 @@ public class SyncingNodeManager {
   private SyncingNodeManager(
       final EventBus eventBus,
       final EventChannels eventChannels,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final BeaconChainUtil chainUtil,
       final Eth2Network eth2Network,
       final SyncService syncService) {
@@ -71,7 +70,7 @@ public class SyncingNodeManager {
     final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(eventBus);
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
 
@@ -118,7 +117,7 @@ public class SyncingNodeManager {
     return eth2Network;
   }
 
-  public ChainStorageClient storageClient() {
+  public RecentChainData storageClient() {
     return storageClient;
   }
 

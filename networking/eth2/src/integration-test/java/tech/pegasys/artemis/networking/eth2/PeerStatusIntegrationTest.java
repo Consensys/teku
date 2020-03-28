@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -25,10 +24,9 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
@@ -45,7 +43,7 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldExchangeStatusMessagesOnConnection() throws Exception {
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = MemoryOnlyChainStorageClient.create(eventBus2);
+    final RecentChainData storageClient2 = MemoryOnlyRecentChainData.create(eventBus2);
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network1 = networkFactory.builder().startNetwork();
     final Eth2Network network2 =
@@ -72,7 +70,7 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldUpdatePeerStatus() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = MemoryOnlyChainStorageClient.create(eventBus1);
+    final RecentChainData storageClient1 = MemoryOnlyRecentChainData.create(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -81,7 +79,7 @@ public class PeerStatusIntegrationTest {
             .startNetwork();
 
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = MemoryOnlyChainStorageClient.create(eventBus2);
+    final RecentChainData storageClient2 = MemoryOnlyRecentChainData.create(eventBus2);
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network2 =
         networkFactory
@@ -108,7 +106,7 @@ public class PeerStatusIntegrationTest {
   }
 
   private void assertStatusMatchesStorage(
-      final ChainStorageClient storageClient, final PeerStatus status) {
+      final RecentChainData storageClient, final PeerStatus status) {
     final Store network2Store = storageClient.getStore();
     assertStatus(
         status,

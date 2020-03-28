@@ -31,7 +31,7 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
@@ -41,7 +41,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventBus eventBus;
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
 
@@ -52,7 +52,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
 
   BlockPropagationManager(
       final EventBus eventBus,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
@@ -68,7 +68,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   public static BlockPropagationManager create(
       final EventBus eventBus,
       final P2PNetwork<Eth2Peer> eth2Network,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final BlockImporter blockImporter) {
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
     final FutureItems<SignedBeaconBlock> futureBlocks =

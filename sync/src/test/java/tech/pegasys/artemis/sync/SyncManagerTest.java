@@ -31,7 +31,7 @@ import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
@@ -39,7 +39,7 @@ import tech.pegasys.artemis.util.config.Constants;
 public class SyncManagerTest {
 
   private static final long SUBSCRIPTION_ID = 3423;
-  private ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private RecentChainData storageClient = mock(RecentChainData.class);
   private Eth2Network network = mock(Eth2Network.class);
   private final PeerSync peerSync = mock(PeerSync.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();

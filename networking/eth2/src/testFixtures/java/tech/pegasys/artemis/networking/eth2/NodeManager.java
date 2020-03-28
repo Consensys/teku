@@ -20,21 +20,20 @@ import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBui
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.StubStorageUpdateChannel;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class NodeManager {
   private final EventBus eventBus;
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
   private final Eth2Network eth2Network;
 
   private NodeManager(
       final EventBus eventBus,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final BeaconChainUtil chainUtil,
       final Eth2Network eth2Network) {
     this.eventBus = eventBus;
@@ -54,7 +53,7 @@ public class NodeManager {
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final EventBus eventBus = new EventBus();
-    final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(eventBus);
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
 
@@ -85,7 +84,7 @@ public class NodeManager {
     return eth2Network;
   }
 
-  public ChainStorageClient storageClient() {
+  public RecentChainData storageClient() {
     return storageClient;
   }
 }

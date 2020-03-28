@@ -17,9 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -43,13 +40,10 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
 
@@ -74,7 +68,7 @@ public class Eth2NetworkFactory {
 
     protected List<Eth2Network> peers = new ArrayList<>();
     protected EventBus eventBus;
-    protected ChainStorageClient chainStorageClient;
+    protected RecentChainData recentChainData;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
 
@@ -117,7 +111,7 @@ public class Eth2NetworkFactory {
         // Setup eth2 handlers
         final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
         final Eth2PeerManager eth2PeerManager =
-            Eth2PeerManager.create(chainStorageClient, historicalChainData, METRICS_SYSTEM);
+            Eth2PeerManager.create(recentChainData, historicalChainData, METRICS_SYSTEM);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
@@ -132,7 +126,7 @@ public class Eth2NetworkFactory {
                 reputationManager,
                 config);
 
-        return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
+        return new Eth2Network(network, eth2PeerManager, eventBus, recentChainData);
       }
     }
 
@@ -162,8 +156,8 @@ public class Eth2NetworkFactory {
       if (eventBus == null) {
         eventBus = new EventBus();
       }
-      if (chainStorageClient == null) {
-        chainStorageClient = MemoryOnlyChainStorageClient.create(eventBus);
+      if (recentChainData == null) {
+        recentChainData = MemoryOnlyRecentChainData.create(eventBus);
       }
     }
 
@@ -178,9 +172,9 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder chainStorageClient(final ChainStorageClient chainStorageClient) {
-      checkNotNull(chainStorageClient);
-      this.chainStorageClient = chainStorageClient;
+    public Eth2P2PNetworkBuilder chainStorageClient(final RecentChainData recentChainData) {
+      checkNotNull(recentChainData);
+      this.recentChainData = recentChainData;
       return this;
     }
 

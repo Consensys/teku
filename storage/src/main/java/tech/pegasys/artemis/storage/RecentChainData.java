@@ -39,12 +39,12 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
-public abstract class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
+public abstract class RecentChainData implements StoreUpdateHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
   protected final EventBus eventBus;
-  private final StorageUpdateChannel storageUpdateChannel;
+  protected final StorageUpdateChannel storageUpdateChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -58,7 +58,7 @@ public abstract class ChainStorageClient implements ChainStorage, StoreUpdateHan
   // Time
   private volatile UnsignedLong genesisTime;
 
-  ChainStorageClient(final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
+  RecentChainData(final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
   }

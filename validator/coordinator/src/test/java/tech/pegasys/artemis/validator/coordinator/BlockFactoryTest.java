@@ -39,9 +39,8 @@ import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -49,8 +48,8 @@ class BlockFactoryTest {
 
   public static final Eth1Data ETH1_DATA = new Eth1Data();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final ChainStorageClient chainStorageClient = MemoryOnlyChainStorageClient.create(new EventBus());
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, chainStorageClient);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, recentChainData);
   private final BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
@@ -76,29 +75,28 @@ class BlockFactoryTest {
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() throws Exception {
-    final UnsignedLong newSlot = chainStorageClient.getBestSlot().plus(ONE);
+    final UnsignedLong newSlot = recentChainData.getBestSlot().plus(ONE);
     assertBlockCreated(newSlot);
   }
 
   @Test
   public void shouldCreateBlockAfterSkippedSlot() throws Exception {
-    final UnsignedLong newSlot = chainStorageClient.getBestSlot().plus(UnsignedLong.valueOf(2));
+    final UnsignedLong newSlot = recentChainData.getBestSlot().plus(UnsignedLong.valueOf(2));
     assertBlockCreated(newSlot);
   }
 
   @Test
   public void shouldCreateBlockAfterMultipleSkippedSlot() throws Exception {
-    final UnsignedLong newSlot = chainStorageClient.getBestSlot().plus(UnsignedLong.valueOf(5));
+    final UnsignedLong newSlot = recentChainData.getBestSlot().plus(UnsignedLong.valueOf(5));
     assertBlockCreated(newSlot);
   }
 
   private void assertBlockCreated(final UnsignedLong newSlot)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    final Bytes32 bestBlockRoot = chainStorageClient.getBestBlockRoot().orElseThrow();
-    final BeaconBlock previousBlock =
-        chainStorageClient.getBlockByRoot(bestBlockRoot).orElseThrow();
-    final BeaconState previousState = chainStorageClient.getBlockState(bestBlockRoot).orElseThrow();
+    final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final BeaconBlock previousBlock = recentChainData.getBlockByRoot(bestBlockRoot).orElseThrow();
+    final BeaconState previousState = recentChainData.getBlockState(bestBlockRoot).orElseThrow();
     final BeaconBlock block =
         blockFactory.createUnsignedBlock(previousState, previousBlock, newSlot, randaoReveal);
 

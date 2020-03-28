@@ -30,9 +30,6 @@ import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
-import tech.pegasys.artemis.storage.events.GetStoreRequest;
-import tech.pegasys.artemis.storage.events.GetStoreResponse;
-import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -57,9 +54,6 @@ public class ChainStorageServer implements StorageUpdateChannel {
   public void start() {
     this.database = databaseFactory.createDatabase();
     eventBus.register(this);
-
-    final Optional<Store> store = getStore();
-    eventBus.post(new StoreInitializedFromStorageEvent(store));
   }
 
   private synchronized Optional<Store> getStore() {
@@ -77,9 +71,13 @@ public class ChainStorageServer implements StorageUpdateChannel {
     }
   }
 
-  @Subscribe
-  public void onStoreRequest(final GetStoreRequest request) {
-    eventBus.post(new GetStoreResponse(request.getId(), getStore()));
+  @Override
+  public SafeFuture<Optional<Store>> onStoreRequest() {
+    if (database == null) {
+      return SafeFuture.failedFuture(new RuntimeException("Database not initialized yet"));
+    }
+
+    return SafeFuture.completedFuture(getStore());
   }
 
   @Override

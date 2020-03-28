@@ -28,9 +28,8 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -38,7 +37,7 @@ public class AttestationTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
-  private final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(eventBus);
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
   private final AttestationTopicHandler topicHandler =
       new AttestationTopicHandler(eventBus, storageClient, 1);
 
@@ -85,7 +84,7 @@ public class AttestationTopicHandlerTest {
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     // Set up state to be missing
-    final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(eventBus);
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
     storageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(eventBus, storageClient, 1);

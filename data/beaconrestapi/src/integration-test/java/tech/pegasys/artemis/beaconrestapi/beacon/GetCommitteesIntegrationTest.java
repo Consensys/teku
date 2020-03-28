@@ -35,8 +35,8 @@ public class GetCommitteesIntegrationTest extends AbstractBeaconRestAPIIntegrati
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
     final UnsignedLong epoch = UnsignedLong.ONE;
-    when(chainStorageClient.getStore()).thenReturn(null);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+    when(recentChainData.getStore()).thenReturn(null);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(epoch);
 
     final Response response = getByEpoch(epoch.intValue());
     assertNoContent(response);
@@ -47,9 +47,9 @@ public class GetCommitteesIntegrationTest extends AbstractBeaconRestAPIIntegrati
     final UnsignedLong epoch = UnsignedLong.ONE;
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(epoch);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getByEpoch(epoch.intValue());
     assertNoContent(response);
@@ -63,9 +63,9 @@ public class GetCommitteesIntegrationTest extends AbstractBeaconRestAPIIntegrati
         SafeFuture.completedFuture(Optional.empty());
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(root));
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(root));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
     when(historicalChainData.getFinalizedStateByBlockRoot(root)).thenReturn(emptyStateResult);
 
     final Response response = getByEpoch(epoch);

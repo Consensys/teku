@@ -26,15 +26,14 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.DataProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class BeaconRestApiWithSwaggerTest {
-  private final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(new EventBus());
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);

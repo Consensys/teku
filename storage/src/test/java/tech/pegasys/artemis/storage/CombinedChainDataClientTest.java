@@ -41,7 +41,7 @@ import tech.pegasys.artemis.util.config.Constants;
 class CombinedChainDataClientTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final ChainStorageClient recentChainData = mock(ChainStorageClient.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
   private final Store store = mock(Store.class);
   private final CombinedChainDataClient client =

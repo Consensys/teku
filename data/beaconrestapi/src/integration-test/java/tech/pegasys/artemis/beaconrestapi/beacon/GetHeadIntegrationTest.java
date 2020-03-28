@@ -29,7 +29,7 @@ public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = get();
     assertNoContent(response);
@@ -38,8 +38,8 @@ public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
   @Test
   public void shouldReturnNoContentIfBestBlockRootIsMissing() throws Exception {
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = get();
     assertNoContent(response);
@@ -48,8 +48,8 @@ public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
   @Test
   public void shouldReturnNoContentIfBestBlockIsMissing() throws Exception {
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(chainStorageClient.getBlockByRoot(headRoot)).thenReturn(Optional.empty());
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(recentChainData.getBlockByRoot(headRoot)).thenReturn(Optional.empty());
 
     final Response response = get();
     assertNoContent(response);

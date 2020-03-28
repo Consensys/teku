@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.diffSlotAttestationData;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.getSingleAttesterIndex;
 
@@ -27,9 +26,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -38,7 +36,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 class AttestationAggregatorTest {
 
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final ChainStorageClient storageClient = MemoryOnlyChainStorageClient.create(new EventBus());
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
   private AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
   private AttestationAggregator aggregator;
 

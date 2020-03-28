@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,10 +31,8 @@ import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.ImportedBlocks;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.MemoryOnlyChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -54,10 +51,8 @@ public class BlockPropagationManagerTest {
       new FutureItems<>(SignedBeaconBlock::getSlot);
   private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
 
-  private final ChainStorageClient localStorage =
-          MemoryOnlyChainStorageClient.create(localEventBus);
-  private final ChainStorageClient remoteStorage =
-          MemoryOnlyChainStorageClient.create(remoteEventBus);
+  private final RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
+  private final RecentChainData remoteStorage = MemoryOnlyRecentChainData.create(remoteEventBus);
   private final BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys);
   private final BeaconChainUtil remoteChain = BeaconChainUtil.create(remoteStorage, validatorKeys);
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
