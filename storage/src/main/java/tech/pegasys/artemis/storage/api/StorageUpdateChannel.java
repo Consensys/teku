@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.artemis.storage.api;
 
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class StoreGenesisDiskUpdateEvent {
+public interface StorageUpdateChannel {
 
-  private final Store store;
+  SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event);
 
-  public StoreGenesisDiskUpdateEvent(final Store store) {
-    this.store = store;
-  }
-
-  public Store getStore() {
-    return store;
-  }
+  void onGenesis(Store store);
 }

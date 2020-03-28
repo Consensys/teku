@@ -13,17 +13,22 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -32,11 +37,35 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
   private static final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(1);
 
   @Test
-  public void shouldReturnNoContentIfStoreNotDefined_queryByEpoch() throws Exception {
+  public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
     when(chainStorageClient.getStore()).thenReturn(null);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
 
-    final Response response = post(1, keys);
+    final Response response = post(epoch.intValue(), keys);
     assertNoContent(response);
+  }
+
+  @Test
+  public void shouldReturnNoContentWhenBestBlockRootMissing() throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
+
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+
+    final Response response = post(epoch.intValue(), keys);
+    assertNoContent(response);
+  }
+
+  @Test
+  public void shouldReturnEmptyListWhenNoPubKeysSupplied() throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+
+    final Response response = post(epoch.intValue(), Collections.emptyList());
+    assertBodyEquals(response, "[]");
   }
 
   private Response post(final int epoch, final List<BLSKeyPair> publicKeys) throws IOException {
