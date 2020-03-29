@@ -35,7 +35,7 @@ public class ArtemisDepositSender extends Node {
     container.setCommand(
         "validator",
         "generate",
-        "--X-confirm-enabled",
+        "--Xconfirm-enabled",
         "false",
         "--deposit-amount-gwei",
         MINIMUM_REQUIRED_GWEI.toString(),
@@ -43,7 +43,7 @@ public class ArtemisDepositSender extends Node {
         ENCRYPTED_KEYSTORE_ENABLED,
         "--eth1-deposit-contract-address",
         eth1Node.getDepositContractAddress(),
-        "--X-number-of-validators",
+        "--Xnumber-of-validators",
         Integer.toString(numberOfValidators),
         "--eth1-private-key",
         eth1Node.getRichBenefactorKey(),

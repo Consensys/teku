@@ -15,12 +15,15 @@ package tech.pegasys.artemis.statetransition.blockimport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
@@ -37,6 +40,9 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -45,14 +51,15 @@ import tech.pegasys.artemis.util.config.Constants;
 public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
+  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final ChainStorageClient localStorage =
-      ChainStorageClient.memoryOnlyClient(localEventBus);
+      ChainStorageClient.memoryOnlyClient(localEventBus, storageUpdateChannel);
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(localStorage, validatorKeys, false);
 
   private final EventBus otherEventBus = mock(EventBus.class);
   private final ChainStorageClient otherStorage =
-      ChainStorageClient.memoryOnlyClient(otherEventBus);
+      ChainStorageClient.memoryOnlyClient(otherEventBus, storageUpdateChannel);
   private final BeaconChainUtil otherChain =
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
@@ -71,6 +78,10 @@ public class BlockImporterTest {
 
   @BeforeEach
   public void setup() {
+    when(storageUpdateChannel.onStorageUpdate(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
     otherChain.initializeStorage();
     localChain.initializeStorage();
   }
