@@ -399,7 +399,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void processSlot() {
     try {
       if (isFirstSlotOfNewEpoch(nodeSlot)) {
-        EVENT_LOG.epochEvent();
+        final UnsignedLong currentEpoch =
+            nodeSlot.plus(UnsignedLong.ONE).dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+        EVENT_LOG.epochEvent(
+            currentEpoch,
+            chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch(),
+            chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch(),
+            chainStorageClient.getFinalizedRoot());
       }
 
       slotEventsChannelPublisher.onSlot(nodeSlot);
@@ -411,7 +417,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           nodeSlot,
           chainStorageClient.getBestSlot(),
           chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch(),
-          chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
+          chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch(),
+          chainStorageClient.getFinalizedRoot());
       this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       this.eventBus.post(new BroadcastAggregatesEvent());

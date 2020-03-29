@@ -40,8 +40,20 @@ public class EventLogger {
     info(genesisEventLog, Color.WHITE);
   }
 
-  public void epochEvent() {
-    final String epochEventLog = "Epoch Event ***";
+  public void epochEvent(
+      final UnsignedLong currentEpoch,
+      final UnsignedLong justifiedEpoch,
+      final UnsignedLong finalizedEpoch,
+      final Bytes32 finalizedRoot) {
+    final String finalizedRootShortened =
+        String.format("%s", finalizedRoot.toHexString().substring(0, 9));
+    final String epochEventLog =
+        String.format(
+            "Epoch Event *** Current epoch: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s..",
+            currentEpoch.toString(),
+            justifiedEpoch.toString(),
+            finalizedEpoch.toString(),
+            finalizedRootShortened);
     info(epochEventLog, Color.PURPLE);
   }
 
@@ -49,14 +61,18 @@ public class EventLogger {
       final UnsignedLong nodeSlot,
       final UnsignedLong bestSlot,
       final UnsignedLong justifiedEpoch,
-      final UnsignedLong finalizedEpoch) {
+      final UnsignedLong finalizedEpoch,
+      final Bytes32 finalizedRoot) {
+    final String finalizedRootShortened =
+        String.format("%s", finalizedRoot.toHexString().substring(0, 9));
     final String slotEventLog =
         String.format(
-            "Slot Event *** Current slot: %s, Head slot: %s, Justified epoch: %s, Finalized epoch: %s",
+            "Slot Event *** Current slot: %s, Head block: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s..",
             nodeSlot.toString(),
             bestSlot.toString(),
             justifiedEpoch.toString(),
-            finalizedEpoch.toString());
+            finalizedEpoch.toString(),
+            finalizedRootShortened);
     info(slotEventLog, Color.WHITE);
   }
 
