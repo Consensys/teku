@@ -15,7 +15,6 @@ package tech.pegasys.artemis.validator.client;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -107,11 +106,6 @@ class DutySchedulerTest {
 
     // And not have any more retries scheduled
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-  }
-
-  @Test
-  public void shouldTimeoutRequestsForDuties() {
-    fail("Not implemented");
   }
 
   @Test

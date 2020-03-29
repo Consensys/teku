@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
@@ -79,6 +80,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
     LOG.trace("Requesting duties for epoch {}", epoch);
     return validatorApiChannel
         .getDuties(epoch, validators.keySet())
+        .orTimeout(Constants.VALIDATOR_DUTIES_TIMEOUT, TimeUnit.SECONDS)
         .thenApply(
             maybeDuties ->
                 maybeDuties.orElseThrow(
