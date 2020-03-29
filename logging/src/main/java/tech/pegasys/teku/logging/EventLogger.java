@@ -45,11 +45,15 @@ public class EventLogger {
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch,
       final Bytes32 finalizedRoot) {
+    final String finalizedRootHex = finalizedRoot.toHexString();
     final String finalizedRootShortened =
-        String.format("%s", finalizedRoot.toHexString().substring(0, 9));
+        String.format(
+            "%s..%s",
+            finalizedRootHex.substring(0, 6),
+            finalizedRootHex.substring(finalizedRootHex.length() - 4, finalizedRootHex.length()));
     final String epochEventLog =
         String.format(
-            "Epoch Event *** Current epoch: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s..",
+            "Epoch Event *** Current epoch: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s",
             currentEpoch.toString(),
             justifiedEpoch.toString(),
             finalizedEpoch.toString(),
@@ -63,11 +67,15 @@ public class EventLogger {
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch,
       final Bytes32 finalizedRoot) {
+    final String finalizedRootHex = finalizedRoot.toHexString();
     final String finalizedRootShortened =
-        String.format("%s", finalizedRoot.toHexString().substring(0, 9));
+        String.format(
+            "%s..%s",
+            finalizedRootHex.substring(0, 6),
+            finalizedRootHex.substring(finalizedRootHex.length() - 4, finalizedRootHex.length()));
     final String slotEventLog =
         String.format(
-            "Slot Event *** Current slot: %s, Head block: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s..",
+            "Slot Event *** Current slot: %s, Head block: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s",
             nodeSlot.toString(),
             bestSlot.toString(),
             justifiedEpoch.toString(),
