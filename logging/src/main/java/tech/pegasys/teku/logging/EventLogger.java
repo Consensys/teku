@@ -37,7 +37,7 @@ public class EventLogger {
         String.format(
             "Genesis Event *** Initial state root: %s, Genesis block root: %s",
             hashTreeRoot.toHexString(), genesisBlockRoot.toHexString());
-    info(genesisEventLog, Color.WHITE);
+    info(genesisEventLog, Color.CYAN);
   }
 
   public void epochEvent(
@@ -54,7 +54,7 @@ public class EventLogger {
             justifiedEpoch.toString(),
             finalizedEpoch.toString(),
             finalizedRootShortened);
-    info(epochEventLog, Color.PURPLE);
+    info(epochEventLog, Color.YELLOW);
   }
 
   public void slotEvent(
