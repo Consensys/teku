@@ -45,20 +45,23 @@ public class EventLogger {
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch,
       final Bytes32 finalizedRoot) {
-    final String finalizedRootHex = finalizedRoot.toHexString();
-    final String finalizedRootShortened =
-        String.format(
-            "%s..%s",
-            finalizedRootHex.substring(0, 6),
-            finalizedRootHex.substring(finalizedRootHex.length() - 4, finalizedRootHex.length()));
     final String epochEventLog =
         String.format(
             "Epoch Event *** Current epoch: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s",
             currentEpoch.toString(),
             justifiedEpoch.toString(),
             finalizedEpoch.toString(),
-            finalizedRootShortened);
+            shortenHash(finalizedRoot.toHexString()));
     info(epochEventLog, Color.YELLOW);
+  }
+
+  public void syncEvent(
+      final UnsignedLong nodeSlot, final UnsignedLong bestSlot, final int numPeers) {
+    final String syncEventLog =
+        String.format(
+            "Sync Event *** Current slot: %s, Head block: %s, Connected peers: %d",
+            nodeSlot, bestSlot.toString(), numPeers);
+    info(syncEventLog, Color.WHITE);
   }
 
   public void slotEvent(
@@ -67,12 +70,6 @@ public class EventLogger {
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch,
       final Bytes32 finalizedRoot) {
-    final String finalizedRootHex = finalizedRoot.toHexString();
-    final String finalizedRootShortened =
-        String.format(
-            "%s..%s",
-            finalizedRootHex.substring(0, 6),
-            finalizedRootHex.substring(finalizedRootHex.length() - 4, finalizedRootHex.length()));
     final String slotEventLog =
         String.format(
             "Slot Event *** Current slot: %s, Head block: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s",
@@ -80,7 +77,7 @@ public class EventLogger {
             bestSlot.toString(),
             justifiedEpoch.toString(),
             finalizedEpoch.toString(),
-            finalizedRootShortened);
+            shortenHash(finalizedRoot.toHexString()));
     info(slotEventLog, Color.WHITE);
   }
 
@@ -99,5 +96,10 @@ public class EventLogger {
 
   private void info(final String message, final Color color) {
     log.info(print(message, color));
+  }
+
+  private String shortenHash(final String hash) {
+    return String.format(
+        "%s..%s", hash.substring(0, 6), hash.substring(hash.length() - 4, hash.length()));
   }
 }
