@@ -12,13 +12,11 @@ dependencies {
   implementation project(':ssz')
   implementation project(':events')
 
-  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  implementation 'tech.pegasys.signers.internal:bls-keystore'
 
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:statetransition'))

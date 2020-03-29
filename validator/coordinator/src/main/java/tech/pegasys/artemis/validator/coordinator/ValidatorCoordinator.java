@@ -19,9 +19,9 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domai
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.validator.client.loader.ValidatorLoader.initializeValidators;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
-import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -105,7 +105,12 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition();
     this.blockCreator = new BlockProposalUtil(stateTransition);
-    this.validators = initializeValidators(config);
+    this.validators =
+        initializeValidators(config).stream()
+            .collect(
+                Collectors.toMap(
+                    tech.pegasys.artemis.validator.client.Validator::getPublicKey,
+                    validator -> new ValidatorInfo(validator.getMessageSignerService())));
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.eth1DataCache = eth1DataCache;

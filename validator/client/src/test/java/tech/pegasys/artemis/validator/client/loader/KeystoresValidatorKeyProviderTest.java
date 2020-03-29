@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.artemis.validator.client.loader;
 
 import static java.nio.file.Files.createTempFile;
 import static java.nio.file.Files.writeString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.validator.coordinator.KeystoresValidatorKeyProvider.KEY_LENGTH;
+import static tech.pegasys.artemis.validator.client.loader.KeystoresValidatorKeyProvider.KEY_LENGTH;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
