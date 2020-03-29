@@ -64,6 +64,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.SigningRoot;
@@ -713,10 +714,25 @@ public class BeaconStateUtil {
   public static Bytes get_domain(
       BeaconState state, Bytes4 domain_type, UnsignedLong message_epoch) {
     UnsignedLong epoch = (message_epoch == null) ? get_current_epoch(state) : message_epoch;
+    return get_domain(domain_type, epoch, state.getFork());
+  }
+  /**
+   * Return the signature domain (fork version concatenated with domain type) of a message.
+   *
+   * @param domain_type the domain for the message
+   * @param epoch the epoch the message being signed is from
+   * @param fork the current fork
+   * @return The fork version and signature domain. This format ((fork version << 32) +
+   *     SignatureDomain) is used to partition BLS signatures.
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
+   */
+  public static Bytes get_domain(
+      final Bytes4 domain_type, final UnsignedLong epoch, final Fork fork) {
     Bytes4 fork_version =
-        (epoch.compareTo(state.getFork().getEpoch()) < 0)
-            ? state.getFork().getPrevious_version()
-            : state.getFork().getCurrent_version();
+        (epoch.compareTo(fork.getEpoch()) < 0)
+            ? fork.getPrevious_version()
+            : fork.getCurrent_version();
     return compute_domain(domain_type, fork_version);
   }
 

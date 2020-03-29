@@ -2,18 +2,20 @@ dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':bls')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:statetransition')
   implementation project(':events')
   implementation project(':services:serviceutils')
-  implementation project(':validator:anticorruption')
+  implementation project(':storage')
   implementation project(':validator:api')
   implementation project(':util')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.google.guava:guava'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.apache.commons:commons-lang3'
 
-  integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
-
+  testImplementation 'org.mockito:mockito-core'
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
 }

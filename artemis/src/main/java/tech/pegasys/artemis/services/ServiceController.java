@@ -21,12 +21,14 @@ import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.services.timer.TimerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.validator.client.ValidatorClientService;
 
 public class ServiceController extends Service {
   private final BeaconChainService beaconChainService;
   private final ChainStorageService chainStorageService;
   private final TimerService timerService;
   private final Optional<PowchainService> powchainService;
+  private final ValidatorClientService validatorClientService;
 
   public ServiceController(final ServiceConfig config) {
     timerService = new TimerService(config);
@@ -36,6 +38,7 @@ public class ServiceController extends Service {
         config.getConfig().isInteropEnabled()
             ? Optional.empty()
             : Optional.of(new PowchainService(config));
+    validatorClientService = ValidatorClientService.create(config);
   }
 
   @Override
@@ -44,6 +47,7 @@ public class ServiceController extends Service {
         timerService.start(),
         chainStorageService.start(),
         beaconChainService.start(),
+        validatorClientService.start(),
         powchainService.map(PowchainService::start).orElse(SafeFuture.completedFuture(null)));
   }
 
@@ -53,6 +57,7 @@ public class ServiceController extends Service {
         timerService.stop(),
         chainStorageService.stop(),
         beaconChainService.stop(),
+        validatorClientService.stop(),
         powchainService.map(PowchainService::stop).orElse(SafeFuture.completedFuture(null)));
   }
 }
