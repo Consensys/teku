@@ -33,13 +33,16 @@ public class EventLogger {
   }
 
   public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
-    info("******* Eth2Genesis Event*******", Color.WHITE);
-    log.info("Initial state root is {}", hashTreeRoot.toHexString());
-    log.info("Genesis block root is {}", genesisBlockRoot.toHexString());
+    final String genesisEventLog =
+        String.format(
+            "Genesis Event *** Initial state root: %s, Genesis block root: %s",
+            hashTreeRoot.toHexString(), genesisBlockRoot.toHexString());
+    info(genesisEventLog, Color.WHITE);
   }
 
   public void epochEvent() {
-    info("******* Epoch Event *******", Color.PURPLE);
+    final String epochEventLog = "Epoch Event ***";
+    info(epochEventLog, Color.PURPLE);
   }
 
   public void slotEvent(
@@ -47,11 +50,14 @@ public class EventLogger {
       final UnsignedLong bestSlot,
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch) {
-    info("******* Slot Event *******", Color.WHITE);
-    log.info("Node slot:                             {}", nodeSlot);
-    log.info("Head block slot:                       {}", bestSlot);
-    log.info("Justified epoch:                       {}", justifiedEpoch);
-    log.info("Finalized epoch:                       {}", finalizedEpoch);
+    final String slotEventLog =
+        String.format(
+            "Slot Event *** Current slot: %s, Head slot: %s, Justified epoch: %s, Finalized epoch: %s",
+            nodeSlot.toString(),
+            bestSlot.toString(),
+            justifiedEpoch.toString(),
+            finalizedEpoch.toString());
+    info(slotEventLog, Color.WHITE);
   }
 
   public void unprocessedAttestation(final Bytes32 beaconBlockRoot) {
@@ -67,7 +73,7 @@ public class EventLogger {
         "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
   }
 
-  private void info(String message, Color color) {
+  private void info(final String message, final Color color) {
     log.info(print(message, color));
   }
 }
