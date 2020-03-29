@@ -24,7 +24,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -35,22 +34,24 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.Committee;
+import tech.pegasys.artemis.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class GetCommittees implements Handler {
+public class GetCommittees extends AbstractHandler implements Handler {
 
   public static final String ROUTE = "/beacon/committees";
 
   private final ChainDataProvider provider;
-  private final JsonProvider jsonProvider;
 
   public GetCommittees(ChainDataProvider provider, JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.provider = provider;
-    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -72,21 +73,17 @@ public class GetCommittees implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       UnsignedLong epoch = getParameterValueAsUnsignedLong(ctx.queryParamMap(), EPOCH);
-      ctx.result(
-          provider
-              .getCommitteesAtEpoch(epoch)
-              .thenApplyChecked(committees -> handleResponseContext(ctx, committees, epoch)));
-
+      final SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(epoch);
+      UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+      ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
+      if (provider.isFinalized(slot)) {
+        handlePossiblyGoneResult(ctx, future);
+      } else {
+        handlePossiblyMissingResult(ctx, future);
+      }
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
-  }
-
-  private String handleResponseContext(Context ctx, List<Committee> committees, UnsignedLong epoch)
-      throws JsonProcessingException {
-    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
-    return jsonProvider.objectToJSON(committees);
   }
 }

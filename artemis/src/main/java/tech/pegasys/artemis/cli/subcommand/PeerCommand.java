@@ -26,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
 @Command(
@@ -55,7 +54,12 @@ public class PeerCommand {
       footer = "Teku is licensed under the Apache License 2.0")
   public void generate(
       @Mixin PeerGenerationParams params,
-      @Parameters(paramLabel = "number", description = "number of peerIDs to generate") int number)
+      @Option(
+              names = {"-n", "--number"},
+              arity = "1",
+              required = true,
+              description = "number of peerIDs to generate")
+          int number)
       throws IOException {
     FileWriter fileWriter = new FileWriter(params.outputFile, Charset.defaultCharset());
     PrintWriter printWriter = new PrintWriter(fileWriter);

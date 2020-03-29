@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static org.mockito.Mockito.mock;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -26,7 +28,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 
 public abstract class AbstractDataBackedRestAPIIntegrationTest
     extends AbstractBeaconRestAPIIntegrationTest {
@@ -35,8 +37,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest
   @Override
   @BeforeEach
   public void setup() {
+    final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
     final EventBus eventBus = new EventBus();
-    chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+    chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
     beaconChainUtil = BeaconChainUtil.create(16, chainStorageClient);
     beaconChainUtil.initializeStorage();
 
@@ -48,16 +51,14 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest
             combinedChainDataClient,
             p2PNetwork,
             syncService,
-            validatorApiChannel,
-            validatorCoordinator);
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
+            validatorApiChannel);
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
   }
 
   public List<SignedBeaconBlock> withBlockDataAtSlot(UnsignedLong... slots) throws Exception {
-    ArrayList<SignedBeaconBlock> results = new ArrayList<>();
+    final ArrayList<SignedBeaconBlock> results = new ArrayList<>();
     for (UnsignedLong slot : slots) {
       results.add(new SignedBeaconBlock(beaconChainUtil.createAndImportBlockAtSlot(slot)));
     }

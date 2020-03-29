@@ -13,5 +13,6 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
 
+  testFixturesApi project(':util')
   testFixturesApi project(':storage')
 }
