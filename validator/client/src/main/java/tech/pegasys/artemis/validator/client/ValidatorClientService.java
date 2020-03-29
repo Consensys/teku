@@ -13,8 +13,7 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import static java.util.Collections.emptyList;
-
+import java.util.List;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
@@ -24,6 +23,7 @@ import tech.pegasys.artemis.validator.anticorruption.ValidatorAnticorruptionLaye
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
+import tech.pegasys.artemis.validator.client.loader.ValidatorLoader;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
@@ -39,12 +39,13 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = config.getEventChannels();
     final ValidatorApiChannel validatorApiChannel =
         eventChannels.getPublisher(ValidatorApiChannel.class);
+    final List<Validator> validators = ValidatorLoader.initializeValidators(config.getConfig());
     final DutyScheduler validatorClient =
         new DutyScheduler(
             DelayedExecutorAsyncRunner.create(),
             validatorApiChannel,
             new ValidatorDutyFactory(validatorApiChannel),
-            emptyList());
+            validators);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 

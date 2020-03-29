@@ -36,4 +36,8 @@ public class Signer {
     Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
     return signerService.signRandaoReveal(signing_root);
   }
+
+  public MessageSignerService getMessageSignerService() {
+    return signerService;
+  }
 }

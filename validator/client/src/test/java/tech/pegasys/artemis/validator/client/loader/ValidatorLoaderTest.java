@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.artemis.validator.client.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,6 +27,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.client.ExternalMessageSignerService;
 import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
+import tech.pegasys.artemis.validator.client.Validator;
 
 class ValidatorLoaderTest {
 
@@ -47,13 +48,13 @@ class ValidatorLoaderTest {
             .setValidatorKeystoreFiles(Collections.emptyList())
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
             .build();
-    final Map<BLSPublicKey, ValidatorInfo> blsPublicKeyValidatorInfoMap =
-        ValidatorLoader.initializeValidators(artemisConfiguration);
+    final List<Validator> validators = ValidatorLoader.initializeValidators(artemisConfiguration);
 
-    assertThat(blsPublicKeyValidatorInfoMap).isNotEmpty();
+    assertThat(validators).hasSize(1);
     final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
-    assertThat(blsPublicKeyValidatorInfoMap.get(key)).isNotNull();
-    assertThat(blsPublicKeyValidatorInfoMap.get(key).getSignerService())
+    final Validator validator = validators.get(0);
+    assertThat(validator.getPublicKey()).isEqualTo(key);
+    assertThat(validator.getMessageSignerService())
         .isInstanceOf(ExternalMessageSignerService.class);
   }
 
@@ -69,14 +70,13 @@ class ValidatorLoaderTest {
             .setValidatorKeystoreFiles(Collections.emptyList())
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
             .build();
-    final Map<BLSPublicKey, ValidatorInfo> blsPublicKeyValidatorInfoMap =
-        ValidatorLoader.initializeValidators(artemisConfiguration);
+    final List<Validator> validators = ValidatorLoader.initializeValidators(artemisConfiguration);
 
-    assertThat(blsPublicKeyValidatorInfoMap).isNotEmpty();
+    assertThat(validators).hasSize(1);
     final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
-    assertThat(blsPublicKeyValidatorInfoMap.get(key)).isNotNull();
-    assertThat(blsPublicKeyValidatorInfoMap.get(key).getSignerService())
-        .isInstanceOf(LocalMessageSignerService.class);
+    final Validator validator = validators.get(0);
+    assertThat(validator.getPublicKey()).isEqualTo(key);
+    assertThat(validator.getMessageSignerService()).isInstanceOf(LocalMessageSignerService.class);
   }
 
   @Test
@@ -93,20 +93,19 @@ class ValidatorLoaderTest {
             .setValidatorKeystoreFiles(Collections.emptyList())
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
             .build();
-    final Map<BLSPublicKey, ValidatorInfo> blsPublicKeyValidatorInfoMap =
-        ValidatorLoader.initializeValidators(artemisConfiguration);
+    final List<Validator> validators = ValidatorLoader.initializeValidators(artemisConfiguration);
 
-    assertThat(blsPublicKeyValidatorInfoMap).isNotEmpty();
-    assertThat(blsPublicKeyValidatorInfoMap).hasSize(2);
+    assertThat(validators).hasSize(2);
 
     final BLSPublicKey key1 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
-    assertThat(blsPublicKeyValidatorInfoMap.get(key1)).isNotNull();
-    assertThat(blsPublicKeyValidatorInfoMap.get(key1).getSignerService())
-        .isInstanceOf(LocalMessageSignerService.class);
+    final Validator validator1 = validators.get(0);
+    assertThat(validator1.getPublicKey()).isEqualTo(key1);
+    assertThat(validator1.getMessageSignerService()).isInstanceOf(LocalMessageSignerService.class);
 
     final BLSPublicKey key2 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY2));
-    assertThat(blsPublicKeyValidatorInfoMap.get(key2)).isNotNull();
-    assertThat(blsPublicKeyValidatorInfoMap.get(key2).getSignerService())
+    final Validator validator2 = validators.get(1);
+    assertThat(validator2.getPublicKey()).isEqualTo(key2);
+    assertThat(validator2.getMessageSignerService())
         .isInstanceOf(ExternalMessageSignerService.class);
   }
 
@@ -124,15 +123,21 @@ class ValidatorLoaderTest {
             .setValidatorKeystoreFiles(Collections.emptyList())
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
             .build();
-    final Map<BLSPublicKey, ValidatorInfo> blsPublicKeyValidatorInfoMap =
-        ValidatorLoader.initializeValidators(artemisConfiguration);
+    final List<Validator> validators = ValidatorLoader.initializeValidators(artemisConfiguration);
 
-    assertThat(blsPublicKeyValidatorInfoMap).isNotEmpty();
-    assertThat(blsPublicKeyValidatorInfoMap).hasSize(1);
+    // Both local and external validators get loaded.
+    assertThat(validators).hasSize(2);
 
+    // Local validators are listed first
     final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
-    assertThat(blsPublicKeyValidatorInfoMap.get(key)).isNotNull();
-    assertThat(blsPublicKeyValidatorInfoMap.get(key).getSignerService())
+    final Validator localValidator = validators.get(0);
+    assertThat(localValidator.getPublicKey()).isEqualTo(key);
+    assertThat(localValidator.getMessageSignerService())
+        .isInstanceOf(LocalMessageSignerService.class);
+
+    final Validator externalValidator = validators.get(1);
+    assertThat(externalValidator.getPublicKey()).isEqualTo(key);
+    assertThat(externalValidator.getMessageSignerService())
         .isInstanceOf(ExternalMessageSignerService.class);
   }
 }
