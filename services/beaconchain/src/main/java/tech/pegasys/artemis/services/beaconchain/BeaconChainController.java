@@ -413,12 +413,18 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
-      EVENT_LOG.slotEvent(
-          nodeSlot,
-          chainStorageClient.getBestSlot(),
-          chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch(),
-          chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch(),
-          chainStorageClient.getFinalizedRoot());
+
+      if (syncService.isSyncActive()) {
+        EVENT_LOG.syncEvent(nodeSlot, chainStorageClient.getBestSlot(), p2pNetwork.getPeerCount());
+      } else {
+        EVENT_LOG.slotEvent(
+            nodeSlot,
+            chainStorageClient.getBestSlot(),
+            chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch(),
+            chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch(),
+            chainStorageClient.getFinalizedRoot());
+      }
+
       this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       this.eventBus.post(new BroadcastAggregatesEvent());
