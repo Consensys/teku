@@ -97,7 +97,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile SettableGauge currentSlotGauge;
   private volatile SettableGauge currentEpochGauge;
   private volatile StateProcessor stateProcessor;
-  private volatile UnsignedLong nodeSlot = UnsignedLong.ZERO;
   private volatile BeaconRestApi beaconRestAPI;
   private volatile AttestationAggregator attestationAggregator;
   private volatile BlockAttestationsPool blockAttestationsPool;
@@ -107,6 +106,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile ValidatorCoordinator validatorCoordinator;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
+
+  // Only accessed from `onTick` handler which is single threaded.
+  private UnsignedLong nodeSlot = UnsignedLong.ZERO;
 
   public BeaconChainController(
       TimeProvider timeProvider,
@@ -384,16 +386,29 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
+    final boolean nextSlotDue = isNextSlotDue(currentTime);
+
+    if (syncService.isSyncActive()) {
+      if (nextSlotDue) {
+        processSlotWhileSyncing();
+      }
+      return;
+    }
+
     final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
     on_tick(transaction, currentTime);
     transaction.commit().join();
+    if (nextSlotDue) {
+      processSlot();
+    }
+  }
+
+  public boolean isNextSlotDue(final UnsignedLong currentTime) {
     final UnsignedLong nextSlotStartTime =
         chainStorageClient
             .getGenesisTime()
             .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
-      processSlot();
-    }
+    return currentTime.compareTo(nextSlotStartTime) >= 0;
   }
 
   private void processSlot() {
@@ -414,16 +429,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
 
-      if (syncService.isSyncActive()) {
-        EVENT_LOG.syncEvent(nodeSlot, chainStorageClient.getBestSlot(), p2pNetwork.getPeerCount());
-      } else {
-        EVENT_LOG.slotEvent(
-            nodeSlot,
-            chainStorageClient.getBestSlot(),
-            chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch(),
-            chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch(),
-            chainStorageClient.getFinalizedRoot());
-      }
+      EVENT_LOG.slotEvent(
+          nodeSlot,
+          chainStorageClient.getBestSlot(),
+          chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch(),
+          chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch(),
+          chainStorageClient.getFinalizedRoot());
 
       this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
@@ -432,6 +443,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     } catch (InterruptedException e) {
       LOG.fatal("onTick: {}", e.toString(), e);
     }
+  }
+
+  private void processSlotWhileSyncing() {
+    this.stateProcessor.processHead();
+    EVENT_LOG.syncEvent(nodeSlot, chainStorageClient.getBestSlot(), p2pNetwork.getPeerCount());
+    nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
   }
 
   private boolean isFirstSlotOfNewEpoch(final UnsignedLong slot) {
