@@ -77,11 +77,13 @@ public class LoggingConfigurator {
 
   private static void addLoggers(final AbstractConfiguration configuration) {
 
-    if (DESTINATION == null) {
+    if (isUninitialized() || !isProgrammaticLoggingNeeded()) {
       return;
     }
 
     StatusLogger.getLogger().info("Configuring logging for destination: {}", DESTINATION);
+    StatusLogger.getLogger().info("Logging includes events: {}", INCLUDE_EVENTS);
+    StatusLogger.getLogger().info("Logging includes color: {}", COLOR);
 
     Appender consoleAppender;
     Appender fileAppender;
@@ -121,6 +123,14 @@ public class LoggingConfigurator {
     }
 
     configuration.getLoggerContext().updateLoggers();
+  }
+
+  private static boolean isProgrammaticLoggingNeeded() {
+    return System.getProperty("log4j.configurationFile") == null;
+  }
+
+  private static boolean isUninitialized() {
+    return DESTINATION == null;
   }
 
   private static void addAppenderToRootLogger(
