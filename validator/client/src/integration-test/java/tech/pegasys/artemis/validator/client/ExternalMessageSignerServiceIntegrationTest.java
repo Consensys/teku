@@ -36,6 +36,9 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.artemis.validator.client.signer.ExternalSignerException;
+import tech.pegasys.artemis.validator.client.signer.SigningRequestBody;
 
 @ExtendWith(MockServerExtension.class)
 public class ExternalMessageSignerServiceIntegrationTest {
@@ -167,5 +170,23 @@ public class ExternalMessageSignerServiceIntegrationTest {
             .withMethod("POST")
             .withBody(json(signingRequestBody))
             .withPath("/signer/randao_reveal/" + publicKey));
+  }
+
+  @Test
+  void signsAggregationSlotWhenSigningServiceReturnsSuccessfulResponse() {
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
+
+    final BLSSignature signature =
+        externalMessageSignerService.signAggregationSlot(SIGNING_ROOT).join();
+    assertThat(signature).isEqualTo(expectedSignature);
+
+    final String publicKey = keyPair.getPublicKey().toString();
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(SIGNING_ROOT.toHexString());
+    client.verify(
+        request()
+            .withMethod("POST")
+            .withBody(json(signingRequestBody))
+            .withPath("/signer/aggregation_slot/" + publicKey));
   }
 }

@@ -244,6 +244,11 @@ public class BeaconChainUtil {
     }
 
     @Override
+    public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
+      return sign(signingRoot);
+    }
+
+    @Override
     public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
       return sign(signingRoot);
     }
