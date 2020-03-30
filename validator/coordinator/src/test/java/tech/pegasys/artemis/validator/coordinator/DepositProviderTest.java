@@ -38,7 +38,7 @@ import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MerkleTree;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
@@ -48,17 +48,17 @@ public class DepositProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private List<tech.pegasys.artemis.pow.event.Deposit> allSeenDepositsList;
   private DepositProvider depositProvider;
-  private ChainStorageClient chainStorageClient;
+  private RecentChainData recentChainData;
   private BeaconState beaconState;
   private MerkleTree depositMerkleTree;
 
   @BeforeEach
   void setUp() {
-    chainStorageClient = mock(ChainStorageClient.class);
+    recentChainData = mock(RecentChainData.class);
     beaconState = mock(BeaconState.class);
 
     depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
-    depositProvider = new DepositProvider(chainStorageClient);
+    depositProvider = new DepositProvider(recentChainData);
 
     createDepositEvents(40);
   }
@@ -108,7 +108,7 @@ public class DepositProviderTest {
     Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
     mockStateEth1DepositIndex(10);
     mockDepositsFromEth1Block(0, 20);
-    when(chainStorageClient.getBlockState(eq(finalizedBlockRoot)))
+    when(recentChainData.getBlockState(eq(finalizedBlockRoot)))
         .thenReturn(Optional.ofNullable(beaconState));
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);

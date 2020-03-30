@@ -30,7 +30,7 @@ public class GetStateRootIntegrationTest extends AbstractBeaconRestAPIIntegratio
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = getBySlot(1);
     assertNoContent(response);
@@ -39,8 +39,8 @@ public class GetStateRootIntegrationTest extends AbstractBeaconRestAPIIntegratio
   @Test
   public void shouldReturnNoContentIfHeadRootUnavailable_queryBySlot() throws Exception {
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getBySlot(1);
     assertNoContent(response);
