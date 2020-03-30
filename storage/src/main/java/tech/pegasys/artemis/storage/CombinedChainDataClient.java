@@ -32,6 +32,8 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
@@ -102,12 +104,28 @@ public class CombinedChainDataClient {
       LOG.trace("Block root at slot {} is the specified head block root", slot);
       return getBlockByBlockRoot(headBlockRoot);
     }
-    if (isFinalized(slot)) {
+    if (isHistoricalData(slot)) {
       LOG.trace("Block at slot {} is in a finalized epoch. Retrieving from historical data", slot);
       return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
     }
 
     return getBlockAtSlotFormHistoricalBlockRoots(slot, store, headState);
+  }
+
+  public SafeFuture<Optional<BeaconBlockAndState>> getBlockAndStateInEffectAtSlot(
+      final UnsignedLong slot, final Bytes32 headBlockRoot) {
+    return getBlockInEffectAtSlot(slot, headBlockRoot)
+        .thenCompose(
+            maybeBlock ->
+                maybeBlock
+                    .map(SignedBeaconBlock::getMessage)
+                    .map(this::getStateForBlock)
+                    .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
+  }
+
+  private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(final BeaconBlock block) {
+    return getStateByBlockRoot(block.hash_tree_root())
+        .thenApply(maybeState -> maybeState.map(state -> new BeaconBlockAndState(block, state)));
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotFormHistoricalBlockRoots(
@@ -128,10 +146,20 @@ public class CombinedChainDataClient {
     return getBlockByBlockRoot(get_block_root_at_slot(state, slot));
   }
 
+  private boolean isHistoricalData(final UnsignedLong slot) {
+    final boolean finalizedPastFirstEpoch = !recentChainData.getFinalizedEpoch().equals(ZERO);
+    return finalizedPastFirstEpoch && isFinalized(slot);
+  }
+
   public boolean isFinalized(final UnsignedLong slot) {
     final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     return finalizedSlot.compareTo(slot) >= 0;
+  }
+
+  public boolean isFinalizedEpoch(final UnsignedLong epoch) {
+    final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
+    return finalizedEpoch.compareTo(epoch) >= 0;
   }
 
   public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
@@ -164,13 +192,13 @@ public class CombinedChainDataClient {
       return STATE_NOT_AVAILABLE;
     }
 
-    if (isFinalized(slot)) {
+    if (isHistoricalData(slot)) {
       return historicalChainData.getFinalizedStateAtSlot(slot);
     }
 
     final BeaconState headState = store.getBlockState(headBlockRoot);
     if (headState.getSlot().equals(slot)) {
-      return completedFuture(Optional.ofNullable(headState));
+      return completedFuture(Optional.of(headState));
     }
 
     return completedFuture(recentChainData.getStateBySlot(slot));
@@ -216,16 +244,15 @@ public class CombinedChainDataClient {
    * @param epoch - the current or historic epoch
    * @return list of CommitteeAssignments
    */
-  public SafeFuture<List<CommitteeAssignment>> getCommitteeAssignmentAtEpoch(UnsignedLong epoch) {
+  public SafeFuture<Optional<List<CommitteeAssignment>>> getCommitteeAssignmentAtEpoch(
+      UnsignedLong epoch) {
     final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
     final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
 
     SafeFuture<Optional<BeaconState>> future = getStateAtSlot(startingSlot);
 
-    return future
-        .thenApply(
-            optionalState -> getCommitteesFromState(optionalState.orElseThrow(), startingSlot))
-        .exceptionally(err -> List.of());
+    return future.thenApply(
+        optionalState -> optionalState.map(state -> getCommitteesFromState(state, startingSlot)));
   }
 
   public List<CommitteeAssignment> getCommitteesFromState(

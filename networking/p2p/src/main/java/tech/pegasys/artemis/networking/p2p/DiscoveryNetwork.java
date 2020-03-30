@@ -70,21 +70,15 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   private static DiscoveryService createDiscoveryService(final NetworkConfig p2pConfig) {
     final DiscoveryService discoveryService;
-    switch (p2pConfig.getDiscoveryMethod()) {
-      case "discv5":
-        discoveryService =
-            DiscV5Service.create(
-                Bytes.wrap(p2pConfig.getPrivateKey().raw()),
-                p2pConfig.getNetworkInterface(),
-                p2pConfig.getListenPort(),
-                p2pConfig.getBootnodes());
-        break;
-      case "static":
-        discoveryService = new NoOpDiscoveryService();
-        break;
-      default:
-        throw new IllegalArgumentException(
-            "Unknown discovery method: " + p2pConfig.getDiscoveryMethod());
+    if (p2pConfig.isDiscoveryEnabled()) {
+      discoveryService =
+          DiscV5Service.create(
+              Bytes.wrap(p2pConfig.getPrivateKey().raw()),
+              p2pConfig.getNetworkInterface(),
+              p2pConfig.getListenPort(),
+              p2pConfig.getBootnodes());
+    } else {
+      discoveryService = new NoOpDiscoveryService();
     }
     return discoveryService;
   }

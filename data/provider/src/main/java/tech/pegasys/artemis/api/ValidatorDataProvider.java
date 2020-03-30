@@ -13,44 +13,45 @@
 
 package tech.pegasys.artemis.api;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.api.schema.Attestation;
+import tech.pegasys.artemis.api.schema.AttestationData;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
-import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties.Duties;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProvider {
-  private final ValidatorCoordinator validatorCoordinator;
   private final ValidatorApiChannel validatorApiChannel;
   private CombinedChainDataClient combinedChainDataClient;
 
   public ValidatorDataProvider(
-      final ValidatorCoordinator validatorCoordinator,
       final ValidatorApiChannel validatorApiChannel,
       final CombinedChainDataClient combinedChainDataClient) {
-    this.validatorCoordinator = validatorCoordinator;
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
   }
 
   public boolean isStoreAvailable() {
     return combinedChainDataClient.isStoreAvailable();
+  }
+
+  public boolean isEpochFinalized(final UnsignedLong epoch) {
+    return combinedChainDataClient.isFinalizedEpoch(epoch);
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
@@ -68,9 +69,32 @@ public class ValidatorDataProvider {
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 
-  public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
+  public SafeFuture<Optional<Attestation>> createUnsignedAttestationAtSlot(
+      UnsignedLong slot, int committeeIndex) {
+    if (!isStoreAvailable()) {
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+    }
+    return validatorApiChannel
+        .createUnsignedAttestation(slot, committeeIndex)
+        .thenApply(
+            maybeAttestation ->
+                maybeAttestation.map(
+                    attestation ->
+                        new Attestation(
+                            attestation.getAggregation_bits(),
+                            new AttestationData(attestation.getData()),
+                            new BLSSignature(attestation.getAggregate_signature()))));
+  }
+
+  public SafeFuture<Optional<List<ValidatorDuties>>> getValidatorDutiesByRequest(
       final ValidatorDutiesRequest validatorDutiesRequest) {
-    if (validatorDutiesRequest == null || !combinedChainDataClient.isStoreAvailable()) {
+    checkArgument(validatorDutiesRequest != null, "Must supply a valid request");
+    if (validatorDutiesRequest.pubkeys.isEmpty()) {
+      // Short-cut if there's nothing to look up
+      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
+    }
+    if (!combinedChainDataClient.isStoreAvailable()
+        || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return SafeFuture.of(
@@ -81,7 +105,9 @@ public class ValidatorDataProvider {
                       .collect(toList());
               return validatorApiChannel.getDuties(validatorDutiesRequest.epoch, publicKeys);
             })
-        .thenApply(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList()));
+        .thenApply(
+            res ->
+                res.map(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList())));
   }
 
   private ValidatorDuties mapToSchemaDuties(
@@ -99,20 +125,11 @@ public class ValidatorDataProvider {
         duties.getAttestationSlot());
   }
 
-  @VisibleForTesting
-  protected Integer getCommitteeIndex(List<CommitteeAssignment> committees, int validatorIndex) {
-    Optional<CommitteeAssignment> matchingCommittee =
-        committees.stream()
-            .filter(committee -> committee.getCommittee().contains(validatorIndex))
-            .findFirst();
-    if (matchingCommittee.isPresent()) {
-      return committees.indexOf(matchingCommittee.get());
-    } else {
-      return null;
-    }
-  }
-
   public void submitAttestation(Attestation attestation) {
-    validatorCoordinator.postSignedAttestation(attestation.asInternalAttestation(), true);
+    // TODO extra validation for the attestation we're posting?
+    if (attestation.signature.asInternalBLSSignature().toBytes().isZero()) {
+      throw new IllegalArgumentException("Signed attestations must have a non zero signature");
+    }
+    validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());
   }
 }

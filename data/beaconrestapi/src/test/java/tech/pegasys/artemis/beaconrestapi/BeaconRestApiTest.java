@@ -46,28 +46,30 @@ import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 class BeaconRestApiTest {
   private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(new EventBus());
+      ChainStorageClient.memoryOnlyClient(new EventBus(), mock(StorageUpdateChannel.class));
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
   private final SyncService syncService = mock(SyncService.class);
   private static final Integer THE_PORT = 12345;
-  private static final String THE_CONFIG =
-      String.format(
-          "beaconrestapi.portNumber=%d\nbeaconrestapi.enableSwagger=%s", THE_PORT, "false");
 
   @BeforeEach
   public void setup() {
-    ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
+    ArtemisConfiguration config =
+        ArtemisConfiguration.builder()
+            .setRestApiPort(THE_PORT)
+            .setRestApiDocsEnabled(false)
+            .build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
-        new DataProvider(storageClient, combinedChainDataClient, null, syncService, null, null),
+        new DataProvider(storageClient, combinedChainDataClient, null, syncService, null),
         config,
         app);
   }

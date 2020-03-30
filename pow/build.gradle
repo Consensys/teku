@@ -13,15 +13,8 @@ dependencies {
   
   implementation 'com.googlecode.json-simple:json-simple'
   implementation 'com.google.code.gson:gson'
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
 
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
   testImplementation testFixtures(project(':util'))
-
-  testImplementation 'org.mockito:mockito-core'
 }

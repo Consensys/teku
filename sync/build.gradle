@@ -18,16 +18,11 @@ dependencies {
     testImplementation testFixtures(project('::networking:eth2'))
     testImplementation testFixtures(project(':util'))
 
-    testImplementation 'org.mockito:mockito-core'
-
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
     integrationTestImplementation testFixtures(project('::networking:eth2'))
     integrationTestImplementation testFixtures(project(':sync'))
     integrationTestImplementation testFixtures(project(':util'))
-
-    integrationTestImplementation 'org.mockito:mockito-core'
-//    integrationTestImplementation 'org.hyperledger.besu:plugin-api'
 
     testFixturesImplementation project(':services:serviceutils')
     testFixturesImplementation project(':util')

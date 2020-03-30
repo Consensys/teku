@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis;
+package tech.pegasys.artemis.cli.subcommand;
 
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class GenesisCommand {
     try (final OutputStream fileStream =
         outputToFile ? new FileOutputStream(params.outputFile) : System.out) {
       if (outputToFile) {
-        STATUS_LOG.generatingMockGenesis(params.validatorCount, params.genesisTime);
+        SUB_COMMAND_LOG.generatingMockGenesis(params.validatorCount, params.genesisTime);
       }
 
       final long genesisTime = params.genesisTime;
@@ -69,11 +69,11 @@ public class GenesisCommand {
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
 
       if (outputToFile) {
-        STATUS_LOG.storingGenesis(params.outputFile, false);
+        SUB_COMMAND_LOG.storingGenesis(params.outputFile, false);
       }
       fileStream.write(serialize(genesisState).toArrayUnsafe());
       if (outputToFile) {
-        STATUS_LOG.storingGenesis(params.outputFile, true);
+        SUB_COMMAND_LOG.storingGenesis(params.outputFile, true);
       }
     }
   }

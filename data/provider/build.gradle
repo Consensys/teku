@@ -15,15 +15,9 @@ dependencies {
     implementation project(':validator:coordinator')
 
     implementation 'com.google.code.gson:gson'
-    implementation 'com.google.guava:guava'
-    implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.tuweni:tuweni-units'
 
-    runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
     testImplementation testFixtures(project(':ethereum:datastructures'))
-
-    testImplementation 'org.mockito:mockito-core'
 }
 
 test {

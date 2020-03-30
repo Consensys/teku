@@ -5,21 +5,15 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
 
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.mapdb:mapdb'
   implementation 'org.rocksdb:rocksdbjni'
 
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
 
-  testImplementation 'org.mockito:mockito-core'
-
+  testFixturesApi project(':util')
   testFixturesApi project(':storage')
 }

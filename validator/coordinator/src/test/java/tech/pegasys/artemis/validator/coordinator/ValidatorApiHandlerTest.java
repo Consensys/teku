@@ -15,24 +15,33 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -43,47 +52,51 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 class ValidatorApiHandlerTest {
 
   private static final UnsignedLong EPOCH = UnsignedLong.valueOf(13);
-  private static final UnsignedLong START_SLOT = BeaconStateUtil.compute_start_slot_at_epoch(EPOCH);
+  private static final UnsignedLong PREVIOUS_EPOCH_START_SLOT =
+      BeaconStateUtil.compute_start_slot_at_epoch(EPOCH.minus(UnsignedLong.ONE));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
+  private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
+  private final EventBus eventBus = mock(EventBus.class);
 
   private final ValidatorApiHandler validatorApiHandler =
-      new ValidatorApiHandler(chainDataClient, blockFactory);
+      new ValidatorApiHandler(chainDataClient, blockFactory, attestationAggregator, eventBus);
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
-    when(chainDataClient.getStateAtSlot(START_SLOT)).thenReturn(completedFuture(Optional.empty()));
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.empty()));
 
-    final SafeFuture<List<ValidatorDuties>> duties =
+    final SafeFuture<Optional<List<ValidatorDuties>>> duties =
         validatorApiHandler.getDuties(EPOCH, List.of(dataStructureUtil.randomPublicKey()));
-    assertThat(duties).isCompletedWithValue(emptyList());
+    assertThat(duties).isCompletedWithValue(Optional.empty());
   }
 
   @Test
   public void getDuties_shouldReturnDutiesForUnknownValidator() {
-    when(chainDataClient.getStateAtSlot(START_SLOT))
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
-    final SafeFuture<List<ValidatorDuties>> result =
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
         validatorApiHandler.getDuties(EPOCH, List.of(unknownPublicKey));
-    final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
-    assertThat(duties).containsExactly(ValidatorDuties.noDuties(unknownPublicKey));
+    final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get()).containsExactly(ValidatorDuties.noDuties(unknownPublicKey));
   }
 
   @Test
   public void getDuties_shouldReturnDutiesForKnownValidator() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlot(START_SLOT))
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
 
     final int validatorIndex = 3;
     final BLSPublicKey publicKey = state.getValidators().get(validatorIndex).getPubkey();
-    final SafeFuture<List<ValidatorDuties>> result =
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
         validatorApiHandler.getDuties(EPOCH, List.of(publicKey));
-    final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
-    assertThat(duties)
+    final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get())
         .containsExactly(
             ValidatorDuties.withDuties(
                 publicKey, validatorIndex, 0, emptyList(), UnsignedLong.valueOf(110)));
@@ -92,16 +105,16 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldReturnDutiesForMixOfKnownAndUnknownValidators() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlot(START_SLOT))
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
     final BLSPublicKey validator3Key = state.getValidators().get(3).getPubkey();
     final BLSPublicKey validator31Key = state.getValidators().get(31).getPubkey();
-    final SafeFuture<List<ValidatorDuties>> result =
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
         validatorApiHandler.getDuties(
             EPOCH, List.of(validator3Key, unknownPublicKey, validator31Key));
-    final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
+    final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
     final ValidatorDuties validator3Duties =
         ValidatorDuties.withDuties(validator3Key, 3, 0, emptyList(), UnsignedLong.valueOf(110));
     final ValidatorDuties unknownValidatorDuties = ValidatorDuties.noDuties(unknownPublicKey);
@@ -112,24 +125,22 @@ class ValidatorApiHandlerTest {
             0,
             List.of(UnsignedLong.valueOf(107), UnsignedLong.valueOf(111)),
             UnsignedLong.valueOf(104));
-    assertThat(duties).containsExactly(validator3Duties, unknownValidatorDuties, validator6Duties);
+    assertThat(duties.get())
+        .containsExactly(validator3Duties, unknownValidatorDuties, validator6Duties);
   }
 
   @Test
-  public void createUnsignedBlock_shouldFailWithChainDataUnavailableWhenStoreIsNotSet() {
-    when(chainDataClient.getStore()).thenReturn(null);
+  public void getDuties_shouldUseGenesisStateForFirstEpoch() {
+    when(chainDataClient.getStateAtSlot(any())).thenReturn(new SafeFuture<>());
+    validatorApiHandler
+        .getDuties(UnsignedLong.ZERO, List.of(dataStructureUtil.randomPublicKey()))
+        .reportExceptions();
 
-    final SafeFuture<Optional<BeaconBlock>> result =
-        validatorApiHandler.createUnsignedBlock(
-            UnsignedLong.ONE, dataStructureUtil.randomSignature());
-
-    assertThat(result).isCompletedWithValue(Optional.empty());
+    verify(chainDataClient).getStateAtSlot(UnsignedLong.ZERO);
   }
 
   @Test
   public void createUnsignedBlock_shouldReturnEmptyWhenBestBlockNotSet() {
-    final Store store = mock(Store.class);
-    when(chainDataClient.getStore()).thenReturn(store);
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -141,7 +152,6 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedBlock_shouldCreateBlock() throws Exception {
-    final Store store = mock(Store.class);
     final UnsignedLong newSlot = UnsignedLong.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final BeaconState previousState = dataStructureUtil.randomBeaconState();
@@ -150,10 +160,12 @@ class ValidatorApiHandlerTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
-    when(chainDataClient.getStore()).thenReturn(store);
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(store.getBlockState(blockRoot)).thenReturn(previousState);
-    when(store.getBlock(blockRoot)).thenReturn(previousBlock);
+    when(chainDataClient.getBestSlot()).thenReturn(UnsignedLong.valueOf(24));
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE), blockRoot))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new BeaconBlockAndState(previousBlock, previousState))));
     when(blockFactory.createUnsignedBlock(previousState, previousBlock, newSlot, randaoReveal))
         .thenReturn(createdBlock);
 
@@ -163,15 +175,84 @@ class ValidatorApiHandlerTest {
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
-  private List<ValidatorDuties> assertCompletedSuccessfully(
-      final SafeFuture<List<ValidatorDuties>> result) {
+  @Test
+  public void createUnsignedAttestation_shouldReturnEmptyWhenBestBlockNotSet() {
+    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
+
+    final SafeFuture<Optional<Attestation>> result =
+        validatorApiHandler.createUnsignedAttestation(UnsignedLong.ONE, 3);
+
+    assertThat(result).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void createUnsignedAttestation_shouldCreateAttestation() {
+    final UnsignedLong slot = UnsignedLong.valueOf(26);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final BeaconState state = createStateWithActiveValidators();
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(state.getSlot().longValue());
+
+    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(chainDataClient.getBestSlot()).thenReturn(slot);
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(slot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(new BeaconBlockAndState(block, state))));
+
+    final SafeFuture<Optional<Attestation>> result =
+        validatorApiHandler.createUnsignedAttestation(slot, 0);
+
+    assertThat(result).isCompleted();
+    final Optional<Attestation> maybeAttestation = result.join();
+    assertThat(maybeAttestation).isPresent();
+    final Attestation attestation = maybeAttestation.orElseThrow();
+    assertThat(attestation.getAggregation_bits())
+        .isEqualTo(new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
+    assertThat(attestation.getData())
+        .isEqualTo(AttestationUtil.getGenericAttestationData(state, block));
+    assertThat(attestation.getAggregate_signature().toBytes())
+        .isEqualTo(BLSSignature.empty().toBytes());
+  }
+
+  @Test
+  public void getFork_shouldReturnEmptyWhenHeadStateNotAvailable() {
+    when(chainDataClient.getHeadStateFromStore()).thenReturn(Optional.empty());
+
+    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void getFork_shouldReturnForkFromHeadState() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    when(chainDataClient.getHeadStateFromStore()).thenReturn(Optional.of(state));
+
+    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.of(state.getFork()));
+  }
+
+  @Test
+  public void sendSignedAttestation_shouldAddAttestationToAggregatorAndEventBus() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    validatorApiHandler.sendSignedAttestation(attestation);
+
+    verify(attestationAggregator).addOwnValidatorAttestation(attestation);
+    verify(eventBus).post(attestation);
+  }
+
+  @Test
+  public void sendSignedBlock_shouldPostProposedBlockEvent() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    validatorApiHandler.sendSignedBlock(block);
+
+    verify(eventBus).post(new ProposedBlockEvent(block));
+  }
+
+  private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(
+      final SafeFuture<Optional<List<ValidatorDuties>>> result) {
     assertThat(result).isCompleted();
     return result.join();
   }
 
   private BeaconState createStateWithActiveValidators() {
     final MutableBeaconState state = dataStructureUtil.randomBeaconState(32).createWritableCopy();
-    state.setSlot(START_SLOT);
+    state.setSlot(PREVIOUS_EPOCH_START_SLOT);
     final SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
     for (int i = 0; i < validators.size(); i++) {
       final MutableValidator validator = validators.get(i);

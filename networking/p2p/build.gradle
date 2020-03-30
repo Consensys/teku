@@ -10,12 +10,10 @@ dependencies {
   implementation project(':util')
   implementation project(':validator:coordinator')
 
-  implementation 'com.google.guava:guava'
   implementation 'de.undercouch:bson4jackson'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.projectreactor:reactor-core'
   implementation 'io.vertx:vertx-core'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-rlpx'
@@ -25,17 +23,12 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'tech.pegasys.discovery:discovery'
 
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
-  testImplementation 'org.mockito:mockito-core'
 
   integrationTestImplementation testFixtures(project(':util'))
-
-  integrationTestImplementation 'org.assertj:assertj-core'
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
 
@@ -43,9 +36,7 @@ dependencies {
 
   testFixturesImplementation testFixtures(project(':util'))
 
-  testFixturesImplementation 'org.assertj:assertj-core'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
-  testFixturesImplementation 'io.projectreactor:reactor-core'
 }

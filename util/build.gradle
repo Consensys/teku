@@ -5,15 +5,12 @@ plugins {
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
 
-  implementation project(path: ':bls')
-  implementation project(path: ':ssz')
+  implementation project(':bls')
+  implementation project(':ssz')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'com.google.guava:guava'
   implementation 'info.picocli:picocli'
-  implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
@@ -23,10 +20,8 @@ dependencies {
   implementation (group: 'org.quartz-scheduler', name: 'quartz') {
     exclude group: 'com.mchange'
   }
-  
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.apache.logging.log4j:log4j-core'
 
   testFixturesApi 'com.google.guava:guava'
 

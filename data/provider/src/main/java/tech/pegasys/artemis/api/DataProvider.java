@@ -18,7 +18,6 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class DataProvider {
   private final NetworkDataProvider networkDataProvider;
@@ -31,14 +30,12 @@ public class DataProvider {
       final CombinedChainDataClient combinedChainDataClient,
       final P2PNetwork<?> p2pNetwork,
       final SyncService syncService,
-      final ValidatorApiChannel validatorApiChannel,
-      final ValidatorCoordinator validatorCoordinator) {
+      final ValidatorApiChannel validatorApiChannel) {
     networkDataProvider = new NetworkDataProvider(p2pNetwork);
     chainDataProvider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =
-        new ValidatorDataProvider(
-            validatorCoordinator, validatorApiChannel, combinedChainDataClient);
+        new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
   }
 
   public NetworkDataProvider getNetworkDataProvider() {

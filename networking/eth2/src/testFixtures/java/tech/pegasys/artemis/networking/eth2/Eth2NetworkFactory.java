@@ -17,6 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -42,7 +45,10 @@ import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.Waiter;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
 
@@ -67,6 +73,7 @@ public class Eth2NetworkFactory {
 
     protected List<Eth2Network> peers = new ArrayList<>();
     protected EventBus eventBus;
+    protected StorageUpdateChannel storageUpdateChannel;
     protected ChainStorageClient chainStorageClient;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
@@ -143,7 +150,7 @@ public class Eth2NetworkFactory {
           port,
           port,
           peerAddresses,
-          "static",
+          false,
           emptyList(),
           new TargetPeerRange(20, 30),
           false,
@@ -152,11 +159,17 @@ public class Eth2NetworkFactory {
     }
 
     private void setDefaults() {
+      if (storageUpdateChannel == null) {
+        storageUpdateChannel = mock(StorageUpdateChannel.class);
+        when(storageUpdateChannel.onStorageUpdate(any()))
+            .thenReturn(
+                SafeFuture.completedFuture(StorageUpdateResult.successfulWithNothingPruned()));
+      }
       if (eventBus == null) {
         eventBus = new EventBus();
       }
       if (chainStorageClient == null) {
-        chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+        chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
       }
     }
 

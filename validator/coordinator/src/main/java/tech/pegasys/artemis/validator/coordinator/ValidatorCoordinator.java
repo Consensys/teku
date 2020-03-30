@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGenericAttestationData;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -32,29 +31,24 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.service.serviceutils.Service;
@@ -62,20 +56,15 @@ import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -95,16 +84,13 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
-  private final DepositProvider depositProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
 
-  //  maps slots to Lists of attestation informations
+  //  maps slots to Lists of attestation information
   //  (which contain information for our validators to produce attestations)
   private Map<UnsignedLong, List<AttesterInformation>> committeeAssignments = new HashMap<>();
-
-  private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
 
   public ValidatorCoordinator(
       EventBus eventBus,
@@ -112,7 +98,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
-      DepositProvider depositProvider,
       Eth1DataCache eth1DataCache,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
@@ -123,7 +108,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
-    this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
   }
 
@@ -196,7 +180,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
       UnsignedLong slot = event.getNodeSlot();
       Store store = chainStorageClient.getStore();
-      BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
 
       if (!isGenesis(slot) && isEpochStart(slot)) {
@@ -210,25 +193,80 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       }
 
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
-      List<AttesterInformation> attesterInformations = committeeAssignments.get(slot);
+      List<AttesterInformation> attestersInformation = committeeAssignments.get(slot);
 
       // If our beacon node does have any attestation responsibilities for this slot
-      if (attesterInformations == null) {
+      if (attestersInformation == null) {
         return;
       }
 
       // Pass attestationAggregator all the attester information necessary
       // for aggregation
-      attestationAggregator.updateAggregatorInformations(attesterInformations);
+      attestationAggregator.updateAggregatorInformations(attestersInformation);
 
-      asyncProduceAttestations(
-          attesterInformations, headState, getGenericAttestationData(headState, headBlock));
+      final Map<UnsignedLong, List<AttesterInformation>> attestersByCommittee =
+          attestersInformation.stream()
+              .collect(Collectors.groupingBy(info -> info.getCommittee().getIndex()));
 
-      // Save headState to check for slashings
-      //      this.headState = headState;
+      attestersByCommittee.forEach(
+          (committeeIndex, attesters) ->
+              validatorApiChannel
+                  .createUnsignedAttestation(slot, committeeIndex.intValue())
+                  .finish(
+                      unsignedAttestationOptional ->
+                          produceAttestations(
+                              slot,
+                              headState,
+                              committeeIndex,
+                              attesters,
+                              unsignedAttestationOptional),
+                      STATUS_LOG::attestationFailure));
     } catch (IllegalArgumentException e) {
       STATUS_LOG.attestationFailure(e);
     }
+  }
+
+  private void produceAttestations(
+      final UnsignedLong slot,
+      final BeaconState state,
+      final UnsignedLong committeeIndex,
+      final List<AttesterInformation> attesters,
+      final Optional<Attestation> unsignedAttestationOptional) {
+    unsignedAttestationOptional.ifPresentOrElse(
+        unsignedAttestation -> produceAttestations(state, unsignedAttestation, attesters),
+        () ->
+            LOG.error(
+                "No attestation produced for slot {} and committee {}", slot, committeeIndex));
+  }
+
+  private void produceAttestations(
+      final BeaconState state,
+      final Attestation unsignedAttestation,
+      final List<AttesterInformation> attesters) {
+    attesters.stream()
+        .parallel()
+        .forEach(
+            attester ->
+                createSignedAttestation(state, unsignedAttestation, attester)
+                    .finish(
+                        validatorApiChannel::sendSignedAttestation,
+                        error ->
+                            LOG.error(
+                                "Failed to sign attestation for slot {} and validator {}",
+                                state.getSlot(),
+                                attester.getPublicKey())));
+  }
+
+  private SafeFuture<Attestation> createSignedAttestation(
+      final BeaconState state,
+      final Attestation unsignedAttestation,
+      final AttesterInformation attester) {
+    final Bitlist aggregationBitlist = new Bitlist(unsignedAttestation.getAggregation_bits());
+    aggregationBitlist.setBit(attester.getIndexIntoCommittee());
+    final AttestationData attestationData =
+        unsignedAttestation.getData().withIndex(attester.getCommittee().getIndex());
+    return signAttestation(state, attester.getPublicKey(), attestationData)
+        .thenApply(signature -> new Attestation(aggregationBitlist, attestationData, signature));
   }
 
   @Subscribe
@@ -240,34 +278,13 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     attestationAggregator.reset();
   }
 
-  public void postSignedAttestation(final Attestation attestation, boolean validate) {
-    // TODO extra validation for the attestation we're posting?
-    if (validate) {
-      if (attestation.getAggregate_signature().equals(BLSSignature.empty())) {
-        throw new IllegalArgumentException("Signed attestations must have a non zero signature");
-      }
-    }
-    attestationAggregator.addOwnValidatorAttestation(attestation);
-    this.eventBus.post(attestation);
-  }
-
-  private void produceAttestations(
-      BeaconState state,
-      BLSPublicKey attester,
-      int indexIntoCommittee,
-      Committee committee,
-      AttestationData genericAttestationData) {
-    int committeeSize = committee.getCommitteeSize();
-    Bitlist aggregationBitfield =
-        AttestationUtil.getAggregationBits(committeeSize, indexIntoCommittee);
-    AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
+  private SafeFuture<BLSSignature> signAttestation(
+      final BeaconState state, final BLSPublicKey attester, final AttestationData attestationData) {
     Bytes domain =
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
     Bytes signing_root = compute_signing_root(attestationData, domain);
 
-    BLSSignature signature = getSigner(attester).signAttestation(signing_root).join();
-    Attestation attestation = new Attestation(aggregationBitfield, attestationData, signature);
-    postSignedAttestation(attestation, false);
+    return getSigner(attester).signAttestation(signing_root);
   }
 
   private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {
@@ -291,91 +308,23 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
               .createUnsignedBlock(newSlot, randaoReveal)
               .orTimeout(10, TimeUnit.SECONDS)
               .join()
-              .orElseThrow();
+              .orElseThrow(
+                  () -> new NoSuchElementException("No block created for slot " + newSlot));
 
       final BLSSignature blockSignature =
           blockCreator.get_block_signature(newState, unsignedBlock, signer);
 
       final SignedBeaconBlock newBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
 
-      this.eventBus.post(new ProposedBlockEvent(newBlock));
+      validatorApiChannel.sendSignedBlock(newBlock);
       LOG.debug("Local validator produced a new block");
     } catch (final Exception e) {
       STATUS_LOG.blockCreationFailure(e);
     }
   }
 
-  public Optional<BeaconBlock> createUnsignedBlock(UnsignedLong newSlot, BLSSignature randao_reveal)
-      throws EpochProcessingException, SlotProcessingException, StateTransitionException {
-    Store store = chainStorageClient.getStore();
-    final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
-    if (headRoot.isEmpty() || store == null) {
-      return Optional.empty();
-    }
-    BeaconState previousState = store.getBlockState(headRoot.get());
-    BeaconBlock previousBlock = store.getBlock(headRoot.get());
-
-    MutableBeaconState newState = previousState.createWritableCopy();
-    // Process empty slots up to the new slot
-    stateTransition.process_slots(newState, newSlot);
-    Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
-    SSZList<Attestation> attestations = blockAttestationsPool.getAttestationsForSlot(newSlot);
-    // Collect slashing to include
-    final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(newState);
-    // Collect deposits
-    final SSZList<Deposit> deposits = depositProvider.getDeposits(newState);
-    final Bytes32 parentRoot = previousBlock.hash_tree_root();
-
-    return Optional.of(
-        blockCreator.createNewUnsignedBlock(
-            newSlot,
-            randao_reveal,
-            newState,
-            parentRoot,
-            eth1Data,
-            attestations,
-            slashingsInBlock,
-            deposits));
-  }
-
-  private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
-    SSZMutableList<ProposerSlashing> slashingsForBlock =
-        BeaconBlockBodyLists.createProposerSlashings();
-    ProposerSlashing slashing = slashings.poll();
-    while (slashing != null) {
-      if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
-        slashingsForBlock.add(slashing);
-      }
-      if (slashingsForBlock.size() >= slashingsForBlock.getMaxSize()) {
-        break;
-      }
-      slashing = slashings.poll();
-    }
-    return slashingsForBlock;
-  }
-
   private MessageSignerService getSigner(BLSPublicKey signer) {
     return validators.get(signer).getSignerService();
-  }
-
-  @VisibleForTesting
-  void asyncProduceAttestations(
-      List<AttesterInformation> attesterInformations,
-      BeaconState state,
-      AttestationData genericAttestationData) {
-    reportExceptions(
-        CompletableFuture.runAsync(
-            () ->
-                attesterInformations
-                    .parallelStream()
-                    .forEach(
-                        attesterInfo ->
-                            produceAttestations(
-                                state,
-                                attesterInfo.getPublicKey(),
-                                attesterInfo.getIndexIntoCommittee(),
-                                attesterInfo.getCommittee(),
-                                genericAttestationData))));
   }
 
   @VisibleForTesting

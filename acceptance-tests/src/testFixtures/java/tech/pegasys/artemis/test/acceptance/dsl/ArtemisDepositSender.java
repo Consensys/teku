@@ -17,60 +17,43 @@ import static java.lang.Boolean.FALSE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
-import tech.pegasys.artemis.test.acceptance.dsl.docker.TestContainerMountableFolder;
 import tech.pegasys.artemis.util.Waiter;
 
 public class ArtemisDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final String ENCRYPTED_KEYSTORE_ENABLED = FALSE.toString();
   private static final UnsignedLong MINIMUM_REQUIRED_GWEI = UnsignedLong.valueOf(32_000_000_000L);
-  private static final String CONTAINER_KEYS_DIRECTORY = "/tmp/keys";
-  private static final String CONTAINER_KEYS_YAML = "keys.yaml";
 
   public ArtemisDepositSender(final Network network) {
     super(network, ArtemisNode.ARTEMIS_DOCKER_IMAGE, LOG);
   }
 
   public String sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
-    final TestContainerMountableFolder testContainerMountableFolder =
-        new TestContainerMountableFolder();
-    final Path tempDirectory = testContainerMountableFolder.createTempDirectory();
-
-    container.withFileSystemBind(tempDirectory.toString(), CONTAINER_KEYS_DIRECTORY);
-
     container.setCommand(
         "validator",
         "generate",
-        "--X-confirm-enabled",
+        "--Xconfirm-enabled",
         "false",
-        "--keys-output-path",
-        CONTAINER_KEYS_DIRECTORY + "/" + CONTAINER_KEYS_YAML,
         "--deposit-amount-gwei",
         MINIMUM_REQUIRED_GWEI.toString(),
         "--encrypted-keystore-enabled",
         ENCRYPTED_KEYSTORE_ENABLED,
         "--eth1-deposit-contract-address",
         eth1Node.getDepositContractAddress(),
-        "--X-number-of-validators",
+        "--Xnumber-of-validators",
         Integer.toString(numberOfValidators),
         "--eth1-private-key",
         eth1Node.getRichBenefactorKey(),
         "--eth1-endpoint",
         eth1Node.getInternalJsonRpcUrl());
+    final StringBuilder validatorKeys = new StringBuilder();
+    container.withLogConsumer(outputFrame -> validatorKeys.append(outputFrame.getUtf8String()));
     container.start();
     Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse());
     container.stop();
-    try {
-      return Files.readString(tempDirectory.resolve(CONTAINER_KEYS_YAML));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    return validatorKeys.toString();
   }
 }

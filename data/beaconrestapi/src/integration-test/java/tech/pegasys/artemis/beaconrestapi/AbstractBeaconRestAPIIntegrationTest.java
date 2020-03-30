@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -29,6 +31,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.artemis.api.DataProvider;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
@@ -36,14 +39,12 @@ import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public abstract class AbstractBeaconRestAPIIntegrationTest {
-  private static final String THE_CONFIG =
-      String.format("beaconrestapi.portNumber=%d\nbeaconrestapi.enableSwagger=%s", 0, "false");
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
 
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ObjectMapper objectMapper = new ObjectMapper();
   protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
   protected final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
@@ -52,7 +53,6 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
       new CombinedChainDataClient(chainStorageClient, historicalChainData);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  protected final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
 
   private final DataProvider dataProvider =
       new DataProvider(
@@ -60,15 +60,15 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
           combinedChainDataClient,
           p2PNetwork,
           syncService,
-          validatorApiChannel,
-          validatorCoordinator);
+          validatorApiChannel);
 
   private BeaconRestApi beaconRestApi;
   protected OkHttpClient client;
 
   @BeforeEach
   public void setup() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient();
@@ -77,6 +77,20 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected void assertNoContent(final Response response) throws IOException {
     assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertGone(final Response response) throws IOException {
+    assertThat(response.code()).isEqualTo(SC_GONE);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertNotFound(final Response response) throws IOException {
+    assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertBodyEquals(final Response response, final String body) throws IOException {
+    assertThat(response.body().string()).isEqualTo(body);
   }
 
   protected Response getResponse(final String path) throws IOException {
