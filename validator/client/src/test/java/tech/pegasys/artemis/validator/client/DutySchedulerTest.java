@@ -39,6 +39,7 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 import tech.pegasys.artemis.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.artemis.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 
 class DutySchedulerTest {
   private static final BLSPublicKey VALIDATOR1_KEY = BLSPublicKey.random(100);
