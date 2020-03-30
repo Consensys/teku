@@ -13,11 +13,14 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
@@ -29,6 +32,8 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public abstract class AbstractDataBackedRestAPIIntegrationTest
     extends AbstractBeaconRestAPIIntegrationTest {
@@ -38,6 +43,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest
   @BeforeEach
   public void setup() {
     final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+    when(storageUpdateChannel.onStorageUpdate(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
     final EventBus eventBus = new EventBus();
     chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
     beaconChainUtil = BeaconChainUtil.create(16, chainStorageClient);
