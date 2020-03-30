@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -71,20 +70,12 @@ class MapDbDatabaseTest {
   private Database database = MapDbDatabase.createInMemory(StateStorageMode.ARCHIVE);
   private final List<StorageUpdateResult> updateResults = new ArrayList<>();
   private final StorageUpdateChannel storageUpdateChannel =
-      new StorageUpdateChannel() {
+      new StubStorageUpdateChannel() {
         @Override
         public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {
           final StorageUpdateResult result = database.update(event);
           updateResults.add(result);
           return SafeFuture.completedFuture(result);
-        }
-
-        @Override
-        public void onGenesis(Store store) {}
-
-        @Override
-        public SafeFuture<Optional<Store>> onStoreRequest() {
-          return null;
         }
       };
 

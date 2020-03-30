@@ -23,7 +23,7 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
   public SafeFuture<Optional<Store>> onStoreRequest() {
-    return null;
+    return SafeFuture.failedFuture(new IllegalStateException("Storage is unavailable."));
   }
 
   @Override

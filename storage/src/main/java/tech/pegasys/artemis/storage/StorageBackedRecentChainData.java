@@ -45,30 +45,29 @@ public class StorageBackedRecentChainData extends RecentChainData {
     return client.initializeFromStorage();
   }
 
-  @SuppressWarnings({"FutureReturnValueIgnored"})
   private SafeFuture<RecentChainData> initializeFromStorage() {
     LOG.trace("Begin initializing ChainStorageClient from storage");
-    SafeFuture<RecentChainData> recentChainDataFuture = new SafeFuture<>();
-    makeStoreRequest()
-        .thenAccept(
+    return requestInitialStore()
+        .thenApply(
             maybeStore -> {
               maybeStore.ifPresent(
                   (store) -> {
                     this.setStore(store);
                     LOG.debug("Finish initializing ChainStorageClient from storage");
                   });
-              recentChainDataFuture.complete(this);
+              return this;
             });
-    return recentChainDataFuture;
   }
 
-  private SafeFuture<Optional<Store>> makeStoreRequest() {
+  private SafeFuture<Optional<Store>> requestInitialStore() {
     return storageUpdateChannel
         .onStoreRequest()
         .orTimeout(Constants.STORAGE_REQUEST_TIMEOUT, TimeUnit.SECONDS)
         .exceptionallyCompose(
             (err) ->
                 asyncRunner.runAfterDelay(
-                    this::makeStoreRequest, Constants.STORAGE_REQUEST_TIMEOUT, TimeUnit.SECONDS));
+                    this::requestInitialStore,
+                    Constants.STORAGE_REQUEST_TIMEOUT,
+                    TimeUnit.SECONDS));
   }
 }

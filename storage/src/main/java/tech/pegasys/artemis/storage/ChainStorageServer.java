@@ -74,7 +74,7 @@ public class ChainStorageServer implements StorageUpdateChannel {
   @Override
   public SafeFuture<Optional<Store>> onStoreRequest() {
     if (database == null) {
-      return SafeFuture.failedFuture(new RuntimeException("Database not initialized yet"));
+      return SafeFuture.failedFuture(new IllegalStateException("Database not initialized yet"));
     }
 
     return SafeFuture.completedFuture(getStore());
