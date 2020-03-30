@@ -61,7 +61,6 @@ import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestat
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -250,7 +249,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
             attester ->
                 createSignedAttestation(state, unsignedAttestation, attester)
                     .finish(
-                        attestation -> postSignedAttestation(attestation, false),
+                        validatorApiChannel::sendSignedAttestation,
                         error ->
                             LOG.error(
                                 "Failed to sign attestation for slot {} and validator {}",
@@ -288,17 +287,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     return getSigner(attester).signAttestation(signing_root);
   }
 
-  public void postSignedAttestation(final Attestation attestation, boolean validate) {
-    // TODO extra validation for the attestation we're posting?
-    if (validate) {
-      if (attestation.getAggregate_signature().equals(BLSSignature.empty())) {
-        throw new IllegalArgumentException("Signed attestations must have a non zero signature");
-      }
-    }
-    attestationAggregator.addOwnValidatorAttestation(attestation);
-    this.eventBus.post(attestation);
-  }
-
   private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {
     try {
       MutableBeaconState newState = previousState.createWritableCopy();
@@ -328,7 +316,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
       final SignedBeaconBlock newBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
 
-      this.eventBus.post(new ProposedBlockEvent(newBlock));
+      validatorApiChannel.sendSignedBlock(newBlock);
       LOG.debug("Local validator produced a new block");
     } catch (final Exception e) {
       STATUS_LOG.blockCreationFailure(e);
