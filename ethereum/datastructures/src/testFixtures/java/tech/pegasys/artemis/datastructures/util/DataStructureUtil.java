@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_P
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.LongStream;
@@ -123,23 +122,24 @@ public final class DataStructureUtil {
     return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
-
-  private BitSet randomBitSet(int n) {
-    Random random = new Random(nextSeed());
-    BitSet bitSet = new BitSet(n);
-    for (int i = 0; i < n; i++) {
-      if (random.nextBoolean()) {
-        bitSet.set(i);
-      }
-    }
-    return bitSet;
-  }
   public Bitlist randomBitlist(int n) {
-    return new Bitlist(randomBitSet(n), n);
+    byte[] byteArray = new byte[n];
+    Random random = new Random(nextSeed());
+
+    for (int i = 0; i < n; i++) {
+      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+    }
+    return new Bitlist(byteArray, n);
   }
 
   public Bitvector randomBitvector(int n) {
-    return new Bitvector(randomBitSet(n), n);
+    byte[] byteArray = new byte[n];
+    Random random = new Random(nextSeed());
+
+    for (int i = 0; i < n; i++) {
+      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+    }
+    return new Bitvector(byteArray, n);
   }
 
   public BLSPublicKey randomPublicKey() {

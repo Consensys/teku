@@ -24,6 +24,7 @@ public class BitvectorDeserializer extends JsonDeserializer<Bitvector> {
   @Override
   public Bitvector deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     Bytes data = Bytes.fromHexString(p.getValueAsString());
-    return new Bitvector(data.toArray());
+    int length = data.bitLength() + 1;
+    return Bitvector.fromBytes(data, length);
   }
 }

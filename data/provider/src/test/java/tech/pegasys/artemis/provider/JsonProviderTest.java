@@ -59,7 +59,7 @@ class JsonProviderTest {
     final Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
 
     assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
-    assertThat(asData.getCurrentSize()).isGreaterThanOrEqualTo(BITLIST_SIZE);
+    assertThat(asData.getCurrentSize()).isEqualTo(BITLIST_SIZE);
   }
 
   @Test
@@ -70,7 +70,7 @@ class JsonProviderTest {
     final Bitvector asData = jsonProvider.jsonToObject(asJson, Bitvector.class);
 
     assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
-    assertThat(asData.getSize()).isGreaterThanOrEqualTo(BITVECTOR_SIZE);
+    assertThat(asData.getSize()).isEqualTo(BITVECTOR_SIZE);
   }
 
   @Test
