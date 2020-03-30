@@ -27,20 +27,20 @@ import tech.pegasys.artemis.datastructures.util.GenesisGenerator;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 
 public class GenesisHandler implements Eth1EventsChannel {
 
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
 
-  public GenesisHandler(final ChainStorageClient chainStorageClient) {
-    this.chainStorageClient = chainStorageClient;
+  public GenesisHandler(final RecentChainData recentChainData) {
+    this.recentChainData = recentChainData;
   }
 
   @Override
   public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
-    if (!chainStorageClient.isPreGenesis()) {
+    if (!recentChainData.isPreGenesis()) {
       return;
     }
 
@@ -67,8 +67,8 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private void eth2Genesis(BeaconState genesisState) {
-    chainStorageClient.initializeFromGenesis(genesisState);
-    Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot().orElseThrow();
+    recentChainData.initializeFromGenesis(genesisState);
+    Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     EVENT_LOG.genesisEvent(genesisState.hash_tree_root(), genesisBlockRoot);
   }
 }

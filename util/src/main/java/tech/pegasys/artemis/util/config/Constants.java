@@ -145,6 +145,7 @@ public class Constants {
   public static long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 100;
+  public static long STORAGE_REQUEST_TIMEOUT = 3; // in sec
 
   static {
     setConstants("minimal");

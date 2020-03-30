@@ -43,7 +43,7 @@ import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.Disconn
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
@@ -52,7 +52,7 @@ public class PeerSyncTest {
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private BlockImporter blockImporter = mock(BlockImporter.class);
-  private ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private RecentChainData storageClient = mock(RecentChainData.class);
 
   private static final SignedBeaconBlock BLOCK = new DataStructureUtil().randomSignedBeaconBlock(1);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");

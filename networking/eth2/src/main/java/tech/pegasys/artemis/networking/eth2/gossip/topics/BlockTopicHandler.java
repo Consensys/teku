@@ -34,20 +34,20 @@ import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
   private static final Logger LOG = LogManager.getLogger();
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
   private final EventBus eventBus;
 
-  public BlockTopicHandler(final EventBus eventBus, final ChainStorageClient chainStorageClient) {
+  public BlockTopicHandler(final EventBus eventBus, final RecentChainData recentChainData) {
     super(eventBus);
     this.eventBus = eventBus;
-    this.chainStorageClient = chainStorageClient;
+    this.recentChainData = recentChainData;
   }
 
   @Override
@@ -67,13 +67,13 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
 
   @Override
   protected boolean validateData(final SignedBeaconBlock block) {
-    if (chainStorageClient.isPreGenesis()) {
+    if (recentChainData.isPreGenesis()) {
       // We can't process blocks pre-genesis
       return false;
     }
 
     final BeaconState preState =
-        chainStorageClient.getStore().getBlockState(block.getMessage().getParent_root());
+        recentChainData.getStore().getBlockState(block.getMessage().getParent_root());
     if (preState == null) {
       // Post event even if we don't have the prestate
       eventBus.post(createEvent(block));
@@ -85,7 +85,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
       return false;
     }
 
-    final UnsignedLong currentSlot = get_current_slot(chainStorageClient.getStore());
+    final UnsignedLong currentSlot = get_current_slot(recentChainData.getStore());
     if (block.getSlot().compareTo(currentSlot) > 0) {
       // Don't gossip future blocks
       eventBus.post(createEvent(block));

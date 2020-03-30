@@ -18,6 +18,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-units'
 
     testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':storage'))
 }
 
 test {
