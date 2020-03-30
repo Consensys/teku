@@ -117,6 +117,7 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(node2.network().getPeerCount()).isEqualTo(2);
           assertThat(node3.network().getPeerCount()).isEqualTo(1);
         });
+
     // TODO: debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 

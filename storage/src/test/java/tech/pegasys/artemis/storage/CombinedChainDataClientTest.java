@@ -391,6 +391,16 @@ class CombinedChainDataClientTest {
     assertThat(client.getBlockBySlot(slotParam).get()).isNotNull().isEmpty();
   }
 
+  @Test
+  public void getStateAtSlot_shouldUseRecentStoreForGenesisSlotDuringFirstEpoch() {
+    final BeaconState state = dataStructureUtil.randomBeaconState(UnsignedLong.ZERO);
+    final Bytes32 headBlockRoot = state.hash_tree_root();
+    when(store.getBlockState(headBlockRoot)).thenReturn(state);
+
+    assertThat(client.getStateAtSlot(state.getSlot(), headBlockRoot))
+        .isCompletedWithValue(Optional.of(state));
+  }
+
   private SignedBeaconBlock block(final UnsignedLong slot) {
     return dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
   }

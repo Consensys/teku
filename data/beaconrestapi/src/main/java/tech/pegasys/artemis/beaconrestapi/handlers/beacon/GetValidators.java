@@ -29,7 +29,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -46,23 +45,22 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class GetValidators implements Handler {
+public class GetValidators extends AbstractHandler implements Handler {
+  public static final String ROUTE = "/beacon/validators";
 
   private final ChainDataProvider chainDataProvider;
 
   public GetValidators(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.chainDataProvider = chainDataProvider;
-    this.jsonProvider = jsonProvider;
   }
-
-  public static final String ROUTE = "/beacon/validators";
-  private final JsonProvider jsonProvider;
 
   @OpenApi(
       path = ROUTE,
@@ -109,27 +107,39 @@ public class GetValidators implements Handler {
           getPositiveIntegerValueWithDefaultIfNotSupplied(
               parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
 
-      final SafeFuture<Optional<BeaconState>> future = getStateFuture(parameters);
+      boolean isFinalized = false;
+      final SafeFuture<Optional<BeaconState>> future;
+      if (parameters.containsKey(EPOCH)) {
+        UnsignedLong epoch = getParameterValueAsUnsignedLong(parameters, EPOCH);
+        UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+        isFinalized = chainDataProvider.isFinalized(slot);
+        future = chainDataProvider.getStateAtSlot(slot);
+      } else {
+        Bytes32 blockRoot =
+            chainDataProvider.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
+        future = chainDataProvider.getStateByBlockRoot(blockRoot);
+      }
 
-      ctx.result(
-          future.thenApplyChecked(
-              state -> handleResponseContext(ctx, state, activeOnly, pageSize, pageToken)));
+      if (isFinalized) {
+        this.handlePossiblyGoneResult(
+            ctx, future, getResultProcessor(activeOnly, pageSize, pageToken));
+      } else {
+        this.handlePossiblyMissingResult(
+            ctx, future, getResultProcessor(activeOnly, pageSize, pageToken));
+      }
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
 
-  private SafeFuture<Optional<BeaconState>> getStateFuture(Map<String, List<String>> parameters) {
-    if (parameters.containsKey(EPOCH)) {
-      UnsignedLong epoch = getParameterValueAsUnsignedLong(parameters, EPOCH);
-      UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-      return chainDataProvider.getStateAtSlot(slot);
-    } else {
-      Bytes32 blockRoot =
-          chainDataProvider.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
-      return chainDataProvider.getStateByBlockRoot(blockRoot);
-    }
+  private final ResultProcessor<BeaconState> getResultProcessor(
+      final boolean activeOnly, final int pageSize, final int pageToken) {
+    return (ctx, state) -> {
+      final BeaconValidators result = new BeaconValidators(state, activeOnly, pageSize, pageToken);
+      ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(chainDataProvider, state));
+      return Optional.of(jsonProvider.objectToJSON(result));
+    };
   }
 
   private int getPositiveIntegerValueWithDefaultIfNotSupplied(
@@ -146,23 +156,5 @@ public class GetValidators implements Handler {
       }
     }
     return intValue;
-  }
-
-  private String handleResponseContext(
-      Context ctx,
-      Optional<BeaconState> optionalState,
-      final boolean activeOnly,
-      final int pageSize,
-      final int pageToken)
-      throws JsonProcessingException {
-    if (optionalState.isEmpty()) {
-      return jsonProvider.objectToJSON(List.of());
-    } else {
-      final BeaconState state = optionalState.get();
-      final BeaconValidators result = new BeaconValidators(state, activeOnly, pageSize, pageToken);
-
-      ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(chainDataProvider, state));
-      return jsonProvider.objectToJSON(result);
-    }
   }
 }

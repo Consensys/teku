@@ -51,6 +51,8 @@ import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainDataProviderTest {
@@ -71,7 +73,8 @@ public class ChainDataProviderTest {
   @BeforeAll
   public static void setup() {
     localEventBus = new EventBus();
-    chainStorageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
+    chainStorageClient =
+        ChainStorageClient.memoryOnlyClient(localEventBus, mock(StorageUpdateChannel.class));
     beaconStateInternal = dataStructureUtil.randomBeaconState();
     beaconState = new BeaconState(beaconStateInternal);
     chainStorageClient.initializeFromGenesis(beaconStateInternal);
@@ -83,14 +86,12 @@ public class ChainDataProviderTest {
   @Test
   public void getCommitteeAssignmentAtEpoch_shouldReturnEmptyListWhenStateAtSlotIsNotFound()
       throws Exception {
-    ChainDataProvider provider = new ChainDataProvider(null, combinedChainDataClient);
+    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
 
-    when(historicalChainData.getFinalizedStateAtSlot(ZERO))
-        .thenReturn(completedFuture(Optional.empty()));
-    SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(ZERO);
+    SafeFuture<Optional<List<Committee>>> future =
+        provider.getCommitteesAtEpoch(UnsignedLong.valueOf(50));
 
-    verify(historicalChainData).getFinalizedStateAtSlot(ZERO);
-    assertEquals(future.get(), List.of());
+    assertThat(future.get()).isEmpty();
   }
 
   @Test
@@ -99,8 +100,8 @@ public class ChainDataProviderTest {
     ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
     UnsignedLong futureEpoch = slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
 
-    SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(futureEpoch);
-    assertEquals(future.get(), List.of());
+    SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(futureEpoch);
+    assertThat(future.get()).isEmpty();
   }
 
   @Test
@@ -112,15 +113,17 @@ public class ChainDataProviderTest {
         new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
     when(mockCombinedChainDataClient.getCommitteeAssignmentAtEpoch(beaconStateInternal.getSlot()))
-        .thenReturn(completedFuture(committeeAssignments));
-    SafeFuture<List<Committee>> future =
+        .thenReturn(completedFuture(Optional.of(committeeAssignments)));
+    SafeFuture<Optional<List<Committee>>> future =
         provider.getCommitteesAtEpoch(beaconStateInternal.getSlot());
 
     verify(mockCombinedChainDataClient).isStoreAvailable();
     verify(mockCombinedChainDataClient)
         .getCommitteeAssignmentAtEpoch(beaconStateInternal.getSlot());
-    Committee result = future.get().get(0);
+    Committee result = future.get().get().get(0);
     assertEquals(ONE, result.slot);
     assertEquals(ZERO, result.index);
     assertEquals(List.of(1), result.committee);
@@ -130,7 +133,7 @@ public class ChainDataProviderTest {
   public void getCommitteeAssignmentAtEpoch_shouldThrowIfStoreNotAvailable() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
-    SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(ZERO);
+    SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(ZERO);
     verify(historicalChainData, never()).getFinalizedStateAtSlot(any());
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
@@ -261,26 +264,58 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getStateAtSlot_shouldThrowWhenStoreNotFound() {
-    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+  public void getStateAtSlot_shouldThrowWhenStorageClientIsMissing() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
+  public void getStateAtSlot_shouldThrowWhenStoreNotFound() {
+    final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+    when(storageClient.getStore()).thenReturn(null);
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(storageClient, historicalChainData);
+    final ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, combinedChainDataClient);
+
+    SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
+    verify(storageClient).getStore();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
+  }
+
+  @Test
+  public void getStateAtSlot_shouldThrowWhenHeadRootMissing() {
+    final Store store = mock(Store.class);
+    final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+    when(storageClient.getStore()).thenReturn(store);
+    when(storageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(storageClient, historicalChainData);
+    final ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, combinedChainDataClient);
+
+    SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
+    verify(storageClient).getBestBlockRoot();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
+  }
+
+  @Test
   void getStateBySlot_shouldReturnBeaconStateWhenFound()
       throws ExecutionException, InterruptedException {
-    ChainDataProvider provider =
-        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-
+    final Bytes32 chainHead = dataStructureUtil.randomBytes32();
     SafeFuture<Optional<tech.pegasys.artemis.datastructures.state.BeaconState>> futureBeaconState =
         completedFuture(Optional.of(beaconStateInternal));
 
+    final ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getStateAtSlot(ZERO)).thenReturn(futureBeaconState);
+    when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(chainHead));
+    when(mockCombinedChainDataClient.getStateAtSlot(ZERO, chainHead)).thenReturn(futureBeaconState);
+
     SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
-    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO);
+    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO, chainHead);
 
     BeaconState result = future.get().get();
     assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);
@@ -321,7 +356,7 @@ public class ChainDataProviderTest {
     ValidatorsRequest smallRequest =
         new ValidatorsRequest(compute_epoch_at_slot(beaconState.slot), List.of(BLSPubKey.empty()));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getStateAtSlot(any()))
+    when(mockCombinedChainDataClient.getStateAtSlot(any(), any()))
         .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
 
     SafeFuture<Optional<BeaconValidators>> future =
@@ -347,7 +382,7 @@ public class ChainDataProviderTest {
                 beaconState.validators.get(11).pubkey,
                 beaconState.validators.get(99).pubkey));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getStateAtSlot(any()))
+    when(mockCombinedChainDataClient.getStateAtSlot(any(), any()))
         .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
     SafeFuture<Optional<BeaconValidators>> future =
         provider.getValidatorsByValidatorsRequest(validatorsRequest);

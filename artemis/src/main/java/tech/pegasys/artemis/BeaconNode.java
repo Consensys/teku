@@ -70,7 +70,9 @@ public class BeaconNode {
 
     final String transitionRecordDir = config.getTransitionRecordDirectory();
     if (transitionRecordDir != null) {
-      eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
+      SSZTransitionRecorder sszTransitionRecorder =
+          new SSZTransitionRecorder(Path.of(transitionRecordDir));
+      eventBus.register(sszTransitionRecorder);
     }
 
     this.serviceController = new ServiceController(serviceConfig);

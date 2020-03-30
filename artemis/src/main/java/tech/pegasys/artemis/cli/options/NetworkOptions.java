@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,24 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.artemis.cli.options;
 
-import tech.pegasys.artemis.storage.DatabaseUpdateResult;
+import picocli.CommandLine;
 
-public class StoreDiskUpdateCompleteEvent {
-  private final long transactionId;
-  private final DatabaseUpdateResult result;
+public class NetworkOptions {
 
-  public StoreDiskUpdateCompleteEvent(final long transactionId, final DatabaseUpdateResult result) {
-    this.transactionId = transactionId;
-    this.result = result;
-  }
+  public static final String NETWORK_OPTION_NAME = "--network";
 
-  public long getTransactionId() {
-    return transactionId;
-  }
+  public static final String DEFAULT_NETWORK = "minimal";
 
-  public DatabaseUpdateResult getResult() {
-    return result;
+  @CommandLine.Option(
+      names = {"-n", NETWORK_OPTION_NAME},
+      paramLabel = "<NETWORK>",
+      description = "Represents which network to use",
+      arity = "1")
+  private String network = DEFAULT_NETWORK;
+
+  public String getNetwork() {
+    return network;
   }
 }
