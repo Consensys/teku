@@ -40,7 +40,8 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = config.getEventChannels();
     final ValidatorApiChannel validatorApiChannel =
         eventChannels.getPublisher(ValidatorApiChannel.class);
-    final Map<BLSPublicKey, Validator> validators = ValidatorLoader.initializeValidators(config.getConfig());
+    final Map<BLSPublicKey, Validator> validators =
+        ValidatorLoader.initializeValidators(config.getConfig());
     final DutyScheduler validatorClient =
         new DutyScheduler(
             DelayedExecutorAsyncRunner.create(),
