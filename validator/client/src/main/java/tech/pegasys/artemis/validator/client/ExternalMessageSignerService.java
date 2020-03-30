@@ -52,6 +52,11 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   @Override
+  public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
+    return sign(signingRoot, "/signer/aggregation_slot");
+  }
+
+  @Override
   public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
     return sign(signingRoot, "/signer/randao_reveal");
   }

@@ -54,7 +54,7 @@ class ValidatorLoaderTest {
     final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator = validators.get(0);
     assertThat(validator.getPublicKey()).isEqualTo(key);
-    assertThat(validator.getMessageSignerService())
+    assertThat(validator.getSigner().getMessageSignerService())
         .isInstanceOf(ExternalMessageSignerService.class);
   }
 
@@ -76,7 +76,8 @@ class ValidatorLoaderTest {
     final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator = validators.get(0);
     assertThat(validator.getPublicKey()).isEqualTo(key);
-    assertThat(validator.getMessageSignerService()).isInstanceOf(LocalMessageSignerService.class);
+    assertThat(validator.getSigner().getMessageSignerService())
+        .isInstanceOf(LocalMessageSignerService.class);
   }
 
   @Test
@@ -100,12 +101,13 @@ class ValidatorLoaderTest {
     final BLSPublicKey key1 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator1 = validators.get(0);
     assertThat(validator1.getPublicKey()).isEqualTo(key1);
-    assertThat(validator1.getMessageSignerService()).isInstanceOf(LocalMessageSignerService.class);
+    assertThat(validator1.getSigner().getMessageSignerService())
+        .isInstanceOf(LocalMessageSignerService.class);
 
     final BLSPublicKey key2 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY2));
     final Validator validator2 = validators.get(1);
     assertThat(validator2.getPublicKey()).isEqualTo(key2);
-    assertThat(validator2.getMessageSignerService())
+    assertThat(validator2.getSigner().getMessageSignerService())
         .isInstanceOf(ExternalMessageSignerService.class);
   }
 
@@ -132,12 +134,12 @@ class ValidatorLoaderTest {
     final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator localValidator = validators.get(0);
     assertThat(localValidator.getPublicKey()).isEqualTo(key);
-    assertThat(localValidator.getMessageSignerService())
+    assertThat(localValidator.getSigner().getMessageSignerService())
         .isInstanceOf(LocalMessageSignerService.class);
 
     final Validator externalValidator = validators.get(1);
     assertThat(externalValidator.getPublicKey()).isEqualTo(key);
-    assertThat(externalValidator.getMessageSignerService())
+    assertThat(externalValidator.getSigner().getMessageSignerService())
         .isInstanceOf(ExternalMessageSignerService.class);
   }
 }

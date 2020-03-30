@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class Validator {
@@ -31,9 +30,5 @@ public class Validator {
 
   public Signer getSigner() {
     return signer;
-  }
-
-  public MessageSignerService getMessageSignerService() {
-    return signer.getMessageSignerService();
   }
 }

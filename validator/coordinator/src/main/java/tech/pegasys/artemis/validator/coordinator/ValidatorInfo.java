@@ -13,19 +13,19 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.validator.client.Signer;
 
 public class ValidatorInfo {
 
-  private final MessageSignerService signerService;
+  private final Signer signer;
   private int validatorIndex = -1;
 
-  public ValidatorInfo(final MessageSignerService signerService) {
-    this.signerService = signerService;
+  public ValidatorInfo(final Signer signer) {
+    this.signer = signer;
   }
 
-  public MessageSignerService getSignerService() {
-    return signerService;
+  public Signer getSigner() {
+    return signer;
   }
 
   public int getValidatorIndex() {
