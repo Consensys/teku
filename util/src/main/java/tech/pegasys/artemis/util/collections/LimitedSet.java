@@ -42,7 +42,6 @@ public final class LimitedSet {
    */
   public static final <T> Set<T> create(
       final int initialCapacity, final int maxSize, final LimitStrategy mode) {
-    return Collections.synchronizedSet(
-        Collections.newSetFromMap(LimitedMap.create(initialCapacity, maxSize, mode)));
+    return Collections.newSetFromMap(LimitedMap.create(initialCapacity, maxSize, mode));
   }
 }

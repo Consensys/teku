@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.collections;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -43,11 +44,12 @@ public class LimitedMap {
   public static final <K, V> Map<K, V> create(
       final int initialCapacity, final int maxSize, final LimitStrategy mode) {
     final boolean useAccessOrder = mode.equals(LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    return new LinkedHashMap<>(initialCapacity, 0.75f, useAccessOrder) {
-      @Override
-      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-        return size() > maxSize;
-      }
-    };
+    return Collections.synchronizedMap(
+        new LinkedHashMap<>(initialCapacity, 0.75f, useAccessOrder) {
+          @Override
+          protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
+            return size() > maxSize;
+          }
+        });
   }
 }

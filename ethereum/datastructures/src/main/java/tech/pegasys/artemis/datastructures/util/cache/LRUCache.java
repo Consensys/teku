@@ -48,7 +48,7 @@ public class LRUCache<K, V> implements Cache<K, V> {
     synchronized (initialCachedContent) {
       cacheMap.putAll(initialCachedContent);
     }
-    this.cacheData = Collections.synchronizedMap(cacheMap);
+    this.cacheData = cacheMap;
   }
 
   @Override
