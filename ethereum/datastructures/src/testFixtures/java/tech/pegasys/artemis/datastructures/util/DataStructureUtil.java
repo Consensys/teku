@@ -123,6 +123,7 @@ public final class DataStructureUtil {
     return randomBitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
+
   private BitSet randomBitSet(int n) {
     Random random = new Random(nextSeed());
     BitSet bitSet = new BitSet(n);
@@ -133,7 +134,6 @@ public final class DataStructureUtil {
     }
     return bitSet;
   }
-
   public Bitlist randomBitlist(int n) {
     return new Bitlist(randomBitSet(n), n);
   }
