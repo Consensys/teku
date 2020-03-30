@@ -21,6 +21,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.storage.rocksdb.RocksDbConfiguration;
+import tech.pegasys.artemis.storage.rocksdb.RocksDbDatabase;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class VersionedDatabaseFactory {
@@ -33,6 +35,7 @@ public class VersionedDatabaseFactory {
   private final File dataDirectory;
   private final File dbDirectory;
   private final File dbVersionFile;
+  private final StateStorageMode stateStorageMode;
 
   public VersionedDatabaseFactory(final ArtemisConfiguration config) {
     this.config = config;
@@ -40,6 +43,7 @@ public class VersionedDatabaseFactory {
     this.dataDirectory = Paths.get(config.getDataPath()).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
+    this.stateStorageMode = StateStorageMode.fromString(config.getDataStorageMode());
   }
 
   public Database createDatabase() {
@@ -54,15 +58,24 @@ public class VersionedDatabaseFactory {
       case V1:
         database = createV1Database();
         break;
+      case V2:
+        database = createV2Database();
+        break;
+      default:
+        throw new IllegalStateException("Unhandled database version " + dbVersion);
     }
     LOG.trace("Created database ({}) at {}", dbVersion.getValue(), dbDirectory.getAbsolutePath());
     return database;
   }
 
   private Database createV1Database() {
-    final StateStorageMode stateStorageMode =
-        StateStorageMode.fromString(config.getDataStorageMode());
     return MapDbDatabase.createOnDisk(dbDirectory, stateStorageMode);
+  }
+
+  private Database createV2Database() {
+    final RocksDbConfiguration rocksDbConfiguration =
+        RocksDbConfiguration.withDataDirectory(dbDirectory.toPath());
+    return RocksDbDatabase.createOnDisk(rocksDbConfiguration, stateStorageMode);
   }
 
   private void validateDataPaths() {
