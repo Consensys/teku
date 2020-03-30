@@ -22,20 +22,11 @@ import org.apache.tuweni.bytes.Bytes;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SigningRequestBody {
 
-  private final String publicKey;
   private final Bytes signingRoot;
 
   @JsonCreator
-  public SigningRequestBody(
-      @JsonProperty("publicKey") final String publicKey,
-      @JsonProperty("signingRoot") final String signingRoot) {
-    this.publicKey = publicKey;
+  public SigningRequestBody(@JsonProperty("signingRoot") final String signingRoot) {
     this.signingRoot = Bytes.fromHexString(signingRoot);
-  }
-
-  @JsonGetter("publicKey")
-  public String publicKey() {
-    return publicKey;
   }
 
   public Bytes signingRoot() {
