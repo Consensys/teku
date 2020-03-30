@@ -35,6 +35,9 @@ public class LoggingConfigurator {
   static final String EVENT_LOGGER_NAME = "teku-event-log";
   static final String STATUS_LOGGER_NAME = "teku-status-log";
 
+  private static final String LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
+  private static final String LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY =
+      "log4j.configurationFile";
   private static final String CONSOLE_APPENDER_NAME = "teku-console-appender";
   private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} [%-5level] - %msg%n";
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
@@ -77,7 +80,7 @@ public class LoggingConfigurator {
 
   private static void addLoggers(final AbstractConfiguration configuration) {
 
-    if (isUninitialized() || !isProgrammaticLoggingNeeded()) {
+    if (isUninitialized() || noProgrammaticLoggingRequired()) {
       return;
     }
 
@@ -89,7 +92,7 @@ public class LoggingConfigurator {
     Appender fileAppender;
 
     switch (DESTINATION) {
-      case CONSOLE_ONLY:
+      case CONSOLE:
         consoleAppender = consoleAppender(configuration);
 
         setUpStatusLogger(consoleAppender);
@@ -97,7 +100,7 @@ public class LoggingConfigurator {
 
         addAppenderToRootLogger(configuration, consoleAppender);
         break;
-      case FILE_ONLY:
+      case FILE:
         fileAppender = fileAppender(configuration);
 
         setUpStatusLogger(fileAppender);
@@ -112,6 +115,8 @@ public class LoggingConfigurator {
                 DESTINATION,
                 LoggingDestination.BOTH);
         // fall through
+      case DEFAULT_BOTH:
+        // fall through
       case BOTH:
         onlyEventsLoggerToConsole(configuration);
 
@@ -125,12 +130,19 @@ public class LoggingConfigurator {
     configuration.getLoggerContext().updateLoggers();
   }
 
-  private static boolean isProgrammaticLoggingNeeded() {
-    return System.getProperty("log4j.configurationFile") == null;
-  }
-
   private static boolean isUninitialized() {
     return DESTINATION == null;
+  }
+
+  private static boolean noProgrammaticLoggingRequired() {
+    return DESTINATION == LoggingDestination.DEFAULT_BOTH && customLog4jProvided();
+  }
+
+  private static boolean customLog4jProvided() {
+    return System.getenv(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY) != null
+        || System.getProperty(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY) != null
+        || System.getenv(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY) != null
+        || System.getProperty(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY) != null;
   }
 
   private static void addAppenderToRootLogger(

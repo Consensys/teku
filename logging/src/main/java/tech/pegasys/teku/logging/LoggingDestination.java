@@ -14,9 +14,10 @@
 package tech.pegasys.teku.logging;
 
 public enum LoggingDestination {
-  CONSOLE_ONLY("consoleOnly"),
-  FILE_ONLY("fileOnly"),
-  BOTH("both");
+  BOTH("both"),
+  CONSOLE("console"),
+  DEFAULT_BOTH("default"),
+  FILE("file");
 
   private final String key;
 
@@ -31,6 +32,6 @@ public enum LoggingDestination {
       }
     }
 
-    return LoggingDestination.BOTH;
+    return DEFAULT_BOTH;
   }
 }
