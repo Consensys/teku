@@ -26,6 +26,7 @@ dependencies {
 
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':util'))
+  testFixturesImplementation project(':validator:client')
 
   test {
     testLogging.showStandardStreams = true

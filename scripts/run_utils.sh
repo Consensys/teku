@@ -25,7 +25,7 @@ create_config() {
   if [ "$NODE" == "0" ]
   then
     # Create a list of peer ids
-    cd demo/node_0 && ./teku peer generate $NUM -o "config/peer_ids.dat" && cd ../../
+    cd demo/node_0 && ./teku peer generate -n $NUM -o "config/peer_ids.dat" && cd ../../
   fi
   # Create a list of all the peers for the configure node procedure to use
   PEERS=$(generate_peers 19000 $NUM $NODE)

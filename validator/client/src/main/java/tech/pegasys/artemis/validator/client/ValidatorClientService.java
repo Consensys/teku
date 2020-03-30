@@ -13,12 +13,13 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import java.util.List;
+import java.util.Map;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.validator.anticorruption.ValidatorAnticorruptionLayer;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
@@ -39,7 +40,7 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = config.getEventChannels();
     final ValidatorApiChannel validatorApiChannel =
         eventChannels.getPublisher(ValidatorApiChannel.class);
-    final List<Validator> validators = ValidatorLoader.initializeValidators(config.getConfig());
+    final Map<BLSPublicKey, Validator> validators = ValidatorLoader.initializeValidators(config.getConfig());
     final DutyScheduler validatorClient =
         new DutyScheduler(
             DelayedExecutorAsyncRunner.create(),

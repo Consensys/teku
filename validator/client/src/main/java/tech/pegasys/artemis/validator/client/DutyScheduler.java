@@ -14,14 +14,11 @@
 package tech.pegasys.artemis.validator.client;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.async.AsyncRunner;
@@ -51,12 +48,11 @@ public class DutyScheduler implements ValidatorTimingChannel {
       final AsyncRunner asyncRunner,
       final ValidatorApiChannel validatorApiChannel,
       final ValidatorDutyFactory dutyFactory,
-      final List<Validator> validators) {
+      final Map<BLSPublicKey, Validator> validators) {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
     this.dutyFactory = dutyFactory;
-    this.validators =
-        validators.stream().collect(Collectors.toMap(Validator::getPublicKey, Function.identity()));
+    this.validators = validators;
   }
 
   @Override

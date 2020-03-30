@@ -21,33 +21,63 @@ import static org.mockito.Mockito.when;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class SignerTest {
+
   private final MessageSignerService signerService = mock(MessageSignerService.class);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Fork fork = dataStructureUtil.randomFork();
 
   private final Signer signer = new Signer(signerService);
 
   @Test
   public void shouldCreateRandaoReveal() {
-    final BLSSignature signature = BLSSignature.empty();
+    final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
-        Bytes.fromHexString("0x4c0e022c60384ac0268588a8e114968d2df4dddccb93e8e858b8c2a57d8f7338");
+        Bytes.fromHexString("0x84c8825ccb169a0d1109ff2b96185ea2bd6f66ed198f2e322473773fff3ed91b");
     when(signerService.signRandaoReveal(expectedSigningRoot))
         .thenReturn(SafeFuture.completedFuture(signature));
     final SafeFuture<BLSSignature> reveal =
-        signer.createRandaoReveal(
-            UnsignedLong.valueOf(7),
-            new Fork(
-                Bytes4.fromHexString("0x11111111"),
-                Bytes4.fromHexString("0x22222222"),
-                UnsignedLong.valueOf(6)));
+        signer.createRandaoReveal(UnsignedLong.valueOf(7), fork);
 
     verify(signerService).signRandaoReveal(expectedSigningRoot);
     assertThat(reveal).isCompletedWithValue(signature);
+  }
+
+  @Test
+  public void shouldSignBlock() {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
+    final BLSSignature signature = dataStructureUtil.randomSignature();
+    final Bytes expectedSigningRoot =
+        Bytes.fromHexString("0xc1d77efb7248d3a1cac986ea27ce9ee8fb2257f8e6053ae0083b77d781af02d3");
+    when(signerService.signBlock(expectedSigningRoot))
+        .thenReturn(SafeFuture.completedFuture(signature));
+
+    final SafeFuture<BLSSignature> result = signer.signBlock(block, fork);
+
+    verify(signerService).signBlock(expectedSigningRoot);
+    assertThat(result).isCompletedWithValue(signature);
+  }
+
+  @Test
+  public void shouldSignAttestationData() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final BLSSignature signature = dataStructureUtil.randomSignature();
+    final Bytes expectedSigningRoot =
+        Bytes.fromHexString("0x08c353f48613183f31ebcb6d95bec46f9da73793cb0581f4a49d253224f778a1");
+    when(signerService.signAttestation(expectedSigningRoot))
+        .thenReturn(SafeFuture.completedFuture(signature));
+
+    final SafeFuture<BLSSignature> result = signer.signAttestationData(attestationData, fork);
+
+    verify(signerService).signAttestation(expectedSigningRoot);
+    assertThat(result).isCompletedWithValue(signature);
   }
 }

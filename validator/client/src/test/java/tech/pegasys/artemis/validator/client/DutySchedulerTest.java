@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +56,10 @@ class DutySchedulerTest {
 
   private final DutyScheduler validatorClient =
       new DutyScheduler(
-          asyncRunner, validatorApiChannel, dutyFactory, List.of(validator1, validator2));
+          asyncRunner,
+          validatorApiChannel,
+          dutyFactory,
+          Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
 
   @BeforeEach
   public void setUp() {

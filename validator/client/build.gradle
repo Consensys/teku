@@ -16,6 +16,6 @@ dependencies {
 
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 
-  testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':util'))
 }
