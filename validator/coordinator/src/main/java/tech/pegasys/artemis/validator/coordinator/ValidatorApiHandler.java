@@ -15,7 +15,6 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
@@ -29,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
@@ -39,7 +40,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
@@ -56,6 +56,7 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
+  private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
   private final BlockFactory blockFactory;
   private final AttestationAggregator attestationAggregator;
@@ -81,12 +82,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
-    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final UnsignedLong slot =
+        compute_start_slot_at_epoch(
+            epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
+    LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlot(slot)
         .thenApply(
             optionalState ->
-                optionalState.map(state -> getValidatorDutiesFromState(state, publicKeys)));
+                optionalState.map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
   }
 
   @Override
@@ -163,20 +167,24 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(
-      final BeaconState state, final Collection<BLSPublicKey> publicKeys) {
+      final BeaconState state,
+      final UnsignedLong epoch,
+      final Collection<BLSPublicKey> publicKeys) {
     final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex =
-        getBeaconProposalSlotsByValidatorIndex(state);
+        getBeaconProposalSlotsByValidatorIndex(state, epoch);
     return publicKeys.stream()
-        .map(key -> getDutiesForValidator(key, state, proposalSlotsByValidatorIndex))
+        .map(key -> getDutiesForValidator(key, state, epoch, proposalSlotsByValidatorIndex))
         .collect(toList());
   }
 
   private ValidatorDuties getDutiesForValidator(
       final BLSPublicKey key,
       final BeaconState state,
+      final UnsignedLong epoch,
       final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex) {
     return ValidatorsUtil.getValidatorIndex(state, key)
-        .map(index -> createValidatorDuties(proposalSlotsByValidatorIndex, key, state, index))
+        .map(
+            index -> createValidatorDuties(proposalSlotsByValidatorIndex, key, state, epoch, index))
         .orElseGet(() -> ValidatorDuties.noDuties(key));
   }
 
@@ -184,12 +192,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex,
       final BLSPublicKey key,
       final BeaconState state,
+      final UnsignedLong epoch,
       final Integer validatorIndex) {
     final List<UnsignedLong> proposerSlots =
         proposalSlotsByValidatorIndex.getOrDefault(validatorIndex, emptyList());
     final CommitteeAssignment committeeAssignment =
-        CommitteeAssignmentUtil.get_committee_assignment(
-                state, compute_epoch_at_slot(state.getSlot()), validatorIndex)
+        CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
             .orElseThrow();
     return ValidatorDuties.withDuties(
         key,
@@ -200,8 +208,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private Map<Integer, List<UnsignedLong>> getBeaconProposalSlotsByValidatorIndex(
-      final BeaconState state) {
-    final UnsignedLong epoch = compute_epoch_at_slot(state.getSlot());
+      final BeaconState state, final UnsignedLong epoch) {
     final UnsignedLong startSlot = compute_start_slot_at_epoch(epoch);
     final UnsignedLong endSlot = startSlot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
     final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex = new HashMap<>();
