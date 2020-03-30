@@ -15,6 +15,7 @@ package tech.pegasys.artemis.validator.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -62,12 +63,14 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot, final String path) {
+    final String publicKey = blsPublicKey.getPublicKey().toString();
     return SafeFuture.ofComposed(
         () -> {
-          final String requestBody = createSigningRequest(signingRoot);
+          final String requestBody = createSigningRequestBody(signingRoot);
+          final URI uri = signingServiceUrl.toURI().resolve(path + "/" + publicKey);
           final HttpRequest request =
               HttpRequest.newBuilder()
-                  .uri(signingServiceUrl.toURI().resolve(path))
+                  .uri(uri)
                   .timeout(timeout)
                   .POST(BodyPublishers.ofString(requestBody))
                   .build();
@@ -77,10 +80,8 @@ public class ExternalMessageSignerService implements MessageSignerService {
         });
   }
 
-  private String createSigningRequest(final Bytes signingRoot) {
-    final String publicKey = blsPublicKey.getPublicKey().toString();
-    final SigningRequestBody signingRequest =
-        new SigningRequestBody(publicKey, signingRoot.toHexString());
+  private String createSigningRequestBody(final Bytes signingRoot) {
+    final SigningRequestBody signingRequest = new SigningRequestBody(signingRoot.toHexString());
     try {
       return MAPPER.writeValueAsString(signingRequest);
     } catch (final JsonProcessingException e) {
