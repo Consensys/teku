@@ -71,10 +71,10 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.Database;
 import tech.pegasys.artemis.storage.DatabaseStorageException;
-import tech.pegasys.artemis.storage.DatabaseUpdateResult;
 import tech.pegasys.artemis.storage.StateStorageMode;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
+import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RocksDbDatabase implements Database {
@@ -266,14 +266,14 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public DatabaseUpdateResult update(final StoreDiskUpdateEvent event) {
+  public StorageUpdateResult update(final StorageUpdate event) {
     if (event.isEmpty()) {
-      return DatabaseUpdateResult.successfulWithNothingPruned();
+      return StorageUpdateResult.successfulWithNothingPruned();
     }
     return doUpdate(event);
   }
 
-  private DatabaseUpdateResult doUpdate(final StoreDiskUpdateEvent event) {
+  private StorageUpdateResult doUpdate(final StorageUpdate event) {
     try (Transaction transaction = db.beginTransaction(new WriteOptions())) {
       try {
         ColumnFamilyHandle defaultColumn = columnHandlesByName.get(DEFAULT);
@@ -338,16 +338,16 @@ public class RocksDbDatabase implements Database {
                         blockNo.toArrayUnsafe(),
                         serialize(beaconState)));
 
-        final DatabaseUpdateResult result;
+        final StorageUpdateResult result;
         if (previousFinalizedCheckpoint == null
             || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
           recordFinalizedBlocks(newFinalizedCheckpoint, transaction);
           final Set<Checkpoint> prunedCheckpoints =
               pruneCheckpointStates(newFinalizedCheckpoint, transaction);
           final Set<Bytes32> prunedBlockRoots = pruneHotBlocks(newFinalizedCheckpoint, transaction);
-          result = DatabaseUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
+          result = StorageUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
         } else {
-          result = DatabaseUpdateResult.successfulWithNothingPruned();
+          result = StorageUpdateResult.successfulWithNothingPruned();
         }
         transaction.commit();
         return result;
@@ -357,7 +357,7 @@ public class RocksDbDatabase implements Database {
         } catch (RocksDBException ex) {
           LOG.error("exception rolling back transaction", ex);
         }
-        return DatabaseUpdateResult.failed(new RuntimeException(e));
+        return StorageUpdateResult.failed(new RuntimeException(e));
       }
     }
   }
