@@ -52,6 +52,11 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
     }
 
     public ListContainerRead(
+        VectorViewType<ElementType> vectorType, TreeNode backingNode) {
+      super(vectorTypeToContainerType(vectorType), backingNode);
+    }
+
+    public ListContainerRead(
         VectorViewType<ElementType> vectorType, TreeNode backingNode, IntCache<ViewRead> cache) {
       super(vectorTypeToContainerType(vectorType), backingNode, cache);
     }
@@ -81,7 +86,7 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
 
   public ListViewReadImpl(ListViewType<ElementType> type, TreeNode node) {
     this.type = type;
-    this.container = new ListContainerRead<>(type.getCompatibleVectorType(), node, null);
+    this.container = new ListContainerRead<>(type.getCompatibleVectorType(), node);
     this.cachedSize = container.getSize();
   }
 
