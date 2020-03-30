@@ -168,4 +168,22 @@ public class ExternalMessageSignerServiceIntegrationTest {
             .withBody(json(signingRequestBody))
             .withPath("/signer/randao_reveal/" + publicKey));
   }
+
+  @Test
+  void signsAggregationSlotWhenSigningServiceReturnsSuccessfulResponse() {
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
+
+    final BLSSignature signature =
+        externalMessageSignerService.signAggregationSlot(SIGNING_ROOT).join();
+    assertThat(signature).isEqualTo(expectedSignature);
+
+    final String publicKey = keyPair.getPublicKey().toString();
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(SIGNING_ROOT.toHexString());
+    client.verify(
+        request()
+            .withMethod("POST")
+            .withBody(json(signingRequestBody))
+            .withPath("/signer/aggregation_slot/" + publicKey));
+  }
 }
