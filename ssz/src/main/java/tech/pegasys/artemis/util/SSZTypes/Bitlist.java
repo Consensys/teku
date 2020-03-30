@@ -16,38 +16,51 @@ package tech.pegasys.artemis.util.SSZTypes;
 import static java.util.Objects.isNull;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
+import java.util.BitSet;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Bitlist {
 
-  private byte[] byteArray;
+  private BitSet bitSet;
   private long maxSize;
+  private int arraySize;
 
   public Bitlist(int arraySize, long maxSize) {
-    this.byteArray = new byte[arraySize];
+    this.bitSet = new BitSet(arraySize);
+    this.arraySize = arraySize;
     this.maxSize = maxSize;
   }
 
-  public Bitlist(Bitlist bitlist) {
-    this.byteArray = new byte[bitlist.getByteArray().length];
-    for (int i = 0; i < bitlist.getByteArray().length; i++) {
-      this.byteArray[i] = bitlist.getByteArray()[i];
-    }
+  public Bitlist(final Bitlist bitlist) {
+    this.bitSet = bitlist.bitSet;
+    this.arraySize = bitlist.arraySize;
     this.maxSize = bitlist.getMaxSize();
   }
 
+  public Bitlist(byte[] byteArray) {
+    this.bitSet = BitSet.valueOf(byteArray);
+    this.arraySize = bitSet.size();
+    this.maxSize = bitSet.size();
+  }
+
   public Bitlist(byte[] bitlist, long maxSize) {
-    this.byteArray = bitlist;
+    this.bitSet = BitSet.valueOf(bitlist);
     this.maxSize = maxSize;
+    this.arraySize = (int)maxSize;
+  }
+
+  public Bitlist(BitSet randomBitSet, int n) {
+    this.bitSet = randomBitSet;
+    this.arraySize = n;
+    this.maxSize = n;
   }
 
   public void setBit(int i) {
-    this.byteArray[i] = 1;
+    this.bitSet.set(i);
   }
 
   public int getBit(int i) {
-    return byteArray[i];
+    return this.bitSet.get(i) ? 1 : 0;
   }
 
   /** Sets all bits in this bitlist which are set in the [other] list */
@@ -67,7 +80,7 @@ public class Bitlist {
   }
 
   public byte[] getByteArray() {
-    return byteArray;
+    return this.bitSet.toByteArray();
   }
 
   public long getMaxSize() {
@@ -75,35 +88,16 @@ public class Bitlist {
   }
 
   public int getCurrentSize() {
-    return byteArray.length;
+    return this.arraySize;
   }
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
-    int len = byteArray.length;
-    byte[] array = new byte[(len / 8) + 1];
-    IntStream.range(0, len).forEach(i -> array[i / 8] |= (((int) this.byteArray[i]) << (i % 8)));
-    array[len / 8] |= 1 << (len % 8);
-    return Bytes.wrap(array);
+    return Bytes.wrap(this.bitSet.toByteArray());
   }
 
   public static Bitlist fromBytes(Bytes bytes, long maxSize) {
-    int numBytes = bytes.size();
-    int leadingBitIndex = 0;
-    while ((bytes.get(numBytes - 1) >>> (7 - leadingBitIndex)) % 2 == 0) {
-      leadingBitIndex++;
-    }
-
-    int bitlistSize = (7 - leadingBitIndex) + (8 * (numBytes - 1));
-    byte[] byteArray = new byte[bitlistSize];
-
-    for (int i = bitlistSize - 1; i >= 0; i--) {
-      if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
-        byteArray[i] = 1;
-      }
-    }
-
-    return new Bitlist(byteArray, maxSize);
+    return new Bitlist(bytes.toArray(), maxSize);
   }
 
   public Bitlist copy() {
@@ -112,7 +106,7 @@ public class Bitlist {
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(byteArray);
+    return Arrays.hashCode(this.bitSet.toByteArray());
   }
 
   @Override

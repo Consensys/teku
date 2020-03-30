@@ -16,30 +16,40 @@ package tech.pegasys.artemis.util.SSZTypes;
 import static java.util.Objects.isNull;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
+import java.util.BitSet;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Bitvector {
 
-  private int size;
-  private byte[] byteArray;
+  private final int size;
+  private BitSet bitSet;
 
   public Bitvector(int size) {
-    this.byteArray = new byte[size];
     this.size = size;
+    this.bitSet = new BitSet(size);
   }
 
   public Bitvector(byte[] byteArray, int size) {
-    this.byteArray = byteArray;
+    this.bitSet = BitSet.valueOf(byteArray);
+    this.size = size;
+  }
+
+  public Bitvector(byte[] byteArray) {
+    this.bitSet = BitSet.valueOf(byteArray);
+    this.size = bitSet.size();
+  }
+
+  public Bitvector(BitSet set, int size) {
+    this.bitSet = set;
     this.size = size;
   }
 
   public void setBit(int i) {
-    this.byteArray[i] = 1;
+    this.bitSet.set(i);
   }
 
   public int getBit(int i) {
-    return byteArray[i];
+    return this.bitSet.get(i) ? 1 : 0;
   }
 
   public int getSize() {
@@ -47,31 +57,21 @@ public class Bitvector {
   }
 
   public byte[] getByteArray() {
-    return byteArray;
+    return bitSet.toByteArray();
   }
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
-    byte[] array = new byte[(size + 7) / 8];
-    IntStream.range(0, size).forEach(i -> array[i / 8] |= (((int) this.byteArray[i]) << (i % 8)));
-    return Bytes.wrap(array);
+    return Bytes.wrap(bitSet.toByteArray());
   }
 
   public static Bitvector fromBytes(Bytes bytes, int size) {
-    byte[] byteArray = new byte[size];
-
-    for (int i = size - 1; i >= 0; i--) {
-      if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
-        byteArray[i] = 1;
-      }
-    }
-
-    return new Bitvector(byteArray, size);
+    return new Bitvector(bytes.toArray(), size);
   }
 
   public Bitvector rightShift(int i) {
     int length = this.getSize();
-    Bitvector newBitvector = new Bitvector(new byte[length], length);
+    Bitvector newBitvector = new Bitvector(length);
     for (int j = 0; j < length - i; j++) {
       if (this.getBit(j) == 1) {
         newBitvector.setBit(j + i);
@@ -86,7 +86,7 @@ public class Bitvector {
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(byteArray);
+    return Arrays.hashCode(this.getByteArray());
   }
 
   @Override
