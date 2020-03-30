@@ -25,8 +25,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.collections.LimitStrategy;
 import tech.pegasys.artemis.util.collections.LimitedSet;
-import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 
 public class GossipHandler implements Function<MessageApi, CompletableFuture<Boolean>> {
   private static final Logger LOG = LogManager.getLogger();
@@ -40,7 +40,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Boo
   private final PubsubPublisherApi publisher;
   private final TopicHandler handler;
   private final Set<Bytes> processedMessages =
-      LimitedSet.create(MAX_SENT_MESSAGES, Mode.DROP_LEAST_RECENTLY_ACCESSED);
+      LimitedSet.create(MAX_SENT_MESSAGES, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
 
   public GossipHandler(
       final Topic topic, final PubsubPublisherApi publisher, final TopicHandler handler) {

@@ -14,16 +14,10 @@
 package tech.pegasys.artemis.util.collections;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 
 /** Helper that creates a thread-safe set with a maximum capacity. */
 public final class LimitedSet {
-  public enum Mode {
-    DROP_LEAST_RECENTLY_ACCESSED,
-    DROP_OLDEST_ELEMENT
-  }
 
   private LimitedSet() {}
 
@@ -35,7 +29,7 @@ public final class LimitedSet {
    * @param <T> The type of object in the set.
    * @return A thread-safe set that will evict elements when the max size is exceeded.
    */
-  public static final <T> Set<T> create(final int maxSize, final Mode mode) {
+  public static final <T> Set<T> create(final int maxSize, final LimitStrategy mode) {
     return create(16, maxSize, mode);
   }
 
@@ -47,15 +41,8 @@ public final class LimitedSet {
    * @return A thread-safe set that will evict elements when the max size is exceeded.
    */
   public static final <T> Set<T> create(
-      final int initialCapacity, final int maxSize, final Mode mode) {
-    final boolean useAccessOrder = mode.equals(Mode.DROP_LEAST_RECENTLY_ACCESSED);
+      final int initialCapacity, final int maxSize, final LimitStrategy mode) {
     return Collections.synchronizedSet(
-        Collections.newSetFromMap(
-            new LinkedHashMap<T, Boolean>(initialCapacity, 0.75f, useAccessOrder) {
-              @Override
-              protected boolean removeEldestEntry(final Map.Entry<T, Boolean> eldest) {
-                return size() > maxSize;
-              }
-            }));
+        Collections.newSetFromMap(LimitedMap.create(initialCapacity, maxSize, mode)));
   }
 }

@@ -15,44 +15,45 @@ package tech.pegasys.artemis.util.collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Set;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-public class LimitedSetTest {
+public class LimitedMapTest {
 
   @Test
   public void create_evictOldest() {
-    final Set<Integer> set = LimitedSet.create(1, 2, LimitStrategy.DROP_OLDEST_ELEMENT);
-    set.add(1);
-    assertThat(set.size()).isEqualTo(1);
-    set.add(2);
-    assertThat(set.size()).isEqualTo(2);
+    final Map<Integer, Integer> map = LimitedMap.create(1, 2, LimitStrategy.DROP_OLDEST_ELEMENT);
+    map.put(1, 1);
+    assertThat(map.size()).isEqualTo(1);
+    map.put(2, 2);
+    assertThat(map.size()).isEqualTo(2);
 
     // Access element 1 then add a new element that will put us over the limit
-    set.add(1);
+    map.get(1);
 
-    set.add(3);
-    assertThat(set.size()).isEqualTo(2);
+    map.put(3, 3);
+    assertThat(map.size()).isEqualTo(2);
     // Element 1 should have been evicted
-    assertThat(set.contains(3)).isTrue();
-    assertThat(set.contains(2)).isTrue();
+    assertThat(map.containsKey(3)).isTrue();
+    assertThat(map.containsKey(2)).isTrue();
   }
 
   @Test
   public void create_evictLeastRecentlyAccessed() {
-    final Set<Integer> set = LimitedSet.create(1, 2, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    set.add(1);
-    assertThat(set.size()).isEqualTo(1);
-    set.add(2);
-    assertThat(set.size()).isEqualTo(2);
+    final Map<Integer, Integer> map =
+        LimitedMap.create(1, 2, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    map.put(1, 1);
+    assertThat(map.size()).isEqualTo(1);
+    map.put(2, 2);
+    assertThat(map.size()).isEqualTo(2);
 
     // Access element 1 then add a new element that will put us over the limit
-    set.add(1);
+    map.get(1);
 
-    set.add(3);
-    assertThat(set.size()).isEqualTo(2);
+    map.put(3, 3);
+    assertThat(map.size()).isEqualTo(2);
     // Element 2 should have been evicted
-    assertThat(set.contains(3)).isTrue();
-    assertThat(set.contains(1)).isTrue();
+    assertThat(map.containsKey(3)).isTrue();
+    assertThat(map.containsKey(1)).isTrue();
   }
 }
