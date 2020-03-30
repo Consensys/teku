@@ -29,6 +29,7 @@ import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.validator.client.Signer;
 
 public class BlockProposalTestUtil {
 
@@ -51,7 +52,7 @@ public class BlockProposalTestUtil {
 
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     final BLSSignature randaoReveal =
-        blockProposalUtil.get_epoch_signature(state, newEpoch, signer);
+        new Signer(signer).createRandaoReveal(newEpoch, state.getFork()).join();
 
     final BeaconBlock newBlock =
         blockProposalUtil.createNewUnsignedBlock(
@@ -65,7 +66,7 @@ public class BlockProposalTestUtil {
             deposits);
 
     // Sign block and set block signature
-    BLSSignature blockSignature = blockProposalUtil.get_block_signature(state, newBlock, signer);
+    BLSSignature blockSignature = new Signer(signer).signBlock(newBlock, state.getFork()).join();
 
     return new SignedBeaconBlock(newBlock, blockSignature);
   }

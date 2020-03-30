@@ -14,9 +14,6 @@
 package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
@@ -26,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -46,6 +42,8 @@ import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
+import tech.pegasys.artemis.validator.client.Signer;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
@@ -265,11 +263,11 @@ public class AttestationGenerator {
     Bitlist aggregationBitfield =
         AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
     AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
-    Bytes domain =
-        get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
-    Bytes signing_root = compute_signing_root(attestationData, domain);
 
-    BLSSignature signature = BLS.sign(attesterKeyPair.getSecretKey(), signing_root);
+    BLSSignature signature =
+        new Signer(new LocalMessageSignerService(attesterKeyPair))
+            .signAttestationData(attestationData, state.getFork())
+            .join();
     return new Attestation(aggregationBitfield, attestationData, signature);
   }
 }

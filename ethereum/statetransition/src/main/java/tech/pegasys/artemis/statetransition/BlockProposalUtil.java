@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 
@@ -98,38 +97,4 @@ public class BlockProposalUtil {
     return BeaconStateUtil.get_beacon_proposer_index(state);
   }
 
-  /**
-   * Gets the block signature from the Validator Client using gRPC
-   *
-   * @param state The post-state associated with the block
-   * @param block The block to sign
-   * @param signer A utility for generating the signature given the domain and message to sign
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
-   */
-  public BLSSignature get_block_signature(
-      final BeaconState state, final BeaconBlock block, final MessageSignerService signer) {
-    final Bytes domain =
-        get_domain(state, Constants.DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(block.getSlot()));
-    final Bytes signing_root = compute_signing_root(block, domain);
-    return signer.signBlock(signing_root).join();
-  }
-
-  /**
-   * Gets the epoch signature used for RANDAO from the Validator Client using gRPC
-   *
-   * @param state
-   * @param epoch
-   * @param signer
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#randao-reveal</a>
-   */
-  public BLSSignature get_epoch_signature(
-      final BeaconState state, final UnsignedLong epoch, final MessageSignerService signer) {
-    Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
-    Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
-    return signer.signRandaoReveal(signing_root).join();
-  }
 }
