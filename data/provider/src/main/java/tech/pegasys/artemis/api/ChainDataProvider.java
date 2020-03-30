@@ -28,27 +28,27 @@ import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.ChainDataUnavailableException;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
 
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
 
   public ChainDataProvider(
-      final ChainStorageClient chainStorageClient,
+      final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient) {
     this.combinedChainDataClient = combinedChainDataClient;
-    this.chainStorageClient = chainStorageClient;
+    this.recentChainData = recentChainData;
   }
 
   public UnsignedLong getGenesisTime() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
-    return chainStorageClient.getGenesisTime();
+    return recentChainData.getGenesisTime();
   }
 
   public BeaconHead getBeaconHead() {
@@ -57,9 +57,9 @@ public class ChainDataProvider {
     }
 
     Bytes32 headBlockRoot =
-        chainStorageClient.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
+        recentChainData.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
     tech.pegasys.artemis.datastructures.blocks.BeaconBlock headBlock =
-        chainStorageClient
+        recentChainData
             .getBlockByRoot(headBlockRoot)
             .orElseThrow(ChainDataUnavailableException::new);
 
@@ -72,7 +72,7 @@ public class ChainDataProvider {
     }
 
     tech.pegasys.artemis.datastructures.state.BeaconState bestBlockRootState =
-        chainStorageClient.getBestBlockRootState().orElseThrow(ChainDataUnavailableException::new);
+        recentChainData.getBestBlockRootState().orElseThrow(ChainDataUnavailableException::new);
     return new Fork(bestBlockRootState.getFork());
   }
 
@@ -165,7 +165,7 @@ public class ChainDataProvider {
     return SafeFuture.of(
         () -> {
           final Bytes32 bestBlockRoot =
-              chainStorageClient.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
+              recentChainData.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
           UnsignedLong slot =
               request.epoch == null
                   ? combinedChainDataClient.getBestSlot()

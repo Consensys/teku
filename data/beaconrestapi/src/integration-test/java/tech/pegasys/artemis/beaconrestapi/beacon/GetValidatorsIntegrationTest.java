@@ -34,7 +34,7 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_implicitlyQueryLatest() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = getLatest();
     assertNoContent(response);
@@ -43,8 +43,8 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
   @Test
   public void shouldReturnNoContentIfHeadRootMissing_implicitlyQueryLatest() throws Exception {
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getLatest();
     assertNoContent(response);
@@ -55,9 +55,9 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(chainStorageClient.getBlockState(headRoot)).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(recentChainData.getBlockState(headRoot)).thenReturn(Optional.empty());
     when(historicalChainData.getFinalizedStateByBlockRoot(headRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
@@ -67,8 +67,8 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByEpoch() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getStore()).thenReturn(null);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
 
     final Response response = getByEpoch(1);
     assertNoContent(response);
@@ -77,9 +77,9 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
   @Test
   public void shouldReturnNoContentIfHeadRootMissing_queryByEpoch() throws Exception {
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getByEpoch(1);
     assertNoContent(response);
@@ -91,10 +91,10 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
     when(historicalChainData.getFinalizedStateAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
@@ -108,11 +108,11 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
     when(store.getBlockState(headRoot)).thenReturn(dataStructureUtil.randomBeaconState(100));
-    when(chainStorageClient.getStateBySlot(any())).thenReturn(Optional.empty());
+    when(recentChainData.getStateBySlot(any())).thenReturn(Optional.empty());
 
     final Response response = getByEpoch(epoch);
     assertNotFound(response);

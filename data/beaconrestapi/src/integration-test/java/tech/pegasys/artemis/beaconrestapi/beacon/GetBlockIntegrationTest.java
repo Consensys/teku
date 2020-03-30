@@ -28,7 +28,7 @@ public class GetBlockIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByEpoch() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = getByEpoch(1);
     assertNoContent(response);
@@ -36,7 +36,7 @@ public class GetBlockIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByRoot() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = getByRoot(Bytes32.ZERO);
     assertNoContent(response);
@@ -44,7 +44,7 @@ public class GetBlockIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = getBySlot(1);
     assertNoContent(response);
