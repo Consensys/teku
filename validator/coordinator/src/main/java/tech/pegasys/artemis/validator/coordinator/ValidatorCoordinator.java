@@ -102,7 +102,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     this.stateTransition = new StateTransition();
     this.blockCreator = new BlockProposalUtil(stateTransition);
     this.validators =
-        initializeValidators(config).stream()
+        initializeValidators(config).values().stream()
             .collect(
                 Collectors.toMap(
                     tech.pegasys.artemis.validator.client.Validator::getPublicKey,
