@@ -103,7 +103,6 @@ public abstract class TransitionBenchmark {
     }
     localChain.setSlot(block.getSlot());
     lastResult = blockImporter.importBlock(block);
-    //    System.out.println("Imported: " + lastResult);
     if (!lastResult.isSuccessful()) {
       throw new RuntimeException("Unable to import block: " + lastResult);
     }

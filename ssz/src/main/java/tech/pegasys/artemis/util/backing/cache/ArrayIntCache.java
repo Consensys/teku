@@ -17,20 +17,20 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.IntFunction;
 
-public final class ArrayCache<V> implements IntCache<V> {
+public final class ArrayIntCache<V> implements IntCache<V> {
   private V[] values;
   private final int initSize;
 
-  public ArrayCache() {
+  public ArrayIntCache() {
     this(16);
   }
 
-  public ArrayCache(int initialSize) {
+  public ArrayIntCache(int initialSize) {
     this.initSize = initialSize;
     this.values = createArray(initialSize);
   }
 
-  private ArrayCache(V[] values, int initSize) {
+  private ArrayIntCache(V[] values, int initSize) {
     this.values = values;
     this.initSize = initSize;
   }
@@ -70,12 +70,12 @@ public final class ArrayCache<V> implements IntCache<V> {
 
   @Override
   public IntCache<V> copy() {
-    return new ArrayCache<>(Arrays.copyOf(values, values.length), initSize);
+    return new ArrayIntCache<>(Arrays.copyOf(values, values.length), initSize);
   }
 
   @Override
   public synchronized IntCache<V> transfer() {
-    ArrayCache<V> ret = new ArrayCache<>(values, initSize);
+    ArrayIntCache<V> ret = new ArrayIntCache<>(values, initSize);
     values = createArray(initSize);
     return ret;
   }
@@ -88,8 +88,9 @@ public final class ArrayCache<V> implements IntCache<V> {
 
   @Override
   public synchronized void invalidateInt(int key) {
-    extend(key);
-    values[key] = null;
+    if (key < values.length) {
+      values[key] = null;
+    }
   }
 
   @Override

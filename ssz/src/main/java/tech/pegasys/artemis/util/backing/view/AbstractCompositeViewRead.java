@@ -15,7 +15,7 @@ package tech.pegasys.artemis.util.backing.view;
 
 import tech.pegasys.artemis.util.backing.CompositeViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
-import tech.pegasys.artemis.util.backing.cache.ArrayCache;
+import tech.pegasys.artemis.util.backing.cache.ArrayIntCache;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
@@ -27,7 +27,7 @@ import tech.pegasys.artemis.util.backing.type.CompositeViewType;
  * the corresponding mutable classes) the instances are not recreated from tree nodes on later
  * access.
  *
- * <p>Thought internally this class has a mutable cache it may be thought of as immutable instance
+ * <p>Though internally this class has a mutable cache it may be thought of as immutable instance
  * and used safely across threads
  *
  * @param <ChildType> the type of children. For heterogeneous composites (like container) this type
@@ -43,20 +43,24 @@ public abstract class AbstractCompositeViewRead<ChildType extends ViewRead>
 
   /** Creates an instance from a type and a backing node */
   protected AbstractCompositeViewRead(CompositeViewType type, TreeNode backingNode) {
-    this(type, backingNode, null);
+    this.type = type;
+    this.backingNode = backingNode;
+    this.sizeCache = sizeImpl();
+    this.childrenViewCache = createCache();
   }
 
   /**
-   * Creates an instance from a type and a backing node Optionally the view instances cache can be
-   * supplied for optimization to shortcut children views creation from backing nodes. The cache
-   * should correspond to the supplied backing tree.
+   * Creates an instance from a type and a backing node.
+   *
+   * <p>View instances cache is supplied for optimization to shortcut children views creation from
+   * backing nodes. The cache should correspond to the supplied backing tree.
    */
   protected AbstractCompositeViewRead(
       CompositeViewType type, TreeNode backingNode, IntCache<ChildType> cache) {
     this.type = type;
     this.backingNode = backingNode;
-    sizeCache = sizeImpl();
-    childrenViewCache = cache == null ? createCache() : cache;
+    this.sizeCache = sizeImpl();
+    this.childrenViewCache = cache;
   }
 
   /**
@@ -74,7 +78,7 @@ public abstract class AbstractCompositeViewRead<ChildType extends ViewRead>
    * the initial cache size
    */
   protected IntCache<ChildType> createCache() {
-    return new ArrayCache<>();
+    return new ArrayIntCache<>();
   }
 
   @Override

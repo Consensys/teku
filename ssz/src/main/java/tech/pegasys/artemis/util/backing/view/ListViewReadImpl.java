@@ -78,8 +78,6 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
   private final ListViewType<ElementType> type;
   private final ListContainerRead<ElementType> container;
   private final int cachedSize;
-  //  private final int size;
-  //  private final VectorViewRead<C> vector;
 
   public ListViewReadImpl(ListViewType<ElementType> type, TreeNode node) {
     this.type = type;

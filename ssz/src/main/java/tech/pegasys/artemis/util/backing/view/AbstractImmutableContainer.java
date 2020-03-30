@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
-import tech.pegasys.artemis.util.backing.cache.ArrayCache;
+import tech.pegasys.artemis.util.backing.cache.ArrayIntCache;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUpdates;
@@ -55,7 +55,7 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
   }
 
   private static IntCache<ViewRead> createCache(ViewRead... memberValues) {
-    ArrayCache<ViewRead> cache = new ArrayCache<>(memberValues.length);
+    ArrayIntCache<ViewRead> cache = new ArrayIntCache<>(memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       cache.invalidateWithNewValue(i, memberValues[i]);
     }

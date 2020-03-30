@@ -15,7 +15,7 @@ package tech.pegasys.artemis.util.backing.view;
 
 import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
-import tech.pegasys.artemis.util.backing.cache.ArrayCache;
+import tech.pegasys.artemis.util.backing.cache.ArrayIntCache;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
@@ -63,7 +63,7 @@ public class VectorViewReadImpl<ElementReadType extends ViewRead>
 
   @Override
   protected IntCache<ElementReadType> createCache() {
-    return size() > 16384 ? new ArrayCache<>() : new ArrayCache<>(size());
+    return size() > 16384 ? new ArrayIntCache<>() : new ArrayIntCache<>(size());
   }
 
   @Override

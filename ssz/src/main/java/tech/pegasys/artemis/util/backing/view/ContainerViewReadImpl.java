@@ -16,7 +16,7 @@ package tech.pegasys.artemis.util.backing.view;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
-import tech.pegasys.artemis.util.backing.cache.ArrayCache;
+import tech.pegasys.artemis.util.backing.cache.ArrayIntCache;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
@@ -57,7 +57,7 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
 
   @Override
   protected IntCache<ViewRead> createCache() {
-    return new ArrayCache<>(size());
+    return new ArrayIntCache<>(size());
   }
 
   @Override
