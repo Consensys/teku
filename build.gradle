@@ -547,7 +547,7 @@ startScripts {
 }
 
 dependencies {
-  implementation project(':artemis')
+  compile project(':artemis')
   errorprone 'com.google.errorprone:error_prone_core'
 }
 
@@ -555,6 +555,7 @@ distributions {
   main {
     contents {
       from("./LICENSE") { into "." }
+      from("build/reports/license/license-dependency.html") { into "." }
       from("libs") { into "native" }
     }
   }
