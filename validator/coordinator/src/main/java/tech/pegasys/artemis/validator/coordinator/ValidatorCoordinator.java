@@ -56,7 +56,7 @@ import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestat
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -77,7 +77,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private final StateTransition stateTransition;
   private final BlockProposalUtil blockCreator;
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
   private final ValidatorApiChannel validatorApiChannel;
@@ -91,14 +91,14 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   public ValidatorCoordinator(
       EventBus eventBus,
       ValidatorApiChannel validatorApiChannel,
-      ChainStorageClient chainStorageClient,
+      RecentChainData recentChainData,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
       Eth1DataCache eth1DataCache,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.validatorApiChannel = validatorApiChannel;
-    this.chainStorageClient = chainStorageClient;
+    this.recentChainData = recentChainData;
     this.stateTransition = new StateTransition();
     this.blockCreator = new BlockProposalUtil(stateTransition);
     this.validators =
@@ -115,7 +115,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   @Override
   protected SafeFuture<?> doStart() {
     this.eventBus.register(this);
-    chainStorageClient.subscribeBestBlockInitialized(this::onBestBlockInitialized);
+    recentChainData.subscribeBestBlockInitialized(this::onBestBlockInitialized);
     return SafeFuture.COMPLETE;
   }
 
@@ -125,8 +125,8 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   }
 
   private void onBestBlockInitialized() {
-    final Store store = chainStorageClient.getStore();
-    final Bytes32 head = chainStorageClient.getBestBlockRoot().orElseThrow();
+    final Store store = recentChainData.getStore();
+    final Bytes32 head = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconState headState = store.getBlockState(head);
 
     // Get validator indices of our own validators
@@ -146,9 +146,9 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   @Override
   public void onSlot(UnsignedLong slot) {
-    final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
+    final Optional<Bytes32> headRoot = recentChainData.getBestBlockRoot();
     if (!isGenesis(slot) && headRoot.isPresent()) {
-      BeaconState headState = chainStorageClient.getStore().getBlockState(headRoot.get());
+      BeaconState headState = recentChainData.getStore().getBlockState(headRoot.get());
       createBlockIfNecessary(headState, slot);
     }
 
@@ -180,7 +180,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     try {
 
       UnsignedLong slot = event.getNodeSlot();
-      Store store = chainStorageClient.getStore();
+      Store store = recentChainData.getStore();
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
 
       if (!isGenesis(slot) && isEpochStart(slot)) {

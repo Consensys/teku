@@ -27,7 +27,7 @@ public class GetAttestationIntegrationTest extends AbstractBeaconRestAPIIntegrat
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = getBySlot(1);
     assertNoContent(response);

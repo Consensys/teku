@@ -146,6 +146,7 @@ public class Constants {
   public static long VALIDATOR_DUTIES_TIMEOUT = 15; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 100;
+  public static long STORAGE_REQUEST_TIMEOUT = 3; // in sec
 
   static {
     setConstants("minimal");

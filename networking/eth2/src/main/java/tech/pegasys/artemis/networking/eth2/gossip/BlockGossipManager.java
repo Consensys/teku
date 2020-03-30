@@ -22,7 +22,7 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 
 public class BlockGossipManager {
   private final EventBus eventBus;
@@ -32,8 +32,8 @@ public class BlockGossipManager {
   public BlockGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final ChainStorageClient chainStorageClient) {
-    final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, chainStorageClient);
+      final RecentChainData recentChainData) {
+    final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, recentChainData);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     eventBus.register(this);

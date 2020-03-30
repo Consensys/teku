@@ -25,7 +25,7 @@ public class GetGenesisTimeIntegrationTest extends AbstractBeaconRestAPIIntegrat
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = get();
     assertNoContent(response);

@@ -32,8 +32,8 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -44,7 +44,7 @@ public class PeerChainValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final Store store = mock(Store.class);
-  private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private final RecentChainData storageClient = mock(RecentChainData.class);
   private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
 
   private final UnsignedLong genesisTime = UnsignedLong.valueOf(0);

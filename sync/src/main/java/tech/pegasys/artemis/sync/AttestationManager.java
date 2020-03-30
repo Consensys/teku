@@ -29,7 +29,7 @@ import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationPro
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
@@ -54,7 +54,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   }
 
   public static AttestationManager create(
-      final EventBus eventBus, final ChainStorageClient storageClient) {
+      final EventBus eventBus, final RecentChainData storageClient) {
     final PendingPool<DelayableAttestation> pendingAttestations =
         PendingPool.createForAttestations(eventBus);
     final FutureItems<DelayableAttestation> futureAttestations =
