@@ -11,68 +11,74 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.artemis.validator.client.loader;
 
-import static com.google.common.base.Functions.identity;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 
-import com.google.common.collect.Streams;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.validator.client.ExternalMessageSignerService;
-import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
+import tech.pegasys.artemis.validator.client.Validator;
+import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.artemis.validator.client.signer.LocalMessageSignerService;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 
-class ValidatorLoader {
+public class ValidatorLoader {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  static Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
-    // Get validator connection info and create a new ValidatorInfo object and put it into the
+  public static Map<BLSPublicKey, Validator> initializeValidators(ArtemisConfiguration config) {
+    // Get validator connection info and create a new Validator object and put it into the
     // Validators map
 
-    final Map<BLSPublicKey, ValidatorInfo> validators = new LinkedHashMap<>();
-    validators.putAll(createLocalSignerValidatorInfo(config));
-    validators.putAll(createExternalSignerValidatorInfo(config));
+    final Map<BLSPublicKey, Validator> validators = new HashMap<>();
+    validators.putAll(createLocalSignerValidator(config));
+    validators.putAll(createExternalSignerValidator(config));
 
-    if (LOG.isDebugEnabled()) {
-      Streams.mapWithIndex(
-              validators.keySet().stream(),
-              (publicKey, index) -> "Validator " + index + ": " + publicKey.toString())
-          .forEach(LOG::debug);
-    }
+    LOG.debug(
+        "Loaded validators: {}",
+        () ->
+            validators.values().stream()
+                .map(Validator::getPublicKey)
+                .map(BLSPublicKey::toString)
+                .collect(joining(", ")));
     return validators;
   }
 
-  private static Map<BLSPublicKey, ValidatorInfo> createLocalSignerValidatorInfo(
+  private static Map<BLSPublicKey, Validator> createLocalSignerValidator(
       final ArtemisConfiguration config) {
     return loadValidatorKeys(config).stream()
-        .collect(
-            Collectors.toMap(
-                BLSKeyPair::getPublicKey,
-                blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
+        .map(
+            blsKeyPair ->
+                new Validator(
+                    blsKeyPair.getPublicKey(),
+                    new Signer(new LocalMessageSignerService(blsKeyPair))))
+        .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
-  private static Map<BLSPublicKey, ValidatorInfo> createExternalSignerValidatorInfo(
+  private static Map<BLSPublicKey, Validator> createExternalSignerValidator(
       final ArtemisConfiguration config) {
+    final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
     return config.getValidatorExternalSignerPublicKeys().stream()
-        .collect(
-            Collectors.toMap(
-                identity(),
-                publicKey ->
-                    new ValidatorInfo(
+        .map(
+            publicKey ->
+                new Validator(
+                    publicKey,
+                    new Signer(
                         new ExternalMessageSignerService(
-                            config.getValidatorExternalSignerUrl(),
-                            publicKey,
-                            Duration.ofMillis(config.getValidatorExternalSignerTimeout())))));
+                            config.getValidatorExternalSignerUrl(), publicKey, timeout))))
+        .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
   private static Collection<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.artemis.validator.client;
 
-import java.util.List;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 
-public interface ValidatorKeyProvider {
-  List<BLSKeyPair> loadValidatorKeys(ArtemisConfiguration config);
+public class Validator {
+  private final BLSPublicKey publicKey;
+  private final Signer signer;
+
+  public Validator(final BLSPublicKey publicKey, final Signer signer) {
+    this.publicKey = publicKey;
+    this.signer = signer;
+  }
+
+  public BLSPublicKey getPublicKey() {
+    return publicKey;
+  }
+
+  public Signer getSigner() {
+    return signer;
+  }
 }
