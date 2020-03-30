@@ -15,6 +15,7 @@ package tech.pegasys.artemis.storage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
@@ -30,6 +31,11 @@ public class TrackingStorageUpdateChannel implements StorageUpdateChannel {
 
   public List<StorageUpdateResult> getStorageUpdates() {
     return updateResults;
+  }
+
+  @Override
+  public SafeFuture<Optional<Store>> onStoreRequest() {
+    return SafeFuture.completedFuture(database.createMemoryStore());
   }
 
   @Override

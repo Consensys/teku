@@ -33,7 +33,7 @@ import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -42,13 +42,13 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEv
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
 
   private NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
 
-  public DepositProvider(ChainStorageClient chainStorageClient) {
-    this.chainStorageClient = chainStorageClient;
+  public DepositProvider(RecentChainData recentChainData) {
+    this.recentChainData = recentChainData;
   }
 
   @Override
@@ -58,7 +58,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEv
         .forEach(
             deposit -> {
               synchronized (DepositProvider.this) {
-                if (!chainStorageClient.isPreGenesis()) {
+                if (!recentChainData.isPreGenesis()) {
                   LOG.debug("About to process deposit: {}", deposit.getIndex());
                 }
 
@@ -71,7 +71,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEv
   @Override
   public synchronized void onFinalizedCheckpoint(FinalizedCheckpointEvent event) {
     BeaconState finalizedState =
-        chainStorageClient
+        recentChainData
             .getBlockState(event.getCheckpoint().getRoot())
             .orElseThrow(
                 () -> new IllegalArgumentException("Finalized Checkpoint state can not be found."));

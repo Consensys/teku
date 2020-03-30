@@ -34,8 +34,8 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByRoot() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getStore()).thenReturn(null);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
 
     final Response response = getByRoot(Bytes32.ZERO);
     assertNoContent(response);
@@ -43,8 +43,8 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getStore()).thenReturn(null);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
 
     final Response response = getBySlot(1);
     assertNoContent(response);
@@ -53,9 +53,9 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   @Test
   public void shouldReturnNoContentIfHeadRootMissing_queryBySlot() throws Exception {
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getBySlot(1);
     assertNoContent(response);
@@ -70,9 +70,9 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
         SafeFuture.completedFuture(Optional.empty());
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(finalizedEpoch));
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(finalizedEpoch));
     when(historicalChainData.getFinalizedStateAtSlot(UnsignedLong.valueOf(slot)))
         .thenReturn(emptyStateResult);
 
@@ -87,12 +87,11 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(finalizedEpoch));
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(finalizedEpoch));
     when(store.getBlockState(headRoot)).thenReturn(dataStructureUtil.randomBeaconState(100));
-    when(chainStorageClient.getStateBySlot(UnsignedLong.valueOf(slot)))
-        .thenReturn(Optional.empty());
+    when(recentChainData.getStateBySlot(UnsignedLong.valueOf(slot))).thenReturn(Optional.empty());
 
     final Response response = getBySlot(slot);
     assertNotFound(response);
@@ -105,8 +104,8 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
         SafeFuture.completedFuture(Optional.empty());
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBlockState(root)).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBlockState(root)).thenReturn(Optional.empty());
     when(historicalChainData.getFinalizedStateByBlockRoot(root)).thenReturn(emptyStateResult);
 
     final Response response = getByRoot(root);
