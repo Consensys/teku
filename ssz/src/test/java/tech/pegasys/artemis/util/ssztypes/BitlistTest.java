@@ -59,7 +59,7 @@ class BitlistTest {
     Bitlist bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Assertions.assertEquals(bitlistSerialized.toHexString(), "0x721806");
+    Assertions.assertEquals(bitlistSerialized.toHexString(), "0x721802");
   }
 
   @Test
@@ -83,7 +83,7 @@ class BitlistTest {
     bitlist.setBit(8);
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Assertions.assertEquals(Bytes.fromHexString("0xf903"), bitlistSerialized);
+    Assertions.assertEquals(Bytes.fromHexString("0xf901"), bitlistSerialized);
   }
 
   @Test
@@ -97,7 +97,7 @@ class BitlistTest {
     bitlist.setBit(7);
     bitlist.setBit(8);
 
-    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"), bitlistMaxSize);
+    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf901"), bitlistMaxSize);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 }

@@ -46,7 +46,7 @@ public class Bitlist {
   public Bitlist(byte[] bitlist, long maxSize) {
     this.bitSet = BitSet.valueOf(bitlist);
     this.maxSize = maxSize;
-    this.arraySize = (int)maxSize;
+    this.arraySize = (int) maxSize;
   }
 
   public Bitlist(BitSet randomBitSet, int n) {
