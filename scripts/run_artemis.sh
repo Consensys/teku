@@ -44,13 +44,13 @@ NODE_INDEX=0
 NUM_NODES=1
 
 configure_node "mothra" $NODE_INDEX $NUM_NODES "$CONFIG_DIR/config.toml"
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" x-interop-number-of-validators $VALIDATOR_COUNT
+sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-number-of-validators $VALIDATOR_COUNT
 sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" numNodes $NUM_NODES
 sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" active $INTEROP_MODE
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" x-interop-genesis-time $GENESIS_TIME
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" x-interop-owned-validator-start-index $OWNED_VALIDATOR_START_INDEX
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" x-interop-owned-validator-count $OWNED_VALIDATOR_COUNT
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" x-interop-start-state "\"$GENESIS_FILE"\"
+sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-genesis-time $GENESIS_TIME
+sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-owned-validator-start-index $OWNED_VALIDATOR_START_INDEX
+sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-owned-validator-count $OWNED_VALIDATOR_COUNT
+sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-start-state "\"$GENESIS_FILE"\"
 
 
 if [ "$PEERS" != "" ]

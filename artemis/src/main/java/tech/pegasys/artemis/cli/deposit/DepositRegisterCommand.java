@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.cli.deposit;
 
 import static tech.pegasys.artemis.cli.deposit.CommonParams.sendDeposit;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -104,7 +104,7 @@ public class DepositRegisterCommand implements Runnable {
               params.getAmount())
           .get();
     } catch (final Throwable t) {
-      STATUS_LOG.sendDepositFailure(t);
+      SUB_COMMAND_LOG.sendDepositFailure(t);
       shutdownFunction.accept(1);
     }
     shutdownFunction.accept(0);

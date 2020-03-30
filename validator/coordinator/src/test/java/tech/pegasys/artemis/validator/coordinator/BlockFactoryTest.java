@@ -40,6 +40,7 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -48,7 +49,7 @@ class BlockFactoryTest {
   public static final Eth1Data ETH1_DATA = new Eth1Data();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ChainStorageClient chainStorageClient =
-      ChainStorageClient.memoryOnlyClient(new EventBus());
+      ChainStorageClient.memoryOnlyClient(new EventBus(), mock(StorageUpdateChannel.class));
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, chainStorageClient);
   private final BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);

@@ -13,14 +13,11 @@
 
 package tech.pegasys.teku.logging;
 
-import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
 import static tech.pegasys.teku.logging.LoggingConfigurator.STATUS_LOGGER_NAME;
 
 import java.nio.file.Path;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class StatusLogger {
 
@@ -30,29 +27,6 @@ public class StatusLogger {
 
   private StatusLogger(final String name) {
     this.log = LogManager.getLogger(name);
-  }
-
-  public void sendDepositFailure(final Throwable cause) {
-    fatal(
-        () ->
-            String.format(
-                "Failed to send deposit transaction: %s : %s",
-                cause.getClass(), cause.getMessage()));
-  }
-
-  public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
-    log.info(
-        "Generating mock genesis state for {} validators at genesis time {}",
-        validatorCount,
-        genesisTime);
-  }
-
-  public void storingGenesis(final String outputFile, final boolean isComplete) {
-    if (isComplete) {
-      log.info("Genesis state file saved: {}", outputFile);
-    } else {
-      log.info("Saving genesis state to file: {}", outputFile);
-    }
   }
 
   public void specificationFailure(final String description, final Throwable cause) {
@@ -72,8 +46,8 @@ public class StatusLogger {
     log.error("Error during block creation", cause);
   }
 
-  public void attestationFailure(final IllegalArgumentException cause) {
-    log.warn("Cannot produce attestations or create a block", cause);
+  public void attestationFailure(final Throwable cause) {
+    log.error("Error during attestation creation", cause);
   }
 
   public void validatorDepositYamlKeyWriterFailure(final Path file) {
@@ -83,9 +57,5 @@ public class StatusLogger {
   public void validatorDepositEncryptedKeystoreWriterFailure(
       final String message, final Path file, final String cause) {
     log.error(message, file.toString(), cause);
-  }
-
-  private void fatal(Supplier<String> message) {
-    log.fatal(print(message.get(), Color.RED));
   }
 }

@@ -16,7 +16,7 @@ package tech.pegasys.artemis.cli.deposit;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static tech.pegasys.artemis.cli.deposit.KeystorePasswordOptions.readFromEnvironmentVariable;
 import static tech.pegasys.artemis.cli.deposit.KeystorePasswordOptions.readFromFile;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -65,7 +65,7 @@ public class DepositGenerateCommand implements Runnable {
   @Mixin private CommonParams params;
 
   @Option(
-      names = {"--X-number-of-validators"},
+      names = {"--Xnumber-of-validators"},
       paramLabel = "<NUMBER>",
       description = "The number of validators to create keys for and register",
       hidden = true,
@@ -149,7 +149,7 @@ public class DepositGenerateCommand implements Runnable {
 
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
-      STATUS_LOG.sendDepositFailure(t);
+      SUB_COMMAND_LOG.sendDepositFailure(t);
       shutdownFunction.accept(1);
     }
     shutdownFunction.accept(0);
@@ -172,7 +172,7 @@ public class DepositGenerateCommand implements Runnable {
       if (consoleAdapter.isConsoleAvailable()
           && isBlank(outputPath)
           && params.isDisplayConfirmation()) {
-        System.out.println(
+        SUB_COMMAND_LOG.display(
             "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
       }
     }
