@@ -34,8 +34,8 @@ import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
@@ -47,7 +47,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ObjectMapper objectMapper = new ObjectMapper();
   protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
-  protected final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
+  protected final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
   protected final CombinedChainDataClient combinedChainDataClient =
       new CombinedChainDataClient(recentChainData, historicalChainData);
