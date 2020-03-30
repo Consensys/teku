@@ -63,9 +63,6 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
 
   @BeforeEach
   public void setup() {
-    beaconRestApi = new BeaconRestApi(dataProvider, config);
-    beaconRestApi.start();
-    client = new OkHttpClient();
     dataProvider =
         new DataProvider(
             chainStorageClient,
@@ -73,6 +70,10 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
             p2PNetwork,
             syncService,
             validatorApiChannel);
+
+    beaconRestApi = new BeaconRestApi(dataProvider, config);
+    beaconRestApi.start();
+    client = new OkHttpClient();
   }
 
   protected void assertNoContent(final Response response) throws IOException {
