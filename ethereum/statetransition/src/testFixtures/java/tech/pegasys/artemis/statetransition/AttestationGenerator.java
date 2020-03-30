@@ -42,8 +42,8 @@ import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
-import tech.pegasys.artemis.validator.client.Signer;
+import tech.pegasys.artemis.validator.client.signer.LocalMessageSignerService;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;

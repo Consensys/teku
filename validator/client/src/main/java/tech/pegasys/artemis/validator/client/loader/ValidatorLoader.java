@@ -29,9 +29,9 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.validator.client.ExternalMessageSignerService;
-import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
-import tech.pegasys.artemis.validator.client.Signer;
+import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.artemis.validator.client.signer.LocalMessageSignerService;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 import tech.pegasys.artemis.validator.client.Validator;
 
 public class ValidatorLoader {
