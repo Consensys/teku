@@ -36,7 +36,7 @@ import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public final class StartupUtil {
@@ -74,17 +74,17 @@ public final class StartupUtil {
   }
 
   public static void setupInitialState(
-      final ChainStorageClient chainStorageClient,
+      final RecentChainData recentChainData,
       final long genesisTime,
       final String startState,
       final int numValidators) {
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
-    setupInitialState(chainStorageClient, genesisTime, startState, validatorKeys, true);
+    setupInitialState(recentChainData, genesisTime, startState, validatorKeys, true);
   }
 
   public static void setupInitialState(
-      final ChainStorageClient chainStorageClient,
+      final RecentChainData recentChainData,
       final long genesisTime,
       final String startState,
       final List<BLSKeyPair> validatorKeyPairs,
@@ -110,6 +110,6 @@ public final class StartupUtil {
               genesisTime, validatorKeyPairs, signDeposits);
     }
 
-    chainStorageClient.initializeFromGenesis(initialState);
+    recentChainData.initializeFromGenesis(initialState);
   }
 }

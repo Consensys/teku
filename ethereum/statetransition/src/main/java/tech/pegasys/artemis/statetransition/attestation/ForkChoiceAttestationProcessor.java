@@ -17,16 +17,16 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attest
 
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.Store;
 
 public class ForkChoiceAttestationProcessor {
 
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final StateTransition stateTransition;
 
   public ForkChoiceAttestationProcessor(
-      final ChainStorageClient storageClient, final StateTransition stateTransition) {
+      final RecentChainData storageClient, final StateTransition stateTransition) {
     this.storageClient = storageClient;
     this.stateTransition = stateTransition;
   }

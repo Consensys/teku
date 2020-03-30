@@ -14,19 +14,19 @@
 package tech.pegasys.artemis.sync;
 
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DefaultSyncService extends Service implements SyncService {
 
   private final SyncManager syncManager;
   private final BlockPropagationManager blockPropagationManager;
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
 
   public DefaultSyncService(
       final BlockPropagationManager blockPropagationManager,
       final SyncManager syncManager,
-      final ChainStorageClient storageClient) {
+      final RecentChainData storageClient) {
     this.storageClient = storageClient;
     this.syncManager = syncManager;
     this.blockPropagationManager = blockPropagationManager;

@@ -48,11 +48,11 @@ public class CombinedChainDataClient {
       completedFuture(Optional.empty());
   private static final SafeFuture<Optional<BeaconState>> STATE_NOT_AVAILABLE =
       completedFuture(Optional.empty());
-  private final ChainStorageClient recentChainData;
+  private final RecentChainData recentChainData;
   private final HistoricalChainData historicalChainData;
 
   public CombinedChainDataClient(
-      final ChainStorageClient recentChainData, final HistoricalChainData historicalChainData) {
+      final RecentChainData recentChainData, final HistoricalChainData historicalChainData) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
   }

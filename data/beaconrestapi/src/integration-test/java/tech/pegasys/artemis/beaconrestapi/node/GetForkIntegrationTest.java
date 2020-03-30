@@ -28,7 +28,7 @@ public class GetForkIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    when(chainStorageClient.getStore()).thenReturn(null);
+    when(recentChainData.getStore()).thenReturn(null);
 
     final Response response = get();
     assertNoContent(response);
@@ -37,8 +37,8 @@ public class GetForkIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
   @Test
   public void shouldReturnNoContentIfBestBlockStateIsMissing() throws Exception {
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getBestBlockRootState()).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRootState()).thenReturn(Optional.empty());
 
     final Response response = get();
     assertNoContent(response);
