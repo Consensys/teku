@@ -12,6 +12,8 @@ dependencies {
 
   implementation testFixtures(project(':ethereum:datastructures'))
   implementation testFixtures(project(':ethereum:statetransition'))
+  implementation testFixtures(project(':storage'))
+
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

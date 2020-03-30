@@ -13,12 +13,18 @@
 
 package tech.pegasys.artemis.storage;
 
+import java.util.Optional;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class StubStorageUpdateChannel implements StorageUpdateChannel {
+
+  @Override
+  public SafeFuture<Optional<Store>> onStoreRequest() {
+    return SafeFuture.failedFuture(new IllegalStateException("Storage is unavailable."));
+  }
 
   @Override
   public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {

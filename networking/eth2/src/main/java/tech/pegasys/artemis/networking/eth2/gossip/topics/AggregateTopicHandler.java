@@ -26,18 +26,17 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 
 public class AggregateTopicHandler extends Eth2TopicHandler<AggregateAndProof> {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
 
-  public AggregateTopicHandler(
-      final EventBus eventBus, final ChainStorageClient chainStorageClient) {
+  public AggregateTopicHandler(final EventBus eventBus, final RecentChainData recentChainData) {
     super(eventBus);
-    this.chainStorageClient = chainStorageClient;
+    this.recentChainData = recentChainData;
   }
 
   @Override
@@ -54,7 +53,7 @@ public class AggregateTopicHandler extends Eth2TopicHandler<AggregateAndProof> {
   protected boolean validateData(final AggregateAndProof aggregateAndProof) {
     final Attestation attestation = aggregateAndProof.getAggregate();
     final BeaconState state =
-        chainStorageClient.getStore().getBlockState(attestation.getData().getBeacon_block_root());
+        recentChainData.getStore().getBlockState(attestation.getData().getBeacon_block_root());
     if (state == null) {
       LOG.trace(
           "Aggregate attestation BeaconState was not found in Store. Attestation: ({}), block_root: ({}) on {}",

@@ -40,7 +40,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -152,7 +152,7 @@ public class AttestationGenerator {
     return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
   }
 
-  public Attestation validAttestation(final ChainStorageClient storageClient)
+  public Attestation validAttestation(final RecentChainData storageClient)
       throws EpochProcessingException, SlotProcessingException {
     final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
     BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
@@ -160,7 +160,7 @@ public class AttestationGenerator {
     return createAttestation(block, state, true);
   }
 
-  public Attestation attestationWithInvalidSignature(final ChainStorageClient storageClient)
+  public Attestation attestationWithInvalidSignature(final RecentChainData storageClient)
       throws EpochProcessingException, SlotProcessingException {
     final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
     BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);

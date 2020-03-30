@@ -24,6 +24,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':util'))
+  testImplementation testFixtures(project(':storage'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
@@ -38,6 +39,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':networking:p2p'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation testFixtures(project(':events'))
+  testFixturesImplementation testFixtures(project(':storage'))
 
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
   testFixturesImplementation 'org.mockito:mockito-core'

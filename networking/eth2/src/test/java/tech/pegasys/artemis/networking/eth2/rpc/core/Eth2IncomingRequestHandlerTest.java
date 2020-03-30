@@ -38,8 +38,8 @@ import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessag
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
@@ -49,16 +49,16 @@ public class Eth2IncomingRequestHandlerTest {
   private final PeerLookup peerLookup = mock(PeerLookup.class);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final BeaconChainMethods beaconChainMethods =
       BeaconChainMethods.create(
           asyncRunner,
           peerLookup,
           combinedChainDataClient,
-          chainStorageClient,
+          recentChainData,
           new NoOpMetricsSystem(),
-          new StatusMessageFactory(chainStorageClient));
+          new StatusMessageFactory(recentChainData));
 
   private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       blocksByRangeMethod = beaconChainMethods.beaconBlocksByRange();
