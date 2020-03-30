@@ -36,6 +36,9 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.artemis.validator.client.signer.ExternalSignerException;
+import tech.pegasys.artemis.validator.client.signer.SigningRequestBody;
 
 @ExtendWith(MockServerExtension.class)
 public class ExternalMessageSignerServiceIntegrationTest {

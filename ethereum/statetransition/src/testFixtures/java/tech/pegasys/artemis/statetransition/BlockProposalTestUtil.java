@@ -29,7 +29,7 @@ import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.validator.client.Signer;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class BlockProposalTestUtil {
 

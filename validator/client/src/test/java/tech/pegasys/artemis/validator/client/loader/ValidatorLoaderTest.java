@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.validator.client.ExternalMessageSignerService;
-import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
 import tech.pegasys.artemis.validator.client.Validator;
+import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.artemis.validator.client.signer.LocalMessageSignerService;
 
 class ValidatorLoaderTest {
 
