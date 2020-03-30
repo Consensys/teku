@@ -11,19 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.artemis.validator.client.signer;
 
-import java.util.Optional;
-import tech.pegasys.artemis.storage.Store;
+public class ExternalSignerException extends RuntimeException {
 
-public class StoreInitializedFromStorageEvent {
-  private final Optional<Store> store;
-
-  public StoreInitializedFromStorageEvent(final Optional<Store> store) {
-    this.store = store;
+  public ExternalSignerException(final String message) {
+    super(message);
   }
 
-  public Optional<Store> getStore() {
-    return store;
+  public ExternalSignerException(final String message, final Throwable cause) {
+    super(message, cause);
   }
 }

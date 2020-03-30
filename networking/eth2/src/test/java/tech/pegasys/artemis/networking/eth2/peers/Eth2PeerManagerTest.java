@@ -26,8 +26,8 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager.PeerValidatorF
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2PeerManagerTest {
@@ -35,7 +35,7 @@ public class Eth2PeerManagerTest {
   private final PeerStatusFactory statusFactory = PeerStatusFactory.create(1L);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private final RecentChainData storageClient = mock(RecentChainData.class);
   private final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(storageClient);
 
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);

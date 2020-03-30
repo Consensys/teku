@@ -30,8 +30,8 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
@@ -39,7 +39,7 @@ public class Eth2NetworkBuilder {
 
   private NetworkConfig config;
   private EventBus eventBus;
-  private ChainStorageClient chainStorageClient;
+  private RecentChainData recentChainData;
   private MetricsSystem metricsSystem;
   private List<RpcMethod> rpcMethods = new ArrayList<>();
   private List<PeerHandler> peerHandlers = new ArrayList<>();
@@ -57,7 +57,7 @@ public class Eth2NetworkBuilder {
     // Setup eth2 handlers
     final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
     final Eth2PeerManager eth2PeerManager =
-        Eth2PeerManager.create(chainStorageClient, historicalChainData, metricsSystem);
+        Eth2PeerManager.create(recentChainData, historicalChainData, metricsSystem);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -65,7 +65,7 @@ public class Eth2NetworkBuilder {
     // Build core network and inject eth2 handlers
     final P2PNetwork<?> network = buildNetwork();
 
-    return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
+    return new Eth2Network(network, eth2PeerManager, eventBus, recentChainData);
   }
 
   protected P2PNetwork<?> buildNetwork() {
@@ -81,7 +81,7 @@ public class Eth2NetworkBuilder {
     assertNotNull("config", config);
     assertNotNull("eventBus", eventBus);
     assertNotNull("metricsSystem", metricsSystem);
-    assertNotNull("chainStorageClient", chainStorageClient);
+    assertNotNull("chainStorageClient", recentChainData);
     assertNotNull("timeProvider", timeProvider);
   }
 
@@ -101,9 +101,9 @@ public class Eth2NetworkBuilder {
     return this;
   }
 
-  public Eth2NetworkBuilder chainStorageClient(final ChainStorageClient chainStorageClient) {
-    checkNotNull(chainStorageClient);
-    this.chainStorageClient = chainStorageClient;
+  public Eth2NetworkBuilder chainStorageClient(final RecentChainData recentChainData) {
+    checkNotNull(recentChainData);
+    this.recentChainData = recentChainData;
     return this;
   }
 

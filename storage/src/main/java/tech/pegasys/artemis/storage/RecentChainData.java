@@ -16,7 +16,6 @@ package tech.pegasys.artemis.storage;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -40,12 +39,12 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
-public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
+public abstract class RecentChainData implements StoreUpdateHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
   protected final EventBus eventBus;
-  private final StorageUpdateChannel storageUpdateChannel;
+  protected final StorageUpdateChannel storageUpdateChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -59,31 +58,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   // Time
   private volatile UnsignedLong genesisTime;
 
-  public static ChainStorageClient memoryOnlyClient(
-      final EventBus eventBus, final StorageUpdateChannel storageUpdateChannel) {
-    final ChainStorageClient client = new ChainStorageClient(storageUpdateChannel, eventBus);
-    eventBus.register(client);
-    return client;
-  }
-
-  public static SafeFuture<ChainStorageClient> storageBackedClient(
-      final EventBus eventBus, final StorageUpdateChannel storageUpdateChannel) {
-    final StorageBackedChainStorageClientFactory factory =
-        new StorageBackedChainStorageClientFactory(storageUpdateChannel, eventBus);
-    eventBus.register(factory);
-    return factory.get();
-  }
-
-  @VisibleForTesting
-  static ChainStorageClient memoryOnlyClientWithStore(
-      final EventBus eventBus, final Store store, final StorageUpdateChannel storageUpdateChannel) {
-    final ChainStorageClient client = new ChainStorageClient(storageUpdateChannel, eventBus);
-    eventBus.register(client);
-    client.setStore(store);
-    return client;
-  }
-
-  ChainStorageClient(final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
+  RecentChainData(final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
   }

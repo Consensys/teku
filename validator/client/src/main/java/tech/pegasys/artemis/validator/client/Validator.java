@@ -13,13 +13,23 @@
 
 package tech.pegasys.artemis.validator.client;
 
-public class ExternalSignerException extends RuntimeException {
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 
-  public ExternalSignerException(final String message) {
-    super(message);
+public class Validator {
+  private final BLSPublicKey publicKey;
+  private final Signer signer;
+
+  public Validator(final BLSPublicKey publicKey, final Signer signer) {
+    this.publicKey = publicKey;
+    this.signer = signer;
   }
 
-  public ExternalSignerException(final String message, final Throwable cause) {
-    super(message, cause);
+  public BLSPublicKey getPublicKey() {
+    return publicKey;
+  }
+
+  public Signer getSigner() {
+    return signer;
   }
 }

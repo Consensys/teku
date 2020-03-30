@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.artemis.validator.client.signer;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
@@ -34,6 +34,11 @@ public class LocalMessageSignerService implements MessageSignerService {
 
   @Override
   public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
+    return sign(signingRoot);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
     return sign(signingRoot);
   }
 
