@@ -15,13 +15,9 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.config.Constants.COMMITTEE_INDEX_SUBSCRIPTION_LENGTH;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 
 import com.google.common.eventbus.EventBus;
@@ -33,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
@@ -150,9 +145,7 @@ public class CommitteeAssignmentManager {
   }
 
   BLSSignature get_slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
-    Bytes domain = get_domain(state, DOMAIN_BEACON_ATTESTER, compute_epoch_at_slot(slot));
-    Bytes signing_root = compute_signing_root(slot.longValue(), domain);
-    return validators.get(signer).getSignerService().signAttestation(signing_root).join();
+    return validators.get(signer).getSigner().signAggregationSlot(slot, state.getFork()).join();
   }
 
   boolean is_aggregator(

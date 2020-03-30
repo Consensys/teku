@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.validator;
+package tech.pegasys.artemis.validator.client.loader;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import java.util.List;
+import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-public interface MessageSignerService {
-
-  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
+public interface ValidatorKeyProvider {
+  List<BLSKeyPair> loadValidatorKeys(ArtemisConfiguration config);
 }
