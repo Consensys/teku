@@ -193,35 +193,36 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
                         headState, epoch.plus(UnsignedLong.ONE), eventBus)));
       }
 
-      // Get attester information to prepare AttestationAggregator for new slot's aggregation
-      List<AttesterInformation> attestersInformation = committeeAssignments.get(slot);
-
-      // If our beacon node does have any attestation responsibilities for this slot
-      if (attestersInformation == null) {
-        return;
-      }
-
-      // Pass attestationAggregator all the attester information necessary
-      // for aggregation
-      attestationAggregator.updateAggregatorInformations(attestersInformation);
-
-      final Map<UnsignedLong, List<AttesterInformation>> attestersByCommittee =
-          attestersInformation.stream()
-              .collect(Collectors.groupingBy(info -> info.getCommittee().getIndex()));
-
-      attestersByCommittee.forEach(
-          (committeeIndex, attesters) ->
-              validatorApiChannel
-                  .createUnsignedAttestation(slot, committeeIndex.intValue())
-                  .finish(
-                      unsignedAttestationOptional ->
-                          produceAttestations(
-                              slot,
-                              headState,
-                              committeeIndex,
-                              attesters,
-                              unsignedAttestationOptional),
-                      STATUS_LOG::attestationFailure));
+      //      // Get attester information to prepare AttestationAggregator for new slot's
+      // aggregation
+      //      List<AttesterInformation> attestersInformation = committeeAssignments.get(slot);
+      //
+      //      // If our beacon node does have any attestation responsibilities for this slot
+      //      if (attestersInformation == null) {
+      //        return;
+      //      }
+      //
+      //      // Pass attestationAggregator all the attester information necessary
+      //      // for aggregation
+      //      attestationAggregator.updateAggregatorInformations(attestersInformation);
+      //
+      //      final Map<UnsignedLong, List<AttesterInformation>> attestersByCommittee =
+      //          attestersInformation.stream()
+      //              .collect(Collectors.groupingBy(info -> info.getCommittee().getIndex()));
+      //
+      //      attestersByCommittee.forEach(
+      //          (committeeIndex, attesters) ->
+      //              validatorApiChannel
+      //                  .createUnsignedAttestation(slot, committeeIndex.intValue())
+      //                  .finish(
+      //                      unsignedAttestationOptional ->
+      //                          produceAttestations(
+      //                              slot,
+      //                              headState,
+      //                              committeeIndex,
+      //                              attesters,
+      //                              unsignedAttestationOptional),
+      //                      STATUS_LOG::attestationFailure));
     } catch (IllegalArgumentException e) {
       STATUS_LOG.attestationFailure(e);
     }

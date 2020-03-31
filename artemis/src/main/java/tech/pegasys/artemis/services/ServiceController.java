@@ -22,6 +22,8 @@ import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.services.timer.TimerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.FeatureToggles;
+import tech.pegasys.artemis.validator.client.ValidatorClientService;
 
 public class ServiceController extends Service {
 
@@ -31,6 +33,9 @@ public class ServiceController extends Service {
     services.add(new TimerService(config));
     services.add(new BeaconChainService(config));
     services.add(new ChainStorageService(config));
+    if (FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      services.add(ValidatorClientService.create(config));
+    }
     if (!config.getConfig().isInteropEnabled()) {
       services.add(new PowchainService(config));
     }
