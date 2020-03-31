@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.CompositeViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
@@ -167,7 +166,10 @@ public abstract class AbstractCompositeViewWrite<
     int elementsPerChunk = type.getElementsPerChunk();
     if (elementsPerChunk == 1) {
       return newChildValues.stream()
-          .map(e -> Pair.of(type.getGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
+          .map(
+              e ->
+                  new TreeUpdates.Update(
+                      type.getGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()))
           .collect(TreeUpdates.collector());
     } else {
       return packChanges(newChildValues, original);

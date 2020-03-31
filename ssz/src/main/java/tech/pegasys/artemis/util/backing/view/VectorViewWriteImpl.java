@@ -16,7 +16,6 @@ package tech.pegasys.artemis.util.backing.view;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
@@ -80,7 +79,7 @@ public class VectorViewWriteImpl<
                     elementType.updateBackingNode(
                         node, entry.getKey() % elementsPerChunk, entry.getValue());
               }
-              return Pair.of(gIndex, node);
+              return new TreeUpdates.Update(gIndex, node);
             })
         .collect(TreeUpdates.collector());
   }

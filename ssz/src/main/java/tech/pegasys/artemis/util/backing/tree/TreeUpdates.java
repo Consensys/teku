@@ -27,8 +27,27 @@ import org.apache.commons.lang3.tuple.Pair;
  */
 public class TreeUpdates {
 
-  /** Convenient collector for the stream with <code>Pair<Long, TreeNode></code> elements */
-  public static Collector<Pair<Long, TreeNode>, ?, TreeUpdates> collector() {
+  /** A single tree update with target generalized index and the new target {@link TreeNode} */
+  public static class Update {
+    private final long generalizedIndex;
+    private final TreeNode newNode;
+
+    public Update(long generalizedIndex, TreeNode newNode) {
+      this.generalizedIndex = generalizedIndex;
+      this.newNode = newNode;
+    }
+
+    public long getGeneralizedIndex() {
+      return generalizedIndex;
+    }
+
+    public TreeNode getNewNode() {
+      return newNode;
+    }
+  }
+
+  /** Convenient collector for the stream with {@link Update} elements */
+  public static Collector<Update, ?, TreeUpdates> collector() {
     return Collectors.collectingAndThen(Collectors.toList(), TreeUpdates::new);
   }
 
@@ -41,10 +60,10 @@ public class TreeUpdates {
   /**
    * Creates a new instance of TreeNodes
    *
-   * @param nodes the list of [[target generalized index], [new node value]] pairs
+   * @param updates the list of {@link Update}s
    *     <p><b>NOTE: the list should conform to the following prerequisites</b>:
    *     <ul>
-   *       <li>the list should be sorted by target index
+   *       <li>the list should be sorted by the target generalized index
    *       <li>the generalized indexes should be on the same tree level. I.e. the highest order bit
    *           should be the same for all indexes
    *     </ul>
@@ -52,10 +71,10 @@ public class TreeUpdates {
    *     be undefined but normally the {@link TreeNode#updated(TreeUpdates)} call would fail in this
    *     case
    */
-  public TreeUpdates(List<Pair<Long, TreeNode>> nodes) {
+  public TreeUpdates(List<Update> updates) {
     this(
-        nodes.stream().map(Pair::getLeft).collect(Collectors.toList()),
-        nodes.stream().map(Pair::getRight).collect(Collectors.toList()));
+        updates.stream().map(Update::getGeneralizedIndex).collect(Collectors.toList()),
+        updates.stream().map(Update::getNewNode).collect(Collectors.toList()));
   }
 
   private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes) {
