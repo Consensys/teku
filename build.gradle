@@ -667,6 +667,6 @@ task dockerUpload(type: Exec) {
   additionalTags.each { tag ->
     cmd.add("docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'")
   }
-  executable "echo"
+  executable "sh"
   args '-c', cmd.join(' && ')
 }
