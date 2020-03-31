@@ -51,8 +51,7 @@ public class ListViewReadImpl<ElementType extends ViewRead> implements ListViewR
       super(containerType, backingNode);
     }
 
-    public ListContainerRead(
-        VectorViewType<ElementType> vectorType, TreeNode backingNode) {
+    public ListContainerRead(VectorViewType<ElementType> vectorType, TreeNode backingNode) {
       super(vectorTypeToContainerType(vectorType), backingNode);
     }
 
