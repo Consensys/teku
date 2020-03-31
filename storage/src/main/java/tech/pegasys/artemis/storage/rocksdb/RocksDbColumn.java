@@ -13,8 +13,10 @@
 
 package tech.pegasys.artemis.storage.rocksdb;
 
+import java.nio.charset.StandardCharsets;
+
 public enum RocksDbColumn {
-  DEFAULT((byte) 0, "default"),
+  DEFAULT("default".getBytes(StandardCharsets.UTF_8), "default"),
   FINALIZED_ROOTS_BY_SLOT((byte) 1, "finalizedRootsBySlot"),
   FINALIZED_BLOCKS_BY_ROOT((byte) 2, "finalizedBlocksByRoot"),
   FINALIZED_STATES_BY_ROOT((byte) 3, "finalizedStatesByRoot"),
@@ -27,7 +29,11 @@ public enum RocksDbColumn {
   private final String name;
 
   RocksDbColumn(final byte id, final String name) {
-    this.id = new byte[] {id};
+    this(new byte[] {id}, name);
+  }
+
+  RocksDbColumn(final byte[] id, final String name) {
+    this.id = id;
     this.name = name;
   }
 
