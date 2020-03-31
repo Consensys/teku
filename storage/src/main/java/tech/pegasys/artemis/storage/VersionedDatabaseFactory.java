@@ -31,15 +31,12 @@ public class VersionedDatabaseFactory {
   @VisibleForTesting static final String DB_PATH = "db";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
 
-  private final ArtemisConfiguration config;
   private final File dataDirectory;
   private final File dbDirectory;
   private final File dbVersionFile;
   private final StateStorageMode stateStorageMode;
 
   public VersionedDatabaseFactory(final ArtemisConfiguration config) {
-    this.config = config;
-
     this.dataDirectory = Paths.get(config.getDataPath()).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
