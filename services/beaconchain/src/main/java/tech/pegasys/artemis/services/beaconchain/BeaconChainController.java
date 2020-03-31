@@ -58,11 +58,11 @@ import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestat
 import tech.pegasys.artemis.statetransition.genesis.GenesisHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.StorageBackedRecentChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.BlockPropagationManager;
@@ -190,8 +190,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
-    HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
-    combinedChainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData);
+    combinedChainDataClient =
+        new CombinedChainDataClient(
+            recentChainData, eventChannels.getPublisher(StorageQueryChannel.class));
   }
 
   public void initMetrics() {
@@ -300,7 +301,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           Eth2NetworkBuilder.create()
               .config(p2pConfig)
               .eventBus(eventBus)
-              .chainStorageClient(recentChainData)
+              .recentChainData(recentChainData)
+              .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .build();

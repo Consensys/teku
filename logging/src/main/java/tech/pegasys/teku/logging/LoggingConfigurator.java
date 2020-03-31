@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.logging;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +36,8 @@ public class LoggingConfigurator {
   static final String EVENT_LOGGER_NAME = "teku-event-log";
   static final String STATUS_LOGGER_NAME = "teku-status-log";
 
+  private static final String LOG4J_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
+  private static final String LOG4J_LEGACY_CONFIG_FILE_KEY = "log4j.configurationFile";
   private static final String CONSOLE_APPENDER_NAME = "teku-console-appender";
   private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} [%-5level] - %msg%n";
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
@@ -77,17 +80,22 @@ public class LoggingConfigurator {
 
   private static void addLoggers(final AbstractConfiguration configuration) {
 
-    if (DESTINATION == null) {
+    if (isUninitialized()) {
       return;
     }
 
-    StatusLogger.getLogger().info("Configuring logging for destination: {}", DESTINATION);
+    if (isProgrammaticLoggingRedundant()) {
+      displayCustomLog4jConfigUsed();
+      return;
+    }
+
+    displayProgrammaticLoggingConfiguration();
 
     Appender consoleAppender;
     Appender fileAppender;
 
     switch (DESTINATION) {
-      case CONSOLE_ONLY:
+      case CONSOLE:
         consoleAppender = consoleAppender(configuration);
 
         setUpStatusLogger(consoleAppender);
@@ -95,7 +103,7 @@ public class LoggingConfigurator {
 
         addAppenderToRootLogger(configuration, consoleAppender);
         break;
-      case FILE_ONLY:
+      case FILE:
         fileAppender = fileAppender(configuration);
 
         setUpStatusLogger(fileAppender);
@@ -104,11 +112,9 @@ public class LoggingConfigurator {
         addAppenderToRootLogger(configuration, fileAppender);
         break;
       default:
-        StatusLogger.getLogger()
-            .warn(
-                "Unknown logging destination: {}, applying default: {}",
-                DESTINATION,
-                LoggingDestination.BOTH);
+        displayUnknownDestinationConfigured();
+        // fall through
+      case DEFAULT_BOTH:
         // fall through
       case BOTH:
         onlyEventsLoggerToConsole(configuration);
@@ -121,6 +127,65 @@ public class LoggingConfigurator {
     }
 
     configuration.getLoggerContext().updateLoggers();
+  }
+
+  private static void displayProgrammaticLoggingConfiguration() {
+    switch (DESTINATION) {
+      case CONSOLE:
+        StatusLogger.getLogger().info("Configuring logging for destination: console");
+        break;
+      case FILE:
+        StatusLogger.getLogger().info("Configuring logging for destination: file");
+        StatusLogger.getLogger().info("Logging file location: {}", FILE);
+        break;
+      default:
+        // fall through
+      case DEFAULT_BOTH:
+        // fall through
+      case BOTH:
+        StatusLogger.getLogger().info("Configuring logging for destination: console and file");
+        StatusLogger.getLogger().info("Logging file location: {}", FILE);
+        break;
+    }
+
+    StatusLogger.getLogger().info("Logging includes events: {}", INCLUDE_EVENTS);
+    StatusLogger.getLogger().info("Logging includes color: {}", COLOR);
+  }
+
+  private static void displayCustomLog4jConfigUsed() {
+    StatusLogger.getLogger()
+        .info("Custom logging configuration applied from: {}", getCustomLog4jConfigFile());
+  }
+
+  private static void displayUnknownDestinationConfigured() {
+    StatusLogger.getLogger()
+        .warn(
+            "Unknown logging destination: {}, applying default: {}",
+            DESTINATION,
+            LoggingDestination.BOTH);
+  }
+
+  private static boolean isUninitialized() {
+    return DESTINATION == null;
+  }
+
+  private static boolean isProgrammaticLoggingRedundant() {
+    return DESTINATION == LoggingDestination.DEFAULT_BOTH && isCustomLog4jConfigFileProvided();
+  }
+
+  private static boolean isCustomLog4jConfigFileProvided() {
+    return System.getenv(LOG4J_CONFIG_FILE_KEY) != null
+        || System.getProperty(LOG4J_CONFIG_FILE_KEY) != null
+        || System.getenv(LOG4J_LEGACY_CONFIG_FILE_KEY) != null
+        || System.getProperty(LOG4J_LEGACY_CONFIG_FILE_KEY) != null;
+  }
+
+  private static String getCustomLog4jConfigFile() {
+    return Optional.of(System.getenv(LOG4J_CONFIG_FILE_KEY))
+        .or(() -> Optional.of(System.getProperty(LOG4J_CONFIG_FILE_KEY)))
+        .or(() -> Optional.of(System.getProperty(LOG4J_LEGACY_CONFIG_FILE_KEY)))
+        .or(() -> Optional.of(LOG4J_LEGACY_CONFIG_FILE_KEY))
+        .get();
   }
 
   private static void addAppenderToRootLogger(
