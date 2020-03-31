@@ -26,7 +26,7 @@ public class LoggingOptions {
 
   public static final boolean DEFAULT_LOG_COLOUR_ENABLED = true;
   public static final boolean DEFAULT_LOG_INCLUDE_EVENTS_ENABLED = true;
-  public static final String DEFAULT_LOG_DESTINATION = "both";
+  public static final String DEFAULT_LOG_DESTINATION = "default_of_both";
   public static final String DEFAULT_LOG_FILE = "teku.log";
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN = "teku_%d{yyyy-MM-dd}.log";
 
@@ -48,7 +48,7 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {LOG_DESTINATION_OPTION_NAME},
       paramLabel = "<LOG_DESTINATION>",
-      description = "Whether all logs go only to the console, only to the log file, or both",
+      description = "Whether a logger is added for the console, the log file, or both",
       arity = "1")
   private String logDestination = DEFAULT_LOG_DESTINATION;
 

@@ -40,9 +40,10 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.StubStorageQueryChannel;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
@@ -109,7 +110,7 @@ public class Eth2NetworkFactory {
     protected Eth2Network buildNetwork(final NetworkConfig config) {
       {
         // Setup eth2 handlers
-        final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
+        final StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(recentChainData, historicalChainData, METRICS_SYSTEM);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();

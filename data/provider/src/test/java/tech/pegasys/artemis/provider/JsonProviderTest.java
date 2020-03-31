@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
@@ -28,6 +27,7 @@ import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 
 class JsonProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -53,14 +53,24 @@ class JsonProviderTest {
 
   @Test
   public void bitListShouldSerializeAndDeserialize() throws JsonProcessingException {
-    String hexString = "0xf22e4ec2";
-    Bytes bytes = Bytes.fromHexString(hexString);
-    Bitlist data = new Bitlist(bytes.toArray(), 64);
-    String asJson = jsonProvider.objectToJSON(data);
-    assertEquals(Q + hexString + Q, asJson);
+    final int BITLIST_SIZE = 40;
+    final Bitlist data = dataStructureUtil.randomBitlist(BITLIST_SIZE);
+    final String asJson = jsonProvider.objectToJSON(data);
+    final Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
 
-    Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
-    assertEquals(data, asData);
+    assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
+    assertThat(asData.getCurrentSize()).isEqualTo(BITLIST_SIZE);
+  }
+
+  @Test
+  public void bitVectorShouldSerializeAndDeserialize() throws JsonProcessingException {
+    final int BITVECTOR_SIZE = 40;
+    final Bitvector data = dataStructureUtil.randomBitvector(BITVECTOR_SIZE);
+    final String asJson = jsonProvider.objectToJSON(data);
+    final Bitvector asData = jsonProvider.jsonToObject(asJson, Bitvector.class);
+
+    assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
+    assertThat(asData.getSize()).isEqualTo(BITVECTOR_SIZE);
   }
 
   @Test

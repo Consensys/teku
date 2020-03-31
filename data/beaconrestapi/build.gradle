@@ -28,6 +28,7 @@ dependencies {
     integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
 
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
+    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
 }
 
 test {
