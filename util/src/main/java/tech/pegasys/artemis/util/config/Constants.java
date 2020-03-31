@@ -150,7 +150,7 @@ public class Constants {
   public static int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
 
   // Teku Validator Client Specific
-  public static long VALIDATOR_DUTIES_TIMEOUT = 15; // in sec
+  public static final long VALIDATOR_DUTIES_TIMEOUT = 15; // in sec
   public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
   public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
 
