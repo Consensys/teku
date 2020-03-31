@@ -14,11 +14,9 @@
 package tech.pegasys.artemis.storage;
 
 import java.io.File;
-import org.junit.jupiter.api.Disabled;
 import tech.pegasys.artemis.storage.rocksdb.RocksDbConfiguration;
 import tech.pegasys.artemis.storage.rocksdb.RocksDbDatabase;
 
-@Disabled("TODO - debug implementation")
 public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Override

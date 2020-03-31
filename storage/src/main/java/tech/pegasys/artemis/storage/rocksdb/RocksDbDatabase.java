@@ -237,7 +237,7 @@ public class RocksDbDatabase implements Database {
     switch (stateStorageMode) {
       case ARCHIVE:
         transaction.put(
-            columnHandlesByName.get(FINALIZED_BLOCKS_BY_ROOT),
+            columnHandlesByName.get(FINALIZED_STATES_BY_ROOT),
             blockRoot.toArrayUnsafe(),
             serialize(state));
         break;
@@ -331,11 +331,11 @@ public class RocksDbDatabase implements Database {
         event
             .getBlockStates()
             .forEach(
-                (blockNo, beaconState) ->
+                (root, beaconState) ->
                     store(
                         transaction,
                         HOT_STATES_BY_ROOT,
-                        blockNo.toArrayUnsafe(),
+                        root.toArrayUnsafe(),
                         serialize(beaconState)));
 
         final StorageUpdateResult result;
@@ -366,8 +366,9 @@ public class RocksDbDatabase implements Database {
       final Checkpoint newFinalizedCheckpoint, final Transaction transaction) {
     ColumnFamilyHandle checkpointStates = columnHandlesByName.get(CHECKPOINT_STATES);
     Set<Checkpoint> prunedCheckpoints = new HashSet<>();
-    try (RocksIterator rocksIterator = db.newIterator(checkpointStates)) {
-      for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
+    try (final RocksIterator rocksIterator = db.newIterator(checkpointStates)) {
+      rocksIterator.seekToFirst();
+      while (rocksIterator.isValid()) {
         final byte[] key = rocksIterator.key();
         Checkpoint checkpoint = deserialize(key, Checkpoint.class);
         if (checkpoint.getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0) {
@@ -450,8 +451,8 @@ public class RocksDbDatabase implements Database {
         && newlyFinalizedBlock.getSlot().compareTo(highestFinalizedSlot) > 0) {
       LOG.debug(
           "Recording finalized block {} at slot {}",
-          newlyFinalizedBlock.getSlot(),
-          newlyFinalizedBlockRoot);
+          newlyFinalizedBlockRoot,
+          newlyFinalizedBlock.getSlot());
       store(
           transaction,
           FINALIZED_ROOTS_BY_SLOT,
@@ -600,9 +601,6 @@ public class RocksDbDatabase implements Database {
     try (RocksIterator rocksIterator =
         db.newIterator(columnHandlesByName.get(FINALIZED_ROOTS_BY_SLOT))) {
       rocksIterator.seekForPrev(Longs.toByteArray(slot.longValue()));
-      if (rocksIterator.isValid()) {
-        rocksIterator.prev();
-      }
       return rocksIterator.isValid()
           ? Optional.of(Bytes32.wrap(rocksIterator.value()))
           : Optional.empty();
@@ -663,6 +661,9 @@ public class RocksDbDatabase implements Database {
   }
 
   public <T> T deserialize(byte[] fromDb, Class<T> classInfo) {
+    if (fromDb == null) {
+      return null;
+    }
     return SimpleOffsetSerializer.deserialize(Bytes.wrap(fromDb), classInfo);
   }
 }
