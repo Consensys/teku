@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +36,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByRoot() throws Exception {
     when(recentChainData.getStore()).thenReturn(null);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(ZERO);
 
     final Response response = getByRoot(Bytes32.ZERO);
     assertNoContent(response);
@@ -44,7 +45,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
     when(recentChainData.getStore()).thenReturn(null);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(ZERO);
 
     final Response response = getBySlot(1);
     assertNoContent(response);
@@ -54,7 +55,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
   public void shouldReturnNoContentIfHeadRootMissing_queryBySlot() throws Exception {
     final Store store = mock(Store.class);
     when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(ZERO);
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = getBySlot(1);

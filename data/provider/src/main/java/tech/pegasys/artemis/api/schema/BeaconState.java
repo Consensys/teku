@@ -13,10 +13,13 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 
 public class BeaconState {
@@ -40,6 +43,56 @@ public class BeaconState {
   public final Checkpoint previous_justified_checkpoint;
   public final Checkpoint current_justified_checkpoint;
   public final Checkpoint finalized_checkpoint;
+
+  @JsonCreator
+  public BeaconState(
+      @JsonProperty("genesis_time") final UnsignedLong genesis_time,
+      @JsonProperty("slot") final UnsignedLong slot,
+      @JsonProperty("fork") final Fork fork,
+      @JsonProperty("latest_block_header") final BeaconBlockHeader latest_block_header,
+      @JsonProperty("block_roots") final List<Bytes32> block_roots,
+      @JsonProperty("state_roots") final List<Bytes32> state_roots,
+      @JsonProperty("historical_roots") final List<Bytes32> historical_roots,
+      @JsonProperty("eth1_data") final Eth1Data eth1_data,
+      @JsonProperty("eth1_data_votes") final List<Eth1Data> eth1_data_votes,
+      @JsonProperty("eth1_deposit_index") final UnsignedLong eth1_deposit_index,
+      @JsonProperty("validators") final List<Validator> validators,
+      @JsonProperty("balances") final List<UnsignedLong> balances,
+      @JsonProperty("randao_mixes") final List<Bytes32> randao_mixes,
+      @JsonProperty("slashings") final List<UnsignedLong> slashings,
+      @JsonProperty("previous_epoch_attestations")
+          final List<PendingAttestation> previous_epoch_attestations,
+      @JsonProperty("current_epoch_attestations")
+          final List<PendingAttestation> current_epoch_attestations,
+      @JsonProperty("justification_bits") final Bitvector justification_bits,
+      @JsonProperty("previous_justified_checkpoint") final Checkpoint previous_justified_checkpoint,
+      @JsonProperty("current_justified_checkpoint") final Checkpoint current_justified_checkpoint,
+      @JsonProperty("finalized_checkpoint") final Checkpoint finalized_checkpoint) {
+    this.genesis_time = genesis_time;
+    this.slot = slot;
+    this.fork = fork;
+    this.latest_block_header = latest_block_header;
+    this.block_roots = block_roots;
+    this.state_roots = state_roots;
+    this.historical_roots = historical_roots;
+    this.eth1_data = eth1_data;
+    this.eth1_data_votes = eth1_data_votes;
+    this.eth1_deposit_index = eth1_deposit_index;
+    this.validators = validators;
+    this.balances = balances;
+    this.randao_mixes = randao_mixes;
+    this.slashings = slashings;
+    this.previous_epoch_attestations = previous_epoch_attestations;
+    this.current_epoch_attestations = current_epoch_attestations;
+    this.justification_bits = justification_bits;
+    this.previous_justified_checkpoint = previous_justified_checkpoint;
+    this.current_justified_checkpoint = current_justified_checkpoint;
+    this.finalized_checkpoint = finalized_checkpoint;
+  }
+
+  public BeaconState(final BeaconBlockAndState blockAndState) {
+    this(blockAndState.getState());
+  }
 
   public BeaconState(final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
     this.genesis_time = beaconState.getGenesis_time();
