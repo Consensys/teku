@@ -34,10 +34,7 @@ import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.backing.type.ListViewType;
-import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -49,38 +46,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   private static volatile ContainerViewType<BeaconState> TYPE = null;
 
-  private static ContainerViewType<BeaconState> createSSZType() {
-    return new ContainerViewType<>(
-        List.of(
-            BasicViewTypes.UINT64_TYPE,
-            BasicViewTypes.UINT64_TYPE,
-            Fork.TYPE,
-            BeaconBlockHeader.TYPE,
-            new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
-            new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
-            new ListViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT),
-            Eth1Data.TYPE,
-            new ListViewType<>(Eth1Data.TYPE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD),
-            BasicViewTypes.UINT64_TYPE,
-            new ListViewType<>(Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
-            new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
-            new VectorViewType<>(
-                BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR),
-            new VectorViewType<>(BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR),
-            new ListViewType<>(
-                PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
-            new ListViewType<>(
-                PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
-            new VectorViewType<>(BasicViewTypes.BIT_TYPE, Constants.JUSTIFICATION_BITS_LENGTH),
-            Checkpoint.TYPE,
-            Checkpoint.TYPE,
-            Checkpoint.TYPE),
-        BeaconStateImpl::new);
-  }
-
   static ContainerViewType<BeaconState> getSSZType() {
     if (TYPE == null) {
-      TYPE = createSSZType();
+      TYPE = BeaconState.createSSZType();
     }
     return TYPE;
   }
@@ -230,8 +198,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
     this.transitionCaches = transitionCaches;
   }
 
-  private BeaconStateImpl(
-      ContainerViewType<? extends ContainerViewRead> type, TreeNode backingNode) {
+  BeaconStateImpl(ContainerViewType<? extends ContainerViewRead> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
