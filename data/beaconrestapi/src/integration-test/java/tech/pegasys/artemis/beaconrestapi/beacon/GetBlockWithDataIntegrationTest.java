@@ -30,6 +30,7 @@ import tech.pegasys.artemis.beaconrestapi.AbstractDataBackedRestAPIIntegrationTe
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
 
 public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+
   @Test
   public void shouldGetBlockWhenPresent_getByEpoch() throws Exception {
     final List<SignedBeaconBlock> blocks = withBlockDataAtSlot(SIX, SEVEN, EIGHT);

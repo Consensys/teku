@@ -37,6 +37,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public abstract class AbstractDataBackedRestAPIIntegrationTest
     extends AbstractBeaconRestAPIIntegrationTest {
+
   protected static final UnsignedLong SIX = UnsignedLong.valueOf(6);
   protected static final UnsignedLong SEVEN = UnsignedLong.valueOf(7);
   protected static final UnsignedLong EIGHT = UnsignedLong.valueOf(8);

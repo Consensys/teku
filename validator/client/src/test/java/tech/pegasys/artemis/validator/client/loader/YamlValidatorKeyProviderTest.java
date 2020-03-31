@@ -22,14 +22,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.tuweni.junit.TempDirectory;
-import org.apache.tuweni.junit.TempDirectoryExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-@ExtendWith(TempDirectoryExtension.class)
 class YamlValidatorKeyProviderTest {
   private static final String TEST_FILE =
       "- {privkey: '0x25295f0d1d592a90b333e26e85149708208e9f8e8bc18f6c77bd62f8ad7a6866',\n"
@@ -48,7 +45,7 @@ class YamlValidatorKeyProviderTest {
   private final ArtemisConfiguration config = mock(ArtemisConfiguration.class);
 
   @Test
-  public void shouldLoadExampleFile(@TempDirectory Path tempDirectory) throws Exception {
+  public void shouldLoadExampleFile(@TempDir Path tempDirectory) throws Exception {
     Path logFile = tempDirectory.resolve("keys.yaml");
     Files.writeString(logFile, TEST_FILE);
     when(config.getValidatorsKeyFile()).thenReturn(logFile.toAbsolutePath().toString());
