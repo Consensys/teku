@@ -41,30 +41,31 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 public abstract class AbstractBeaconRestAPIIntegrationTest {
-  private static final okhttp3.MediaType JSON =
-      okhttp3.MediaType.parse("application/json; charset=utf-8");
+  static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
+  static final ArtemisConfiguration config =
+      ArtemisConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final ObjectMapper objectMapper = new ObjectMapper();
+  protected final ObjectMapper objectMapper = new ObjectMapper();
+
   protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
   protected final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
-  protected final RecentChainData recentChainData = mock(RecentChainData.class);
-  protected final CombinedChainDataClient combinedChainDataClient =
-      new CombinedChainDataClient(recentChainData, historicalChainData);
+  protected RecentChainData recentChainData = mock(RecentChainData.class);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
-  private final DataProvider dataProvider =
-      new DataProvider(
-          recentChainData, combinedChainDataClient, p2PNetwork, syncService, validatorApiChannel);
-
-  private BeaconRestApi beaconRestApi;
+  protected CombinedChainDataClient combinedChainDataClient =
+      new CombinedChainDataClient(recentChainData, historicalChainData);
+  protected DataProvider dataProvider;
+  protected BeaconRestApi beaconRestApi;
   protected OkHttpClient client;
 
   @BeforeEach
   public void setup() {
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
+    dataProvider =
+        new DataProvider(
+            recentChainData, combinedChainDataClient, p2PNetwork, syncService, validatorApiChannel);
+
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient();
