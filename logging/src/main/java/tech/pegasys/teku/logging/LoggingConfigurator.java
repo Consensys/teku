@@ -84,7 +84,7 @@ public class LoggingConfigurator {
       return;
     }
 
-    if (noProgrammaticLoggingRequired()) {
+    if (isProgrammaticLoggingRedundant()) {
       StatusLogger.getLogger()
           .info("Custom logging configuration applied from: {}", getCustomLog4jConfigFile());
       return;
@@ -140,7 +140,7 @@ public class LoggingConfigurator {
     return DESTINATION == null;
   }
 
-  private static boolean noProgrammaticLoggingRequired() {
+  private static boolean isProgrammaticLoggingRedundant() {
     return DESTINATION == LoggingDestination.DEFAULT_BOTH && isCustomLog4jConfigFileProvided();
   }
 
