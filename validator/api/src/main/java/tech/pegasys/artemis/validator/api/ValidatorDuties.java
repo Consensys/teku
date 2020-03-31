@@ -33,13 +33,18 @@ public class ValidatorDuties {
       final BLSPublicKey publicKey,
       final int validatorIndex,
       final int attestationCommitteeIndex,
+      final int attestationCommitteePosition,
       final List<UnsignedLong> blockProposalSlots,
       final UnsignedLong attestationSlot) {
     return new ValidatorDuties(
         publicKey,
         Optional.of(
             new Duties(
-                validatorIndex, attestationCommitteeIndex, blockProposalSlots, attestationSlot)));
+                validatorIndex,
+                attestationCommitteeIndex,
+                attestationCommitteePosition,
+                blockProposalSlots,
+                attestationSlot)));
   }
 
   public static ValidatorDuties noDuties(final BLSPublicKey publicKey) {
@@ -82,16 +87,19 @@ public class ValidatorDuties {
   public static class Duties {
     private final int validatorIndex;
     private final int attestationCommitteeIndex;
+    private final int attestationCommitteePosition;
     private final List<UnsignedLong> blockProposalSlots;
     private final UnsignedLong attestationSlot;
 
     public Duties(
         final int validatorIndex,
         final int attestationCommitteeIndex,
+        final int attestationCommitteePosition,
         final List<UnsignedLong> blockProposalSlots,
         final UnsignedLong attestationSlot) {
       this.validatorIndex = validatorIndex;
       this.attestationCommitteeIndex = attestationCommitteeIndex;
+      this.attestationCommitteePosition = attestationCommitteePosition;
       this.blockProposalSlots = blockProposalSlots;
       this.attestationSlot = attestationSlot;
     }
@@ -102,6 +110,10 @@ public class ValidatorDuties {
 
     public int getAttestationCommitteeIndex() {
       return attestationCommitteeIndex;
+    }
+
+    public int getAttestationCommitteePosition() {
+      return attestationCommitteePosition;
     }
 
     public List<UnsignedLong> getBlockProposalSlots() {
@@ -123,6 +135,7 @@ public class ValidatorDuties {
       final Duties duties = (Duties) o;
       return validatorIndex == duties.validatorIndex
           && attestationCommitteeIndex == duties.attestationCommitteeIndex
+          && attestationCommitteePosition == duties.attestationCommitteePosition
           && Objects.equals(blockProposalSlots, duties.blockProposalSlots)
           && Objects.equals(attestationSlot, duties.attestationSlot);
     }
@@ -130,7 +143,11 @@ public class ValidatorDuties {
     @Override
     public int hashCode() {
       return Objects.hash(
-          validatorIndex, attestationCommitteeIndex, blockProposalSlots, attestationSlot);
+          validatorIndex,
+          attestationCommitteeIndex,
+          attestationCommitteePosition,
+          blockProposalSlots,
+          attestationSlot);
     }
 
     @Override
@@ -138,6 +155,7 @@ public class ValidatorDuties {
       return MoreObjects.toStringHelper(this)
           .add("validatorIndex", validatorIndex)
           .add("attestationCommitteeIndex", attestationCommitteeIndex)
+          .add("attestationCommitteePosition", attestationCommitteePosition)
           .add("blockProposalSlots", blockProposalSlots)
           .add("attestationSlot", attestationSlot)
           .toString();
