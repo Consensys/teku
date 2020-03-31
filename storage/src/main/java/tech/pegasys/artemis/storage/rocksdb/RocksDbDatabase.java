@@ -531,9 +531,9 @@ public class RocksDbDatabase implements Database {
       final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot =
           allValues(HOT_BLOCKS_BY_ROOT, Bytes32.class, SignedBeaconBlock.class);
       final Map<Bytes32, BeaconState> hotStatesByRoot =
-          allValues(HOT_STATES_BY_ROOT, Bytes32.class, BeaconState.class);
+          allValues(HOT_STATES_BY_ROOT, Bytes32.class, BeaconStateImpl.class);
       final Map<Checkpoint, BeaconState> checkpointStates =
-          allValues(CHECKPOINT_STATES, Checkpoint.class, BeaconState.class);
+          allValues(CHECKPOINT_STATES, Checkpoint.class, BeaconStateImpl.class);
       final Map<UnsignedLong, Checkpoint> latestMessages =
           allUnsignedLongValues(LATEST_MESSAGES, Checkpoint.class);
       return Optional.of(
@@ -552,14 +552,16 @@ public class RocksDbDatabase implements Database {
     }
   }
 
-  private <K, V> Map<K, V> allValues(
-      final RocksDbColumn column, final Class<K> keyClass, final Class<V> valueClass) {
+  private <K, V, TValueImpl extends V> Map<K, V> allValues(
+      final RocksDbColumn column,
+      final Class<K> keyClass,
+      final Class<TValueImpl> valueImplementation) {
     try (RocksIterator rocksIterator = db.newIterator(columnHandlesByName.get(column))) {
       rocksIterator.seekToFirst();
-      Map<K, V> result = new HashMap<>();
-      for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
+      final Map<K, V> result = new HashMap<>();
+      while (rocksIterator.isValid()) {
         K key = deserialize(rocksIterator.key(), keyClass);
-        V value = deserialize(rocksIterator.value(), valueClass);
+        V value = deserialize(rocksIterator.value(), valueImplementation);
         result.put(key, value);
         rocksIterator.next();
       }
