@@ -630,7 +630,7 @@ public class RocksDbDatabase implements Database {
   public Optional<BeaconState> getState(final Bytes32 root) {
     try {
       byte[] key = root.toArrayUnsafe();
-      byte[] bytes = db.get(columnHandlesByName.get(HOT_BLOCKS_BY_ROOT), key);
+      byte[] bytes = db.get(columnHandlesByName.get(HOT_STATES_BY_ROOT), key);
       if (bytes == null) {
         bytes = db.get(columnHandlesByName.get(FINALIZED_STATES_BY_ROOT), key);
       }
