@@ -13,7 +13,8 @@
 
 package tech.pegasys.artemis.services;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
@@ -21,38 +22,33 @@ import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.services.timer.TimerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.FeatureToggles;
+import tech.pegasys.artemis.validator.client.ValidatorClientService;
 
 public class ServiceController extends Service {
-  private final BeaconChainService beaconChainService;
-  private final ChainStorageService chainStorageService;
-  private final TimerService timerService;
-  private final Optional<PowchainService> powchainService;
+
+  private final List<Service> services = new ArrayList<>();
 
   public ServiceController(final ServiceConfig config) {
-    timerService = new TimerService(config);
-    beaconChainService = new BeaconChainService(config);
-    chainStorageService = new ChainStorageService(config);
-    powchainService =
-        config.getConfig().isInteropEnabled()
-            ? Optional.empty()
-            : Optional.of(new PowchainService(config));
+    services.add(new TimerService(config));
+    services.add(new BeaconChainService(config));
+    services.add(new ChainStorageService(config));
+    if (FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      services.add(ValidatorClientService.create(config));
+    }
+    if (!config.getConfig().isInteropEnabled()) {
+      services.add(new PowchainService(config));
+    }
   }
 
   @Override
   protected SafeFuture<?> doStart() {
     return SafeFuture.allOfFailFast(
-        timerService.start(),
-        chainStorageService.start(),
-        beaconChainService.start(),
-        powchainService.map(PowchainService::start).orElse(SafeFuture.completedFuture(null)));
+        services.stream().map(Service::start).toArray(SafeFuture[]::new));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(
-        timerService.stop(),
-        chainStorageService.stop(),
-        beaconChainService.stop(),
-        powchainService.map(PowchainService::stop).orElse(SafeFuture.completedFuture(null)));
+    return SafeFuture.allOf(services.stream().map(Service::stop).toArray(SafeFuture[]::new));
   }
 }
