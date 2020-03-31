@@ -36,9 +36,8 @@ public class LoggingConfigurator {
   static final String EVENT_LOGGER_NAME = "teku-event-log";
   static final String STATUS_LOGGER_NAME = "teku-status-log";
 
-  private static final String LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
-  private static final String LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY =
-      "log4j.configurationFile";
+  private static final String LOG4J_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
+  private static final String LOG4J_LEGACY_CONFIG_FILE_KEY = "log4j.configurationFile";
   private static final String CONSOLE_APPENDER_NAME = "teku-console-appender";
   private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} [%-5level] - %msg%n";
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
@@ -146,17 +145,17 @@ public class LoggingConfigurator {
   }
 
   private static boolean isCustomLog4jConfigFileProvided() {
-    return System.getenv(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY) != null
-        || System.getProperty(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY) != null
-        || System.getenv(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY) != null
-        || System.getProperty(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY) != null;
+    return System.getenv(LOG4J_CONFIG_FILE_KEY) != null
+        || System.getProperty(LOG4J_CONFIG_FILE_KEY) != null
+        || System.getenv(LOG4J_LEGACY_CONFIG_FILE_KEY) != null
+        || System.getProperty(LOG4J_LEGACY_CONFIG_FILE_KEY) != null;
   }
 
   private static String getCustomLog4jConfigFile() {
-    return Optional.of(System.getenv(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY))
-        .or(() -> Optional.of(System.getProperty(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY)))
-        .or(() -> Optional.of(System.getProperty(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY)))
-        .or(() -> Optional.of(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY))
+    return Optional.of(System.getenv(LOG4J_CONFIG_FILE_KEY))
+        .or(() -> Optional.of(System.getProperty(LOG4J_CONFIG_FILE_KEY)))
+        .or(() -> Optional.of(System.getProperty(LOG4J_LEGACY_CONFIG_FILE_KEY)))
+        .or(() -> Optional.of(LOG4J_LEGACY_CONFIG_FILE_KEY))
         .get();
   }
 
