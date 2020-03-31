@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.logging;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -80,7 +81,13 @@ public class LoggingConfigurator {
 
   private static void addLoggers(final AbstractConfiguration configuration) {
 
-    if (isUninitialized() || noProgrammaticLoggingRequired()) {
+    if (isUninitialized()) {
+      return;
+    }
+
+    if (noProgrammaticLoggingRequired()) {
+      StatusLogger.getLogger()
+          .info("Custom logging configuration applied from: {}", getCustomLog4jConfigFile());
       return;
     }
 
@@ -135,14 +142,22 @@ public class LoggingConfigurator {
   }
 
   private static boolean noProgrammaticLoggingRequired() {
-    return DESTINATION == LoggingDestination.DEFAULT_BOTH && customLog4jProvided();
+    return DESTINATION == LoggingDestination.DEFAULT_BOTH && isCustomLog4jConfigFileProvided();
   }
 
-  private static boolean customLog4jProvided() {
+  private static boolean isCustomLog4jConfigFileProvided() {
     return System.getenv(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY) != null
         || System.getProperty(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY) != null
         || System.getenv(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY) != null
         || System.getProperty(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY) != null;
+  }
+
+  private static String getCustomLog4jConfigFile() {
+    return Optional.of(System.getenv(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY))
+        .or(() -> Optional.of(System.getProperty(LOG4J_ENVIRONMENTAL_CONFIG_FILE_KEY)))
+        .or(() -> Optional.of(System.getProperty(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY)))
+        .or(() -> Optional.of(LOG4J_ENVIRONMENTAL_LEGACY_CONFIG_FILE_KEY))
+        .get();
   }
 
   private static void addAppenderToRootLogger(
