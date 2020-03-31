@@ -49,16 +49,16 @@ import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainDataProviderTest {
   private static final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private static CombinedChainDataClient combinedChainDataClient;
-  private static HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
+  private static StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private static tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal;
   private static BeaconState beaconState;
   private static Bytes32 blockRoot;
