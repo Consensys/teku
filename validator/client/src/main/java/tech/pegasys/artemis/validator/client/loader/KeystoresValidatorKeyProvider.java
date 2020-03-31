@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.artemis.validator.client.loader;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -37,7 +37,7 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
-  static final int KEY_LENGTH = 48;
+  public static final int KEY_LENGTH = 48;
 
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {

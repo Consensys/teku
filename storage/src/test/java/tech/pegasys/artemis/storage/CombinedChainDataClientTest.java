@@ -35,6 +35,7 @@ import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -42,7 +43,7 @@ class CombinedChainDataClientTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
+  private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private final Store store = mock(Store.class);
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(recentChainData, historicalChainData);
