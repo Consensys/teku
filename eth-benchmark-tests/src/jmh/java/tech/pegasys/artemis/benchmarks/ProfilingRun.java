@@ -13,10 +13,13 @@
 
 package tech.pegasys.artemis.benchmarks;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +38,8 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -50,7 +55,7 @@ public class ProfilingRun {
     Constants.setConstants("mainnet");
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
-    int validatorsCount = 32 * 1024;
+    int validatorsCount = 16 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -73,6 +78,11 @@ public class ProfilingRun {
     while (true) {
       EventBus localEventBus = mock(EventBus.class);
       StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+      when(storageUpdateChannel.onStorageUpdate(any()))
+          .thenReturn(
+              SafeFuture.completedFuture(
+                  new SuccessfulStorageUpdateResult(
+                      Collections.emptySet(), Collections.emptySet())));
       ChainStorageClient localStorage =
           ChainStorageClient.memoryOnlyClient(localEventBus, storageUpdateChannel);
       BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);

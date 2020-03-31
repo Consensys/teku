@@ -13,9 +13,12 @@
 
 package tech.pegasys.artemis.benchmarks;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -39,6 +42,8 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -77,6 +82,10 @@ public abstract class TransitionBenchmark {
 
     EventBus localEventBus = mock(EventBus.class);
     StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
+    when(storageUpdateChannel.onStorageUpdate(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
     localStorage = ChainStorageClient.memoryOnlyClient(localEventBus, storageUpdateChannel);
     localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
     localChain.initializeStorage();
