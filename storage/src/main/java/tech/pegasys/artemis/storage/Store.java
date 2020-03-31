@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.client;
+package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 
@@ -38,6 +38,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.client.FailedPrecommitException;
+import tech.pegasys.artemis.storage.client.ReadOnlyStore;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -492,7 +494,7 @@ public class Store implements ReadOnlyStore {
         latest_messages);
   }
 
-  interface StoreUpdateHandler {
+  public interface StoreUpdateHandler {
     StoreUpdateHandler NOOP =
         new StoreUpdateHandler() {
           @Override

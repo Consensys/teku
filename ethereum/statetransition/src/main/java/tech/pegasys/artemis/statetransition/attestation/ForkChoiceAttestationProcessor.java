@@ -17,8 +17,8 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attest
 
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.statetransition.StateTransition;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.storage.client.Store;
 
 public class ForkChoiceAttestationProcessor {
 

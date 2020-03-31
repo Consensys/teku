@@ -24,8 +24,8 @@ import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.storage.client.Store;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();

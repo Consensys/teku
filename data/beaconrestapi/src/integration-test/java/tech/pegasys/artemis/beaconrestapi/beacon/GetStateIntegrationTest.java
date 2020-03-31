@@ -27,7 +27,7 @@ import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetState;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.storage.client.Store;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
-import tech.pegasys.artemis.storage.client.Store;
+import tech.pegasys.artemis.storage.Store;
 
 public class GetStateRootIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -24,10 +24,6 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.storage.server.Database;
-import tech.pegasys.artemis.storage.server.DatabaseStorageException;
-import tech.pegasys.artemis.storage.server.DatabaseVersion;
-import tech.pegasys.artemis.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class VersionedDatabaseFactoryTest {

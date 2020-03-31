@@ -59,13 +59,13 @@ import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregat
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.genesis.GenesisHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.artemis.storage.client.Store;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.BlockPropagationManager;
 import tech.pegasys.artemis.sync.DefaultSyncService;

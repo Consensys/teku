@@ -30,7 +30,7 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class BlockGossipManagerTest {
