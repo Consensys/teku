@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -147,6 +148,11 @@ public class Constants {
   public static final int REPUTATION_MANAGER_CAPACITY = 100;
   public static long STORAGE_REQUEST_TIMEOUT = 3; // in sec
   public static int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
+
+  // Teku Validator Client Specific
+  public static final long VALIDATOR_DUTIES_TIMEOUT = 15; // in sec
+  public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
+  public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
 
   static {
     setConstants("minimal");
