@@ -15,21 +15,25 @@ package tech.pegasys.artemis.validator.client.duties;
 
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.artemis.validator.client.ForkProvider;
 import tech.pegasys.artemis.validator.client.Validator;
 
 public class ValidatorDutyFactory {
+  private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
 
-  public ValidatorDutyFactory(final ValidatorApiChannel validatorApiChannel) {
+  public ValidatorDutyFactory(
+      final ForkProvider forkProvider, final ValidatorApiChannel validatorApiChannel) {
+    this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
   }
 
   public BlockProductionDuty createBlockProductionDuty(
       final Validator validator, final UnsignedLong slot) {
-    return new BlockProductionDuty(validator, slot, validatorApiChannel);
+    return new BlockProductionDuty(validator, slot, forkProvider, validatorApiChannel);
   }
 
   public AttestationProductionDuty createAttestationProductionDuty(final UnsignedLong slot) {
-    return new AttestationProductionDuty(slot, validatorApiChannel);
+    return new AttestationProductionDuty(slot, forkProvider, validatorApiChannel);
   }
 }

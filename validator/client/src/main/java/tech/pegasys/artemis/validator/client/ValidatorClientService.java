@@ -17,6 +17,7 @@ import java.util.Map;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -27,6 +28,8 @@ import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.artemis.validator.client.loader.ValidatorLoader;
 
 public class ValidatorClientService extends Service {
+  public static final int FORK_RETRY_DELAY_SECONDS = 10;
+  public static final int FORK_REFRESH_TIME_SECONDS = 120;
   private final EventChannels eventChannels;
   private final DutyScheduler validatorClient;
 
@@ -40,13 +43,17 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = config.getEventChannels();
     final ValidatorApiChannel validatorApiChannel =
         eventChannels.getPublisher(ValidatorApiChannel.class);
+    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+    final ForkProvider forkProvider =
+        new ForkProvider(
+            asyncRunner, validatorApiChannel, FORK_RETRY_DELAY_SECONDS, FORK_REFRESH_TIME_SECONDS);
     final Map<BLSPublicKey, Validator> validators =
         ValidatorLoader.initializeValidators(config.getConfig());
     final DutyScheduler validatorClient =
         new DutyScheduler(
             DelayedExecutorAsyncRunner.create(),
             validatorApiChannel,
-            new ValidatorDutyFactory(validatorApiChannel),
+            new ValidatorDutyFactory(forkProvider, validatorApiChannel),
             validators);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);

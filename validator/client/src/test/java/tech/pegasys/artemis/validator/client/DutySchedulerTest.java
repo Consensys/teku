@@ -166,10 +166,16 @@ class DutySchedulerTest {
   @Test
   public void shouldScheduleAttestationDuties() {
     final UnsignedLong attestationSlot = UnsignedLong.valueOf(5);
+    final int validator1Index = 5;
+    final int validator1Committee = 3;
+    final int validator2Index = 6;
+    final int validator2Committee = 4;
     final ValidatorDuties validator1Duties =
-        ValidatorDuties.withDuties(VALIDATOR1_KEY, 5, 3, emptyList(), attestationSlot);
+        ValidatorDuties.withDuties(
+            VALIDATOR1_KEY, validator1Index, validator1Committee, emptyList(), attestationSlot);
     final ValidatorDuties validator2Duties =
-        ValidatorDuties.withDuties(VALIDATOR2_KEY, 6, 4, emptyList(), attestationSlot);
+        ValidatorDuties.withDuties(
+            VALIDATOR2_KEY, validator2Index, validator2Committee, emptyList(), attestationSlot);
     when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
@@ -182,8 +188,8 @@ class DutySchedulerTest {
     validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
 
     // Both validators should be scheduled to create an attestation in the same slot
-    verify(attestationDuty).addValidator(validator1);
-    verify(attestationDuty).addValidator(validator2);
+    verify(attestationDuty).addValidator(validator1Committee, validator1, validator1Index);
+    verify(attestationDuty).addValidator(validator2Committee, validator2, validator2Index);
 
     // Execute
     validatorClient.onAttestationCreationDue(attestationSlot);

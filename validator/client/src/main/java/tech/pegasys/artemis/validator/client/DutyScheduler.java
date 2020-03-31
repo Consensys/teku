@@ -108,7 +108,11 @@ public class DutyScheduler implements ValidatorTimingChannel {
               duties
                   .getBlockProposalSlots()
                   .forEach(slot -> scheduleBlockProduction(validator, slot));
-              scheduleAttestationProduction(validator, duties.getAttestationSlot());
+              scheduleAttestationProduction(
+                  duties.getAttestationCommitteeIndex(),
+                  validator,
+                  duties.getValidatorIndex(),
+                  duties.getAttestationSlot());
             });
   }
 
@@ -116,10 +120,14 @@ public class DutyScheduler implements ValidatorTimingChannel {
     blockProposalDuties.put(slot, dutyFactory.createBlockProductionDuty(validator, slot));
   }
 
-  private void scheduleAttestationProduction(final Validator validator, final UnsignedLong slot) {
+  private void scheduleAttestationProduction(
+      final int attestationCommitteeIndex,
+      final Validator validator,
+      final int validatorIndex,
+      final UnsignedLong slot) {
     attestationProposalDuties
         .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
-        .addValidator(validator);
+        .addValidator(attestationCommitteeIndex, validator, validatorIndex);
   }
 
   @Override
