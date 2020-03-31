@@ -100,14 +100,24 @@ public class GenesisGenerator {
             balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
             UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
 
-    Validator modifiedValidator = validator.withEffective_balance(effective_balance);
+    UnsignedLong activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
+    UnsignedLong activation_epoch = validator.getActivation_epoch();
 
     if (validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
-      modifiedValidator =
-          modifiedValidator
-              .withActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH))
-              .withActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+      activation_eligibility_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
+      activation_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
     }
+
+    Validator modifiedValidator = new Validator(
+        validator.getPubkey(),
+        validator.getWithdrawal_credentials(),
+        effective_balance,
+        validator.isSlashed(),
+        activation_eligibility_epoch,
+        activation_epoch,
+        validator.getExit_epoch(),
+        validator.getWithdrawable_epoch());
+
     state.getValidators().set(index, modifiedValidator);
   }
 
