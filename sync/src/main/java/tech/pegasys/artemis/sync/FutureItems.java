@@ -23,8 +23,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.util.collections.LimitedSet;
-import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
+import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
+import tech.pegasys.artemis.util.collections.LimitStrategy;
 
 /** Holds items with slots that are in the future relative to our node's current slot */
 class FutureItems<T> {
@@ -75,6 +75,7 @@ class FutureItems<T> {
   }
 
   private Set<T> createNewSet() {
-    return LimitedSet.create(MAX_ITEMS_PER_SLOT, Mode.DROP_LEAST_RECENTLY_ACCESSED);
+    return ConcurrentLimitedSet.create(
+        MAX_ITEMS_PER_SLOT, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   }
 }
