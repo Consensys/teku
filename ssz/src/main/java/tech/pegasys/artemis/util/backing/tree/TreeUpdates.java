@@ -41,10 +41,16 @@ public class TreeUpdates {
   /**
    * Creates a new instance of TreeNodes
    *
-   * @param nodes the list of [[target generalized index], [new node value]] pairs <b>NOTE: the list
-   *     should be sorted by target index</b> The ordering is not checked for performance reasons
-   *     For unsorted list the behavior may be undefined but normally the {@link
-   *     TreeNode#updated(TreeUpdates)} call would fail in this case
+   * @param nodes the list of [[target generalized index], [new node value]] pairs
+   *     <p><b>NOTE: the list should conform to the following prerequisites</b>:
+   *     <ul>
+   *       <li>the list should be sorted by target index
+   *       <li>the generalized indexes should be on the same tree level. I.e. the highest order bit
+   *           should be the same for all indexes
+   *     </ul>
+   *     Prerequisites are not checked for performance reasons. For an invalid list the behavior may
+   *     be undefined but normally the {@link TreeNode#updated(TreeUpdates)} call would fail in this
+   *     case
    */
   public TreeUpdates(List<Pair<Long, TreeNode>> nodes) {
     this(
