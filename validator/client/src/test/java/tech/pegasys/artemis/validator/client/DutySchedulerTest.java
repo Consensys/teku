@@ -121,7 +121,7 @@ class DutySchedulerTest {
     final UnsignedLong blockProposerSlot = UnsignedLong.valueOf(5);
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
-            VALIDATOR1_KEY, 5, 3, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
+            VALIDATOR1_KEY, 5, 3, 6, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
     when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validator1Duties))));
 
@@ -142,7 +142,7 @@ class DutySchedulerTest {
     final UnsignedLong blockProposerSlot = UnsignedLong.valueOf(5);
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
-            VALIDATOR1_KEY, 5, 3, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
+            VALIDATOR1_KEY, 5, 3, 6, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
     when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validator1Duties))));
 
@@ -168,14 +168,26 @@ class DutySchedulerTest {
     final UnsignedLong attestationSlot = UnsignedLong.valueOf(5);
     final int validator1Index = 5;
     final int validator1Committee = 3;
+    final int validator1CommitteePosition = 9;
     final int validator2Index = 6;
     final int validator2Committee = 4;
+    final int validator2CommitteePosition = 8;
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
-            VALIDATOR1_KEY, validator1Index, validator1Committee, emptyList(), attestationSlot);
+            VALIDATOR1_KEY,
+            validator1Index,
+            validator1Committee,
+            validator1CommitteePosition,
+            emptyList(),
+            attestationSlot);
     final ValidatorDuties validator2Duties =
         ValidatorDuties.withDuties(
-            VALIDATOR2_KEY, validator2Index, validator2Committee, emptyList(), attestationSlot);
+            VALIDATOR2_KEY,
+            validator2Index,
+            validator2Committee,
+            validator2CommitteePosition,
+            emptyList(),
+            attestationSlot);
     when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));

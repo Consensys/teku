@@ -22,8 +22,9 @@ public class ValidatorAnticorruptionLayer {
   public static void initAnticorruptionLayer(final ServiceConfig config) {
     final ValidatorTimingChannel validatorTimingChannel =
         config.getEventChannels().getPublisher(ValidatorTimingChannel.class);
-    final EventBusAdapter eventBusAdapter = new EventBusAdapter(validatorTimingChannel);
-    config.getEventBus().register(eventBusAdapter);
-    config.getEventChannels().subscribe(SlotEventsChannel.class, eventBusAdapter);
+    final BeaconChainEventAdapter beaconChainEventAdapter =
+        new BeaconChainEventAdapter(validatorTimingChannel);
+    config.getEventBus().register(beaconChainEventAdapter);
+    config.getEventChannels().subscribe(SlotEventsChannel.class, beaconChainEventAdapter);
   }
 }

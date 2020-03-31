@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import static tech.pegasys.artemis.util.config.Constants.FORK_REFRESH_TIME_SECONDS;
+import static tech.pegasys.artemis.util.config.Constants.FORK_RETRY_DELAY_SECONDS;
+
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -27,20 +30,13 @@ public class ForkProvider {
 
   private AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
-  private final int retryDelayInSeconds;
-  private final int refreshDelayInSeconds;
 
   private volatile Optional<Fork> currentFork = Optional.empty();
 
   public ForkProvider(
-      final AsyncRunner asyncRunner,
-      final ValidatorApiChannel validatorApiChannel,
-      final int retryDelayInSeconds,
-      final int refreshDelayInSeconds) {
+      final AsyncRunner asyncRunner, final ValidatorApiChannel validatorApiChannel) {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
-    this.retryDelayInSeconds = retryDelayInSeconds;
-    this.refreshDelayInSeconds = refreshDelayInSeconds;
   }
 
   public SafeFuture<Fork> getFork() {
@@ -53,7 +49,7 @@ public class ForkProvider {
             error -> {
               LOG.error("Failed to retrieve current fork. Retrying after delay", error);
               return asyncRunner.runAfterDelay(
-                  this::getFork, retryDelayInSeconds, TimeUnit.SECONDS);
+                  this::getFork, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
             });
   }
 
@@ -65,13 +61,13 @@ public class ForkProvider {
               if (maybeFork.isEmpty()) {
                 LOG.trace("Fork not available, retrying");
                 return asyncRunner.runAfterDelay(
-                    this::requestFork, retryDelayInSeconds, TimeUnit.SECONDS);
+                    this::requestFork, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
               }
               final Fork fork = maybeFork.orElseThrow();
               currentFork = Optional.of(fork);
               // Periodically refresh the current fork.
               asyncRunner
-                  .runAfterDelay(this::loadFork, refreshDelayInSeconds, TimeUnit.SECONDS)
+                  .runAfterDelay(this::loadFork, FORK_REFRESH_TIME_SECONDS, TimeUnit.SECONDS)
                   .reportExceptions();
               return SafeFuture.completedFuture(fork);
             });

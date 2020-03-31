@@ -28,15 +28,13 @@ import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.artemis.validator.client.loader.ValidatorLoader;
 
 public class ValidatorClientService extends Service {
-  public static final int FORK_RETRY_DELAY_SECONDS = 10;
-  public static final int FORK_REFRESH_TIME_SECONDS = 120;
   private final EventChannels eventChannels;
-  private final DutyScheduler validatorClient;
+  private final DutyScheduler dutyScheduler;
 
   private ValidatorClientService(
-      final EventChannels eventChannels, final DutyScheduler validatorClient) {
+      final EventChannels eventChannels, final DutyScheduler dutyScheduler) {
     this.eventChannels = eventChannels;
-    this.validatorClient = validatorClient;
+    this.dutyScheduler = dutyScheduler;
   }
 
   public static ValidatorClientService create(final ServiceConfig config) {
@@ -44,17 +42,13 @@ public class ValidatorClientService extends Service {
     final ValidatorApiChannel validatorApiChannel =
         eventChannels.getPublisher(ValidatorApiChannel.class);
     final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
-    final ForkProvider forkProvider =
-        new ForkProvider(
-            asyncRunner, validatorApiChannel, FORK_RETRY_DELAY_SECONDS, FORK_REFRESH_TIME_SECONDS);
+    final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
     final Map<BLSPublicKey, Validator> validators =
         ValidatorLoader.initializeValidators(config.getConfig());
+    final ValidatorDutyFactory validatorDutyFactory =
+        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
     final DutyScheduler validatorClient =
-        new DutyScheduler(
-            DelayedExecutorAsyncRunner.create(),
-            validatorApiChannel,
-            new ValidatorDutyFactory(forkProvider, validatorApiChannel),
-            validators);
+        new DutyScheduler(asyncRunner, validatorApiChannel, validatorDutyFactory, validators);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 
@@ -63,7 +57,7 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    eventChannels.subscribe(ValidatorTimingChannel.class, validatorClient);
+    eventChannels.subscribe(ValidatorTimingChannel.class, dutyScheduler);
     return SafeFuture.COMPLETE;
   }
 

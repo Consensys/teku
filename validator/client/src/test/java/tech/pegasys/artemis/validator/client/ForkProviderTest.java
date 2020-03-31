@@ -37,8 +37,7 @@ class ForkProviderTest {
 
   private final Fork fork = dataStructureUtil.randomFork();
 
-  private final ForkProvider forkProvider =
-      new ForkProvider(asyncRunner, validatorApiChannel, Integer.MAX_VALUE, Integer.MAX_VALUE);
+  private final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
 
   @Test
   public void shouldRequestForkWhenNotPreviouslyLoaded() {

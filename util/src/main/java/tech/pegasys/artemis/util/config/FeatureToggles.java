@@ -11,27 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
+package tech.pegasys.artemis.util.config;
 
-public enum LoggingDestination {
-  BOTH("both"),
-  CONSOLE("console"),
-  DEFAULT_BOTH("default"),
-  FILE("file");
+/**
+ * Defines feature toggles to enable or disable new functionality which may not be fully ready yet.
+ * Allows larger pieces of work to be delivered in smaller PRs without breaking functionality while
+ * they are under development.
+ */
+public class FeatureToggles {
 
-  private final String key;
-
-  private LoggingDestination(final String key) {
-    this.key = key;
-  }
-
-  public static LoggingDestination get(final String destination) {
-    for (final LoggingDestination candidate : LoggingDestination.values()) {
-      if (candidate.key.equals(destination)) {
-        return candidate;
-      }
-    }
-
-    return DEFAULT_BOTH;
-  }
+  /**
+   * Controls whether the ValidatorClientService is used to generate blocks and attestations or if
+   * ValidatorCoordinator performs those duties.
+   */
+  public static final boolean USE_VALIDATOR_CLIENT_SERVICE = false;
 }

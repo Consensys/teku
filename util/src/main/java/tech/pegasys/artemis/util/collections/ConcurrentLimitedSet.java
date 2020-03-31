@@ -16,10 +16,10 @@ package tech.pegasys.artemis.util.collections;
 import java.util.Collections;
 import java.util.Set;
 
-/** Helper that creates a set with a maximum capacity. */
-public final class LimitedSet {
+/** Helper that creates a thread-safe set with a maximum capacity. */
+public final class ConcurrentLimitedSet {
 
-  private LimitedSet() {}
+  private ConcurrentLimitedSet() {}
 
   /**
    * Creates a limited set with a default initial capacity.
@@ -27,10 +27,10 @@ public final class LimitedSet {
    * @param maxSize The maximum number of elements to keep in the set.
    * @param mode A mode that determines which element is evicted when the set exceeds its max size.
    * @param <T> The type of object in the set.
-   * @return A set that will evict elements when the max size is exceeded.
+   * @return A thread-safe set that will evict elements when the max size is exceeded.
    */
   public static <T> Set<T> create(final int maxSize, final LimitStrategy mode) {
-    return create(16, maxSize, mode);
+    return Collections.synchronizedSet(LimitedSet.create(maxSize, mode));
   }
 
   /**
@@ -38,10 +38,10 @@ public final class LimitedSet {
    * @param maxSize The maximum number of elements to keep in the set.
    * @param mode A mode that determines which element is evicted when the set exceeds its max size.
    * @param <T> The type of object held in the set.
-   * @return A set that will evict elements when the max size is exceeded.
+   * @return A thread-safe set that will evict elements when the max size is exceeded.
    */
   public static <T> Set<T> create(
       final int initialCapacity, final int maxSize, final LimitStrategy mode) {
-    return Collections.newSetFromMap(LimitedMap.create(initialCapacity, maxSize, mode));
+    return Collections.synchronizedSet(LimitedSet.create(initialCapacity, maxSize, mode));
   }
 }

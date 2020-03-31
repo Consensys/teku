@@ -11,25 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.artemis.validator.client.duties;
 
-import java.util.Optional;
-import tech.pegasys.artemis.storage.Store;
-
-public class GetStoreResponse {
-  private final long requestId;
-  private final Optional<Store> store;
-
-  public GetStoreResponse(final long requestId, final Optional<Store> store) {
-    this.requestId = requestId;
-    this.store = store;
-  }
-
-  public Optional<Store> getStore() {
-    return store;
-  }
-
-  public long getRequestId() {
-    return requestId;
-  }
+public interface Duty {
+  void performDuty();
 }
