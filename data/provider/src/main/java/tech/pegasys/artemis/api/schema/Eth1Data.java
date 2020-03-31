@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -25,5 +27,15 @@ public class Eth1Data {
     deposit_count = eth1Data.getDeposit_count();
     deposit_root = eth1Data.getDeposit_root();
     block_hash = eth1Data.getBlock_hash();
+  }
+
+  @JsonCreator
+  public Eth1Data(
+      @JsonProperty("deposit_root") final Bytes32 deposit_root,
+      @JsonProperty("deposit_count") final UnsignedLong deposit_count,
+      @JsonProperty("block_hash") final Bytes32 block_hash) {
+    this.deposit_root = deposit_root;
+    this.deposit_count = deposit_count;
+    this.block_hash = block_hash;
   }
 }
