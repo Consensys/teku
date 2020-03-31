@@ -33,25 +33,52 @@ public class EventLogger {
   }
 
   public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
-    info("******* Eth2Genesis Event*******", Color.WHITE);
-    log.info("Initial state root is {}", hashTreeRoot.toHexString());
-    log.info("Genesis block root is {}", genesisBlockRoot.toHexString());
+    final String genesisEventLog =
+        String.format(
+            "Genesis Event *** Initial state root: %s, Genesis block root: %s",
+            hashTreeRoot.toHexString(), genesisBlockRoot.toHexString());
+    info(genesisEventLog, Color.CYAN);
   }
 
-  public void epochEvent() {
-    info("******* Epoch Event *******", Color.PURPLE);
+  public void epochEvent(
+      final UnsignedLong currentEpoch,
+      final UnsignedLong justifiedEpoch,
+      final UnsignedLong finalizedEpoch,
+      final Bytes32 finalizedRoot) {
+    final String epochEventLog =
+        String.format(
+            "Epoch Event *** Current epoch: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s",
+            currentEpoch.toString(),
+            justifiedEpoch.toString(),
+            finalizedEpoch.toString(),
+            shortenHash(finalizedRoot.toHexString()));
+    info(epochEventLog, Color.YELLOW);
+  }
+
+  public void syncEvent(
+      final UnsignedLong nodeSlot, final UnsignedLong bestSlot, final int numPeers) {
+    final String syncEventLog =
+        String.format(
+            "Sync Event *** Current slot: %s, Head block: %s, Connected peers: %d",
+            nodeSlot, bestSlot.toString(), numPeers);
+    info(syncEventLog, Color.WHITE);
   }
 
   public void slotEvent(
       final UnsignedLong nodeSlot,
       final UnsignedLong bestSlot,
       final UnsignedLong justifiedEpoch,
-      final UnsignedLong finalizedEpoch) {
-    info("******* Slot Event *******", Color.WHITE);
-    log.info("Node slot:                             {}", nodeSlot);
-    log.info("Head block slot:                       {}", bestSlot);
-    log.info("Justified epoch:                       {}", justifiedEpoch);
-    log.info("Finalized epoch:                       {}", finalizedEpoch);
+      final UnsignedLong finalizedEpoch,
+      final Bytes32 finalizedRoot) {
+    final String slotEventLog =
+        String.format(
+            "Slot Event *** Current slot: %s, Head block: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s",
+            nodeSlot.toString(),
+            bestSlot.toString(),
+            justifiedEpoch.toString(),
+            finalizedEpoch.toString(),
+            shortenHash(finalizedRoot.toHexString()));
+    info(slotEventLog, Color.WHITE);
   }
 
   public void unprocessedAttestation(final Bytes32 beaconBlockRoot) {
@@ -67,7 +94,12 @@ public class EventLogger {
         "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
   }
 
-  private void info(String message, Color color) {
+  private void info(final String message, final Color color) {
     log.info(print(message, color));
+  }
+
+  private String shortenHash(final String hash) {
+    return String.format(
+        "%s..%s", hash.substring(0, 6), hash.substring(hash.length() - 4, hash.length()));
   }
 }
