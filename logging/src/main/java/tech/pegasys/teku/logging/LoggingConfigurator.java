@@ -85,14 +85,11 @@ public class LoggingConfigurator {
     }
 
     if (isProgrammaticLoggingRedundant()) {
-      StatusLogger.getLogger()
-          .info("Custom logging configuration applied from: {}", getCustomLog4jConfigFile());
+      displayCustomLog4jConfigUsed();
       return;
     }
 
-    StatusLogger.getLogger().info("Configuring logging for destination: {}", DESTINATION);
-    StatusLogger.getLogger().info("Logging includes events: {}", INCLUDE_EVENTS);
-    StatusLogger.getLogger().info("Logging includes color: {}", COLOR);
+    displayProgrammaticLoggingConfiguration();
 
     Appender consoleAppender;
     Appender fileAppender;
@@ -115,11 +112,7 @@ public class LoggingConfigurator {
         addAppenderToRootLogger(configuration, fileAppender);
         break;
       default:
-        StatusLogger.getLogger()
-            .warn(
-                "Unknown logging destination: {}, applying default: {}",
-                DESTINATION,
-                LoggingDestination.BOTH);
+        displayUnknownDestinationConfigured();
         // fall through
       case DEFAULT_BOTH:
         // fall through
@@ -134,6 +127,42 @@ public class LoggingConfigurator {
     }
 
     configuration.getLoggerContext().updateLoggers();
+  }
+
+  private static void displayProgrammaticLoggingConfiguration() {
+    switch (DESTINATION) {
+      case CONSOLE:
+        StatusLogger.getLogger().info("Configuring logging for destination: console");
+        break;
+      case FILE:
+        StatusLogger.getLogger().info("Configuring logging for destination: file");
+        StatusLogger.getLogger().info("Logging file location: {}", FILE);
+        break;
+      default:
+        // fall through
+      case DEFAULT_BOTH:
+        // fall through
+      case BOTH:
+        StatusLogger.getLogger().info("Configuring logging for destination: console and file");
+        StatusLogger.getLogger().info("Logging file location: {}", FILE);
+        break;
+    }
+
+    StatusLogger.getLogger().info("Logging includes events: {}", INCLUDE_EVENTS);
+    StatusLogger.getLogger().info("Logging includes color: {}", COLOR);
+  }
+
+  private static void displayCustomLog4jConfigUsed() {
+    StatusLogger.getLogger()
+        .info("Custom logging configuration applied from: {}", getCustomLog4jConfigFile());
+  }
+
+  private static void displayUnknownDestinationConfigured() {
+    StatusLogger.getLogger()
+        .warn(
+            "Unknown logging destination: {}, applying default: {}",
+            DESTINATION,
+            LoggingDestination.BOTH);
   }
 
   private static boolean isUninitialized() {
