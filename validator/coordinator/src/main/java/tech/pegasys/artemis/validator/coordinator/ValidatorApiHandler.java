@@ -145,7 +145,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     + (committeeCount - 1));
           }
           final AttestationData attestationData =
-              AttestationUtil.getGenericAttestationData(state, block);
+              AttestationUtil.getGenericAttestationData(slot, state, block);
           final List<Integer> committee =
               CommitteeUtil.get_beacon_committee(state, slot, UnsignedLong.valueOf(committeeIndex));
 
@@ -203,6 +203,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         key,
         validatorIndex,
         Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),
+        committeeAssignment.getCommittee().indexOf(validatorIndex),
         proposerSlots,
         committeeAssignment.getSlot());
   }

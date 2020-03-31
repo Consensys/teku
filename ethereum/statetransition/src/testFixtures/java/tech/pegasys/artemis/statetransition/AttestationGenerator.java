@@ -200,7 +200,7 @@ public class AttestationGenerator {
     Committee committee = new Committee(committeeIndex, committeeIndices);
     int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
     AttestationData genericAttestationData =
-        AttestationUtil.getGenericAttestationData(postState, block);
+        AttestationUtil.getGenericAttestationData(postState.getSlot(), postState, block);
 
     final BLSKeyPair validatorKeyPair =
         withValidSignature ? validatorKeys.get(validatorIndex) : randomKeyPair;
@@ -234,7 +234,7 @@ public class AttestationGenerator {
       Committee committee = new Committee(committeeIndex, committeeIndices);
       int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
       AttestationData genericAttestationData =
-          AttestationUtil.getGenericAttestationData(state, block);
+          AttestationUtil.getGenericAttestationData(state.getSlot(), state, block);
       final BLSKeyPair validatorKeyPair = validatorKeys.get(validatorIndex);
       attestations.add(
           createAttestation(
