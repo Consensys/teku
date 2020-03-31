@@ -20,6 +20,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
@@ -30,6 +31,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
@@ -82,13 +84,17 @@ public class SyncingNodeManager {
     chainUtil.initializeStorage();
 
     BlockImporter blockImporter = new BlockImporter(storageClient, eventBus);
+    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
     BlockPropagationManager blockPropagationManager =
-        BlockPropagationManager.create(eventBus, eth2Network, storageClient, blockImporter);
+        BlockPropagationManager.create(
+            eventBus, pendingBlocks, eth2Network, storageClient, blockImporter);
     SyncManager syncManager = SyncManager.create(eth2Network, storageClient, blockImporter);
     SyncService syncService =
         new DefaultSyncService(blockPropagationManager, syncManager, storageClient);
 
-    eventChannels.subscribe(SlotEventsChannel.class, blockPropagationManager);
+    eventChannels
+        .subscribe(SlotEventsChannel.class, blockPropagationManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
 
     syncService.start().join();
 

@@ -67,10 +67,10 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
 
   public static BlockPropagationManager create(
       final EventBus eventBus,
+      final PendingPool<SignedBeaconBlock> pendingBlocks,
       final P2PNetwork<Eth2Peer> eth2Network,
       final RecentChainData storageClient,
       final BlockImporter blockImporter) {
-    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         new FutureItems<>(SignedBeaconBlock::getSlot);
     final FetchRecentBlocksService recentBlockFetcher =

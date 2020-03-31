@@ -39,7 +39,6 @@ import tech.pegasys.artemis.datastructures.util.MerkleTree;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.storage.RecentChainData;
-import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -113,8 +112,7 @@ public class DepositProviderTest {
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
 
-    depositProvider.onFinalizedCheckpoint(
-        new FinalizedCheckpointEvent(new Checkpoint(UnsignedLong.ONE, finalizedBlockRoot)));
+    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UnsignedLong.ONE, finalizedBlockRoot));
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
   }

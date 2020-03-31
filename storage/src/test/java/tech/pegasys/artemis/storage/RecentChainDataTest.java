@@ -30,7 +30,6 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
-import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.config.Constants;
 
 class RecentChainDataTest {
@@ -252,10 +251,8 @@ class RecentChainDataTest {
 
     final Transaction tx = preGenesisStorageClient.startStoreTransaction();
     tx.setFinalizedCheckpoint(newCheckpoint);
-    verify(eventBus, never()).post(new FinalizedCheckpointEvent(newCheckpoint));
 
     tx.commit().reportExceptions();
-    verify(eventBus).post(new FinalizedCheckpointEvent(newCheckpoint));
 
     // Check that store was updated
     final Checkpoint currentCheckpoint =
@@ -272,14 +269,10 @@ class RecentChainDataTest {
     final Transaction tx = preGenesisStorageClient.startStoreTransaction();
     tx.setTime(UnsignedLong.valueOf(11L));
     tx.commit().reportExceptions();
-    verify(eventBus, never()).post(argThat(this::isFinalizedCheckpointEvent));
+    verify(eventBus, never()).post(argThat((obj) -> obj instanceof Checkpoint));
 
     final Checkpoint currentCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
-  }
-
-  private boolean isFinalizedCheckpointEvent(final Object obj) {
-    return obj instanceof FinalizedCheckpointEvent;
   }
 }

@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
@@ -61,12 +62,14 @@ import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.StorageBackedRecentChainData;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
+import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.BlockPropagationManager;
 import tech.pegasys.artemis.sync.DefaultSyncService;
+import tech.pegasys.artemis.sync.DelayableAttestation;
+import tech.pegasys.artemis.sync.PendingPool;
 import tech.pegasys.artemis.sync.SyncManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
@@ -158,6 +161,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return StorageBackedRecentChainData.create(
             DelayedExecutorAsyncRunner.create(),
             eventChannels.getPublisher(StorageUpdateChannel.class),
+            eventChannels.getPublisher(FinalizedCheckpointChannel.class),
             eventBus)
         .thenAccept(
             client -> {
@@ -181,7 +185,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initDepositProvider();
     initEth1DataCache();
     initValidatorCoordinator();
-    initPreGenesisDepositHandler();
+    initGenesisHandler();
     initStateProcessor();
     initAttestationPropagationManager();
     initP2PNetwork();
@@ -218,7 +222,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     depositProvider = new DepositProvider(recentChainData);
     eventChannels
         .subscribe(Eth1EventsChannel.class, depositProvider)
-        .subscribe(FinalizedCheckpointEventChannel.class, depositProvider);
+        .subscribe(FinalizedCheckpointChannel.class, depositProvider);
   }
 
   private void initEth1DataCache() {
@@ -262,7 +266,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.stateProcessor = new StateProcessor(eventBus, recentChainData);
   }
 
-  private void initPreGenesisDepositHandler() {
+  private void initGenesisHandler() {
     if (setupInitialState) {
       return;
     }
@@ -271,8 +275,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initAttestationPropagationManager() {
-    attestationManager = AttestationManager.create(eventBus, recentChainData);
-    eventChannels.subscribe(SlotEventsChannel.class, attestationManager);
+    final PendingPool<DelayableAttestation> pendingAttestations =
+        PendingPool.createForAttestations(eventBus);
+    attestationManager = AttestationManager.create(eventBus, pendingAttestations, recentChainData);
+    eventChannels
+        .subscribe(SlotEventsChannel.class, attestationManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
   }
 
   public void initP2PNetwork() {
@@ -355,11 +363,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       syncService = new NoopSyncService();
     } else {
       BlockImporter blockImporter = new BlockImporter(recentChainData, eventBus);
+      final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
       BlockPropagationManager blockPropagationManager =
-          BlockPropagationManager.create(eventBus, p2pNetwork, recentChainData, blockImporter);
+          BlockPropagationManager.create(
+              eventBus, pendingBlocks, p2pNetwork, recentChainData, blockImporter);
       SyncManager syncManager = SyncManager.create(p2pNetwork, recentChainData, blockImporter);
       syncService = new DefaultSyncService(blockPropagationManager, syncManager, recentChainData);
-      eventChannels.subscribe(SlotEventsChannel.class, blockPropagationManager);
+      eventChannels
+          .subscribe(SlotEventsChannel.class, blockPropagationManager)
+          .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     }
   }
 
