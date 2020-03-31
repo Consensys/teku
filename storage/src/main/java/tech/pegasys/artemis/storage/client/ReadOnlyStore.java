@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.clientside;
+package tech.pegasys.artemis.storage.client;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Set;

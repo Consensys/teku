@@ -27,7 +27,7 @@ import tech.pegasys.artemis.datastructures.util.GenesisGenerator;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.artemis.storage.clientside.RecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class GenesisHandler implements Eth1EventsChannel {
 

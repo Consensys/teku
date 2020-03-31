@@ -41,7 +41,7 @@ import tech.pegasys.artemis.cli.subcommand.TransitionCommand;
 import tech.pegasys.artemis.cli.util.CascadingDefaultProvider;
 import tech.pegasys.artemis.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.artemis.cli.util.TomlConfigFileDefaultProvider;
-import tech.pegasys.artemis.storage.serverside.DatabaseStorageException;
+import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;

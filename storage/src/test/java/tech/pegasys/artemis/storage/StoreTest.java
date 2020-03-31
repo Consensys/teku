@@ -29,9 +29,9 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.storage.clientside.Store;
-import tech.pegasys.artemis.storage.clientside.Store.Transaction;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.client.Store;
+import tech.pegasys.artemis.storage.client.Store.Transaction;
 import tech.pegasys.artemis.storage.events.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 

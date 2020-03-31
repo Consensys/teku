@@ -36,7 +36,7 @@ import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.clientside.ChainDataUnavailableException;
+import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetNewBlockTest {
