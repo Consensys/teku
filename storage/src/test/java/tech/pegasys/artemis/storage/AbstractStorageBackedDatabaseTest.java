@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.junit.TempDirectory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -49,17 +49,17 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   }
 
   @Test
-  public void shouldPersistOnDisk_pruneMode(@TempDirectory final Path tempDir) throws Exception {
+  public void shouldPersistOnDisk_pruneMode(@TempDir final Path tempDir) throws Exception {
     testShouldPersistOnDisk(tempDir, StateStorageMode.PRUNE);
   }
 
   @Test
-  public void shouldPersistOnDisk_archiveMode(@TempDirectory final Path tempDir) throws Exception {
+  public void shouldPersistOnDisk_archiveMode(@TempDir final Path tempDir) throws Exception {
     testShouldPersistOnDisk(tempDir, StateStorageMode.ARCHIVE);
   }
 
   private void testShouldPersistOnDisk(
-      @TempDirectory final Path tempDir, final StateStorageMode storageMode) throws Exception {
+      @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
     try {
       database = setupDatabase(tempDir.toFile(), storageMode);
       database.storeGenesis(store);

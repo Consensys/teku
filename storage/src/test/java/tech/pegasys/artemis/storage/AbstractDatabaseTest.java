@@ -33,11 +33,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.junit.TempDirectory;
-import org.apache.tuweni.junit.TempDirectoryExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -49,7 +47,6 @@ import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
-@ExtendWith(TempDirectoryExtension.class)
 abstract class AbstractDatabaseTest {
   protected static final BeaconState GENESIS_STATE =
       new DataStructureUtil().randomBeaconState(UnsignedLong.ZERO);
@@ -84,7 +81,7 @@ abstract class AbstractDatabaseTest {
   }
 
   @BeforeEach
-  public void setup(@TempDirectory final Path tempDir) {
+  public void setup(@TempDir final Path tempDir) {
     setupDatabase(StateStorageMode.ARCHIVE);
 
     final File databaseFile = new File(tempDir.toString(), "teku.db");
