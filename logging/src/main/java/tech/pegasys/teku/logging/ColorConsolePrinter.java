@@ -20,11 +20,14 @@ public class ColorConsolePrinter {
   private static final String resetCode = "\u001B[0m";
 
   public enum Color {
+    BLACK,
     RED,
+    GREEN,
+    YELLOW,
     BLUE,
     PURPLE,
-    WHITE,
-    GREEN
+    CYAN,
+    WHITE
   }
 
   public static String print(final String message, final Color color) {
@@ -33,16 +36,22 @@ public class ColorConsolePrinter {
 
   private static String colorCode(final Color color) {
     switch (color) {
+      case BLACK:
+        return "\u001b[30m";
       case RED:
-        return "\u001B[31m";
-      case BLUE:
-        return "\u001b[34;1m";
-      case PURPLE:
-        return "\u001B[35m";
-      case WHITE:
-        return "\033[1;30m";
+        return "\u001b[31m";
       case GREEN:
-        return "\u001B[32m";
+        return "\u001b[32m";
+      case YELLOW:
+        return "\u001b[33m";
+      case BLUE:
+        return "\u001b[34m";
+      case PURPLE:
+        return "\u001b[35m";
+      case CYAN:
+        return "\u001b[36m";
+      case WHITE:
+        return "\u001b[37m";
       default:
         return "";
     }
