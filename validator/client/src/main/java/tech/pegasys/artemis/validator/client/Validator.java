@@ -11,25 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.artemis.validator.client;
 
-import java.util.Optional;
-import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 
-public class GetStoreResponse {
-  private final long requestId;
-  private final Optional<Store> store;
+public class Validator {
+  private final BLSPublicKey publicKey;
+  private final Signer signer;
 
-  public GetStoreResponse(final long requestId, final Optional<Store> store) {
-    this.requestId = requestId;
-    this.store = store;
+  public Validator(final BLSPublicKey publicKey, final Signer signer) {
+    this.publicKey = publicKey;
+    this.signer = signer;
   }
 
-  public Optional<Store> getStore() {
-    return store;
+  public BLSPublicKey getPublicKey() {
+    return publicKey;
   }
 
-  public long getRequestId() {
-    return requestId;
+  public Signer getSigner() {
+    return signer;
   }
 }

@@ -17,13 +17,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 
 public class BitvectorSerializer extends JsonSerializer<Bitvector> {
   @Override
   public void serialize(Bitvector value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeString(Bytes.wrap(value.getByteArray()).toHexString().toLowerCase());
+    gen.writeString(value.serialize().toHexString().toLowerCase());
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.artemis.validator.client.signer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,6 +50,11 @@ public class ExternalMessageSignerService implements MessageSignerService {
   @Override
   public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
     return sign(signingRoot, "/signer/attestation");
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
+    return sign(signingRoot, "/signer/aggregation_slot");
   }
 
   @Override

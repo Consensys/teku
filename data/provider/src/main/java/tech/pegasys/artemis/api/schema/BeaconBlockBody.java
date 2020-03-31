@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,6 +28,26 @@ public class BeaconBlockBody {
   public final List<Attestation> attestations;
   public final List<Deposit> deposits;
   public final List<SignedVoluntaryExit> voluntary_exits;
+
+  @JsonCreator
+  public BeaconBlockBody(
+      @JsonProperty("randao_reveal") final BLSSignature randao_reveal,
+      @JsonProperty("eth1_data") final Eth1Data eth1_data,
+      @JsonProperty("graffiti") final Bytes32 graffiti,
+      @JsonProperty("proposer_slashings") final List<ProposerSlashing> proposer_slashings,
+      @JsonProperty("attester_slashings") final List<AttesterSlashing> attester_slashings,
+      @JsonProperty("attestations") final List<Attestation> attestations,
+      @JsonProperty("deposits") final List<Deposit> deposits,
+      @JsonProperty("voluntary_exits") final List<SignedVoluntaryExit> voluntary_exits) {
+    this.randao_reveal = randao_reveal;
+    this.eth1_data = eth1_data;
+    this.graffiti = graffiti;
+    this.proposer_slashings = proposer_slashings;
+    this.attester_slashings = attester_slashings;
+    this.attestations = attestations;
+    this.deposits = deposits;
+    this.voluntary_exits = voluntary_exits;
+  }
 
   public BeaconBlockBody(tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody body) {
     this.randao_reveal = new BLSSignature(body.getRandao_reveal().toBytes());

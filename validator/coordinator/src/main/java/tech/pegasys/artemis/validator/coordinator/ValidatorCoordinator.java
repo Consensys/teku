@@ -14,14 +14,11 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.validator.client.loader.ValidatorLoader.initializeValidators;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
-import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -39,7 +36,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -50,7 +46,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
@@ -71,6 +66,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.artemis.validator.client.signer.Signer;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
 public class ValidatorCoordinator extends Service implements SlotEventsChannel {
@@ -105,7 +101,12 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     this.recentChainData = recentChainData;
     this.stateTransition = new StateTransition();
     this.blockCreator = new BlockProposalUtil(stateTransition);
-    this.validators = initializeValidators(config);
+    this.validators =
+        initializeValidators(config).values().stream()
+            .collect(
+                Collectors.toMap(
+                    tech.pegasys.artemis.validator.client.Validator::getPublicKey,
+                    validator -> new ValidatorInfo(validator.getSigner())));
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.eth1DataCache = eth1DataCache;
@@ -280,11 +281,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   private SafeFuture<BLSSignature> signAttestation(
       final BeaconState state, final BLSPublicKey attester, final AttestationData attestationData) {
-    Bytes domain =
-        get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
-    Bytes signing_root = compute_signing_root(attestationData, domain);
-
-    return getSigner(attester).signAttestation(signing_root);
+    return getSignerService(attester).signAttestationData(attestationData, state.getFork());
   }
 
   private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {
@@ -300,9 +297,9 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
         return;
       }
 
-      final MessageSignerService signer = getSigner(proposer);
+      final Signer signer = getSignerService(proposer);
       final BLSSignature randaoReveal =
-          blockCreator.get_epoch_signature(newState, compute_epoch_at_slot(newSlot), signer);
+          signer.createRandaoReveal(compute_epoch_at_slot(newSlot), newState.getFork()).join();
       final BeaconBlock unsignedBlock =
           validatorApiChannel
               .createUnsignedBlock(newSlot, randaoReveal)
@@ -312,8 +309,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
                   () -> new NoSuchElementException("No block created for slot " + newSlot));
 
       final BLSSignature blockSignature =
-          blockCreator.get_block_signature(newState, unsignedBlock, signer);
-
+          signer.signBlock(unsignedBlock, newState.getFork()).join();
       final SignedBeaconBlock newBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
 
       validatorApiChannel.sendSignedBlock(newBlock);
@@ -323,8 +319,8 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     }
   }
 
-  private MessageSignerService getSigner(BLSPublicKey signer) {
-    return validators.get(signer).getSignerService();
+  private Signer getSignerService(BLSPublicKey signer) {
+    return validators.get(signer).getSigner();
   }
 
   @VisibleForTesting
