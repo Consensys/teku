@@ -17,8 +17,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import tech.pegasys.artemis.util.collections.ConcurrentLimitedMap;
 import tech.pegasys.artemis.util.collections.LimitStrategy;
-import tech.pegasys.artemis.util.collections.LimitedMap;
 
 /**
  * Cache made around LRU-map with fixed size, removing eldest entries (by added) when the space is
@@ -43,7 +43,8 @@ public class LRUCache<K, V> implements Cache<K, V> {
 
   private LRUCache(int capacity, Map<K, V> initialCachedContent) {
     this.maxCapacity = capacity;
-    Map<K, V> cacheMap = LimitedMap.create(maxCapacity, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    Map<K, V> cacheMap =
+        ConcurrentLimitedMap.create(maxCapacity, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     // copy safely, initialCachedContent is always a SynchronizedMap instance
     synchronized (initialCachedContent) {
       cacheMap.putAll(initialCachedContent);

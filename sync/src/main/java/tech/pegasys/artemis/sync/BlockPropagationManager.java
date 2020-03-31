@@ -33,8 +33,8 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.artemis.util.collections.LimitStrategy;
-import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
 public class BlockPropagationManager extends Service implements SlotEventsChannel {
@@ -48,7 +48,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final FetchRecentBlocksService recentBlockFetcher;
   private final Set<Bytes32> invalidBlockRoots =
-      LimitedSet.create(500, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      ConcurrentLimitedSet.create(500, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
 
   BlockPropagationManager(
       final EventBus eventBus,

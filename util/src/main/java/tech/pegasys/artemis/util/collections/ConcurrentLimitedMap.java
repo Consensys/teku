@@ -13,12 +13,12 @@
 
 package tech.pegasys.artemis.util.collections;
 
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.Map;
 
-/** Helper that creates a map with a maximum capacity. */
-public final class LimitedMap {
-  private LimitedMap() {}
+/** Helper that creates a thread-safe map with a maximum capacity. */
+public final class ConcurrentLimitedMap {
+  private ConcurrentLimitedMap() {}
 
   /**
    * Creates a limited map with a default initial capacity.
@@ -27,10 +27,10 @@ public final class LimitedMap {
    * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
-   * @return A map that will evict elements when the max size is exceeded.
+   * @return A thread-safe map that will evict elements when the max size is exceeded.
    */
   public static <K, V> Map<K, V> create(final int maxSize, final LimitStrategy mode) {
-    return create(16, maxSize, mode);
+    return Collections.synchronizedMap(LimitedMap.create(maxSize, mode));
   }
 
   /**
@@ -39,16 +39,10 @@ public final class LimitedMap {
    * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
-   * @return A map that will evict elements when the max size is exceeded.
+   * @return A thread-safe map that will evict elements when the max size is exceeded.
    */
   public static <K, V> Map<K, V> create(
       final int initialCapacity, final int maxSize, final LimitStrategy mode) {
-    final boolean useAccessOrder = mode.equals(LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    return new LinkedHashMap<>(initialCapacity, 0.75f, useAccessOrder) {
-      @Override
-      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-        return size() > maxSize;
-      }
-    };
+    return Collections.synchronizedMap(LimitedMap.create(initialCapacity, maxSize, mode));
   }
 }
