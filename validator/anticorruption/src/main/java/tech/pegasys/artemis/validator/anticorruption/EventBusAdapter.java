@@ -26,7 +26,6 @@ import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 class EventBusAdapter implements SlotEventsChannel {
 
   private final ValidatorTimingChannel validatorTimingChannel;
-  private UnsignedLong epoch = null;
 
   public EventBusAdapter(final ValidatorTimingChannel validatorTimingChannel) {
     this.validatorTimingChannel = validatorTimingChannel;
