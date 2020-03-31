@@ -20,7 +20,7 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.ForkProvider;
 import tech.pegasys.artemis.validator.client.Validator;
 
-public class BlockProductionDuty {
+public class BlockProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
   private final Validator validator;
   private final UnsignedLong slot;
@@ -34,6 +34,7 @@ public class BlockProductionDuty {
     this.slot = slot;
   }
 
+  @Override
   public void performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
   }

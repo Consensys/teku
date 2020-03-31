@@ -32,6 +32,7 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 import tech.pegasys.artemis.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.artemis.validator.client.duties.BlockProductionDuty;
+import tech.pegasys.artemis.validator.client.duties.Duty;
 import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
 
 public class DutyScheduler implements ValidatorTimingChannel {
@@ -132,16 +133,17 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onBlockProductionDue(final UnsignedLong slot) {
-    final BlockProductionDuty duty = blockProposalDuties.remove(slot);
-    if (duty == null) {
-      return;
-    }
-    duty.performDuty();
+    performDutyForSlot(blockProposalDuties, slot);
   }
 
   @Override
   public void onAttestationCreationDue(final UnsignedLong slot) {
-    final AttestationProductionDuty duty = attestationProposalDuties.remove(slot);
+    performDutyForSlot(attestationProposalDuties, slot);
+  }
+
+  public void performDutyForSlot(
+      final Map<UnsignedLong, ? extends Duty> duties, final UnsignedLong slot) {
+    final Duty duty = duties.remove(slot);
     if (duty == null) {
       return;
     }

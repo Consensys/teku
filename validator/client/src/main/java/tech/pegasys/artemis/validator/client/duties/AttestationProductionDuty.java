@@ -20,7 +20,7 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.ForkProvider;
 import tech.pegasys.artemis.validator.client.Validator;
 
-public class AttestationProductionDuty {
+public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
   private final UnsignedLong slot;
 
@@ -34,6 +34,7 @@ public class AttestationProductionDuty {
   public synchronized void addValidator(
       final int attestationCommitteeIndex, final Validator validator, final int validatorIndex) {}
 
+  @Override
   public synchronized void performDuty() {
     LOG.trace("Creating attestations at slot {}", slot);
   }
