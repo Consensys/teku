@@ -23,5 +23,7 @@ public interface MessageSignerService {
 
   SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
 
+  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
+
   SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
 }

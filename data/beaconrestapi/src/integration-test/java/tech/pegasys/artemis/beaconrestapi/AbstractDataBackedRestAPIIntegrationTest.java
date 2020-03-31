@@ -28,9 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -48,19 +47,14 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest
             SafeFuture.completedFuture(
                 new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
     final EventBus eventBus = new EventBus();
-    chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
-    beaconChainUtil = BeaconChainUtil.create(16, chainStorageClient);
+    recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+    beaconChainUtil = BeaconChainUtil.create(16, recentChainData);
     beaconChainUtil.initializeStorage();
 
-    historicalChainData = new HistoricalChainData(eventBus);
-    combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
+    combinedChainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData);
     dataProvider =
         new DataProvider(
-            chainStorageClient,
-            combinedChainDataClient,
-            p2PNetwork,
-            syncService,
-            validatorApiChannel);
+            recentChainData, combinedChainDataClient, p2PNetwork, syncService, validatorApiChannel);
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();

@@ -33,9 +33,9 @@ import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
@@ -48,15 +48,14 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
+  protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
+  protected final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+  protected RecentChainData recentChainData = mock(RecentChainData.class);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
-
-  protected HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
-  protected ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
-      new CombinedChainDataClient(chainStorageClient, historicalChainData);
+      new CombinedChainDataClient(recentChainData, historicalChainData);
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
   protected OkHttpClient client;
@@ -65,11 +64,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   public void setup() {
     dataProvider =
         new DataProvider(
-            chainStorageClient,
-            combinedChainDataClient,
-            p2PNetwork,
-            syncService,
-            validatorApiChannel);
+            recentChainData, combinedChainDataClient, p2PNetwork, syncService, validatorApiChannel);
 
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();

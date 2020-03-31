@@ -13,32 +13,20 @@
 
 package tech.pegasys.artemis.storage;
 
-import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
-import tech.pegasys.artemis.storage.events.GetBlockByBlockRootRequest;
-import tech.pegasys.artemis.storage.events.GetBlockByBlockRootResponse;
-import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
-import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
-import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
-import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotResponse;
-import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootRequest;
-import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootResponse;
-import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
-import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
-import tech.pegasys.artemis.storage.events.GetStoreRequest;
-import tech.pegasys.artemis.storage.events.GetStoreResponse;
-import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
 import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-public class ChainStorageServer implements StorageUpdateChannel {
+public class ChainStorageServer implements StorageUpdateChannel, StorageQueryChannel {
   private final EventBus eventBus;
   private final VersionedDatabaseFactory databaseFactory;
 
@@ -57,9 +45,6 @@ public class ChainStorageServer implements StorageUpdateChannel {
   public void start() {
     this.database = databaseFactory.createDatabase();
     eventBus.register(this);
-
-    final Optional<Store> store = getStore();
-    eventBus.post(new StoreInitializedFromStorageEvent(store));
   }
 
   private synchronized Optional<Store> getStore() {
@@ -77,9 +62,13 @@ public class ChainStorageServer implements StorageUpdateChannel {
     }
   }
 
-  @Subscribe
-  public void onStoreRequest(final GetStoreRequest request) {
-    eventBus.post(new GetStoreResponse(request.getId(), getStore()));
+  @Override
+  public SafeFuture<Optional<Store>> onStoreRequest() {
+    if (database == null) {
+      return SafeFuture.failedFuture(new IllegalStateException("Database not initialized yet"));
+    }
+
+    return SafeFuture.completedFuture(getStore());
   }
 
   @Override
@@ -97,41 +86,34 @@ public class ChainStorageServer implements StorageUpdateChannel {
     database.storeGenesis(store);
   }
 
-  @Subscribe
-  @AllowConcurrentEvents
-  public void onGetBlockBySlotRequest(final GetFinalizedBlockAtSlotRequest request) {
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+    Optional<SignedBeaconBlock> block =
+        database.getFinalizedRootAtSlot(slot).flatMap(database::getSignedBlock);
+    return SafeFuture.completedFuture(block);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(
+      final UnsignedLong slot) {
     final Optional<SignedBeaconBlock> block =
-        database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getSignedBlock);
-    eventBus.post(new GetFinalizedBlockAtSlotResponse(request.getSlot(), block));
+        database.getLatestFinalizedRootAtSlot(slot).flatMap(database::getSignedBlock);
+    return SafeFuture.completedFuture(block);
   }
 
-  @Subscribe
-  @AllowConcurrentEvents
-  public void onGetStateBySlotRequest(final GetFinalizedStateAtSlotRequest request) {
-    final Optional<BeaconState> state =
-        database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getState);
-    eventBus.post(new GetFinalizedStateAtSlotResponse(request.getSlot(), state));
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(database.getSignedBlock(blockRoot));
   }
 
-  @Subscribe
-  @AllowConcurrentEvents
-  public void onGetStateByBlockRequest(final GetFinalizedStateByBlockRootRequest request) {
-    final Optional<BeaconState> state = database.getState(request.getBlockRoot());
-    eventBus.post(new GetFinalizedStateByBlockRootResponse(request.getBlockRoot(), state));
+  @Override
+  public SafeFuture<Optional<BeaconState>> getFinalizedStateAtSlot(final UnsignedLong slot) {
+    return SafeFuture.completedFuture(
+        database.getFinalizedRootAtSlot(slot).flatMap(database::getState));
   }
 
-  @Subscribe
-  @AllowConcurrentEvents
-  public void onGetLatestBlockBySlotRequest(final GetLatestFinalizedBlockAtSlotRequest request) {
-    final Optional<SignedBeaconBlock> block =
-        database.getLatestFinalizedRootAtSlot(request.getSlot()).flatMap(database::getSignedBlock);
-    eventBus.post(new GetLatestFinalizedBlockAtSlotResponse(request.getSlot(), block));
-  }
-
-  @Subscribe
-  @AllowConcurrentEvents
-  public void onGetBlockByBlockRootRequest(final GetBlockByBlockRootRequest request) {
-    final Optional<SignedBeaconBlock> block = database.getSignedBlock(request.getBlockRoot());
-    eventBus.post(new GetBlockByBlockRootResponse(request.getBlockRoot(), block));
+  @Override
+  public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(database.getState(blockRoot));
   }
 }

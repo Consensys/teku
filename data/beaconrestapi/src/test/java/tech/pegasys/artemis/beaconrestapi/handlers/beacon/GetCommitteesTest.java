@@ -45,11 +45,11 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetCommitteesTest {
@@ -59,7 +59,7 @@ public class GetCommitteesTest {
   private static UnsignedLong slot;
   private static UnsignedLong epoch;
   private static CombinedChainDataClient combinedChainDataClient;
-  private static HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
+  private static StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
@@ -71,8 +71,7 @@ public class GetCommitteesTest {
   @BeforeAll
   public static void setup() {
     final EventBus localEventBus = new EventBus();
-    final ChainStorageClient storageClient =
-        ChainStorageClient.memoryOnlyClient(localEventBus, mock(StorageUpdateChannel.class));
+    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(localEventBus);
     beaconState = dataStructureUtil.randomBeaconState();
     storageClient.initializeFromGenesis(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
@@ -132,7 +131,7 @@ public class GetCommitteesTest {
 
   @Test
   public void shouldReturnListOfCommitteeAssignments() throws Exception {
-    ChainStorageClient client = mock(ChainStorageClient.class);
+    RecentChainData client = mock(RecentChainData.class);
     Store store = mock(Store.class);
     CombinedChainDataClient combinedClient =
         new CombinedChainDataClient(client, historicalChainData);

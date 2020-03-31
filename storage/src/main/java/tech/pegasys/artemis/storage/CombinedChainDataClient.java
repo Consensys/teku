@@ -39,6 +39,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class CombinedChainDataClient {
@@ -48,11 +49,11 @@ public class CombinedChainDataClient {
       completedFuture(Optional.empty());
   private static final SafeFuture<Optional<BeaconState>> STATE_NOT_AVAILABLE =
       completedFuture(Optional.empty());
-  private final ChainStorageClient recentChainData;
-  private final HistoricalChainData historicalChainData;
+  private final RecentChainData recentChainData;
+  private final StorageQueryChannel historicalChainData;
 
   public CombinedChainDataClient(
-      final ChainStorageClient recentChainData, final HistoricalChainData historicalChainData) {
+      final RecentChainData recentChainData, final StorageQueryChannel historicalChainData) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
   }
