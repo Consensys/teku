@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,8 +58,8 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onEpoch(final UnsignedLong epochNumber) {
-    LOG.trace("Handling epoch {}", epochNumber);
+  public void onSlot(final UnsignedLong slotNumber) {
+    final UnsignedLong epochNumber = compute_epoch_at_slot(slotNumber);
     latestScheduledEpoch.getAndUpdate(
         lastRequestedEpoch -> {
           final UnsignedLong startEpoch =

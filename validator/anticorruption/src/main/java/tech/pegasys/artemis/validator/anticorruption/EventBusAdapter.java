@@ -15,8 +15,6 @@ package tech.pegasys.artemis.validator.anticorruption;
 
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Objects;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
@@ -41,11 +39,7 @@ class EventBusAdapter implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UnsignedLong slot) {
-    final UnsignedLong epochOfSlot = BeaconStateUtil.compute_epoch_at_slot(slot);
-    if (!Objects.equals(epochOfSlot, epoch)) {
-      validatorTimingChannel.onEpoch(epochOfSlot);
-      epoch = epochOfSlot;
-    }
+    validatorTimingChannel.onSlot(slot);
     validatorTimingChannel.onBlockProductionDue(slot);
   }
 }

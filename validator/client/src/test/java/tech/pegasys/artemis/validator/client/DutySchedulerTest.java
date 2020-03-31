@@ -22,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
@@ -66,11 +67,13 @@ class DutySchedulerTest {
   public void setUp() {
     when(validatorApiChannel.getDuties(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
+    when(dutyFactory.createAttestationProductionDuty(any()))
+        .thenReturn(mock(AttestationProductionDuty.class));
   }
 
   @Test
   public void shouldFetchDutiesForCurrentAndNextEpoch() {
-    validatorClient.onEpoch(UnsignedLong.ONE);
+    validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
 
     verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
     verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
@@ -79,12 +82,12 @@ class DutySchedulerTest {
   @Test
   public void shouldNotRefetchDutiesWhichHaveAlreadyBeenRetrieved() {
     when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
-    validatorClient.onEpoch(UnsignedLong.ONE);
+    validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
 
     verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
     verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
 
-    validatorClient.onEpoch(UnsignedLong.valueOf(2));
+    validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)));
 
     // Requests the next epoch, but not the current one because we already have that
     verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(3), VALIDATOR_KEYS);
@@ -99,7 +102,7 @@ class DutySchedulerTest {
         .thenReturn(request1)
         .thenReturn(request2);
 
-    validatorClient.onEpoch(UnsignedLong.ONE);
+    validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
     verify(validatorApiChannel, times(1)).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
 
     request1.completeExceptionally(new RuntimeException("Nope"));
@@ -127,7 +130,7 @@ class DutySchedulerTest {
         .thenReturn(blockCreationDuty);
 
     // Load duties
-    validatorClient.onEpoch(UnsignedLong.ONE);
+    validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
 
     // Execute
     validatorClient.onBlockProductionDue(blockProposerSlot);
@@ -148,7 +151,7 @@ class DutySchedulerTest {
         .thenReturn(blockCreationDuty);
 
     // Load duties
-    validatorClient.onEpoch(UnsignedLong.ONE);
+    validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
 
     // Execute
     validatorClient.onBlockProductionDue(blockProposerSlot);
@@ -176,7 +179,7 @@ class DutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
 
     // Load duties
-    validatorClient.onEpoch(UnsignedLong.ONE);
+    validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
 
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty).addValidator(validator1);
