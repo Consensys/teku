@@ -99,7 +99,7 @@ class ValidatorApiHandlerTest {
     assertThat(duties.get())
         .containsExactly(
             ValidatorDuties.withDuties(
-                publicKey, validatorIndex, 0, emptyList(), UnsignedLong.valueOf(110)));
+                publicKey, validatorIndex, 0, 2, emptyList(), UnsignedLong.valueOf(110)));
   }
 
   @Test
@@ -116,12 +116,13 @@ class ValidatorApiHandlerTest {
             EPOCH, List.of(validator3Key, unknownPublicKey, validator31Key));
     final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
     final ValidatorDuties validator3Duties =
-        ValidatorDuties.withDuties(validator3Key, 3, 0, emptyList(), UnsignedLong.valueOf(110));
+        ValidatorDuties.withDuties(validator3Key, 3, 0, 2, emptyList(), UnsignedLong.valueOf(110));
     final ValidatorDuties unknownValidatorDuties = ValidatorDuties.noDuties(unknownPublicKey);
     final ValidatorDuties validator6Duties =
         ValidatorDuties.withDuties(
             validator31Key,
             31,
+            0,
             0,
             List.of(UnsignedLong.valueOf(107), UnsignedLong.valueOf(111)),
             UnsignedLong.valueOf(104));
@@ -187,9 +188,9 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedAttestation_shouldCreateAttestation() {
-    final UnsignedLong slot = UnsignedLong.valueOf(26);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final BeaconState state = createStateWithActiveValidators();
+    final UnsignedLong slot = state.getSlot().plus(UnsignedLong.valueOf(5));
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(state.getSlot().longValue());
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
@@ -207,7 +208,8 @@ class ValidatorApiHandlerTest {
     assertThat(attestation.getAggregation_bits())
         .isEqualTo(new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
     assertThat(attestation.getData())
-        .isEqualTo(AttestationUtil.getGenericAttestationData(state, block));
+        .isEqualTo(AttestationUtil.getGenericAttestationData(slot, state, block));
+    assertThat(attestation.getData().getSlot()).isEqualTo(slot);
     assertThat(attestation.getAggregate_signature().toBytes())
         .isEqualTo(BLSSignature.empty().toBytes());
   }

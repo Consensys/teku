@@ -547,7 +547,7 @@ startScripts {
 }
 
 dependencies {
-  implementation project(':artemis')
+  compile project(':artemis')
   errorprone 'com.google.errorprone:error_prone_core'
 }
 
@@ -555,6 +555,7 @@ distributions {
   main {
     contents {
       from("./LICENSE") { into "." }
+      from("build/reports/license/license-dependency.html") { into "." }
       from("libs") { into "native" }
     }
   }
@@ -652,8 +653,8 @@ task dockerUpload(type: Exec) {
   def imageRepos = 'pegasyseng'
   def imageName = "${imageRepos}/teku"
   def image = "${imageName}:develop"
-  def cmd = "docker push ${imageName}:${rootProject.version}"
-  def additionalTags = []
+  def cmd = []
+  def additionalTags = ["${rootProject.version}"]
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
     additionalTags.add('develop')
   }
@@ -664,8 +665,8 @@ task dockerUpload(type: Exec) {
   }
 
   additionalTags.each { tag ->
-    cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'"
+    cmd.add("docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'")
   }
   executable "sh"
-  args "-c", cmd
+  args '-c', cmd.join(' && ')
 }
