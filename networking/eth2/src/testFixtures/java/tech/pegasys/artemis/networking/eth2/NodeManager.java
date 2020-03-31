@@ -21,7 +21,7 @@ import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 

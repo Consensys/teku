@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.Store;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 

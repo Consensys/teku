@@ -41,7 +41,7 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
 import tech.pegasys.artemis.storage.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.util.Waiter;

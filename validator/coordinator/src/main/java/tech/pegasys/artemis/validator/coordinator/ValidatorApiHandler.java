@@ -45,7 +45,7 @@ import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.clientside.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.ExceptionThrowingFunction;
 import tech.pegasys.artemis.util.async.SafeFuture;

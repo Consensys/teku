@@ -24,6 +24,10 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.artemis.storage.serverside.Database;
+import tech.pegasys.artemis.storage.serverside.DatabaseStorageException;
+import tech.pegasys.artemis.storage.serverside.DatabaseVersion;
+import tech.pegasys.artemis.storage.serverside.VersionedDatabaseFactory;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class VersionedDatabaseFactoryTest {

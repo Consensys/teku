@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.clientside;
 
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 
@@ -104,11 +104,11 @@ public class Store implements ReadOnlyStore {
         latest_messages);
   }
 
-  Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
+  public Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
     return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP);
   }
 
-  Transaction startTransaction(
+  public Transaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new Transaction(storageUpdateChannel, updateHandler);
   }

@@ -17,7 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
 
 public class StatusMessageFactory {
 

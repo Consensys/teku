@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;

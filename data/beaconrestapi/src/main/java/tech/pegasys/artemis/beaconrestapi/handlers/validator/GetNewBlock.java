@@ -42,7 +42,7 @@ import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainDataUnavailableException;
+import tech.pegasys.artemis.storage.clientside.ChainDataUnavailableException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetNewBlock implements Handler {

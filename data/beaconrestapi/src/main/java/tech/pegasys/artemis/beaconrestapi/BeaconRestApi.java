@@ -58,7 +58,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetNewBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostAttestation;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainDataUnavailableException;
+import tech.pegasys.artemis.storage.clientside.ChainDataUnavailableException;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 

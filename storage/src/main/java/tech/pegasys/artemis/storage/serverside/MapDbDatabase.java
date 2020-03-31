@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.serverside;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -38,6 +38,7 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.storage.clientside.Store;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;

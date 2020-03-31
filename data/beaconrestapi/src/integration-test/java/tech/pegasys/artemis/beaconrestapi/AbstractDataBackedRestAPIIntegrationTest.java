@@ -28,7 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.clientside.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.SuccessfulStorageUpdateResult;

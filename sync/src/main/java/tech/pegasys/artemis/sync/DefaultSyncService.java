@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.sync;
 
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DefaultSyncService extends Service implements SyncService {

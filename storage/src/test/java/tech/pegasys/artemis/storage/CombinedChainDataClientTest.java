@@ -36,6 +36,9 @@ import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
+import tech.pegasys.artemis.storage.clientside.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 

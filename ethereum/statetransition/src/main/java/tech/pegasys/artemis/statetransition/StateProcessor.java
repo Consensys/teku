@@ -24,8 +24,8 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.storage.RecentChainData;
-import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.Store;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {

@@ -31,8 +31,8 @@ import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessag
 import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 
 public class BeaconChainMethods {

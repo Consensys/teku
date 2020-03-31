@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.serverside;
 
 public class DatabaseStorageException extends RuntimeException {
   public DatabaseStorageException(final String s) {

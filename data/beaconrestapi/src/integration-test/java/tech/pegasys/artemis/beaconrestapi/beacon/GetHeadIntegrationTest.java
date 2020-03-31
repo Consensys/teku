@@ -23,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
-import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.clientside.Store;
 
 public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 

@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.api;
 
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.clientside.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.clientside.RecentChainData;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 

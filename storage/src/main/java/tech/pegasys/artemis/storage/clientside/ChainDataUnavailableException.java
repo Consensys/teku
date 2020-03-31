@@ -11,13 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.clientside;
 
-import tech.pegasys.artemis.storage.events.StorageUpdateResult;
-
-public class FailedPrecommitException extends RuntimeException {
-
-  public FailedPrecommitException(final StorageUpdateResult result) {
-    super(result.getError());
-  }
-}
+public class ChainDataUnavailableException extends RuntimeException {}
