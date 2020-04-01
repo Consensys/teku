@@ -55,10 +55,8 @@ public final class ArrayIntCache<V> implements IntCache<V> {
     V val = key >= values.length ? null : values[key];
     if (val == null) {
       val = fallback.apply(key);
-      synchronized (this) {
-        extend(key);
-        values[key] = val;
-      }
+      extend(key);
+      values[key] = val;
     }
     return val;
   }
@@ -74,27 +72,25 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   }
 
   @Override
-  public synchronized IntCache<V> transfer() {
-    ArrayIntCache<V> ret = new ArrayIntCache<>(values, initSize);
-    values = createArray(initSize);
-    return ret;
+  public IntCache<V> transfer() {
+    return copy();
   }
 
   @Override
-  public synchronized void invalidateWithNewValueInt(int key, V newValue) {
+  public void invalidateWithNewValueInt(int key, V newValue) {
     extend(key);
     values[key] = newValue;
   }
 
   @Override
-  public synchronized void invalidateInt(int key) {
+  public void invalidateInt(int key) {
     if (key < values.length) {
       values[key] = null;
     }
   }
 
   @Override
-  public synchronized void clear() {
+  public void clear() {
     values = createArray(initSize);
   }
 }
