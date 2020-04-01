@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
@@ -67,7 +68,7 @@ public class AttestationGossipManagerTest {
 
     // Post new attestation
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    attestation.setData(attestation.getData().withIndex(UnsignedLong.valueOf(committeeIndex)));
+    setCommitteeIndex(attestation, committeeIndex);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
     eventBus.post(attestation);
 
@@ -84,7 +85,7 @@ public class AttestationGossipManagerTest {
 
     // Post new attestation
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    attestation.setData(attestation.getData().withIndex(UnsignedLong.valueOf(committeeIndex + 1)));
+    setCommitteeIndex(attestation, committeeIndex + 1);
     eventBus.post(attestation);
 
     verifyNoInteractions(topicChannel);
@@ -106,16 +107,27 @@ public class AttestationGossipManagerTest {
 
     // Attestation for dismissed assignment should be ignored
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    attestation.setData(attestation.getData().withIndex(UnsignedLong.valueOf(dismissedIndex)));
+    setCommitteeIndex(attestation, dismissedIndex);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
     eventBus.post(attestation);
     verify(topicChannel, never()).gossip(serialized);
 
     // Attestation for remaining assignment should be processed
     final Attestation attestation2 = dataStructureUtil.randomAttestation();
-    attestation2.setData(attestation.getData().withIndex(UnsignedLong.valueOf(committeeIndex)));
+    setCommitteeIndex(attestation2, committeeIndex);
     final Bytes serialized2 = SimpleOffsetSerializer.serialize(attestation2);
     eventBus.post(attestation2);
     verify(topicChannel).gossip(serialized2);
+  }
+
+  public void setCommitteeIndex(final Attestation attestation, final int committeeIndex) {
+    final AttestationData data = attestation.getData();
+    attestation.setData(
+        new AttestationData(
+            data.getSlot(),
+            UnsignedLong.valueOf(committeeIndex),
+            data.getBeacon_block_root(),
+            data.getSource(),
+            data.getTarget()));
   }
 }
