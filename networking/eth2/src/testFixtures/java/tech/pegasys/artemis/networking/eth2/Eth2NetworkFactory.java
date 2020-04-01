@@ -173,7 +173,7 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder chainStorageClient(final RecentChainData recentChainData) {
+    public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
       checkNotNull(recentChainData);
       this.recentChainData = recentChainData;
       return this;

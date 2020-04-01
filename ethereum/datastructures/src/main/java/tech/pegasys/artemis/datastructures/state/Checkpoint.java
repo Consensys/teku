@@ -124,10 +124,6 @@ public class Checkpoint extends AbstractImmutableContainer<Checkpoint>
     return compute_start_slot_at_epoch(getEpoch());
   }
 
-  public UnsignedLong getFinalizedSlot() {
-    return getEpochStartSlot();
-  }
-
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();

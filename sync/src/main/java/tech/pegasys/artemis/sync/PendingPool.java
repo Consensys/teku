@@ -279,7 +279,7 @@ public class PendingPool<T> extends Service
 
   @Override
   public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
-    this.latestFinalizedSlot = checkpoint.getFinalizedSlot();
+    this.latestFinalizedSlot = checkpoint.getEpochStartSlot();
   }
 
   @VisibleForTesting

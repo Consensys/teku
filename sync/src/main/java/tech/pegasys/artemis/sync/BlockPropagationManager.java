@@ -24,8 +24,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
@@ -41,7 +39,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventBus eventBus;
-  private final RecentChainData storageClient;
+  private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
 
@@ -52,13 +50,13 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
 
   BlockPropagationManager(
       final EventBus eventBus,
-      final RecentChainData storageClient,
+      final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final FetchRecentBlocksService recentBlockFetcher) {
     this.eventBus = eventBus;
-    this.storageClient = storageClient;
+    this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
@@ -68,15 +66,12 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   public static BlockPropagationManager create(
       final EventBus eventBus,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final P2PNetwork<Eth2Peer> eth2Network,
-      final RecentChainData storageClient,
+      final FutureItems<SignedBeaconBlock> futureBlocks,
+      final FetchRecentBlocksService recentBlockFetcher,
+      final RecentChainData recentChainData,
       final BlockImporter blockImporter) {
-    final FutureItems<SignedBeaconBlock> futureBlocks =
-        new FutureItems<>(SignedBeaconBlock::getSlot);
-    final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(eth2Network, pendingBlocks);
     return new BlockPropagationManager(
-        eventBus, storageClient, blockImporter, pendingBlocks, futureBlocks, recentBlockFetcher);
+        eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks, recentBlockFetcher);
   }
 
   @Override
@@ -149,7 +144,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   private boolean blockIsKnown(final SignedBeaconBlock block) {
     return pendingBlocks.contains(block)
         || futureBlocks.contains(block)
-        || storageClient.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent();
+        || recentChainData.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent();
   }
 
   private boolean blockIsInvalid(final SignedBeaconBlock block) {

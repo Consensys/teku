@@ -23,13 +23,11 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
@@ -57,14 +55,10 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   public static AttestationManager create(
       final EventBus eventBus,
       final PendingPool<DelayableAttestation> pendingAttestations,
-      final RecentChainData storageClient) {
-    final FutureItems<DelayableAttestation> futureAttestations =
-        new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
+      final FutureItems<DelayableAttestation> futureAttestations,
+      final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor) {
     return new AttestationManager(
-        eventBus,
-        new ForkChoiceAttestationProcessor(storageClient, new StateTransition()),
-        pendingAttestations,
-        futureAttestations);
+        eventBus, forkChoiceAttestationProcessor, pendingAttestations, futureAttestations);
   }
 
   @Subscribe

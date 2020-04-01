@@ -53,6 +53,7 @@ import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.StateTransition;
+import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
@@ -69,6 +70,8 @@ import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.BlockPropagationManager;
 import tech.pegasys.artemis.sync.DefaultSyncService;
 import tech.pegasys.artemis.sync.DelayableAttestation;
+import tech.pegasys.artemis.sync.FetchRecentBlocksService;
+import tech.pegasys.artemis.sync.FutureItems;
 import tech.pegasys.artemis.sync.PendingPool;
 import tech.pegasys.artemis.sync.SyncManager;
 import tech.pegasys.artemis.sync.SyncService;
@@ -277,7 +280,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initAttestationPropagationManager() {
     final PendingPool<DelayableAttestation> pendingAttestations =
         PendingPool.createForAttestations(eventBus);
-    attestationManager = AttestationManager.create(eventBus, pendingAttestations, recentChainData);
+    final FutureItems<DelayableAttestation> futureAttestations =
+        new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
+    final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
+        new ForkChoiceAttestationProcessor(recentChainData, new StateTransition());
+    attestationManager =
+        AttestationManager.create(
+            eventBus, pendingAttestations, futureAttestations, forkChoiceAttestationProcessor);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
@@ -364,9 +373,18 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     } else {
       BlockImporter blockImporter = new BlockImporter(recentChainData, eventBus);
       final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
+      final FutureItems<SignedBeaconBlock> futureBlocks =
+          new FutureItems<>(SignedBeaconBlock::getSlot);
+      final FetchRecentBlocksService recentBlockFetcher =
+          FetchRecentBlocksService.create(p2pNetwork, pendingBlocks);
       BlockPropagationManager blockPropagationManager =
           BlockPropagationManager.create(
-              eventBus, pendingBlocks, p2pNetwork, recentChainData, blockImporter);
+              eventBus,
+              pendingBlocks,
+              futureBlocks,
+              recentBlockFetcher,
+              recentChainData,
+              blockImporter);
       SyncManager syncManager = SyncManager.create(p2pNetwork, recentChainData, blockImporter);
       syncService = new DefaultSyncService(blockPropagationManager, syncManager, recentChainData);
       eventChannels
