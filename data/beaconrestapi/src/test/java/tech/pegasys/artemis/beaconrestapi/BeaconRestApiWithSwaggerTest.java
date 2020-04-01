@@ -26,9 +26,9 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.DataProvider;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 

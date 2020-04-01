@@ -27,9 +27,9 @@ import tech.pegasys.artemis.api.schema.Fork;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.storage.ChainDataUnavailableException;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainDataProvider {

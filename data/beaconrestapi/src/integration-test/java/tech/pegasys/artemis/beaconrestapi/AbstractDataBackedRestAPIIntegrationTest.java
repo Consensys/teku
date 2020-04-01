@@ -29,10 +29,10 @@ import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.events.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public abstract class AbstractDataBackedRestAPIIntegrationTest

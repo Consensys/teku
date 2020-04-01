@@ -40,10 +40,10 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
@@ -173,7 +173,7 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder chainStorageClient(final RecentChainData recentChainData) {
+    public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
       checkNotNull(recentChainData);
       this.recentChainData = recentChainData;
       return this;

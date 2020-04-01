@@ -15,8 +15,8 @@ package tech.pegasys.artemis.storage.api;
 
 import java.util.Optional;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
+import tech.pegasys.artemis.storage.events.StorageUpdate;
+import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface StorageUpdateChannel {
