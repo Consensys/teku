@@ -55,7 +55,7 @@ public class NodeManager {
     final EventBus eventBus = new EventBus();
     final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
     final Eth2P2PNetworkBuilder networkBuilder =
-        networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
+        networkFactory.builder().eventBus(eventBus).recentChainData(storageClient);
 
     configureNetwork.accept(networkBuilder);
 

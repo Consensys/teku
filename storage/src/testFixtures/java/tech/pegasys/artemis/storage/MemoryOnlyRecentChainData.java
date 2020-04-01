@@ -18,7 +18,7 @@ import com.google.common.eventbus.EventBus;
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
   public MemoryOnlyRecentChainData(final EventBus eventBus) {
-    super(new StubStorageUpdateChannel(), eventBus);
+    super(new StubStorageUpdateChannel(), new StubFinalizedCheckpointChannel(), eventBus);
     eventBus.register(this);
   }
 

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
-import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
+import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 
 public class FailedPrecommitException extends RuntimeException {
 

@@ -11,6 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.artemis.storage.api;
 
-public class BestBlockInitializedEvent {}
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
+
+public interface FinalizedCheckpointChannel {
+  void onNewFinalizedCheckpoint(final Checkpoint checkpoint);
+}
