@@ -75,8 +75,9 @@ public interface BeaconState
   Field RANDAO_MIXES_FIELD =
       new Field(
           12,
-          new VectorViewType<>(
-              BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
+          () ->
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
   Field SLASHINGS_FIELD =
       new Field(
           13,
