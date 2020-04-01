@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -22,7 +24,20 @@ public class BeaconBlockHeader {
   public final Bytes32 state_root;
   public final Bytes32 body_root;
 
-  public BeaconBlockHeader(tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader header) {
+  @JsonCreator
+  public BeaconBlockHeader(
+      @JsonProperty("slot") final UnsignedLong slot,
+      @JsonProperty("parent_root") final Bytes32 parent_root,
+      @JsonProperty("state_root") final Bytes32 state_root,
+      @JsonProperty("body_root") final Bytes32 body_root) {
+    this.slot = slot;
+    this.parent_root = parent_root;
+    this.state_root = state_root;
+    this.body_root = body_root;
+  }
+
+  public BeaconBlockHeader(
+      final tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader header) {
     this.slot = header.getSlot();
     this.parent_root = header.getParent_root();
     this.state_root = header.getState_root();
