@@ -155,12 +155,12 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData() {
+    return randomAttestationData(randomUnsignedLong());
+  }
+
+  public AttestationData randomAttestationData(final UnsignedLong slot) {
     return new AttestationData(
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        randomBytes32(),
-        randomCheckpoint(),
-        randomCheckpoint());
+        slot, randomUnsignedLong(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public Attestation randomAttestation() {

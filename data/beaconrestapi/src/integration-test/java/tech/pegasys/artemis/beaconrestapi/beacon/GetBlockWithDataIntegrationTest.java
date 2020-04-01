@@ -28,16 +28,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
-import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  private final JsonProvider jsonProvider = new JsonProvider();
-
-  private static final UnsignedLong SIX = UnsignedLong.valueOf(6);
-  private static final UnsignedLong SEVEN = UnsignedLong.valueOf(7);
-  private static final UnsignedLong EIGHT = UnsignedLong.valueOf(8);
-  private static final UnsignedLong NINE = UnsignedLong.valueOf(9);
-  private static final UnsignedLong TEN = UnsignedLong.valueOf(10);
 
   @Test
   public void shouldGetBlockWhenPresent_getByEpoch() throws Exception {

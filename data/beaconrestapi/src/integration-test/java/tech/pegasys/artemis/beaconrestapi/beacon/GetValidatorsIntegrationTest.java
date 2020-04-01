@@ -102,22 +102,6 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
     assertGone(response);
   }
 
-  @Test
-  public void handleMissingNonFinalizedState_queryByEpoch() throws Exception {
-    final int epoch = 1;
-    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
-
-    final Store store = mock(Store.class);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(store.getBlockState(headRoot)).thenReturn(dataStructureUtil.randomBeaconState(100));
-    when(recentChainData.getStateBySlot(any())).thenReturn(Optional.empty());
-
-    final Response response = getByEpoch(epoch);
-    assertNotFound(response);
-  }
-
   private Response getLatest() throws IOException {
     return getResponse(GetValidators.ROUTE);
   }
