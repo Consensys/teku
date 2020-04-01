@@ -11,12 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.duties;
+package tech.pegasys.artemis.util.config;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public interface Duty {
-  SafeFuture<?> performDuty();
+import org.junit.jupiter.api.Test;
 
-  String describe();
+// Ensure that toggles changed during local development are not accidentally committed
+class FeatureTogglesTest {
+  @Test
+  public void shouldToggleOffValidatorClientService() {
+    assertThat(FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE).isFalse();
+  }
 }

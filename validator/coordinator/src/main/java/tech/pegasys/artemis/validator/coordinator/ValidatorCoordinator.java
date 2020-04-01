@@ -64,6 +64,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.signer.Signer;
@@ -146,10 +147,12 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   @Override
   public void onSlot(UnsignedLong slot) {
-    final Optional<Bytes32> headRoot = recentChainData.getBestBlockRoot();
-    if (!isGenesis(slot) && headRoot.isPresent()) {
-      BeaconState headState = recentChainData.getStore().getBlockState(headRoot.get());
-      createBlockIfNecessary(headState, slot);
+    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      final Optional<Bytes32> headRoot = recentChainData.getBestBlockRoot();
+      if (!isGenesis(slot) && headRoot.isPresent()) {
+        BeaconState headState = recentChainData.getStore().getBlockState(headRoot.get());
+        createBlockIfNecessary(headState, slot);
+      }
     }
 
     eth1DataCache.onSlot(slot);
@@ -191,6 +194,11 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
                 () ->
                     committeeAssignmentManager.updateCommitteeAssignments(
                         headState, epoch.plus(UnsignedLong.ONE), eventBus)));
+      }
+
+      if (FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+        // Leave attestation creation to the validator client service.
+        return;
       }
 
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
@@ -264,8 +272,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       final AttesterInformation attester) {
     final Bitlist aggregationBitlist = new Bitlist(unsignedAttestation.getAggregation_bits());
     aggregationBitlist.setBit(attester.getIndexIntoCommittee());
-    final AttestationData attestationData =
-        unsignedAttestation.getData().withIndex(attester.getCommittee().getIndex());
+    final AttestationData attestationData = unsignedAttestation.getData();
     return signAttestation(state, attester.getPublicKey(), attestationData)
         .thenApply(signature -> new Attestation(aggregationBitlist, attestationData, signature));
   }
