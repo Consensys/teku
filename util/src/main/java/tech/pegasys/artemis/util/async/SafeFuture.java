@@ -110,8 +110,35 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     }
   }
 
-  public static <U> SafeFuture<Void> allOf(final SafeFuture<?>... futures) {
-    return of(CompletableFuture.allOf(futures));
+  public static SafeFuture<Void> allOf(final SafeFuture<?>... futures) {
+    return of(CompletableFuture.allOf(futures))
+        .catchAndRethrow(completionException -> addSuppressedErrors(completionException, futures));
+  }
+
+  /**
+   * Adds the {@link Throwable} from each future as a suppressed exception to completionException
+   * unless it is already set as the cause.
+   *
+   * <p>This ensures that when futures are combined with {@link #allOf(SafeFuture[])} that all
+   * failures are reported, not just the first one.
+   *
+   * @param completionException the exception reported by {@link
+   *     CompletableFuture#allOf(CompletableFuture[])}
+   * @param futures the futures passed to allOf
+   */
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public static void addSuppressedErrors(
+      final Throwable completionException, final SafeFuture<?>[] futures) {
+    Stream.of(futures)
+        .forEach(
+            future ->
+                future.exceptionally(
+                    error -> {
+                      if (completionException.getCause() != error) {
+                        completionException.addSuppressed(error);
+                      }
+                      return null;
+                    }));
   }
 
   /**
