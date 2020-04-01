@@ -63,13 +63,13 @@ public class TreeUpdates {
    * @param updates the list of {@link Update}s
    *     <p><b>NOTE: the list should conform to the following prerequisites</b>:
    *     <ul>
+   *       <li>all generalized indexes are unique
    *       <li>the list should be sorted by the target generalized index
    *       <li>the generalized indexes should be on the same tree level. I.e. the highest order bit
    *           should be the same for all indexes
    *     </ul>
-   *     Prerequisites are not checked for performance reasons. For an invalid list the behavior may
-   *     be undefined but normally the {@link TreeNode#updated(TreeUpdates)} call would fail in this
-   *     case
+   *
+   * @throws IllegalArgumentException if the list doesn't conform to above restrictions
    */
   public TreeUpdates(List<Update> updates) {
     this(
@@ -78,7 +78,7 @@ public class TreeUpdates {
   }
 
   private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes) {
-    this(gIndexes, nodes, 1, depth(gIndexes));
+    this(gIndexes, nodes, 1, getDepthAndValidate(gIndexes));
   }
 
   private TreeUpdates(List<Long> gIndexes, List<TreeNode> nodes, long prefix, int heightFromLeaf) {
@@ -95,6 +95,9 @@ public class TreeUpdates {
    *     generalized indexes
    */
   public Pair<TreeUpdates, TreeUpdates> splitAtPivot() {
+    if (heightFromLeaf <= 0) {
+      throw new IllegalStateException("Can't split leaf update");
+    }
     long lPrefix = prefix << 1;
     long rPrefix = lPrefix | 1;
     long pivotGIndex = rPrefix << (heightFromLeaf - 1);
@@ -111,11 +114,6 @@ public class TreeUpdates {
             heightFromLeaf - 1));
   }
 
-  private static int depth(List<Long> gIndexes) {
-    if (gIndexes.isEmpty()) return -1;
-    return Long.bitCount(Long.highestOneBit(gIndexes.get(0)) - 1);
-  }
-
   /** Number of updated nodes in this set */
   public int size() {
     return gIndexes.size();
@@ -129,6 +127,31 @@ public class TreeUpdates {
   /** Gets new tree node for update at position [index] */
   public TreeNode getNode(int index) {
     return nodes.get(index);
+  }
+
+  private static int getDepthAndValidate(List<Long> gIndexes) {
+    if (gIndexes.isEmpty()) {
+      return 0;
+    }
+    long highestBit = Long.highestOneBit(gIndexes.get(0));
+    long mask = highestBit - 1;
+    long checkMask = ~mask;
+
+    long lastGIdx = -1;
+    for (int i = 0; i < gIndexes.size(); i++) {
+      long gIdx = gIndexes.get(i);
+      if (gIdx < 1) {
+        throw new IllegalArgumentException("Invalid gIndex: " + gIdx);
+      }
+      if (gIdx <= lastGIdx) {
+        throw new IllegalArgumentException("Invalid gIndex ordering: " + gIndexes);
+      }
+      if ((gIdx & checkMask) != highestBit) {
+        throw new IllegalArgumentException("Indexes are of different depth: [0] and [" + i + "]");
+      }
+      lastGIdx = gIdx;
+    }
+    return Long.bitCount(mask);
   }
 
   /**
