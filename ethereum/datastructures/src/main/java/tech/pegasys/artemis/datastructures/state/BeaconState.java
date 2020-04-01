@@ -185,26 +185,26 @@ public interface BeaconState
 
   // Versioning
   default UnsignedLong getGenesis_time() {
-    return ((UInt64View) get(GENESIS_TIME_FIELD.getOrder())).get();
+    return ((UInt64View) get(GENESIS_TIME_FIELD.getIndex())).get();
   }
 
   default UnsignedLong getSlot() {
-    return ((UInt64View) get(SLOT_FIELD.getOrder())).get();
+    return ((UInt64View) get(SLOT_FIELD.getIndex())).get();
   }
 
   default Fork getFork() {
-    return getAny(FORK_FIELD.getOrder());
+    return getAny(FORK_FIELD.getIndex());
   }
 
   // History
   default BeaconBlockHeader getLatest_block_header() {
-    return getAny(LATEST_BLOCK_HEADER_FIELD.getOrder());
+    return getAny(LATEST_BLOCK_HEADER_FIELD.getIndex());
   }
 
   default SSZVector<Bytes32> getBlock_roots() {
     return new SSZBackingVector<>(
         Bytes32.class,
-        getAny(BLOCK_ROOTS_FIELD.getOrder()),
+        getAny(BLOCK_ROOTS_FIELD.getIndex()),
         Bytes32View::new,
         AbstractBasicView::get);
   }
@@ -212,7 +212,7 @@ public interface BeaconState
   default SSZVector<Bytes32> getState_roots() {
     return new SSZBackingVector<>(
         Bytes32.class,
-        getAny(STATE_ROOTS_FIELD.getOrder()),
+        getAny(STATE_ROOTS_FIELD.getIndex()),
         Bytes32View::new,
         AbstractBasicView::get);
   }
@@ -220,33 +220,33 @@ public interface BeaconState
   default SSZList<Bytes32> getHistorical_roots() {
     return new SSZBackingList<>(
         Bytes32.class,
-        getAny(HISTORICAL_ROOTS_FIELD.getOrder()),
+        getAny(HISTORICAL_ROOTS_FIELD.getIndex()),
         Bytes32View::new,
         AbstractBasicView::get);
   }
 
   // Eth1
   default Eth1Data getEth1_data() {
-    return getAny(ETH1_DATA_FIELD.getOrder());
+    return getAny(ETH1_DATA_FIELD.getIndex());
   }
 
   default SSZList<Eth1Data> getEth1_data_votes() {
     return new SSZBackingList<>(
         Eth1Data.class,
-        getAny(ETH1_DATA_VOTES_FIELD.getOrder()),
+        getAny(ETH1_DATA_VOTES_FIELD.getIndex()),
         Function.identity(),
         Function.identity());
   }
 
   default UnsignedLong getEth1_deposit_index() {
-    return ((UInt64View) get(ETH1_DEPOSIT_INDEX_FIELD.getOrder())).get();
+    return ((UInt64View) get(ETH1_DEPOSIT_INDEX_FIELD.getIndex())).get();
   }
 
   // Registry
   default SSZList<Validator> getValidators() {
     return new SSZBackingList<>(
         Validator.class,
-        getAny(VALIDATORS_FIELD.getOrder()),
+        getAny(VALIDATORS_FIELD.getIndex()),
         Function.identity(),
         Function.identity());
   }
@@ -254,7 +254,7 @@ public interface BeaconState
   default SSZList<UnsignedLong> getBalances() {
     return new SSZBackingList<>(
         UnsignedLong.class,
-        getAny(BALANCES_FIELD.getOrder()),
+        getAny(BALANCES_FIELD.getIndex()),
         UInt64View::new,
         AbstractBasicView::get);
   }
@@ -262,7 +262,7 @@ public interface BeaconState
   default SSZVector<Bytes32> getRandao_mixes() {
     return new SSZBackingVector<>(
         Bytes32.class,
-        getAny(RANDAO_MIXES_FIELD.getOrder()),
+        getAny(RANDAO_MIXES_FIELD.getIndex()),
         Bytes32View::new,
         AbstractBasicView::get);
   }
@@ -271,7 +271,7 @@ public interface BeaconState
   default SSZVector<UnsignedLong> getSlashings() {
     return new SSZBackingVector<>(
         UnsignedLong.class,
-        getAny(SLASHINGS_FIELD.getOrder()),
+        getAny(SLASHINGS_FIELD.getIndex()),
         UInt64View::new,
         AbstractBasicView::get);
   }
@@ -280,7 +280,7 @@ public interface BeaconState
   default SSZList<PendingAttestation> getPrevious_epoch_attestations() {
     return new SSZBackingList<>(
         PendingAttestation.class,
-        getAny(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getOrder()),
+        getAny(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex()),
         Function.identity(),
         Function.identity());
   }
@@ -288,26 +288,26 @@ public interface BeaconState
   default SSZList<PendingAttestation> getCurrent_epoch_attestations() {
     return new SSZBackingList<>(
         PendingAttestation.class,
-        getAny(CURRENT_EPOCH_ATTESTATIONS_FIELD.getOrder()),
+        getAny(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex()),
         Function.identity(),
         Function.identity());
   }
 
   // Finality
   default Bitvector getJustification_bits() {
-    return ViewUtils.getBitvector(getAny(JUSTIFICATION_BITS_FIELD.getOrder()));
+    return ViewUtils.getBitvector(getAny(JUSTIFICATION_BITS_FIELD.getIndex()));
   }
 
   default Checkpoint getPrevious_justified_checkpoint() {
-    return getAny(PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD.getOrder());
+    return getAny(PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD.getIndex());
   }
 
   default Checkpoint getCurrent_justified_checkpoint() {
-    return getAny(CURRENT_JUSTIFIED_CHECKPOINT_FIELD.getOrder());
+    return getAny(CURRENT_JUSTIFIED_CHECKPOINT_FIELD.getIndex());
   }
 
   default Checkpoint getFinalized_checkpoint() {
-    return getAny(FINALIZED_CHECKPOINT_FIELD.getOrder());
+    return getAny(FINALIZED_CHECKPOINT_FIELD.getIndex());
   }
 
   @Override

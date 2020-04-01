@@ -24,20 +24,20 @@ import tech.pegasys.artemis.util.backing.type.ViewType;
 public interface SSZContainer {
 
   class Field {
-    private final int order;
+    private final int index;
     private final Supplier<ViewType> viewType;
 
-    public Field(int order, ViewType viewType) {
-      this(order, () -> viewType);
+    public Field(int index, ViewType viewType) {
+      this(index, () -> viewType);
     }
 
-    public Field(int order, Supplier<ViewType> viewType) {
-      this.order = order;
+    public Field(int index, Supplier<ViewType> viewType) {
+      this.index = index;
       this.viewType = viewType;
     }
 
-    public int getOrder() {
-      return order;
+    public int getIndex() {
+      return index;
     }
 
     public Supplier<ViewType> getViewType() {
@@ -58,10 +58,10 @@ public interface SSZContainer {
                     throw new RuntimeException(e);
                   }
                 })
-            .sorted(Comparator.comparing(Field::getOrder))
+            .sorted(Comparator.comparing(Field::getIndex))
             .collect(Collectors.toList());
     for (int i = 0; i < ret.size(); i++) {
-      if (i != ret.get(i).getOrder()) {
+      if (i != ret.get(i).getIndex()) {
         throw new IllegalArgumentException("Wrong fields ordering: " + ret);
       }
     }
