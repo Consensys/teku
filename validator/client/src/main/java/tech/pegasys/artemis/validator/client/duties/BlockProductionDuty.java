@@ -48,21 +48,14 @@ public class BlockProductionDuty implements Duty {
   }
 
   @Override
-  public void performDuty() {
+  public SafeFuture<?> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
-    forkProvider
-        .getFork()
-        .thenCompose(this::produceBlock)
-        .finish(
-            () ->
-                LOG.debug("Validator {} created block at slot {}", validator.getPublicKey(), slot),
-            error ->
-                LOG.error(
-                    "Validator "
-                        + validator.getPublicKey()
-                        + " failed to create block at slot "
-                        + slot,
-                    error));
+    return forkProvider.getFork().thenCompose(this::produceBlock);
+  }
+
+  @Override
+  public String describe() {
+    return "Block production for slot " + slot + " by " + validator.getPublicKey();
   }
 
   public SafeFuture<Void> produceBlock(final Fork fork) {

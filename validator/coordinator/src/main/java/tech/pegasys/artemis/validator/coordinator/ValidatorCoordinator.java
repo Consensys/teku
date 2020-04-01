@@ -64,6 +64,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.signer.Signer;
@@ -191,6 +192,11 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
                 () ->
                     committeeAssignmentManager.updateCommitteeAssignments(
                         headState, epoch.plus(UnsignedLong.ONE), eventBus)));
+      }
+
+      if (FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+        // Leave attestation creation to the validator client service.
+        return;
       }
 
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
