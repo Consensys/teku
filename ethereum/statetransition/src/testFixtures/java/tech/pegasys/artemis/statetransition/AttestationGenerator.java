@@ -36,7 +36,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -200,7 +200,8 @@ public class AttestationGenerator {
     Committee committee = new Committee(committeeIndex, committeeIndices);
     int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
     AttestationData genericAttestationData =
-        AttestationUtil.getGenericAttestationData(postState, block);
+        AttestationUtil.getGenericAttestationData(
+            postState.getSlot(), postState, block, committeeIndex);
 
     final BLSKeyPair validatorKeyPair =
         withValidSignature ? validatorKeys.get(validatorIndex) : randomKeyPair;
@@ -234,7 +235,7 @@ public class AttestationGenerator {
       Committee committee = new Committee(committeeIndex, committeeIndices);
       int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
       AttestationData genericAttestationData =
-          AttestationUtil.getGenericAttestationData(state, block);
+          AttestationUtil.getGenericAttestationData(state.getSlot(), state, block, committeeIndex);
       final BLSKeyPair validatorKeyPair = validatorKeys.get(validatorIndex);
       attestations.add(
           createAttestation(
@@ -258,11 +259,10 @@ public class AttestationGenerator {
       BLSKeyPair attesterKeyPair,
       int indexIntoCommittee,
       Committee committee,
-      AttestationData genericAttestationData) {
+      AttestationData attestationData) {
     int committeSize = committee.getCommitteeSize();
     Bitlist aggregationBitfield =
         AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
-    AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
 
     BLSSignature signature =
         new Signer(new LocalMessageSignerService(attesterKeyPair))

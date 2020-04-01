@@ -154,7 +154,8 @@ public class LoggingConfigurator {
 
   private static void displayCustomLog4jConfigUsed() {
     StatusLogger.getLogger()
-        .info("Custom logging configuration applied from: {}", getCustomLog4jConfigFile());
+        .info(
+            "Custom logging configuration applied from: {}", getCustomLog4jConfigFile().orElse(""));
   }
 
   private static void displayUnknownDestinationConfigured() {
@@ -174,18 +175,14 @@ public class LoggingConfigurator {
   }
 
   private static boolean isCustomLog4jConfigFileProvided() {
-    return System.getenv(LOG4J_CONFIG_FILE_KEY) != null
-        || System.getProperty(LOG4J_CONFIG_FILE_KEY) != null
-        || System.getenv(LOG4J_LEGACY_CONFIG_FILE_KEY) != null
-        || System.getProperty(LOG4J_LEGACY_CONFIG_FILE_KEY) != null;
+    return getCustomLog4jConfigFile().isPresent();
   }
 
-  private static String getCustomLog4jConfigFile() {
-    return Optional.of(System.getenv(LOG4J_CONFIG_FILE_KEY))
-        .or(() -> Optional.of(System.getProperty(LOG4J_CONFIG_FILE_KEY)))
-        .or(() -> Optional.of(System.getProperty(LOG4J_LEGACY_CONFIG_FILE_KEY)))
-        .or(() -> Optional.of(LOG4J_LEGACY_CONFIG_FILE_KEY))
-        .get();
+  private static Optional<String> getCustomLog4jConfigFile() {
+    return Optional.ofNullable(System.getenv(LOG4J_CONFIG_FILE_KEY))
+        .or(() -> Optional.ofNullable(System.getProperty(LOG4J_CONFIG_FILE_KEY)))
+        .or(() -> Optional.ofNullable(System.getenv(LOG4J_LEGACY_CONFIG_FILE_KEY)))
+        .or(() -> Optional.ofNullable(System.getProperty(LOG4J_LEGACY_CONFIG_FILE_KEY)));
   }
 
   private static void addAppenderToRootLogger(

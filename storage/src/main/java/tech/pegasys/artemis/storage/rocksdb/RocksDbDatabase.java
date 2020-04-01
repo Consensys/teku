@@ -69,12 +69,12 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.storage.Database;
-import tech.pegasys.artemis.storage.DatabaseStorageException;
-import tech.pegasys.artemis.storage.StateStorageMode;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdate;
-import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
+import tech.pegasys.artemis.storage.events.StorageUpdate;
+import tech.pegasys.artemis.storage.events.StorageUpdateResult;
+import tech.pegasys.artemis.storage.server.Database;
+import tech.pegasys.artemis.storage.server.DatabaseStorageException;
+import tech.pegasys.artemis.storage.server.StateStorageMode;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RocksDbDatabase implements Database {

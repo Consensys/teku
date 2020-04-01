@@ -45,7 +45,7 @@ import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.ExceptionThrowingFunction;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -144,10 +144,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     + " - expected between 0 and "
                     + (committeeCount - 1));
           }
+          final UnsignedLong committeeIndexUnsigned = UnsignedLong.valueOf(committeeIndex);
           final AttestationData attestationData =
-              AttestationUtil.getGenericAttestationData(state, block);
+              AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
           final List<Integer> committee =
-              CommitteeUtil.get_beacon_committee(state, slot, UnsignedLong.valueOf(committeeIndex));
+              CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
 
           final Bitlist aggregationBits =
               new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
@@ -203,6 +204,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         key,
         validatorIndex,
         Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),
+        committeeAssignment.getCommittee().indexOf(validatorIndex),
         proposerSlots,
         committeeAssignment.getSlot());
   }

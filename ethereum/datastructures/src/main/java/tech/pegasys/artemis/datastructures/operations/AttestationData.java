@@ -142,10 +142,6 @@ public class AttestationData extends AbstractImmutableContainer<AttestationData>
     return ((Checkpoint) get(4));
   }
 
-  public AttestationData withIndex(final UnsignedLong index) {
-    return new AttestationData(getSlot(), index, getBeacon_block_root(), getSource(), getTarget());
-  }
-
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();

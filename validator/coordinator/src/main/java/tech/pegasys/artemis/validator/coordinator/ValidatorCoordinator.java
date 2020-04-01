@@ -56,8 +56,8 @@ import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestat
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -264,8 +264,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       final AttesterInformation attester) {
     final Bitlist aggregationBitlist = new Bitlist(unsignedAttestation.getAggregation_bits());
     aggregationBitlist.setBit(attester.getIndexIntoCommittee());
-    final AttestationData attestationData =
-        unsignedAttestation.getData().withIndex(attester.getCommittee().getIndex());
+    final AttestationData attestationData = unsignedAttestation.getData();
     return signAttestation(state, attester.getPublicKey(), attestationData)
         .thenApply(signature -> new Attestation(aggregationBitlist, attestationData, signature));
   }

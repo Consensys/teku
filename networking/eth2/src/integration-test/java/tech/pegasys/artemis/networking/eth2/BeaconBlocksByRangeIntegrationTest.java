@@ -30,8 +30,8 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeIntegrationTest {
@@ -46,11 +46,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     storageClient1 = MemoryOnlyRecentChainData.create(eventBus1);
     final Eth2Network network1 =
-        networkFactory
-            .builder()
-            .eventBus(eventBus1)
-            .chainStorageClient(storageClient1)
-            .startNetwork();
+        networkFactory.builder().eventBus(eventBus1).recentChainData(storageClient1).startNetwork();
 
     final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
