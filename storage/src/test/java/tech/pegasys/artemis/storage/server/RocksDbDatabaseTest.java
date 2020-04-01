@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.storage.server;
 
 import java.io.File;
-import tech.pegasys.artemis.storage.rocksdb.RocksDbConfiguration;
-import tech.pegasys.artemis.storage.rocksdb.RocksDbDatabase;
+import tech.pegasys.artemis.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.artemis.storage.server.rocksdb.RocksDbDatabase;
 
 public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 

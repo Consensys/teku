@@ -11,20 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.rocksdb;
+package tech.pegasys.artemis.storage.server.rocksdb;
 
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.CHECKPOINT_STATES;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.DEFAULT;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.FINALIZED_BLOCKS_BY_ROOT;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.FINALIZED_ROOTS_BY_SLOT;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.FINALIZED_STATES_BY_ROOT;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.HOT_BLOCKS_BY_ROOT;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.HOT_STATES_BY_ROOT;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.LATEST_MESSAGES;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbDefaultColumnKey.BEST_JUSTIFIED_CHECKPOINT_KEY;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbDefaultColumnKey.FINALIZED_CHECKPOINT_KEY;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbDefaultColumnKey.GENESIS_TIME_KEY;
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbDefaultColumnKey.JUSTIFIED_CHECKPOINT_KEY;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbColumn.CHECKPOINT_STATES;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbColumn.DEFAULT;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbColumn.FINALIZED_BLOCKS_BY_ROOT;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbColumn.FINALIZED_ROOTS_BY_SLOT;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbColumn.FINALIZED_STATES_BY_ROOT;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbColumn.HOT_BLOCKS_BY_ROOT;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbColumn.HOT_STATES_BY_ROOT;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbColumn.LATEST_MESSAGES;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbDefaultColumnKey.BEST_JUSTIFIED_CHECKPOINT_KEY;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbDefaultColumnKey.FINALIZED_CHECKPOINT_KEY;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbDefaultColumnKey.GENESIS_TIME_KEY;
+import static tech.pegasys.artemis.storage.server.rocksdb.RocksDbDefaultColumnKey.JUSTIFIED_CHECKPOINT_KEY;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Longs;

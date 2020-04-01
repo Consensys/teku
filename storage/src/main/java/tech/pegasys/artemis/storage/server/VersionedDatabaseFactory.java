@@ -21,8 +21,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.storage.rocksdb.RocksDbConfiguration;
-import tech.pegasys.artemis.storage.rocksdb.RocksDbDatabase;
+import tech.pegasys.artemis.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.artemis.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class VersionedDatabaseFactory {
