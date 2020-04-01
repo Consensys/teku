@@ -81,21 +81,6 @@ class DutySchedulerTest {
   }
 
   @Test
-  public void shouldFetchDutiresForSecondEpochWhenFirstEpochReached() {
-    validatorClient.onSlot(UnsignedLong.ZERO);
-
-    verify(validatorApiChannel).getDuties(UnsignedLong.ZERO, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
-
-    // Process each slot up to the start of epoch 1
-    final UnsignedLong epoch1Start = compute_start_slot_at_epoch(UnsignedLong.ONE);
-    for (int slot = 0; slot <= epoch1Start.intValue(); slot++) {
-      validatorClient.onSlot(UnsignedLong.valueOf(slot));
-    }
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
-  }
-
-  @Test
   public void shouldNotRefetchDutiesWhichHaveAlreadyBeenRetrieved() {
     when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
     validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
