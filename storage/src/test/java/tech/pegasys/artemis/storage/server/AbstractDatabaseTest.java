@@ -49,7 +49,7 @@ import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
-abstract class AbstractDatabaseTest {
+public abstract class AbstractDatabaseTest {
   protected static final BeaconState GENESIS_STATE =
       new DataStructureUtil().randomBeaconState(UnsignedLong.ZERO);
 
@@ -74,7 +74,7 @@ abstract class AbstractDatabaseTest {
           .get();
   protected final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
 
-  abstract Database createDatabase(final StateStorageMode storageMode);
+  protected abstract Database createDatabase(final StateStorageMode storageMode);
 
   protected Database setupDatabase(final StateStorageMode storageMode) {
     database = createDatabase(storageMode);

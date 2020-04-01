@@ -11,16 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server;
+package tech.pegasys.artemis.storage.server.rocksdb;
 
 import java.io.File;
-import tech.pegasys.artemis.storage.server.rocksdb.RocksDbConfiguration;
-import tech.pegasys.artemis.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.artemis.storage.server.AbstractStorageBackedDatabaseTest;
+import tech.pegasys.artemis.storage.server.Database;
+import tech.pegasys.artemis.storage.server.StateStorageMode;
 
 public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Override
-  Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
+  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
     final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
     return RocksDbDatabase.createOnDisk(config, storageMode);
   }

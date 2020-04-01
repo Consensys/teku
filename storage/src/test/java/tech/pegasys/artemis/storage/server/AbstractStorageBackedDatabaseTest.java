@@ -34,10 +34,11 @@ import tech.pegasys.artemis.storage.TrackingStorageUpdateChannel;
 
 public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabaseTest {
 
-  abstract Database createDatabase(final File tempDir, final StateStorageMode storageMode);
+  protected abstract Database createDatabase(
+      final File tempDir, final StateStorageMode storageMode);
 
   @Override
-  Database createDatabase(final StateStorageMode storageMode) {
+  protected Database createDatabase(final StateStorageMode storageMode) {
     final File tmpDir = Files.createTempDir();
     tmpDir.deleteOnExit();
     return createDatabase(tmpDir, storageMode);
@@ -61,100 +62,94 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
   private void testShouldPersistOnDisk(
       @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
-    try {
-      database = setupDatabase(tempDir.toFile(), storageMode);
-      database.storeGenesis(store);
+    database = setupDatabase(tempDir.toFile(), storageMode);
+    database.storeGenesis(store);
 
-      // Create blocks
-      final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
-      final SignedBeaconBlock block2 = blockAtSlot(2, block1);
-      final SignedBeaconBlock block3 = blockAtSlot(3, block2);
-      // Few skipped slots
-      final SignedBeaconBlock block7 = blockAtSlot(7, block3);
-      final SignedBeaconBlock block8 = blockAtSlot(8, block7);
-      final SignedBeaconBlock block9 = blockAtSlot(9, block8);
-      // Create some blocks on a different fork
-      final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
-      final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
-      final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
-      final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
+    // Create blocks
+    final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
+    final SignedBeaconBlock block2 = blockAtSlot(2, block1);
+    final SignedBeaconBlock block3 = blockAtSlot(3, block2);
+    // Few skipped slots
+    final SignedBeaconBlock block7 = blockAtSlot(7, block3);
+    final SignedBeaconBlock block8 = blockAtSlot(8, block7);
+    final SignedBeaconBlock block9 = blockAtSlot(9, block8);
+    // Create some blocks on a different fork
+    final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
+    final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
+    final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
+    final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
 
-      // Create States
-      final Map<Bytes32, BeaconState> states = new HashMap<>();
-      final BeaconState block3State = dataStructureUtil.randomBeaconState(block3.getSlot());
-      final BeaconState block7State = dataStructureUtil.randomBeaconState(block7.getSlot());
-      final BeaconState forkBlock6State = dataStructureUtil.randomBeaconState(forkBlock6.getSlot());
-      final BeaconState forkBlock7State = dataStructureUtil.randomBeaconState(forkBlock7.getSlot());
-      // Store states in map
-      states.put(block3.getMessage().hash_tree_root(), block3State);
-      states.put(block7.getMessage().hash_tree_root(), block7State);
-      states.put(forkBlock6.getMessage().hash_tree_root(), forkBlock6State);
-      states.put(forkBlock7.getMessage().hash_tree_root(), forkBlock7State);
+    // Create States
+    final Map<Bytes32, BeaconState> states = new HashMap<>();
+    final BeaconState block3State = dataStructureUtil.randomBeaconState(block3.getSlot());
+    final BeaconState block7State = dataStructureUtil.randomBeaconState(block7.getSlot());
+    final BeaconState forkBlock6State = dataStructureUtil.randomBeaconState(forkBlock6.getSlot());
+    final BeaconState forkBlock7State = dataStructureUtil.randomBeaconState(forkBlock7.getSlot());
+    // Store states in map
+    states.put(block3.getMessage().hash_tree_root(), block3State);
+    states.put(block7.getMessage().hash_tree_root(), block7State);
+    states.put(forkBlock6.getMessage().hash_tree_root(), forkBlock6State);
+    states.put(forkBlock7.getMessage().hash_tree_root(), forkBlock7State);
 
-      add(
-          states,
-          block1,
-          block2,
-          block3,
-          block7,
-          block8,
-          block9,
-          forkBlock6,
-          forkBlock7,
-          forkBlock8,
-          forkBlock9);
+    add(
+        states,
+        block1,
+        block2,
+        block3,
+        block7,
+        block8,
+        block9,
+        forkBlock6,
+        forkBlock7,
+        forkBlock8,
+        forkBlock9);
 
-      assertStatesAvailable(states);
+    assertStatesAvailable(states);
 
-      assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
-      assertLatestUpdateResultPrunedCollectionsAreEmpty();
+    assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
+    assertLatestUpdateResultPrunedCollectionsAreEmpty();
 
-      finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
+    finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
 
-      // Upon finalization, we should prune data
-      final Set<Bytes32> blocksToPrune =
-          Set.of(block1, block2, block3, forkBlock6).stream()
-              .map(b -> b.getMessage().hash_tree_root())
-              .collect(Collectors.toSet());
-      blocksToPrune.add(genesisBlock.hash_tree_root());
-      final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
-      assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
+    // Upon finalization, we should prune data
+    final Set<Bytes32> blocksToPrune =
+        Set.of(block1, block2, block3, forkBlock6).stream()
+            .map(b -> b.getMessage().hash_tree_root())
+            .collect(Collectors.toSet());
+    blocksToPrune.add(genesisBlock.hash_tree_root());
+    final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
+    assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
 
-      // Check data was pruned from store
-      assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
+    // Check data was pruned from store
+    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
 
-      // Close and re-read from disk store.
-      database.close();
-      database = setupDatabase(tempDir.toFile(), storageMode);
-      assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
-      assertBlocksFinalized(block1, block2, block3, block7);
-      assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
+    // Close and re-read from disk store.
+    database.close();
+    database = setupDatabase(tempDir.toFile(), storageMode);
+    assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
+    assertBlocksFinalized(block1, block2, block3, block7);
+    assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
 
-      assertHotStatesAvailable(List.of(block7State, forkBlock7State));
-      switch (storageMode) {
-        case ARCHIVE:
-          final Map<Bytes32, BeaconState> expectedStates = new HashMap<>(states);
-          // We should've pruned non-canonical states prior to latest finalized slot
-          expectedStates.remove(forkBlock6.getMessage().hash_tree_root());
-          assertStatesAvailable(expectedStates);
-          break;
-        case PRUNE:
-          assertStatesUnavailableForBlocks(block3, forkBlock6);
-          assertStatesAvailable(
-              Map.of(
-                  block7.getMessage().hash_tree_root(),
-                  block7State,
-                  forkBlock7.getMessage().hash_tree_root(),
-                  forkBlock7State));
-          break;
-      }
-
-      // Should still be able to retrieve finalized blocks by root
-      assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
-    } finally {
-      // Close and re-read from disk store.
-      database.close();
-      database = MapDbDatabase.createInMemory(storageMode);
+    assertHotStatesAvailable(List.of(block7State, forkBlock7State));
+    switch (storageMode) {
+      case ARCHIVE:
+        final Map<Bytes32, BeaconState> expectedStates = new HashMap<>(states);
+        // We should've pruned non-canonical states prior to latest finalized slot
+        expectedStates.remove(forkBlock6.getMessage().hash_tree_root());
+        assertStatesAvailable(expectedStates);
+        break;
+      case PRUNE:
+        assertStatesUnavailableForBlocks(block3, forkBlock6);
+        assertStatesAvailable(
+            Map.of(
+                block7.getMessage().hash_tree_root(),
+                block7State,
+                forkBlock7.getMessage().hash_tree_root(),
+                forkBlock7State));
+        break;
     }
+
+    // Should still be able to retrieve finalized blocks by root
+    assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.utils;
+package tech.pegasys.artemis.storage.server.mapdb;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;

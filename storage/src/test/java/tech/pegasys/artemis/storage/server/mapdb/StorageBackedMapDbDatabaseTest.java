@@ -11,14 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server;
+package tech.pegasys.artemis.storage.server.mapdb;
 
 import java.io.File;
+import tech.pegasys.artemis.storage.server.AbstractStorageBackedDatabaseTest;
+import tech.pegasys.artemis.storage.server.Database;
+import tech.pegasys.artemis.storage.server.StateStorageMode;
 
 public class StorageBackedMapDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Override
-  Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
+  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
     return MapDbDatabase.createOnDisk(tempDir, storageMode);
   }
 }
