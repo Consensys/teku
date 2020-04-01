@@ -26,7 +26,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.storage.RecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AggregateTopicHandler extends Eth2TopicHandler<AggregateAndProof> {
   private static final Logger LOG = LogManager.getLogger();

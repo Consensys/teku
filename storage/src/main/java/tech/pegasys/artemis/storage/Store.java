@@ -38,6 +38,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.client.FailedPrecommitException;
+import tech.pegasys.artemis.storage.client.ReadOnlyStore;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -104,11 +106,11 @@ public class Store implements ReadOnlyStore {
         latest_messages);
   }
 
-  Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
+  public Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
     return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP);
   }
 
-  Transaction startTransaction(
+  public Transaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new Transaction(storageUpdateChannel, updateHandler);
   }
@@ -492,7 +494,7 @@ public class Store implements ReadOnlyStore {
         latest_messages);
   }
 
-  interface StoreUpdateHandler {
+  public interface StoreUpdateHandler {
     StoreUpdateHandler NOOP =
         new StoreUpdateHandler() {
           @Override
