@@ -272,8 +272,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       final AttesterInformation attester) {
     final Bitlist aggregationBitlist = new Bitlist(unsignedAttestation.getAggregation_bits());
     aggregationBitlist.setBit(attester.getIndexIntoCommittee());
-    final AttestationData attestationData =
-        unsignedAttestation.getData().withIndex(attester.getCommittee().getIndex());
+    final AttestationData attestationData = unsignedAttestation.getData();
     return signAttestation(state, attester.getPublicKey(), attestationData)
         .thenApply(signature -> new Attestation(aggregationBitlist, attestationData, signature));
   }

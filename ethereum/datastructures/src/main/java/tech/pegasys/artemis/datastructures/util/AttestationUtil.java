@@ -220,7 +220,7 @@ public class AttestationUtil {
 
   // Get attestation data that does not include attester specific shard or crosslink information
   public static AttestationData getGenericAttestationData(
-      UnsignedLong slot, BeaconState state, BeaconBlock block) {
+      UnsignedLong slot, BeaconState state, BeaconBlock block, final UnsignedLong committeeIndex) {
     UnsignedLong epoch = compute_epoch_at_slot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.hash_tree_root();
@@ -233,6 +233,6 @@ public class AttestationUtil {
     Checkpoint target = new Checkpoint(epoch, epoch_boundary_block_root);
 
     // Set attestation data
-    return new AttestationData(slot, UnsignedLong.ZERO, beacon_block_root, source, target);
+    return new AttestationData(slot, committeeIndex, beacon_block_root, source, target);
   }
 }
