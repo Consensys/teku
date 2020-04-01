@@ -71,7 +71,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
               currentEpoch = currentEpoch.plus(UnsignedLong.ONE)) {
             scheduleDutiesForEpoch(currentEpoch).reportExceptions();
           }
-          return startEpoch.compareTo(endEpoch) > 0 ? startEpoch : endEpoch;
+          return startEpoch.compareTo(endEpoch) > 0 ? lastRequestedEpoch : endEpoch;
         });
   }
 
