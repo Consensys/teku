@@ -11,9 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.client;
 
 import com.google.common.eventbus.EventBus;
+import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.StubFinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.StubStorageUpdateChannel;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 

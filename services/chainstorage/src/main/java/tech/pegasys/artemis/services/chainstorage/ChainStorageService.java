@@ -17,9 +17,9 @@ import static tech.pegasys.artemis.util.config.Constants.STORAGE_QUERY_CHANNEL_P
 
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.storage.ChainStorageServer;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.server.ChainStorageServer;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainStorageService extends Service {
