@@ -127,6 +127,7 @@ class DutySchedulerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validator1Duties))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
+    when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
     when(dutyFactory.createBlockProductionDuty(validator1, blockProposerSlot))
         .thenReturn(blockCreationDuty);
 
@@ -148,6 +149,7 @@ class DutySchedulerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validator1Duties))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
+    when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
     when(dutyFactory.createBlockProductionDuty(validator1, blockProposerSlot))
         .thenReturn(blockCreationDuty);
 
@@ -194,15 +196,17 @@ class DutySchedulerTest {
             SafeFuture.completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
-
+    when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
 
     // Load duties
     validatorClient.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
 
     // Both validators should be scheduled to create an attestation in the same slot
-    verify(attestationDuty).addValidator(validator1, validator1Committee, validator1Index);
-    verify(attestationDuty).addValidator(validator2, validator2Committee, validator2Index);
+    verify(attestationDuty)
+        .addValidator(validator1, validator1Committee, validator1CommitteePosition);
+    verify(attestationDuty)
+        .addValidator(validator2, validator2Committee, validator2CommitteePosition);
 
     // Execute
     validatorClient.onAttestationCreationDue(attestationSlot);
