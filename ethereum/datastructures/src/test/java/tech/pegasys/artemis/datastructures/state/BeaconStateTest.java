@@ -69,36 +69,40 @@ class BeaconStateTest {
 
   @Test
   public void changeSpecConstantsTest() {
-    BeaconState s1 = BeaconState.createEmpty();
+    try {
+      BeaconState s1 = BeaconState.createEmpty();
 
-    Constants.SLOTS_PER_HISTORICAL_ROOT = 123;
-    Constants.HISTORICAL_ROOTS_LIMIT = 123;
-    Constants.SLOTS_PER_ETH1_VOTING_PERIOD = 123;
-    Constants.VALIDATOR_REGISTRY_LIMIT = 123;
-    Constants.EPOCHS_PER_HISTORICAL_VECTOR = 123;
-    Constants.EPOCHS_PER_SLASHINGS_VECTOR = 123;
-    Constants.MAX_ATTESTATIONS = 123;
-    Constants.JUSTIFICATION_BITS_LENGTH = 123;
+      Constants.SLOTS_PER_HISTORICAL_ROOT = 123;
+      Constants.HISTORICAL_ROOTS_LIMIT = 123;
+      Constants.SLOTS_PER_ETH1_VOTING_PERIOD = 123;
+      Constants.VALIDATOR_REGISTRY_LIMIT = 123;
+      Constants.EPOCHS_PER_HISTORICAL_VECTOR = 123;
+      Constants.EPOCHS_PER_SLASHINGS_VECTOR = 123;
+      Constants.MAX_ATTESTATIONS = 123;
+      Constants.JUSTIFICATION_BITS_LENGTH = 123;
 
-    // this call should reset all the memorized spec constants
-    BeaconState.setConstants();
-    BeaconState s2 = BeaconState.createEmpty();
+      // this call should reset all the memorized spec constants
+      BeaconState.setConstants();
+      BeaconState s2 = BeaconState.createEmpty();
 
-    assertThat(s1.getBlock_roots().getMaxSize()).isNotEqualTo(s2.getBlock_roots().getMaxSize());
-    assertThat(s1.getState_roots().getMaxSize()).isNotEqualTo(s2.getState_roots().getMaxSize());
-    assertThat(s1.getHistorical_roots().getMaxSize())
-        .isNotEqualTo(s2.getHistorical_roots().getMaxSize());
-    assertThat(s1.getEth1_data_votes().getMaxSize())
-        .isNotEqualTo(s2.getEth1_data_votes().getMaxSize());
-    assertThat(s1.getValidators().getMaxSize()).isNotEqualTo(s2.getValidators().getMaxSize());
-    assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
-    assertThat(s1.getRandao_mixes().getMaxSize()).isNotEqualTo(s2.getRandao_mixes().getMaxSize());
-    assertThat(s1.getSlashings().getMaxSize()).isNotEqualTo(s2.getSlashings().getMaxSize());
-    assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
-        .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
-    assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
-        .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
-    assertThat(s1.getJustification_bits().getSize())
-        .isNotEqualTo(s2.getJustification_bits().getSize());
+      assertThat(s1.getBlock_roots().getMaxSize()).isNotEqualTo(s2.getBlock_roots().getMaxSize());
+      assertThat(s1.getState_roots().getMaxSize()).isNotEqualTo(s2.getState_roots().getMaxSize());
+      assertThat(s1.getHistorical_roots().getMaxSize())
+          .isNotEqualTo(s2.getHistorical_roots().getMaxSize());
+      assertThat(s1.getEth1_data_votes().getMaxSize())
+          .isNotEqualTo(s2.getEth1_data_votes().getMaxSize());
+      assertThat(s1.getValidators().getMaxSize()).isNotEqualTo(s2.getValidators().getMaxSize());
+      assertThat(s1.getBalances().getMaxSize()).isNotEqualTo(s2.getBalances().getMaxSize());
+      assertThat(s1.getRandao_mixes().getMaxSize()).isNotEqualTo(s2.getRandao_mixes().getMaxSize());
+      assertThat(s1.getSlashings().getMaxSize()).isNotEqualTo(s2.getSlashings().getMaxSize());
+      assertThat(s1.getPrevious_epoch_attestations().getMaxSize())
+          .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
+      assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
+          .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
+      assertThat(s1.getJustification_bits().getSize())
+          .isNotEqualTo(s2.getJustification_bits().getSize());
+    } finally {
+      Constants.setConstants("minimal");
+    }
   }
 }
