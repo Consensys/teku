@@ -40,7 +40,6 @@ public class BlockProductionDuty implements Duty {
       final UnsignedLong slot,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel) {
-    LOG.trace("Created");
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;

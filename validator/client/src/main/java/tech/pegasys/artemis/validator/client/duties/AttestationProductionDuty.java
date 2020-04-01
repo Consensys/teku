@@ -34,7 +34,8 @@ import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Integer, List<ValidatorWithCommitteePosition>> validators = new HashMap<>();
+  private final Map<Integer, List<ValidatorWithCommitteePosition>> validatorsByCommitteeIndex =
+      new HashMap<>();
   private final UnsignedLong slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
@@ -50,7 +51,7 @@ public class AttestationProductionDuty implements Duty {
 
   public synchronized void addValidator(
       final Validator validator, final int attestationCommitteeIndex, final int committeePosition) {
-    validators
+    validatorsByCommitteeIndex
         .computeIfAbsent(attestationCommitteeIndex, key -> new ArrayList<>())
         .add(new ValidatorWithCommitteePosition(validator, committeePosition));
   }
@@ -58,7 +59,7 @@ public class AttestationProductionDuty implements Duty {
   @Override
   public synchronized SafeFuture<?> performDuty() {
     LOG.trace("Creating attestations at slot {}", slot);
-    if (validators.isEmpty()) {
+    if (validatorsByCommitteeIndex.isEmpty()) {
       return SafeFuture.COMPLETE;
     }
     return forkProvider.getFork().thenCompose(this::produceAttestations);
@@ -71,7 +72,7 @@ public class AttestationProductionDuty implements Duty {
 
   private SafeFuture<Void> produceAttestations(final Fork fork) {
     return SafeFuture.allOf(
-        validators.entrySet().stream()
+        validatorsByCommitteeIndex.entrySet().stream()
             .map(entry -> produceAttestationsForCommittee(fork, entry.getKey(), entry.getValue()))
             .toArray(SafeFuture[]::new));
   }
