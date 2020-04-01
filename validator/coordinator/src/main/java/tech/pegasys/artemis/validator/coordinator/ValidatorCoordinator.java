@@ -147,10 +147,12 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   @Override
   public void onSlot(UnsignedLong slot) {
-    final Optional<Bytes32> headRoot = recentChainData.getBestBlockRoot();
-    if (!isGenesis(slot) && headRoot.isPresent()) {
-      BeaconState headState = recentChainData.getStore().getBlockState(headRoot.get());
-      createBlockIfNecessary(headState, slot);
+    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      final Optional<Bytes32> headRoot = recentChainData.getBestBlockRoot();
+      if (!isGenesis(slot) && headRoot.isPresent()) {
+        BeaconState headState = recentChainData.getStore().getBlockState(headRoot.get());
+        createBlockIfNecessary(headState, slot);
+      }
     }
 
     eth1DataCache.onSlot(slot);
