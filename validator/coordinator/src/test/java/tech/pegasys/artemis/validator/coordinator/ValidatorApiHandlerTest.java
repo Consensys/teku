@@ -198,8 +198,9 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getBlockAndStateInEffectAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(new BeaconBlockAndState(block, state))));
 
+    final int committeeIndex = 0;
     final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(slot, 0);
+        validatorApiHandler.createUnsignedAttestation(slot, committeeIndex);
 
     assertThat(result).isCompleted();
     final Optional<Attestation> maybeAttestation = result.join();
@@ -208,7 +209,9 @@ class ValidatorApiHandlerTest {
     assertThat(attestation.getAggregation_bits())
         .isEqualTo(new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE));
     assertThat(attestation.getData())
-        .isEqualTo(AttestationUtil.getGenericAttestationData(slot, state, block));
+        .isEqualTo(
+            AttestationUtil.getGenericAttestationData(
+                slot, state, block, UnsignedLong.valueOf(committeeIndex)));
     assertThat(attestation.getData().getSlot()).isEqualTo(slot);
     assertThat(attestation.getAggregate_signature().toBytes())
         .isEqualTo(BLSSignature.empty().toBytes());
