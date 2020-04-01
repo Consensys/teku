@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.client;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
@@ -31,9 +31,10 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
+import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
-import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -44,6 +45,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   protected final EventBus eventBus;
+  protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
@@ -58,9 +60,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   // Time
   private volatile UnsignedLong genesisTime;
 
-  RecentChainData(final StorageUpdateChannel storageUpdateChannel, final EventBus eventBus) {
+  RecentChainData(
+      final StorageUpdateChannel storageUpdateChannel,
+      final FinalizedCheckpointChannel finalizedCheckpointChannel,
+      final EventBus eventBus) {
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
+    this.finalizedCheckpointChannel = finalizedCheckpointChannel;
   }
 
   public void subscribeStoreInitialized(Runnable runnable) {
@@ -268,16 +274,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store == null ? null : store.getFinalizedCheckpoint().getRoot();
   }
 
-  public UnsignedLong getJustifiedEpoch() {
-    return store == null ? UnsignedLong.ZERO : store.getJustifiedCheckpoint().getEpoch();
-  }
-
-  public Bytes32 getJustifiedRoot() {
-    return store == null ? null : store.getJustifiedCheckpoint().getRoot();
-  }
-
   @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
-    eventBus.post(new FinalizedCheckpointEvent(finalizedCheckpoint));
+  public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
+    finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
   }
 }

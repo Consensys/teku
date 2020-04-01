@@ -24,9 +24,9 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.storage.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.RecentChainData;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
@@ -47,11 +47,7 @@ public class PeerStatusIntegrationTest {
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network1 = networkFactory.builder().startNetwork();
     final Eth2Network network2 =
-        networkFactory
-            .builder()
-            .eventBus(eventBus2)
-            .chainStorageClient(storageClient2)
-            .startNetwork();
+        networkFactory.builder().eventBus(eventBus2).recentChainData(storageClient2).startNetwork();
 
     Waiter.waitFor(network1.connect(network1.createPeerAddress(network2.getNodeAddress())));
     Waiter.waitFor(
@@ -72,11 +68,7 @@ public class PeerStatusIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final RecentChainData storageClient1 = MemoryOnlyRecentChainData.create(eventBus1);
     final Eth2Network network1 =
-        networkFactory
-            .builder()
-            .eventBus(eventBus1)
-            .chainStorageClient(storageClient1)
-            .startNetwork();
+        networkFactory.builder().eventBus(eventBus1).recentChainData(storageClient1).startNetwork();
 
     final EventBus eventBus2 = new EventBus();
     final RecentChainData storageClient2 = MemoryOnlyRecentChainData.create(eventBus2);
@@ -85,7 +77,7 @@ public class PeerStatusIntegrationTest {
         networkFactory
             .builder()
             .eventBus(eventBus2)
-            .chainStorageClient(storageClient2)
+            .recentChainData(storageClient2)
             .peer(network1)
             .startNetwork();
 

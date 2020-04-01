@@ -510,6 +510,21 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void allof_shouldCompleteWhenAllFuturesComplete() {
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
+
+    final SafeFuture<Void> result = SafeFuture.allOf(future1, future2);
+    assertThat(result).isNotDone();
+
+    future1.complete(null);
+    assertThat(result).isNotDone();
+
+    future2.complete(null);
+    assertThat(result).isCompletedWithValue(null);
+  }
+
+  @Test
   public void allOfFailFast_failImmediatelyWhenAnyFutureFails() {
     final SafeFuture<Void> future1 = new SafeFuture<>();
     final SafeFuture<Void> future2 = new SafeFuture<>();

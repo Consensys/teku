@@ -11,13 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.client;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -30,8 +32,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
   public StorageBackedRecentChainData(
       final AsyncRunner asyncRunner,
       final StorageUpdateChannel storageUpdateChannel,
+      final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final EventBus eventBus) {
-    super(storageUpdateChannel, eventBus);
+    super(storageUpdateChannel, finalizedCheckpointChannel, eventBus);
     this.asyncRunner = asyncRunner;
     eventBus.register(this);
   }
@@ -39,9 +42,11 @@ public class StorageBackedRecentChainData extends RecentChainData {
   public static SafeFuture<RecentChainData> create(
       final AsyncRunner asyncRunner,
       final StorageUpdateChannel storageUpdateChannel,
+      final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final EventBus eventBus) {
     StorageBackedRecentChainData client =
-        new StorageBackedRecentChainData(asyncRunner, storageUpdateChannel, eventBus);
+        new StorageBackedRecentChainData(
+            asyncRunner, storageUpdateChannel, finalizedCheckpointChannel, eventBus);
     return client.initializeFromStorage();
   }
 

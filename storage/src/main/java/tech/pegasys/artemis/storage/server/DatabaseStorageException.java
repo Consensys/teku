@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.server;
 
-import tech.pegasys.artemis.storage.events.diskupdates.StorageUpdateResult;
+public class DatabaseStorageException extends RuntimeException {
+  public DatabaseStorageException(final String s) {
+    super(s);
+  }
 
-public class FailedPrecommitException extends RuntimeException {
-
-  public FailedPrecommitException(final StorageUpdateResult result) {
-    super(result.getError());
+  public DatabaseStorageException(final String s, final Throwable cause) {
+    super(s, cause);
   }
 }

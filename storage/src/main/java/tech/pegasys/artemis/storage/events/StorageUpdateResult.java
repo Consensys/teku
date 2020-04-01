@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events.diskupdates;
+package tech.pegasys.artemis.storage.events;
 
 import java.util.Collections;
 import java.util.Set;

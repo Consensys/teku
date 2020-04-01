@@ -13,22 +13,11 @@
 
 package tech.pegasys.artemis.storage;
 
-import com.google.common.eventbus.EventBus;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 
-public class MemoryOnlyRecentChainData extends RecentChainData {
+public class StubFinalizedCheckpointChannel implements FinalizedCheckpointChannel {
 
-  public MemoryOnlyRecentChainData(final EventBus eventBus) {
-    super(new StubStorageUpdateChannel(), eventBus);
-    eventBus.register(this);
-  }
-
-  public static RecentChainData create(final EventBus eventBus) {
-    return new MemoryOnlyRecentChainData(eventBus);
-  }
-
-  public static RecentChainData createWithStore(final EventBus eventBus, final Store store) {
-    MemoryOnlyRecentChainData client = new MemoryOnlyRecentChainData(eventBus);
-    client.setStore(store);
-    return client;
-  }
+  @Override
+  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {}
 }

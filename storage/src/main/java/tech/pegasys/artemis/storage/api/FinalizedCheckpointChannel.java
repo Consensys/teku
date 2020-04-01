@@ -11,14 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.api;
 
-public class DatabaseStorageException extends RuntimeException {
-  public DatabaseStorageException(final String s) {
-    super(s);
-  }
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
-  public DatabaseStorageException(final String s, final Throwable cause) {
-    super(s, cause);
-  }
+public interface FinalizedCheckpointChannel {
+  void onNewFinalizedCheckpoint(final Checkpoint checkpoint);
 }

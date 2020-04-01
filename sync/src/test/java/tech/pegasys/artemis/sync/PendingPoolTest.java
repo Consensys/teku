@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 
 public class PendingPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -135,7 +134,7 @@ public class PendingPoolTest {
   public void add_nonFinalizedBlock() {
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
-    eventBus.post(new FinalizedCheckpointEvent(checkpoint));
+    pendingPool.onNewFinalizedCheckpoint(checkpoint);
 
     final UnsignedLong slot = checkpoint.getEpochStartSlot().plus(UnsignedLong.ONE);
     setSlot(slot);
@@ -154,7 +153,7 @@ public class PendingPoolTest {
   public void add_finalizedBlock() {
     final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
-    eventBus.post(new FinalizedCheckpointEvent(checkpoint));
+    pendingPool.onNewFinalizedCheckpoint(checkpoint);
     final long slot = checkpoint.getEpochStartSlot().longValue() + 10;
     setSlot(slot);
 
@@ -345,7 +344,7 @@ public class PendingPoolTest {
     }
 
     // Update finalized checkpoint and prune
-    eventBus.post(new FinalizedCheckpointEvent(checkpoint));
+    pendingPool.onNewFinalizedCheckpoint(checkpoint);
     pendingPool.prune();
 
     // Check that all final blocks have been pruned

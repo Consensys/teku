@@ -27,7 +27,7 @@ import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.artemis.util.collections.LimitStrategy;
 
 /** Holds items with slots that are in the future relative to our node's current slot */
-class FutureItems<T> {
+public class FutureItems<T> {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_ITEMS_PER_SLOT = 500;
   private final NavigableMap<UnsignedLong, Set<T>> queuedFutureItems =

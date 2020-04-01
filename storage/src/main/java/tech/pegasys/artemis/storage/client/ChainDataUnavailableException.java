@@ -11,10 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.api;
+package tech.pegasys.artemis.storage.client;
 
-import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
-
-public interface FinalizedCheckpointEventChannel {
-  void onFinalizedCheckpoint(FinalizedCheckpointEvent event);
-}
+public class ChainDataUnavailableException extends RuntimeException {}
