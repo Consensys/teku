@@ -61,6 +61,12 @@ public class LoggingConfigurator {
     LOG_LEVEL = level;
   }
 
+  public static synchronized void setLevel(final String filter, final Level level) {
+    StatusLogger.getLogger().info("Setting logging level on filter {} to {}", filter, level.name());
+    Configurator.setAllLevels(filter, level);
+    LOG_LEVEL = level;
+  }
+
   public static synchronized void update(final LoggingConfiguration configuration) {
     COLOR.set(configuration.isColorEnabled());
     DESTINATION = configuration.getDestination();
