@@ -11,37 +11,39 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events.diskupdates;
+package tech.pegasys.artemis.storage.events;
 
-import java.util.Collections;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
-public class FailedStorageUpdateResult implements StorageUpdateResult {
-  private final RuntimeException error;
+public class SuccessfulStorageUpdateResult implements StorageUpdateResult {
+  private final Set<Bytes32> prunedBlockRoots;
+  private final Set<Checkpoint> prunedCheckpoints;
 
-  FailedStorageUpdateResult(final RuntimeException error) {
-    this.error = error;
+  public SuccessfulStorageUpdateResult(
+      final Set<Bytes32> prunedBlockRoots, final Set<Checkpoint> prunedCheckpoints) {
+    this.prunedBlockRoots = prunedBlockRoots;
+    this.prunedCheckpoints = prunedCheckpoints;
   }
 
   @Override
   public boolean isSuccessful() {
-    return false;
+    return true;
   }
 
   @Override
   public RuntimeException getError() {
-    return error;
-  }
-
-  @Override
-  public Set<Bytes32> getPrunedBlockRoots() {
-    return Collections.emptySet();
+    return null;
   }
 
   @Override
   public Set<Checkpoint> getPrunedCheckpoints() {
-    return Collections.emptySet();
+    return prunedCheckpoints;
+  }
+
+  @Override
+  public Set<Bytes32> getPrunedBlockRoots() {
+    return prunedBlockRoots;
   }
 }

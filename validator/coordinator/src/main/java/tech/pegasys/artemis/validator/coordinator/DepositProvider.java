@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MerkleTree;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
@@ -34,11 +35,10 @@ import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.storage.RecentChainData;
-import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
-import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
+import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
-public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEventChannel {
+public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -69,10 +69,10 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEv
   }
 
   @Override
-  public synchronized void onFinalizedCheckpoint(FinalizedCheckpointEvent event) {
+  public synchronized void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
     BeaconState finalizedState =
         recentChainData
-            .getBlockState(event.getCheckpoint().getRoot())
+            .getBlockState(checkpoint.getRoot())
             .orElseThrow(
                 () -> new IllegalArgumentException("Finalized Checkpoint state can not be found."));
 
