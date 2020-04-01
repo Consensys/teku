@@ -144,10 +144,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     + " - expected between 0 and "
                     + (committeeCount - 1));
           }
+          final UnsignedLong committeeIndexUnsigned = UnsignedLong.valueOf(committeeIndex);
           final AttestationData attestationData =
-              AttestationUtil.getGenericAttestationData(slot, state, block);
+              AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
           final List<Integer> committee =
-              CommitteeUtil.get_beacon_committee(state, slot, UnsignedLong.valueOf(committeeIndex));
+              CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
 
           final Bitlist aggregationBits =
               new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
