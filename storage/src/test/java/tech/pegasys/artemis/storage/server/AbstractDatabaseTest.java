@@ -120,6 +120,18 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
+  public void shouldStoreBlockWithLargeSlot() {
+    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final SignedBeaconBlock newBlock =
+        dataStructureUtil.randomSignedBeaconBlock(UnsignedLong.MAX_VALUE);
+    final Bytes32 root = newBlock.getMessage().hash_tree_root();
+    transaction.putBlock(root, newBlock);
+    transaction.commit().reportExceptions();
+
+    assertThat(database.getSignedBlock(root)).hasValue(newBlock);
+  }
+
+  @Test
   public void shouldGetHotBlockByRoot() {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     final SignedBeaconBlock block1 = blockAtSlot(1);
