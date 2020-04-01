@@ -94,14 +94,16 @@ public class CombinedChainDataClient {
       LOG.trace("No block at slot {} because head block root {} is unknown", slot, headBlockRoot);
       return BLOCK_NOT_AVAILABLE;
     }
-    if (headState.getSlot().compareTo(slot) < 0) {
+
+    final UnsignedLong headStateSlot = headState.getSlot();
+    if (headStateSlot.compareTo(slot) < 0) {
       LOG.trace(
           "No block at slot {} because it is after the referenced head state slot {}",
           slot,
-          headState.getSlot());
+          headStateSlot);
       return BLOCK_NOT_AVAILABLE;
     }
-    if (headState.getSlot().equals(slot)) {
+    if (headStateSlot.equals(slot)) {
       LOG.trace("Block root at slot {} is the specified head block root", slot);
       return getBlockByBlockRoot(headBlockRoot);
     }
