@@ -108,15 +108,16 @@ public class GenesisGenerator {
       activation_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
     }
 
-    Validator modifiedValidator = new Validator(
-        validator.getPubkey(),
-        validator.getWithdrawal_credentials(),
-        effective_balance,
-        validator.isSlashed(),
-        activation_eligibility_epoch,
-        activation_epoch,
-        validator.getExit_epoch(),
-        validator.getWithdrawable_epoch());
+    Validator modifiedValidator =
+        new Validator(
+            validator.getPubkey(),
+            validator.getWithdrawal_credentials(),
+            effective_balance,
+            validator.isSlashed(),
+            activation_eligibility_epoch,
+            activation_epoch,
+            validator.getExit_epoch(),
+            validator.getWithdrawable_epoch());
 
     state.getValidators().set(index, modifiedValidator);
   }
