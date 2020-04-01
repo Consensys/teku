@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
@@ -219,19 +219,20 @@ public class AttestationUtil {
   }
 
   // Get attestation data that does not include attester specific shard or crosslink information
-  public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
-    UnsignedLong slot = state.getSlot();
+  public static AttestationData getGenericAttestationData(
+      UnsignedLong slot, BeaconState state, BeaconBlock block, final UnsignedLong committeeIndex) {
+    UnsignedLong epoch = compute_epoch_at_slot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.hash_tree_root();
-    UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
+    UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
     Bytes32 epoch_boundary_block_root =
-        start_slot.compareTo(slot) == 0
+        start_slot.compareTo(slot) == 0 || state.getSlot().compareTo(start_slot) <= 0
             ? block.hash_tree_root()
             : get_block_root_at_slot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
-    Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
+    Checkpoint target = new Checkpoint(epoch, epoch_boundary_block_root);
 
     // Set attestation data
-    return new AttestationData(slot, UnsignedLong.ZERO, beacon_block_root, source, target);
+    return new AttestationData(slot, committeeIndex, beacon_block_root, source, target);
   }
 }

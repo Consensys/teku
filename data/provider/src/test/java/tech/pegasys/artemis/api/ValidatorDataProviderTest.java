@@ -41,8 +41,8 @@ import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.storage.ChainDataUnavailableException;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -160,7 +160,7 @@ public class ValidatorDataProviderTest {
     assertThat(validatorDuties.size()).isEqualTo(1);
     ValidatorDuties expected =
         new ValidatorDuties(
-            new BLSPubKey(publicKey.toBytesCompressed()), null, null, emptyList(), null);
+            new BLSPubKey(publicKey.toBytesCompressed()), null, null, null, emptyList(), null);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
@@ -201,6 +201,7 @@ public class ValidatorDataProviderTest {
             List.of(new BLSPubKey(publicKey.toBytesCompressed())));
     final int validatorIndex = 4;
     final int attestationCommitteeIndex = 2;
+    final int attestationCommitteePosition = 5;
     final List<UnsignedLong> blockProposalSlots =
         List.of(UnsignedLong.valueOf(66), UnsignedLong.valueOf(77));
     final UnsignedLong attestationSlot = UnsignedLong.valueOf(50);
@@ -213,6 +214,7 @@ public class ValidatorDataProviderTest {
                             publicKey,
                             validatorIndex,
                             attestationCommitteeIndex,
+                            attestationCommitteePosition,
                             blockProposalSlots,
                             attestationSlot)))));
 
@@ -227,6 +229,7 @@ public class ValidatorDataProviderTest {
             new BLSPubKey(publicKey.toBytesCompressed()),
             validatorIndex,
             attestationCommitteeIndex,
+            attestationCommitteePosition,
             blockProposalSlots,
             attestationSlot);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);

@@ -30,8 +30,8 @@ import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLS;
@@ -44,55 +44,55 @@ public class BeaconChainUtil {
 
   private final StateTransition stateTransition = new StateTransition();
   private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil(stateTransition);
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
 
   private BeaconChainUtil(
       final List<BLSKeyPair> validatorKeys,
-      final ChainStorageClient chainStorageClient,
+      final RecentChainData recentChainData,
       boolean signDeposits) {
     this.validatorKeys = validatorKeys;
-    this.storageClient = chainStorageClient;
+    this.storageClient = recentChainData;
     this.signDeposits = signDeposits;
   }
 
   public static BeaconChainUtil create(
-      final int validatorCount, final ChainStorageClient storageClient) {
+      final int validatorCount, final RecentChainData storageClient) {
     final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorCount);
     return create(storageClient, validatorKeys);
   }
 
   public static BeaconChainUtil create(
-      final ChainStorageClient storageClient, final List<BLSKeyPair> validatorKeys) {
+      final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
     return create(storageClient, validatorKeys, true);
   }
 
   public static BeaconChainUtil create(
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
     return new BeaconChainUtil(validatorKeys, storageClient, signDeposits);
   }
 
   public static void initializeStorage(
-      final ChainStorageClient chainStorageClient, final List<BLSKeyPair> validatorKeys) {
-    initializeStorage(chainStorageClient, validatorKeys, true);
+      final RecentChainData recentChainData, final List<BLSKeyPair> validatorKeys) {
+    initializeStorage(recentChainData, validatorKeys, true);
   }
 
   public static void initializeStorage(
-      final ChainStorageClient chainStorageClient,
+      final RecentChainData recentChainData,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
-    StartupUtil.setupInitialState(chainStorageClient, 0, null, validatorKeys, signDeposits);
+    StartupUtil.setupInitialState(recentChainData, 0, null, validatorKeys, signDeposits);
   }
 
   public void initializeStorage() {
     initializeStorage(storageClient);
   }
 
-  public void initializeStorage(final ChainStorageClient chainStorageClient) {
-    initializeStorage(chainStorageClient, validatorKeys, signDeposits);
+  public void initializeStorage(final RecentChainData recentChainData) {
+    initializeStorage(recentChainData, validatorKeys, signDeposits);
   }
 
   public void setSlot(final UnsignedLong currentSlot) {
@@ -240,6 +240,11 @@ public class BeaconChainUtil {
 
     @Override
     public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
+      return sign(signingRoot);
+    }
+
+    @Override
+    public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
       return sign(signingRoot);
     }
 

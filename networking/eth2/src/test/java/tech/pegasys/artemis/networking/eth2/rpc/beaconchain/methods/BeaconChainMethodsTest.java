@@ -27,8 +27,8 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RequestRpcDecoder;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
@@ -50,15 +50,15 @@ public class BeaconChainMethodsTest {
   private final PeerLookup peerLookup = mock(PeerLookup.class);
   final AsyncRunner asyncRunner = new StubAsyncRunner();
   final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
-  final ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
+  final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
-  final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(chainStorageClient);
+  final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
   private final BeaconChainMethods beaconChainMethods =
       BeaconChainMethods.create(
           asyncRunner,
           peerLookup,
           combinedChainDataClient,
-          chainStorageClient,
+          recentChainData,
           metricsSystem,
           statusMessageFactory);
 

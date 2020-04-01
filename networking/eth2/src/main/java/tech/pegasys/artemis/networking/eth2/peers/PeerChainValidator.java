@@ -26,8 +26,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -35,16 +35,16 @@ import tech.pegasys.artemis.util.config.Constants;
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ChainStorageClient storageClient;
-  private final HistoricalChainData historicalChainData;
+  private final RecentChainData storageClient;
+  private final StorageQueryChannel historicalChainData;
   private final Eth2Peer peer;
   private final AtomicBoolean hasRun = new AtomicBoolean(false);
   private final PeerStatus status;
   private SafeFuture<Boolean> result;
 
   private PeerChainValidator(
-      final ChainStorageClient storageClient,
-      final HistoricalChainData historicalChainData,
+      final RecentChainData storageClient,
+      final StorageQueryChannel historicalChainData,
       final Eth2Peer peer,
       final PeerStatus status) {
     this.storageClient = storageClient;
@@ -54,8 +54,8 @@ public class PeerChainValidator {
   }
 
   public static PeerChainValidator create(
-      final ChainStorageClient storageClient,
-      final HistoricalChainData historicalChainData,
+      final RecentChainData storageClient,
+      final StorageQueryChannel historicalChainData,
       final Eth2Peer peer,
       final PeerStatus status) {
     return new PeerChainValidator(storageClient, historicalChainData, peer, status);

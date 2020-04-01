@@ -17,13 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 
 public class LimitedSetTest {
 
   @Test
   public void create_evictOldest() {
-    final Set<Integer> set = LimitedSet.create(1, 2, Mode.DROP_OLDEST_ELEMENT);
+    final Set<Integer> set = LimitedSet.create(1, 2, LimitStrategy.DROP_OLDEST_ELEMENT);
     set.add(1);
     assertThat(set.size()).isEqualTo(1);
     set.add(2);
@@ -41,7 +40,7 @@ public class LimitedSetTest {
 
   @Test
   public void create_evictLeastRecentlyAccessed() {
-    final Set<Integer> set = LimitedSet.create(1, 2, Mode.DROP_LEAST_RECENTLY_ACCESSED);
+    final Set<Integer> set = LimitedSet.create(1, 2, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     set.add(1);
     assertThat(set.size()).isEqualTo(1);
     set.add(2);

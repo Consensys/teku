@@ -29,9 +29,9 @@ import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.Disconn
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.events.Subscribers;
 
@@ -48,7 +48,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   Eth2PeerManager(
       final CombinedChainDataClient combinedChainDataClient,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
       final PeerValidatorFactory peerValidatorFactory) {
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
@@ -64,8 +64,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   public static Eth2PeerManager create(
-      final ChainStorageClient storageClient,
-      final HistoricalChainData historicalChainData,
+      final RecentChainData storageClient,
+      final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->

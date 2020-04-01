@@ -40,6 +40,8 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -77,14 +79,7 @@ public class ProfilingRun {
 
     while (true) {
       EventBus localEventBus = mock(EventBus.class);
-      StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-      when(storageUpdateChannel.onStorageUpdate(any()))
-          .thenReturn(
-              SafeFuture.completedFuture(
-                  new SuccessfulStorageUpdateResult(
-                      Collections.emptySet(), Collections.emptySet())));
-      ChainStorageClient localStorage =
-          ChainStorageClient.memoryOnlyClient(localEventBus, storageUpdateChannel);
+      RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
       BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
       localStorage.initializeFromGenesis(initialState);
       BlockImporter blockImporter = new BlockImporter(localStorage, localEventBus);

@@ -19,6 +19,7 @@ dependencies {
     implementation 'org.webjars:swagger-ui'
 
     testImplementation testFixtures(project(':bls'))
+    testImplementation testFixtures(project(':storage'))
     testImplementation testFixtures(project(':ethereum:datastructures'))
 
     testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
@@ -27,6 +28,7 @@ dependencies {
     integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
 
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
+    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
 }
 
 test {

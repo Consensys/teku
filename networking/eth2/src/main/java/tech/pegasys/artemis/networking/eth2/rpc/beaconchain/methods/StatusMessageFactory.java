@@ -17,21 +17,21 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class StatusMessageFactory {
 
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
 
-  public StatusMessageFactory(final ChainStorageClient chainStorageClient) {
-    this.chainStorageClient = chainStorageClient;
+  public StatusMessageFactory(final RecentChainData recentChainData) {
+    this.recentChainData = recentChainData;
   }
 
   public StatusMessage createStatusMessage() {
     final Bytes32 finalizedRoot;
     final UnsignedLong finalizedEpoch;
-    if (chainStorageClient.getStore() != null) {
-      final Checkpoint finalizedCheckpoint = chainStorageClient.getStore().getFinalizedCheckpoint();
+    if (recentChainData.getStore() != null) {
+      final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
       finalizedRoot = finalizedCheckpoint.getRoot();
       finalizedEpoch = finalizedCheckpoint.getEpoch();
     } else {
@@ -39,10 +39,10 @@ public class StatusMessageFactory {
       finalizedEpoch = UnsignedLong.ZERO;
     }
     return new StatusMessage(
-        chainStorageClient.getForkAtHead(),
+        recentChainData.getForkAtHead(),
         finalizedRoot,
         finalizedEpoch,
-        chainStorageClient.getBestBlockRoot().orElse(Bytes32.ZERO),
-        chainStorageClient.getBestSlot());
+        recentChainData.getBestBlockRoot().orElse(Bytes32.ZERO),
+        recentChainData.getBestSlot());
   }
 }

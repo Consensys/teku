@@ -28,14 +28,14 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
   private final P2PNetwork<?> network;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
   private BlockGossipManager blockGossipManager;
@@ -46,12 +46,12 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
       final P2PNetwork<?> network,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
-      final ChainStorageClient chainStorageClient) {
+      final RecentChainData recentChainData) {
     super(network);
     this.network = network;
     this.peerManager = peerManager;
     this.eventBus = eventBus;
-    this.chainStorageClient = chainStorageClient;
+    this.recentChainData = recentChainData;
   }
 
   @Override
@@ -61,9 +61,9 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
 
   private void startup() {
     state.set(State.RUNNING);
-    blockGossipManager = new BlockGossipManager(network, eventBus, chainStorageClient);
-    attestationGossipManager = new AttestationGossipManager(network, eventBus, chainStorageClient);
-    aggregateGossipManager = new AggregateGossipManager(network, eventBus, chainStorageClient);
+    blockGossipManager = new BlockGossipManager(network, eventBus, recentChainData);
+    attestationGossipManager = new AttestationGossipManager(network, eventBus, recentChainData);
+    aggregateGossipManager = new AggregateGossipManager(network, eventBus, recentChainData);
   }
 
   @Override

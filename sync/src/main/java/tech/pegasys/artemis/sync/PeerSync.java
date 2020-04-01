@@ -31,7 +31,7 @@ import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.Disconn
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -42,7 +42,7 @@ public class PeerSync {
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final BlockImporter blockImporter;
 
   private final AsyncRunner asyncRunner;
@@ -51,7 +51,7 @@ public class PeerSync {
 
   public PeerSync(
       final AsyncRunner asyncRunner,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final BlockImporter blockImporter) {
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;

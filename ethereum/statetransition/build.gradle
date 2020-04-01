@@ -20,12 +20,14 @@ dependencies {
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
+  testImplementation testFixtures(project(':storage'))
 
   testFixturesApi testFixtures(project(':bls'))
   testFixturesApi testFixtures(project(':storage'))
 
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':util'))
+  testFixturesImplementation project(':validator:client')
 
   test {
     testLogging.showStandardStreams = true

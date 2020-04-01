@@ -20,6 +20,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
@@ -28,8 +29,9 @@ import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.StubStorageUpdateChannel;
+import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
@@ -37,7 +39,7 @@ import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 public class SyncingNodeManager {
   private final EventBus eventBus;
   private final EventChannels eventChannels;
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final BeaconChainUtil chainUtil;
   private final Eth2Network eth2Network;
   private final SyncService syncService;
@@ -45,7 +47,7 @@ public class SyncingNodeManager {
   private SyncingNodeManager(
       final EventBus eventBus,
       final EventChannels eventChannels,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final BeaconChainUtil chainUtil,
       final Eth2Network eth2Network,
       final SyncService syncService) {
@@ -70,31 +72,44 @@ public class SyncingNodeManager {
     final EventBus eventBus = new EventBus();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
-    final ChainStorageClient storageClient =
-        ChainStorageClient.memoryOnlyClient(eventBus, new StubStorageUpdateChannel());
+    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
     final Eth2P2PNetworkBuilder networkBuilder =
-        networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
+        networkFactory.builder().eventBus(eventBus).recentChainData(recentChainData);
 
     configureNetwork.accept(networkBuilder);
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
 
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, validatorKeys);
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(recentChainData, validatorKeys);
     chainUtil.initializeStorage();
 
-    BlockImporter blockImporter = new BlockImporter(storageClient, eventBus);
+    BlockImporter blockImporter = new BlockImporter(recentChainData, eventBus);
+    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
+    final FutureItems<SignedBeaconBlock> futureBlocks =
+        new FutureItems<>(SignedBeaconBlock::getSlot);
+    final FetchRecentBlocksService recentBlockFetcher =
+        FetchRecentBlocksService.create(eth2Network, pendingBlocks);
     BlockPropagationManager blockPropagationManager =
-        BlockPropagationManager.create(eventBus, eth2Network, storageClient, blockImporter);
-    SyncManager syncManager = SyncManager.create(eth2Network, storageClient, blockImporter);
-    SyncService syncService =
-        new DefaultSyncService(blockPropagationManager, syncManager, storageClient);
+        BlockPropagationManager.create(
+            eventBus,
+            pendingBlocks,
+            futureBlocks,
+            recentBlockFetcher,
+            recentChainData,
+            blockImporter);
 
-    eventChannels.subscribe(SlotEventsChannel.class, blockPropagationManager);
+    SyncManager syncManager = SyncManager.create(eth2Network, recentChainData, blockImporter);
+    SyncService syncService =
+        new DefaultSyncService(blockPropagationManager, syncManager, recentChainData);
+
+    eventChannels
+        .subscribe(SlotEventsChannel.class, blockPropagationManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
 
     syncService.start().join();
 
     return new SyncingNodeManager(
-        eventBus, eventChannels, storageClient, chainUtil, eth2Network, syncService);
+        eventBus, eventChannels, recentChainData, chainUtil, eth2Network, syncService);
   }
 
   public SafeFuture<Peer> connect(final SyncingNodeManager peer) {
@@ -118,7 +133,7 @@ public class SyncingNodeManager {
     return eth2Network;
   }
 
-  public ChainStorageClient storageClient() {
+  public RecentChainData storageClient() {
     return storageClient;
   }
 

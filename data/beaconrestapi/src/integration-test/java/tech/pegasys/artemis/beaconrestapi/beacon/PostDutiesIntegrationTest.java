@@ -39,8 +39,8 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
     final UnsignedLong epoch = UnsignedLong.ONE;
-    when(chainStorageClient.getStore()).thenReturn(null);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+    when(recentChainData.getStore()).thenReturn(null);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(epoch);
 
     final Response response = post(epoch.intValue(), keys);
     assertNoContent(response);
@@ -51,9 +51,9 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
     final UnsignedLong epoch = UnsignedLong.ONE;
 
     final Store store = mock(Store.class);
-    when(chainStorageClient.getStore()).thenReturn(store);
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
-    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(epoch);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = post(epoch.intValue(), keys);
     assertNoContent(response);
@@ -62,7 +62,7 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
   @Test
   public void shouldReturnEmptyListWhenNoPubKeysSupplied() throws Exception {
     final UnsignedLong epoch = UnsignedLong.ONE;
-    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(epoch);
 
     final Response response = post(epoch.intValue(), Collections.emptyList());
     assertBodyEquals(response, "[]");

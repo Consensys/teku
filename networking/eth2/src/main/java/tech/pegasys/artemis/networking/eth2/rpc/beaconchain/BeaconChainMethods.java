@@ -31,8 +31,8 @@ import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessag
 import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 
 public class BeaconChainMethods {
@@ -69,13 +69,13 @@ public class BeaconChainMethods {
       final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
-      final ChainStorageClient chainStorageClient,
+      final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory) {
     return new BeaconChainMethods(
         createStatus(asyncRunner, statusMessageFactory, peerLookup),
         createGoodBye(asyncRunner, metricsSystem, peerLookup),
-        createBeaconBlocksByRoot(asyncRunner, chainStorageClient, peerLookup),
+        createBeaconBlocksByRoot(asyncRunner, recentChainData, peerLookup),
         createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup));
   }
 
@@ -114,10 +114,10 @@ public class BeaconChainMethods {
   private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRoot(
           final AsyncRunner asyncRunner,
-          final ChainStorageClient chainStorageClient,
+          final RecentChainData recentChainData,
           final PeerLookup peerLookup) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
-        new BeaconBlocksByRootMessageHandler(chainStorageClient);
+        new BeaconBlocksByRootMessageHandler(recentChainData);
     return new Eth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_ROOT,

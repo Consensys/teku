@@ -24,16 +24,16 @@ import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final EventBus eventBus;
   private final StateTransition stateTransition = new StateTransition();
 
-  public BlockImporter(ChainStorageClient storageClient, EventBus eventBus) {
+  public BlockImporter(RecentChainData storageClient, EventBus eventBus) {
     this.storageClient = storageClient;
     this.eventBus = eventBus;
   }

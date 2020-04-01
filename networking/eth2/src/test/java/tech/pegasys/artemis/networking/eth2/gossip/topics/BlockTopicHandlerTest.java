@@ -14,15 +14,12 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,26 +28,18 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
-import tech.pegasys.artemis.storage.events.diskupdates.SuccessfulStorageUpdateResult;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class BlockTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-  private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, storageClient);
   private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, storageClient);
 
   @BeforeEach
   public void setup() {
-    when(storageUpdateChannel.onStorageUpdate(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
     beaconChainUtil.initializeStorage();
   }
 

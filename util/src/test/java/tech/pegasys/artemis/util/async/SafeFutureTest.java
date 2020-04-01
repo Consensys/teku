@@ -486,6 +486,45 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void allOf_shouldAddAllSuppressedExceptions() {
+    final Throwable error1 = new RuntimeException("Nope");
+    final Throwable error2 = new RuntimeException("Oh dear");
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> future3 = new SafeFuture<>();
+
+    final SafeFuture<Void> result = SafeFuture.allOf(future1, future2, future3);
+    assertThat(result).isNotDone();
+
+    future2.completeExceptionally(error2);
+    assertThat(result).isNotDone();
+
+    future3.complete(null);
+    assertThat(result).isNotDone();
+
+    future1.completeExceptionally(error1);
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::join).hasSuppressedException(error2);
+    assertThatThrownBy(result::join).hasRootCause(error1);
+  }
+
+  @Test
+  public void allof_shouldCompleteWhenAllFuturesComplete() {
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
+
+    final SafeFuture<Void> result = SafeFuture.allOf(future1, future2);
+    assertThat(result).isNotDone();
+
+    future1.complete(null);
+    assertThat(result).isNotDone();
+
+    future2.complete(null);
+    assertThat(result).isCompletedWithValue(null);
+  }
+
+  @Test
   public void allOfFailFast_failImmediatelyWhenAnyFutureFails() {
     final SafeFuture<Void> future1 = new SafeFuture<>();
     final SafeFuture<Void> future2 = new SafeFuture<>();

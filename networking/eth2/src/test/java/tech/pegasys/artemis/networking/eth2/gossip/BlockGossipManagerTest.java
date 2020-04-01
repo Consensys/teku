@@ -30,16 +30,14 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class BlockGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-  private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(eventBus, storageUpdateChannel);
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 

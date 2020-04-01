@@ -28,8 +28,8 @@ import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
-import tech.pegasys.artemis.storage.ChainDataUnavailableException;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
@@ -114,13 +114,14 @@ public class ValidatorDataProvider {
       final tech.pegasys.artemis.validator.api.ValidatorDuties duty) {
     final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
     if (duty.getDuties().isEmpty()) {
-      return new ValidatorDuties(pubKey, null, null, emptyList(), null);
+      return new ValidatorDuties(pubKey, null, null, null, emptyList(), null);
     }
     final Duties duties = duty.getDuties().get();
     return new ValidatorDuties(
         pubKey,
         duties.getValidatorIndex(),
         duties.getAttestationCommitteeIndex(),
+        duties.getAttestationCommitteePosition(),
         duties.getBlockProposalSlots(),
         duties.getAttestationSlot());
   }

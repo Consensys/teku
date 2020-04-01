@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.provider;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
@@ -23,9 +22,9 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 public class BitlistDeserializer extends JsonDeserializer<Bitlist> {
   @Override
-  public Bitlist deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
+  public Bitlist deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     Bytes data = Bytes.fromHexString(p.getValueAsString());
-    return new Bitlist(data.toArray(), data.bitLength());
+    int length = data.bitLength();
+    return Bitlist.fromBytes(data, length);
   }
 }
