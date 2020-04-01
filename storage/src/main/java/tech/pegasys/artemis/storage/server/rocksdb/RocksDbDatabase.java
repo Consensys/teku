@@ -201,7 +201,7 @@ public class RocksDbDatabase implements Database {
         transaction.commit();
       } catch (DatabaseStorageException | RocksDBException e) {
         rollback(transaction);
-        throw new DatabaseStorageException("Error Storing Genesis", e);
+        throw new DatabaseStorageException("Error storing genesis", e);
       }
     }
   }
@@ -261,7 +261,7 @@ public class RocksDbDatabase implements Database {
           db.get(columnHandles.get(FINALIZED_ROOTS_BY_SLOT), Longs.toByteArray(slot.longValue()));
       return bytes == null ? Optional.empty() : Optional.of(Bytes32.wrap(bytes));
     } catch (RocksDBException e) {
-      throw new DatabaseStorageException("unable to getFinalizedRootAtSlot " + slot, e);
+      throw new DatabaseStorageException("Unable to getFinalizedRootAtSlot " + slot, e);
     }
   }
 
@@ -285,7 +285,7 @@ public class RocksDbDatabase implements Database {
         bytes = db.get(columnHandles.get(FINALIZED_BLOCKS_BY_ROOT), root.toArrayUnsafe());
       }
     } catch (RocksDBException e) {
-      throw new DatabaseStorageException("error trying to load block from db ");
+      throw new DatabaseStorageException("Unable to load block " + root, e);
     }
     return bytes != null
         ? Optional.of(deserialize(bytes, SignedBeaconBlock.class))
@@ -304,7 +304,7 @@ public class RocksDbDatabase implements Database {
           ? Optional.empty()
           : Optional.of(deserialize(bytes, BeaconStateImpl.class));
     } catch (RocksDBException e) {
-      throw new DatabaseStorageException("unable to getState for root" + root, e);
+      throw new DatabaseStorageException("Unable to getState for root " + root, e);
     }
   }
 
@@ -435,7 +435,7 @@ public class RocksDbDatabase implements Database {
           columnHandles.get(HOT_BLOCKS_BY_ROOT), root.toArrayUnsafe(), serialize(block));
       addToHotRootsBySlotCache(root, block);
     } catch (RocksDBException e) {
-      throw new DatabaseStorageException("Error storing a hotBlock", e);
+      throw new DatabaseStorageException("Error storing a hotBlock " + root, e);
     }
   }
 
@@ -627,8 +627,8 @@ public class RocksDbDatabase implements Database {
 
   private void throwIfClosed() {
     if (closed.get()) {
-      LOG.error("Attempting to use a closed RocksDBKeyValueStorage");
-      throw new IllegalStateException("Storage has been closed");
+      throw new IllegalStateException(
+          "Attempting to use a closed " + this.getClass().getSimpleName());
     }
   }
 }
