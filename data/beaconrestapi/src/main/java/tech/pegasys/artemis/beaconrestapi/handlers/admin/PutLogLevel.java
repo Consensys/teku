@@ -75,7 +75,7 @@ public class PutLogLevel implements Handler {
       final String[] logFilters = params.getLogFilter().orElseGet(() -> new String[] {""});
 
       for (final String logFilter : logFilters) {
-        LoggingConfigurator.setLevel(logFilter, params.getLevel());
+        LoggingConfigurator.setAllLevels(logFilter, params.getLevel());
       }
 
       ctx.status(SC_NO_CONTENT);
