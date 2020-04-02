@@ -21,14 +21,11 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetCommitteesIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
