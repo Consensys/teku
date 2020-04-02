@@ -29,6 +29,7 @@ import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
+import tech.pegasys.artemis.storage.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
@@ -58,6 +59,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest
     recentChainData = MemoryOnlyRecentChainData.create(eventBus);
     beaconChainUtil = BeaconChainUtil.create(16, recentChainData);
     beaconChainUtil.initializeStorage();
+    historicalChainData = new StubStorageQueryChannel();
 
     combinedChainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData);
     dataProvider =

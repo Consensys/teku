@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server;
+package tech.pegasys.artemis.storage.server.mapdb;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -41,9 +41,8 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.storage.events.StorageUpdateResult;
-import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
-import tech.pegasys.artemis.storage.utils.MapDBSerializer;
-import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
+import tech.pegasys.artemis.storage.server.Database;
+import tech.pegasys.artemis.storage.server.StateStorageMode;
 
 public class MapDbDatabase implements Database {
 

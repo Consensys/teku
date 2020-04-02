@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.eventbus.EventBus;
@@ -205,6 +206,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         validatorIndex,
         Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),
         committeeAssignment.getCommittee().indexOf(validatorIndex),
+        getAggregatorModulo(committeeAssignment.getCommittee().size()),
         proposerSlots,
         committeeAssignment.getSlot());
   }

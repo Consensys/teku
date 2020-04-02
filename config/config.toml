@@ -51,6 +51,6 @@ data-storage-mode = "prune"
 
 # beacon rest api
 rest-api-port = 5051
-rest-api-docs-enabled = false
-rest-api-enabled = false
+rest-api-docs-enabled = true
+rest-api-enabled = true
 rest-api-interface = "127.0.0.1"
