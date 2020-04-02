@@ -49,7 +49,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
   protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
-  protected final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+  protected StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   protected RecentChainData recentChainData = mock(RecentChainData.class);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);

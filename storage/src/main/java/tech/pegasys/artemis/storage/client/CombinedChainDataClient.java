@@ -15,7 +15,6 @@ package tech.pegasys.artemis.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
@@ -237,26 +236,6 @@ public class CombinedChainDataClient {
 
   public boolean isStoreAvailable() {
     return recentChainData != null && getStore() != null;
-  }
-
-  /**
-   * Gets a list of CommitteeAssignments for a specified epoch.
-   *
-   * <p>These committee assignments are calculated at the epoch prior to the specified epoch, unless
-   * specifying epoch 0, in which case the committee assignments are correct.
-   *
-   * @param epoch - the current or historic epoch
-   * @return list of CommitteeAssignments
-   */
-  public SafeFuture<Optional<List<CommitteeAssignment>>> getCommitteeAssignmentAtEpoch(
-      UnsignedLong epoch) {
-    final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
-    final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
-
-    SafeFuture<Optional<BeaconState>> future = getStateAtSlot(startingSlot);
-
-    return future.thenApply(
-        optionalState -> optionalState.map(state -> getCommitteesFromState(state, startingSlot)));
   }
 
   public List<CommitteeAssignment> getCommitteesFromState(

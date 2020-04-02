@@ -21,14 +21,11 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetCommitteesIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
@@ -53,23 +50,6 @@ public class GetCommitteesIntegrationTest extends AbstractBeaconRestAPIIntegrati
 
     final Response response = getByEpoch(epoch.intValue());
     assertNoContent(response);
-  }
-
-  @Test
-  public void handleMissingState() throws Exception {
-    final int epoch = 1;
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    final SafeFuture<Optional<BeaconState>> emptyStateResult =
-        SafeFuture.completedFuture(Optional.empty());
-
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(root));
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
-    when(historicalChainData.getFinalizedStateByBlockRoot(root)).thenReturn(emptyStateResult);
-
-    final Response response = getByEpoch(epoch);
-    assertGone(response);
   }
 
   private Response getByEpoch(final int epoch) throws IOException {

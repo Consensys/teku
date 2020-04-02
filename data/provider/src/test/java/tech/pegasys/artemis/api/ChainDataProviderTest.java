@@ -112,18 +112,21 @@ public class ChainDataProviderTest {
         List.of(new CommitteeAssignment(List.of(1), ZERO, ONE));
     final ChainDataProvider provider =
         new ChainDataProvider(mockRecentChainData, mockCombinedChainDataClient);
+    final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBestBlockRoot())
-        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
-    when(mockCombinedChainDataClient.getCommitteeAssignmentAtEpoch(beaconStateInternal.getSlot()))
-        .thenReturn(completedFuture(Optional.of(committeeAssignments)));
+    when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(bestBlockRoot));
+    when(mockCombinedChainDataClient.getCommitteesFromState(any(), any()))
+        .thenReturn(committeeAssignments);
+    when(mockRecentChainData.getBestSlot()).thenReturn(beaconStateInternal.getSlot());
+    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new BeaconBlockAndState(null, beaconStateInternal))));
     final SafeFuture<Optional<List<Committee>>> future =
         provider.getCommitteesAtEpoch(beaconStateInternal.getSlot());
 
     verify(mockCombinedChainDataClient).isStoreAvailable();
-    verify(mockCombinedChainDataClient)
-        .getCommitteeAssignmentAtEpoch(beaconStateInternal.getSlot());
     final Committee result = future.get().get().get(0);
     assertEquals(ONE, result.slot);
     assertEquals(ZERO, result.index);

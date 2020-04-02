@@ -13,6 +13,10 @@
 
 package tech.pegasys.artemis.api;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.ZERO;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +35,7 @@ import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -80,12 +85,28 @@ public class ChainDataProvider {
     if (!isStoreAvailable() || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
+    final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
+    final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
+    final UnsignedLong slot = compute_start_slot_at_epoch(epoch);
+
+    // one epoch in future is available, beyond that cannot be calculated
+    if (slot.compareTo(
+            recentChainData.getBestSlot().plus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH)))
+        > 0) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final Bytes32 bestRoot =
+        combinedChainDataClient.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
     return combinedChainDataClient
-        .getCommitteeAssignmentAtEpoch(epoch)
+        .getBlockAndStateInEffectAtSlot(startingSlot, bestRoot)
         .thenApply(
             maybeResult ->
                 maybeResult.map(
-                    result -> result.stream().map(Committee::new).collect(Collectors.toList())));
+                    result ->
+                        combinedChainDataClient.getCommitteesFromState(result.getState(), slot)
+                            .stream()
+                            .map(Committee::new)
+                            .collect(Collectors.toList())));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(final UnsignedLong slot) {
