@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import java.util.Optional;
@@ -38,6 +39,12 @@ public class LogLevel {
     return level;
   }
 
+  @JsonGetter("level")
+  public String getLevelAsString() {
+    return level.toString();
+  }
+
+  @JsonGetter("log_filter")
   public Optional<String[]> getLogFilter() {
     return Optional.ofNullable(logFilter);
   }

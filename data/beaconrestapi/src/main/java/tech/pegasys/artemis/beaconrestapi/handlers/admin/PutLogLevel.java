@@ -27,7 +27,6 @@ import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.artemis.api.schema.LogLevel;
@@ -50,13 +49,11 @@ public class PutLogLevel implements Handler {
       method = HttpMethod.PUT,
       summary = "Changes the log level without restarting.",
       tags = {TAG_ADMIN},
-      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = LogLevel.class)}),
-      queryParams = {
-        @OpenApiParam(name = "level", description = "Log level."),
-        @OpenApiParam(
-            name = "log_filter",
-            description = "Packages or classes to change the log level for. Optional.")
-      },
+      requestBody =
+          @OpenApiRequestBody(
+              content = {@OpenApiContent(from = LogLevel.class)},
+              description =
+                  "```\n{\n  \"level\": (String; acceptable values: ALL, TRACE, DEBUG, INFO, ERROR, FATAL, OFF ),\n  \"log_filter\": [(String; Optional)]\n}\n```"),
       description =
           "Changes the log level without restarting. You can change the log level for all logs, or the log level for specific packages or classes.",
       responses = {
