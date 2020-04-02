@@ -310,8 +310,8 @@ class Helper {
   /**
    * Cofactor clearing - fast version.
    *
-   * <p>Uses the version given in section 4.1 of Budroni and Pintore, "Efficient hash maps to G2
-   * on BLS curves," ePrint 2017/419 https://eprint.iacr.org/2017/419 NOTE: this impl works for
+   * <p>Uses the version given in section 4.1 of Budroni and Pintore, "Efficient hash maps to G2 on
+   * BLS curves," ePrint 2017/419 https://eprint.iacr.org/2017/419 NOTE: this impl works for
    * Jacobian projective coordinates without computing an inversion.
    *
    * @param p the point to be transformed to the G2 group

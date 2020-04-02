@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
-import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2_fast;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
 import static tech.pegasys.artemis.util.hashToG2.Helper.isInG2;
