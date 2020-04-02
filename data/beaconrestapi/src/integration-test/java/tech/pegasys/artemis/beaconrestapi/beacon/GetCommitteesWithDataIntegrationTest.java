@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,31 +28,32 @@ import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 
 public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-
   public static final UnsignedLong TWENTY = UnsignedLong.valueOf(20L);
-  public static final UnsignedLong SIXTEEN = UnsignedLong.valueOf(16L);
-  public static final UnsignedLong TWENTY_FOUR = UnsignedLong.valueOf(24L);
+  public static final UnsignedLong TWO_HUNDRED = UnsignedLong.valueOf(200L);
 
   @Test
   void shouldGetCommitteesAtCurrentEpochWhenBlockIsMissing() throws Exception {
+    final int EPOCH = 2;
     withBlockDataAtSlot(NINE, TEN, TWENTY);
 
-    List<Committee> result = getCommitteesByEpoch(2);
-    assertThat(result.get(0).slot).isEqualTo(SIXTEEN);
+    List<Committee> result = getCommitteesByEpoch(EPOCH);
+    assertThat(result.get(0).slot).isEqualTo(firstSlotInEpoch(EPOCH));
   }
 
   @Test
-  void shouldGetCommitteesAtNextEpochWhenBlockIsMissing() throws Exception {
+  void shouldGetCommitteesAtNextEpoch() throws Exception {
+    final int EPOCH = 3;
     withBlockDataAtSlot(NINE, TEN, TWENTY);
 
-    List<Committee> result = getCommitteesByEpoch(3);
-    assertThat(result.get(0).slot).isEqualTo(TWENTY_FOUR);
+    List<Committee> result = getCommitteesByEpoch(EPOCH);
+    assertThat(result.get(0).slot).isEqualTo(firstSlotInEpoch(EPOCH));
   }
 
   @Test
-  void shouldGetCommitteesAtFutureEpochWhenBlockIsMissing() throws Exception {
+  void shouldGetCommitteesAtFutureEpoch() throws Exception {
     withBlockDataAtSlot(NINE, TEN, TWENTY);
 
     // currently at epoch 2, epoch 3 will be available, but 4 will be missing,
@@ -62,18 +64,29 @@ public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRest
 
   @Test
   void shouldGetCommitteesAtCurrentEpochWithBlockPresent() throws Exception {
+    final int EPOCH = 1;
     withBlockDataAtSlot(SEVEN, EIGHT, NINE, TEN);
 
-    List<Committee> result = getCommitteesByEpoch(1);
-    assertThat(result.get(0).slot).isEqualTo(EIGHT);
+    List<Committee> result = getCommitteesByEpoch(EPOCH);
+    assertThat(result.get(0).slot).isEqualTo(firstSlotInEpoch(EPOCH));
   }
 
   @Test
   void shouldGetCommitteesAtNextEpochWithBlockPresent() throws Exception {
+    final int EPOCH = 2;
     withBlockDataAtSlot(SEVEN, EIGHT, NINE, TEN);
 
-    List<Committee> result = getCommitteesByEpoch(2);
-    assertThat(result.get(0).slot).isEqualTo(SIXTEEN);
+    List<Committee> result = getCommitteesByEpoch(EPOCH);
+    assertThat(result.get(0).slot).isEqualTo(firstSlotInEpoch(EPOCH));
+  }
+
+  @Test
+  void shouldHandleMissingFinalizedEpoch() throws Exception {
+    withBlockDataAtSlot(EIGHT, TWENTY, TWO_HUNDRED);
+    withFinalizedChainAtEpoch(UnsignedLong.valueOf(10L));
+
+    final Response response = getByEpoch(9);
+    assertThat(response.code()).isEqualTo(SC_GONE);
   }
 
   private List<Committee> getCommitteesByEpoch(final int epoch) throws IOException {
@@ -82,6 +95,10 @@ public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRest
     assertThat(response.code()).isEqualTo(SC_OK);
     final Committee[] result = jsonProvider.jsonToObject(responseBody, Committee[].class);
     return List.of(result);
+  }
+
+  private UnsignedLong firstSlotInEpoch(final int epoch) {
+    return BeaconStateUtil.compute_start_slot_at_epoch(UnsignedLong.valueOf(epoch));
   }
 
   private Response getByEpoch(final int epoch) throws IOException {
