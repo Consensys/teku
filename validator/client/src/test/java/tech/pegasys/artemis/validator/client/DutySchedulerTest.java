@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -82,9 +83,9 @@ class DutySchedulerTest {
 
   @Test
   public void shouldFetchDutiresForSecondEpochWhenFirstEpochReached() {
-    validatorClient.onSlot(UnsignedLong.ZERO);
+    validatorClient.onSlot(ZERO);
 
-    verify(validatorApiChannel).getDuties(UnsignedLong.ZERO, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(ZERO, VALIDATOR_KEYS);
     verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
 
     // Process each slot up to the start of epoch 1
@@ -137,7 +138,7 @@ class DutySchedulerTest {
     final UnsignedLong blockProposerSlot = UnsignedLong.valueOf(5);
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
-            VALIDATOR1_KEY, 5, 3, 6, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
+            VALIDATOR1_KEY, 5, 3, 6, 0, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
     when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validator1Duties))));
 
@@ -159,7 +160,7 @@ class DutySchedulerTest {
     final UnsignedLong blockProposerSlot = UnsignedLong.valueOf(5);
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
-            VALIDATOR1_KEY, 5, 3, 6, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
+            VALIDATOR1_KEY, 5, 3, 6, 0, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
     when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validator1Duties))));
 
@@ -196,6 +197,7 @@ class DutySchedulerTest {
             validator1Index,
             validator1Committee,
             validator1CommitteePosition,
+            0,
             emptyList(),
             attestationSlot);
     final ValidatorDuties validator2Duties =
@@ -204,6 +206,7 @@ class DutySchedulerTest {
             validator2Index,
             validator2Committee,
             validator2CommitteePosition,
+            0,
             emptyList(),
             attestationSlot);
     when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
