@@ -79,7 +79,6 @@ class BeaconStateTest {
       Constants.EPOCHS_PER_HISTORICAL_VECTOR = 123;
       Constants.EPOCHS_PER_SLASHINGS_VECTOR = 123;
       Constants.MAX_ATTESTATIONS = 123;
-      Constants.JUSTIFICATION_BITS_LENGTH = 123;
 
       // this call should reset all the memorized spec constants
       BeaconState.setConstants();
@@ -99,8 +98,6 @@ class BeaconStateTest {
           .isNotEqualTo(s2.getPrevious_epoch_attestations().getMaxSize());
       assertThat(s1.getCurrent_epoch_attestations().getMaxSize())
           .isNotEqualTo(s2.getCurrent_epoch_attestations().getMaxSize());
-      assertThat(s1.getJustification_bits().getSize())
-          .isNotEqualTo(s2.getJustification_bits().getSize());
     } finally {
       Constants.setConstants("minimal");
     }
