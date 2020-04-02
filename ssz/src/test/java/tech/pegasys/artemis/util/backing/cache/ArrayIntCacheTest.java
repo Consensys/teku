@@ -58,6 +58,7 @@ public class ArrayIntCacheTest {
             .peek(Thread::start)
             .collect(Collectors.toList());
 
+    // wait a second for any threading issues
     t1.join(1000);
     assertThat(t1.isAlive()).isTrue();
     assertThat(threads).allMatch(Thread::isAlive);

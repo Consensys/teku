@@ -18,11 +18,14 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.TestUtil;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
@@ -76,6 +79,17 @@ public class ContainerViewTest {
   }
 
   public interface ContainerRead extends ContainerViewRead {
+
+    public static final ContainerViewType<ContainerReadImpl> TYPE =
+        new ContainerViewType<>(
+            List.of(
+                BasicViewTypes.UINT64_TYPE,
+                BasicViewTypes.UINT64_TYPE,
+                SubContainerRead.TYPE,
+                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
+                new ListViewType<>(SubContainerRead.TYPE, 2),
+                new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
+            ContainerReadImpl::new);
 
     static ContainerRead createDefault() {
       return ContainerReadImpl.TYPE.getDefault();
@@ -196,17 +210,6 @@ public class ContainerViewTest {
   }
 
   public static class ContainerReadImpl extends ContainerViewReadImpl implements ContainerRead {
-
-    public static final ContainerViewType<ContainerReadImpl> TYPE =
-        new ContainerViewType<>(
-            List.of(
-                BasicViewTypes.UINT64_TYPE,
-                BasicViewTypes.UINT64_TYPE,
-                SubContainerRead.TYPE,
-                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
-                new ListViewType<>(SubContainerRead.TYPE, 2),
-                new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
-            ContainerReadImpl::new);
 
     public ContainerReadImpl(ContainerViewType<?> type, TreeNode backingNode) {
       super(type, backingNode);
@@ -400,4 +403,100 @@ public class ContainerViewTest {
     assertThat(c1r.getList2().get(1).getLong2()).isEqualTo(UnsignedLong.valueOf(0x888));
     assertThat(c2r.getList2().get(1).getLong2()).isEqualTo(UnsignedLong.valueOf(0xaaa));
   }
+
+  // The threading test is probabilistic and may have false positives
+  // (i.e. pass on incorrect implementation)
+  @Test
+  public void testThreadSafety() throws InterruptedException {
+    ContainerWrite c1w = ContainerRead.createDefault().createWritableCopy();
+    c1w.setLong1(UnsignedLong.valueOf(0x1));
+    c1w.setLong2(UnsignedLong.valueOf(0x2));
+
+    c1w.getSub1().setLong1(UnsignedLong.valueOf(0x111));
+    c1w.getSub1().setLong2(UnsignedLong.valueOf(0x222));
+
+    c1w.getList1().append(UInt64View.fromLong(0x333));
+    c1w.getList1().append(UInt64View.fromLong(0x444));
+
+    c1w.getList2()
+        .append(
+            sc -> {
+              sc.setLong1(UnsignedLong.valueOf(0x555));
+              sc.setLong2(UnsignedLong.valueOf(0x666));
+            });
+
+    c1w.getList3()
+        .set(
+            0,
+            new ImmutableSubContainerImpl(
+                UnsignedLong.valueOf(0x999), Bytes32.leftPad(Bytes.fromHexString("0xa999"))));
+    c1w.getList3()
+        .set(
+            1,
+            new ImmutableSubContainerImpl(
+                UnsignedLong.valueOf(0xaaa), Bytes32.leftPad(Bytes.fromHexString("0xaaaa"))));
+
+    ContainerRead c1r = c1w.commitChanges();
+
+    // sanity check of equalsByGetters
+    assertThat(Utils.equalsByGetters(c1r, c1w)).isTrue();
+    ContainerWrite c2w = c1r.createWritableCopy();
+    c2w.getList2().getByRef(0).setLong1(UnsignedLong.valueOf(293874));
+    assertThat(Utils.equalsByGetters(c1r, c2w)).isFalse();
+    assertThat(Utils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
+
+    // new container from backing tree without any cached views
+    ContainerRead c2r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
+    // concurrently traversing children of the the same view instance to make sure the internal
+    // cache is thread safe
+    List<Future<Boolean>> futures = TestUtil
+        .executeParallel(() -> Utils.equalsByGetters(c2r, c1r), 512);
+
+    assertThat(TestUtil.waitAll(futures)).containsOnly(true);
+
+    Consumer<ContainerWrite> containerMutator =
+        w -> {
+          w.setLong2(UnsignedLong.valueOf(0x11111));
+          w.getSub1().setLong2(UnsignedLong.valueOf(0x22222));
+          w.getList1().append(UInt64View.fromLong(0x44444));
+          w.getList1().set(0, UInt64View.fromLong(0x11111));
+          SubContainerWrite sc = w.getList2().append();
+          sc.setLong1(UnsignedLong.valueOf(0x77777));
+          sc.setLong2(UnsignedLong.valueOf(0x88888));
+          w.getList2().getByRef(0).setLong2(UnsignedLong.valueOf(0x44444));
+          w.getList3()
+              .set(
+                  0,
+                  new ImmutableSubContainerImpl(
+                      UnsignedLong.valueOf(0x99999),
+                      Bytes32.leftPad(Bytes.fromHexString("0xa99999"))));
+        };
+    ContainerWrite c3w = c1r.createWritableCopy();
+    containerMutator.accept(c3w);
+    ContainerRead c3r = c3w.commitChanges();
+
+    ContainerRead c4r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
+
+    assertThat(Utils.equalsByGetters(c1r, c4r)).isTrue();
+    // make updated view from the source view in parallel
+    // this tests that mutable view caches are merged and transferred
+    // in a thread safe way
+    List<Future<ContainerRead>> modifiedFuts =
+        TestUtil.executeParallel(
+            () -> {
+              ContainerWrite w = c4r.createWritableCopy();
+              containerMutator.accept(w);
+              return w.commitChanges();
+            },
+            512);
+
+    List<ContainerRead> modified = TestUtil.waitAll(modifiedFuts);
+    assertThat(Utils.equalsByGetters(c1r, c4r)).isTrue();
+    assertThat(c1r.hashTreeRoot()).isEqualTo(c4r.hashTreeRoot());
+
+    assertThat(modified)
+        .allMatch(
+            c -> Utils.equalsByGetters(c, c3r) && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
+  }
+
 }

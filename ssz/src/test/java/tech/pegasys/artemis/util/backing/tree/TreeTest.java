@@ -4,16 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.ByteOrder;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.TestUtil;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.BranchNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUpdates.Update;
 
@@ -115,30 +112,10 @@ public class TreeTest {
   // The threading test is probabilistic and may have false positives
   // (i.e. pass on incorrect implementation)
   public void testHashThreadSafe() {
+    // since the hash can be calculated lazily and cached inside TreeNode there are
+    // potential threading issues
     TreeNode tree = TreeUtil.createDefaultTree(32 * 1024, newTestLeaf(111));
-    ExecutorService threadPool = Executors.newFixedThreadPool(512);
-    CountDownLatch latch = new CountDownLatch(1);
-    List<Future<Bytes32>> hasheFuts =
-        IntStream.range(0, 512)
-            .mapToObj(
-                i ->
-                    threadPool.submit(
-                        () -> {
-                          latch.await();
-                          return tree.hashTreeRoot();
-                        }))
-            .collect(Collectors.toList());
-    latch.countDown();
-    Stream<Bytes32> hashes =
-        hasheFuts.stream()
-            .map(
-                f -> {
-                  try {
-                    return f.get();
-                  } catch (Exception e) {
-                    throw new RuntimeException(e);
-                  }
-                });
-    assertThat(hashes).containsOnly(tree.hashTreeRoot());
+    List<Future<Bytes32>> hasheFuts = TestUtil.executeParallel(() -> tree.hashTreeRoot(), 512);
+    assertThat(TestUtil.waitAll(hasheFuts)).containsOnly(tree.hashTreeRoot());
   }
 }
