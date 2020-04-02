@@ -104,7 +104,7 @@ public interface BeaconState
   Field CURRENT_JUSTIFIED_CHECKPOINT_FIELD = new Field(18, Checkpoint.TYPE);
   Field FINALIZED_CHECKPOINT_FIELD = new Field(19, Checkpoint.TYPE);
 
-  static ContainerViewType<BeaconState> createSSZType() {
+  static ContainerViewType<BeaconState> getSSZType() {
     return new ContainerViewType<>(
         SSZContainer.listFields(BeaconState.class).stream()
             .map(f -> f.getViewType().get())
@@ -178,10 +178,6 @@ public interface BeaconState
               state.setCurrent_justified_checkpoint(current_justified_checkpoint);
               state.setFinalized_checkpoint(finalized_checkpoint);
             });
-  }
-
-  static void setConstants() {
-    BeaconStateImpl.resetSSZType();
   }
 
   // Versioning

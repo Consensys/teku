@@ -38,7 +38,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -89,7 +88,6 @@ public abstract class TestSuite {
             .get(0)) {
       SimpleOffsetSerializer.setConstants();
     }
-    BeaconState.setConstants();
   }
 
   public static Integer loadMetaData(TestSet testSet) {

@@ -81,7 +81,6 @@ class BeaconStateTest {
       Constants.MAX_ATTESTATIONS = 123;
 
       // this call should reset all the memorized spec constants
-      BeaconState.setConstants();
       BeaconState s2 = BeaconState.createEmpty();
 
       assertThat(s1.getBlock_roots().getMaxSize()).isNotEqualTo(s2.getBlock_roots().getMaxSize());

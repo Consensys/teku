@@ -34,6 +34,7 @@ import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
 import tech.pegasys.artemis.util.config.Constants;
@@ -43,19 +44,6 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 14;
-
-  private static volatile ContainerViewType<BeaconState> TYPE = null;
-
-  static ContainerViewType<BeaconState> getSSZType() {
-    if (TYPE == null) {
-      TYPE = BeaconState.createSSZType();
-    }
-    return TYPE;
-  }
-
-  public static void resetSSZType() {
-    TYPE = null;
-  }
 
   @Label("sos-ignore")
   private final TransitionCaches transitionCaches;
@@ -188,13 +176,16 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   private SSZList<PendingAttestation> currentEpochAttestationsCache;
 
   public BeaconStateImpl() {
-    super(getSSZType());
+    super(BeaconState.getSSZType());
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
   BeaconStateImpl(
-      TreeNode backingNode, IntCache<ViewRead> cache, TransitionCaches transitionCaches) {
-    super(getSSZType(), backingNode, cache);
+      CompositeViewType type,
+      TreeNode backingNode,
+      IntCache<ViewRead> cache,
+      TransitionCaches transitionCaches) {
+    super(type, backingNode, cache);
     this.transitionCaches = transitionCaches;
   }
 
@@ -241,7 +232,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
       Checkpoint finalized_checkpoint) {
 
     super(
-        getSSZType(),
+        BeaconState.getSSZType(),
         BeaconState.create(
                 genesis_time,
                 slot,

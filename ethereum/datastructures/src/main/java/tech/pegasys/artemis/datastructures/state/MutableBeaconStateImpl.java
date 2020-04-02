@@ -61,7 +61,10 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   @Override
   protected BeaconStateImpl createViewRead(TreeNode backingNode, IntCache<ViewRead> viewCache) {
     return new BeaconStateImpl(
-        backingNode, viewCache, builder ? TransitionCaches.createNewEmpty() : transitionCaches);
+        getType(),
+        backingNode,
+        viewCache,
+        builder ? TransitionCaches.createNewEmpty() : transitionCaches);
   }
 
   @Override
