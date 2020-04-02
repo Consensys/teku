@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
@@ -264,9 +263,7 @@ public class CommitteeUtil {
             });
   }
 
-  public static UnsignedLong getAggregatorModulo(final int committeeSize) {
-    return max(
-        UnsignedLong.ONE,
-        UnsignedLong.valueOf(committeeSize).dividedBy(TARGET_AGGREGATORS_PER_COMMITTEE));
+  public static int getAggregatorModulo(final int committeeSize) {
+    return Math.max(1, committeeSize / TARGET_AGGREGATORS_PER_COMMITTEE);
   }
 }

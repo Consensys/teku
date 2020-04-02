@@ -160,7 +160,13 @@ public class ValidatorDataProviderTest {
     assertThat(validatorDuties.size()).isEqualTo(1);
     ValidatorDuties expected =
         new ValidatorDuties(
-            new BLSPubKey(publicKey.toBytesCompressed()), null, null, null, emptyList(), null);
+            new BLSPubKey(publicKey.toBytesCompressed()),
+            null,
+            null,
+            null,
+            null,
+            emptyList(),
+            null);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
@@ -202,6 +208,7 @@ public class ValidatorDataProviderTest {
     final int validatorIndex = 4;
     final int attestationCommitteeIndex = 2;
     final int attestationCommitteePosition = 5;
+    final int aggregatorModulo = 12;
     final List<UnsignedLong> blockProposalSlots =
         List.of(UnsignedLong.valueOf(66), UnsignedLong.valueOf(77));
     final UnsignedLong attestationSlot = UnsignedLong.valueOf(50);
@@ -215,7 +222,7 @@ public class ValidatorDataProviderTest {
                             validatorIndex,
                             attestationCommitteeIndex,
                             attestationCommitteePosition,
-                            ZERO,
+                            aggregatorModulo,
                             blockProposalSlots,
                             attestationSlot)))));
 
@@ -231,6 +238,7 @@ public class ValidatorDataProviderTest {
             validatorIndex,
             attestationCommitteeIndex,
             attestationCommitteePosition,
+            aggregatorModulo,
             blockProposalSlots,
             attestationSlot);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);

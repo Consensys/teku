@@ -101,7 +101,7 @@ public class Constants {
   public static Bytes4 DOMAIN_SHARD_ATTESTER = Bytes4.fromHexString("0x81000000");
 
   // Honest Validator
-  public static UnsignedLong TARGET_AGGREGATORS_PER_COMMITTEE = UnsignedLong.valueOf(16);
+  public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
   public static UnsignedLong SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(14L);
 
   // Deposit

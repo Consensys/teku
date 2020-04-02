@@ -34,7 +34,7 @@ public class ValidatorDuties {
       final int validatorIndex,
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
-      final UnsignedLong aggregatorModulo,
+      final int aggregatorModulo,
       final List<UnsignedLong> blockProposalSlots,
       final UnsignedLong attestationSlot) {
     return new ValidatorDuties(
@@ -90,7 +90,7 @@ public class ValidatorDuties {
     private final int validatorIndex;
     private final int attestationCommitteeIndex;
     private final int attestationCommitteePosition;
-    private final UnsignedLong aggregatorModulo;
+    private final int aggregatorModulo;
     private final List<UnsignedLong> blockProposalSlots;
     private final UnsignedLong attestationSlot;
 
@@ -98,7 +98,7 @@ public class ValidatorDuties {
         final int validatorIndex,
         final int attestationCommitteeIndex,
         final int attestationCommitteePosition,
-        final UnsignedLong aggregatorModulo,
+        final int aggregatorModulo,
         final List<UnsignedLong> blockProposalSlots,
         final UnsignedLong attestationSlot) {
       this.validatorIndex = validatorIndex;
@@ -121,7 +121,7 @@ public class ValidatorDuties {
       return attestationCommitteePosition;
     }
 
-    public UnsignedLong getAggregatorModulo() {
+    public int getAggregatorModulo() {
       return aggregatorModulo;
     }
 

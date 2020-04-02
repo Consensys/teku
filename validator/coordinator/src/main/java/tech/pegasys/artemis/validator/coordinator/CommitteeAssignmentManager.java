@@ -153,8 +153,7 @@ public class CommitteeAssignmentManager {
       UnsignedLong committeeIndex,
       BLSSignature slot_signature) {
     List<Integer> committee = get_beacon_committee(state, slot, committeeIndex);
-    UnsignedLong modulo = getAggregatorModulo(committee.size());
-    return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo.longValue())
-        == 0;
+    int modulo = getAggregatorModulo(committee.size());
+    return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo) == 0;
   }
 }
