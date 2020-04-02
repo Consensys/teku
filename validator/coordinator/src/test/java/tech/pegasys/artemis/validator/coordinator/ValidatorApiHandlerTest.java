@@ -99,7 +99,7 @@ class ValidatorApiHandlerTest {
     assertThat(duties.get())
         .containsExactly(
             ValidatorDuties.withDuties(
-                publicKey, validatorIndex, 0, 2, emptyList(), UnsignedLong.valueOf(110)));
+                publicKey, validatorIndex, 0, 2, 1, emptyList(), UnsignedLong.valueOf(110)));
   }
 
   @Test
@@ -116,18 +116,20 @@ class ValidatorApiHandlerTest {
             EPOCH, List.of(validator3Key, unknownPublicKey, validator31Key));
     final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
     final ValidatorDuties validator3Duties =
-        ValidatorDuties.withDuties(validator3Key, 3, 0, 2, emptyList(), UnsignedLong.valueOf(110));
+        ValidatorDuties.withDuties(
+            validator3Key, 3, 0, 2, 1, emptyList(), UnsignedLong.valueOf(110));
     final ValidatorDuties unknownValidatorDuties = ValidatorDuties.noDuties(unknownPublicKey);
-    final ValidatorDuties validator6Duties =
+    final ValidatorDuties validator31Duties =
         ValidatorDuties.withDuties(
             validator31Key,
             31,
             0,
             0,
+            1,
             List.of(UnsignedLong.valueOf(107), UnsignedLong.valueOf(111)),
             UnsignedLong.valueOf(104));
     assertThat(duties.get())
-        .containsExactly(validator3Duties, unknownValidatorDuties, validator6Duties);
+        .containsExactly(validator3Duties, unknownValidatorDuties, validator31Duties);
   }
 
   @Test

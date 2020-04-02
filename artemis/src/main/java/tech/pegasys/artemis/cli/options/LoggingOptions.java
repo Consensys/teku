@@ -17,7 +17,7 @@ import picocli.CommandLine;
 
 public class LoggingOptions {
 
-  public static final String LOG_COLOUR_ENABLED_OPTION_NAME = "--log-colour-enabled";
+  public static final String LOG_COLOR_ENABLED_OPTION_NAME = "--log-color-enabled";
   public static final String LOG_INCLUDE_EVENTS_ENABLED_OPTION_NAME =
       "--log-include-events-enabled";
   public static final String LOG_DESTINATION_OPTION_NAME = "--log-destination";
@@ -31,7 +31,7 @@ public class LoggingOptions {
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN = "teku_%d{yyyy-MM-dd}.log";
 
   @CommandLine.Option(
-      names = {LOG_COLOUR_ENABLED_OPTION_NAME},
+      names = {LOG_COLOR_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Whether Status and Event log messages include a console color display code",
       arity = "1")
