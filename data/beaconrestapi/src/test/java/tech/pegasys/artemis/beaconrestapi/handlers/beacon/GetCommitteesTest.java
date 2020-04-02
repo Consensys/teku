@@ -18,8 +18,6 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,7 +34,6 @@ import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,7 +42,6 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
@@ -127,30 +123,5 @@ public class GetCommitteesTest {
     SafeFuture<String> future = args.getValue();
     verify(context).status(SC_GONE);
     assertThat(future.get()).isNull();
-  }
-
-  @Test
-  public void shouldReturnListOfCommitteeAssignments() throws Exception {
-    RecentChainData client = mock(RecentChainData.class);
-    Store store = mock(Store.class);
-    CombinedChainDataClient combinedClient =
-        new CombinedChainDataClient(client, historicalChainData);
-    ChainDataProvider provider = new ChainDataProvider(client, combinedClient);
-    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
-    when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
-    when(client.getFinalizedEpoch()).thenReturn(ZERO);
-    when(store.getBlockState(blockRoot)).thenReturn(beaconState);
-    when(client.getStateBySlot(any())).thenReturn(Optional.of(beaconState));
-    when(client.getStore()).thenReturn(store);
-    when(client.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-
-    handler.handle(context);
-
-    verify(context).result(args.capture());
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    SafeFuture<String> future = args.getValue();
-    String data = future.get();
-
-    assertEquals(SLOTS_PER_EPOCH, StringUtils.countMatches(data, "\"committee\":"));
   }
 }
