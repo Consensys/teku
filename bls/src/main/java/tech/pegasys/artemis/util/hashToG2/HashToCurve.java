@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
+import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2_fast;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
 import static tech.pegasys.artemis.util.hashToG2.Helper.isInG2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.isOnCurve;
@@ -73,7 +74,8 @@ public class HashToCurve {
     // This should never fail, and the check is non-trivial, so we use an assert
     assert isOnCurve(p);
 
-    JacobianPoint q = clear_h2(p);
+    // Use either clear_h2() or clear_h2_fast() here. The result is the same, but one is faster :)
+    JacobianPoint q = clear_h2_fast(p);
 
     // This should never fail, and the check is very expensive, so we use an assert
     assert isInG2(q);

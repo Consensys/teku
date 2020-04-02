@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
+import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2_fast;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
 import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
 import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
@@ -203,6 +204,7 @@ class HelperTest {
                 "0x0f008a6b5637c0f7e5957c3c56ba616c5477f1dce08d6805f42dc495faed05ad046304ec7e2c7229694b82f6c886c6f8",
                 "0x00a0ede04aa5881555e0dc51a8db295b393cb349ea7be5547829b2f102191b2d06118e71a8a756db2316cf15a8378b72"));
     assertEquals(expected, clear_h2(a));
+    assertEquals(expected, clear_h2_fast(a));
   }
 
   @Test
