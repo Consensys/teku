@@ -178,11 +178,17 @@ public class RocksDbDatabase implements Database {
             FINALIZED_CHECKPOINT_KEY.getId(),
             serialize(store.getFinalizedCheckpoint()));
         for (Bytes32 root : store.getBlockRoots()) {
+          // Since we're storing genesis, we should only have 1 root here corresponding to genesis
           final SignedBeaconBlock block = store.getSignedBlock(root);
           final BeaconState state = store.getBlockState(root);
-          addHotBlock(transaction, root, block);
           byte[] rootArray = root.toArrayUnsafe();
+
+          // We need to store the genesis block in both hot and cold storage so that on restart
+          // we're guaranteed to have at least one block / state to load into RecentChainData.
+          // Save to hot storage
+          addHotBlock(transaction, root, block);
           transaction.put(columnHandles.get(HOT_STATES_BY_ROOT), rootArray, serialize(state));
+          // Save to cold storage
           transaction.put(
               columnHandles.get(FINALIZED_ROOTS_BY_SLOT),
               Longs.toByteArray(block.getSlot().longValue()),
