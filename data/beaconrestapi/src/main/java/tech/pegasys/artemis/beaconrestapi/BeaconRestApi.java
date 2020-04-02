@@ -93,7 +93,7 @@ public class BeaconRestApi {
               ctx.contentType("text/html");
             });
       } catch (IOException ex) {
-        LOG.error("Could not read custom " + FILE_NOT_FOUND_HTML, ex.getMessage());
+        LOG.error("Could not read custom " + FILE_NOT_FOUND_HTML, ex);
       }
     }
   }

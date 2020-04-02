@@ -13,9 +13,17 @@
 
 package tech.pegasys.artemis.validator.client.duties;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.ForkProvider;
 import tech.pegasys.artemis.validator.client.Validator;
@@ -24,6 +32,8 @@ public class BlockProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
   private final Validator validator;
   private final UnsignedLong slot;
+  private final ForkProvider forkProvider;
+  private final ValidatorApiChannel validatorApiChannel;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -32,10 +42,41 @@ public class BlockProductionDuty implements Duty {
       final ValidatorApiChannel validatorApiChannel) {
     this.validator = validator;
     this.slot = slot;
+    this.forkProvider = forkProvider;
+    this.validatorApiChannel = validatorApiChannel;
   }
 
   @Override
-  public void performDuty() {
+  public SafeFuture<?> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
+    return forkProvider.getFork().thenCompose(this::produceBlock);
+  }
+
+  @Override
+  public String describe() {
+    return "Block production for slot " + slot + " by " + validator.getPublicKey();
+  }
+
+  public SafeFuture<Void> produceBlock(final Fork fork) {
+    return createRandaoReveal(fork)
+        .thenCompose(this::createUnsignedBlock)
+        .thenCompose(unsignedBlock -> signBlock(fork, unsignedBlock))
+        .thenAccept(validatorApiChannel::sendSignedBlock);
+  }
+
+  public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(final BLSSignature randaoReveal) {
+    return validatorApiChannel.createUnsignedBlock(slot, randaoReveal);
+  }
+
+  public SafeFuture<BLSSignature> createRandaoReveal(final Fork fork) {
+    return validator.getSigner().createRandaoReveal(compute_epoch_at_slot(slot), fork);
+  }
+
+  public SafeFuture<SignedBeaconBlock> signBlock(
+      final Fork fork, final Optional<BeaconBlock> unsignedBlock) {
+    return validator
+        .getSigner()
+        .signBlock(unsignedBlock.orElseThrow(), fork)
+        .thenApply(signature -> new SignedBeaconBlock(unsignedBlock.orElseThrow(), signature));
   }
 }
