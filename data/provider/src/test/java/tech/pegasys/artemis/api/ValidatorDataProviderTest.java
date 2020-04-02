@@ -215,6 +215,7 @@ public class ValidatorDataProviderTest {
                             validatorIndex,
                             attestationCommitteeIndex,
                             attestationCommitteePosition,
+                            ZERO,
                             blockProposalSlots,
                             attestationSlot)))));
 

@@ -15,10 +15,9 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.config.Constants.COMMITTEE_INDEX_SUBSCRIPTION_LENGTH;
-import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -154,10 +153,7 @@ public class CommitteeAssignmentManager {
       UnsignedLong committeeIndex,
       BLSSignature slot_signature) {
     List<Integer> committee = get_beacon_committee(state, slot, committeeIndex);
-    UnsignedLong modulo =
-        max(
-            UnsignedLong.ONE,
-            UnsignedLong.valueOf(committee.size()).dividedBy(TARGET_AGGREGATORS_PER_COMMITTEE));
+    UnsignedLong modulo = getAggregatorModulo(committee.size());
     return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo.longValue())
         == 0;
   }

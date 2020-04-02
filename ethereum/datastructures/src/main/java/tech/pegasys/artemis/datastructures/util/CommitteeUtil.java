@@ -20,11 +20,13 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedLong;
@@ -260,5 +262,11 @@ public class CommitteeUtil {
                   committeeIndex,
                   count);
             });
+  }
+
+  public static UnsignedLong getAggregatorModulo(final int committeeSize) {
+    return max(
+        UnsignedLong.ONE,
+        UnsignedLong.valueOf(committeeSize).dividedBy(TARGET_AGGREGATORS_PER_COMMITTEE));
   }
 }

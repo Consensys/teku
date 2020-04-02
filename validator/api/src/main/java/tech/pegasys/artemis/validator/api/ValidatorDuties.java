@@ -34,6 +34,7 @@ public class ValidatorDuties {
       final int validatorIndex,
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
+      final UnsignedLong aggregatorModulo,
       final List<UnsignedLong> blockProposalSlots,
       final UnsignedLong attestationSlot) {
     return new ValidatorDuties(
@@ -43,6 +44,7 @@ public class ValidatorDuties {
                 validatorIndex,
                 attestationCommitteeIndex,
                 attestationCommitteePosition,
+                aggregatorModulo,
                 blockProposalSlots,
                 attestationSlot)));
   }
@@ -88,6 +90,7 @@ public class ValidatorDuties {
     private final int validatorIndex;
     private final int attestationCommitteeIndex;
     private final int attestationCommitteePosition;
+    private final UnsignedLong aggregatorModulo;
     private final List<UnsignedLong> blockProposalSlots;
     private final UnsignedLong attestationSlot;
 
@@ -95,11 +98,13 @@ public class ValidatorDuties {
         final int validatorIndex,
         final int attestationCommitteeIndex,
         final int attestationCommitteePosition,
+        final UnsignedLong aggregatorModulo,
         final List<UnsignedLong> blockProposalSlots,
         final UnsignedLong attestationSlot) {
       this.validatorIndex = validatorIndex;
       this.attestationCommitteeIndex = attestationCommitteeIndex;
       this.attestationCommitteePosition = attestationCommitteePosition;
+      this.aggregatorModulo = aggregatorModulo;
       this.blockProposalSlots = blockProposalSlots;
       this.attestationSlot = attestationSlot;
     }
@@ -114,6 +119,10 @@ public class ValidatorDuties {
 
     public int getAttestationCommitteePosition() {
       return attestationCommitteePosition;
+    }
+
+    public UnsignedLong getAggregatorModulo() {
+      return aggregatorModulo;
     }
 
     public List<UnsignedLong> getBlockProposalSlots() {
@@ -136,6 +145,7 @@ public class ValidatorDuties {
       return validatorIndex == duties.validatorIndex
           && attestationCommitteeIndex == duties.attestationCommitteeIndex
           && attestationCommitteePosition == duties.attestationCommitteePosition
+          && Objects.equals(aggregatorModulo, duties.aggregatorModulo)
           && Objects.equals(blockProposalSlots, duties.blockProposalSlots)
           && Objects.equals(attestationSlot, duties.attestationSlot);
     }
@@ -146,6 +156,7 @@ public class ValidatorDuties {
           validatorIndex,
           attestationCommitteeIndex,
           attestationCommitteePosition,
+          aggregatorModulo,
           blockProposalSlots,
           attestationSlot);
     }
@@ -156,6 +167,7 @@ public class ValidatorDuties {
           .add("validatorIndex", validatorIndex)
           .add("attestationCommitteeIndex", attestationCommitteeIndex)
           .add("attestationCommitteePosition", attestationCommitteePosition)
+          .add("aggregatorModulo", aggregatorModulo)
           .add("blockProposalSlots", blockProposalSlots)
           .add("attestationSlot", attestationSlot)
           .toString();
