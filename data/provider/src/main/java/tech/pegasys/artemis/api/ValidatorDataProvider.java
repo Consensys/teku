@@ -114,7 +114,7 @@ public class ValidatorDataProvider {
       final tech.pegasys.artemis.validator.api.ValidatorDuties duty) {
     final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
     if (duty.getDuties().isEmpty()) {
-      return new ValidatorDuties(pubKey, null, null, null, emptyList(), null);
+      return new ValidatorDuties(pubKey, null, null, null, null, emptyList(), null);
     }
     final Duties duties = duty.getDuties().get();
     return new ValidatorDuties(
@@ -122,6 +122,7 @@ public class ValidatorDataProvider {
         duties.getValidatorIndex(),
         duties.getAttestationCommitteeIndex(),
         duties.getAttestationCommitteePosition(),
+        duties.getAggregatorModulo(),
         duties.getBlockProposalSlots(),
         duties.getAttestationSlot());
   }
