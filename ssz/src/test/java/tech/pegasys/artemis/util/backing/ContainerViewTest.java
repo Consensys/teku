@@ -449,8 +449,8 @@ public class ContainerViewTest {
     ContainerRead c2r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
     // concurrently traversing children of the the same view instance to make sure the internal
     // cache is thread safe
-    List<Future<Boolean>> futures = TestUtil
-        .executeParallel(() -> Utils.equalsByGetters(c2r, c1r), 512);
+    List<Future<Boolean>> futures =
+        TestUtil.executeParallel(() -> Utils.equalsByGetters(c2r, c1r), 512);
 
     assertThat(TestUtil.waitAll(futures)).containsOnly(true);
 
@@ -498,5 +498,4 @@ public class ContainerViewTest {
         .allMatch(
             c -> Utils.equalsByGetters(c, c3r) && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
   }
-
 }
