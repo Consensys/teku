@@ -94,7 +94,7 @@ dependencyManagement {
     dependency 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
     dependency 'org.quartz-scheduler:quartz:2.3.2'
-    dependency 'org.rocksdb:rocksdbjni:5.15.10'
+    dependency 'org.rocksdb:rocksdbjni:6.4.6'
 
     dependencySet(group: "org.web3j", version: "4.5.6") {
       entry 'core'
@@ -110,7 +110,7 @@ dependencyManagement {
     dependency "org.testcontainers:testcontainers:1.12.3"
     dependency "org.testcontainers:junit-jupiter:1.12.3"
 
-    dependency 'tech.pegasys.discovery:discovery:0.3.1'
+    dependency 'tech.pegasys.discovery:discovery:0.3.2'
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.0'
   }
