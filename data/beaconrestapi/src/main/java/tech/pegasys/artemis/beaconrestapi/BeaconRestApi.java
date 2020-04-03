@@ -35,6 +35,7 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
+import tech.pegasys.artemis.beaconrestapi.handlers.admin.PutLogLevel;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
@@ -73,6 +74,7 @@ public class BeaconRestApi {
     app.server().setServerPort(configuration.getRestApiPort());
 
     addExceptionHandlers();
+    addAdminHandlers();
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
@@ -163,6 +165,10 @@ public class BeaconRestApi {
       options.path("/swagger-docs").swagger(new SwaggerOptions("/swagger-ui"));
     }
     return options;
+  }
+
+  private void addAdminHandlers() {
+    app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
