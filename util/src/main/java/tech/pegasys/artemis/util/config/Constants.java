@@ -27,10 +27,10 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 public class Constants {
 
   // Non-configurable constants
-  public static final UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
-  public static final int BASE_REWARDS_PER_EPOCH = 4;
-  public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
-  public static final int JUSTIFICATION_BITS_LENGTH = 4;
+  public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
+  public static int BASE_REWARDS_PER_EPOCH = 4;
+  public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
+  public static int JUSTIFICATION_BITS_LENGTH = 4;
 
   // Misc
   public static int MAX_COMMITTEES_PER_SLOT;
