@@ -79,7 +79,9 @@ public final class PublicKey {
 
   // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
   // Let's only interpret the raw data into a point when necessary to do so.
-  private final Bytes rawData;
+  // And vice versa while aggregating we are dealing with points only so let's
+  // convert point to raw data when necessary to do so.
+  private final Supplier<Bytes> rawData;
   private final Supplier<G1Point> point;
 
   /**
@@ -92,13 +94,13 @@ public final class PublicKey {
   }
 
   PublicKey(G1Point point) {
-    this.rawData = point.toBytes();
+    this.rawData = Suppliers.memoize(point::toBytes);
     this.point = () -> point;
   }
 
   PublicKey(Bytes rawData) {
-    this.rawData = rawData;
-    this.point = Suppliers.memoize(() -> parsePublicKeyBytes(this.rawData));
+    this.rawData = () -> rawData;
+    this.point = Suppliers.memoize(() -> parsePublicKeyBytes(rawData));
   }
 
   private G1Point parsePublicKeyBytes(Bytes publicKeyBytes) {
@@ -126,7 +128,8 @@ public final class PublicKey {
    * @return byte array representation of the public key
    */
   public Bytes toBytesCompressed() {
-    return (rawData.size() == COMPRESSED_PK_SIZE) ? rawData : point.get().toBytesCompressed();
+    Bytes data = rawData.get();
+    return (data.size() == COMPRESSED_PK_SIZE) ? data : point.get().toBytesCompressed();
   }
 
   public G1Point g1Point() {
@@ -155,7 +158,8 @@ public final class PublicKey {
       return false;
     }
     PublicKey other = (PublicKey) obj;
-    if (rawData.size() == other.rawData.size() && rawData.equals(other.rawData)) {
+    if (rawData.get().size() == other.rawData.get().size()
+        && rawData.get().equals(other.rawData.get())) {
       return true;
     }
     return point.get().equals(other.point.get());

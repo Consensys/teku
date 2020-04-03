@@ -63,7 +63,7 @@ public class GenesisHandler implements Eth1EventsChannel {
 
     genesisGenerator
         .getGenesisStateIfValid(BeaconStateUtil::is_valid_genesis_state)
-        .ifPresent(candidateState -> eth2Genesis(candidateState.commitChanges()));
+        .ifPresent(this::eth2Genesis);
   }
 
   private void eth2Genesis(BeaconState genesisState) {

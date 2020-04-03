@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.backing.view;
 
+import java.util.Objects;
 import tech.pegasys.artemis.util.backing.BasicView;
 import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
@@ -51,5 +52,22 @@ public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
   @Override
   public ViewWrite createWritableCopy() {
     throw new UnsupportedOperationException("Basic view instances are immutable");
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    AbstractBasicView<?, ?> that = (AbstractBasicView<?, ?>) o;
+    return Objects.equals(get(), that.get());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(get());
   }
 }

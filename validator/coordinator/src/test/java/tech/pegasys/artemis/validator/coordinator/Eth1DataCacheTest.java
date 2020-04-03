@@ -26,6 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.pow.Eth1DataManager;
@@ -40,7 +41,7 @@ public class Eth1DataCacheTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final BeaconStateImpl genesisState = mock(BeaconStateImpl.class);
+  private final BeaconState genesisState = mock(BeaconState.class);
 
   static {
     Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(3);
@@ -94,7 +95,6 @@ public class Eth1DataCacheTest {
 
   @Test
   void checkTimeValuesStayAboveZero() {
-    genesisState.setGenesis_time(UnsignedLong.ZERO);
     eth1DataCache.startBeaconChainMode(genesisState);
     eth1DataCache.onSlot(UnsignedLong.ONE);
     assertThat(eth1DataCache.getSpecRangeLowerBound()).isEqualByComparingTo(UnsignedLong.ZERO);

@@ -33,7 +33,6 @@ import picocli.CommandLine.Parameters;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -110,9 +109,7 @@ public class TransitionCommand implements Runnable {
           if (delta) {
             targetSlot = state.getSlot().plus(targetSlot);
           }
-          MutableBeaconState stateWrite = state.createWritableCopy();
-          stateTransition.process_slots(stateWrite, targetSlot);
-          return stateWrite.commitChanges();
+          return stateTransition.process_slots(state, targetSlot);
         });
   }
 

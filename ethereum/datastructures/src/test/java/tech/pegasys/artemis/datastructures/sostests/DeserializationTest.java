@@ -40,7 +40,6 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -162,7 +161,7 @@ public class DeserializationTest {
   void BeaconStateTest() {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
     Bytes bytes = SimpleOffsetSerializer.serialize(beaconState);
-    BeaconStateImpl state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
+    BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
     assertEquals(beaconState, state);
   }
 
@@ -218,7 +217,7 @@ public class DeserializationTest {
     assertEquals(
         validator,
         SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(validator), ValidatorImpl.class));
+            SimpleOffsetSerializer.serialize(validator), Validator.class));
   }
 
   @Test

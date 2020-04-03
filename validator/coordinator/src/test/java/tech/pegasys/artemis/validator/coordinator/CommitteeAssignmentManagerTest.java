@@ -35,7 +35,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
@@ -53,10 +53,8 @@ class CommitteeAssignmentManagerTest {
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 50);
   private final List<DepositData> depositDatas =
       new MockStartDepositGenerator().createDeposits(validatorKeys);
-  private final MutableBeaconState state =
-      new MockStartBeaconStateGenerator()
-          .createInitialBeaconState(UnsignedLong.ONE, depositDatas)
-          .createWritableCopy();
+  private final BeaconState state =
+      new MockStartBeaconStateGenerator().createInitialBeaconState(UnsignedLong.ONE, depositDatas);
 
   private CommitteeAssignmentManager committeeAssignmentManager;
   private Map<BLSPublicKey, ValidatorInfo> validators = new HashMap<>();
@@ -120,8 +118,10 @@ class CommitteeAssignmentManagerTest {
         () -> verify(eventBus, never()).post(any(CommitteeDismissalEvent.class)));
 
     UnsignedLong secondEpoch = UnsignedLong.valueOf(3);
-    state.setSlot(secondEpoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)));
-    committeeAssignmentManager.updateCommitteeAssignments(state, secondEpoch, eventBus);
+    BeaconState newState =
+        state.updated(
+            state -> state.setSlot(secondEpoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH))));
+    committeeAssignmentManager.updateCommitteeAssignments(newState, secondEpoch, eventBus);
 
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(any(CommitteeAssignmentEvent.class)));
     Waiter.waitFor(() -> verify(eventBus, times(1)).post(any(CommitteeDismissalEvent.class)));

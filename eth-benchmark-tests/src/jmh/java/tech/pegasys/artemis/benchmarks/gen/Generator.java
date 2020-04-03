@@ -55,10 +55,10 @@ public class Generator {
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     System.out.println("Generating keypairs...");
-    int validatorsCount = 16 * 1024;
+    int validatorsCount = 32 * 1024;
 
     List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")
+        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz")
             .readAll(validatorsCount);
 
     System.out.println("Keypairs done.");
@@ -116,7 +116,7 @@ public class Generator {
   @Test
   public void generateKeyPairs() throws Exception {
     int randomSeed = 0;
-    int limitK = 100;
+    int limitK = 200;
     File outFile = new File("bls-key-pairs-" + limitK + "k-seed-" + randomSeed + ".txt");
     Iterator<BLSKeyPair> keyPairIterator =
         IntStream.range(randomSeed, randomSeed + Integer.MAX_VALUE)

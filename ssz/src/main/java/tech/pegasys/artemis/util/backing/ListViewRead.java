@@ -18,15 +18,15 @@ import tech.pegasys.artemis.util.backing.type.ListViewType;
 /**
  * Immutable List view
  *
- * @param <R> Type of list elements
+ * @param <ElementType> Type of list elements
  */
-public interface ListViewRead<R extends ViewRead> extends CompositeViewRead<R> {
+public interface ListViewRead<ElementType extends ViewRead> extends CompositeViewRead<ElementType> {
 
   @Override
-  ListViewWrite<R> createWritableCopy();
+  ListViewWrite<ElementType> createWritableCopy();
 
   @Override
-  ListViewType<R> getType();
+  ListViewType<ElementType> getType();
 
   /** Returns the number of elements in this list */
   @Override
