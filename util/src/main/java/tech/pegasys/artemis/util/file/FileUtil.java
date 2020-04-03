@@ -45,9 +45,15 @@ public abstract class FileUtil {
           // Create directory
           if (!outputFile.mkdirs()) {
             throw new IllegalStateException(
-                "Couldn't create directory " + outputFile.getAbsolutePath());
+                "Could not create directory " + outputFile.getAbsolutePath());
           }
         } else if (!entry.isDirectory()) {
+          // Make sure parent directories exist
+          File parent = outputFile.getParentFile();
+          if (!parent.isDirectory() && !parent.mkdirs()) {
+            throw new IllegalStateException(
+                "Could not create directory " + parent.getAbsolutePath());
+          }
           // Create file
           try (final OutputStream outputFileStream = new FileOutputStream(outputFile)) {
             IOUtils.copy(archiveStream, outputFileStream);
