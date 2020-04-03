@@ -17,10 +17,11 @@ package tech.pegasys.artemis.util.backing;
  * Mutable Vector view with immutable elements This type of vector can be modified by setting
  * immutable elements
  *
- * @param <R> Type of elements
+ * @param <ElementType> Type of elements
  */
-public interface VectorViewWrite<R> extends CompositeViewWrite<R>, VectorViewRead<R> {
+public interface VectorViewWrite<ElementType>
+    extends CompositeViewWrite<ElementType>, VectorViewRead<ElementType> {
 
   @Override
-  VectorViewRead<R> commitChanges();
+  VectorViewRead<ElementType> commitChanges();
 }

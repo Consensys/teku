@@ -17,22 +17,23 @@ package tech.pegasys.artemis.util.backing;
  * Mutable List view with immutable elements This type of list can be modified by setting or
  * appending immutable elements
  *
- * @param <R> Type of list elements
+ * @param <ElementType> Type of list elements
  */
-public interface ListViewWrite<R extends ViewRead> extends CompositeViewWrite<R>, ListViewRead<R> {
+public interface ListViewWrite<ElementType extends ViewRead>
+    extends CompositeViewWrite<ElementType>, ListViewRead<ElementType> {
 
   @Override
-  void set(int index, R value);
+  void set(int index, ElementType value);
 
   /**
    * Appends a new immutable value to the end of the list. Size is incremented
    *
    * @throws IndexOutOfBoundsException if size would exceed maxLength
    */
-  default void append(R value) {
+  default void append(ElementType value) {
     set(size(), value);
   }
 
   @Override
-  ListViewRead<R> commitChanges();
+  ListViewRead<ElementType> commitChanges();
 }

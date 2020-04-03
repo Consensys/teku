@@ -87,15 +87,15 @@ public class CompositeListViewTest {
   public void simpleTest1() {
     ListViewType<TestView> listType = new ListViewType<>(testType, 3);
     ListViewWrite<TestView> list = listType.getDefault().createWritableCopy();
-    TreeNode n0 = list.getBackingNode();
+    TreeNode n0 = list.commitChanges().getBackingNode();
     list.set(0, new TestView(0x111));
-    TreeNode n1 = list.getBackingNode();
+    TreeNode n1 = list.commitChanges().getBackingNode();
     list.set(1, new TestView(0x222));
-    TreeNode n2 = list.getBackingNode();
+    TreeNode n2 = list.commitChanges().getBackingNode();
     list.set(2, new TestView(0x333));
-    TreeNode n3 = list.getBackingNode();
+    TreeNode n3 = list.commitChanges().getBackingNode();
     list.set(0, new TestView(0x444));
-    TreeNode n4 = list.getBackingNode();
+    TreeNode n4 = list.commitChanges().getBackingNode();
 
     assertThat(listType.createFromBackingNode(n0).size()).isEqualTo(0);
     assertThat(listType.createFromBackingNode(n1).size()).isEqualTo(1);

@@ -25,7 +25,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -82,9 +81,9 @@ public class BlockProposalUtil {
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
-    MutableBeaconState state = preState.createWritableCopy();
+    BeaconState state = preState;
     try {
-      stateTransition.process_slots(state, slot);
+      state = stateTransition.process_slots(preState, slot);
     } catch (SlotProcessingException | EpochProcessingException e) {
       LOG.fatal("Coordinator checking proposer index exception", e);
     }

@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 
 class ValidatorsUtilTest {
@@ -49,9 +48,8 @@ class ValidatorsUtilTest {
     // However we need to ensure we don't return a value added to the cache by a later state with
     // more validators, if the validator isn't actually in the target state.
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final MutableBeaconState nextState = state.createWritableCopy();
     final Validator validator = dataStructureUtil.randomValidator();
-    nextState.getValidators().add(validator);
+    final BeaconState nextState = state.updated(s -> s.getValidators().add(validator));
 
     assertThat(ValidatorsUtil.getValidatorIndex(nextState, validator.getPubkey()))
         .contains(nextState.getValidators().size() - 1);

@@ -24,10 +24,10 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_active_balance;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_active_balance_with_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_balance;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
@@ -57,8 +57,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -68,12 +70,11 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public final class EpochProcessorUtil {
@@ -280,11 +281,11 @@ public final class EpochProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
   private static UnsignedLong get_base_reward(BeaconState state, int index) {
-    UnsignedLong total_balance = get_total_active_balance(state);
+    UnsignedLong total_balance_square_root = get_total_active_balance_with_root(state).getRight();
     UnsignedLong effective_balance = state.getValidators().get(index).getEffective_balance();
     return effective_balance
         .times(UnsignedLong.valueOf(BASE_REWARD_FACTOR))
-        .dividedBy(integer_squareroot(total_balance))
+        .dividedBy(total_balance_square_root)
         .dividedBy(UnsignedLong.valueOf(BASE_REWARDS_PER_EPOCH));
   }
 
@@ -310,8 +311,9 @@ public final class EpochProcessorUtil {
       penalties.set(i, UnsignedLong.ZERO);
     }
 
-    List<Integer> eligible_validator_indices =
+    Map<Integer, UnsignedLong> eligible_validator_base_rewards =
         IntStream.range(0, state.getValidators().size())
+            .parallel()
             .filter(
                 index -> {
                   Validator validator = state.getValidators().get(index);
@@ -323,7 +325,7 @@ public final class EpochProcessorUtil {
                               < 0);
                 })
             .boxed()
-            .collect(Collectors.toList());
+            .collect(Collectors.toMap(i -> i, i -> get_base_reward(state, i)));
 
     // Micro-incentives for matching FFG source, FFG target, and head
     SSZList<PendingAttestation> matching_source_attestations =
@@ -340,18 +342,21 @@ public final class EpochProcessorUtil {
       Set<Integer> unslashed_attesting_indices =
           get_unslashed_attesting_indices(state, attestations, HashSet::new);
       UnsignedLong attesting_balance = get_total_balance(state, unslashed_attesting_indices);
-      for (Integer index : eligible_validator_indices) {
+      for (Entry<Integer, UnsignedLong> index_base_reward :
+          eligible_validator_base_rewards.entrySet()) {
+        int index = index_base_reward.getKey();
         if (unslashed_attesting_indices.contains(index)) {
           rewards.set(
               index,
               rewards
                   .get(index)
                   .plus(
-                      get_base_reward(state, index)
+                      index_base_reward
+                          .getValue()
                           .times(attesting_balance)
                           .dividedBy(total_balance)));
         } else {
-          penalties.set(index, penalties.get(index).plus(get_base_reward(state, index)));
+          penalties.set(index, penalties.get(index).plus(index_base_reward.getValue()));
         }
       }
     }
@@ -368,6 +373,17 @@ public final class EpochProcessorUtil {
                 Collectors.groupingBy(
                     Pair::getLeft, Collectors.mapping(Pair::getRight, Collectors.toList())));
 
+    // in theory attestation can be be from non eligible validator
+    // so we need to fall back to reward calculation in this case
+    IntFunction<UnsignedLong> base_reward_func =
+        index -> {
+          UnsignedLong ret = eligible_validator_base_rewards.get(index);
+          if (ret == null) {
+            ret = get_base_reward(state, index);
+          }
+          return ret;
+        };
+
     validator_source_attestations.forEach(
         (index, attestations) ->
             attestations.stream()
@@ -375,7 +391,8 @@ public final class EpochProcessorUtil {
                 .ifPresent(
                     attestation -> {
                       UnsignedLong proposer_reward =
-                          get_base_reward(state, index)
+                          base_reward_func
+                              .apply(index)
                               .dividedBy(UnsignedLong.valueOf(PROPOSER_REWARD_QUOTIENT));
                       rewards.set(
                           attestation.getProposer_index().intValue(),
@@ -383,7 +400,7 @@ public final class EpochProcessorUtil {
                               .get(attestation.getProposer_index().intValue())
                               .plus(proposer_reward));
                       UnsignedLong max_attester_reward =
-                          get_base_reward(state, index).minus(proposer_reward);
+                          base_reward_func.apply(index).minus(proposer_reward);
                       rewards.set(
                           index,
                           rewards
@@ -398,14 +415,16 @@ public final class EpochProcessorUtil {
       Set<Integer> matching_target_attesting_indices =
           get_unslashed_attesting_indices(state, matching_target_attestations, HashSet::new);
 
-      for (Integer index : eligible_validator_indices) {
+      for (Entry<Integer, UnsignedLong> index_base_reward :
+          eligible_validator_base_rewards.entrySet()) {
+        int index = index_base_reward.getKey();
         penalties.set(
             index,
             penalties
                 .get(index)
                 .plus(
                     UnsignedLong.valueOf(BASE_REWARDS_PER_EPOCH)
-                        .times(get_base_reward(state, index))));
+                        .times(index_base_reward.getValue())));
         if (!matching_target_attesting_indices.contains(index)) {
           penalties.set(
               index,
@@ -466,13 +485,15 @@ public final class EpochProcessorUtil {
     try {
 
       // Process activation eligibility and ejections
-      SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
+      SSZMutableList<Validator> validators = state.getValidators();
       for (int index = 0; index < validators.size(); index++) {
-        MutableValidator validator = validators.get(index);
+        Validator validator = validators.get(index);
 
         if (is_eligible_for_activation_queue(validator)) {
-          validator.setActivation_eligibility_epoch(
-              get_current_epoch(state).plus(UnsignedLong.ONE));
+          validators.set(
+              index,
+              validator.withActivation_eligibility_epoch(
+                  get_current_epoch(state).plus(UnsignedLong.ONE)));
         }
 
         if (is_active_validator(validator, get_current_epoch(state))
@@ -516,8 +537,13 @@ public final class EpochProcessorUtil {
       int churn_limit = get_validator_churn_limit(state).intValue();
       int sublist_size = Math.min(churn_limit, activation_queue.size());
       for (Integer index : activation_queue.subList(0, sublist_size)) {
-        MutableValidator validator = state.getValidators().get(index);
-        validator.setActivation_epoch(compute_activation_exit_epoch(get_current_epoch(state)));
+        state
+            .getValidators()
+            .update(
+                index,
+                validator ->
+                    validator.withActivation_epoch(
+                        compute_activation_exit_epoch(get_current_epoch(state))));
       }
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
@@ -580,10 +606,10 @@ public final class EpochProcessorUtil {
     }
 
     // Update effective balances with hysteresis
-    SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
+    SSZMutableList<Validator> validators = state.getValidators();
     SSZList<UnsignedLong> balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
-      MutableValidator validator = validators.get(index);
+      Validator validator = validators.get(index);
       UnsignedLong balance = balances.get(index);
       long HALF_INCREMENT = Constants.EFFECTIVE_BALANCE_INCREMENT / 2;
       if (balance.compareTo(validator.getEffective_balance()) < 0
@@ -592,10 +618,16 @@ public final class EpochProcessorUtil {
                   .plus(UnsignedLong.valueOf(3 * HALF_INCREMENT))
                   .compareTo(balance)
               < 0) {
-        validator.setEffective_balance(
-            min(
-                balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
-                UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)));
+
+        state
+            .getValidators()
+            .set(
+                index,
+                validator.withEffective_balance(
+                    min(
+                        balance.minus(
+                            balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
+                        UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))));
       }
     }
 

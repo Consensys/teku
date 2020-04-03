@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.util.backing;
 
 /** A wrapper class for primitive value BasicView classes has no mutable view pair */
-public interface BasicView<C> extends ViewRead {
+public interface BasicView<ValueType> extends ViewRead {
 
   /** Returns wrapped primitive value */
-  C get();
+  ValueType get();
 }

@@ -17,4 +17,12 @@ package tech.pegasys.artemis.util.backing;
  * Base class for immutable containers. Since containers are heterogeneous their generic child view
  * is ViewRead
  */
-public interface ContainerViewRead extends CompositeViewRead<ViewRead> {}
+public interface ContainerViewRead extends CompositeViewRead<ViewRead> {
+
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  // container is heterogeneous by its nature so making unsafe cast here
+  // is more convenient and is not less safe
+  default <C extends ViewRead> C getAny(int index) {
+    return (C) get(index);
+  }
+}

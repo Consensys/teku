@@ -16,7 +16,7 @@ package tech.pegasys.artemis.util.backing.type;
 import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.view.ListViewImpl;
+import tech.pegasys.artemis.util.backing.view.ListViewReadImpl;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
@@ -35,12 +35,12 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
   @Override
   public ListViewRead<C> getDefault() {
-    return new ListViewImpl<>(getCompatibleVectorType());
+    return new ListViewReadImpl<C>(this);
   }
 
   @Override
   public ListViewRead<C> createFromBackingNode(TreeNode node) {
-    return new ListViewImpl<>(this, node);
+    return new ListViewReadImpl<>(this, node);
   }
 
   public VectorViewType<C> getCompatibleVectorType() {

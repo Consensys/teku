@@ -14,4 +14,8 @@
 package tech.pegasys.artemis.util.backing;
 
 /** Base class for mutable containers. */
-public interface ContainerViewWrite extends CompositeViewWrite<ViewRead>, ContainerViewRead {}
+public interface ContainerViewWrite extends CompositeViewWrite<ViewRead>, ContainerViewRead {
+
+  @Override
+  ContainerViewRead commitChanges();
+}

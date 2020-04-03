@@ -26,7 +26,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
@@ -39,8 +38,7 @@ public class registry_updates extends TestSuite {
   })
   void mainnetProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    MutableBeaconState wState = pre.createWritableCopy();
-    EpochProcessorUtil.process_registry_updates(wState);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_registry_updates);
     assertEquals(post, wState);
   }
 
@@ -50,8 +48,7 @@ public class registry_updates extends TestSuite {
   })
   void minimalProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    MutableBeaconState wState = pre.createWritableCopy();
-    EpochProcessorUtil.process_registry_updates(wState);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_registry_updates);
     assertThat(wState).isEqualTo(post);
   }
 

@@ -91,6 +91,6 @@ public class BasicListViewTest {
         .isThrownBy(() -> listView.append(new UInt64View(UnsignedLong.valueOf(0xaaa))));
 
     listView.clear();
-    assertThat(listView.hashTreeRoot()).isEqualTo(n0.hashTreeRoot());
+    assertThat(listView.commitChanges().hashTreeRoot()).isEqualTo(n0.hashTreeRoot());
   }
 }
