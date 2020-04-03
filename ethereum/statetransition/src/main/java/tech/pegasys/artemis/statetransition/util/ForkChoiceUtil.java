@@ -64,7 +64,7 @@ public class ForkChoiceUtil {
   }
 
   public static UnsignedLong get_current_slot(ReadOnlyStore store) {
-    return get_current_slot(store, true);
+    return get_current_slot(store, false);
   }
 
   public static UnsignedLong compute_slots_since_epoch_start(UnsignedLong slot) {
