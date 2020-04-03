@@ -264,6 +264,8 @@ public class CommitteeUtil {
   }
 
   public static int getAggregatorModulo(final int committeeSize) {
-    return Math.max(1, committeeSize / TARGET_AGGREGATORS_PER_COMMITTEE);
+    return TARGET_AGGREGATORS_PER_COMMITTEE == 0
+        ? 1
+        : Math.max(1, committeeSize / TARGET_AGGREGATORS_PER_COMMITTEE);
   }
 }
