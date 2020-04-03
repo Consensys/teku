@@ -2,6 +2,7 @@ dependencies {
     implementation project(':data')
     implementation project(':data:provider')
     implementation project(':ethereum:datastructures')
+    implementation project(':logging')
     implementation project(':networking:p2p')
     implementation project(':services:serviceutils')
     implementation project(':storage')

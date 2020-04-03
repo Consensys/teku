@@ -159,12 +159,12 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData() {
+    return randomAttestationData(randomUnsignedLong());
+  }
+
+  public AttestationData randomAttestationData(final UnsignedLong slot) {
     return new AttestationData(
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        randomBytes32(),
-        randomCheckpoint(),
-        randomCheckpoint());
+        slot, randomUnsignedLong(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public Attestation randomAttestation() {
@@ -185,6 +185,10 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum) {
+    return randomSignedBeaconBlock(UnsignedLong.valueOf(slotNum));
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlock(UnsignedLong slotNum) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum);
     return new SignedBeaconBlock(beaconBlock, randomSignature());
   }
@@ -195,12 +199,15 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum) {
-    UnsignedLong slot = UnsignedLong.valueOf(slotNum);
+    return randomBeaconBlock(UnsignedLong.valueOf(slotNum));
+  }
+
+  public BeaconBlock randomBeaconBlock(UnsignedLong slotNum) {
     Bytes32 previous_root = randomBytes32();
     Bytes32 state_root = randomBytes32();
     BeaconBlockBody body = randomBeaconBlockBody();
 
-    return new BeaconBlock(slot, previous_root, state_root, body);
+    return new BeaconBlock(slotNum, previous_root, state_root, body);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot) {

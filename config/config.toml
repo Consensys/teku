@@ -14,7 +14,7 @@ p2p-advertised-port = 9000
 p2p-private-key-file = "path/to/file"
 
 # interop
-# when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
+# when genesis time is set to 0, teku takes genesis time as currentTime + 5 seconds.
 Xinterop-genesis-time = 0
 Xinterop-owned-validator-start-index =  0
 Xinterop-owned-validator-count = 64
@@ -33,7 +33,7 @@ eth1-endpoint = "http://localhost:8545"
 #Xtransaction-record-directory="/tmp/teku"
 
 # logging
-#log-colour-enabled = false
+#log-color-enabled = false
 #log-include-events-enabled = false
 #log-destination =  'both', 'file' or 'console'
 #log-file = 'teku.log'
@@ -51,6 +51,6 @@ data-storage-mode = "prune"
 
 # beacon rest api
 rest-api-port = 5051
-rest-api-docs-enabled = false
-rest-api-enabled = false
+rest-api-docs-enabled = true
+rest-api-enabled = true
 rest-api-interface = "127.0.0.1"

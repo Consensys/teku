@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
@@ -20,6 +22,16 @@ public class Fork {
   public Bytes4 previous_version;
   public Bytes4 current_version;
   public UnsignedLong epoch;
+
+  @JsonCreator
+  public Fork(
+      @JsonProperty("previous_version") final Bytes4 previous_version,
+      @JsonProperty("current_version") final Bytes4 current_version,
+      @JsonProperty("epoch") final UnsignedLong epoch) {
+    this.previous_version = previous_version;
+    this.current_version = current_version;
+    this.epoch = epoch;
+  }
 
   public Fork(final tech.pegasys.artemis.datastructures.state.Fork fork) {
     this.previous_version = fork.getPrevious_version();

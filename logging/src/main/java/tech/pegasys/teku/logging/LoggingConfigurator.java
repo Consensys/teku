@@ -49,7 +49,7 @@ public class LoggingConfigurator {
   private static boolean INCLUDE_EVENTS;
   private static String FILE;
   private static String FILE_PATTERN;
-  private static Level LOG_LEVEL = Level.INFO;
+  private static Level ROOT_LOG_LEVEL = Level.INFO;
 
   public static boolean isColorEnabled() {
     return COLOR.get();
@@ -58,7 +58,12 @@ public class LoggingConfigurator {
   public static synchronized void setAllLevels(final Level level) {
     StatusLogger.getLogger().info("Setting logging level to {}", level.name());
     Configurator.setAllLevels("", level);
-    LOG_LEVEL = level;
+    ROOT_LOG_LEVEL = level;
+  }
+
+  public static synchronized void setAllLevels(final String filter, final Level level) {
+    StatusLogger.getLogger().info("Setting logging level on filter {} to {}", filter, level.name());
+    Configurator.setAllLevels(filter, level);
   }
 
   public static synchronized void update(final LoggingConfiguration configuration) {
@@ -199,15 +204,15 @@ public class LoggingConfigurator {
   }
 
   private static LoggerConfig setUpEventsLogger(final Appender appender) {
-    final Level eventsLogLevel = INCLUDE_EVENTS ? LOG_LEVEL : Level.OFF;
+    final Level eventsLogLevel = INCLUDE_EVENTS ? ROOT_LOG_LEVEL : Level.OFF;
     final LoggerConfig logger = new LoggerConfig(EVENT_LOGGER_NAME, eventsLogLevel, true);
     logger.addAppender(appender, eventsLogLevel, null);
     return logger;
   }
 
   private static void setUpStatusLogger(final Appender appender) {
-    final LoggerConfig logger = new LoggerConfig(STATUS_LOGGER_NAME, LOG_LEVEL, true);
-    logger.addAppender(appender, LOG_LEVEL, null);
+    final LoggerConfig logger = new LoggerConfig(STATUS_LOGGER_NAME, ROOT_LOG_LEVEL, true);
+    logger.addAppender(appender, ROOT_LOG_LEVEL, null);
   }
 
   private static Appender consoleAppender(final AbstractConfiguration configuration) {

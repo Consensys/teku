@@ -13,6 +13,10 @@
 
 package tech.pegasys.artemis.validator.client.duties;
 
+import tech.pegasys.artemis.util.async.SafeFuture;
+
 public interface Duty {
-  void performDuty();
+  SafeFuture<?> performDuty();
+
+  String describe();
 }

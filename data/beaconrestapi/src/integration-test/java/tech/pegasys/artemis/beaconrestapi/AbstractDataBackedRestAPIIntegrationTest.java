@@ -27,7 +27,9 @@ import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
+import tech.pegasys.artemis.storage.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
@@ -36,7 +38,14 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public abstract class AbstractDataBackedRestAPIIntegrationTest
     extends AbstractBeaconRestAPIIntegrationTest {
+
+  protected static final UnsignedLong SIX = UnsignedLong.valueOf(6);
+  protected static final UnsignedLong SEVEN = UnsignedLong.valueOf(7);
+  protected static final UnsignedLong EIGHT = UnsignedLong.valueOf(8);
+  protected static final UnsignedLong NINE = UnsignedLong.valueOf(9);
+  protected static final UnsignedLong TEN = UnsignedLong.valueOf(10);
   private BeaconChainUtil beaconChainUtil;
+  protected final JsonProvider jsonProvider = new JsonProvider();
 
   @Override
   @BeforeEach
@@ -50,6 +59,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest
     recentChainData = MemoryOnlyRecentChainData.create(eventBus);
     beaconChainUtil = BeaconChainUtil.create(16, recentChainData);
     beaconChainUtil.initializeStorage();
+    historicalChainData = new StubStorageQueryChannel();
 
     combinedChainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData);
     dataProvider =

@@ -16,7 +16,8 @@ package tech.pegasys.artemis.storage.server;
 import java.util.Optional;
 
 public enum DatabaseVersion {
-  V1("1.0");
+  V1("1.0"),
+  V2("2.0");
 
   public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V1;
   private String value;
