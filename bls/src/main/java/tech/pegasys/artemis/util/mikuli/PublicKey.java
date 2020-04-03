@@ -158,7 +158,8 @@ public final class PublicKey {
       return false;
     }
     PublicKey other = (PublicKey) obj;
-    if (rawData.get().size() == other.rawData.get().size() && rawData.equals(other.rawData)) {
+    if (rawData.get().size() == other.rawData.get().size()
+        && rawData.get().equals(other.rawData.get())) {
       return true;
     }
     return point.get().equals(other.point.get());
