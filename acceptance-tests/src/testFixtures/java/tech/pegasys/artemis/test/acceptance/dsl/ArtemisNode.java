@@ -29,6 +29,8 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +40,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -50,6 +53,7 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
+import tech.pegasys.artemis.util.file.FileUtil;
 import tech.pegasys.artemis.util.network.NetworkUtility;
 
 public class ArtemisNode extends Node {
@@ -58,10 +62,8 @@ public class ArtemisNode extends Node {
   public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/teku:develop";
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.toml";
-  protected static final String ARTIFACTS_PATH = "/artifacts/";
-  private static final String ARTIFACTS_DB_PATH = ARTIFACTS_PATH + "data/db/";
-  private static final String DATABASE_PATH = ARTIFACTS_DB_PATH + "teku.db";
-  private static final String DATABASE_VERSION_PATH = ARTIFACTS_PATH + "data/db.version";
+  protected static final String WORKING_DIRECTORY = "/artifacts/";
+  private static final String DATA_PATH = WORKING_DIRECTORY + "data/";
   private static final int P2P_PORT = 9000;
 
   private final SimpleHttpClient httpClient;
@@ -78,7 +80,7 @@ public class ArtemisNode extends Node {
     this.config = config;
 
     container
-        .withWorkingDirectory(ARTIFACTS_PATH)
+        .withWorkingDirectory(WORKING_DIRECTORY)
         .withExposedPorts(REST_API_PORT)
         .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
         .withCommand("--config-file", CONFIG_FILE_PATH);
@@ -211,27 +213,38 @@ public class ArtemisNode extends Node {
             httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconChainHead.class));
   }
 
-  public File getDatabaseFileFromContainer() throws Exception {
-    File tempDatabaseFile = File.createTempFile("teku.db", ".db");
-    tempDatabaseFile.deleteOnExit();
-    container.copyFileFromContainer(DATABASE_PATH, tempDatabaseFile.getAbsolutePath());
-    return tempDatabaseFile;
+  /**
+   * Copies data directory from node into a temporary directory.
+   *
+   * @return A file containing the data directory.
+   * @throws Exception
+   */
+  public File getDataDirectoryFromContainer() throws Exception {
+    File dbTar = File.createTempFile("database", ".tar");
+    dbTar.deleteOnExit();
+    copyDirectoryToTar(DATA_PATH, dbTar);
+    // Uncompress file to directory
+    File tmpDir = createTempDirectory();
+    FileUtil.unTar(dbTar, tmpDir);
+    return tmpDir;
   }
 
-  public File getDatabaseVersionFileFromContainer() throws Exception {
-    File tempDatabaseVersionFile = File.createTempFile("teku.db", ".version");
-    tempDatabaseVersionFile.deleteOnExit();
-    container.copyFileFromContainer(
-        DATABASE_VERSION_PATH, tempDatabaseVersionFile.getAbsolutePath());
-    return tempDatabaseVersionFile;
-  }
-
-  public void copyDatabaseFileToContainer(File databaseFile) {
-    copyFileToContainer(databaseFile, DATABASE_PATH);
-  }
-
-  public void copyDatabaseVersionFileToContainer(File databaseVersionFile) {
-    copyFileToContainer(databaseVersionFile, DATABASE_VERSION_PATH);
+  /**
+   * Copies contents of the given directory into node's working directory.
+   *
+   * @param sourceDirectory
+   * @throws IOException
+   */
+  public void copyContentsToWorkingDirectory(File sourceDirectory) throws IOException {
+    final Path directoryPath = sourceDirectory.toPath();
+    try (final Stream<Path> pathStream = Files.walk(directoryPath)) {
+      pathStream.forEach(
+          srcPath -> {
+            final Path relativePath = directoryPath.relativize(srcPath);
+            final Path destination = Paths.get(WORKING_DIRECTORY, relativePath.toString());
+            copyFileToContainer(srcPath.toFile(), destination.toAbsolutePath().toString());
+          });
+    }
   }
 
   public void copyFileToContainer(File file, String containerPath) {
@@ -265,7 +278,7 @@ public class ArtemisNode extends Node {
   @Override
   public void captureDebugArtifacts(final File artifactDir) {
     if (container.isRunning()) {
-      copyDirectoryToTar(ARTIFACTS_PATH, new File(artifactDir, nodeAlias + ".tar"));
+      copyDirectoryToTar(WORKING_DIRECTORY, new File(artifactDir, nodeAlias + ".tar"));
     } else {
       // Can't capture artifacts if it's not running but then it probably didn't cause the failure
       LOG.debug("Not capturing artifacts from {} because it is not running", nodeAlias);
@@ -300,8 +313,8 @@ public class ArtemisNode extends Node {
       configMap.put("rest-api-enabled", true);
       configMap.put("rest-api-port", REST_API_PORT);
       configMap.put("rest-api-docs-enabled", false);
-      configMap.put("Xtransition-record-directory", ARTIFACTS_PATH + "transitions/");
-      configMap.put("data-path", ARTIFACTS_PATH + "data/");
+      configMap.put("Xtransition-record-directory", WORKING_DIRECTORY + "transitions/");
+      configMap.put("data-path", DATA_PATH);
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");
     }

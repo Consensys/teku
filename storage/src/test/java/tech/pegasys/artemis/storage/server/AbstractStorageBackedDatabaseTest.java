@@ -16,11 +16,8 @@ package tech.pegasys.artemis.storage.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.io.Files;
-import com.google.common.io.MoreFiles;
-import com.google.common.io.RecursiveDeleteOption;
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -38,9 +33,9 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.TrackingStorageUpdateChannel;
+import tech.pegasys.artemis.util.file.FileUtil;
 
 public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabaseTest {
-  private static final Logger LOG = LogManager.getLogger();
   private final List<File> tmpDirectories = new ArrayList<>();
 
   protected abstract Database createDatabase(
@@ -56,14 +51,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   @AfterEach
   public void tearDown() {
     // Clean up tmp directories
-    for (File tmpDirectory : tmpDirectories) {
-      try {
-        MoreFiles.deleteRecursively(tmpDirectory.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
-      } catch (IOException e) {
-        LOG.error("Failed to delete tmp directory: " + tmpDirectory.getAbsolutePath(), e);
-        throw new RuntimeException(e);
-      }
-    }
+    FileUtil.recursivelyDeleteDirectories(tmpDirectories);
     tmpDirectories.clear();
   }
 
