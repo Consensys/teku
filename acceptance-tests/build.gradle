@@ -1,7 +1,7 @@
 dependencies {
   testFixturesImplementation project(':data:provider')
-
   testFixturesImplementation testFixtures(project(':util'))
+  testFixturesImplementation project(':util')
 
   testFixturesImplementation 'com.google.code.gson:gson'
   testFixturesImplementation 'com.squareup.okhttp3:okhttp'
