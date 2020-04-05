@@ -61,17 +61,11 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   }
 
   public UnsignedLong getEarliestSlotForProcessing() {
-    // Attestations can't be processed until their slot is in the past and until we are in the same
-    // epoch as their target.
-    return max(data.getSlot().plus(UnsignedLong.ONE), data.getTarget().getEpochStartSlot());
+    return data.getEarliestSlotForProcessing();
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {
     return Sets.newHashSet(data.getTarget().getRoot(), data.getBeacon_block_root());
-  }
-
-  private static UnsignedLong max(final UnsignedLong a, final UnsignedLong b) {
-    return a.compareTo(b) > 0 ? a : b;
   }
 
   @Override

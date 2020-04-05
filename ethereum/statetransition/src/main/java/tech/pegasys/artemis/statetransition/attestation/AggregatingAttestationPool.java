@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -62,21 +63,16 @@ public class AggregatingAttestationPool {
 
   public synchronized Optional<Attestation> createAggregateFor(
       final AttestationData attestationData) {
-    final MatchingDataAttestationGroup attestations =
-        attestationGroupByDataHash.get(attestationData.hash_tree_root());
-    if (attestations == null) {
-      return Optional.empty();
-    }
-
-    return attestations.stream().findFirst();
+    return Optional.ofNullable(attestationGroupByDataHash.get(attestationData.hash_tree_root()))
+        .flatMap(attestations -> attestations.stream().findFirst());
   }
 
   public boolean canBeIncluded(final MatchingDataAttestationGroup group, final UnsignedLong slot) {
-    // TODO: Hit all cases in Attestation.getEarliestSlotForProcessing
-    return group.getAttestationData().getSlot().compareTo(slot) < 0;
+    return group.getAttestationData().getEarliestSlotForProcessing().compareTo(slot) >= 0;
   }
 
-  public Stream<Attestation> stream() {
+  @VisibleForTesting
+  Stream<Attestation> stream() {
     return attestationGroupByDataHash.values().stream()
         .flatMap(MatchingDataAttestationGroup::stream);
   }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -131,6 +133,13 @@ public class AttestationData extends AbstractImmutableContainer<AttestationData>
         .add("source", getSource())
         .add("target", getTarget())
         .toString();
+  }
+
+
+  public UnsignedLong getEarliestSlotForProcessing() {
+    // Attestations can't be processed until their slot is in the past and until we are in the same
+    // epoch as their target.
+    return max(getSlot().plus(UnsignedLong.ONE), getTarget().getEpochStartSlot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
