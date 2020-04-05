@@ -13,41 +13,59 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
-import static java.util.Objects.isNull;
+import static com.google.common.base.Preconditions.checkElementIndex;
+import static java.util.stream.Collectors.toList;
 
-import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Bitlist {
 
-  private byte[] byteArray;
-  private long maxSize;
+  private final BitSet data;
+  private final int size;
+  private final long maxSize;
 
   public Bitlist(int arraySize, long maxSize) {
-    this.byteArray = new byte[arraySize];
+    this.size = arraySize;
+    this.data = new BitSet(arraySize);
     this.maxSize = maxSize;
   }
 
   public Bitlist(Bitlist bitlist) {
-    this.byteArray = new byte[bitlist.getByteArray().length];
-    for (int i = 0; i < bitlist.getByteArray().length; i++) {
-      this.byteArray[i] = bitlist.getByteArray()[i];
-    }
+    this.size = bitlist.size;
+    this.data = (BitSet) bitlist.data.clone();
     this.maxSize = bitlist.getMaxSize();
   }
 
-  public Bitlist(byte[] bitlist, long maxSize) {
-    this.byteArray = bitlist;
+  private Bitlist(int size, BitSet data, long maxSize) {
+    this.size = size;
+    this.data = data;
     this.maxSize = maxSize;
   }
 
   public void setBit(int i) {
-    this.byteArray[i] = 1;
+    checkElementIndex(i, size);
+    data.set(i);
   }
 
-  public int getBit(int i) {
-    return byteArray[i];
+  public boolean getBit(int i) {
+    checkElementIndex(i, size);
+    return data.get(i);
+  }
+
+  public boolean intersects(Bitlist other) {
+    return data.intersects(other.data);
+  }
+
+  public List<Integer> getAllSetBits() {
+    return streamAllSetBits().boxed().collect(toList());
+  }
+
+  public IntStream streamAllSetBits() {
+    return data.stream();
   }
 
   /** Sets all bits in this bitlist which are set in the [other] list */
@@ -59,15 +77,11 @@ public class Bitlist {
               + " > "
               + getCurrentSize());
     }
-    for (int i = 0; i < other.getCurrentSize(); i++) {
-      if (other.getBit(i) > 0) {
-        setBit(i);
-      }
-    }
+    data.or(other.data);
   }
 
-  public byte[] getByteArray() {
-    return byteArray;
+  public int countSetBits() {
+    return data.cardinality();
   }
 
   public long getMaxSize() {
@@ -75,14 +89,14 @@ public class Bitlist {
   }
 
   public int getCurrentSize() {
-    return byteArray.length;
+    return size;
   }
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
-    int len = byteArray.length;
+    int len = size;
     byte[] array = new byte[(len / 8) + 1];
-    IntStream.range(0, len).forEach(i -> array[i / 8] |= (((int) this.byteArray[i]) << (i % 8)));
+    IntStream.range(0, len).forEach(i -> array[i / 8] |= ((data.get(i) ? 1 : 0) << (i % 8)));
     array[len / 8] |= 1 << (len % 8);
     return Bytes.wrap(array);
   }
@@ -95,15 +109,15 @@ public class Bitlist {
     }
 
     int bitlistSize = (7 - leadingBitIndex) + (8 * (numBytes - 1));
-    byte[] byteArray = new byte[bitlistSize];
+    BitSet byteArray = new BitSet(bitlistSize);
 
     for (int i = bitlistSize - 1; i >= 0; i--) {
       if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
-        byteArray[i] = 1;
+        byteArray.set(i);
       }
     }
 
-    return new Bitlist(byteArray, maxSize);
+    return new Bitlist(bitlistSize, byteArray, maxSize);
   }
 
   public Bitlist copy() {
@@ -111,30 +125,27 @@ public class Bitlist {
   }
 
   @Override
-  public int hashCode() {
-    return Arrays.hashCode(byteArray);
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final Bitlist bitlist = (Bitlist) o;
+    return size == bitlist.size && maxSize == bitlist.maxSize && Objects.equals(data, bitlist.data);
   }
 
   @Override
-  public boolean equals(Object obj) {
-    if (isNull(obj)) {
-      return false;
-    }
-    if (this == obj) {
-      return true;
-    }
-    if (!(obj instanceof Bitlist)) {
-      return false;
-    }
-    Bitlist other = (Bitlist) obj;
-    return Arrays.equals(this.getByteArray(), other.getByteArray());
+  public int hashCode() {
+    return Objects.hash(data, size, maxSize);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < getCurrentSize(); i++) {
-      sb.append(getBit(i));
+      sb.append(getBit(i) ? 1 : 0);
     }
     return sb.toString();
   }

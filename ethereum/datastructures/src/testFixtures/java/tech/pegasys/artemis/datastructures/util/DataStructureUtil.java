@@ -123,13 +123,15 @@ public final class DataStructureUtil {
   }
 
   public Bitlist randomBitlist(int n) {
-    byte[] byteArray = new byte[n];
+    Bitlist bitlist = new Bitlist(n, n);
     Random random = new Random(nextSeed());
 
     for (int i = 0; i < n; i++) {
-      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+      if (random.nextBoolean()) {
+        bitlist.setBit(i);
+      }
     }
-    return new Bitlist(byteArray, n);
+    return bitlist;
   }
 
   public Bitvector randomBitvector(int n) {

@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.util.ssztypes;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -36,8 +39,8 @@ class BitlistTest {
   @Test
   void initTest() {
     Bitlist bitlist = new Bitlist(10, bitlistMaxSize);
-    Assertions.assertEquals(bitlist.getBit(0), 0);
-    Assertions.assertEquals(bitlist.getBit(9), 0);
+    assertFalse(bitlist.getBit(0));
+    assertFalse(bitlist.getBit(9));
   }
 
   @Test
@@ -47,11 +50,11 @@ class BitlistTest {
     bitlist.setBit(3);
     bitlist.setBit(8);
 
-    Assertions.assertEquals(bitlist.getBit(0), 0);
-    Assertions.assertEquals(bitlist.getBit(1), 1);
-    Assertions.assertEquals(bitlist.getBit(3), 1);
-    Assertions.assertEquals(bitlist.getBit(4), 0);
-    Assertions.assertEquals(bitlist.getBit(8), 1);
+    assertFalse(bitlist.getBit(0));
+    assertTrue(bitlist.getBit(1));
+    assertTrue(bitlist.getBit(3));
+    assertFalse(bitlist.getBit(4));
+    assertTrue(bitlist.getBit(8));
   }
 
   @Test

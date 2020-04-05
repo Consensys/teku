@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,6 +122,17 @@ public class AttestationData extends AbstractImmutableContainer<AttestationData>
     return hashTreeRoot().slice(0, 4).toInt();
   }
 
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", getSlot())
+        .add("index", getIndex())
+        .add("beacon_block_root", getBeacon_block_root())
+        .add("source", getSource())
+        .add("target", getTarget())
+        .toString();
+  }
+
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();
@@ -145,21 +157,5 @@ public class AttestationData extends AbstractImmutableContainer<AttestationData>
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return "AttestationData{"
-        + "slot="
-        + getSlot()
-        + ", index="
-        + getIndex()
-        + ", beacon_block_root="
-        + getBeacon_block_root()
-        + ", source="
-        + getSource()
-        + ", target="
-        + getTarget()
-        + '}';
   }
 }

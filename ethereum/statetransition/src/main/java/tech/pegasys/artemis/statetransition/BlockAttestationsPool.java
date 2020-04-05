@@ -98,17 +98,9 @@ public class BlockAttestationsPool {
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
     final Bitlist bitlist =
         processedAttestationsBitlist.computeIfAbsent(
-            attestationDataHash,
-            (key) -> {
-              //              ChainStorage.add(
-              //                  attestationDataHash, attestation.getData().getSlot(),
-              // dataRootToSlot);
-              return attestation.getAggregation_bits().copy();
-            });
+            attestationDataHash, (key) -> attestation.getAggregation_bits().copy());
 
-    for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-      if (attestation.getAggregation_bits().getBit(i) == 1) bitlist.setBit(i);
-    }
+    bitlist.setAllBits(attestation.getAggregation_bits());
   }
 
   private SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {

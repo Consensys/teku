@@ -282,7 +282,7 @@ public final class HashTreeUtil {
         merkleize(
             bitfield_bytes(bitlist.serialize()),
             chunk_count(SSZTypes.BITLIST, bitlist.getMaxSize())),
-        bitlist.getByteArray().length);
+        bitlist.getCurrentSize());
   }
 
   /**
