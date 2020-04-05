@@ -25,8 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.sync.FetchBlockTask.FetchBlockResult.Status;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -36,14 +36,14 @@ class FetchBlockTask {
   private static final Comparator<Eth2Peer> SHUFFLING_COMPARATOR =
       Comparator.comparing(p -> Math.random());
 
-  private final Eth2Network eth2Network;
+  private final P2PNetwork<Eth2Peer> eth2Network;
   private final Bytes32 blockRoot;
   private final Set<NodeId> queriedPeers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   private final AtomicInteger numberOfRuns = new AtomicInteger(0);
   private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
-  FetchBlockTask(final Eth2Network eth2Network, final Bytes32 blockRoot) {
+  FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
     this.eth2Network = eth2Network;
     this.blockRoot = blockRoot;
   }
@@ -52,7 +52,8 @@ class FetchBlockTask {
     cancelled.set(true);
   }
 
-  public static FetchBlockTask create(final Eth2Network eth2Network, final Bytes32 blockRoot) {
+  public static FetchBlockTask create(
+      final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
     return new FetchBlockTask(eth2Network, blockRoot);
   }
 

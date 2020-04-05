@@ -15,20 +15,12 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestation;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttesterSlashing;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposerSlashing;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSignedVoluntaryExit;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTER_SLASHINGS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_PROPOSER_SLASHINGS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VOLUNTARY_EXITS;
 
-import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -36,35 +28,38 @@ import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockBodyTest {
-  private int seed = 100;
-  private BLSSignature blsSignature = BLSSignature.random(seed);
-  private Eth1Data eth1Data = randomEth1Data(seed++);
-  private Bytes32 graffiti = randomBytes32(seed++);
-  private SSZList<ProposerSlashing> proposerSlashings =
-      new SSZList<>(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
-  private SSZList<AttesterSlashing> attesterSlashings =
-      new SSZList<>(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
-  private SSZList<Attestation> attestations = new SSZList<>(Attestation.class, MAX_ATTESTATIONS);
-  private SSZList<Deposit> deposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
-  private SSZList<SignedVoluntaryExit> voluntaryExits =
-      new SSZList<>(SignedVoluntaryExit.class, MAX_VOLUNTARY_EXITS);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private BLSSignature blsSignature = dataStructureUtil.randomSignature();
+  private Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
+  private Bytes32 graffiti = dataStructureUtil.randomBytes32();
+  private SSZMutableList<ProposerSlashing> proposerSlashings =
+      SSZList.createMutable(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
+  private SSZMutableList<AttesterSlashing> attesterSlashings =
+      SSZList.createMutable(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
+  private SSZMutableList<Attestation> attestations =
+      SSZList.createMutable(Attestation.class, MAX_ATTESTATIONS);
+  private SSZMutableList<Deposit> deposits = SSZList.createMutable(Deposit.class, MAX_DEPOSITS);
+  private SSZMutableList<SignedVoluntaryExit> voluntaryExits =
+      SSZList.createMutable(SignedVoluntaryExit.class, MAX_VOLUNTARY_EXITS);
 
   {
-    proposerSlashings.add(randomProposerSlashing(seed++));
-    proposerSlashings.add(randomProposerSlashing(seed++));
-    proposerSlashings.add(randomProposerSlashing(seed++));
-    attesterSlashings.add(randomAttesterSlashing(seed++));
-    attestations.add(randomAttestation(seed++));
-    attestations.add(randomAttestation(seed++));
-    attestations.add(randomAttestation(seed++));
-    deposits.addAll(randomDeposits(100, seed++));
-    voluntaryExits.add(randomSignedVoluntaryExit(seed++));
-    voluntaryExits.add(randomSignedVoluntaryExit(seed++));
-    voluntaryExits.add(randomSignedVoluntaryExit(seed++));
+    proposerSlashings.add(dataStructureUtil.randomProposerSlashing());
+    proposerSlashings.add(dataStructureUtil.randomProposerSlashing());
+    proposerSlashings.add(dataStructureUtil.randomProposerSlashing());
+    attesterSlashings.add(dataStructureUtil.randomAttesterSlashing());
+    attestations.add(dataStructureUtil.randomAttestation());
+    attestations.add(dataStructureUtil.randomAttestation());
+    attestations.add(dataStructureUtil.randomAttestation());
+    deposits.addAll(dataStructureUtil.randomDeposits(MAX_DEPOSITS));
+    voluntaryExits.add(dataStructureUtil.randomSignedVoluntaryExit());
+    voluntaryExits.add(dataStructureUtil.randomSignedVoluntaryExit());
+    voluntaryExits.add(dataStructureUtil.randomSignedVoluntaryExit());
   }
 
   private BeaconBlockBody beaconBlockBody =
@@ -104,16 +99,14 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
     // Create copy of proposerSlashings and reverse to ensure it is different.
-    SSZList<ProposerSlashing> reverseProposerSlashings =
-        new SSZList<>(proposerSlashings, MAX_PROPOSER_SLASHINGS, ProposerSlashing.class);
-    Collections.reverse(reverseProposerSlashings);
+    SSZList<ProposerSlashing> reverseProposerSlashings = proposerSlashings.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
             blsSignature,
             eth1Data,
             graffiti,
-            reverseProposerSlashings,
+            SSZList.createMutable(reverseProposerSlashings),
             attesterSlashings,
             attestations,
             deposits,
@@ -125,9 +118,9 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenAttesterSlashingsAreDifferent() {
     // Create copy of attesterSlashings and change the element to ensure it is different.
-    SSZList<AttesterSlashing> otherAttesterSlashings =
-        new SSZList<>(attesterSlashings, MAX_ATTESTER_SLASHINGS, AttesterSlashing.class);
-    otherAttesterSlashings.add(0, randomAttesterSlashing(seed++));
+    SSZMutableList<AttesterSlashing> otherAttesterSlashings =
+        SSZList.concat(
+            SSZList.singleton(dataStructureUtil.randomAttesterSlashing()), attesterSlashings);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
@@ -146,9 +139,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenAttestationsAreDifferent() {
     // Create copy of attestations and reverse to ensure it is different.
-    SSZList<Attestation> reverseAttestations =
-        new SSZList<>(attestations, MAX_ATTESTATIONS, Attestation.class);
-    Collections.reverse(reverseAttestations);
+    SSZList<Attestation> reverseAttestations = attestations.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
@@ -167,8 +158,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenDepositsAreDifferent() {
     // Create copy of deposits and reverse to ensure it is different.
-    SSZList<Deposit> reverseDeposits = new SSZList<>(deposits, MAX_DEPOSITS, Deposit.class);
-    Collections.reverse(reverseDeposits);
+    SSZList<Deposit> reverseDeposits = deposits.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
@@ -187,9 +177,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenExitsAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
-    SSZList<SignedVoluntaryExit> reverseVoluntaryExits =
-        new SSZList<>(voluntaryExits, MAX_VOLUNTARY_EXITS, SignedVoluntaryExit.class);
-    Collections.reverse(reverseVoluntaryExits);
+    SSZList<SignedVoluntaryExit> reverseVoluntaryExits = voluntaryExits.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(

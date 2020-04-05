@@ -29,9 +29,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
-import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -63,8 +63,8 @@ public class GossipMessageHandlerIntegrationTest {
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
-    waitFor(node1.network().connect(node2.network().getNodeAddress()));
-    waitFor(node2.network().connect(node3.network().getNodeAddress()));
+    waitFor(node1.connect(node2));
+    waitFor(node2.connect(node3));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -77,7 +77,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate block from network 1
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(blockSlot);
-    node1.eventBus().post(new BlockProposedEvent(newBlock));
+    node1.eventBus().post(new ProposedBlockEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
     final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
@@ -108,8 +108,8 @@ public class GossipMessageHandlerIntegrationTest {
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
-    waitFor(node1.network().connect(node2.network().getNodeAddress()));
-    waitFor(node2.network().connect(node3.network().getNodeAddress()));
+    waitFor(node1.connect(node2));
+    waitFor(node2.connect(node3));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -117,13 +117,14 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(node2.network().getPeerCount()).isEqualTo(2);
           assertThat(node3.network().getPeerCount()).isEqualTo(1);
         });
+
     // TODO: debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 
     // Propagate invalid block from network 1
     final SignedBeaconBlock newBlock =
         node1.chainUtil().createBlockAtSlotFromInvalidProposer(blockSlot);
-    node1.eventBus().post(new BlockProposedEvent(newBlock));
+    node1.eventBus().post(new ProposedBlockEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
     final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
@@ -145,7 +146,7 @@ public class GossipMessageHandlerIntegrationTest {
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
-    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(node1.connect(node2));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -175,7 +176,7 @@ public class GossipMessageHandlerIntegrationTest {
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
-    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(node1.connect(node2));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -220,7 +221,7 @@ public class GossipMessageHandlerIntegrationTest {
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
-    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(node1.connect(node2));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {

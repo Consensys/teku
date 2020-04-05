@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDepositData;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,15 +24,17 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class DepositTest {
-  private int seed = 100;
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private SSZVector<Bytes32> branch = setupMerkleBranch();
-  private DepositData depositData = randomDepositData(seed);
+  private DepositData depositData = dataStructureUtil.randomDepositData();
 
   private Deposit deposit = new Deposit(branch, depositData);
 
@@ -54,10 +55,11 @@ class DepositTest {
   @Test
   void equalsReturnsFalseWhenBranchesAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
-    List<Bytes32> reverseBranch = new ArrayList<>(branch);
+    List<Bytes32> reverseBranch = new ArrayList<>(branch.asList());
     Collections.reverse(reverseBranch);
 
-    Deposit testDeposit = new Deposit(new SSZVector<>(reverseBranch, Bytes32.class), depositData);
+    Deposit testDeposit =
+        new Deposit(SSZVector.createMutable(reverseBranch, Bytes32.class), depositData);
 
     assertNotEquals(deposit, testDeposit);
   }
@@ -66,9 +68,9 @@ class DepositTest {
   void equalsReturnsFalseWhenDepositDataIsDifferent() {
     // DepositData is rather involved to create. Just create a random one until it is not the same
     // as the original.
-    DepositData otherDepositData = randomDepositData(seed++);
+    DepositData otherDepositData = dataStructureUtil.randomDepositData();
     while (Objects.equals(otherDepositData, depositData)) {
-      otherDepositData = randomDepositData(seed++);
+      otherDepositData = dataStructureUtil.randomDepositData();
     }
 
     Deposit testDeposit = new Deposit(branch, otherDepositData);
@@ -95,8 +97,8 @@ class DepositTest {
   }
 
   private SSZVector<Bytes32> setupMerkleBranch() {
-    SSZVector<Bytes32> branch =
-        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+    SSZMutableVector<Bytes32> branch =
+        SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
 
     for (int i = 0; i < branch.size(); ++i) {
       branch.set(i, Bytes32.random());

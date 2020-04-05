@@ -20,6 +20,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,9 +36,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.client.FailedPrecommitException;
+import tech.pegasys.artemis.storage.client.ReadOnlyStore;
+import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -45,7 +48,6 @@ public class Store implements ReadOnlyStore {
   private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
-  private long transactionCount = 0;
   private UnsignedLong time;
   private UnsignedLong genesis_time;
   private Checkpoint justified_checkpoint;
@@ -89,8 +91,8 @@ public class Store implements ReadOnlyStore {
     Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
     blocks.put(root, new SignedBeaconBlock(genesisBlock, BLSSignature.empty()));
-    block_states.put(root, BeaconStateWithCache.deepCopy(genesisState));
-    checkpoint_states.put(justified_checkpoint, BeaconStateWithCache.deepCopy(genesisState));
+    block_states.put(root, genesisState);
+    checkpoint_states.put(justified_checkpoint, genesisState);
 
     return new Store(
         genesisState.getGenesis_time(),
@@ -104,13 +106,13 @@ public class Store implements ReadOnlyStore {
         latest_messages);
   }
 
-  Transaction startTransaction(final TransactionPrecommit transactionPrecommit) {
-    return startTransaction(transactionPrecommit, StoreUpdateHandler.NOOP);
+  public Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
+    return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP);
   }
 
-  Transaction startTransaction(
-      final TransactionPrecommit transactionPrecommit, final StoreUpdateHandler updateHandler) {
-    return new Transaction(transactionCount++, transactionPrecommit, updateHandler);
+  public Transaction startTransaction(
+      final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
+    return new Transaction(storageUpdateChannel, updateHandler);
   }
 
   @Override
@@ -261,8 +263,7 @@ public class Store implements ReadOnlyStore {
 
   public class Transaction implements ReadOnlyStore {
 
-    private final long id;
-    private final TransactionPrecommit transactionPrecommit;
+    private final StorageUpdateChannel storageUpdateChannel;
     private Optional<UnsignedLong> time = Optional.empty();
     private Optional<UnsignedLong> genesis_time = Optional.empty();
     private Optional<Checkpoint> justified_checkpoint = Optional.empty();
@@ -275,11 +276,8 @@ public class Store implements ReadOnlyStore {
     private final StoreUpdateHandler updateHandler;
 
     Transaction(
-        final long id,
-        final TransactionPrecommit transactionPrecommit,
-        final StoreUpdateHandler updateHandler) {
-      this.id = id;
-      this.transactionPrecommit = transactionPrecommit;
+        final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
+      this.storageUpdateChannel = storageUpdateChannel;
       this.updateHandler = updateHandler;
     }
 
@@ -321,10 +319,8 @@ public class Store implements ReadOnlyStore {
 
     @CheckReturnValue
     public SafeFuture<Void> commit() {
-      final StoreDiskUpdateEvent updateEvent =
-          new StoreDiskUpdateEvent(
-              id,
-              time,
+      final StorageUpdate updateEvent =
+          new StorageUpdate(
               genesis_time,
               justified_checkpoint,
               finalized_checkpoint,
@@ -333,13 +329,17 @@ public class Store implements ReadOnlyStore {
               block_states,
               checkpoint_states,
               latest_messages);
-      return transactionPrecommit
-          .precommit(updateEvent)
-          .thenRun(
-              () -> {
+      return storageUpdateChannel
+          .onStorageUpdate(updateEvent)
+          .thenAccept(
+              updateResult -> {
+                if (!updateResult.isSuccessful()) {
+                  throw new FailedPrecommitException(updateResult);
+                }
                 final Lock writeLock = Store.this.lock.writeLock();
                 writeLock.lock();
                 try {
+                  // Add new data
                   time.ifPresent(value -> Store.this.time = value);
                   genesis_time.ifPresent(value -> Store.this.genesis_time = value);
                   justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
@@ -350,6 +350,15 @@ public class Store implements ReadOnlyStore {
                   Store.this.block_states.putAll(block_states);
                   Store.this.checkpoint_states.putAll(checkpoint_states);
                   Store.this.latest_messages.putAll(latest_messages);
+                  // Prune old data
+                  updateResult.getPrunedCheckpoints().forEach(Store.this.checkpoint_states::remove);
+                  updateResult
+                      .getPrunedBlockRoots()
+                      .forEach(
+                          prunedRoot -> {
+                            Store.this.blocks.remove(prunedRoot);
+                            Store.this.block_states.remove(prunedRoot);
+                          });
                 } finally {
                   writeLock.unlock();
                 }
@@ -451,7 +460,41 @@ public class Store implements ReadOnlyStore {
     }
   }
 
-  interface StoreUpdateHandler {
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof Store)) {
+      return false;
+    }
+    final Store store = (Store) o;
+    return Objects.equals(time, store.time)
+        && Objects.equals(genesis_time, store.genesis_time)
+        && Objects.equals(justified_checkpoint, store.justified_checkpoint)
+        && Objects.equals(finalized_checkpoint, store.finalized_checkpoint)
+        && Objects.equals(best_justified_checkpoint, store.best_justified_checkpoint)
+        && Objects.equals(blocks, store.blocks)
+        && Objects.equals(block_states, store.block_states)
+        && Objects.equals(checkpoint_states, store.checkpoint_states)
+        && Objects.equals(latest_messages, store.latest_messages);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        time,
+        genesis_time,
+        justified_checkpoint,
+        finalized_checkpoint,
+        best_justified_checkpoint,
+        blocks,
+        block_states,
+        checkpoint_states,
+        latest_messages);
+  }
+
+  public interface StoreUpdateHandler {
     StoreUpdateHandler NOOP =
         new StoreUpdateHandler() {
           @Override

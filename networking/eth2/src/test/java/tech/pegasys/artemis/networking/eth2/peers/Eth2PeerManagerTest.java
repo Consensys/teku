@@ -26,8 +26,8 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager.PeerValidatorF
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2PeerManagerTest {
@@ -35,7 +35,7 @@ public class Eth2PeerManagerTest {
   private final PeerStatusFactory statusFactory = PeerStatusFactory.create(1L);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private final RecentChainData storageClient = mock(RecentChainData.class);
   private final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(storageClient);
 
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
@@ -62,7 +62,7 @@ public class Eth2PeerManagerTest {
     assertThat(connectedPeers).isEmpty();
 
     // Add a peer
-    final Peer peer = createPeer();
+    final Peer peer = createPeer(1);
     final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
 
@@ -85,7 +85,7 @@ public class Eth2PeerManagerTest {
     assertThat(connectedPeers).isEmpty();
 
     // Add a peer
-    final Peer peer = createPeer();
+    final Peer peer = createPeer(1);
     final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
 
@@ -108,14 +108,14 @@ public class Eth2PeerManagerTest {
     assertThat(connectedPeers).isEmpty();
 
     // Add a peer
-    final Peer peer = createPeer();
+    final Peer peer = createPeer(1);
     final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
     setInitialPeerStatus(eth2Peer);
     assertThat(connectedPeers).containsExactly(eth2Peer);
 
     // Add another peer
-    final Peer peerB = createPeer();
+    final Peer peerB = createPeer(2);
     final Eth2Peer eth2PeerB = createEth2Peer(peerB);
     peerManager.onConnect(peerB);
     setInitialPeerStatus(eth2PeerB);
@@ -134,7 +134,7 @@ public class Eth2PeerManagerTest {
     // Sanity check
     assertThat(connectedPeers).isEmpty();
 
-    final Peer peer = createPeer();
+    final Peer peer = createPeer(1);
     final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
     setInitialPeerStatus(eth2Peer);
@@ -143,9 +143,9 @@ public class Eth2PeerManagerTest {
     assertThat(connectedPeersB).containsExactly(eth2Peer);
   }
 
-  private Peer createPeer() {
+  private Peer createPeer(final int id) {
     final Peer peer = mock(Peer.class);
-    when(peer.getId()).thenReturn(new MockNodeId());
+    when(peer.getId()).thenReturn(new MockNodeId(id));
     return peer;
   }
 
@@ -155,6 +155,9 @@ public class Eth2PeerManagerTest {
   }
 
   private Eth2Peer createEth2Peer(final Peer peer) {
-    return new Eth2Peer(peer, peerManager.getBeaconChainMethods(), statusMessageFactory);
+    final Eth2Peer eth2Peer =
+        new Eth2Peer(peer, peerManager.getBeaconChainMethods(), statusMessageFactory);
+    when(peer.idMatches(eth2Peer)).thenReturn(true);
+    return eth2Peer;
   }
 }

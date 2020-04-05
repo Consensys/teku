@@ -23,34 +23,34 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
 
-  public StateProcessor(EventBus eventBus, ChainStorageClient chainStorageClient) {
-    this.chainStorageClient = chainStorageClient;
-    this.blockImporter = new BlockImporter(chainStorageClient, eventBus);
+  public StateProcessor(EventBus eventBus, RecentChainData recentChainData) {
+    this.recentChainData = recentChainData;
+    this.blockImporter = new BlockImporter(recentChainData, eventBus);
     eventBus.register(this);
   }
 
   public Bytes32 processHead() {
-    Store store = chainStorageClient.getStore();
+    Store store = recentChainData.getStore();
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
-    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
+    recentChainData.updateBestBlock(headBlockRoot, headBlock.getSlot());
     return headBlockRoot;
   }
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
+  private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
     LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
     final BlockImportResult result = blockImporter.importBlock(blockProposedEvent.getBlock());
     if (result.isSuccessful()) {

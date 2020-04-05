@@ -29,16 +29,16 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
   private final GossipNetwork gossipNetwork;
   private final EventBus eventBus;
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
 
   private final Map<Integer, TopicChannel> attestationChannels = new ConcurrentHashMap<>();
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
@@ -46,10 +46,10 @@ public class AttestationGossipManager {
   public AttestationGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final ChainStorageClient chainStorageClient) {
+      final RecentChainData recentChainData) {
     this.gossipNetwork = gossipNetwork;
     this.eventBus = eventBus;
-    this.chainStorageClient = chainStorageClient;
+    this.recentChainData = recentChainData;
     eventBus.register(this);
   }
 
@@ -91,7 +91,7 @@ public class AttestationGossipManager {
 
   private TopicChannel createChannelForCommitteeIndex(final int committeeIndex) {
     final AttestationTopicHandler topicHandler =
-        new AttestationTopicHandler(eventBus, chainStorageClient, committeeIndex);
+        new AttestationTopicHandler(eventBus, recentChainData, committeeIndex);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

@@ -25,12 +25,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -40,8 +40,8 @@ public class SyncManager extends Service {
   private static final Duration LONG_DELAY = Duration.ofSeconds(20);
 
   private static final Logger LOG = LogManager.getLogger();
-  private final Eth2Network network;
-  private final ChainStorageClient storageClient;
+  private final P2PNetwork<Eth2Peer> network;
+  private final RecentChainData storageClient;
   private final PeerSync peerSync;
 
   private boolean syncActive = false;
@@ -53,8 +53,8 @@ public class SyncManager extends Service {
 
   SyncManager(
       final AsyncRunner asyncRunner,
-      final Eth2Network network,
-      final ChainStorageClient storageClient,
+      final P2PNetwork<Eth2Peer> network,
+      final RecentChainData storageClient,
       final PeerSync peerSync) {
     this.asyncRunner = asyncRunner;
     this.network = network;
@@ -63,10 +63,10 @@ public class SyncManager extends Service {
   }
 
   public static SyncManager create(
-      final Eth2Network network,
-      final ChainStorageClient storageClient,
+      final P2PNetwork<Eth2Peer> network,
+      final RecentChainData storageClient,
       final BlockImporter blockImporter) {
-    final AsyncRunner asyncRunner = new DelayedExecutorAsyncRunner();
+    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
     return new SyncManager(
         asyncRunner,
         network,
@@ -128,6 +128,20 @@ public class SyncManager extends Service {
     return syncQueued;
   }
 
+  public SyncingStatus getSyncStatus() {
+    final boolean isSyncActive = isSyncActive();
+    if (isSyncActive) {
+      Optional<Eth2Peer> bestPeer = findBestSyncPeer();
+      if (bestPeer.isPresent()) {
+        UnsignedLong highestSlot = bestPeer.get().getStatus().getHeadSlot();
+        final SyncStatus syncStatus =
+            new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
+        return new SyncingStatus(true, syncStatus);
+      }
+    }
+    return new SyncingStatus(false, null);
+  }
+
   private SafeFuture<Void> executeSync() {
     return findBestSyncPeer()
         .map(this::syncToPeer)
@@ -174,7 +188,7 @@ public class SyncManager extends Service {
             });
   }
 
-  private Optional<Eth2Peer> findBestSyncPeer() {
+  Optional<Eth2Peer> findBestSyncPeer() {
     return network
         .streamPeers()
         .filter(this::isPeerSyncSuitable)

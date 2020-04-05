@@ -1,52 +1,56 @@
-[node]
-# networkMode options:
-# "mock": use MockP2PNetwork
-# "jvmlibp2p" : use JvmLibP2PNetwork
-networkMode = "mock"
-networkInterface = "0.0.0.0"
-port = 9000
-discovery = "static"
-bootnodes = ""
-advertisedPort = 9000
-constants = "minimal"
+# network
+network = "minimal"
 
-[interop]
-# when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
-genesisTime = 0
-ownedValidatorStartIndex = 0
-ownedValidatorCount = 64
-startState = ""
+# p2p
+# p2p-enabled options:
+# false - no discovery, only connect to static peers
+# true - Enable discovery v5
+p2p-enabled = false
+p2p-interface = "0.0.0.0"
+p2p-port = 9000
+p2p-discovery-enabled = false
+p2p-advertised-port = 9000
 #this.privKey.bytes().toHexString() who's corresponding sha2(publicKey) == 16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ
-privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A8F53B52EDF"
+p2p-private-key-file = "path/to/file"
 
-[validator]
-#validatorsKeyFile = "keys.yaml"
+# interop
+# when genesis time is set to 0, teku takes genesis time as currentTime + 5 seconds.
+Xinterop-genesis-time = 0
+Xinterop-owned-validator-start-index =  0
+Xinterop-owned-validator-count = 64
+Xinterop-start-state = ""
+Xinterop-number-of-validators = 64
+Xinterop-enabled = true
 
-[deposit]
-# normal, test, simulation
-# "test" pre-production
-# "simulation" to run a simulation of deposits with ganache-cli, if a inputFile is included the file will replay the deposits
-# "normal" production, must include contractAddr and nodeUrl
-mode = "test"
-inputFile = "" #"validator_test_data.json"
-numValidators = 64
-numNodes = 1
-contractAddr = "0x77f7bED277449F51505a4C54550B074030d989bC"
-nodeUrl = "http://localhost:8545"
+# validator
+#validators-key-file="path/to/keys.yaml"
 
-[output]
-logPath = "."
-logFile = "artemis.log"
-transitionRecordDir = "/tmp/artemis"
+# deposit
+eth1-deposit-contract-address = "0x77f7bED277449F51505a4C54550B074030d989bC"
+eth1-endpoint = "http://localhost:8545"
 
-[metrics]
-enabled = false
-port = 8008
-metricsNetworkInterface = "127.0.0.1"
-#metricsCategories = [ "BEACONCHAIN", "JVM", "PROCESS" ]
+# output
+#Xtransaction-record-directory="/tmp/teku"
 
-[database]
-startFromDisk = false
+# logging
+#log-color-enabled = false
+#log-include-events-enabled = false
+#log-destination =  'both', 'file' or 'console'
+#log-file = 'teku.log'
+#log-file-name-pattern = 'tekuL_%d{yyyy-MM-dd}.log'
 
-[beaconrestapi]
-portNumber = 5051
+# metrics
+metrics-enabled = false
+metrics-port = 8008
+metrics-interface = "127.0.0.1"
+metrics-categories = ["BEACONCHAIN","JVM","PROCESS"]
+
+# database
+data-path = "."
+data-storage-mode = "prune"
+
+# beacon rest api
+rest-api-port = 5051
+rest-api-docs-enabled = true
+rest-api-enabled = true
+rest-api-interface = "127.0.0.1"

@@ -22,7 +22,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AggregateGossipManager {
   private final EventBus eventBus;
@@ -32,9 +32,9 @@ public class AggregateGossipManager {
   public AggregateGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final ChainStorageClient chainStorageClient) {
+      final RecentChainData recentChainData) {
     final AggregateTopicHandler aggregateTopicHandler =
-        new AggregateTopicHandler(eventBus, chainStorageClient);
+        new AggregateTopicHandler(eventBus, recentChainData);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(aggregateTopicHandler.getTopic(), aggregateTopicHandler);
     eventBus.register(this);

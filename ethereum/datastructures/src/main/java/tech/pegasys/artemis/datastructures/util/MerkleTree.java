@@ -26,7 +26,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 public abstract class MerkleTree {
   protected final List<List<Bytes32>> tree;
   protected final List<Bytes32> zeroHashes;
-  protected final int treeDepth;
+  protected final int treeDepth; // Root does not count as depth, i.e. tree height is treeDepth + 1
 
   protected MerkleTree(int treeDepth) {
     checkArgument(treeDepth > 1, "MerkleTree: treeDepth must be greater than 1");
@@ -60,18 +60,18 @@ public abstract class MerkleTree {
     return getProof(index);
   }
 
-  public SSZVector<Bytes32> getProof(int index) {
+  public SSZVector<Bytes32> getProof(int itemIndex) {
     List<Bytes32> proof = new ArrayList<>();
     for (int i = 0; i < treeDepth; i++) {
 
       // Get index of sibling node
-      index = index % 2 == 1 ? index - 1 : index + 1;
+      int siblingIndex = itemIndex % 2 == 1 ? itemIndex - 1 : itemIndex + 1;
 
       // If sibling is contained in the tree
-      if (index < tree.get(i).size()) {
+      if (siblingIndex < tree.get(i).size()) {
 
         // Get the sibling from the tree
-        proof.add(tree.get(i).get(index));
+        proof.add(tree.get(i).get(siblingIndex));
       } else {
 
         // Get the zero hash at the appropriate
@@ -79,10 +79,10 @@ public abstract class MerkleTree {
         proof.add(zeroHashes.get(i));
       }
 
-      index /= 2;
+      itemIndex /= 2;
     }
     proof.add(calcMixInValue());
-    return new SSZVector<>(proof, Bytes32.class);
+    return SSZVector.createMutable(proof, Bytes32.class);
   }
 
   private Bytes32 calcViewBoundaryRoot(int depth, int viewLimit) {
@@ -91,35 +91,38 @@ public abstract class MerkleTree {
     }
     depth -= 1;
     Bytes32 deeperRoot = calcViewBoundaryRoot(depth, viewLimit);
+    // Check if given the viewLimit at the leaf layer, is root in left or right subtree
     if ((viewLimit & (1 << depth)) != 0) {
-      return Hash.sha2_256(Bytes.concatenate(tree.get(depth).get(viewLimit >> depth), deeperRoot));
+      // For the right subtree
+      return Hash.sha2_256(
+          Bytes.concatenate(tree.get(depth).get((viewLimit >> depth) - 1), deeperRoot));
     } else {
+      // For the left subtree
       return Hash.sha2_256(Bytes.concatenate(deeperRoot, zeroHashes.get(depth)));
     }
   }
 
   /**
    * @param value of the leaf
-   * @param viewLimit index of the last leaf that is supposed to be in the tree when getting the
-   *     view
-   * @return
+   * @param viewLimit number of leaves in the tree
+   * @return proof (i.e. collection of siblings on the way to root for the given leaf)
    */
   public SSZVector<Bytes32> getProofWithViewBoundary(Bytes32 value, int viewLimit) {
     return getProofWithViewBoundary(tree.get(0).indexOf(value), viewLimit);
   }
 
   /**
-   * @param index of the leaf
-   * @param viewLimit ndex of the last leaf that is supposed to be in the tree when getting the view
-   * @return
+   * @param itemIndex of the leaf
+   * @param viewLimit number of leaves in the tree
+   * @return proof (i.e. collection of siblings on the way to root for the given leaf)
    */
-  public SSZVector<Bytes32> getProofWithViewBoundary(int index, int viewLimit) {
-    checkArgument(index <= viewLimit, "MerkleTree: Index must be less than or equal to view limit");
+  public SSZVector<Bytes32> getProofWithViewBoundary(int itemIndex, int viewLimit) {
+    checkArgument(itemIndex < viewLimit, "MerkleTree: Index must be less than the view limit");
 
     List<Bytes32> proof = new ArrayList<>();
     for (int i = 0; i < treeDepth; i++) {
       // Get index of sibling node
-      index = index % 2 == 1 ? index - 1 : index + 1;
+      int siblingIndex = itemIndex % 2 == 1 ? itemIndex - 1 : itemIndex + 1;
 
       // Check how much of the tree at this level is strictly within the view limit.
       int limit = viewLimit >> i;
@@ -127,32 +130,31 @@ public abstract class MerkleTree {
       checkArgument(
           limit <= tree.get(i).size(), "MerkleTree: Tree is too small for given limit at height");
 
-      // If the index (sibling node to be put in the proof) is equal to the limit,
-      if (index == limit) {
-        // At:
+      // If the sibling is equal to the limit,
+      if (siblingIndex == limit) {
         // Go deeper to partially merkleize in zero-hashes.
-        proof.add(calcViewBoundaryRoot(i, viewLimit + 1));
-      } else if (index > limit) {
+        proof.add(calcViewBoundaryRoot(i, viewLimit));
+      } else if (siblingIndex > limit) {
         // Beyond:
         // Just use a zero-hash as effective sibling.
         proof.add(zeroHashes.get(i));
       } else {
         // Within:
         // Return the tree node as-is without modifications
-        proof.add(tree.get(i).get(index));
+        proof.add(tree.get(i).get(siblingIndex));
       }
-      index /= 2;
+      itemIndex /= 2;
     }
-    proof.add(calcMixInValue(viewLimit + 1));
-    return new SSZVector<>(proof, Bytes32.class);
+    proof.add(calcMixInValue(viewLimit));
+    return SSZVector.createMutable(proof, Bytes32.class);
   }
 
-  private Bytes32 calcMixInValue(int viewLimit) {
+  public Bytes32 calcMixInValue(int viewLimit) {
     return (Bytes32)
         Bytes.concatenate(Bytes.ofUnsignedLong(viewLimit, LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
   }
 
-  private Bytes32 calcMixInValue() {
+  public Bytes32 calcMixInValue() {
     return calcMixInValue(getNumberOfLeaves());
   }
 

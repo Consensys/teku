@@ -13,11 +13,9 @@
 
 package tech.pegasys.artemis.sync;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import org.apache.logging.log4j.Level;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,20 +23,21 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
-import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
-public class AttestationManager extends Service {
+public class AttestationManager extends Service implements SlotEventsChannel {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private final EventBus eventBus;
   private final ForkChoiceAttestationProcessor attestationProcessor;
+
   private final PendingPool<DelayableAttestation> pendingAttestations;
   private final FutureItems<DelayableAttestation> futureAttestations;
 
@@ -54,16 +53,12 @@ public class AttestationManager extends Service {
   }
 
   public static AttestationManager create(
-      final EventBus eventBus, final ChainStorageClient storageClient) {
-    final PendingPool<DelayableAttestation> pendingAttestations =
-        PendingPool.createForAttestations(eventBus);
-    final FutureItems<DelayableAttestation> futureAttestations =
-        new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
+      final EventBus eventBus,
+      final PendingPool<DelayableAttestation> pendingAttestations,
+      final FutureItems<DelayableAttestation> futureAttestations,
+      final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor) {
     return new AttestationManager(
-        eventBus,
-        new ForkChoiceAttestationProcessor(storageClient, new StateTransition(false)),
-        pendingAttestations,
-        futureAttestations);
+        eventBus, forkChoiceAttestationProcessor, pendingAttestations, futureAttestations);
   }
 
   @Subscribe
@@ -83,15 +78,14 @@ public class AttestationManager extends Service {
             aggregate, () -> eventBus.post(new ProcessedAggregateEvent(aggregate))));
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onSlot(final SlotEvent slotEvent) {
-    futureAttestations.prune(slotEvent.getSlot()).forEach(this::processAttestation);
+  @Override
+  public void onSlot(final UnsignedLong slot) {
+    futureAttestations.prune(slot).forEach(this::processAttestation);
   }
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onBlockImported(final BlockImportedEvent blockImportedEvent) {
+  private void onBlockImported(final ImportedBlockEvent blockImportedEvent) {
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     pendingAttestations
@@ -127,7 +121,7 @@ public class AttestationManager extends Service {
           futureAttestations.add(delayableAttestation);
           break;
         default:
-          STDOUT.log(Level.WARN, "Failed to process attestation: " + result.getFailureMessage());
+          LOG.warn("Failed to process attestation: " + result.getFailureMessage());
           break;
       }
     }

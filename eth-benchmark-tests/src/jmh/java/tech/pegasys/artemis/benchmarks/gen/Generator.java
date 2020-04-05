@@ -30,14 +30,14 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO.Writer;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -50,21 +50,21 @@ public class Generator {
   @Test
   public void generateBlocks() throws Exception {
 
-    Constants.SLOTS_PER_EPOCH = 6;
+    Constants.setConstants("mainnet");
 
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     System.out.println("Generating keypairs...");
-    int validatorsCount = 10 * 1024;
+    int validatorsCount = 32 * 1024;
 
     List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")
+        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz")
             .readAll(validatorsCount);
 
     System.out.println("Keypairs done.");
 
     EventBus localEventBus = mock(EventBus.class);
-    ChainStorageClient localStorage = ChainStorageClient.memoryOnlyClient(localEventBus);
+    RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
     BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
     localChain.initializeStorage();
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
@@ -81,35 +81,32 @@ public class Generator {
         for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
           long s = System.currentTimeMillis();
           currentSlot = currentSlot.plus(UnsignedLong.ONE);
-          //        Optional<BeaconState> lastState =
-          // localStorage.getBlockState(localStorage.getBestBlockRoot());
-          //        Optional<BeaconBlock> lastBlock =
-          // localStorage.getBlockByRoot(localStorage.getBestBlockRoot());
-          BlockProcessingRecord record =
+
+          final SignedBeaconBlock block =
               localChain.createAndImportBlockAtSlot(
                   currentSlot, AttestationGenerator.groupAndAggregateAttestations(attestations));
-
-          final SignedBeaconBlock block = record.getBlock();
           writer.accept(block);
+          final BeaconState postState =
+              localStorage.getBlockState(block.getMessage().hash_tree_root()).orElseThrow();
 
           attestations =
               UnsignedLong.ONE.equals(currentSlot)
                   ? Collections.emptyList()
                   : attestationGenerator.getAttestationsForSlot(
-                      record.getPostState(), block.getMessage(), currentSlot);
+                      postState, block.getMessage(), currentSlot);
 
           System.out.println(
               "Processed: "
                   + currentSlot
                   + ", "
-                  + getCommittees(record.getPostState())
+                  + getCommittees(postState)
                   + ", "
                   + (System.currentTimeMillis() - s)
                   + " ms");
         }
 
         Optional<BeaconState> bestState =
-            localStorage.getBlockState(localStorage.getBestBlockRoot());
+            localStorage.getBlockState(localStorage.getBestBlockRoot().orElse(null));
         System.out.println("Epoch done: " + bestState);
       }
     }
@@ -119,7 +116,7 @@ public class Generator {
   @Test
   public void generateKeyPairs() throws Exception {
     int randomSeed = 0;
-    int limitK = 100;
+    int limitK = 200;
     File outFile = new File("bls-key-pairs-" + limitK + "k-seed-" + randomSeed + ".txt");
     Iterator<BLSKeyPair> keyPairIterator =
         IntStream.range(randomSeed, randomSeed + Integer.MAX_VALUE)

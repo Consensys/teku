@@ -33,6 +33,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class FetchBlockTaskTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   final Eth2Network eth2Network = mock(Eth2Network.class);
   final List<Eth2Peer> peers = new ArrayList<>();
 
@@ -43,12 +44,12 @@ public class FetchBlockTaskTest {
 
   @Test
   public void run_successful() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
     assertThat(task.getBlockRoot()).isEqualTo(blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
 
     final SafeFuture<FetchBlockResult> result = task.run();
@@ -60,7 +61,7 @@ public class FetchBlockTaskTest {
 
   @Test
   public void run_noPeers() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
@@ -73,11 +74,11 @@ public class FetchBlockTaskTest {
 
   @Test
   public void run_failAndRetryWithNoNewPeers() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
 
@@ -99,11 +100,11 @@ public class FetchBlockTaskTest {
 
   @Test
   public void run_failAndRetryWithNewPeer() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
 
@@ -115,7 +116,7 @@ public class FetchBlockTaskTest {
     assertThat(task.getNumberOfRetries()).isEqualTo(0);
 
     // Add another peer
-    final Eth2Peer peer2 = registerNewPeer();
+    final Eth2Peer peer2 = registerNewPeer(2);
     when(peer2.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
 
     // Retry
@@ -129,16 +130,16 @@ public class FetchBlockTaskTest {
 
   @Test
   public void run_withMultiplesPeersAvailable() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
     when(peer.getOutstandingRequests()).thenReturn(1);
     // Add another peer
-    final Eth2Peer peer2 = registerNewPeer();
+    final Eth2Peer peer2 = registerNewPeer(2);
     when(peer2.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
     when(peer2.getOutstandingRequests()).thenReturn(0);
 
@@ -152,11 +153,11 @@ public class FetchBlockTaskTest {
 
   @Test
   public void cancel() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
 
     task.cancel();
@@ -167,10 +168,10 @@ public class FetchBlockTaskTest {
     assertThat(fetchBlockResult.getStatus()).isEqualTo(Status.CANCELLED);
   }
 
-  private Eth2Peer registerNewPeer() {
+  private Eth2Peer registerNewPeer(final int id) {
     final Eth2Peer peer = mock(Eth2Peer.class);
     when(peer.getOutstandingRequests()).thenReturn(0);
-    when(peer.getId()).thenReturn(new MockNodeId());
+    when(peer.getId()).thenReturn(new MockNodeId(id));
 
     peers.add(peer);
     return peer;

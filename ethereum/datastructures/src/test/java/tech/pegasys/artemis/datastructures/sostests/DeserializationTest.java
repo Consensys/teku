@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.sostests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.stream.IntStream;
@@ -36,6 +35,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
@@ -43,13 +43,16 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class DeserializationTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
   @Test
   void BeaconBlockBodyTest() {
-    BeaconBlockBody beaconBlockBody = DataStructureUtil.randomBeaconBlockBody(100);
+    BeaconBlockBody beaconBlockBody = dataStructureUtil.randomBeaconBlockBody();
     BeaconBlockBody newBeaconBlockBody =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(beaconBlockBody), BeaconBlockBody.class);
@@ -58,7 +61,7 @@ public class DeserializationTest {
 
   @Test
   void BeaconBlockHeaderTest() {
-    BeaconBlockHeader beaconBlockHeader = DataStructureUtil.randomBeaconBlockHeader(100);
+    BeaconBlockHeader beaconBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
     Bytes beaconBlockSerialized = SimpleOffsetSerializer.serialize(beaconBlockHeader);
     BeaconBlockHeader newBeaconBlockHeader =
         SimpleOffsetSerializer.deserialize(beaconBlockSerialized, BeaconBlockHeader.class);
@@ -67,7 +70,7 @@ public class DeserializationTest {
 
   @Test
   void BeaconBlockTest() {
-    BeaconBlock beaconBlock = DataStructureUtil.randomBeaconBlock(100, 100);
+    BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(100);
     Bytes serialized = SimpleOffsetSerializer.serialize(beaconBlock);
     BeaconBlock newBeaconBlock = SimpleOffsetSerializer.deserialize(serialized, BeaconBlock.class);
     assertEquals(beaconBlock, newBeaconBlock);
@@ -75,7 +78,7 @@ public class DeserializationTest {
 
   @Test
   void Eth1DataTest() {
-    Eth1Data eth1Data = DataStructureUtil.randomEth1Data(100);
+    Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
     Bytes eth1DataSerialized = SimpleOffsetSerializer.serialize(eth1Data);
     Eth1Data newEth1Data = SimpleOffsetSerializer.deserialize(eth1DataSerialized, Eth1Data.class);
     assertEquals(eth1Data, newEth1Data);
@@ -83,7 +86,7 @@ public class DeserializationTest {
 
   @Test
   void AttestationDataTest() {
-    AttestationData attestationData = DataStructureUtil.randomAttestationData(100);
+    AttestationData attestationData = dataStructureUtil.randomAttestationData();
     assertEquals(
         attestationData,
         SimpleOffsetSerializer.deserialize(
@@ -92,7 +95,7 @@ public class DeserializationTest {
 
   @Test
   void AttestationTest() {
-    Attestation attestation = DataStructureUtil.randomAttestation(100);
+    Attestation attestation = dataStructureUtil.randomAttestation();
     Attestation newAttestation =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(attestation), Attestation.class);
@@ -101,7 +104,7 @@ public class DeserializationTest {
 
   @Test
   void AttesterSlashingTest() {
-    AttesterSlashing attesterSlashing = DataStructureUtil.randomAttesterSlashing(100);
+    AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing newAttesterSlashing =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(attesterSlashing), AttesterSlashing.class);
@@ -110,7 +113,7 @@ public class DeserializationTest {
 
   @Test
   void DepositDataTest() {
-    DepositData depositData = DataStructureUtil.randomDepositData(100);
+    DepositData depositData = dataStructureUtil.randomDepositData();
     assertEquals(
         depositData,
         SimpleOffsetSerializer.deserialize(
@@ -119,7 +122,7 @@ public class DeserializationTest {
 
   @Test
   void DepositTest() {
-    Deposit deposit = DataStructureUtil.randomDeposit(100);
+    Deposit deposit = dataStructureUtil.randomDeposit();
     Bytes serialized = SimpleOffsetSerializer.serialize(deposit);
     Deposit newDeposit = SimpleOffsetSerializer.deserialize(serialized, Deposit.class);
     // TODO
@@ -129,7 +132,7 @@ public class DeserializationTest {
 
   @Test
   void IndexedAttestationTest() {
-    IndexedAttestation indexedAttestation = DataStructureUtil.randomIndexedAttestation(100);
+    IndexedAttestation indexedAttestation = dataStructureUtil.randomIndexedAttestation();
     IndexedAttestation newIndexedAttestation =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(indexedAttestation), IndexedAttestation.class);
@@ -138,7 +141,7 @@ public class DeserializationTest {
 
   @Test
   void ProposerSlashingTest() {
-    ProposerSlashing proposerSlashing = DataStructureUtil.randomProposerSlashing(100);
+    ProposerSlashing proposerSlashing = dataStructureUtil.randomProposerSlashing();
     assertEquals(
         proposerSlashing,
         SimpleOffsetSerializer.deserialize(
@@ -147,7 +150,7 @@ public class DeserializationTest {
 
   @Test
   void VoluntaryExitTest() {
-    VoluntaryExit voluntaryExit = DataStructureUtil.randomVoluntaryExit(100);
+    VoluntaryExit voluntaryExit = dataStructureUtil.randomVoluntaryExit();
     assertEquals(
         voluntaryExit,
         SimpleOffsetSerializer.deserialize(
@@ -156,15 +159,15 @@ public class DeserializationTest {
 
   @Test
   void BeaconStateTest() {
-    BeaconState beaconState = randomBeaconState(100);
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
     Bytes bytes = SimpleOffsetSerializer.serialize(beaconState);
-    BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconState.class);
+    BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
     assertEquals(beaconState, state);
   }
 
   @Test
   void CheckpointTest() {
-    Checkpoint checkpoint = DataStructureUtil.randomCheckpoint(100);
+    Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     Bytes checkpointSerialized = SimpleOffsetSerializer.serialize(checkpoint);
     Checkpoint newCheckpoint =
         SimpleOffsetSerializer.deserialize(checkpointSerialized, Checkpoint.class);
@@ -185,15 +188,15 @@ public class DeserializationTest {
 
   @Test
   void HistoricalBatchTest() {
-    SSZVector<Bytes32> block_roots =
-        new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
-    SSZVector<Bytes32> state_roots =
-        new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SSZMutableVector<Bytes32> block_roots =
+        SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SSZMutableVector<Bytes32> state_roots =
+        SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(
             i -> {
-              block_roots.set(i, DataStructureUtil.randomBytes32(i));
-              state_roots.set(i, DataStructureUtil.randomBytes32(i));
+              block_roots.set(i, dataStructureUtil.randomBytes32());
+              state_roots.set(i, dataStructureUtil.randomBytes32());
             });
     HistoricalBatch deposit = new HistoricalBatch(block_roots, state_roots);
     Bytes serialized = SimpleOffsetSerializer.serialize(deposit);
@@ -210,7 +213,7 @@ public class DeserializationTest {
 
   @Test
   void ValidatorTest() {
-    Validator validator = DataStructureUtil.randomValidator(100);
+    Validator validator = dataStructureUtil.randomValidator();
     assertEquals(
         validator,
         SimpleOffsetSerializer.deserialize(
@@ -219,7 +222,7 @@ public class DeserializationTest {
 
   @Test
   void AggregateAndProofTest() {
-    AggregateAndProof aggregateAndProof = DataStructureUtil.randomAggregateAndProof(100);
+    AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     assertEquals(
         aggregateAndProof,
         SimpleOffsetSerializer.deserialize(

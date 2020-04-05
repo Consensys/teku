@@ -30,6 +30,12 @@ public class EventChannels {
             EventChannel.createAsync(channelInterface, exceptionHandler, metricsSystem));
   }
 
+  public static EventChannels createSyncChannels(
+      final ChannelExceptionHandler exceptionHandler, final MetricsSystem metricsSystem) {
+    return new EventChannels(
+        channelInterface -> EventChannel.create(channelInterface, exceptionHandler, metricsSystem));
+  }
+
   EventChannels(final Function<Class<?>, EventChannel<?>> eventChannelFactory) {
     this.eventChannelFactory = eventChannelFactory;
   }
@@ -38,8 +44,27 @@ public class EventChannels {
     return getChannel(channelInterface).getPublisher();
   }
 
-  public <T> void subscribe(final Class<T> channelInterface, final T subscriber) {
-    getChannel(channelInterface).subscribe(subscriber);
+  public <T> EventChannels subscribe(final Class<T> channelInterface, final T subscriber) {
+    return subscribeMultithreaded(channelInterface, subscriber, 1);
+  }
+
+  /**
+   * Adds a subscriber to this channel where events are handled by multiple threads concurrently.
+   *
+   * <p>Note that only async event channels can use multiple threads. Synchronous channels will
+   * always use the publisher thread to process events.
+   *
+   * <p>Events are still placed into an ordered queue and started in order, but as multiple threads
+   * pull from the queue, the execution order can no longer be guaranteed.
+   *
+   * @param channelInterface the channel to subscribe to
+   * @param subscriber the subscriber to notify of events
+   * @param requestedParallelism the number of threads to use to process events
+   */
+  public <T> EventChannels subscribeMultithreaded(
+      final Class<T> channelInterface, final T subscriber, final int requestedParallelism) {
+    getChannel(channelInterface).subscribeMultithreaded(subscriber, requestedParallelism);
+    return this;
   }
 
   @SuppressWarnings("unchecked")

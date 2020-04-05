@@ -1,16 +1,24 @@
 dependencies {
+  implementation project(':bls')
   implementation project(':ethereum:datastructures')
+  implementation project(':logging')
+  implementation project(':ssz')
   implementation project(':util')
 
-  implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.logging.log4j:log4j-api'
-  runtime 'org.apache.logging.log4j:log4j-core'
-  implementation 'org.apache.commons:commons-lang3'
-  compile group: 'org.mapdb', name: 'mapdb', version: '3.0.7'
+  implementation 'org.mapdb:mapdb'
+  implementation 'org.rocksdb:rocksdbjni'
 
-  testImplementation 'org.mockito:mockito-core'
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':util'))
+  testImplementation testFixtures(project(':storage'))
+
+  testFixturesApi project(':util')
+  testFixturesApi project(':storage')
+  testFixturesApi project(':ethereum:datastructures')
+
+  testFixturesImplementation 'com.google.guava:guava'
+  testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
 }

@@ -28,11 +28,13 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class BlockTopicHandlerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, storageClient);
   private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, storageClient);
 
@@ -67,7 +69,7 @@ public class BlockTopicHandlerTest {
 
   @Test
   public void handleMessage_invalidBlock_unknownPreState() {
-    SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 100);
+    SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
 
     final boolean result = topicHandler.handleMessage(serialized);

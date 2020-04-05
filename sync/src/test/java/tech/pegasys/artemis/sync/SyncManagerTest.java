@@ -31,7 +31,7 @@ import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
@@ -39,11 +39,11 @@ import tech.pegasys.artemis.util.config.Constants;
 public class SyncManagerTest {
 
   private static final long SUBSCRIPTION_ID = 3423;
-  private ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private RecentChainData storageClient = mock(RecentChainData.class);
   private Eth2Network network = mock(Eth2Network.class);
   private final PeerSync peerSync = mock(PeerSync.class);
-  private final StubAsyncRunner asynRunnner = new StubAsyncRunner();
-  private SyncManager syncManager = new SyncManager(asynRunnner, network, storageClient, peerSync);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private SyncManager syncManager = new SyncManager(asyncRunner, network, storageClient, peerSync);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(20);
@@ -66,7 +66,6 @@ public class SyncManagerTest {
     when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
-    when(peer.sendGoodbye(any())).thenReturn(new SafeFuture<>());
   }
 
   @Test
@@ -132,7 +131,7 @@ public class SyncManagerTest {
     when(peerSync.sync(peer2)).thenReturn(new SafeFuture<>());
     syncFuture.complete(PeerSyncResult.FAULTY_ADVERTISEMENT);
 
-    asynRunnner.executeQueuedActions();
+    asyncRunner.executeQueuedActions();
     verify(peerSync).sync(peer2);
     assertThat(syncManager.isSyncActive()).isTrue();
     assertThat(syncManager.isSyncQueued()).isFalse();
@@ -191,5 +190,45 @@ public class SyncManagerTest {
     assertThat(syncManager.isSyncActive()).isFalse();
     verify(peerSync).stop();
     verify(network).unsubscribeConnect(SUBSCRIPTION_ID);
+  }
+
+  @Test
+  void sync_syncStatus() {
+    // stream needs to be used more than once
+    when(network.streamPeers()).then(i -> Stream.of(peer));
+
+    final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
+    UnsignedLong startingSlot = UnsignedLong.valueOf(11);
+    when(peerSync.getStartingSlot()).thenReturn(startingSlot);
+
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isTrue();
+
+    UnsignedLong currentSlot = UnsignedLong.valueOf(17);
+    when(storageClient.getBestSlot()).thenReturn(currentSlot);
+
+    SyncStatus syncStatus = syncManager.getSyncStatus().getSyncStatus();
+    assertThat(syncStatus.getCurrent_slot()).isEqualTo(currentSlot);
+    assertThat(syncStatus.getStarting_slot()).isEqualTo(startingSlot);
+    assertThat(syncStatus.getHighest_slot()).isEqualTo(PEER_HEAD_SLOT);
+
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    verify(peerSync).sync(peer);
+  }
+
+  @Test
+  void sync_isSyncing_noPeers() {
+    when(network.streamPeers()).thenReturn(Stream.empty());
+    // Should be immediately completed as there is nothing to do.
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+    verifyNoInteractions(peerSync);
+
+    // verify that getSyncStatus completes even when no peers
+    assertThat(syncManager.getSyncStatus().getSyncStatus()).isNull();
+    assertThat(syncManager.isSyncQueued()).isFalse();
   }
 }

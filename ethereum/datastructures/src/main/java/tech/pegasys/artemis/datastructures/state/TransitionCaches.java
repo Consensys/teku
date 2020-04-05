@@ -16,9 +16,11 @@ package tech.pegasys.artemis.datastructures.state;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
-import tech.pegasys.artemis.datastructures.util.cache.Cache;
-import tech.pegasys.artemis.datastructures.util.cache.LRUCache;
-import tech.pegasys.artemis.datastructures.util.cache.NoOpCache;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.LRUCache;
+import tech.pegasys.artemis.util.cache.NoOpCache;
 
 /** The container class for all transition caches. */
 public class TransitionCaches {
@@ -27,9 +29,13 @@ public class TransitionCaches {
   private static int MAX_BEACON_PROPOSER_INDEX_CACHE = 1;
   private static int MAX_BEACON_COMMITTEE_CACHE = 64 * 64;
   private static int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 1;
+  private static int MAX_COMMITTEE_SHUFFLE_CACHE = 2;
 
   private static final TransitionCaches NO_OP_INSTANCE =
       new TransitionCaches(
+          NoOpCache.getNoOpCache(),
+          NoOpCache.getNoOpCache(),
+          NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
@@ -54,24 +60,36 @@ public class TransitionCaches {
   private final Cache<UnsignedLong, List<Integer>> activeValidators;
   private final Cache<UnsignedLong, Integer> beaconProposerIndex;
   private final Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee;
-  private final Cache<UnsignedLong, UnsignedLong> totalActiveBalance;
+  private final Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> totalActiveBalance;
+  private final Cache<UnsignedLong, BLSPublicKey> validatorsPubKeys;
+  private final Cache<BLSPublicKey, Integer> validatorIndex;
+  private final Cache<Bytes32, List<Integer>> committeeShuffle;
 
   private TransitionCaches() {
     activeValidators = new LRUCache<>(MAX_ACTIVE_VALIDATORS_CACHE);
     beaconProposerIndex = new LRUCache<>(MAX_BEACON_PROPOSER_INDEX_CACHE);
     beaconCommittee = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = new LRUCache<>(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
+    validatorsPubKeys = new LRUCache<>(Integer.MAX_VALUE - 1);
+    validatorIndex = new LRUCache<>(Integer.MAX_VALUE - 1);
+    committeeShuffle = new LRUCache<>(MAX_COMMITTEE_SHUFFLE_CACHE);
   }
 
-  private TransitionCaches(
+  public TransitionCaches(
       Cache<UnsignedLong, List<Integer>> activeValidators,
       Cache<UnsignedLong, Integer> beaconProposerIndex,
       Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee,
-      Cache<UnsignedLong, UnsignedLong> totalActiveBalance) {
+      Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> totalActiveBalance,
+      Cache<UnsignedLong, BLSPublicKey> validatorsPubKeys,
+      Cache<BLSPublicKey, Integer> validatorIndex,
+      Cache<Bytes32, List<Integer>> committeeShuffle) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
     this.totalActiveBalance = totalActiveBalance;
+    this.validatorsPubKeys = validatorsPubKeys;
+    this.validatorIndex = validatorIndex;
+    this.committeeShuffle = committeeShuffle;
   }
 
   /** (epoch) -> (active validators) cache */
@@ -90,8 +108,38 @@ public class TransitionCaches {
   }
 
   /** (epoch) -> (total active balance) cache */
-  public Cache<UnsignedLong, UnsignedLong> getTotalActiveBalance() {
+  public Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> getTotalActiveBalance() {
     return totalActiveBalance;
+  }
+
+  /** (validator index) -> (validator pub key) cache */
+  public Cache<UnsignedLong, BLSPublicKey> getValidatorsPubKeys() {
+    return validatorsPubKeys;
+  }
+
+  /**
+   * (validator pub key) -> (validator index) cache
+   *
+   * <p>WARNING: May contain mappings for public keys of validators that are not yet registered in
+   * this state (but when registered are guaranteed to be at that index). Check index < total
+   * validator count before looking up the cache
+   */
+  public Cache<BLSPublicKey, Integer> getValidatorIndex() {
+    return validatorIndex;
+  }
+
+  /** (epoch committee seed) -> (validators shuffle for epoch) cache */
+  public Cache<Bytes32, List<Integer>> getCommitteeShuffle() {
+    return committeeShuffle;
+  }
+
+  public void invalidate() {
+    activeValidators.clear();
+    beaconProposerIndex.clear();
+    beaconCommittee.clear();
+    totalActiveBalance.clear();
+    validatorsPubKeys.clear();
+    committeeShuffle.clear();
   }
 
   /**
@@ -103,6 +151,9 @@ public class TransitionCaches {
         activeValidators.copy(),
         beaconProposerIndex.copy(),
         beaconCommittee.copy(),
-        totalActiveBalance.copy());
+        totalActiveBalance.copy(),
+        validatorsPubKeys,
+        validatorIndex,
+        committeeShuffle.copy());
   }
 }

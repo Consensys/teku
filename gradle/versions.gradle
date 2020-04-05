@@ -22,15 +22,23 @@ dependencyManagement {
 
     dependency 'de.undercouch:bson4jackson:2.9.2'
 
-    dependency 'info.picocli:picocli:4.0.4'
+    dependency 'info.picocli:picocli:4.2.0'
 
-    dependency 'io.javalin:javalin:3.6.0'
+    dependency 'io.javalin:javalin:3.7.0'
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.3.2-RELEASE'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
 
     dependency 'io.pkts:pkts-core:3.0.3'
+
+    dependency 'org.mock-server:mockserver-junit-jupiter:5.9.0'
+
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2'
+    dependency 'io.swagger.core.v3:swagger-core:2.1.1'
+    dependency 'org.webjars:swagger-ui:3.24.3'
+    dependency 'io.github.classgraph:classgraph:4.8.34'
 
     dependencySet(group: 'io.vertx', version: '3.8.3') {
       entry 'vertx-codegen'
@@ -42,7 +50,7 @@ dependencyManagement {
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'org.apache.tuweni', version: '0.9.0') {
+    dependencySet(group: 'org.apache.tuweni', version: '0.10.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-config'
       entry 'tuweni-crypto' 
@@ -57,6 +65,7 @@ dependencyManagement {
 
     dependency 'org.apache.commons:commons-text:1.6'
     dependency 'org.apache.commons:commons-lang3:3.9'
+    dependency 'org.apache.commons:commons-compress:1.20'
 
     dependencySet(group: 'org.apache.logging.log4j', version: '2.12.1') {
       entry 'log4j-api'
@@ -72,6 +81,8 @@ dependencyManagement {
 
     dependency 'org.java-websocket:Java-WebSocket:1.3.8'
 
+    dependency 'org.mapdb:mapdb:3.0.7'
+
     dependencySet(group: 'org.junit.jupiter', version: '5.5.2') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
@@ -79,12 +90,12 @@ dependencyManagement {
     }
 
     dependency 'org.mockito:mockito-core:3.1.0'
-    
+
     dependency 'org.openjdk.jmh:jmh-core:1.21'
     dependency 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
     dependency 'org.quartz-scheduler:quartz:2.3.2'
-    dependency 'org.rocksdb:rocksdbjni:5.15.10'
+    dependency 'org.rocksdb:rocksdbjni:6.4.6'
 
     dependencySet(group: "org.web3j", version: "4.5.6") {
       entry 'core'
@@ -99,5 +110,9 @@ dependencyManagement {
 
     dependency "org.testcontainers:testcontainers:1.12.3"
     dependency "org.testcontainers:junit-jupiter:1.12.3"
+
+    dependency 'tech.pegasys.discovery:discovery:0.3.2'
+
+    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.0'
   }
 }

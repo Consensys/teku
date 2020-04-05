@@ -37,8 +37,10 @@ import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessag
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.async.AsyncRunner;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class RpcDecoderTestBase {
 
@@ -54,24 +56,27 @@ public class RpcDecoderTestBase {
   protected static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
       getLengthPrefix(ERROR_MESSAGE_DATA.size());
 
-  protected static PeerLookup peerLookup = mock(PeerLookup.class);
-  protected static CombinedChainDataClient combinedChainDataClient =
+  protected static final AsyncRunner asyncRunner = new StubAsyncRunner();
+  protected static final PeerLookup peerLookup = mock(PeerLookup.class);
+  protected static final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  protected static ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
+  protected static final RecentChainData RECENT_CHAIN_DATA = mock(RecentChainData.class);
 
-  protected static BeaconChainMethods BEACON_CHAIN_METHODS =
+  protected static final BeaconChainMethods BEACON_CHAIN_METHODS =
       BeaconChainMethods.create(
+          asyncRunner,
           peerLookup,
           combinedChainDataClient,
-          chainStorageClient,
+          RECENT_CHAIN_DATA,
           new NoOpMetricsSystem(),
-          new StatusMessageFactory(chainStorageClient));
+          new StatusMessageFactory(RECENT_CHAIN_DATA));
 
   @SuppressWarnings("unchecked")
   protected static final Eth2RpcMethod<
           BeaconBlocksByRootRequestMessage, BeaconBlocksByRootRequestMessage>
       METHOD =
           new Eth2RpcMethod<>(
+              asyncRunner,
               "",
               RpcEncoding.SSZ,
               BeaconBlocksByRootRequestMessage.class,

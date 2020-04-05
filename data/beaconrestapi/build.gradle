@@ -1,20 +1,35 @@
 dependencies {
-    compile 'io.javalin:javalin'
-    implementation project(':util')
     implementation project(':data')
-    implementation project(':ethereum:datastructures')
-    implementation project(':storage')
-    implementation project(':networking:p2p')
     implementation project(':data:provider')
+    implementation project(':ethereum:datastructures')
+    implementation project(':logging')
+    implementation project(':networking:p2p')
+    implementation project(':services:serviceutils')
+    implementation project(':storage')
+    implementation project(':sync')
+    implementation project(':util')
+    implementation project(':validator:api')
+    implementation project(':validator:coordinator')
 
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'io.swagger.core.v3:swagger-core'
+    implementation 'io.github.classgraph:classgraph'
+    implementation 'io.javalin:javalin'
     implementation 'org.apache.tuweni:tuweni-crypto'
     implementation 'org.apache.tuweni:tuweni-units'
-    implementation 'com.google.guava:guava'
-    implementation 'org.apache.logging.log4j:log4j-api'
-    implementation 'org.apache.commons:commons-lang3'
-    runtime 'org.apache.logging.log4j:log4j-core'
+    implementation 'org.webjars:swagger-ui'
 
-    testImplementation 'org.mockito:mockito-core'
+    testImplementation testFixtures(project(':bls'))
+    testImplementation testFixtures(project(':storage'))
+    testImplementation testFixtures(project(':ethereum:datastructures'))
+
+    testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
+
+    integrationTestImplementation testFixtures(project(':bls'))
+    integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
+
+    integrationTestImplementation 'com.squareup.okhttp3:okhttp'
+    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
 }
 
 test {

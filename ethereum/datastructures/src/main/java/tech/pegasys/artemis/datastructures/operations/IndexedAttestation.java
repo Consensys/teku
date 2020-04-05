@@ -52,15 +52,15 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   // Required by SSZ reflection
   public IndexedAttestation() {
     this.attesting_indices =
-        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        SSZList.createMutable(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     data = null;
     signature = null;
   }
 
   public IndexedAttestation(IndexedAttestation indexedAttestation) {
-    this.attesting_indices = new SSZList<>(indexedAttestation.getAttesting_indices());
+    this.attesting_indices = SSZList.createMutable(indexedAttestation.getAttesting_indices());
     this.data = indexedAttestation.getData();
-    this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
+    this.signature = new BLSSignature(indexedAttestation.getSignature());
   }
 
   @Override
@@ -135,10 +135,7 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root_list_ul(
-                Constants.MAX_VALIDATORS_PER_COMMITTEE,
-                attesting_indices.stream()
-                    .map(item -> SSZ.encodeUInt64(item.longValue()))
-                    .collect(Collectors.toList())),
+                attesting_indices.map(Bytes.class, item -> SSZ.encodeUInt64(item.longValue()))),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }

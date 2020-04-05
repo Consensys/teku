@@ -29,7 +29,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
@@ -114,7 +114,7 @@ public class IsVariableTest {
   @Test
   void isBeaconStateVariableTest() {
     assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).isVariable());
+        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconStateImpl.class).isVariable());
   }
 
   @Test

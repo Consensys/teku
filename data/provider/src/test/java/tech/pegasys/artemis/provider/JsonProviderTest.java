@@ -13,19 +13,98 @@
 
 package tech.pegasys.artemis.provider;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
+import tech.pegasys.artemis.api.schema.BeaconState;
+import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 
 class JsonProviderTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final JsonProvider jsonProvider = new JsonProvider();
+  private static final String Q = "\"";
 
   @Test
-  void beaconStateJsonTest() {
-    BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
-    String jsonState = JsonProvider.objectToJSON(state);
+  public void bytes32ShouldSerializeToJsonAndBack() throws JsonProcessingException {
+    Bytes32 data = Bytes32.random();
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(Q + data.toHexString().toLowerCase() + Q, serialized);
+
+    Bytes32 deserialize = jsonProvider.jsonToObject(serialized, Bytes32.class);
+    assertEquals(data, deserialize);
+  }
+
+  @Test
+  public void unsignedLongShouldSerializeToJson() throws JsonProcessingException {
+    UnsignedLong data = dataStructureUtil.randomUnsignedLong();
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, data.toString());
+  }
+
+  @Test
+  public void bitListShouldSerializeAndDeserialize() throws JsonProcessingException {
+    final int BITLIST_SIZE = 40;
+    final Bitlist data = dataStructureUtil.randomBitlist(BITLIST_SIZE);
+    final String asJson = jsonProvider.objectToJSON(data);
+    final Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
+
+    assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
+    assertThat(asData.getCurrentSize()).isEqualTo(BITLIST_SIZE);
+  }
+
+  @Test
+  public void bitVectorShouldSerializeAndDeserialize() throws JsonProcessingException {
+    final int BITVECTOR_SIZE = 40;
+    final Bitvector data = dataStructureUtil.randomBitvector(BITVECTOR_SIZE);
+    final String asJson = jsonProvider.objectToJSON(data);
+    final Bitvector asData = jsonProvider.jsonToObject(asJson, Bitvector.class);
+
+    assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
+    assertThat(asData.getSize()).isEqualTo(BITVECTOR_SIZE);
+  }
+
+  @Test
+  public void stringShouldSerializeToJson() throws JsonProcessingException {
+    String data = "test";
+    assertEquals(Q + data + Q, jsonProvider.objectToJSON(data));
+  }
+
+  @Test
+  void beaconStateJsonTest() throws JsonProcessingException {
+    tech.pegasys.artemis.datastructures.state.BeaconState stateInternal =
+        dataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16));
+    BeaconState state = new BeaconState(stateInternal);
+    String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
+  }
+
+  @Test
+  void validatorsRequestTest() throws JsonProcessingException {
+    final String PUBKEY =
+        "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";
+    final String data =
+        "{\n"
+            + "  \"epoch\": 0, \n"
+            + "  \"pubkeys\": [\n"
+            + "\""
+            + PUBKEY
+            + "\"\n"
+            + "  ]\n"
+            + "}";
+
+    ValidatorsRequest result = jsonProvider.jsonToObject(data, ValidatorsRequest.class);
+
+    assertThat(result.epoch).isEqualTo(UnsignedLong.ZERO);
+    assertThat(result.pubkeys).isEqualTo(List.of(BLSPubKey.fromHexString(PUBKEY)));
   }
 }

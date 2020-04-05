@@ -24,7 +24,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.statetransition.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 
 public class CommitteeAssignmentUtil {
 
@@ -43,7 +43,7 @@ public class CommitteeAssignmentUtil {
       BeaconState state, UnsignedLong epoch, int validator_index) {
     UnsignedLong next_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
     checkArgument(
-        epoch.compareTo(next_epoch) <= 0, "get_committe_assignment: Epoch number too high");
+        epoch.compareTo(next_epoch) <= 0, "get_committee_assignment: Epoch number too high");
 
     UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
 

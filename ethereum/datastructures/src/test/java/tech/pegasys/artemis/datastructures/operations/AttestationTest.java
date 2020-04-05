@@ -16,8 +16,6 @@ package tech.pegasys.artemis.datastructures.operations;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBitlist;
 
 import com.google.common.primitives.UnsignedLong;
 
@@ -27,14 +25,15 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationTest {
-  private int seed = 100;
-  private Bitlist aggregationBitfield = randomBitlist(seed);
-  private AttestationData data = randomAttestationData(seed++);
-  private BLSSignature aggregateSignature = BLSSignature.random(seed++);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private Bitlist aggregationBitfield = dataStructureUtil.randomBitlist();
+  private AttestationData data = dataStructureUtil.randomAttestationData();
+  private BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
 
   private Attestation attestation = new Attestation(aggregationBitfield, data, aggregateSignature);
 
@@ -68,7 +67,7 @@ class AttestationTest {
                 target),
             BLSSignature.empty());
 
-    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochSlot());
+    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochStartSlot());
   }
 
   @Test
@@ -125,7 +124,8 @@ class AttestationTest {
 
   @Test
   void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
-    Attestation testAttestation = new Attestation(randomBitlist(seed++), data, aggregateSignature);
+    Attestation testAttestation =
+        new Attestation(dataStructureUtil.randomBitlist(), data, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -134,9 +134,9 @@ class AttestationTest {
   void equalsReturnsFalseWhenAttestationDataIsDifferent() {
     // AttestationData is rather involved to create. Just create a random one until it is not the
     // same as the original.
-    AttestationData otherData = randomAttestationData(seed++);
+    AttestationData otherData = dataStructureUtil.randomAttestationData();
     while (Objects.equals(otherData, data)) {
-      otherData = randomAttestationData(seed++);
+      otherData = dataStructureUtil.randomAttestationData();
     }
 
     Attestation testAttestation =
@@ -147,14 +147,11 @@ class AttestationTest {
 
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-    BLSSignature differentAggregateSignature = BLSSignature.random();
-    while (differentAggregateSignature.equals(aggregateSignature)) {
-      differentAggregateSignature = BLSSignature.random();
-    }
-
+    BLSSignature differentAggregateSignature = BLSSignature.random(99);
     Attestation testAttestation =
         new Attestation(aggregationBitfield, data, differentAggregateSignature);
 
+    assertNotEquals(aggregateSignature, differentAggregateSignature);
     assertNotEquals(attestation, testAttestation);
   }
 }

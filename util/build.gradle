@@ -5,24 +5,27 @@ plugins {
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
 
-  implementation 'info.picocli:picocli'
+  implementation project(':bls')
+  implementation project(':ssz')
+
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'com.google.guava:guava'
+  implementation 'info.picocli:picocli'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  // implementation files('../lib/tuweni-ssz-0.9.0-SNAPSHOT.jar')
-  implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'org.apache.logging.log4j:log4j-core'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
+  implementation 'com.google.guava:guava'
+  implementation 'org.apache.commons:commons-compress'
 
   implementation (group: 'org.quartz-scheduler', name: 'quartz') {
     exclude group: 'com.mchange'
   }
 
-  testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.apache.logging.log4j:log4j-core'
 
-  testSupportImplementation 'org.awaitility:awaitility'
+  testFixturesApi 'com.google.guava:guava'
+
+  testFixturesImplementation 'org.awaitility:awaitility'
 }

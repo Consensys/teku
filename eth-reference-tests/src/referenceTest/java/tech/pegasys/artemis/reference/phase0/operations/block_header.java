@@ -39,14 +39,17 @@ public class block_header extends TestSuite {
   @MethodSource({"mainnetBeaconBlockHeaderSuccessSetup", "minimalBeaconBlockHeaderSuccessSetup"})
   void mainnetProcessBeaconBlockHeaderSuccess(
       BeaconBlock block, BeaconState pre, BeaconState post) {
-    assertDoesNotThrow(() -> process_block_header(pre, block));
-    assertEquals(pre, post);
+    BeaconState wState =
+        assertDoesNotThrow(() -> pre.updated(state -> process_block_header(state, block)));
+    assertEquals(post, wState);
   }
 
   @ParameterizedTest(name = "{index}. process block header")
   @MethodSource({"mainnetBeaconBlockHeaderSetup", "minimalBeaconBlockHeaderSetup"})
   void mainnetProcessBeaconBlockHeader(BeaconBlock block, BeaconState pre) {
-    assertThrows(BlockProcessingException.class, () -> process_block_header(pre, block));
+    assertThrows(
+        BlockProcessingException.class,
+        () -> pre.updated(state -> process_block_header(state, block)));
   }
 
   @MustBeClosed

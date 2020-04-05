@@ -30,7 +30,6 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -209,15 +208,10 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, randao_reveal.toBytes()),
             eth1_data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, graffiti),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_PROPOSER_SLASHINGS, proposer_slashings),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTER_SLASHINGS, attester_slashings),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_ATTESTATIONS, attestations),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_DEPOSITS, deposits),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_VOLUNTARY_EXITS, voluntary_exits)));
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attestations),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, deposits),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, voluntary_exits)));
   }
 }

@@ -15,23 +15,38 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.libp2p.core.Connection;
+import io.libp2p.core.Network;
+import io.libp2p.core.PeerId;
+import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.core.security.SecureChannel.Session;
+import io.libp2p.crypto.keys.EcdsaKt;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.util.async.StubAsyncRunner;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerManagerTest {
 
-  private final StubAsyncRunner asynRunner = new StubAsyncRunner();
+  private final ReputationManager reputationManager = mock(ReputationManager.class);
+  private final Network network = mock(Network.class);
+
   private final PeerManager peerManager =
       new PeerManager(
-          asynRunner, new NoOpMetricsSystem(), Collections.emptyList(), Collections.emptyMap());
+          new NoOpMetricsSystem(),
+          reputationManager,
+          Collections.emptyList(),
+          Collections.emptyMap());
 
   @Test
   public void subscribeConnect_singleListener() {
@@ -42,13 +57,13 @@ public class PeerManagerTest {
 
     // Add a peer
     final Peer peer = mock(Peer.class);
-    when(peer.getId()).thenReturn(new MockNodeId());
+    when(peer.getId()).thenReturn(new MockNodeId(1));
     peerManager.onConnectedPeer(peer);
     assertThat(connectedPeers).containsExactly(peer);
 
     // Add another peer
     final Peer peer2 = mock(Peer.class);
-    when(peer2.getId()).thenReturn(new MockNodeId());
+    when(peer2.getId()).thenReturn(new MockNodeId(2));
     peerManager.onConnectedPeer(peer2);
     assertThat(connectedPeers).containsExactly(peer, peer2);
   }
@@ -63,10 +78,45 @@ public class PeerManagerTest {
     assertThat(connectedPeers).isEmpty();
 
     final Peer peer = mock(Peer.class);
-    when(peer.getId()).thenReturn(new MockNodeId());
+    when(peer.getId()).thenReturn(new MockNodeId(1));
     peerManager.onConnectedPeer(peer);
 
     assertThat(connectedPeers).containsExactly(peer);
     assertThat(connectedPeersB).containsExactly(peer);
+  }
+
+  @Test
+  public void shouldReportFailedConnectionsToReputationManager() {
+    final Multiaddr multiaddr = Multiaddr.fromString("/ip4/127.0.0.1/tcp/9000");
+    final MultiaddrPeerAddress peerAddress = new MultiaddrPeerAddress(new MockNodeId(1), multiaddr);
+    when(network.connect(multiaddr))
+        .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Nope")));
+
+    final SafeFuture<Peer> result = peerManager.connect(peerAddress, network);
+    assertThat(result).isCompletedExceptionally();
+
+    verify(reputationManager).reportInitiatedConnectionFailed(peerAddress);
+    verify(reputationManager, never()).reportInitiatedConnectionSuccessful(peerAddress);
+  }
+
+  @Test
+  public void shouldReportSuccessfulConnectionsToReputationManager() {
+    final Connection connection = mock(Connection.class);
+    final Session secureSession =
+        new Session(PeerId.random(), PeerId.random(), EcdsaKt.generateEcdsaKeyPair().component2());
+    when(connection.secureSession()).thenReturn(secureSession);
+    when(connection.closeFuture()).thenReturn(new SafeFuture<>());
+    final Multiaddr multiaddr = Multiaddr.fromString("/ip4/127.0.0.1/tcp/9000");
+    final MultiaddrPeerAddress peerAddress = new MultiaddrPeerAddress(new MockNodeId(1), multiaddr);
+    final SafeFuture<Connection> connectionFuture = new SafeFuture<>();
+    when(network.connect(multiaddr)).thenReturn(connectionFuture);
+
+    final SafeFuture<Peer> result = peerManager.connect(peerAddress, network);
+    peerManager.handleConnection(connection);
+    connectionFuture.complete(connection);
+    assertThat(result).isCompleted();
+
+    verify(reputationManager).reportInitiatedConnectionSuccessful(peerAddress);
+    verify(reputationManager, never()).reportInitiatedConnectionFailed(peerAddress);
   }
 }

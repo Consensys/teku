@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.math.LongMath;
 import com.google.common.primitives.UnsignedLong;
 import java.math.RoundingMode;
@@ -39,6 +38,7 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
 /*
 
@@ -90,29 +90,29 @@ Search Eth1 Blocks to find blocks in the cache range:
 
  */
 
-public class Eth1DataManager {
+public class Eth1DataManager implements TimeTickChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final Eth1Provider eth1Provider;
-  private final DepositContractListener depositContractListener;
+  private final DepositContractAccessor depositContractAccessor;
   private final EventBus eventBus;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
 
   private AtomicReference<EthBlock.Block> latestBlockReference = new AtomicReference<>();
   private AtomicInteger cacheStartupRetry = new AtomicInteger(0);
-  private AtomicBoolean cacheStartupDone = new AtomicBoolean(false);
+  private AtomicBoolean subscriptionModeOn = new AtomicBoolean(false);
 
   public Eth1DataManager(
       Eth1Provider eth1Provider,
       EventBus eventBus,
-      DepositContractListener depositContractListener,
+      DepositContractAccessor depositContractAccessor,
       AsyncRunner asyncRunner,
       TimeProvider timeProvider) {
     this.eth1Provider = eth1Provider;
     this.eventBus = eventBus;
-    this.depositContractListener = depositContractListener;
+    this.depositContractAccessor = depositContractAccessor;
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
   }
@@ -122,13 +122,19 @@ public class Eth1DataManager {
         .finish(
             () -> {
               LOG.info("Eth1DataManager successfully ran cache startup logic");
-              cacheStartupDone.set(true);
-              eventBus.register(this);
+              subscriptionModeOn.set(true);
             });
   }
 
-  @Subscribe
+  public void stop() {
+    subscriptionModeOn.set(false);
+  }
+
+  @Override
   public void onTick(Date date) {
+    if (!subscriptionModeOn.get()) {
+      return;
+    }
 
     // Fetch new Eth1 blocks every SECONDS_PER_ETH1_BLOCK seconds
     // (can't use slot events here as an approximation due to this needing to be run pre-genesis)
@@ -316,9 +322,9 @@ public class Eth1DataManager {
 
   private SafeFuture<Void> postCacheEth1BlockEvent(UnsignedLong blockNumber, EthBlock.Block block) {
     SafeFuture<UnsignedLong> countFuture =
-        SafeFuture.of(depositContractListener.getDepositCount(blockNumber));
+        SafeFuture.of(depositContractAccessor.getDepositCount(blockNumber));
     SafeFuture<Bytes32> rootFuture =
-        SafeFuture.of(depositContractListener.getDepositRoot(blockNumber));
+        SafeFuture.of(depositContractAccessor.getDepositRoot(blockNumber));
 
     return SafeFuture.allOf(countFuture, rootFuture)
         .thenRun(

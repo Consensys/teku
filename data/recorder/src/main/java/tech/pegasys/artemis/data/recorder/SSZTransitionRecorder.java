@@ -14,24 +14,26 @@
 package tech.pegasys.artemis.data.recorder;
 
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SSZTransitionRecorder {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Path outputDirectory;
 
   public SSZTransitionRecorder(final Path outputDirectory) {
@@ -39,8 +41,7 @@ public class SSZTransitionRecorder {
   }
 
   @Subscribe
-  public void onGenesisEvent(final StoreGenesisDiskUpdateEvent genesisEvent) {
-    final Store store = genesisEvent.getStore();
+  public void onGenesis(final Store store) {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
     if (isNotGenesis(finalizedCheckpoint)) {
       return;
@@ -68,14 +69,13 @@ public class SSZTransitionRecorder {
     try {
       Files.write(file, serialize(data).toArrayUnsafe());
     } catch (final IOException e) {
-      STDOUT.log(Level.ERROR, "Failed to record data to " + file + ": " + e.getMessage());
+      LOG.error("Failed to record data to " + file, e);
     }
   }
 
   private Path mkdirs(final Path dir) {
     if (!dir.toFile().mkdirs() && !dir.toFile().isDirectory()) {
-      STDOUT.log(
-          Level.ERROR, "Failed to create transition record directory " + dir.toAbsolutePath());
+      LOG.error("Failed to create transition record directory {}", dir.toAbsolutePath());
     }
     return dir;
   }

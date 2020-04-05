@@ -1,0 +1,46 @@
+# valid toml file
+
+# network
+network="minimal"
+
+# p2p
+p2p-enabled=false
+p2p-interface="1.2.3.4"
+p2p-port=1234
+p2p-discovery-enabled=false
+p2p-advertised-port=9000
+p2p-private-key-file="path/to/file"
+
+# interop
+Xinterop-genesis-time=1
+Xinterop-owned-validator-start-index= 0
+Xinterop-owned-validator-count=64
+Xinterop-start-state=""
+Xinterop-number-of-validators=64
+Xinterop-enabled=true
+
+# validator
+#validators-key-file="path/to/keys.yaml"
+
+# deposit
+eth1-deposit-contract-address="0x77f7bED277449F51505a4C54550B074030d989bC"
+eth1-endpoint="http://localhost:8545"
+
+# output
+#Xtransaction-record-directory="/tmp/teku"
+
+# metrics
+metrics-enabled=false
+metrics-port=8008
+metrics-interface="127.0.0.1"
+metrics-categories=["BEACONCHAIN","JVM","PROCESS"]
+
+# database
+data-path="."
+data-storage-mode="prune"
+
+# beacon rest api
+rest-api-port=5051
+rest-api-docs-enabled=false
+rest-api-enabled=false
+rest-api-interface="127.0.0.1"

@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.sync;
 
-import static tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage.REASON_FAULT_ERROR;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
@@ -28,10 +27,11 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -42,14 +42,16 @@ public class PeerSync {
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
-  private final ChainStorageClient storageClient;
+  private final RecentChainData storageClient;
   private final BlockImporter blockImporter;
 
   private final AsyncRunner asyncRunner;
 
+  private volatile UnsignedLong startingSlot = UnsignedLong.valueOf(0);
+
   public PeerSync(
       final AsyncRunner asyncRunner,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final BlockImporter blockImporter) {
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
@@ -62,6 +64,8 @@ public class PeerSync {
     final UnsignedLong finalizedEpoch = storageClient.getFinalizedEpoch();
     final UnsignedLong latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
+
+    this.startingSlot = firstNonFinalSlot;
 
     return executeSync(peer, peer.getStatus(), firstNonFinalSlot, SafeFuture.COMPLETE)
         .whenComplete(
@@ -183,6 +187,10 @@ public class PeerSync {
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
-    peer.sendGoodbye(REASON_FAULT_ERROR).reportExceptions();
+    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+  }
+
+  public UnsignedLong getStartingSlot() {
+    return startingSlot;
   }
 }

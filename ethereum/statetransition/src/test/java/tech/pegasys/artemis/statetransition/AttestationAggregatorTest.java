@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.diffSlotAttestationData;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.getSingleAttesterIndex;
 
@@ -27,8 +26,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.bls.BLSAggregate;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -36,8 +36,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 class AttestationAggregatorTest {
 
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(mock(EventBus.class));
+  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
   private AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
   private AttestationAggregator aggregator;
 
@@ -53,7 +52,7 @@ class AttestationAggregatorTest {
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
-        new AggregatorInformation(BLSSignature.random(), validatorIndex));
+        new AggregatorInformation(BLSSignature.random(42), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation aggregateAttesation = aggregator.getAggregateAndProofs().get(0).getAggregate();
     assertEquals(attestation, aggregateAttesation);
@@ -65,10 +64,10 @@ class AttestationAggregatorTest {
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
-        new AggregatorInformation(BLSSignature.random(), validatorIndex));
+        new AggregatorInformation(BLSSignature.random(42), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = new Attestation(attestation);
-    newAttestation.setAggregate_signature(BLSSignature.random());
+    newAttestation.setAggregate_signature(BLSSignature.random(97));
     aggregator.addOwnValidatorAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
     assertEquals(attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
@@ -81,11 +80,11 @@ class AttestationAggregatorTest {
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
-        new AggregatorInformation(BLSSignature.random(), validatorIndex));
+        new AggregatorInformation(BLSSignature.random(42), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = AttestationGenerator.withNewSingleAttesterBit(attestation);
     int newAttesterIndex = getSingleAttesterIndex(newAttestation);
-    BLSSignature sig2 = BLSSignature.random();
+    BLSSignature sig2 = BLSSignature.random(97);
     newAttestation.setAggregate_signature(sig2);
     aggregator.addOwnValidatorAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
@@ -99,7 +98,7 @@ class AttestationAggregatorTest {
             == 1);
     assertEquals(
         aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature(),
-        BLSAggregate.bls_aggregate_signatures(List.of(sig1, sig2)));
+        BLS.aggregate(List.of(sig1, sig2)));
   }
 
   @Test
@@ -108,13 +107,13 @@ class AttestationAggregatorTest {
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
-        new AggregatorInformation(BLSSignature.random(), validatorIndex));
+        new AggregatorInformation(BLSSignature.random(42), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = new Attestation(attestation);
     newAttestation.setData(
         diffSlotAttestationData(
             attestation.getData().getSlot().plus(UnsignedLong.ONE), attestation.getData()));
-    newAttestation.setAggregate_signature(BLSSignature.random());
+    newAttestation.setAggregate_signature(BLSSignature.random(97));
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
     assertEquals(attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
@@ -126,10 +125,10 @@ class AttestationAggregatorTest {
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
-        new AggregatorInformation(BLSSignature.random(), validatorIndex));
+        new AggregatorInformation(BLSSignature.random(42), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = new Attestation(attestation);
-    newAttestation.setAggregate_signature(BLSSignature.random());
+    newAttestation.setAggregate_signature(BLSSignature.random(97));
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
     assertEquals(attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
@@ -142,11 +141,11 @@ class AttestationAggregatorTest {
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
-        new AggregatorInformation(BLSSignature.random(), validatorIndex));
+        new AggregatorInformation(BLSSignature.random(42), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = AttestationGenerator.withNewSingleAttesterBit(attestation);
     int newAttesterIndex = getSingleAttesterIndex(newAttestation);
-    BLSSignature sig2 = BLSSignature.random();
+    BLSSignature sig2 = BLSSignature.random(97);
     newAttestation.setAggregate_signature(sig2);
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
@@ -160,7 +159,7 @@ class AttestationAggregatorTest {
             == 1);
     assertEquals(
         aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature(),
-        BLSAggregate.bls_aggregate_signatures(List.of(sig1, sig2)));
+        BLS.aggregate(List.of(sig1, sig2)));
   }
 
   @Test
@@ -169,10 +168,10 @@ class AttestationAggregatorTest {
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
-        new AggregatorInformation(BLSSignature.random(), validatorIndex));
+        new AggregatorInformation(BLSSignature.random(42), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = AttestationGenerator.withNewSingleAttesterBit(attestation);
-    BLSSignature sig2 = BLSSignature.random();
+    BLSSignature sig2 = BLSSignature.random(97);
     newAttestation.setAggregate_signature(sig2);
     aggregator.processAttestation(newAttestation);
     aggregator.reset();

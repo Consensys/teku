@@ -13,25 +13,34 @@
 
 package tech.pegasys.artemis.services.chainstorage;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
-import org.apache.logging.log4j.Level;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.storage.ChainStorageServer;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
+import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.server.ChainStorageServer;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class ChainStorageService implements ServiceInterface {
+public class ChainStorageService extends Service {
+  private final ChainStorageServer server;
 
-  @Override
-  public void init(ServiceConfig config) {
-    new ChainStorageServer(config.getEventBus(), config.getConfig());
+  public ChainStorageService(final ServiceConfig serviceConfig) {
+    this.server = ChainStorageServer.create(serviceConfig.getEventBus(), serviceConfig.getConfig());
+    serviceConfig
+        .getEventChannels()
+        .subscribe(StorageUpdateChannel.class, server)
+        .subscribeMultithreaded(
+            StorageQueryChannel.class, server, STORAGE_QUERY_CHANNEL_PARALLELISM);
   }
 
   @Override
-  public void run() {}
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.fromRunnable(server::start);
+  }
 
   @Override
-  public void stop() {
-    STDOUT.log(Level.DEBUG, "ChainStorageService.stop()");
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.COMPLETE;
   }
 }

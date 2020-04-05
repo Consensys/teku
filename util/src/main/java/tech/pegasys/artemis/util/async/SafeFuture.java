@@ -20,6 +20,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,6 +64,31 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return safeFuture;
   }
 
+  public static <U> SafeFuture<U> of(final Supplier<CompletionStage<U>> futureSupplier) {
+    try {
+      return SafeFuture.of(futureSupplier.get());
+    } catch (Throwable e) {
+      return SafeFuture.failedFuture(e);
+    }
+  }
+
+  public static <U> SafeFuture<U> of(final ExceptionThrowingSupplier<U> supplier) {
+    try {
+      return SafeFuture.completedFuture(supplier.get());
+    } catch (final Throwable e) {
+      return SafeFuture.failedFuture(e);
+    }
+  }
+
+  public static <U> SafeFuture<U> ofComposed(
+      final ExceptionThrowingSupplier<CompletionStage<U>> futureSupplier) {
+    try {
+      return SafeFuture.of(futureSupplier.get());
+    } catch (final Throwable e) {
+      return SafeFuture.failedFuture(e);
+    }
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
@@ -74,8 +101,65 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
-  public static <U> SafeFuture<Void> allOf(final SafeFuture<?>... futures) {
-    return of(CompletableFuture.allOf(futures));
+  public static SafeFuture<Void> fromRunnable(final Runnable action) {
+    try {
+      action.run();
+      return SafeFuture.COMPLETE;
+    } catch (Throwable t) {
+      return SafeFuture.failedFuture(t);
+    }
+  }
+
+  public static SafeFuture<Void> allOf(final SafeFuture<?>... futures) {
+    return of(CompletableFuture.allOf(futures))
+        .catchAndRethrow(completionException -> addSuppressedErrors(completionException, futures));
+  }
+
+  /**
+   * Adds the {@link Throwable} from each future as a suppressed exception to completionException
+   * unless it is already set as the cause.
+   *
+   * <p>This ensures that when futures are combined with {@link #allOf(SafeFuture[])} that all
+   * failures are reported, not just the first one.
+   *
+   * @param completionException the exception reported by {@link
+   *     CompletableFuture#allOf(CompletableFuture[])}
+   * @param futures the futures passed to allOf
+   */
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public static void addSuppressedErrors(
+      final Throwable completionException, final SafeFuture<?>[] futures) {
+    Stream.of(futures)
+        .forEach(
+            future ->
+                future.exceptionally(
+                    error -> {
+                      if (completionException.getCause() != error) {
+                        completionException.addSuppressed(error);
+                      }
+                      return null;
+                    }));
+  }
+
+  /**
+   * Returns a new SafeFuture that is completed when all of the given SafeFutures complete
+   * successfully or completes exceptionally immediately when any of the SafeFutures complete
+   * exceptionally. The results, if any, of the given SafeFutures are not reflected in the returned
+   * SafeFuture, but may be obtained by inspecting them individually. If no SafeFutures are
+   * provided, returns a SafeFuture completed with the value {@code null}.
+   *
+   * <p>Among the applications of this method is to await completion of a set of independent
+   * SafeFutures before continuing a program, as in: {@code SafeFuture.allOf(c1, c2, c3).join();}.
+   *
+   * @param futures the SafeFutures
+   * @return a new SafeFuture that is completed when all of the given SafeFutures complete
+   * @throws NullPointerException if the array or any of its elements are {@code null}
+   */
+  public static <U> SafeFuture<Void> allOfFailFast(final SafeFuture<?>... futures) {
+    final SafeFuture<Void> complete = new SafeFuture<>();
+    Stream.of(futures).forEach(future -> future.finish(() -> {}, complete::completeExceptionally));
+    allOf(futures).propagateTo(complete);
+    return complete;
   }
 
   public static SafeFuture<Object> anyOf(final SafeFuture<?>... futures) {
@@ -156,10 +240,46 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return result;
   }
 
+  /**
+   * Returns a new CompletionStage that, when the this stage completes exceptionally, executes the
+   * provided Consumer with the exception as the argument. The returned stage will be exceptionally
+   * completed with the same exception.
+   *
+   * <p>This is equivalent to a catch block that performs some action and then rethrows the original
+   * exception.
+   *
+   * @param onError the function to executor when this stage completes exceptionally.
+   * @return a new SafeFuture which completes with the same result (successful or exceptionally) as
+   *     this stage.
+   */
+  public SafeFuture<T> catchAndRethrow(final Consumer<Throwable> onError) {
+    return exceptionallyCompose(
+        error -> {
+          onError.accept(error);
+          return failedFuture(error);
+        });
+  }
+
+  public static <U> SafeFuture<U> supplyAsync(final Supplier<U> supplier) {
+    return SafeFuture.of(CompletableFuture.supplyAsync(supplier));
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public <U> SafeFuture<U> thenApply(final Function<? super T, ? extends U> fn) {
     return (SafeFuture<U>) super.thenApply(fn);
+  }
+
+  public <U> SafeFuture<U> thenApplyChecked(final ExceptionThrowingFunction<T, U> function) {
+    return thenCompose(
+        value -> {
+          try {
+            final U result = function.apply(value);
+            return SafeFuture.completedFuture(result);
+          } catch (final Throwable e) {
+            return SafeFuture.failedFuture(e);
+          }
+        });
   }
 
   @Override

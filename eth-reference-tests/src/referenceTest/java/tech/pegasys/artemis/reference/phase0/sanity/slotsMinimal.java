@@ -27,7 +27,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 
@@ -37,13 +36,11 @@ public class slotsMinimal extends TestSuite {
   @ParameterizedTest(name = "{index}.{3} Sanity slots (Minimal)")
   @MethodSource({"sanityGenericSlotSetup"})
   void sanityProcessSlot(BeaconState pre, BeaconState post, UnsignedLong slot, String testName) {
-    boolean printEnabled = false;
-    StateTransition stateTransition = new StateTransition(printEnabled);
-    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
+    StateTransition stateTransition = new StateTransition();
 
-    assertDoesNotThrow(
-        () -> stateTransition.process_slots(preWithCache, pre.getSlot().plus(slot), false));
-    assertEquals(preWithCache, post);
+    BeaconState state =
+        assertDoesNotThrow(() -> stateTransition.process_slots(pre, pre.getSlot().plus(slot)));
+    assertEquals(post, state);
   }
 
   @MustBeClosed

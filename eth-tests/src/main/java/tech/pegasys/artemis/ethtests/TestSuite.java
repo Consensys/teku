@@ -25,7 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,13 +38,12 @@ import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.mikuli.G2Point;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
@@ -57,7 +56,6 @@ public abstract class TestSuite {
           "resources",
           "eth2.0-spec-tests",
           "tests");
-  private static final String FILE = "file://";
 
   @SuppressWarnings({"rawtypes"})
   public static void loadConfigFromPath(Path path) throws Exception {
@@ -85,7 +83,7 @@ public abstract class TestSuite {
     // reflection information
     if (Constants.SLOTS_PER_HISTORICAL_ROOT
         != SimpleOffsetSerializer.classReflectionInfo
-            .get(BeaconState.class)
+            .get(BeaconStateImpl.class)
             .getVectorLengths()
             .get(0)) {
       SimpleOffsetSerializer.setConstants();
@@ -98,10 +96,9 @@ public abstract class TestSuite {
   }
 
   public static InputStream getInputStreamFromPath(Path path) {
-    URL url = null;
     InputStream in = null;
     try {
-      url = new URL(FILE + path);
+      URL url = path.toUri().toURL();
       in = url.openConnection().getInputStream();
     } catch (IOException e) {
       LOG.warn("Failed to load " + path, e);
@@ -240,70 +237,73 @@ public abstract class TestSuite {
     return finalArguments;
   }
 
-  @SuppressWarnings({"rawtypes"})
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private static Object parseObjectFromFile(Class className, Path path, Object object) {
-    if (path != null) {
-      Iterator<Path> itr = path.iterator();
-      while (itr.hasNext()) {
-        object = ((Map) object).get(itr.next().toString());
-      }
+    // We found what we're looking for; recursion is finished
+    if (path == null) return MapObjectUtil.convertMapToTypedObject(className, object);
+    if (object.getClass() == LinkedHashMap.class) {
+      // We just recurse down the path for HashMaps
+      Path head = path.getName(0);
+      Path tail = path.getNameCount() > 1 ? path.subpath(1, path.getNameCount()) : null;
+      return parseObjectFromFile(className, tail, ((Map) object).get(head.toString()));
+    } else if (object.getClass() == ArrayList.class) {
+      // If we've found an ArrayList, we need to construct a list of the objects we're looking for
+      return ((ArrayList) object)
+          .stream().map(x -> parseObjectFromFile(className, path, x)).collect(Collectors.toList());
+    } else {
+      throw new RuntimeException(
+          "Unknown class encountered in parseObjectFromFile: " + object.getClass());
     }
-    return MapObjectUtil.convertMapToTypedObject(className, object);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> aggregatePublicKeysSetup(Path path) {
-
+  public static Stream<Arguments> aggregateSetup(Path path) {
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", PublicKey[].class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSSignature[].class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> messageHashCompressedSetup(Path path) {
-
+  public static Stream<Arguments> aggregateVerifySetup(Path path) {
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
+    // We are expecting an array of PublicKeys, but we must just specify just PublicKey type here
+    // due to the test file format.
+    testSet.add(
+        new TestObject("data.yaml", BLSPublicKey.class, Paths.get("input", "pairs", "pubkey")));
+    // As above
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "pairs", "message")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("input", "signature")));
+    testSet.add(new TestObject("data.yaml", Boolean.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> privateKeyPublicKeySetup(Path path) {
-
+  public static Stream<Arguments> fastAggregateVerifySetup(Path path) {
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSPublicKey[].class, Paths.get("input", "pubkeys")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("input", "signature")));
+    testSet.add(new TestObject("data.yaml", Boolean.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> messageHashUncompressedSetup(Path path) {
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
-    return findTestsByPath(testSet);
-  }
-
-  @MustBeClosed
-  public static Stream<Arguments> signMessagesSetup(Path path) {
-
+  public static Stream<Arguments> signSetup(Path path) {
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "domain")));
-    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input", "privkey")));
-    testSet.add(new TestObject("data.yaml", Signature.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSSecretKey.class, Paths.get("input", "privkey")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> aggregateSignaturesSetup(Path path) {
-
+  public static Stream<Arguments> verifySetup(Path path) {
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", Signature[].class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSPublicKey.class, Paths.get("input", "pubkey")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("input", "signature")));
+    testSet.add(new TestObject("data.yaml", Boolean.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
@@ -312,8 +312,8 @@ public abstract class TestSuite {
       throws Exception {
     loadConfigFromPath(configPath);
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
-    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconStateImpl.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -351,7 +351,7 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("block.yaml", SignedBeaconBlock.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -363,8 +363,8 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("block.yaml", SignedBeaconBlock.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -377,7 +377,7 @@ public abstract class TestSuite {
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("block.yaml", SignedBeaconBlock.class, null));
     testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -390,8 +390,8 @@ public abstract class TestSuite {
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("deposit.yaml", Deposit.class, null));
     testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -403,7 +403,7 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("deposit.yaml", Deposit.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -415,8 +415,8 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("deposit.yaml", Deposit.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -429,7 +429,7 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject(operationName, operationClass, null));
-    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -442,8 +442,8 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject(operationName, operationClass, null));
-    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
-    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconStateImpl.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -456,7 +456,7 @@ public abstract class TestSuite {
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("voluntary_exit.yaml", VoluntaryExit.class, null));
     testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -468,7 +468,7 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("voluntary_exit.yaml", VoluntaryExit.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -480,8 +480,8 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("voluntary_exit.yaml", VoluntaryExit.class, null));
-    testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
-    testSet.add(new TestObject("post.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("pre.yaml", BeaconStateImpl.class, null));
+    testSet.add(new TestObject("post.yaml", BeaconStateImpl.class, null));
 
     return findTestsByPath(testSet);
   }
@@ -496,8 +496,8 @@ public abstract class TestSuite {
     Integer block_count = loadMetaData(metaDataSet);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
-    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconStateImpl.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconStateImpl.class, null));
     for (int i = 0; i < block_count; i++) {
       testSet.add(new TestObject("blocks_" + i + ".ssz", SignedBeaconBlock.class, null));
     }
@@ -517,7 +517,7 @@ public abstract class TestSuite {
     Integer block_count = loadMetaData(metaDataSet);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconStateImpl.class, null));
     for (int i = 0; i < block_count; i++) {
       testSet.add(new TestObject("blocks_" + i + ".ssz", SignedBeaconBlock.class, null));
     }
@@ -532,8 +532,8 @@ public abstract class TestSuite {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
-    testSet.add(new TestObject("post.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("pre.ssz", BeaconStateImpl.class, null));
+    testSet.add(new TestObject("post.ssz", BeaconStateImpl.class, null));
     testSet.add(new TestObject("slots.yaml", UnsignedLong.class, null));
 
     return findTestsByPath(testSet);
@@ -560,7 +560,7 @@ public abstract class TestSuite {
     testSet.add(
         new TestObject(
             "quickstart_genesis_" + numValidators + "_" + genesisTime + ".ssz",
-            BeaconState.class,
+            BeaconStateImpl.class,
             null));
 
     return findTestsByPath(testSet);
@@ -575,7 +575,7 @@ public abstract class TestSuite {
     Integer deposits_count = loadMetaData(metaDataSet);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("state.ssz", BeaconState.class, null));
+    testSet.add(new TestObject("state.ssz", BeaconStateImpl.class, null));
     testSet.add(new TestObject("eth1_timestamp.yaml", UnsignedLong.class, null));
     testSet.add(new TestObject("eth1_block_hash.ssz", Bytes32.class, null));
     for (int i = 0; i < deposits_count; i++) {
@@ -594,7 +594,7 @@ public abstract class TestSuite {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("genesis.yaml", BeaconState.class, null));
+    testSet.add(new TestObject("genesis.yaml", BeaconStateImpl.class, null));
     testSet.add(new TestObject("is_valid.yaml", Boolean.class, null));
 
     return findTestsByPath(testSet);

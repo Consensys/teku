@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -20,15 +21,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.api.StorageQueryChannel;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
@@ -44,19 +48,24 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   Eth2PeerManager(
       final CombinedChainDataClient combinedChainDataClient,
-      final ChainStorageClient storageClient,
+      final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
       final PeerValidatorFactory peerValidatorFactory) {
-    statusMessageFactory = new StatusMessageFactory(storageClient);
+    this.statusMessageFactory = new StatusMessageFactory(storageClient);
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
-            this, combinedChainDataClient, storageClient, metricsSystem, statusMessageFactory);
+            DelayedExecutorAsyncRunner.create(),
+            this,
+            combinedChainDataClient,
+            storageClient,
+            metricsSystem,
+            statusMessageFactory);
   }
 
   public static Eth2PeerManager create(
-      final ChainStorageClient storageClient,
-      final HistoricalChainData historicalChainData,
+      final RecentChainData storageClient,
+      final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
@@ -69,7 +78,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   @Override
-  public void onConnect(@NotNull final Peer peer) {
+  public void onConnect(final Peer peer) {
     Eth2Peer eth2Peer = new Eth2Peer(peer, rpcMethods, statusMessageFactory);
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), eth2Peer) == null;
     if (!wasAdded) {
@@ -77,6 +86,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       return;
     }
 
+    peer.setDisconnectRequestHandler(
+        reason -> eth2Peer.sendGoodbye(convertToEth2DisconnectReason(reason)));
     if (peer.connectionInitiatedLocally()) {
       eth2Peer
           .sendStatus()
@@ -95,6 +106,24 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                         connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
                       }
                     }));
+  }
+
+  private UnsignedLong convertToEth2DisconnectReason(final DisconnectReason reason) {
+    switch (reason) {
+      case TOO_MANY_PEERS:
+        return GoodbyeMessage.REASON_TOO_MANY_PEERS;
+      case SHUTTING_DOWN:
+        return GoodbyeMessage.REASON_CLIENT_SHUT_DOWN;
+      case REMOTE_FAULT:
+        return GoodbyeMessage.REASON_FAULT_ERROR;
+      case IRRELEVANT_NETWORK:
+        return GoodbyeMessage.REASON_IRRELEVANT_NETWORK;
+      case UNABLE_TO_VERIFY_NETWORK:
+        return GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK;
+      default:
+        LOG.warn("Unknown disconnect reason: " + reason);
+        return GoodbyeMessage.REASON_FAULT_ERROR;
+    }
   }
 
   public long subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {

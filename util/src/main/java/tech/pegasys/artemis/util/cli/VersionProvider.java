@@ -18,9 +18,10 @@ import picocli.CommandLine;
 
 public class VersionProvider implements CommandLine.IVersionProvider {
 
-  public static final String CLIENT_IDENTITY = "artemis";
+  public static final String CLIENT_IDENTITY = "teku";
+  public static final String IMPLEMENTATION_VERSION = "v" + getImplementationVersion();
   public static final String VERSION =
-      CLIENT_IDENTITY + "/v" + getImplementationVersion() + "/" + detectOS() + "/" + detectJvm();
+      CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION + "/" + detectOS() + "/" + detectJvm();
 
   @Override
   public String[] getVersion() {

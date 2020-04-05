@@ -1,11 +1,14 @@
 dependencies {
-  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testSupportImplementation project(path: ':data:provider')
-  testSupportImplementation 'com.google.code.gson:gson'
-  testSupportImplementation 'com.squareup.okhttp3:okhttp'
-  testSupportImplementation 'io.libp2p:jvm-libp2p-minimal'
-  testSupportImplementation 'org.apache.tuweni:tuweni-toml'
-  testSupportImplementation 'org.assertj:assertj-core'
-  testSupportImplementation 'org.junit.jupiter:junit-jupiter-api'
-  testSupportImplementation "org.testcontainers:testcontainers"
+  testFixturesImplementation project(':data:provider')
+  testFixturesImplementation testFixtures(project(':util'))
+  testFixturesImplementation project(':util')
+
+  testFixturesImplementation 'com.google.code.gson:gson'
+  testFixturesImplementation 'com.squareup.okhttp3:okhttp'
+  testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
+  testFixturesImplementation 'org.apache.commons:commons-lang3'
+  testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
+  testFixturesImplementation 'org.apache.tuweni:tuweni-toml'
+  testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testFixturesImplementation "org.testcontainers:testcontainers"
 }

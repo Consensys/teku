@@ -1,0 +1,12 @@
+dependencies {
+  api project(':ssz')
+
+  api 'org.bouncycastle:bcprov-jdk15on'
+
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.apache.tuweni:tuweni-ssz'
+  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
+
+  testImplementation project(':logging')
+}

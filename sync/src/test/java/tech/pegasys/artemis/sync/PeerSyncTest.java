@@ -34,16 +34,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
@@ -52,9 +52,9 @@ public class PeerSyncTest {
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private BlockImporter blockImporter = mock(BlockImporter.class);
-  private ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private RecentChainData storageClient = mock(RecentChainData.class);
 
-  private static final SignedBeaconBlock BLOCK = DataStructureUtil.randomSignedBeaconBlock(1, 100);
+  private static final SignedBeaconBlock BLOCK = new DataStructureUtil().randomSignedBeaconBlock(1);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(30);
   private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
@@ -68,6 +68,7 @@ public class PeerSyncTest {
               PEER_HEAD_BLOCK_ROOT,
               PEER_HEAD_SLOT));
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private PeerSync peerSync;
 
@@ -80,11 +81,12 @@ public class PeerSyncTest {
   public void setUp() {
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
-    when(peer.sendGoodbye(any())).thenReturn(new SafeFuture<>());
     // By default set up block import to succeed
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
-    when(blockImporter.importBlock(any()))
-        .thenReturn(BlockImportResult.successful(processingRecord));
+    final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
+    final BlockImportResult result = BlockImportResult.successful(processingRecord);
+    when(processingRecord.getBlock()).thenReturn(block);
+    when(blockImporter.importBlock(any())).thenReturn(result);
     peerSync = new PeerSync(asyncRunner, storageClient, blockImporter);
   }
 
@@ -145,16 +147,18 @@ public class PeerSyncTest {
     assertThat(syncFuture).isCompleted();
     PeerSyncResult result = syncFuture.join();
     if (shouldDisconnect) {
-      verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
+      verify(peer).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
       assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
     } else {
-      verify(peer, never()).sendGoodbye(any());
+      verify(peer, never()).disconnectCleanly(any());
       assertThat(result).isEqualByComparingTo(PeerSyncResult.IMPORT_FAILED);
     }
   }
 
   @Test
   void sync_stoppedBeforeBlockImport() {
+    UnsignedLong step = UnsignedLong.ONE;
+    UnsignedLong startHere = UnsignedLong.ONE;
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -166,7 +170,7 @@ public class PeerSyncTest {
             eq(PEER_HEAD_BLOCK_ROOT),
             any(),
             any(),
-            eq(UnsignedLong.ONE),
+            eq(step),
             responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
@@ -186,11 +190,15 @@ public class PeerSyncTest {
     }
 
     // Should not disconnect the peer as it wasn't their fault
-    verify(peer, never()).sendGoodbye(any());
+    verify(peer, never()).disconnectCleanly(any());
     verifyNoInteractions(blockImporter);
     assertThat(syncFuture).isCompleted();
     PeerSyncResult result = syncFuture.join();
     assertThat(result).isEqualByComparingTo(PeerSyncResult.CANCELLED);
+
+    // check startingSlot
+    UnsignedLong startingSlot = peerSync.getStartingSlot();
+    assertThat(startingSlot).isEqualTo(startHere);
   }
 
   @Test
@@ -229,7 +237,7 @@ public class PeerSyncTest {
 
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
-    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
+    verify(peer).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
   }
 
   @Test
@@ -304,7 +312,7 @@ public class PeerSyncTest {
 
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
-    verify(peer, never()).sendGoodbye(any());
+    verify(peer, never()).disconnectCleanly(any());
   }
 
   @Test
@@ -326,9 +334,11 @@ public class PeerSyncTest {
 
     final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
     final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
+    final SafeFuture<Void> requestFuture3 = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any()))
         .thenReturn(requestFuture1)
-        .thenReturn(requestFuture2);
+        .thenReturn(requestFuture2)
+        .thenReturn(requestFuture3);
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
@@ -345,6 +355,10 @@ public class PeerSyncTest {
     // Complete request with no returned blocks
     requestFuture1.complete(null);
     verify(blockImporter, never()).importBlock(any());
+
+    // check startingSlot
+    final UnsignedLong syncStatusStartingSlot = peerSync.getStartingSlot();
+    assertThat(syncStatusStartingSlot).isEqualTo(startSlot);
 
     asyncRunner.executeQueuedActions();
     final UnsignedLong nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
@@ -370,16 +384,60 @@ public class PeerSyncTest {
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
     requestFuture2.complete(null);
 
-    // Check that the sync is done and the peer was not disconnected.
+    // Check that the sync is done
     assertThat(syncFuture).isCompleted();
-    verify(peer, never()).sendGoodbye(any());
+
+    // check startingSlot is still where it was
+    final UnsignedLong syncStatusStartingSlot2 = peerSync.getStartingSlot();
+    assertThat(syncStatusStartingSlot2).isEqualTo(startSlot);
+
+    // do another sync and check that things are further along.
+    UnsignedLong thirdRequestSize = UnsignedLong.valueOf(6);
+    final PeerStatus peer_status_later =
+        PeerStatus.fromStatusMessage(
+            new StatusMessage(
+                Constants.GENESIS_FORK_VERSION,
+                Bytes32.ZERO,
+                PEER_FINALIZED_EPOCH,
+                PEER_HEAD_BLOCK_ROOT,
+                peerHeadSlot.plus(thirdRequestSize)));
+
+    when(peer.getStatus()).thenReturn(peer_status_later);
+    final SafeFuture<PeerSyncResult> syncFuture2 = peerSync.sync(peer);
+    assertThat(syncFuture2).isNotDone();
+
+    // first non-finalized slot after syncing with peer
+    final UnsignedLong secondSyncStartingSlot =
+        PEER_FINALIZED_EPOCH
+            .times(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
+            .plus(UnsignedLong.ONE);
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(PEER_HEAD_BLOCK_ROOT),
+            eq(secondSyncStartingSlot),
+            any(),
+            eq(UnsignedLong.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    // Signal that second sync is complete
+    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
+    requestFuture3.complete(null);
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncFuture2).isCompleted();
+    verify(peer, never()).disconnectCleanly(any());
+
+    // check that starting slot for second sync is the first slot after peer's finalized epoch
+    final UnsignedLong syncStatusStartingSlot3 = peerSync.getStartingSlot();
+    assertThat(syncStatusStartingSlot3).isEqualTo(secondSyncStartingSlot);
   }
 
   private List<SignedBeaconBlock> respondWithBlocksAtSlots(
       final ResponseStream.ResponseListener<SignedBeaconBlock> responseListener, int... slots) {
     List<SignedBeaconBlock> blocks = new ArrayList<>();
     for (int slot : slots) {
-      final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot, slot);
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
       blocks.add(block);
       responseListener.onResponse(block);
     }

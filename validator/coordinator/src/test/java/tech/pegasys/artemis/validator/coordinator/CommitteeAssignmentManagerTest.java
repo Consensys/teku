@@ -40,8 +40,8 @@ import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -69,9 +69,9 @@ class CommitteeAssignmentManagerTest {
     committeeAssignments = new HashMap<>();
     committeeAssignmentManager =
         spy(new CommitteeAssignmentManager(validators, committeeAssignments));
-    doReturn(BLSSignature.random())
+    doReturn(BLSSignature.random(42))
         .when(committeeAssignmentManager)
-        .slot_signature(any(), any(), any());
+        .get_slot_signature(any(), any(), any());
   }
 
   @Test
@@ -103,8 +103,8 @@ class CommitteeAssignmentManagerTest {
   void someAlreadyRegistered_someToRegister_someToDeregister() throws Exception {
     // Set TARGET_COMMITTEE_SIZE to 1 in order to make sure there are more than 1 committees per
     // slot
-    // and our Validotor will be assigned to a different committee at epoch 3
-    int oldTargetCommiteeSize = TARGET_COMMITTEE_SIZE;
+    // and our Validator will be assigned to a different committee at epoch 3
+    int oldTargetCommitteeSize = TARGET_COMMITTEE_SIZE;
     TARGET_COMMITTEE_SIZE = 1;
 
     EventBus eventBus = mock(EventBus.class);
@@ -118,13 +118,15 @@ class CommitteeAssignmentManagerTest {
         () -> verify(eventBus, never()).post(any(CommitteeDismissalEvent.class)));
 
     UnsignedLong secondEpoch = UnsignedLong.valueOf(3);
-    state.setSlot(secondEpoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)));
-    committeeAssignmentManager.updateCommitteeAssignments(state, secondEpoch, eventBus);
+    BeaconState newState =
+        state.updated(
+            state -> state.setSlot(secondEpoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH))));
+    committeeAssignmentManager.updateCommitteeAssignments(newState, secondEpoch, eventBus);
 
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(any(CommitteeAssignmentEvent.class)));
     Waiter.waitFor(() -> verify(eventBus, times(1)).post(any(CommitteeDismissalEvent.class)));
 
-    TARGET_COMMITTEE_SIZE = oldTargetCommiteeSize;
+    TARGET_COMMITTEE_SIZE = oldTargetCommitteeSize;
   }
 
   @Test

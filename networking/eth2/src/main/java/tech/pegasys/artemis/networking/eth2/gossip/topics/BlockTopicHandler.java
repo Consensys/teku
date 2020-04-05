@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_current_slot;
@@ -26,27 +27,26 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.bls.BLSVerify;
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
   private static final Logger LOG = LogManager.getLogger();
-  private final ChainStorageClient chainStorageClient;
+  private final RecentChainData recentChainData;
   private final EventBus eventBus;
 
-  public BlockTopicHandler(final EventBus eventBus, final ChainStorageClient chainStorageClient) {
+  public BlockTopicHandler(final EventBus eventBus, final RecentChainData recentChainData) {
     super(eventBus);
     this.eventBus = eventBus;
-    this.chainStorageClient = chainStorageClient;
+    this.recentChainData = recentChainData;
   }
 
   @Override
@@ -66,13 +66,13 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
 
   @Override
   protected boolean validateData(final SignedBeaconBlock block) {
-    if (chainStorageClient.isPreGenesis()) {
+    if (recentChainData.isPreGenesis()) {
       // We can't process blocks pre-genesis
       return false;
     }
 
     final BeaconState preState =
-        chainStorageClient.getStore().getBlockState(block.getMessage().getParent_root());
+        recentChainData.getStore().getBlockState(block.getMessage().getParent_root());
     if (preState == null) {
       // Post event even if we don't have the prestate
       eventBus.post(createEvent(block));
@@ -84,7 +84,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
       return false;
     }
 
-    final UnsignedLong currentSlot = get_current_slot(chainStorageClient.getStore());
+    final UnsignedLong currentSlot = get_current_slot(recentChainData.getStore());
     if (block.getSlot().compareTo(currentSlot) > 0) {
       // Don't gossip future blocks
       eventBus.post(createEvent(block));
@@ -95,21 +95,20 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   }
 
   private boolean isBlockSignatureValid(final SignedBeaconBlock block, final BeaconState preState) {
-    final StateTransition stateTransition = new StateTransition(false);
-    final BeaconStateWithCache postState = BeaconStateWithCache.fromBeaconState(preState);
+    final StateTransition stateTransition = new StateTransition();
 
     try {
-      stateTransition.process_slots(postState, block.getMessage().getSlot(), false);
+      BeaconState postState = stateTransition.process_slots(preState, block.getMessage().getSlot());
+      final int proposerIndex = get_beacon_proposer_index(postState);
+      final Validator proposer = postState.getValidators().get(proposerIndex);
+      final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
+      final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
+      final BLSSignature signature = block.getSignature();
+      return BLS.verify(proposer.getPubkey(), signing_root, signature);
+
     } catch (EpochProcessingException | SlotProcessingException e) {
       LOG.error("Unable to process block state.", e);
       return false;
     }
-
-    final int proposerIndex = get_beacon_proposer_index(postState);
-    final Validator proposer = postState.getValidators().get(proposerIndex);
-    final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
-    final BLSSignature signature = block.getSignature();
-    return BLSVerify.bls_verify(
-        proposer.getPubkey(), block.getMessage().hash_tree_root(), signature, domain);
   }
 }

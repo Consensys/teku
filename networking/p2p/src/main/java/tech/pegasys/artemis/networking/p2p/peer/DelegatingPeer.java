@@ -15,6 +15,8 @@ package tech.pegasys.artemis.networking.p2p.peer;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
@@ -30,6 +32,11 @@ public class DelegatingPeer implements Peer {
   @Override
   public NodeId getId() {
     return peer.getId();
+  }
+
+  @Override
+  public PeerAddress getAddress() {
+    return peer.getAddress();
   }
 
   @Override
@@ -54,8 +61,23 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
-  public void disconnect() {
-    peer.disconnect();
+  public void disconnectImmediately() {
+    peer.disconnectImmediately();
+  }
+
+  @Override
+  public void disconnectCleanly(final DisconnectReason reason) {
+    peer.disconnectCleanly(reason);
+  }
+
+  @Override
+  public void setDisconnectRequestHandler(final DisconnectRequestHandler handler) {
+    peer.setDisconnectRequestHandler(handler);
+  }
+
+  @Override
+  public void subscribeDisconnect(final PeerDisconnectedSubscriber subscriber) {
+    peer.subscribeDisconnect(subscriber);
   }
 
   @Override

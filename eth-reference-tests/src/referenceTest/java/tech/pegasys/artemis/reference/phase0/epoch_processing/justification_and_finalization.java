@@ -30,20 +30,20 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class justification_and_finalization extends TestSuite {
-  @ParameterizedTest(name = "{index}. process justification and finalization pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process justification and finalization")
   @MethodSource("mainnetProcessJusticationAndFinalizationSetup")
-  void mainnetProcessJusticationAndFinalization(BeaconState pre, BeaconState post)
+  void mainnetProcessJusticationAndFinalization(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    EpochProcessorUtil.process_justification_and_finalization(pre);
-    assertEquals(pre, post);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_justification_and_finalization);
+    assertEquals(post, wState);
   }
 
-  @ParameterizedTest(name = "{index}. process justification and finalization pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process justification and finalization")
   @MethodSource("minimalProcessJusticationAndFinalizationSetup")
-  void minimalProcessJusticationAndFinalization(BeaconState pre, BeaconState post)
+  void minimalProcessJusticationAndFinalization(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    EpochProcessorUtil.process_justification_and_finalization(pre);
-    assertEquals(pre, post);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_justification_and_finalization);
+    assertEquals(post, wState);
   }
 
   @MustBeClosed

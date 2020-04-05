@@ -28,7 +28,7 @@ import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.util.bls.BLSAggregate;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class AttestationAggregator {
@@ -79,7 +79,7 @@ public class AttestationAggregator {
     // If the attestation message hasn't been seen before:
     // - add it to the aggregate attestation map to aggregate further when
     // another attestation with the same message is received
-    // - add it to the list of aggregate attestations for that commiteeeIndex
+    // - add it to the list of aggregate attestations for that committeeIndex
     // to broadcast
     else if (isNewData.get()) {
       UnsignedLong committeeIndex = newAttestation.getData().getIndex();
@@ -113,8 +113,7 @@ public class AttestationAggregator {
     List<BLSSignature> signaturesToAggregate = new ArrayList<>();
     signaturesToAggregate.add(oldAggregateAttestation.getAggregate_signature());
     signaturesToAggregate.add(newAttestation.getAggregate_signature());
-    oldAggregateAttestation.setAggregate_signature(
-        BLSAggregate.bls_aggregate_signatures(signaturesToAggregate));
+    oldAggregateAttestation.setAggregate_signature(BLS.aggregate(signaturesToAggregate));
   }
 
   public void reset() {
@@ -125,10 +124,10 @@ public class AttestationAggregator {
 
   public synchronized List<AggregateAndProof> getAggregateAndProofs() {
     List<AggregateAndProof> aggregateAndProofs = new ArrayList<>();
-    for (UnsignedLong commiteeIndex : committeeIndexToAggregatorInformation.keySet()) {
+    for (UnsignedLong committeeIndex : committeeIndexToAggregatorInformation.keySet()) {
       AggregatorInformation aggregatorInformation =
-          committeeIndexToAggregatorInformation.get(commiteeIndex);
-      Attestation aggregate = committeeIndexToAggregate.get(commiteeIndex);
+          committeeIndexToAggregatorInformation.get(committeeIndex);
+      Attestation aggregate = committeeIndexToAggregate.get(committeeIndex);
       aggregateAndProofs.add(
           new AggregateAndProof(
               UnsignedLong.valueOf(aggregatorInformation.getValidatorIndex()),

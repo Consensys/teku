@@ -21,10 +21,9 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -51,16 +50,15 @@ public class BlockPropagationIntegrationTest {
     final List<SignedBeaconBlock> blocksToFetch = new ArrayList<>();
     for (int i = 0; i < 3; i++) {
       currentSlot = currentSlot.plus(UnsignedLong.ONE);
-      final BlockProcessingRecord record =
-          node1.chainUtil().createAndImportBlockAtSlot(currentSlot);
-      blocksToFetch.add(record.getBlock());
+      final SignedBeaconBlock block = node1.chainUtil().createAndImportBlockAtSlot(currentSlot);
+      blocksToFetch.add(block);
     }
 
     // Setup node 2
     SyncingNodeManager node2 = SyncingNodeManager.create(networkFactory, validatorKeys);
 
     // Connect networks
-    Waiter.waitFor(node1.network().connect(node2.network().getNodeAddress()));
+    Waiter.waitFor(node1.connect(node2));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -77,7 +75,7 @@ public class BlockPropagationIntegrationTest {
 
     // Propagate new block
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(currentSlot);
-    node1.eventBus().post(new BlockProposedEvent(newBlock));
+    node1.eventBus().post(new ProposedBlockEvent(newBlock));
 
     // Verify that node2 fetches required blocks in response
     Waiter.waitFor(

@@ -1,17 +1,15 @@
 dependencies {
-  implementation project(':util')
+  implementation project(':bls')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
+  implementation project(':ssz')
   implementation project(':storage')
+  implementation project(':util')
 
-  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
-  implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.mockito:mockito-core'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'org.junit.jupiter:junit-jupiter-api'
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
   implementation 'org.junit.jupiter:junit-jupiter-params'
 }
 

@@ -1,23 +1,38 @@
 dependencies {
+    implementation project(':data')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
     implementation project(':networking:p2p')
     implementation project(':networking:eth2')
+    implementation project(':logging')
     implementation project(':services:serviceutils')
+    implementation project(':ssz')
     implementation project(':storage')
     implementation project(':util')
-    implementation project(':data')
+    implementation project(':events')
+
     implementation 'org.apache.tuweni:tuweni-bytes'
 
-    testImplementation 'org.mockito:mockito-core'
-    testImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
-    testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-    testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-    testCompile 'org.mockito:mockito-junit-jupiter:3.2.4'
+    testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':ethereum:statetransition'))
+    testImplementation testFixtures(project('::networking:eth2'))
+    testImplementation testFixtures(project(':util'))
 
-    integrationTestImplementation 'org.mockito:mockito-core'
-    integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
-    integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+    integrationTestImplementation testFixtures(project(':bls'))
+    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
+    integrationTestImplementation testFixtures(project('::networking:eth2'))
+    integrationTestImplementation testFixtures(project(':sync'))
+    integrationTestImplementation testFixtures(project(':util'))
 
-    testSupportImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+    testFixturesImplementation project(':services:serviceutils')
+    testFixturesImplementation project(':util')
+
+    testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+    testFixturesImplementation testFixtures(project('::networking:eth2'))
+    testFixturesImplementation testFixtures(project('::networking:p2p'))
+    testFixturesImplementation testFixtures(project('::events'))
+
+    testFixturesImplementation 'org.hyperledger.besu:plugin-api'
+    testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
+    testFixturesImplementation 'com.google.guava:guava'
 }

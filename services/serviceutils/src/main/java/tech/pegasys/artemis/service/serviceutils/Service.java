@@ -17,8 +17,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public abstract class Service {
-  private static final SafeFuture<Void> FALLBACK_STOPPED_FUTURE = SafeFuture.completedFuture(null);
-
   enum State {
     IDLE,
     RUNNING,
@@ -42,9 +40,13 @@ public abstract class Service {
       return doStop();
     } else {
       // Return a successful future if there's nothing to do at this point
-      return FALLBACK_STOPPED_FUTURE;
+      return SafeFuture.COMPLETE;
     }
   }
 
   protected abstract SafeFuture<?> doStop();
+
+  protected boolean isRunning() {
+    return state.get() == State.RUNNING;
+  }
 }

@@ -26,10 +26,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -39,12 +36,15 @@ import tech.pegasys.artemis.sync.FetchRecentBlocksService.FetchBlockTaskFactory;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
-@ExtendWith(MockitoExtension.class)
 public class FetchRecentBlocksServiceTest {
 
-  @Mock private Eth2Network eth2Network;
-  @Mock private PendingPool<SignedBeaconBlock> pendingBlocksPool;
-  @Mock private FetchBlockTaskFactory fetchBlockTaskFactory;
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private Eth2Network eth2Network = mock(Eth2Network.class);
+
+  @SuppressWarnings("unchecked")
+  private PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
+
+  private FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
 
   private final int maxConcurrentRequests = 2;
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -86,14 +86,14 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void fetchSingleBlockSuccessfully() {
-    final Bytes32 root = DataStructureUtil.randomBytes32(1);
+    final Bytes32 root = dataStructureUtil.randomBytes32();
     recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     future.complete(FetchBlockResult.createSuccessful(block));
 
     assertThat(importedBlocks).containsExactly(block);
@@ -102,7 +102,7 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void handleDuplicateRequiredBlocks() {
-    final Bytes32 root = DataStructureUtil.randomBytes32(1);
+    final Bytes32 root = dataStructureUtil.randomBytes32();
     recentBlockFetcher.requestRecentBlock(root);
     recentBlockFetcher.requestRecentBlock(root);
 
@@ -110,7 +110,7 @@ public class FetchRecentBlocksServiceTest {
     assertThat(importedBlocks).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     future.complete(FetchBlockResult.createSuccessful(block));
 
     assertThat(importedBlocks).containsExactly(block);
@@ -119,7 +119,7 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void ignoreKnownBlock() {
-    final Bytes32 root = DataStructureUtil.randomBytes32(1);
+    final Bytes32 root = dataStructureUtil.randomBytes32();
     when(pendingBlocksPool.contains(root)).thenReturn(true);
     recentBlockFetcher.requestRecentBlock(root);
 
@@ -129,7 +129,7 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void cancelBlockRequest() {
-    final Bytes32 root = DataStructureUtil.randomBytes32(1);
+    final Bytes32 root = dataStructureUtil.randomBytes32();
     recentBlockFetcher.requestRecentBlock(root);
     recentBlockFetcher.cancelRecentBlockRequest(root);
 
@@ -144,7 +144,7 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void fetchSingleBlockWithRetry() {
-    final Bytes32 root = DataStructureUtil.randomBytes32(1);
+    final Bytes32 root = dataStructureUtil.randomBytes32();
     recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
@@ -166,7 +166,7 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void cancelTaskWhileWaitingToRetry() {
-    final Bytes32 root = DataStructureUtil.randomBytes32(1);
+    final Bytes32 root = dataStructureUtil.randomBytes32();
     recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
@@ -193,7 +193,7 @@ public class FetchRecentBlocksServiceTest {
 
   @Test
   public void handlesPeersUnavailable() {
-    final Bytes32 root = DataStructureUtil.randomBytes32(1);
+    final Bytes32 root = dataStructureUtil.randomBytes32();
     recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
@@ -217,7 +217,7 @@ public class FetchRecentBlocksServiceTest {
   public void queueFetchTaskWhenConcurrencyLimitReached() {
     final int taskCount = maxConcurrentRequests + 1;
     for (int i = 0; i < taskCount; i++) {
-      final Bytes32 root = DataStructureUtil.randomBytes32(1);
+      final Bytes32 root = dataStructureUtil.randomBytes32();
       recentBlockFetcher.requestRecentBlock(root);
     }
 
@@ -225,7 +225,7 @@ public class FetchRecentBlocksServiceTest {
 
     // Complete first task
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     future.complete(FetchBlockResult.createSuccessful(block));
 
     // After first task completes, remaining pending count should become active

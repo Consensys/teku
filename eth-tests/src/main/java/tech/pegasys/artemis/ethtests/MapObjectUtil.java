@@ -19,12 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -41,7 +37,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
@@ -53,12 +49,9 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.mikuli.G2Point;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
 public class MapObjectUtil {
 
@@ -71,26 +64,23 @@ public class MapObjectUtil {
     else if (classtype.equals(SignedBeaconBlock.class)) return getSignedBeaconBlock((Map) object);
     else if (classtype.equals(BeaconBlockBody.class)) return getBeaconBlockBody((Map) object);
     else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
+    else if (classtype.equals(BLSPublicKey.class)) return getPublicKey(object.toString());
+    else if (classtype.equals(BLSPublicKey[].class)) return getPublicKeyArray((List) object);
+    else if (classtype.equals(BLSSecretKey.class)) return getSecretKey(object.toString());
+    else if (classtype.equals(BLSSignature.class)) return getSignature(object.toString());
+    else if (classtype.equals(BLSSignature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(Bytes[].class)) return getBytesArray((List) object);
     else if (classtype.equals(Bytes32[].class)) return getBytes32Array((List) object);
-    else if (classtype.equals(BeaconState.class)) return getBeaconState((Map) object);
-    else if (classtype.equals(BeaconStateWithCache.class))
-      return getBeaconStateWithCache((Map) object);
+    else if (classtype.equals(BeaconStateImpl.class)) return getBeaconState((Map) object);
     else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
     else if (classtype.equals(Deposit.class)) return getDeposit((Map) object);
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
     else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
     else if (classtype.equals(Fork.class)) return getFork((Map) object);
-    else if (classtype.equals(G2Point.class)) return getG2Point(object);
     else if (classtype.equals(HistoricalBatch.class)) return getHistoricalBatch((Map) object);
     else if (classtype.equals(IndexedAttestation.class)) return getIndexedAttestation((Map) object);
     else if (classtype.equals(PendingAttestation.class)) return getPendingAttestation((Map) object);
     else if (classtype.equals(ProposerSlashing.class)) return getProposerSlashing((Map) object);
-    else if (classtype.equals(PublicKey.class)) return getPublicKey(object.toString());
-    else if (classtype.equals(PublicKey[].class)) return getPublicKeyArray((List) object);
-    else if (classtype.equals(SecretKey.class)) return getSecretKey(object.toString());
-    else if (classtype.equals(Signature.class)) return getSignature(object.toString());
-    else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(Validator.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
     else if (classtype.equals(SignedVoluntaryExit.class))
@@ -106,64 +96,6 @@ public class MapObjectUtil {
     return null;
   }
 
-  @SuppressWarnings({"rawtypes"})
-  private static G2Point getG2Point(Object object) {
-    if (object.getClass() == ArrayList.class) {
-      List list = (List) object;
-      // If we have only two elements then these are the compressed X_im and X_re coordinates
-      if (list.size() == 2) {
-        return G2Point.fromBytesCompressed(
-            Bytes.concatenate(
-                Bytes48.leftPad(Bytes.fromHexString(list.get(0).toString())),
-                Bytes48.leftPad(Bytes.fromHexString(list.get(1).toString()))));
-      }
-
-      // If we have three elements then these are the uncompressed complex X, Y and Z coords
-      BIG xRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(0).toString()))
-                  .toArray());
-      BIG xIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(1).toString()))
-                  .toArray());
-      BIG yRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(0).toString()))
-                  .toArray());
-      BIG yIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(1).toString()))
-                  .toArray());
-      BIG zRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(0).toString()))
-                  .toArray());
-      BIG zIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(1).toString()))
-                  .toArray());
-
-      FP2 x = new FP2(xRe, xIm);
-      FP2 y = new FP2(yRe, yIm);
-      FP2 z = new FP2(zRe, zIm);
-
-      // Normalise the point (affine transformation) so that Z = 1
-      z.inverse();
-      x.mul(z);
-      x.reduce();
-      y.mul(z);
-      y.reduce();
-
-      return new G2Point(new ECP2(x, y));
-    } else {
-      Map map = (Map) object;
-      return G2Point.hashToG2(
-          Bytes.fromHexString(map.get("message").toString()),
-          Bytes.fromHexString(map.get("domain").toString()));
-    }
-  }
-
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static List<Bytes> getBytesArray(List list) {
     return (List<Bytes>)
@@ -173,27 +105,27 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<PublicKey> getPublicKeyArray(List list) {
-    return (List<PublicKey>)
+  private static List<BLSPublicKey> getPublicKeyArray(List list) {
+    return (List<BLSPublicKey>)
         list.stream().map(object -> getPublicKey(object.toString())).collect(Collectors.toList());
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<Signature> getSignatureArray(List list) {
-    return (List<Signature>)
+  private static List<BLSSignature> getSignatureArray(List list) {
+    return (List<BLSSignature>)
         list.stream().map(object -> getSignature(object.toString())).collect(Collectors.toList());
   }
 
-  private static PublicKey getPublicKey(String s) {
-    return PublicKey.fromBytesCompressed(Bytes.fromHexString(s));
+  private static BLSPublicKey getPublicKey(String s) {
+    return BLSPublicKey.fromBytesCompressed(Bytes.fromHexStringLenient(s, 48));
   }
 
-  private static SecretKey getSecretKey(String s) {
-    return SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(s)));
+  private static BLSSecretKey getSecretKey(String s) {
+    return BLSSecretKey.fromBytes(Bytes.fromHexStringLenient(s, 48));
   }
 
-  private static Signature getSignature(String s) {
-    return Signature.fromBytesCompressed(Bytes.fromHexString(s));
+  private static BLSSignature getSignature(String s) {
+    return BLSSignature.fromBytes(Bytes.fromHexStringLenient(s, 96));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -207,13 +139,13 @@ public class MapObjectUtil {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static HistoricalBatch getHistoricalBatch(Map map) {
     SSZVector<Bytes32> block_roots =
-        new SSZVector<>(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("block_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<Bytes32> state_roots =
-        new SSZVector<>(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("state_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
@@ -230,19 +162,19 @@ public class MapObjectUtil {
     BeaconBlockHeader latest_block_header =
         getBeaconBlockHeader((Map) map.get("latest_block_header"));
     SSZVector<Bytes32> block_roots =
-        new SSZVector<>(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("block_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<Bytes32> state_roots =
-        new SSZVector<>(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("state_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZList<Bytes32> historical_roots =
-        new SSZList<>(
+        SSZList.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("historical_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
@@ -250,7 +182,7 @@ public class MapObjectUtil {
             Bytes32.class);
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
     SSZList<Eth1Data> eth1_data_votes =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("eth1_data_votes"))
                 .stream().map(e -> getEth1Data(e)).collect(Collectors.toList()),
             Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
@@ -258,13 +190,13 @@ public class MapObjectUtil {
     UnsignedLong eth1_deposit_index =
         UnsignedLong.valueOf(map.get("eth1_deposit_index").toString());
     SSZList<Validator> validators =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("validators"))
                 .stream().map(e -> getValidator(e)).collect(Collectors.toList()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             Validator.class);
     SSZList<UnsignedLong> balances =
-        new SSZList<>(
+        SSZList.createMutable(
             new ArrayList<>(
                 ((List<Object>) map.get("balances"))
                     .stream()
@@ -273,26 +205,26 @@ public class MapObjectUtil {
             Constants.VALIDATOR_REGISTRY_LIMIT,
             UnsignedLong.class);
     SSZVector<Bytes32> randao_mixes =
-        new SSZVector<>(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("randao_mixes"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<UnsignedLong> slashings =
-        new SSZVector<>(
+        SSZVector.createMutable(
             new ArrayList<>((List<Object>) map.get("slashings"))
                 .stream()
                     .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
                     .collect(Collectors.toList()),
             UnsignedLong.class);
     SSZList<PendingAttestation> previous_epoch_attestations =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("previous_epoch_attestations"))
                 .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
             PendingAttestation.class);
     SSZList<PendingAttestation> current_epoch_attestations =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("current_epoch_attestations"))
                 .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
@@ -307,7 +239,7 @@ public class MapObjectUtil {
         getCheckpoint((Map) map.get("current_justified_checkpoint"));
     Checkpoint finalized_checkpoint = getCheckpoint((Map) map.get("finalized_checkpoint"));
 
-    return new BeaconStateWithCache(
+    return BeaconState.create(
         genesis_time,
         slot,
         fork,
@@ -328,11 +260,6 @@ public class MapObjectUtil {
         previous_justified_checkpoint,
         current_justified_checkpoint,
         finalized_checkpoint);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static BeaconStateWithCache getBeaconStateWithCache(Map map) {
-    return (BeaconStateWithCache) getBeaconState(map);
   }
 
   @SuppressWarnings({"rawtypes"})
@@ -362,7 +289,7 @@ public class MapObjectUtil {
     UnsignedLong withdrawable_epoch =
         UnsignedLong.valueOf(map.get("withdrawable_epoch").toString());
 
-    return new Validator(
+    return Validator.create(
         pubkey,
         withdrawal_credentials,
         effective_balance,
@@ -408,31 +335,31 @@ public class MapObjectUtil {
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
     Bytes32 graffiti = Bytes32.fromHexString(map.get("graffiti").toString());
     SSZList<ProposerSlashing> proposer_slashings =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("proposer_slashings"))
                 .stream().map(e -> getProposerSlashing(e)).collect(Collectors.toList()),
             Constants.MAX_PROPOSER_SLASHINGS,
             ProposerSlashing.class);
     SSZList<AttesterSlashing> attester_slashings =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("attester_slashings"))
                 .stream().map(e -> getAttesterSlashing(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTER_SLASHINGS,
             AttesterSlashing.class);
     SSZList<Attestation> attestations =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("attestations"))
                 .stream().map(e -> getAttestation(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTATIONS,
             Attestation.class);
     SSZList<Deposit> deposits =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("deposits"))
                 .stream().map(e -> getDeposit(e)).collect(Collectors.toList()),
             Constants.MAX_DEPOSITS,
             Deposit.class);
     SSZList<SignedVoluntaryExit> voluntary_exits =
-        new SSZList<>(
+        SSZList.createMutable(
             ((List<Map>) map.get("voluntary_exits"))
                 .stream().map(e -> getSignedVoluntaryExit(e)).collect(Collectors.toList()),
             Constants.MAX_VOLUNTARY_EXITS,
@@ -476,7 +403,7 @@ public class MapObjectUtil {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Deposit getDeposit(Map map) {
     SSZVector<Bytes32> proof =
-        new SSZVector<>(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("proof"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
@@ -546,7 +473,7 @@ public class MapObjectUtil {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static IndexedAttestation getIndexedAttestation(Map map) {
     SSZList<UnsignedLong> attesting_indices =
-        new SSZList<>(
+        SSZList.createMutable(
             new ArrayList<>((List<Object>) map.get("attesting_indices"))
                 .stream()
                     .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))

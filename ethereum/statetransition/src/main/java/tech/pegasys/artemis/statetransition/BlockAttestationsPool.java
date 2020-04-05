@@ -25,10 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockAttestationsPool {
@@ -50,9 +52,24 @@ public class BlockAttestationsPool {
   private final int QUEUE_INITIAL_CAPACITY = 1024;
 
   @VisibleForTesting
-  final Queue<Attestation> aggregateAttesationsQueue =
+  final Queue<Attestation> aggregateAttestationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
+
+  public SSZList<Attestation> getAttestationsForSlot(final UnsignedLong slot) {
+    SSZList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+    if (slot.compareTo(
+            UnsignedLong.valueOf(
+                Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+        >= 0) {
+
+      UnsignedLong attestation_slot =
+          slot.minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
+
+      attestations = getAggregatedAttestationsForBlockAtSlot(attestation_slot);
+    }
+    return attestations;
+  }
 
   public void addUnprocessedAggregateAttestationToQueue(Attestation newAttestation) {
 
@@ -72,7 +89,7 @@ public class BlockAttestationsPool {
       }
     }
 
-    aggregateAttesationsQueue.add(newAttestation);
+    aggregateAttestationsQueue.add(newAttestation);
 
     //    ChainStorage.add(attestationDataHash, newAttestation.getData().getSlot(), dataRootToSlot);
   }
@@ -94,16 +111,16 @@ public class BlockAttestationsPool {
     }
   }
 
-  public SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {
-    SSZList<Attestation> attestations =
-        new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
+  private SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {
+    SSZMutableList<Attestation> attestations =
+        SSZList.createMutable(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
 
-    while (aggregateAttesationsQueue.peek() != null
-        && aggregateAttesationsQueue.peek().getData().getSlot().compareTo(slot) <= 0
+    while (aggregateAttestationsQueue.peek() != null
+        && aggregateAttestationsQueue.peek().getData().getSlot().compareTo(slot) <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
 
-      Attestation aggregate = aggregateAttesationsQueue.remove();
+      Attestation aggregate = aggregateAttestationsQueue.remove();
       Bytes32 attestationHashTreeRoot = aggregate.getData().hash_tree_root();
 
       // Check if attestation has already been processed in successful block

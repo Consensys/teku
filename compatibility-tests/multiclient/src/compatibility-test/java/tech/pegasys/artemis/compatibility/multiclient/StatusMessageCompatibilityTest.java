@@ -40,17 +40,19 @@ class StatusMessageCompatibilityTest {
 
   @BeforeEach
   public void setUp() throws Exception {
+    Constants.setConstants("mainnet");
     artemis = networkFactory.builder().startNetwork();
   }
 
   @AfterEach
   public void tearDown() {
     networkFactory.stopAll();
+    Constants.setConstants("minimal");
   }
 
   @Test
   public void shouldExchangeStatusWhenArtemisConnectsToPrysm() throws Exception {
-    waitFor(artemis.connect(PRYSM_NODE.getMultiAddr()));
+    waitFor(artemis.connect(artemis.createPeerAddress(PRYSM_NODE.getMultiAddr())));
     waitFor(() -> assertThat(artemis.getPeerCount()).isEqualTo(1));
     final Eth2Peer prysm = artemis.getPeer(PRYSM_NODE.getId()).orElseThrow();
     final PeerStatus status = prysm.getStatus();

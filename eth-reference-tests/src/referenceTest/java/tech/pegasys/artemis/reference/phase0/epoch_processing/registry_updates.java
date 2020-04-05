@@ -32,24 +32,24 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 @ExtendWith(BouncyCastleExtension.class)
 public class registry_updates extends TestSuite {
 
-  @ParameterizedTest(name = "{index}.{2} process registry updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process registry updates")
   @MethodSource({
     "mainnetProcessRegistryUpdates",
   })
   void mainnetProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    EpochProcessorUtil.process_registry_updates(pre);
-    assertEquals(pre, post);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_registry_updates);
+    assertEquals(post, wState);
   }
 
-  @ParameterizedTest(name = "{index}.{2} process registry updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process registry updates")
   @MethodSource({
     "minimalProcessRegistryUpdates",
   })
   void minimalProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    EpochProcessorUtil.process_registry_updates(pre);
-    assertThat(pre).usingRecursiveComparison().isEqualTo(post);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_registry_updates);
+    assertThat(wState).isEqualTo(post);
   }
 
   @MustBeClosed

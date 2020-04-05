@@ -30,18 +30,20 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class final_updates extends TestSuite {
-  @ParameterizedTest(name = "{index}. process final updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process final updates")
   @MethodSource("mainnetFinalUpdatesSetup")
-  void mainnetProcessFinalUpdates(BeaconState pre, BeaconState post) throws Exception {
-    EpochProcessorUtil.process_final_updates(pre);
-    assertEquals(pre, post);
+  void mainnetProcessFinalUpdates(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_final_updates);
+    assertEquals(post, wState);
   }
 
-  @ParameterizedTest(name = "{index}. process final updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process final updates")
   @MethodSource("minimalFinalUpdatesSetup")
-  void minimalFinalUpdatesSetup(BeaconState pre, BeaconState post) throws Exception {
-    EpochProcessorUtil.process_final_updates(pre);
-    assertEquals(pre, post);
+  void minimalFinalUpdatesSetup(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_final_updates);
+    assertEquals(post, wState);
   }
 
   @MustBeClosed

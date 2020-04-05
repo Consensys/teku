@@ -21,8 +21,8 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class BlockGossipManager {
   private final EventBus eventBus;
@@ -32,8 +32,8 @@ public class BlockGossipManager {
   public BlockGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final ChainStorageClient chainStorageClient) {
-    final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, chainStorageClient);
+      final RecentChainData recentChainData) {
+    final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, recentChainData);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     eventBus.register(this);
@@ -41,7 +41,7 @@ public class BlockGossipManager {
 
   @Subscribe
   @SuppressWarnings("unused")
-  void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
+  void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
     final Bytes data = SimpleOffsetSerializer.serialize(blockProposedEvent.getBlock());
     channel.gossip(data);
   }

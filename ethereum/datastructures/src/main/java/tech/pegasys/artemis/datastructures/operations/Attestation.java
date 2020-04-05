@@ -36,7 +36,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static final int SSZ_FIELD_COUNT = 1;
 
   private Bitlist aggregation_bits; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
   private AttestationData data;
@@ -62,7 +62,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   public UnsignedLong getEarliestSlotForProcessing() {
     // Attestations can't be processed until their slot is in the past and until we are in the same
     // epoch as their target.
-    return max(data.getSlot().plus(UnsignedLong.ONE), data.getTarget().getEpochSlot());
+    return max(data.getSlot().plus(UnsignedLong.ONE), data.getTarget().getEpochStartSlot());
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {

@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -38,30 +37,30 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
 /** JMH base class for measuring state transitions performance */
 @BenchmarkMode(Mode.SingleShotTime)
 @State(Scope.Thread)
-@Fork(0)
 @Threads(1)
 public abstract class TransitionBenchmark {
 
-  ChainStorageClient localStorage;
+  RecentChainData localStorage;
   BeaconChainUtil localChain;
   BlockImporter blockImporter;
   Iterator<SignedBeaconBlock> blockIterator;
   BlockImportResult lastResult;
   SignedBeaconBlock prefetchedBlock;
 
-  @Param({"1024", "3072", "10240"})
+  @Param({"16384", "32768"})
   int validatorsCount;
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    Constants.SLOTS_PER_EPOCH = 6;
+    Constants.setConstants("mainnet");
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     String blocksFile =
@@ -70,14 +69,14 @@ public abstract class TransitionBenchmark {
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
-    String keysFile = "/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz";
+    String keysFile = "/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz";
 
     System.out.println("Generating keypairs from " + keysFile);
     List<BLSKeyPair> validatorKeys =
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
-    localStorage = ChainStorageClient.memoryOnlyClient(localEventBus);
+    localStorage = MemoryOnlyRecentChainData.create(localEventBus);
     localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
     localChain.initializeStorage();
 
@@ -103,7 +102,6 @@ public abstract class TransitionBenchmark {
     }
     localChain.setSlot(block.getSlot());
     lastResult = blockImporter.importBlock(block);
-    System.out.println("Imported: " + lastResult);
     if (!lastResult.isSuccessful()) {
       throw new RuntimeException("Unable to import block: " + lastResult);
     }
@@ -118,9 +116,7 @@ public abstract class TransitionBenchmark {
     @Setup(Level.Iteration)
     public void skipAndPrefetch() throws Exception {
       if (lastResult != null
-          && (lastResult.getBlockProcessingRecord().getBlock().getSlot().longValue() + 1)
-                  % Constants.SLOTS_PER_EPOCH
-              == 0) {
+          && (lastResult.getBlock().getSlot().longValue() + 1) % Constants.SLOTS_PER_EPOCH == 0) {
 
         // import block with epoch transition
         importNextBlock();
@@ -129,7 +125,7 @@ public abstract class TransitionBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 2, batchSize = 6)
+    @Warmup(iterations = 2, batchSize = 32)
     @Measurement(iterations = 50)
     public void importBlock() throws Exception {
       importNextBlock();
@@ -146,17 +142,15 @@ public abstract class TransitionBenchmark {
     public void skipAndPrefetch() throws Exception {
       // import all blocks without epoch transition
       while (lastResult == null
-          || (lastResult.getBlockProcessingRecord().getBlock().getSlot().longValue() + 1)
-                  % Constants.SLOTS_PER_EPOCH
-              != 0) {
+          || (lastResult.getBlock().getSlot().longValue() + 1) % Constants.SLOTS_PER_EPOCH != 0) {
         importNextBlock();
       }
       prefetchBlock();
     }
 
     @Benchmark
-    @Warmup(iterations = 2)
-    @Measurement(iterations = 10)
+    @Warmup(iterations = 10)
+    @Measurement(iterations = 20)
     public void importBlock() throws Exception {
       importNextBlock();
     }

@@ -31,14 +31,15 @@ import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.ImportedBlocks;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockPropagationManagerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final EventBus localEventBus = new EventBus();
   private final EventBus remoteEventBus = new EventBus();
@@ -50,10 +51,8 @@ public class BlockPropagationManagerTest {
       new FutureItems<>(SignedBeaconBlock::getSlot);
   private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
 
-  private final ChainStorageClient localStorage =
-      ChainStorageClient.memoryOnlyClient(localEventBus);
-  private final ChainStorageClient remoteStorage =
-      ChainStorageClient.memoryOnlyClient(remoteEventBus);
+  private final RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
+  private final RecentChainData remoteStorage = MemoryOnlyRecentChainData.create(remoteEventBus);
   private final BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys);
   private final BeaconChainUtil remoteChain = BeaconChainUtil.create(remoteStorage, validatorKeys);
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
@@ -104,8 +103,7 @@ public class BlockPropagationManagerTest {
     final UnsignedLong nextNextSlot = nextSlot.plus(UnsignedLong.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
-    final SignedBeaconBlock nextNextBlock =
-        remoteChain.createAndImportBlockAtSlot(nextNextSlot).getBlock();
+    final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
 
     incrementSlot();
     incrementSlot();
@@ -119,7 +117,7 @@ public class BlockPropagationManagerTest {
   @Test
   public void onGossipedBlock_futureBlock() throws Exception {
     final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
-    final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock();
+    final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
     localEventBus.post(new GossipedBlockEvent(nextBlock));
     assertThat(importedBlocks.get()).isEmpty();
@@ -134,8 +132,7 @@ public class BlockPropagationManagerTest {
     final UnsignedLong nextNextSlot = nextSlot.plus(UnsignedLong.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
-    final SignedBeaconBlock nextNextBlock =
-        remoteChain.createAndImportBlockAtSlot(nextNextSlot).getBlock();
+    final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
 
     incrementSlot();
     localEventBus.post(new GossipedBlockEvent(nextNextBlock));
@@ -152,7 +149,7 @@ public class BlockPropagationManagerTest {
 
     for (int i = 0; i < blockCount; i++) {
       final UnsignedLong nextSlot = incrementSlot();
-      blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock());
+      blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 
     // Gossip all blocks except the first
@@ -179,7 +176,7 @@ public class BlockPropagationManagerTest {
     for (int i = 0; i < invalidChainDepth; i++) {
       final UnsignedLong nextSlot = incrementSlot();
       final SignedBeaconBlock block =
-          DataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot, i);
+          dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
       invalidBlockDescendants.add(block);
       parentBlockRoot = block.getMessage().hash_tree_root();
     }
@@ -211,7 +208,7 @@ public class BlockPropagationManagerTest {
     for (int i = 0; i < invalidChainDepth; i++) {
       final UnsignedLong nextSlot = incrementSlot();
       final SignedBeaconBlock block =
-          DataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot, i);
+          dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
       invalidBlockDescendants.add(block);
       parentBlockRoot = block.getMessage().hash_tree_root();
     }
@@ -249,7 +246,7 @@ public class BlockPropagationManagerTest {
     incrementSlot();
     for (int i = 0; i < blockCount; i++) {
       final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.valueOf(i + 1));
-      blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock());
+      blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 
     // Gossip all blocks except the first
@@ -282,7 +279,7 @@ public class BlockPropagationManagerTest {
   private UnsignedLong incrementSlot() {
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
     localChain.setSlot(currentSlot);
-    localEventBus.post(new SlotEvent(currentSlot));
+    blockPropagationManager.onSlot(currentSlot);
     return currentSlot;
   }
 }

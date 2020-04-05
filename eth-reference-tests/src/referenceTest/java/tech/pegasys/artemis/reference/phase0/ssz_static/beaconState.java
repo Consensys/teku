@@ -26,14 +26,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class beaconState extends TestSuite {
 
-  @ParameterizedTest(
-      name =
-          "{index}. ssz_static/BeaconState deserializedBeaconState={0}, root={1}, signingRoot={2}")
+  @ParameterizedTest(name = "{index}. ssz_static/BeaconState root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
@@ -57,6 +56,6 @@ public class beaconState extends TestSuite {
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
     Path path = Paths.get(config, "phase0", "ssz_static", "BeaconState");
-    return sszStaticSetup(path, configPath, BeaconState.class);
+    return sszStaticSetup(path, configPath, BeaconStateImpl.class);
   }
 }

@@ -1,0 +1,5 @@
+dependencies {
+  implementation 'org.apache.commons:commons-lang3'
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-ssz'
+}
