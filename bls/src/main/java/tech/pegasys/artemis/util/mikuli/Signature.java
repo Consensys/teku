@@ -22,6 +22,7 @@ import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 
 /** This class represents a Signature on G2 */
@@ -39,9 +40,18 @@ public final class Signature {
    * @return Signature
    */
   static Signature aggregate(List<Signature> signatures) {
-    return signatures.isEmpty()
-        ? new Signature(new G2Point())
-        : signatures.stream().reduce(Signature::combine).get();
+    return aggregate(signatures.stream());
+  }
+
+  /**
+   * Aggregates a stream of Signature pairs, returns the signature that corresponds to G2 point at
+   * infinity if list is empty
+   *
+   * @param signatures The stream of signatures to aggregate
+   * @return Signature
+   */
+  static Signature aggregate(Stream<Signature> signatures) {
+    return signatures.reduce(Signature::combine).orElseGet(() -> new Signature(new G2Point()));
   }
 
   /**

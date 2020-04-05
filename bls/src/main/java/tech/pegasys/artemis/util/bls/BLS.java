@@ -15,10 +15,10 @@ package tech.pegasys.artemis.util.bls;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.mikuli.BLS12381;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
 /**
  * Implements the standard interfaces for BLS methods as defined in
@@ -62,9 +62,19 @@ public class BLS {
    * @return the aggregated signature
    */
   public static BLSSignature aggregate(List<BLSSignature> signatures) {
-    List<Signature> signatureObjects =
-        signatures.stream().map(BLSSignature::getSignature).collect(Collectors.toList());
-    return new BLSSignature(BLS12381.aggregate(signatureObjects));
+    return aggregate(signatures.stream());
+  }
+
+  /**
+   * Aggregates a stream of BLSSignatures into a single BLSSignature.
+   *
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.7
+   *
+   * @param signatures the stream of signatures to be aggregated
+   * @return the aggregated signature
+   */
+  public static BLSSignature aggregate(final Stream<BLSSignature> signatures) {
+    return new BLSSignature(BLS12381.aggregate(signatures.map(BLSSignature::getSignature)));
   }
 
   /**

@@ -17,28 +17,38 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.util.AttestationUtil;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.bls.BLS;
 
 class AggregateAttestationBuilder {
   private final Set<Attestation> includedAttestations = new HashSet<>();
-  private Attestation currentAggregate;
+  private final AttestationData attestationData;
+  private Bitlist currentAggregateBits;
+
+  AggregateAttestationBuilder(final AttestationData attestationData) {
+    this.attestationData = attestationData;
+  }
 
   public boolean canAggregate(final Attestation candidate) {
-    return currentAggregate == null
-        || !currentAggregate.getAggregation_bits().intersects(candidate.getAggregation_bits());
+    return currentAggregateBits == null
+        || !currentAggregateBits.intersects(candidate.getAggregation_bits());
   }
 
   public void aggregate(final Attestation attestation) {
     includedAttestations.add(attestation);
-    if (currentAggregate == null) {
-      currentAggregate = attestation;
+    if (currentAggregateBits == null) {
+      currentAggregateBits = attestation.getAggregation_bits();
     } else {
-      currentAggregate = AttestationUtil.aggregateAttestations(currentAggregate, attestation);
+      currentAggregateBits.setAllBits(attestation.getAggregation_bits());
     }
   }
 
-  public Attestation getAggregate() {
-    return currentAggregate;
+  public Attestation buildAggregate() {
+    return new Attestation(
+        currentAggregateBits,
+        attestationData,
+        BLS.aggregate(includedAttestations.stream().map(Attestation::getAggregate_signature)));
   }
 
   public Collection<Attestation> getIncludedAttestations() {

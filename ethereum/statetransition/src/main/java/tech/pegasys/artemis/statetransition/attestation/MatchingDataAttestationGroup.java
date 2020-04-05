@@ -76,10 +76,10 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
 
     @Override
     public Attestation next() {
-      final AggregateAttestationBuilder builder = new AggregateAttestationBuilder();
+      final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(attestationData);
       streamRemainingAttestations().filter(builder::canAggregate).forEach(builder::aggregate);
       includedAttestations.addAll(builder.getIncludedAttestations());
-      return builder.getAggregate();
+      return builder.buildAggregate();
     }
 
     public Stream<Attestation> streamRemainingAttestations() {
