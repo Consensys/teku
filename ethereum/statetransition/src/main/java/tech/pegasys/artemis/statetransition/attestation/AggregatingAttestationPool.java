@@ -13,14 +13,11 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
-import com.google.common.collect.Iterators;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
@@ -29,7 +26,7 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 
-public class AggregatingAttestationPool implements Iterable<Attestation> {
+public class AggregatingAttestationPool {
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new LinkedHashMap<>();
@@ -56,14 +53,10 @@ public class AggregatingAttestationPool implements Iterable<Attestation> {
 
   public synchronized SSZList<Attestation> getAttestationsForBlock(final UnsignedLong slot) {
     final SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
-    final AggregatingIterator iterator =
-        new AggregatingIterator(
-            Iterators.filter(
-                attestationGroupByDataHash.values().iterator(),
-                group -> canBeIncluded(group, slot)));
-    while (iterator.hasNext() && attestations.size() < attestations.getMaxSize()) {
-      attestations.add(iterator.next());
-    }
+    attestationGroupByDataHash.values().stream()
+        .filter(group -> canBeIncluded(group, slot))
+        .flatMap(MatchingDataAttestationGroup::stream)
+        .forEach(attestations::add);
     return attestations;
   }
 
@@ -75,7 +68,7 @@ public class AggregatingAttestationPool implements Iterable<Attestation> {
       return Optional.empty();
     }
 
-    return Optional.of(attestations.iterator().next());
+    return attestations.stream().findFirst();
   }
 
   public boolean canBeIncluded(final MatchingDataAttestationGroup group, final UnsignedLong slot) {
@@ -83,41 +76,8 @@ public class AggregatingAttestationPool implements Iterable<Attestation> {
     return group.getAttestationData().getSlot().compareTo(slot) < 0;
   }
 
-  @Override
-  public Iterator<Attestation> iterator() {
-    return new AggregatingIterator();
-  }
-
   public Stream<Attestation> stream() {
-    return StreamSupport.stream(spliterator(), false);
-  }
-
-  private class AggregatingIterator implements Iterator<Attestation> {
-
-    private final Iterator<MatchingDataAttestationGroup> groupsIterator;
-
-    private Iterator<Attestation> currentGroupIterator;
-
-    private AggregatingIterator() {
-      this(attestationGroupByDataHash.values().iterator());
-    }
-
-    private AggregatingIterator(final Iterator<MatchingDataAttestationGroup> groupsIterator) {
-      this.groupsIterator = groupsIterator;
-    }
-
-    @Override
-    public boolean hasNext() {
-      return groupsIterator.hasNext()
-          || (currentGroupIterator != null && currentGroupIterator.hasNext());
-    }
-
-    @Override
-    public Attestation next() {
-      if (currentGroupIterator == null || !currentGroupIterator.hasNext()) {
-        currentGroupIterator = groupsIterator.next().iterator();
-      }
-      return currentGroupIterator.next();
-    }
+    return attestationGroupByDataHash.values().stream()
+        .flatMap(MatchingDataAttestationGroup::stream);
   }
 }

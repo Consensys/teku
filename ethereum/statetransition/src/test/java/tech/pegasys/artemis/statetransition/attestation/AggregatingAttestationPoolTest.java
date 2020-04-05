@@ -66,7 +66,7 @@ class AggregatingAttestationPoolTest {
   }
 
   private void assertAttestations(final Attestation... expectedAttestations) {
-    assertThat(aggregatingPool).containsExactly(expectedAttestations);
+    assertThat(aggregatingPool.stream()).containsExactly(expectedAttestations);
   }
 
   private Attestation addAttestationFromValidators(

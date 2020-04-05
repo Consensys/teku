@@ -21,6 +21,7 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 
@@ -48,6 +49,10 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
   @Override
   public Iterator<Attestation> iterator() {
     return new AggregatingIterator();
+  }
+
+  public Stream<Attestation> stream() {
+    return StreamSupport.stream(spliterator(), false);
   }
 
   public boolean isEmpty() {
