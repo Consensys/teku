@@ -24,9 +24,9 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.config.Constants;
 
-class AggregatingPoolTest {
+class AggregatingAttestationPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final AggregatingPool aggregatingPool = new AggregatingPool();
+  private final AggregatingAttestationPool aggregatingPool = new AggregatingAttestationPool();
 
   @Test
   public void shouldNotAggregateAttestationsWithDifferentData() {
@@ -66,10 +66,7 @@ class AggregatingPoolTest {
   }
 
   private void assertAttestations(final Attestation... expectedAttestations) {
-    for (Attestation expectedAttestation : expectedAttestations) {
-      assertThat(aggregatingPool.removeNextBestAttestation()).contains(expectedAttestation);
-    }
-    assertThat(aggregatingPool.removeNextBestAttestation()).isEmpty();
+    assertThat(aggregatingPool).containsExactly(expectedAttestations);
   }
 
   private Attestation addAttestationFromValidators(
