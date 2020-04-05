@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
@@ -38,7 +39,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -57,11 +58,11 @@ class ValidatorApiHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
-  private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
+  private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final EventBus eventBus = mock(EventBus.class);
 
   private final ValidatorApiHandler validatorApiHandler =
-      new ValidatorApiHandler(chainDataClient, blockFactory, attestationAggregator, eventBus);
+      new ValidatorApiHandler(chainDataClient, blockFactory, attestationPool, eventBus);
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
@@ -239,7 +240,7 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationAggregator).addOwnValidatorAttestation(attestation);
+    verify(attestationPool).add(attestation);
     verify(eventBus).post(attestation);
   }
 
@@ -249,6 +250,14 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendSignedBlock(block);
 
     verify(eventBus).post(new ProposedBlockEvent(block));
+  }
+
+  @Test
+  public void sendAggregateAndProof_shouldPostAggregateAndProof() {
+    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
+    validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
+
+    verify(eventBus).post(aggregateAndProof);
   }
 
   private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(

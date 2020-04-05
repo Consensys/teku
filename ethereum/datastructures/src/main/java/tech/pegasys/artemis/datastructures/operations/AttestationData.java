@@ -135,7 +135,6 @@ public class AttestationData extends AbstractImmutableContainer<AttestationData>
         .toString();
   }
 
-
   public UnsignedLong getEarliestSlotForProcessing() {
     // Attestations can't be processed until their slot is in the past and until we are in the same
     // epoch as their target.

@@ -23,10 +23,10 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -35,19 +35,19 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 public class BlockFactory {
   private final BlockProposalUtil blockCreator;
   private final StateTransition stateTransition;
-  private final BlockAttestationsPool blockAttestationsPool;
+  private final AggregatingAttestationPool attestationPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
 
   public BlockFactory(
       final BlockProposalUtil blockCreator,
       final StateTransition stateTransition,
-      final BlockAttestationsPool blockAttestationsPool,
+      final AggregatingAttestationPool attestationPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache) {
     this.blockCreator = blockCreator;
     this.stateTransition = stateTransition;
-    this.blockAttestationsPool = blockAttestationsPool;
+    this.attestationPool = attestationPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
   }
@@ -64,7 +64,7 @@ public class BlockFactory {
     stateTransition.process_slots(newState, newSlot);
 
     // Collect attestations to include
-    SSZList<Attestation> attestations = blockAttestationsPool.getAttestationsForSlot(newSlot);
+    SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(newSlot);
     // Collect slashing to include
     final SSZList<ProposerSlashing> slashingsInBlock =
         BeaconBlockBodyLists.createProposerSlashings();
