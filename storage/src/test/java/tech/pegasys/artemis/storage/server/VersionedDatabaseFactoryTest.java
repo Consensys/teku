@@ -39,10 +39,11 @@ public class VersionedDatabaseFactoryTest {
   @Test
   public void createDatabase_fromEmptyDataDir() throws Exception {
     final VersionedDatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
-    final Database db = dbFactory.createDatabase();
-    assertThat(db).isNotNull();
+    try (final Database db = dbFactory.createDatabase()) {
+      assertThat(db).isNotNull();
 
-    assertDbVersionSaved(dataDir, DatabaseVersion.DEFAULT_VERSION);
+      assertDbVersionSaved(dataDir, DatabaseVersion.DEFAULT_VERSION);
+    }
   }
 
   @Test
@@ -51,8 +52,9 @@ public class VersionedDatabaseFactoryTest {
     createVersionFile(dataDir, DatabaseVersion.V1);
 
     final VersionedDatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
-    final Database db = dbFactory.createDatabase();
-    assertThat(db).isNotNull();
+    try (final Database db = dbFactory.createDatabase()) {
+      assertThat(db).isNotNull();
+    }
   }
 
   @Test

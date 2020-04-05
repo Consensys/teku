@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -40,18 +39,19 @@ public class attestation extends TestSuite {
   @ParameterizedTest(name = "{index}. process attestation success")
   @MethodSource({"mainnetAttestationSuccessSetup", "minimalAttestationSuccessSetup"})
   void processAttestationSuccess(Attestation attestation, BeaconState pre, BeaconState post) {
-    MutableBeaconState wState = pre.createWritableCopy();
-    assertDoesNotThrow(() -> process_attestations(wState, SSZList.singleton(attestation)));
+    BeaconState wState =
+        assertDoesNotThrow(
+            () ->
+                pre.updated(state -> process_attestations(state, SSZList.singleton(attestation))));
     assertEquals(post, wState);
   }
 
   @ParameterizedTest(name = "{index}. process attestation")
   @MethodSource({"mainnetAttestationSetup", "minimalAttestationSetup"})
   void processAttestation(Attestation attestation, BeaconState pre) {
-    MutableBeaconState wState = pre.createWritableCopy();
     assertThrows(
         BlockProcessingException.class,
-        () -> process_attestations(wState, SSZList.singleton(attestation)));
+        () -> pre.updated(state -> process_attestations(state, SSZList.singleton(attestation))));
   }
 
   @MustBeClosed

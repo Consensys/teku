@@ -18,21 +18,28 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.TestUtil;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractCompositeViewRead;
 import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.MutableContainerImpl;
+import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
+import tech.pegasys.artemis.util.backing.view.ContainerViewWriteImpl;
 
 public class ContainerViewTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -46,31 +53,71 @@ public class ContainerViewTest {
 
   public interface SubContainerRead extends ContainerViewRead {
 
-    UnsignedLong getLong1();
+    ContainerViewType<SubContainerRead> TYPE =
+        new ContainerViewType<>(
+            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE),
+            SubContainerReadImpl::new);
 
-    UnsignedLong getLong2();
+    default UnsignedLong getLong1() {
+      return ((UInt64View) get(0)).get();
+    }
+
+    default UnsignedLong getLong2() {
+      return ((UInt64View) get(1)).get();
+    }
   }
 
-  public interface SubContainerWrite extends SubContainerRead, ContainerViewWrite {
+  public interface SubContainerWrite extends SubContainerRead, ContainerViewWriteRef {
 
-    void setLong1(UnsignedLong val);
+    default void setLong1(UnsignedLong val) {
+      set(0, new UInt64View(val));
+    }
 
-    void setLong2(UnsignedLong val);
+    default void setLong2(UnsignedLong val) {
+      set(1, new UInt64View(val));
+    }
   }
 
   public interface ContainerRead extends ContainerViewRead {
 
-    UnsignedLong getLong1();
+    public static final ContainerViewType<ContainerReadImpl> TYPE =
+        new ContainerViewType<>(
+            List.of(
+                BasicViewTypes.UINT64_TYPE,
+                BasicViewTypes.UINT64_TYPE,
+                SubContainerRead.TYPE,
+                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
+                new ListViewType<>(SubContainerRead.TYPE, 2),
+                new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
+            ContainerReadImpl::new);
 
-    UnsignedLong getLong2();
+    static ContainerRead createDefault() {
+      return ContainerReadImpl.TYPE.getDefault();
+    }
 
-    SubContainerRead getSub1();
+    default UnsignedLong getLong1() {
+      return ((UInt64View) get(0)).get();
+    }
 
-    ListViewRead<UInt64View> getList1();
+    default UnsignedLong getLong2() {
+      return ((UInt64View) get(1)).get();
+    }
 
-    ListViewRead<SubContainerRead> getList2();
+    default SubContainerRead getSub1() {
+      return (SubContainerRead) get(2);
+    }
 
-    VectorViewRead<ImmutableSubContainer> getList3();
+    default ListViewRead<UInt64View> getList1() {
+      return getAny(3);
+    }
+
+    default ListViewRead<SubContainerRead> getList2() {
+      return getAny(4);
+    }
+
+    default VectorViewRead<ImmutableSubContainer> getList3() {
+      return getAny(5);
+    }
 
     @Override
     ContainerWrite createWritableCopy();
@@ -98,8 +145,7 @@ public class ContainerViewTest {
     ContainerRead commitChanges();
   }
 
-  public static class ImmutableSubContainerImpl
-      extends AbstractImmutableContainer<ImmutableSubContainerImpl>
+  public static class ImmutableSubContainerImpl extends AbstractImmutableContainer
       implements ImmutableSubContainer {
 
     public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
@@ -127,73 +173,84 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerImpl extends MutableContainerImpl<SubContainerImpl>
-      implements SubContainerWrite {
+  public static class SubContainerReadImpl extends ContainerViewReadImpl
+      implements SubContainerRead {
 
-    public static final ContainerViewType<SubContainerImpl> TYPE =
-        new ContainerViewType<>(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE), SubContainerImpl::new);
+    public SubContainerReadImpl(TreeNode backingNode, IntCache<ViewRead> cache) {
+      super(TYPE, backingNode, cache);
+    }
 
-    private SubContainerImpl(ContainerViewType<SubContainerImpl> type, TreeNode backingNode) {
+    private SubContainerReadImpl(ContainerViewType<SubContainerRead> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
     @Override
-    public UnsignedLong getLong1() {
-      return ((UInt64View) get(0)).get();
-    }
-
-    @Override
-    public UnsignedLong getLong2() {
-      return ((UInt64View) get(1)).get();
-    }
-
-    @Override
-    public void setLong1(UnsignedLong val) {
-      set(0, new UInt64View(val));
-    }
-
-    @Override
-    public void setLong2(UnsignedLong val) {
-      set(1, new UInt64View(val));
+    public SubContainerWrite createWritableCopy() {
+      return new SubContainerWriteImpl(this);
     }
   }
 
-  public static class ContainerImpl extends MutableContainerImpl<ContainerImpl>
-      implements ContainerWrite {
+  public static class SubContainerWriteImpl extends ContainerViewWriteImpl
+      implements SubContainerWrite {
 
-    public static final ContainerViewType<ContainerImpl> TYPE =
-        new ContainerViewType<>(
-            List.of(
-                BasicViewTypes.UINT64_TYPE,
-                BasicViewTypes.UINT64_TYPE,
-                SubContainerImpl.TYPE,
-                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
-                new ListViewType<>(SubContainerImpl.TYPE, 2),
-                new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
-            ContainerImpl::new);
+    public SubContainerWriteImpl(SubContainerReadImpl backingImmutableView) {
+      super(backingImmutableView);
+    }
 
-    public ContainerImpl(ContainerViewType<ContainerImpl> type, TreeNode backingNode) {
+    @Override
+    protected AbstractCompositeViewRead<ViewRead> createViewRead(
+        TreeNode backingNode, IntCache<ViewRead> viewCache) {
+      return new SubContainerReadImpl(backingNode, viewCache);
+    }
+
+    @Override
+    public SubContainerRead commitChanges() {
+      return (SubContainerRead) super.commitChanges();
+    }
+  }
+
+  public static class ContainerReadImpl extends ContainerViewReadImpl implements ContainerRead {
+
+    public ContainerReadImpl(ContainerViewType<?> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
-    public static ContainerRead createDefault() {
-      return TYPE.getDefault();
+    public ContainerReadImpl(
+        CompositeViewType type, TreeNode backingNode, IntCache<ViewRead> cache) {
+      super(type, backingNode, cache);
     }
 
     @Override
-    public UnsignedLong getLong1() {
-      return ((UInt64View) get(0)).get();
+    public ContainerWrite createWritableCopy() {
+      return new ContainerWriteImpl(this);
+    }
+  }
+
+  public static class ContainerWriteImpl extends ContainerViewWriteImpl implements ContainerWrite {
+
+    public ContainerWriteImpl(ContainerReadImpl backingImmutableView) {
+      super(backingImmutableView);
     }
 
     @Override
-    public UnsignedLong getLong2() {
-      return ((UInt64View) get(1)).get();
+    protected AbstractCompositeViewRead<ViewRead> createViewRead(
+        TreeNode backingNode, IntCache<ViewRead> viewCache) {
+      return new ContainerReadImpl(getType(), backingNode, viewCache);
     }
 
     @Override
-    public SubContainerImpl getSub1() {
-      return (SubContainerImpl) getByRef(2);
+    public ContainerRead commitChanges() {
+      return (ContainerRead) super.commitChanges();
+    }
+
+    @Override
+    public ContainerWrite createWritableCopy() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SubContainerWrite getSub1() {
+      return (SubContainerWrite) getByRef(2);
     }
 
     @Override
@@ -227,7 +284,7 @@ public class ContainerViewTest {
 
   @Test
   public void readWriteContainerTest1() {
-    ContainerRead c1 = ContainerImpl.createDefault();
+    ContainerRead c1 = ContainerRead.createDefault();
 
     {
       assertThat(c1.getSub1().getLong1()).isEqualTo(UnsignedLong.ZERO);
@@ -345,5 +402,100 @@ public class ContainerViewTest {
 
     assertThat(c1r.getList2().get(1).getLong2()).isEqualTo(UnsignedLong.valueOf(0x888));
     assertThat(c2r.getList2().get(1).getLong2()).isEqualTo(UnsignedLong.valueOf(0xaaa));
+  }
+
+  // The threading test is probabilistic and may have false positives
+  // (i.e. pass on incorrect implementation)
+  @Test
+  public void testThreadSafety() throws InterruptedException {
+    ContainerWrite c1w = ContainerRead.createDefault().createWritableCopy();
+    c1w.setLong1(UnsignedLong.valueOf(0x1));
+    c1w.setLong2(UnsignedLong.valueOf(0x2));
+
+    c1w.getSub1().setLong1(UnsignedLong.valueOf(0x111));
+    c1w.getSub1().setLong2(UnsignedLong.valueOf(0x222));
+
+    c1w.getList1().append(UInt64View.fromLong(0x333));
+    c1w.getList1().append(UInt64View.fromLong(0x444));
+
+    c1w.getList2()
+        .append(
+            sc -> {
+              sc.setLong1(UnsignedLong.valueOf(0x555));
+              sc.setLong2(UnsignedLong.valueOf(0x666));
+            });
+
+    c1w.getList3()
+        .set(
+            0,
+            new ImmutableSubContainerImpl(
+                UnsignedLong.valueOf(0x999), Bytes32.leftPad(Bytes.fromHexString("0xa999"))));
+    c1w.getList3()
+        .set(
+            1,
+            new ImmutableSubContainerImpl(
+                UnsignedLong.valueOf(0xaaa), Bytes32.leftPad(Bytes.fromHexString("0xaaaa"))));
+
+    ContainerRead c1r = c1w.commitChanges();
+
+    // sanity check of equalsByGetters
+    assertThat(Utils.equalsByGetters(c1r, c1w)).isTrue();
+    ContainerWrite c2w = c1r.createWritableCopy();
+    c2w.getList2().getByRef(0).setLong1(UnsignedLong.valueOf(293874));
+    assertThat(Utils.equalsByGetters(c1r, c2w)).isFalse();
+    assertThat(Utils.equalsByGetters(c1r, c2w.commitChanges())).isFalse();
+
+    // new container from backing tree without any cached views
+    ContainerRead c2r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
+    // concurrently traversing children of the the same view instance to make sure the internal
+    // cache is thread safe
+    List<Future<Boolean>> futures =
+        TestUtil.executeParallel(() -> Utils.equalsByGetters(c2r, c1r), 512);
+
+    assertThat(TestUtil.waitAll(futures)).containsOnly(true);
+
+    Consumer<ContainerWrite> containerMutator =
+        w -> {
+          w.setLong2(UnsignedLong.valueOf(0x11111));
+          w.getSub1().setLong2(UnsignedLong.valueOf(0x22222));
+          w.getList1().append(UInt64View.fromLong(0x44444));
+          w.getList1().set(0, UInt64View.fromLong(0x11111));
+          SubContainerWrite sc = w.getList2().append();
+          sc.setLong1(UnsignedLong.valueOf(0x77777));
+          sc.setLong2(UnsignedLong.valueOf(0x88888));
+          w.getList2().getByRef(0).setLong2(UnsignedLong.valueOf(0x44444));
+          w.getList3()
+              .set(
+                  0,
+                  new ImmutableSubContainerImpl(
+                      UnsignedLong.valueOf(0x99999),
+                      Bytes32.leftPad(Bytes.fromHexString("0xa99999"))));
+        };
+    ContainerWrite c3w = c1r.createWritableCopy();
+    containerMutator.accept(c3w);
+    ContainerRead c3r = c3w.commitChanges();
+
+    ContainerRead c4r = ContainerRead.TYPE.createFromBackingNode(c1r.getBackingNode());
+
+    assertThat(Utils.equalsByGetters(c1r, c4r)).isTrue();
+    // make updated view from the source view in parallel
+    // this tests that mutable view caches are merged and transferred
+    // in a thread safe way
+    List<Future<ContainerRead>> modifiedFuts =
+        TestUtil.executeParallel(
+            () -> {
+              ContainerWrite w = c4r.createWritableCopy();
+              containerMutator.accept(w);
+              return w.commitChanges();
+            },
+            512);
+
+    List<ContainerRead> modified = TestUtil.waitAll(modifiedFuts);
+    assertThat(Utils.equalsByGetters(c1r, c4r)).isTrue();
+    assertThat(c1r.hashTreeRoot()).isEqualTo(c4r.hashTreeRoot());
+
+    assertThat(modified)
+        .allMatch(
+            c -> Utils.equalsByGetters(c, c3r) && c.hashTreeRoot().equals(c3r.hashTreeRoot()));
   }
 }

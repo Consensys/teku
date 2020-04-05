@@ -33,8 +33,6 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -43,7 +41,7 @@ import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPo
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -267,16 +265,22 @@ class ValidatorApiHandlerTest {
   }
 
   private BeaconState createStateWithActiveValidators() {
-    final MutableBeaconState state = dataStructureUtil.randomBeaconState(32).createWritableCopy();
-    state.setSlot(PREVIOUS_EPOCH_START_SLOT);
-    final SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
-    for (int i = 0; i < validators.size(); i++) {
-      final MutableValidator validator = validators.get(i);
-      validator.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-      validator.setActivation_epoch(UnsignedLong.ZERO);
-      validator.setExit_epoch(Constants.FAR_FUTURE_EPOCH);
-      validator.setWithdrawable_epoch(Constants.FAR_FUTURE_EPOCH);
-    }
-    return state.commitChanges();
+    return dataStructureUtil
+        .randomBeaconState(32)
+        .updated(
+            state -> {
+              state.setSlot(PREVIOUS_EPOCH_START_SLOT);
+              final SSZMutableList<Validator> validators = state.getValidators();
+              for (int i = 0; i < validators.size(); i++) {
+                validators.update(
+                    i,
+                    validator ->
+                        validator
+                            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
+                            .withActivation_epoch(UnsignedLong.ZERO)
+                            .withExit_epoch(Constants.FAR_FUTURE_EPOCH)
+                            .withWithdrawable_epoch(Constants.FAR_FUTURE_EPOCH));
+              }
+            });
   }
 }

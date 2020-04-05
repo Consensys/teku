@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -66,7 +67,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.SigningRoot;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
@@ -277,11 +277,21 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
    */
   public static UnsignedLong get_total_active_balance(BeaconState state) {
+    return get_total_active_balance_with_root(state).getLeft();
+  }
+
+  public static Pair<UnsignedLong, UnsignedLong> get_total_active_balance_with_root(
+      BeaconState state) {
     return BeaconStateCache.getTransitionCaches(state)
         .getTotalActiveBalance()
         .get(
             get_current_epoch(state),
-            epoch -> get_total_balance(state, get_active_validator_indices(state, epoch)));
+            epoch -> {
+              UnsignedLong total_balance =
+                  get_total_balance(state, get_active_validator_indices(state, epoch));
+              UnsignedLong squareroot = integer_squareroot(total_balance);
+              return Pair.of(total_balance, squareroot);
+            });
   }
 
   /**
@@ -433,7 +443,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#initiate_validator_exit</a>
    */
   public static void initiate_validator_exit(MutableBeaconState state, int index) {
-    MutableValidator validator = state.getValidators().get(index);
+    Validator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
     if (!validator.getExit_epoch().equals(FAR_FUTURE_EPOCH)) {
       return;
@@ -460,9 +470,15 @@ public class BeaconStateUtil {
     }
 
     // Set validator exit epoch and withdrawable epoch
-    validator.setExit_epoch(exit_queue_epoch);
-    validator.setWithdrawable_epoch(
-        validator.getExit_epoch().plus(UnsignedLong.valueOf(MIN_VALIDATOR_WITHDRAWABILITY_DELAY)));
+    state
+        .getValidators()
+        .set(
+            index,
+            validator
+                .withExit_epoch(exit_queue_epoch)
+                .withWithdrawable_epoch(
+                    exit_queue_epoch.plus(
+                        UnsignedLong.valueOf(MIN_VALIDATOR_WITHDRAWABILITY_DELAY))));
   }
 
   /**
@@ -479,12 +495,20 @@ public class BeaconStateUtil {
       MutableBeaconState state, int slashed_index, int whistleblower_index) {
     UnsignedLong epoch = get_current_epoch(state);
     initiate_validator_exit(state, slashed_index);
-    MutableValidator validator = state.getValidators().get(slashed_index);
-    validator.setSlashed(true);
-    validator.setWithdrawable_epoch(
-        max(
-            validator.getWithdrawable_epoch(),
-            epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR))));
+
+    Validator validator = state.getValidators().get(slashed_index);
+
+    state
+        .getValidators()
+        .set(
+            slashed_index,
+            validator
+                .withSlashed(true)
+                .withWithdrawable_epoch(
+                    max(
+                        validator.getWithdrawable_epoch(),
+                        epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)))));
+
     int index = epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
     state
         .getSlashings()

@@ -15,9 +15,9 @@ package tech.pegasys.artemis.networking.p2p.connection;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import tech.pegasys.artemis.datastructures.util.cache.Cache;
-import tech.pegasys.artemis.datastructures.util.cache.LRUCache;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
+import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.LRUCache;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class ReputationManager {

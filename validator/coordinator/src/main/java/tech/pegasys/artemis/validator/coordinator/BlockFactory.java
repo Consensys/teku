@@ -22,7 +22,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -59,9 +58,8 @@ public class BlockFactory {
       final BLSSignature randaoReveal)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
 
-    MutableBeaconState newState = previousState.createWritableCopy();
     // Process empty slots up to the new slot
-    stateTransition.process_slots(newState, newSlot);
+    BeaconState newState = stateTransition.process_slots(previousState, newSlot);
 
     // Collect attestations to include
     SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(newSlot);

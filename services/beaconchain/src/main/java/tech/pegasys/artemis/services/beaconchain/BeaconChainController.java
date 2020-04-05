@@ -422,15 +422,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
     final boolean nextSlotDue = isNextSlotDue(currentTime);
 
+    final Store.Transaction transaction = recentChainData.startStoreTransaction();
+    on_tick(transaction, currentTime);
+    transaction.commit().join();
+
     if (syncService.isSyncActive()) {
       if (nextSlotDue) {
         processSlotWhileSyncing();
       }
       return;
     }
-    final Store.Transaction transaction = recentChainData.startStoreTransaction();
-    on_tick(transaction, currentTime);
-    transaction.commit().join();
     if (nextSlotDue) {
       processSlot();
     }

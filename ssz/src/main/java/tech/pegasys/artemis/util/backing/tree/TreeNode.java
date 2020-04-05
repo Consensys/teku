@@ -153,6 +153,15 @@ public interface TreeNode {
    */
   TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
 
+  /** Updates the tree in a batch */
+  default TreeNode updated(TreeUpdates newNodes) {
+    TreeNode ret = this;
+    for (int i = 0; i < newNodes.size(); i++) {
+      ret = ret.updated(newNodes.getGIndex(i), newNodes.getNode(i));
+    }
+    return ret;
+  }
+
   /**
    * 'Sets' a new node on place of the node at generalized index. This node and all its descendants
    * are left immutable. The updated subtree node is returned.

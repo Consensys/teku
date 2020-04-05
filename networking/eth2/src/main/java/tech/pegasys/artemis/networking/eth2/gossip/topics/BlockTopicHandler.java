@@ -27,7 +27,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
@@ -97,20 +96,19 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
 
   private boolean isBlockSignatureValid(final SignedBeaconBlock block, final BeaconState preState) {
     final StateTransition stateTransition = new StateTransition();
-    final MutableBeaconState postState = preState.createWritableCopy();
 
     try {
-      stateTransition.process_slots(postState, block.getMessage().getSlot());
+      BeaconState postState = stateTransition.process_slots(preState, block.getMessage().getSlot());
+      final int proposerIndex = get_beacon_proposer_index(postState);
+      final Validator proposer = postState.getValidators().get(proposerIndex);
+      final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
+      final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
+      final BLSSignature signature = block.getSignature();
+      return BLS.verify(proposer.getPubkey(), signing_root, signature);
+
     } catch (EpochProcessingException | SlotProcessingException e) {
       LOG.error("Unable to process block state.", e);
       return false;
     }
-
-    final int proposerIndex = get_beacon_proposer_index(postState);
-    final Validator proposer = postState.getValidators().get(proposerIndex);
-    final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
-    final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
-    final BLSSignature signature = block.getSignature();
-    return BLS.verify(proposer.getPubkey(), signing_root, signature);
   }
 }

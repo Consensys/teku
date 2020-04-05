@@ -35,13 +35,11 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final ArtemisNode node1 = createArtemisNode();
     node1.start();
     final UnsignedLong genesisTime = node1.getGenesisTime();
-    File tempDatabaseFile = node1.getDatabaseFileFromContainer();
-    File tempDatabaseVersionFile = node1.getDatabaseVersionFileFromContainer();
+    File dataDirectory = node1.getDataDirectoryFromContainer();
     node1.stop();
 
     final ArtemisNode node2 = createArtemisNode();
-    node2.copyDatabaseFileToContainer(tempDatabaseFile);
-    node2.copyDatabaseVersionFileToContainer(tempDatabaseVersionFile);
+    node2.copyContentsToWorkingDirectory(dataDirectory);
     node2.start();
     node2.waitForGenesisTime(genesisTime);
     node2.waitForNewBlock();

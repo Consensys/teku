@@ -38,7 +38,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -93,33 +93,47 @@ public class GenesisGenerator {
       // Could be null if the deposit was invalid
       return;
     }
-    MutableValidator validator = state.getValidators().get(index);
+    Validator validator = state.getValidators().get(index);
     UnsignedLong balance = state.getBalances().get(index);
     UnsignedLong effective_balance =
         BeaconStateUtil.min(
             balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
             UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
-    validator.setEffective_balance(effective_balance);
+
+    UnsignedLong activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
+    UnsignedLong activation_epoch = validator.getActivation_epoch();
 
     if (validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
-      validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
-      validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+      activation_eligibility_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
+      activation_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
     }
+
+    Validator modifiedValidator =
+        new Validator(
+            validator.getPubkey(),
+            validator.getWithdrawal_credentials(),
+            effective_balance,
+            validator.isSlashed(),
+            activation_eligibility_epoch,
+            activation_epoch,
+            validator.getExit_epoch(),
+            validator.getWithdrawable_epoch());
+
+    state.getValidators().set(index, modifiedValidator);
   }
 
-  public MutableBeaconState getGenesisState() {
+  public BeaconState getGenesisState() {
     return getGenesisStateIfValid(state -> true).orElseThrow();
   }
 
-  public Optional<MutableBeaconState> getGenesisStateIfValid(
-      Predicate<BeaconState> validityCriteria) {
+  public Optional<BeaconState> getGenesisStateIfValid(Predicate<BeaconState> validityCriteria) {
     if (!validityCriteria.test(state)) {
       return Optional.empty();
     }
 
     finalizeState();
 
-    return Optional.of(state.createWritableCopy());
+    return Optional.of(state.commitChanges());
   }
 
   private void finalizeState() {

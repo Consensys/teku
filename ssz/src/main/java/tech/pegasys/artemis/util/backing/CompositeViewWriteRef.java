@@ -17,8 +17,9 @@ package tech.pegasys.artemis.util.backing;
  * Represents a mutable composite view which is able to return a mutable child 'by reference' Any
  * modifications made to such child are reflected in this structure and its backing tree
  */
-public interface CompositeViewWriteRef<R extends ViewRead, W extends R>
-    extends CompositeViewWrite<R> {
+public interface CompositeViewWriteRef<
+        ChildReadType extends ViewRead, ChildWriteType extends ChildReadType>
+    extends CompositeViewWrite<ChildReadType> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are
@@ -26,5 +27,5 @@ public interface CompositeViewWriteRef<R extends ViewRead, W extends R>
    *
    * @throws IndexOutOfBoundsException if index >= size()
    */
-  W getByRef(int index);
+  ChildWriteType getByRef(int index);
 }
