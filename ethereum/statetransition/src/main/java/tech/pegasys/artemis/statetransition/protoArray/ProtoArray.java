@@ -66,6 +66,29 @@ public class ProtoArray  {
             maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex));
   }
 
+  /// Follows the best-descendant links to find the best-block (i.e., head-block).
+  ///
+  /// ## Notes
+  ///
+  /// The result of this function is not guaranteed to be accurate if `Self::on_new_block` has
+  /// been called without a subsequent `Self::apply_score_changes` call. This is because
+  /// `on_new_block` does not attempt to walk backwards through the tree and update the
+  /// best-child/best-descendant links.
+  public Bytes32 findHead(Bytes32 justifiedRoot) {
+    int justifiedIndex = indices.get(justifiedRoot);
+    ProtoNode justifiedNode = nodes.get(justifiedIndex);
+
+    int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
+    ProtoNode bestNode = nodes.get(bestDescendantIndex);
+
+    // Perform a sanity check that the node is indeed valid to be the head.
+    if (!nodeIsViableForHead(bestNode)) {
+      throw new RuntimeException("ProtoArray: Best node is not viable for head");
+    }
+
+    return bestNode.getRoot();
+  }
+
   /// Iterate backwards through the array, touching all nodes and their parents and potentially
   /// the best-child of each parent.
   ///
