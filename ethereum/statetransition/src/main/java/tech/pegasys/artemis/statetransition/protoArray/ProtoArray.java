@@ -32,6 +32,40 @@ public class ProtoArray  {
   private List<ProtoNode> nodes = new ArrayList<>();
   private Map<Bytes32, Integer> indices = new HashMap<>();
 
+  /// Register a block with the fork choice.
+  ///
+  /// It is only sane to supply a `None` parent for the genesis block.
+  public void onBlock(UnsignedLong slot,
+                      Bytes32 root,
+                      Bytes32 stateRoot,
+                      UnsignedLong justifiedEpoch,
+                      UnsignedLong finalizedEpoch,
+                      Optional<Bytes32> optionalParentRoot) {
+    if (indices.containsKey(root)) {
+      return;
+    }
+
+    int nodeIndex = nodes.size();
+
+    ProtoNode node = new ProtoNode(
+            slot,
+            stateRoot,
+            root,
+            optionalParentRoot.map(parentRoot -> indices.get(parentRoot)),
+            justifiedEpoch,
+            finalizedEpoch,
+            UnsignedLong.ZERO,
+            Optional.empty(),
+            Optional.empty()
+    );
+
+    indices.put(node.getRoot(), nodeIndex);
+    nodes.add(node);
+
+    node.getParentIndex().ifPresent(parentIndex ->
+            maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex));
+  }
+
   /// Iterate backwards through the array, touching all nodes and their parents and potentially
   /// the best-child of each parent.
   ///
