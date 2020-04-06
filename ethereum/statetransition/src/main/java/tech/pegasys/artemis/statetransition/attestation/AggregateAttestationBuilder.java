@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -45,6 +47,7 @@ class AggregateAttestationBuilder {
   }
 
   public Attestation buildAggregate() {
+    checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
     return new Attestation(
         currentAggregateBits,
         attestationData,

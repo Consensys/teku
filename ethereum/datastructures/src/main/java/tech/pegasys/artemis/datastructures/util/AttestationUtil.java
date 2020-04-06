@@ -228,17 +228,4 @@ public class AttestationUtil {
     // Set attestation data
     return new AttestationData(slot, committeeIndex, beacon_block_root, source, target);
   }
-
-  public static Attestation aggregateAttestations(
-      final Attestation firstAttestation, final Attestation... attestations) {
-    final Bitlist aggregateBits = firstAttestation.getAggregation_bits().copy();
-    final List<BLSSignature> signatures = new ArrayList<>();
-    signatures.add(firstAttestation.getAggregate_signature());
-
-    for (Attestation attestation : attestations) {
-      aggregateBits.setAllBits(attestation.getAggregation_bits());
-      signatures.add(attestation.getAggregate_signature());
-    }
-    return new Attestation(aggregateBits, firstAttestation.getData(), BLS.aggregate(signatures));
-  }
 }
