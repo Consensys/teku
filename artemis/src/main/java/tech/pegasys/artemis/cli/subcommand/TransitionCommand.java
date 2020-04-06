@@ -30,6 +30,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import tech.pegasys.artemis.cli.options.NetworkOptions;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
@@ -39,7 +40,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.config.ArtemisConfigurationDeprecated;
 import tech.pegasys.artemis.util.config.Constants;
 
 @Command(
@@ -115,8 +115,7 @@ public class TransitionCommand implements Runnable {
 
   private void processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
-    Constants.setConstants(
-        ArtemisConfigurationDeprecated.fromFile(params.configFile).getConstants());
+    Constants.setConstants(params.networkOptions.getNetwork());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
@@ -171,11 +170,7 @@ public class TransitionCommand implements Runnable {
         description = "Pre (Input) path. If none is specified, input is read from STDIN")
     private String pre;
 
-    @Option(
-        names = {"-c", "--config"},
-        paramLabel = "<FILENAME>",
-        description = "Path/filename of the config file")
-    private String configFile = "./config/config.toml";
+    @Mixin private NetworkOptions networkOptions;
 
     @Override
     public String toString() {
