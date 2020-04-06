@@ -70,7 +70,7 @@ public class DepositGenerateCommand implements Runnable {
       names = {"--number-of-validators"},
       paramLabel = "<NUMBER>",
       description = "The number of validators to create keys for and register",
-      converter = NumberOfValidatorConverter.class,
+      converter = PositiveIntegerTypeConverter.class,
       defaultValue = "1")
   private int validatorCount = 1;
 
@@ -277,18 +277,18 @@ public class DepositGenerateCommand implements Runnable {
     }
   }
 
-  private static class NumberOfValidatorConverter implements ITypeConverter<Integer> {
+  private static class PositiveIntegerTypeConverter implements ITypeConverter<Integer> {
     @Override
     public Integer convert(final String value) throws TypeConversionException {
       try {
-        final int validatorCount = Integer.parseInt(value);
-        if (validatorCount <= 0) {
-          throw new TypeConversionException("Invalid value: must be a positive number");
+        final int parsedValue = Integer.parseInt(value);
+        if (parsedValue <= 0) {
+          throw new TypeConversionException("Must be a positive number");
         }
-        return validatorCount;
+        return parsedValue;
       } catch (final NumberFormatException e) {
         throw new TypeConversionException(
-            "Invalid format: must be a numeric value but was " + value);
+            "Invalid format: must be a numeric value but was '" + value + "'");
       }
     }
   }
