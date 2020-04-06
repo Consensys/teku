@@ -355,11 +355,14 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
+    final BeaconBlockAndState blockAndState = new BeaconBlockAndState(null, beaconStateInternal);
+    final SafeFuture<Optional<BeaconBlockAndState>> safeFuture =
+        completedFuture(Optional.of(blockAndState));
     final ValidatorsRequest smallRequest =
         new ValidatorsRequest(compute_epoch_at_slot(beaconState.slot), List.of(BLSPubKey.empty()));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getStateAtSlot(any(), any()))
-        .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
+    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any(), any()))
+        .thenReturn(safeFuture);
 
     final SafeFuture<Optional<BeaconValidators>> future =
         provider.getValidatorsByValidatorsRequest(smallRequest);
@@ -376,6 +379,9 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
+    final BeaconBlockAndState blockAndState = new BeaconBlockAndState(null, beaconStateInternal);
+    final SafeFuture<Optional<BeaconBlockAndState>> safeFuture =
+        completedFuture(Optional.of(blockAndState));
     final ValidatorsRequest validatorsRequest =
         new ValidatorsRequest(
             compute_epoch_at_slot(beaconState.slot),
@@ -384,8 +390,8 @@ public class ChainDataProviderTest {
                 beaconState.validators.get(11).pubkey,
                 beaconState.validators.get(99).pubkey));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getStateAtSlot(any(), any()))
-        .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
+    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any(), any()))
+        .thenReturn(safeFuture);
     final SafeFuture<Optional<BeaconValidators>> future =
         provider.getValidatorsByValidatorsRequest(validatorsRequest);
 
