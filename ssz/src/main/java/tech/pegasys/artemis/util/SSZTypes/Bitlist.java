@@ -62,7 +62,7 @@ public class Bitlist {
 
   public List<Integer> getAllSetBits() {
     final List<Integer> setBits = new ArrayList<>();
-    for (int i = data.nextSetBit(0); i > 0; i = data.nextSetBit(i + 1)) {
+    for (int i = data.nextSetBit(0); i >= 0; i = data.nextSetBit(i + 1)) {
       setBits.add(i);
     }
     return setBits;

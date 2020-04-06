@@ -46,9 +46,9 @@ class BitlistTest {
 
   @Test
   void getAllSetBits() {
-    Bitlist bitlist = create(1, 3, 8, 9);
+    Bitlist bitlist = create(0, 1, 3, 8, 9);
 
-    assertThat(bitlist.getAllSetBits()).containsExactly(1, 3, 8, 9);
+    assertThat(bitlist.getAllSetBits()).containsExactly(0, 1, 3, 8, 9);
   }
 
   @Test
