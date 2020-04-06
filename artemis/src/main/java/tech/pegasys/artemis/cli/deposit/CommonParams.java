@@ -46,7 +46,6 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class CommonParams implements Closeable {
-  private static final UnsignedLong MINIMUM_REQUIRED_GWEI = UnsignedLong.valueOf(32_000_000_000L);
   private final Consumer<Integer> shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
   @Spec private CommandSpec spec;
@@ -74,7 +73,7 @@ public class CommonParams implements Closeable {
       paramLabel = "<GWEI>",
       converter = UnsignedLongConverter.class,
       description = "Deposit amount in Gwei")
-  private UnsignedLong amount;
+  private UnsignedLong amount = UnsignedLong.valueOf(32000000000L);
 
   @Option(
       names = {"--Xconfirm-enabled"},
@@ -100,7 +99,6 @@ public class CommonParams implements Closeable {
       final ConsoleAdapter consoleAdapter) {
     this.spec = commandSpec;
     this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
-    this.amount = MINIMUM_REQUIRED_GWEI;
     this.shutdownFunction = shutdownFunction;
     this.consoleAdapter = consoleAdapter;
   }
@@ -202,22 +200,12 @@ public class CommonParams implements Closeable {
   private static class UnsignedLongConverter implements CommandLine.ITypeConverter<UnsignedLong> {
     @Override
     public UnsignedLong convert(final String value) {
-      final UnsignedLong depositAmountGwei;
-
       try {
-        depositAmountGwei = UnsignedLong.valueOf(value);
+        return UnsignedLong.valueOf(value);
       } catch (final NumberFormatException e) {
         throw new TypeConversionException(
             "Invalid format: must be a numeric value but was " + value);
       }
-
-      if (depositAmountGwei.compareTo(MINIMUM_REQUIRED_GWEI) < 0) {
-        throw new TypeConversionException(
-            String.format(
-                "The specified deposit amount [%s] does not match minimum deposit amount requirements [%s]",
-                depositAmountGwei.toString(), MINIMUM_REQUIRED_GWEI.toString()));
-      }
-      return depositAmountGwei;
     }
   }
 }
