@@ -32,6 +32,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
@@ -219,6 +220,16 @@ class ValidatorApiHandlerTest {
     assertThat(attestation.getData().getSlot()).isEqualTo(slot);
     assertThat(attestation.getAggregate_signature().toBytes())
         .isEqualTo(BLSSignature.empty().toBytes());
+  }
+
+  @Test
+  public void createAggregate_shouldReturnAggregateFromAttestationPool() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
+    when(attestationPool.createAggregateFor(attestationData)).thenReturn(aggregate);
+
+    assertThat(validatorApiHandler.createAggregate(attestationData))
+        .isCompletedWithValue(aggregate);
   }
 
   @Test
