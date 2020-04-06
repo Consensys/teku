@@ -73,7 +73,7 @@ public class CommonParams implements Closeable {
       paramLabel = "<GWEI>",
       converter = UnsignedLongConverter.class,
       description = "Deposit amount in Gwei")
-  private UnsignedLong amount = UnsignedLong.valueOf(32000000000L);
+  private UnsignedLong amount = UnsignedLong.valueOf(32_000_000_000L);
 
   @Option(
       names = {"--Xconfirm-enabled"},
