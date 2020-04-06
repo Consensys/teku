@@ -11,52 +11,51 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.blockimport;
+package tech.pegasys.artemis.core.results;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
-public class FailedBlockImportResult implements BlockImportResult {
-  private final FailureReason failureReason;
-  private final Optional<Throwable> cause;
+public class SuccessfulBlockImportResult implements BlockImportResult {
 
-  FailedBlockImportResult(final FailureReason failureReason, final Optional<Throwable> cause) {
-    this.failureReason = failureReason;
-    this.cause = cause;
+  private final SignedBeaconBlock block;
+  private final Optional<BlockProcessingRecord> record;
+
+  public SuccessfulBlockImportResult(
+      final SignedBeaconBlock block, final Optional<BlockProcessingRecord> record) {
+    this.block = block;
+    this.record = record;
   }
 
   @Override
   public boolean isSuccessful() {
-    return false;
+    return true;
   }
 
   @Override
   public Optional<BlockProcessingRecord> getBlockProcessingRecord() {
-    return Optional.empty();
+    return record;
   }
 
   @Override
   public SignedBeaconBlock getBlock() {
-    return null;
+    return block;
   }
 
   @Override
   public FailureReason getFailureReason() {
-    return failureReason;
+    return null;
   }
 
   @Override
   public Optional<Throwable> getFailureCause() {
-    return cause;
+    return Optional.empty();
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("failureReason", failureReason)
-        .add("cause", cause)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("block", block).toString();
   }
 }

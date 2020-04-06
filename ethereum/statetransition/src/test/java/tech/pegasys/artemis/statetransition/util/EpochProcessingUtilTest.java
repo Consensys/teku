@@ -17,6 +17,7 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 
 @ExtendWith(BouncyCastleExtension.class)
 @Disabled

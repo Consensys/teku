@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
@@ -52,7 +53,6 @@ import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateProcessor;
-import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
