@@ -217,6 +217,10 @@ public class BeaconChainUtil {
     }
   }
 
+  public List<BLSKeyPair> getValidatorKeys() {
+    return validatorKeys;
+  }
+
   public int getWrongProposerIndex(final int actualProposerIndex) {
     return actualProposerIndex == 0 ? 1 : actualProposerIndex - 1;
   }
