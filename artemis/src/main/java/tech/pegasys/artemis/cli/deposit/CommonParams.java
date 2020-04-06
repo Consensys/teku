@@ -73,7 +73,7 @@ public class CommonParams implements Closeable {
       paramLabel = "<GWEI>",
       converter = UnsignedLongConverter.class,
       description = "Deposit amount in Gwei")
-  private UnsignedLong amount = UnsignedLong.valueOf(32_000_000_000L);
+  private UnsignedLong amount;
 
   @Option(
       names = {"--Xconfirm-enabled"},
@@ -99,6 +99,7 @@ public class CommonParams implements Closeable {
       final ConsoleAdapter consoleAdapter) {
     this.spec = commandSpec;
     this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
+    this.amount = UnsignedLong.valueOf(32_000_000_000L);
     this.shutdownFunction = shutdownFunction;
     this.consoleAdapter = consoleAdapter;
   }
