@@ -52,6 +52,13 @@ class BitlistTest {
   }
 
   @Test
+  void getAllSetBits_noSetBits() {
+    Bitlist bitlist = create();
+
+    assertThat(bitlist.getAllSetBits()).isEmpty();
+  }
+
+  @Test
   void intersects_noOverlap() {
     Bitlist bitlist1 = create(1, 3, 5);
     Bitlist bitlist2 = create(0, 2, 4);

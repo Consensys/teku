@@ -69,10 +69,7 @@ public class AttestationGenerator {
 
   public static Attestation withNewAttesterBits(Attestation oldAttestation, int numNewAttesters) {
     Attestation attestation = new Attestation(oldAttestation);
-    Bitlist newBitlist =
-        new Bitlist(
-            attestation.getAggregation_bits().getCurrentSize(),
-            attestation.getAggregation_bits().getMaxSize());
+    Bitlist newBitlist = attestation.getAggregation_bits().copy();
     List<Integer> unsetBits = new ArrayList<>();
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
       if (!newBitlist.getBit(i)) {
