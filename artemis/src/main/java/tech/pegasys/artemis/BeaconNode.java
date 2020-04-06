@@ -79,7 +79,7 @@ public class BeaconNode {
 
     LoggingConfigurator.update(
         new LoggingConfiguration(
-            config.isLogColourEnabled(),
+            config.isLogColorEnabled(),
             config.isLogIncludeEventsEnabled(),
             LoggingDestination.get(config.getLogDestination()),
             config.getLogFile(),
