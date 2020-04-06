@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -130,15 +129,6 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
     return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
         && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("aggregation_bits", aggregation_bits)
-        .add("data", data)
-        .add("signature", signature)
-        .toString();
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
