@@ -193,15 +193,97 @@ Description:
 Run the Teku beacon chain client and validator
 
 Options:
-  -c, --config=<FILENAME>   Path/filename of the config file
-  -h, --help                Show this help message and exit.
+  -c, --config-file=<FILENAME>
+                             Path/filename of the config file
+      --data-path=<FILENAME> Path to output data files
+      --data-storage-mode=<STORAGE_MODE>
+                             Sets the strategy for handling historical chain
+                               data.  Supported values include: 'prune', and
+                               'archive'
+      --eth1-deposit-contract-address=<ADDRESS>
+                             Contract address for the deposit contract
+      --eth1-endpoint=<NETWORK>
+                             URL for Eth 1.0 node
+  -h, --help                 Show this help message and exit.
   -l, --logging=<LOG VERBOSITY LEVEL>
-                            Logging verbosity levels: OFF, FATAL, WARN, INFO,
-                              DEBUG, TRACE, ALL (default: INFO).
-  -V, --version             Print version information and exit.
+                             Logging verbosity levels: OFF, FATAL, WARN, INFO,
+                               DEBUG, TRACE, ALL (default: INFO).
+      --log-color-enabled=<BOOLEAN>
+                             Whether Status and Event log messages include a
+                               console color display code
+      --log-destination=<LOG_DESTINATION>
+                             Whether a logger is added for the console, the log
+                               file, or both
+      --log-file=<FILENAME>  Path containing the location (relative or
+                               absolute) and the log filename.
+      --log-file-name-pattern=<REGEX>
+                             Pattern for the filename to apply to rolled over
+                               logs files.
+      --log-include-events-enabled=<BOOLEAN>
+                             Whether the frequent update events are logged (e.
+                               g. every slot event, with validators and
+                               attestations))
+      --metrics-categories[=<METRICS_CATEGORY>[,<METRICS_CATEGORY>...]...]
+                             Metric categories to enable
+      --metrics-enabled=<BOOLEAN>
+                             Enables metrics collection via Prometheus
+      --metrics-interface=<NETWORK>
+                             Metrics network interface to expose metrics for
+                               Prometheus
+      --metrics-port=<INTEGER>
+                             Metrics port to expose metrics for Prometheus
+  -n, --network=<NETWORK>    Represents which network to use
+      --p2p-advertised-ip=<NETWORK>
+                             Peer to peer advertised ip
+      --p2p-advertised-port=<INTEGER>
+                             Peer to peer advertised port
+      --p2p-discovery-bootnodes[=<enode://id@host:port>[,<enode://id@host:
+        port>...]...]
+                             ENR of the bootnode
+      --p2p-discovery-enabled=<BOOLEAN>
+                             Enables discv5 discovery
+      --p2p-enabled=<BOOLEAN>
+                             Enables peer to peer
+      --p2p-interface=<NETWORK>
+                             Peer to peer network interface
+      --p2p-peer-lower-bound=<INTEGER>
+                             Lower bound on the target number of peers
+      --p2p-peer-upper-bound=<INTEGER>
+                             Upper bound on the target number of peers
+      --p2p-port=<INTEGER>   Peer to peer port
+      --p2p-private-key-file=<FILENAME>
+                             This node's private key file
+      --p2p-static-peers[=<PEER_ADDRESSES>[,<PEER_ADDRESSES>...]...]
+                             Static peers
+      --rest-api-docs-enabled=<BOOLEAN>
+                             Enable swagger-docs and swagger-ui endpoints
+      --rest-api-enabled=<BOOLEAN>
+                             Enables Beacon Rest API
+      --rest-api-interface=<NETWORK>
+                             Interface of Beacon Rest API
+      --rest-api-port=<INTEGER>
+                             Port number of Beacon Rest API
+  -V, --version              Print version information and exit.
+      --validators-external-signer-public-keys[=<STRINGS>[,<STRINGS>...]...]
+                             The list of external signer public keys
+      --validators-external-signer-timeout=<INTEGER>
+                             Timeout for the external signing service
+      --validators-external-signer-url=<NETWORK>
+                             URL for the external signing service
+      --validators-key-file=<FILENAME>
+                             The file to load validator keys from
+      --validators-key-files[=<FILENAMES>[,<FILENAMES>...]...]
+                             The list of encrypted keystore files to load the
+                               validator keys from
+      --validators-key-password-files[=<FILENAMES>[,<FILENAMES>...]...]
+                             The list of password files to decrypt the
+                               validator keystore files
 Commands:
   transition  Manually run state transitions
   peer        Commands for LibP2P PeerID
+  validator   Register validators by sending deposit transactions to an
+                Ethereum 1 node
+  genesis     Commands for generating genesis state
 
 Teku is licensed under the Apache License 2.0
 
