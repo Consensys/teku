@@ -44,6 +44,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
@@ -54,6 +55,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
@@ -62,16 +64,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final CombinedChainDataClient combinedChainDataClient;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
+  private final AttestationAggregator attestationAggregator;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
+      final AttestationAggregator attestationAggregator,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
+    this.attestationAggregator = attestationAggregator;
     this.eventBus = eventBus;
   }
 
@@ -172,6 +177,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void sendSignedAttestation(final Attestation attestation) {
     // TODO: Should the add be done via AttestationManager?
     attestationPool.add(attestation);
+    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      attestationAggregator.addOwnValidatorAttestation(attestation);
+    }
     eventBus.post(attestation);
   }
 

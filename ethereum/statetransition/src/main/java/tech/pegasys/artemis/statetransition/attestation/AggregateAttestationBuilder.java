@@ -38,7 +38,7 @@ class AggregateAttestationBuilder {
   public void aggregate(final Attestation attestation) {
     includedAttestations.add(attestation);
     if (currentAggregateBits == null) {
-      currentAggregateBits = attestation.getAggregation_bits();
+      currentAggregateBits = attestation.getAggregation_bits().copy();
     } else {
       currentAggregateBits.setAllBits(attestation.getAggregation_bits());
     }

@@ -37,6 +37,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
@@ -57,10 +58,12 @@ class ValidatorApiHandlerTest {
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
   private final EventBus eventBus = mock(EventBus.class);
 
   private final ValidatorApiHandler validatorApiHandler =
-      new ValidatorApiHandler(chainDataClient, blockFactory, attestationPool, eventBus);
+      new ValidatorApiHandler(
+          chainDataClient, blockFactory, attestationPool, attestationAggregator, eventBus);
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
@@ -239,6 +242,7 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendSignedAttestation(attestation);
 
     verify(attestationPool).add(attestation);
+    verify(attestationAggregator).addOwnValidatorAttestation(attestation);
     verify(eventBus).post(attestation);
   }
 

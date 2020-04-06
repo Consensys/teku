@@ -260,7 +260,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eth1DataCache);
     eventChannels.subscribe(
         ValidatorApiChannel.class,
-        new ValidatorApiHandler(combinedChainDataClient, blockFactory, attestationPool, eventBus));
+        new ValidatorApiHandler(
+            combinedChainDataClient,
+            blockFactory,
+            attestationPool,
+            attestationAggregator,
+            eventBus));
   }
 
   public void initStateProcessor() {
