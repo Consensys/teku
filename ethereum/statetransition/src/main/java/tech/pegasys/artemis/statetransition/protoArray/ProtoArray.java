@@ -20,176 +20,161 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.commons.lang3.builder.Diff;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Validator;
-
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getParticipantIndices;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_balance;
-import static tech.pegasys.artemis.statetransition.protoArray.DiffArray.createDiffArray;
 
 public class ProtoArray  {
 
-  private List<ProtoBlock> array = new ArrayList<>();
-  private Map<Bytes32, Integer> blockRootToIndex = new HashMap<>();
-  private Map<Integer, Integer> validatorToLastVotedBlockIndex = new HashMap<>();
-  private Map<Integer, UnsignedLong> validatorToEffectiveBalance = new HashMap<>();
-  private int finalizedBlockIndex = 0;
+  private int pruneThreshold;
 
-  public ProtoArray(BeaconState state) {
-    updateValidatorsEffectiveBalances(state);
-  }
+  private UnsignedLong justifiedEpoch;
+  private UnsignedLong finalizedEpoch;
 
-  public synchronized void onBlock(SignedBeaconBlock signedBeaconBlock) {
-    BeaconBlock beaconBlock = signedBeaconBlock.getMessage();
-    Bytes32 blockRoot = beaconBlock.hash_tree_root();
-    Bytes32 parentRoot = beaconBlock.getParent_root();
+  private List<ProtoNode> nodes = new ArrayList<>();
+  private Map<Bytes32, Integer> indices = new HashMap<>();
 
-    // Check if block is viable
-    Optional<ProtoBlock> maybeParentProtoBlock = getProtoBlock(parentRoot);
-    ProtoBlock parentProtoBlock;
-    if (maybeParentProtoBlock.isEmpty()) {
-      // Parent block was not found in the array, i.e. the block is not in the filtered tree
-      return;
-    } else {
-      parentProtoBlock = maybeParentProtoBlock.get();
+  /// Iterate backwards through the array, touching all nodes and their parents and potentially
+  /// the best-child of each parent.
+  ///
+  /// The structure of the `this.nodes` array ensures that the child of each node is always
+  /// touched before its parent.
+  ///
+  /// For each node, the following is done:
+  ///
+  /// - Update the node's weight with the corresponding delta.
+  /// - Back-propagate each node's delta to its parents delta.
+  /// - Compare the current node with the parents best-child, updating it if the current node
+  /// should become the best child.
+  /// - If required, update the parents best-descendant with the current node or its best-descendant.
+  private void applyScoreChanges(List<Long> deltas,
+                                UnsignedLong justifiedEpoch,
+                                UnsignedLong finalizedEpoch) {
+    if (deltas.size() != indices.size()) {
+      throw new RuntimeException("ProtoArray: Invalid delta length");
     }
 
-    // Append the latest block to array
-    int blockIndex = array.size();
-    ProtoBlock newProtoBlock = ProtoBlock.createNewProtoBlock(blockIndex, blockRoot, parentRoot);
-    array.add(newProtoBlock);
-
-    blockRootToIndex.put(blockRoot, blockIndex);
-
-    // If block’s parent has a best child already, return
-    Optional<Integer> maybeParentsBestChildIndex = parentProtoBlock.getBestChildIndex();
-    if (maybeParentsBestChildIndex.isPresent()) {
-      return;
-    }
-    parentProtoBlock.setBestChildIndex(blockIndex);
-    parentProtoBlock.setBestDescendantIndex(blockIndex);
-  }
-
-  public synchronized void onAttestations(BeaconState state, Attestation attestation) {
-    DiffArray diffArray = createDiffArray(finalizedBlockIndex, array.size());
-
-    if (getBlockIndex(attestation.getData().getBeacon_block_root()).isEmpty()) {
-      return;
+    if (!justifiedEpoch.equals(this.justifiedEpoch) || !finalizedEpoch.equals(this.finalizedEpoch)) {
+      this.justifiedEpoch = justifiedEpoch;
+      this.finalizedEpoch = finalizedEpoch;
     }
 
-    int blockIndex = getBlockIndex(attestation.getData().getBeacon_block_root()).get();
+    // Iterate backwards through all indices in `this.nodes`.
+    for (int nodeIndex = nodes.size() - 1; nodeIndex >= 0; nodeIndex--) {
+      ProtoNode node = nodes.get(nodeIndex);
 
-    List<Integer> participants = getParticipantIndices(state, attestation);
-
-    participants
-            .parallelStream()
-            .forEach(participantIndex -> {
-              clearParticipantsPreviousVoteWeights(diffArray, participantIndex);
-              updateLatestBlockVoteForValidator(participantIndex, blockIndex);
-            });
-
-    long totalWeightOfAttestation = get_total_balance(state, participants).longValue();
-    diffArray.noteChange(blockIndex, totalWeightOfAttestation);
-    applyDiffArray(diffArray);
-  }
-
-  public void onJustifiedCheckpoint(BeaconState state, Checkpoint justifiedCheckpoint) {
-    DiffArray diffArray = createDiffArray(finalizedBlockIndex, array.size());
-  }
-
-  private void applyDiffArray(DiffArray diffArray) {
-    for (int blockIndex = finalizedBlockIndex + array.size() - 1;
-         blockIndex >= 0;
-         blockIndex--) {
-      long weightDiff = diffArray.get(blockIndex);
-      if (weightDiff == 0L) {
+      // There is no need to adjust the balances or manage parent of the zero hash since it
+      // is an alias to the genesis block. The weight applied to the genesis block is
+      // irrelevant as we _always_ choose it and it's impossible for it to have a parent.
+      if (node.getRoot().equals(Bytes32.ZERO)) {
         continue;
       }
 
-      ProtoBlock protoBlock = this.get(blockIndex);
-      protoBlock.modifyWeight(weightDiff);
+      long nodeDelta = deltas.get(nodeIndex);
+      node.adjustWeight(nodeDelta);
 
-      getParentBlock(protoBlock).ifPresent(parentBlock -> {
-        maybeUpdateBestChild(protoBlock, parentBlock);
-        parentBlock.modifyWeight(weightDiff);
+      node.getParentIndex().ifPresent(parentIndex -> {
+        deltas.set(parentIndex, deltas.get(parentIndex) + nodeDelta);
+        maybeUpdateBestChildAndDescendant();
       });
     }
   }
 
-  private Optional<ProtoBlock> getParentBlock(ProtoBlock childBlock) {
-    // Check if parent block is still in the array
-    Integer parentBlockIndex = blockRootToIndex.get(childBlock.getParentRoot());
-    if (parentBlockIndex == null) {
-      return Optional.empty();
-    }
+  /// Observe the parent at `parentIndex` with respect to the child at `childIndex` and
+  /// potentially modify the `parent.bestChild` and `parent.bestDescendant` values.
+  ///
+  /// ## Detail
+  ///
+  /// There are four outcomes:
+  ///
+  /// - The child is already the best child but it's now invalid due to a FFG change and should be removed.
+  /// - The child is already the best child and the parent is updated with the new best-descendant.
+  /// - The child is not the best child but becomes the best child.
+  /// - The child is not the best child and does not become the best child.
+  private void maybeUpdateBestChildAndDescendant(int parentIndex, int childIndex) {
+    ProtoNode child = nodes.get(childIndex);
+    ProtoNode parent = nodes.get(parentIndex);
 
-    return Optional.of(this.get(parentBlockIndex));
+    boolean childLeadsToViableHead = nodeLeadsToViableHead(child);
+
+    parent.getBestChildIndex().ifPresentOrElse(bestChildIndex -> {
+      if (bestChildIndex.equals(childIndex) && !childLeadsToViableHead) {
+        // If the child is already the best-child of the parent but it's not viable for
+        // the head, remove it.
+        changeToNone(parent);
+      } else if (bestChildIndex.equals(childIndex)){
+        // If the child is the best-child already, set it again to ensure that the
+        // best-descendant of the parent is updated.
+        changeToChild(parent, childIndex);
+      } else {
+        ProtoNode bestChild = nodes.get(bestChildIndex);
+
+        boolean bestChildLeadsToViableHead = nodeLeadsToViableHead(bestChild);
+
+        if (childLeadsToViableHead && !bestChildLeadsToViableHead) {
+          // The child leads to a viable head, but the current best-child doesn't.
+          changeToChild(parent, childIndex);
+        } else if (!childLeadsToViableHead && bestChildLeadsToViableHead) {
+          // The best child leads to a viable head, but the child doesn't.
+          // No change.
+        } else if (child.getWeight().equals(bestChild.getWeight())) {
+          // Tie-breaker of equal weights by root.
+          if (child.getRoot().compareTo(bestChild.getRoot()) >= 0) {
+            changeToChild(parent, childIndex);
+          } else {
+            // No change.
+          }
+        } else {
+          // Choose the winner by weight.
+          if (child.getWeight().compareTo(bestChild.getWeight()) >= 0) {
+            changeToChild(parent, childIndex);
+          } else {
+            // No change.
+          }
+        }
+      }
+    }, () -> {
+      if (childLeadsToViableHead) {
+        // There is no current best-child and the child is viable.
+        changeToChild(parent, childIndex);
+      } else {
+        // There is no current best-child but the child is not not viable.
+        // No change.
+      }
+    });
   }
 
-  private void maybeUpdateBestChild(ProtoBlock protoBlock, ProtoBlock parentBlock) {
-    int blockIndex = blockRootToIndex.get(protoBlock.getRoot());
-    Integer bestChildIndex = parentBlock.getBestChildIndex().orElse(-1);
-    if (bestChildIndex == blockIndex) {
-      return;
-    }
-
-    // If the parent block does not have a best child yet or the best child has lower
-    // weight than the current block:
-    // - set parent's best child to current block
-    // - set parent's best descendant to current block's best descendant
-    if (bestChildIndex == -1 ||
-            protoBlock.getWeight().compareTo(this.get(bestChildIndex).getWeight()) > 0) {
-      parentBlock.setBestChildIndex(blockIndex);
-      parentBlock.setBestDescendantIndex(protoBlock.getBestDescendantIndex());
-    }
+  // Helper for maybeUpdateBestChildAndDescendant
+  private void changeToChild(ProtoNode parent, int childIndex) {
+    ProtoNode child = nodes.get(childIndex);
+    parent.setBestChildIndex(Optional.of(childIndex));
+    parent.setBestDescendantIndex(Optional.of(child.getBestDescendantIndex().orElse(childIndex)));
   }
 
-  private ProtoBlock get(int blockIndex) {
-    return array.get(blockIndex - finalizedBlockIndex);
+  // Helper for maybeUpdateBestChildAndDescendant
+  private void changeToNone(ProtoNode parent) {
+    parent.setBestChildIndex(Optional.empty());
+    parent.setBestDescendantIndex(Optional.empty());
   }
 
-  private void set(int blockIndex, ProtoBlock block) {
-    array.set(blockIndex - finalizedBlockIndex, block);
+  /// Indicates if the node itself is viable for the head, or if it's best descendant is viable
+  /// for the head.
+  private boolean nodeLeadsToViableHead(ProtoNode node) {
+    boolean bestDescendantIsViableForHead =
+            node.getBestDescendantIndex()
+            .map(nodes::get)
+            .map(this::nodeIsViableForHead)
+            .orElse(false);
+
+    return bestDescendantIsViableForHead || nodeIsViableForHead(node);
   }
 
-  private Optional<ProtoBlock> getProtoBlock(Bytes32 root) {
-    return Optional.ofNullable(blockRootToIndex.get(root)).map(index -> array.get(index));
-  }
-
-  private void updateLatestBlockVoteForValidator(int validatorIndex, int blockIndex) {
-    validatorToLastVotedBlockIndex.put(validatorIndex, blockIndex);
-  }
-
-  private Optional<Integer> getBlockIndex(Bytes32 blockRoot) {
-    return Optional.ofNullable(blockRootToIndex.get(blockRoot));
-  }
-
-  private Optional<Integer> getParentIndex(Bytes32 blockRoot) {
-    return Optional.ofNullable(blockRootToIndex.get(blockRoot));
-  }
-
-  private void clearParticipantsPreviousVoteWeights(
-          DiffArray diffArray,
-          int validatorIndex) {
-    int latestVotedBlockIndex = validatorToLastVotedBlockIndex.get(validatorIndex);
-    long effectiveBalance = validatorToEffectiveBalance.get(validatorIndex).longValue();
-    diffArray.noteChange(latestVotedBlockIndex, -effectiveBalance);
-  }
-
-  private void updateValidatorsEffectiveBalances(BeaconState newState) {
-    List<Validator> validatorList = newState.getValidators();
-    for (int validatorIndex = 0;
-         validatorIndex < validatorList.size();
-         validatorIndex++) {
-      validatorToEffectiveBalance.put(
-              validatorIndex,
-              validatorList.get(validatorIndex).getEffective_balance());
-    }
+  /// This is the equivalent to the `filter_block_tree` function in the eth2 spec:
+  ///
+  /// https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/fork-choice.md#filter_block_tree
+  ///
+  /// Any node that has a different finalized or justified epoch should not be viable for the
+  /// head.
+  private boolean nodeIsViableForHead(ProtoNode node) {
+    return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(UnsignedLong.ZERO))
+            && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(UnsignedLong.ZERO));
   }
 }
