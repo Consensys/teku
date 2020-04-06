@@ -3,6 +3,7 @@ dependencies {
   implementation project(':data')
   implementation project(':data:metrics')
   implementation project(':data:recorder')
+  implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':events')

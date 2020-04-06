@@ -15,6 +15,10 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.StateTransitionException;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -24,10 +28,6 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
-import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 

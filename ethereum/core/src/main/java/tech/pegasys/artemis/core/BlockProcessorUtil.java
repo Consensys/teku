@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
@@ -54,6 +54,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -370,7 +371,7 @@ public final class BlockProcessorUtil {
 
         List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
         checkArgument(
-            attestation.getAggregation_bits().getByteArray().length == committee.size(),
+            attestation.getAggregation_bits().getCurrentSize() == committee.size(),
             "process_attestations: Attestation aggregation bit, custody bit, and committee doesn't have the same length");
 
         PendingAttestation pendingAttestation =

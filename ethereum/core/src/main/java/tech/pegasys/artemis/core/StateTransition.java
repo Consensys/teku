@@ -11,22 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
-import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_randao;
-import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_final_updates;
-import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_justification_and_finalization;
-import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_registry_updates;
-import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_rewards_and_penalties;
-import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -34,6 +21,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.util.config.Constants.ZERO_HASH;
 
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -41,15 +29,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.metrics.EpochMetrics;
-import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
-import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.bls.BLS;
 
 public class StateTransition {
@@ -98,7 +87,7 @@ public class StateTransition {
       Bytes32 stateRoot = postState.hash_tree_root();
       // Validate state root (`validate_state_root == True` in production)
       if (validateStateRootAndSignatures) {
-        checkArgument(
+        Preconditions.checkArgument(
             block.getState_root().equals(stateRoot),
             "Block state root does NOT match the calculated state root!\n"
                 + "Block state root: "
@@ -119,9 +108,11 @@ public class StateTransition {
 
   private static boolean verify_block_signature(
       final BeaconState state, SignedBeaconBlock signed_block) {
-    final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+    final Validator proposer =
+        state.getValidators().get(BeaconStateUtil.get_beacon_proposer_index(state));
     final Bytes signing_root =
-        compute_signing_root(signed_block.getMessage(), get_domain(state, DOMAIN_BEACON_PROPOSER));
+        BeaconStateUtil.compute_signing_root(
+            signed_block.getMessage(), BeaconStateUtil.get_domain(state, DOMAIN_BEACON_PROPOSER));
     return BLS.verify(proposer.getPubkey(), signing_root, signed_block.getSignature());
   }
 
@@ -142,10 +133,10 @@ public class StateTransition {
       throws BlockProcessingException {
     return preState.updated(
         state -> {
-          process_block_header(state, block);
-          process_randao(state, block.getBody(), validateStateRootAndSignatures);
-          process_eth1_data(state, block.getBody());
-          process_operations(state, block.getBody());
+          BlockProcessorUtil.process_block_header(state, block);
+          BlockProcessorUtil.process_randao(state, block.getBody(), validateStateRootAndSignatures);
+          BlockProcessorUtil.process_eth1_data(state, block.getBody());
+          BlockProcessorUtil.process_operations(state, block.getBody());
         });
   }
 
@@ -160,14 +151,14 @@ public class StateTransition {
     return preState.updated(
         state -> {
           // Note: the lines with @ label here will be inserted here in a future phase
-          process_justification_and_finalization(state);
-          process_rewards_and_penalties(state);
-          process_registry_updates(state);
+          EpochProcessorUtil.process_justification_and_finalization(state);
+          EpochProcessorUtil.process_rewards_and_penalties(state);
+          EpochProcessorUtil.process_registry_updates(state);
           // @process_reveal_deadlines
           // @process_challenge_deadlines
-          process_slashings(state);
+          EpochProcessorUtil.process_slashings(state);
           // @update_period_committee
-          process_final_updates(state);
+          EpochProcessorUtil.process_final_updates(state);
           // @after_process_final_updates
         });
   }
@@ -243,7 +234,7 @@ public class StateTransition {
   private synchronized void recordMetrics(BeaconState state) {
     epochMetrics.ifPresent(
         metrics -> {
-          final UnsignedLong currentEpoch = get_current_epoch(state);
+          final UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
           long pendingExits =
               state.getValidators().stream()
                   .filter(
