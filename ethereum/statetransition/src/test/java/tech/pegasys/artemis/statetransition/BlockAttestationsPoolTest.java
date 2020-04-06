@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -31,6 +32,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 class BlockAttestationsPoolTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final AttestationGenerator attestationGenerator = new AttestationGenerator(emptyList());
   private BlockAttestationsPool pool;
 
   @BeforeEach
@@ -41,7 +43,7 @@ class BlockAttestationsPoolTest {
   @Test
   @SuppressWarnings("UnusedVariable")
   void unprocessedAggregate_NewData() {
-    Attestation attestation = AttestationGenerator.aggregateAttestation(10);
+    Attestation attestation = attestationGenerator.aggregateAttestation(10);
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
     assertTrue(pool.aggregateAttestationsQueue.contains(attestation));
     assertTrue(
@@ -50,7 +52,7 @@ class BlockAttestationsPoolTest {
 
   @Test
   void unprocessedAggregate_OldData_DifferentBitlist_BitlistUpdated() {
-    Attestation attestation = AttestationGenerator.aggregateAttestation(10);
+    Attestation attestation = attestationGenerator.aggregateAttestation(10);
     Attestation newAttestation = withNewAttesterBits(attestation, 1);
 
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
@@ -58,9 +60,9 @@ class BlockAttestationsPoolTest {
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
     Bitlist bitlist = pool.unprocessedAttestationsBitlist.get(attestationDataHash);
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-      final int expected =
+      final boolean expected =
           attestation.getAggregation_bits().getBit(i)
-              | newAttestation.getAggregation_bits().getBit(i);
+              || newAttestation.getAggregation_bits().getBit(i);
       assertEquals(bitlist.getBit(i), expected);
     }
     assert (pool.aggregateAttestationsQueue.size() == 2);
@@ -68,7 +70,7 @@ class BlockAttestationsPoolTest {
 
   @Test
   void unprocessedAggregate_OldData_SameBitlist_ShouldBeIgnored() {
-    Attestation attestation = AttestationGenerator.aggregateAttestation(10);
+    Attestation attestation = attestationGenerator.aggregateAttestation(10);
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
     Attestation newAttestation = new Attestation(attestation);
     pool.addUnprocessedAggregateAttestationToQueue(newAttestation);
@@ -77,7 +79,7 @@ class BlockAttestationsPoolTest {
 
   @Test
   void processedAggregate_NewData_SetBits() throws Exception {
-    Attestation attestation = AttestationGenerator.aggregateAttestation(10);
+    Attestation attestation = attestationGenerator.aggregateAttestation(10);
     pool.addAggregateAttestationProcessedInBlock(attestation);
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
     Bitlist bitlist = pool.processedAttestationsBitlist.get(attestationDataHash);
@@ -90,7 +92,7 @@ class BlockAttestationsPoolTest {
 
   @Test
   void processedAggregate_OldData_DifferentBitlist_SetBits() {
-    Attestation attestation = AttestationGenerator.aggregateAttestation(10);
+    Attestation attestation = attestationGenerator.aggregateAttestation(10);
     pool.addAggregateAttestationProcessedInBlock(attestation);
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
 
@@ -98,16 +100,16 @@ class BlockAttestationsPoolTest {
     pool.addAggregateAttestationProcessedInBlock(newAttestation);
     Bitlist bitlist = pool.processedAttestationsBitlist.get(attestationDataHash);
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-      final int expected =
+      final boolean expected =
           attestation.getAggregation_bits().getBit(i)
-              | newAttestation.getAggregation_bits().getBit(i);
+              || newAttestation.getAggregation_bits().getBit(i);
       assertEquals(bitlist.getBit(i), expected);
     }
   }
 
   @Test
   void getAggregatedAttestations_DoesNotReturnAttestationWithNoNewBits() throws Exception {
-    Attestation attestation = AttestationGenerator.aggregateAttestation(10);
+    Attestation attestation = attestationGenerator.aggregateAttestation(10);
     pool.addAggregateAttestationProcessedInBlock(attestation);
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
 
