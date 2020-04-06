@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -60,14 +61,15 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
   }
 
   public void remove(final Attestation attestation) {
-    final int validatorCount = attestation.getAggregation_bits().countSetBits();
-    final Set<Attestation> attestations = attestationsByValidatorCount.get(validatorCount);
-    if (attestations == null) {
-      return;
-    }
-    attestations.remove(attestation);
-    if (attestations.isEmpty()) {
-      attestationsByValidatorCount.remove(validatorCount);
+    final Collection<Set<Attestation>> attestationSets = attestationsByValidatorCount.values();
+    for (Iterator<Set<Attestation>> i = attestationSets.iterator(); i.hasNext(); ) {
+      final Set<Attestation> candidates = i.next();
+      candidates.removeIf(
+          candidate ->
+              attestation.getAggregation_bits().isSuperSetOf(candidate.getAggregation_bits()));
+      if (candidates.isEmpty()) {
+        i.remove();
+      }
     }
   }
 

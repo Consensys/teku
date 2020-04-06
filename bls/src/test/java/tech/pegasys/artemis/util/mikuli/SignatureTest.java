@@ -18,9 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.Collections;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class SignatureTest {
+
+  public static final int HEX_CHARS_REQUIRED = 96 * 2;
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
@@ -41,6 +45,32 @@ class SignatureTest {
   void succeedsWhenEqualsReturnsFalseForDifferentSignatures() {
     Signature signature1 = Signature.random(1);
     Signature signature2 = Signature.random(2);
+    assertNotEquals(signature1, signature2);
+  }
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForEmptySignatures() {
+    assertEquals(BLSSignature.empty().getSignature(), BLSSignature.empty().getSignature());
+    assertEquals(
+        BLSSignature.empty().getSignature().hashCode(),
+        BLSSignature.empty().getSignature().hashCode());
+  }
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForInvalidSignatures() {
+    final Bytes rawData = Bytes.fromHexString("1".repeat(HEX_CHARS_REQUIRED));
+    final Signature signature1 = Signature.fromBytes(rawData);
+    final Signature signature2 = Signature.fromBytes(rawData);
+    assertEquals(signature1, signature2);
+    assertEquals(signature1.hashCode(), signature2.hashCode());
+  }
+
+  @Test
+  void succeedsWhenEqualsReturnsFalseForDifferentInvalidSignatures() {
+    final Signature signature1 =
+        Signature.fromBytes(Bytes.fromHexString("1".repeat(HEX_CHARS_REQUIRED)));
+    final Signature signature2 =
+        Signature.fromBytes(Bytes.fromHexString("2".repeat(HEX_CHARS_REQUIRED)));
     assertNotEquals(signature1, signature2);
   }
 

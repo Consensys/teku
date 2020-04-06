@@ -66,6 +66,17 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
+  public void remove_shouldRemoveAttestationsThatAreAggregatedIntoRemovedAttestation() {
+    final Attestation attestation1 = addAttestation(1);
+    final Attestation attestation2 = addAttestation(2);
+    final Attestation attestation3 = addAttestation(3);
+
+    group.remove(aggregateAttestations(attestation1, attestation2));
+
+    assertThat(group.stream()).containsExactly(attestation3);
+  }
+
+  @Test
   public void iterator_shouldAggregateAttestationsWhereValidatorsDoNotOverlap() {
     final Attestation attestation1 = addAttestation(1);
     final Attestation attestation2 = addAttestation(2);

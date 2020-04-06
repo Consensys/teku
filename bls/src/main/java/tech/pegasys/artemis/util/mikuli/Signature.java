@@ -217,7 +217,12 @@ public final class Signature {
 
   @Override
   public int hashCode() {
-    return point.get().hashCode();
+    try {
+      return point.get().hashCode();
+    } catch (final IllegalArgumentException e) {
+      // Invalid point so only equal if it has the same raw data, hence use that hashCode.
+      return rawData.hashCode();
+    }
   }
 
   @VisibleForTesting
@@ -240,6 +245,11 @@ public final class Signature {
     if (rawData.size() == other.rawData.size() && rawData.equals(other.rawData)) {
       return true;
     }
-    return point.get().equals(other.point.get());
+    try {
+      return point.get().equals(other.point.get());
+    } catch (final IllegalArgumentException e) {
+      // Invalid points are only equal if they have the exact some data.
+      return false;
+    }
   }
 }

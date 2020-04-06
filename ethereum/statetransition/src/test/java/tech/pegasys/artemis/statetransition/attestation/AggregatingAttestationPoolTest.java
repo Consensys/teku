@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition.attestation;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
@@ -96,6 +97,11 @@ class AggregatingAttestationPoolTest {
 
     assertThat(aggregatingPool.getAttestationsForBlock(SLOT))
         .containsExactlyInAnyOrder(aggregateAttestations(attestation1, attestation2), attestation3);
+  }
+
+  @Test
+  public void getAttestationsForBlock_shouldNotIncludeAttesationsFromBeforePreviousEpoch() {
+fail("Not working yet");
   }
 
   private Attestation addAttestationFromValidators(
