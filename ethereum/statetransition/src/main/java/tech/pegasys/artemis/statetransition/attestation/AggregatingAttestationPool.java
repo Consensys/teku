@@ -13,12 +13,10 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
@@ -68,12 +66,6 @@ public class AggregatingAttestationPool {
   }
 
   public boolean canBeIncluded(final MatchingDataAttestationGroup group, final UnsignedLong slot) {
-    return group.getAttestationData().getEarliestSlotForProcessing().compareTo(slot) >= 0;
-  }
-
-  @VisibleForTesting
-  Stream<Attestation> stream() {
-    return attestationGroupByDataHash.values().stream()
-        .flatMap(MatchingDataAttestationGroup::stream);
+    return group.getAttestationData().getEarliestSlotForProcessing().compareTo(slot) <= 0;
   }
 }
