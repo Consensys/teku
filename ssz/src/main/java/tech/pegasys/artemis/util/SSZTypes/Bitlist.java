@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.util.SSZTypes;
 
 import static com.google.common.base.Preconditions.checkElementIndex;
-import static java.util.stream.Collectors.toList;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
@@ -61,7 +61,11 @@ public class Bitlist {
   }
 
   public List<Integer> getAllSetBits() {
-    return streamAllSetBits().boxed().collect(toList());
+    final List<Integer> setBits = new ArrayList<>();
+    for (int i = data.nextSetBit(0); i > 0; i = data.nextSetBit(i + 1)) {
+      setBits.add(i);
+    }
+    return setBits;
   }
 
   public IntStream streamAllSetBits() {

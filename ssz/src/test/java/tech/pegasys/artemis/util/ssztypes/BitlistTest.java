@@ -13,9 +13,11 @@
 
 package tech.pegasys.artemis.util.ssztypes;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -24,37 +26,50 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 class BitlistTest {
   private static int bitlistMaxSize = 4000;
 
-  private static Bitlist createBitlist() {
-    Bitlist bitlist = new Bitlist(18, bitlistMaxSize);
-    bitlist.setBit(1);
-    bitlist.setBit(4);
-    bitlist.setBit(5);
-    bitlist.setBit(6);
-    bitlist.setBit(11);
-    bitlist.setBit(12);
-    bitlist.setBit(17);
-    return bitlist;
-  }
-
   @Test
   void initTest() {
-    Bitlist bitlist = new Bitlist(10, bitlistMaxSize);
+    Bitlist bitlist = create();
     assertFalse(bitlist.getBit(0));
     assertFalse(bitlist.getBit(9));
   }
 
   @Test
   void setTest() {
-    Bitlist bitlist = new Bitlist(10, bitlistMaxSize);
-    bitlist.setBit(1);
-    bitlist.setBit(3);
-    bitlist.setBit(8);
+    Bitlist bitlist = create(1, 3, 8);
 
     assertFalse(bitlist.getBit(0));
     assertTrue(bitlist.getBit(1));
     assertTrue(bitlist.getBit(3));
     assertFalse(bitlist.getBit(4));
     assertTrue(bitlist.getBit(8));
+  }
+
+  @Test
+  void getAllSetBits() {
+    Bitlist bitlist = create(1, 3, 8, 9);
+
+    assertThat(bitlist.getAllSetBits()).containsExactly(1, 3, 8, 9);
+  }
+
+  @Test
+  void intersects_noOverlap() {
+    Bitlist bitlist1 = create(1, 3, 5);
+    Bitlist bitlist2 = create(0, 2, 4);
+
+    assertThat(bitlist1.intersects(bitlist2)).isFalse();
+  }
+
+  @Test
+  void intersects_withOverlap() {
+    Bitlist bitlist1 = create(1, 3, 5);
+    Bitlist bitlist2 = create(0, 3, 4);
+
+    assertThat(bitlist1.intersects(bitlist2)).isTrue();
+  }
+
+  @Test
+  void countSetBits() {
+    assertThat(create(1, 2, 6, 7, 9).countSetBits()).isEqualTo(5);
   }
 
   @Test
@@ -102,5 +117,15 @@ class BitlistTest {
 
     Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"), bitlistMaxSize);
     Assertions.assertEquals(bitlist, newBitlist);
+  }
+
+  private static Bitlist create(int... bits) {
+    Bitlist bitlist = new Bitlist(18, bitlistMaxSize);
+    IntStream.of(bits).forEach(bitlist::setBit);
+    return bitlist;
+  }
+
+  private static Bitlist createBitlist() {
+    return create(1, 4, 5, 6, 11, 12, 17);
   }
 }
