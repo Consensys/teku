@@ -13,16 +13,17 @@
 
 package tech.pegasys.artemis.statetransition.blockimport;
 
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;

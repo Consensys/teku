@@ -5,6 +5,7 @@ dependencies {
   implementation project(':storage')
   implementation project(':services:serviceutils')
   implementation project(':ethereum:statetransition')
+  implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':util')
   implementation project(':logging')

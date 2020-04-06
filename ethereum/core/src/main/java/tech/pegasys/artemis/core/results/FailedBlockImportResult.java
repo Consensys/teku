@@ -11,51 +11,52 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.blockimport;
+package tech.pegasys.artemis.core.results;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
-public class SuccessfulBlockImportResult implements BlockImportResult {
+public class FailedBlockImportResult implements BlockImportResult {
+  private final FailureReason failureReason;
+  private final Optional<Throwable> cause;
 
-  private final SignedBeaconBlock block;
-  private final Optional<BlockProcessingRecord> record;
-
-  public SuccessfulBlockImportResult(
-      final SignedBeaconBlock block, final Optional<BlockProcessingRecord> record) {
-    this.block = block;
-    this.record = record;
+  FailedBlockImportResult(final FailureReason failureReason, final Optional<Throwable> cause) {
+    this.failureReason = failureReason;
+    this.cause = cause;
   }
 
   @Override
   public boolean isSuccessful() {
-    return true;
+    return false;
   }
 
   @Override
   public Optional<BlockProcessingRecord> getBlockProcessingRecord() {
-    return record;
-  }
-
-  @Override
-  public SignedBeaconBlock getBlock() {
-    return block;
-  }
-
-  @Override
-  public FailureReason getFailureReason() {
-    return null;
-  }
-
-  @Override
-  public Optional<Throwable> getFailureCause() {
     return Optional.empty();
   }
 
   @Override
+  public SignedBeaconBlock getBlock() {
+    return null;
+  }
+
+  @Override
+  public FailureReason getFailureReason() {
+    return failureReason;
+  }
+
+  @Override
+  public Optional<Throwable> getFailureCause() {
+    return cause;
+  }
+
+  @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("block", block).toString();
+    return MoreObjects.toStringHelper(this)
+        .add("failureReason", failureReason)
+        .add("cause", cause)
+        .toString();
   }
 }
