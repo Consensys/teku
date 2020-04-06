@@ -175,7 +175,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
-    // TODO: Should the add be done via AttestationManager?
     attestationPool.add(attestation);
     if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
       attestationAggregator.addOwnValidatorAttestation(attestation);
@@ -185,7 +184,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendAggregateAndProof(final AggregateAndProof aggregateAndProof) {
-    // TODO: Should the add be done via AttestationManager?
     attestationPool.add(aggregateAndProof.getAggregate());
     eventBus.post(aggregateAndProof);
   }
