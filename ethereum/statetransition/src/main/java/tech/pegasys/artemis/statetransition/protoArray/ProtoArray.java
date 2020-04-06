@@ -128,9 +128,81 @@ public class ProtoArray  {
       long nodeDelta = deltas.get(nodeIndex);
       node.adjustWeight(nodeDelta);
 
+      if (node.getParentIndex().isEmpty()){
+        continue;
+      }
+
+      int parentIndex = node.getParentIndex().get();
+      deltas.set(parentIndex, deltas.get(parentIndex) + nodeDelta);
+      maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex);
+    }
+  }
+
+  /// Update the tree with new finalization information. The tree is only actually pruned if both
+  /// of the two following criteria are met:
+  ///
+  /// - The supplied finalized epoch and root are different to the current values.
+  /// - The number of nodes in `self` is at least `self.prune_threshold`.
+  ///
+  /// # Errors
+  ///
+  /// Throws errors if:
+  ///
+  /// - The finalized epoch is less than the current one.
+  /// - The finalized epoch is equal to the current one, but the finalized root is different.
+  /// - There is some internal error relating to invalid indices inside `self`.
+  public void maybePrune(Bytes32 finalizedRoot) {
+    int finalizedIndex = indices.get(finalizedRoot);
+
+    if (finalizedIndex < pruneThreshold) {
+      // Pruning at small numbers incurs more cost than benefit.
+      return;
+    }
+
+    // Remove the `indices` key/values for all the to-be-deleted nodes.
+    for (int nodeIndex = 0; nodeIndex < finalizedIndex; nodeIndex++) {
+      Bytes32 root = nodes.get(nodeIndex).getRoot();
+      indices.remove(root);
+    }
+
+    // Drop all the nodes prior to finalization.
+    nodes.subList(0, finalizedIndex).clear();
+
+    // Adjust the indices map.
+    indices.replaceAll((key, value) -> {
+      int newIndex = value - finalizedIndex;
+      if (newIndex < 0) {
+        throw new RuntimeException("ProtoArray: New array index less than 0.");
+      }
+      return newIndex;
+    });
+
+    // Iterate through all the existing nodes and adjust their indices to match the
+    // new layout of nodes.
+    for (ProtoNode node : nodes) {
       node.getParentIndex().ifPresent(parentIndex -> {
-        deltas.set(parentIndex, deltas.get(parentIndex) + nodeDelta);
-        maybeUpdateBestChildAndDescendant();
+        // If node.parentIndex is less than finalizedIndex, set is to None.
+        if (parentIndex < finalizedIndex) {
+          node.setParentIndex(Optional.empty());
+        } else {
+          node.setParentIndex(Optional.of(parentIndex - finalizedIndex));
+        }
+      });
+
+      node.getBestChildIndex().ifPresent(bestChildIndex -> {
+        int newBestChildIndex = bestChildIndex - finalizedIndex;
+        if (newBestChildIndex < 0) {
+          throw new RuntimeException("ProtoArray: New best child index is less than 0");
+        }
+        node.setBestChildIndex(Optional.of(newBestChildIndex));
+      });
+
+      node.getBestDescendantIndex().ifPresent(bestDescendantIndex -> {
+        int newBestDescendantIndex = bestDescendantIndex - finalizedIndex;
+        if (newBestDescendantIndex < 0) {
+          throw new RuntimeException("ProtoArray: New best descendant index is less than 0");
+        }
+        node.setBestDescendantIndex(Optional.of(newBestDescendantIndex));
       });
     }
   }

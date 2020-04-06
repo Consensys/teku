@@ -23,11 +23,14 @@ public class ProtoNode {
   private final Bytes32 stateRoot;
 
   private final Bytes32 root;
-  private final Optional<Integer> parentIndex;
   private final UnsignedLong justifiedEpoch;
   private final UnsignedLong finalizedEpoch;
 
   private UnsignedLong weight;
+
+
+
+  private Optional<Integer> parentIndex;
   private Optional<Integer> bestChildIndex;
   private Optional<Integer> bestDescendantIndex;
 
@@ -89,6 +92,10 @@ public class ProtoNode {
 
   public UnsignedLong getFinalizedEpoch() {
     return finalizedEpoch;
+  }
+
+  public void setParentIndex(Optional<Integer> parentIndex) {
+    this.parentIndex = parentIndex;
   }
 
   public Optional<Integer> getBestChildIndex() {
