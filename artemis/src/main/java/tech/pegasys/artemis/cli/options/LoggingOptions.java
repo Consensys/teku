@@ -24,7 +24,7 @@ public class LoggingOptions {
   public static final String LOG_FILE_OPTION_NAME = "--log-file";
   public static final String LOG_FILE_NAME_PATTERN_OPTION_NAME = "--log-file-name-pattern";
 
-  public static final boolean DEFAULT_LOG_COLOUR_ENABLED = true;
+  public static final boolean DEFAULT_LOG_COLOR_ENABLED = true;
   public static final boolean DEFAULT_LOG_INCLUDE_EVENTS_ENABLED = true;
   public static final String DEFAULT_LOG_DESTINATION = "default_of_both";
   public static final String DEFAULT_LOG_FILE = "teku.log";
@@ -35,7 +35,7 @@ public class LoggingOptions {
       paramLabel = "<BOOLEAN>",
       description = "Whether Status and Event log messages include a console color display code",
       arity = "1")
-  private boolean logColourEnabled = DEFAULT_LOG_COLOUR_ENABLED;
+  private boolean logColorEnabled = DEFAULT_LOG_COLOR_ENABLED;
 
   @CommandLine.Option(
       names = {LOG_INCLUDE_EVENTS_ENABLED_OPTION_NAME},
@@ -66,8 +66,8 @@ public class LoggingOptions {
       arity = "1")
   private String logFileNamePattern = DEFAULT_LOG_FILE_NAME_PATTERN;
 
-  public boolean isLogColourEnabled() {
-    return logColourEnabled;
+  public boolean isLogColorEnabled() {
+    return logColorEnabled;
   }
 
   public boolean isLogIncludeEventsEnabled() {
