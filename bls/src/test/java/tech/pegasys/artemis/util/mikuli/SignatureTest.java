@@ -26,6 +26,7 @@ class SignatureTest {
   void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
     Signature signature = Signature.random(42);
     assertEquals(signature, signature);
+    assertEquals(signature.hashCode(), signature.hashCode());
   }
 
   @Test
@@ -33,6 +34,7 @@ class SignatureTest {
     Signature signature = Signature.random(117);
     Signature copyOfSignature = new Signature(signature);
     assertEquals(signature, copyOfSignature);
+    assertEquals(signature.hashCode(), copyOfSignature.hashCode());
   }
 
   @Test
@@ -56,12 +58,16 @@ class SignatureTest {
   @Test
   void roundtripEncodeDecode() {
     Signature signature = Signature.random(257);
-    assertEquals(signature, Signature.fromBytes(signature.toBytes()));
+    final Signature result = Signature.fromBytes(signature.toBytes());
+    assertEquals(signature, result);
+    assertEquals(signature.hashCode(), result.hashCode());
   }
 
   @Test
   void roundtripEncodeDecodeCompressed() {
     Signature signature = Signature.random(513);
-    assertEquals(signature, Signature.fromBytesCompressed(signature.toBytesCompressed()));
+    final Signature result = Signature.fromBytesCompressed(signature.toBytesCompressed());
+    assertEquals(signature, result);
+    assertEquals(signature.hashCode(), result.hashCode());
   }
 }

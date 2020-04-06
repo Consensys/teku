@@ -217,7 +217,7 @@ public final class Signature {
 
   @Override
   public int hashCode() {
-    return point.hashCode();
+    return point.get().hashCode();
   }
 
   @VisibleForTesting
