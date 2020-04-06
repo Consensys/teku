@@ -39,8 +39,7 @@ public interface ValidatorApiChannel {
   SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       UnsignedLong slot, int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(
-      AttestationData attestationData);
+  SafeFuture<Optional<Attestation>> createAggregate(AttestationData attestationData);
 
   void sendSignedAttestation(Attestation attestation);
 
