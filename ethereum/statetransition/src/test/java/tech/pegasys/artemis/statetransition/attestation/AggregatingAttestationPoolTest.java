@@ -101,7 +101,7 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void getAttestationsForBlock_shouldNotIncludeAttesationsFromBeforePreviousEpoch() {
-fail("Not working yet");
+    fail("Not working yet");
   }
 
   private Attestation addAttestationFromValidators(
