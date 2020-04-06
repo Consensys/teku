@@ -227,7 +227,7 @@ public class BeaconNodeCommandTest {
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
         .setMetricsCategories(Arrays.asList("BEACONCHAIN", "JVM", "PROCESS"))
-        .setLogColourEnabled(true)
+        .setLogColorEnabled(true)
         .setLogDestination("default_of_both")
         .setLogFile("teku.log")
         .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log")
