@@ -24,9 +24,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.artemis.core.EpochProcessorUtil;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class slashings extends TestSuite {

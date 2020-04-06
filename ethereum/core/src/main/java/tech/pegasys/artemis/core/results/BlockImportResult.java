@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.blockimport;
+package tech.pegasys.artemis.core.results;
 
 import java.util.Optional;
 import tech.pegasys.artemis.data.BlockProcessingRecord;

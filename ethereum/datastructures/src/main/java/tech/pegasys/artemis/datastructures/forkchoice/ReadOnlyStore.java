@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.client;
+package tech.pegasys.artemis.datastructures.forkchoice;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Set;
