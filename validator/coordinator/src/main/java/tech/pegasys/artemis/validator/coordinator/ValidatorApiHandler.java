@@ -164,10 +164,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(
-      final UnsignedLong slot, final int committeeIndex, final boolean aggregator) {}
-
-  @Override
   public SafeFuture<Optional<Attestation>> createAggregate(
       final AttestationData attestationData, final UnsignedLong slot, final int committeeIndex) {
     return SafeFuture.completedFuture(attestationPool.createAggregateFor(attestationData));
