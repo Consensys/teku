@@ -164,8 +164,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(
-      final AttestationData attestationData, final UnsignedLong slot, final int committeeIndex) {
+  public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
     return SafeFuture.completedFuture(attestationPool.createAggregateFor(attestationData));
   }
 
