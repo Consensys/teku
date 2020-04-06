@@ -118,8 +118,9 @@ public class AttestationUtil {
     Set<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
       int index = committee.get(i);
-      int bitfieldBit = bits.getBit(i);
-      if (bitfieldBit == 1) attesting_indices.add(index);
+      if (bits.getBit(i)) {
+        attesting_indices.add(index);
+      }
     }
     return new ArrayList<>(attesting_indices);
   }
@@ -180,7 +181,7 @@ public class AttestationUtil {
       throw new UnsupportedOperationException("Attestation bitlist size's don't match");
     boolean representsNewAttester = false;
     for (int i = 0; i < oldBitlist.getCurrentSize(); i++) {
-      if (newBitlist.getBit(i) == 1 && oldBitlist.getBit(i) == 0) {
+      if (newBitlist.getBit(i) && !oldBitlist.getBit(i)) {
         oldBitlist.setBit(i);
         representsNewAttester = true;
       }
@@ -191,15 +192,14 @@ public class AttestationUtil {
   public static boolean representsNewAttester(
       Attestation oldAttestation, Attestation newAttestation) {
     int newAttesterIndex = getAttesterIndexIntoCommittee(newAttestation);
-    return oldAttestation.getAggregation_bits().getBit(newAttesterIndex) == 0;
+    return !oldAttestation.getAggregation_bits().getBit(newAttesterIndex);
   }
 
   // Returns the index of the first attester in the Attestation
   public static int getAttesterIndexIntoCommittee(Attestation attestation) {
     Bitlist aggregationBits = attestation.getAggregation_bits();
     for (int i = 0; i < aggregationBits.getCurrentSize(); i++) {
-      int bitfieldBit = aggregationBits.getBit(i);
-      if (bitfieldBit == 1) {
+      if (aggregationBits.getBit(i)) {
         return i;
       }
     }
@@ -208,14 +208,7 @@ public class AttestationUtil {
 
   // Returns the indices of the attesters in the Attestation
   public static List<Integer> getAttesterIndicesIntoCommittee(Bitlist aggregationBits) {
-    List<Integer> attesterIndices = new ArrayList<>();
-    for (int i = 0; i < aggregationBits.getCurrentSize(); i++) {
-      int bitfieldBit = aggregationBits.getBit(i);
-      if (bitfieldBit == 1) {
-        attesterIndices.add(i);
-      }
-    }
-    return attesterIndices;
+    return aggregationBits.getAllSetBits();
   }
 
   // Get attestation data that does not include attester specific shard or crosslink information
