@@ -11,10 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.protoArray;
+package tech.pegasys.artemis.statetransition.protoarray;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,23 +22,36 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class ProtoArray  {
 
-  private int pruneThreshold;
+  private final int pruneThreshold;
 
   private UnsignedLong justifiedEpoch;
   private UnsignedLong finalizedEpoch;
 
-  private List<ProtoNode> nodes = new ArrayList<>();
-  private Map<Bytes32, Integer> indices = new HashMap<>();
+  private final List<ProtoNode> nodes;
 
-  /// Register a block with the fork choice.
-  ///
-  /// It is only sane to supply a `None` parent for the genesis block.
+  public ProtoArray(int pruneThreshold,
+                    UnsignedLong justifiedEpoch,
+                    UnsignedLong finalizedEpoch,
+                    List<ProtoNode> nodes,
+                    Map<Bytes32, Integer> indices) {
+    this.pruneThreshold = pruneThreshold;
+    this.justifiedEpoch = justifiedEpoch;
+    this.finalizedEpoch = finalizedEpoch;
+    this.nodes = nodes;
+    this.indices = indices;
+  }
+
+  private final Map<Bytes32, Integer> indices;
+
+  // Register a block with the fork choice.
+  //
+  // It is only sane to supply a `None` parent for the genesis block.
   public void onBlock(UnsignedLong slot,
                       Bytes32 root,
+                      Optional<Bytes32> optionalParentRoot,
                       Bytes32 stateRoot,
                       UnsignedLong justifiedEpoch,
-                      UnsignedLong finalizedEpoch,
-                      Optional<Bytes32> optionalParentRoot) {
+                      UnsignedLong finalizedEpoch) {
     if (indices.containsKey(root)) {
       return;
     }
@@ -51,7 +62,7 @@ public class ProtoArray  {
             slot,
             stateRoot,
             root,
-            optionalParentRoot.map(parentRoot -> indices.get(parentRoot)),
+            optionalParentRoot.map(indices::get),
             justifiedEpoch,
             finalizedEpoch,
             UnsignedLong.ZERO,
@@ -66,14 +77,14 @@ public class ProtoArray  {
             maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex));
   }
 
-  /// Follows the best-descendant links to find the best-block (i.e., head-block).
-  ///
-  /// ## Notes
-  ///
-  /// The result of this function is not guaranteed to be accurate if `Self::on_new_block` has
-  /// been called without a subsequent `Self::apply_score_changes` call. This is because
-  /// `on_new_block` does not attempt to walk backwards through the tree and update the
-  /// best-child/best-descendant links.
+  // Follows the best-descendant links to find the best-block (i.e., head-block).
+  //
+  // ## Notes
+  //
+  // The result of this function is not guaranteed to be accurate if `Self::on_new_block` has
+  // been called without a subsequent `Self::apply_score_changes` call. This is because
+  // `on_new_block` does not attempt to walk backwards through the tree and update the
+  // best-child/best-descendant links.
   public Bytes32 findHead(Bytes32 justifiedRoot) {
     int justifiedIndex = indices.get(justifiedRoot);
     ProtoNode justifiedNode = nodes.get(justifiedIndex);
@@ -89,19 +100,19 @@ public class ProtoArray  {
     return bestNode.getRoot();
   }
 
-  /// Iterate backwards through the array, touching all nodes and their parents and potentially
-  /// the best-child of each parent.
-  ///
-  /// The structure of the `this.nodes` array ensures that the child of each node is always
-  /// touched before its parent.
-  ///
-  /// For each node, the following is done:
-  ///
-  /// - Update the node's weight with the corresponding delta.
-  /// - Back-propagate each node's delta to its parents delta.
-  /// - Compare the current node with the parents best-child, updating it if the current node
-  /// should become the best child.
-  /// - If required, update the parents best-descendant with the current node or its best-descendant.
+  // Iterate backwards through the array, touching all nodes and their parents and potentially
+  // the best-child of each parent.
+  //
+  // The structure of the `this.nodes` array ensures that the child of each node is always
+  // touched before its parent.
+  //
+  // For each node, the following is done:
+  //
+  // - Update the node's weight with the corresponding delta.
+  // - Back-propagate each node's delta to its parents delta.
+  // - Compare the current node with the parents best-child, updating it if the current node
+  // should become the best child.
+  // - If required, update the parents best-descendant with the current node or its best-descendant.
   private void applyScoreChanges(List<Long> deltas,
                                 UnsignedLong justifiedEpoch,
                                 UnsignedLong finalizedEpoch) {
@@ -138,19 +149,19 @@ public class ProtoArray  {
     }
   }
 
-  /// Update the tree with new finalization information. The tree is only actually pruned if both
-  /// of the two following criteria are met:
-  ///
-  /// - The supplied finalized epoch and root are different to the current values.
-  /// - The number of nodes in `self` is at least `self.prune_threshold`.
-  ///
-  /// # Errors
-  ///
-  /// Throws errors if:
-  ///
-  /// - The finalized epoch is less than the current one.
-  /// - The finalized epoch is equal to the current one, but the finalized root is different.
-  /// - There is some internal error relating to invalid indices inside `self`.
+  // Update the tree with new finalization information. The tree is only actually pruned if both
+  // of the two following criteria are met:
+  //
+  // - The supplied finalized epoch and root are different to the current values.
+  // - The number of nodes in `self` is at least `self.prune_threshold`.
+  //
+  // # Errors
+  //
+  // Throws errors if:
+  //
+  // - The finalized epoch is less than the current one.
+  // - The finalized epoch is equal to the current one, but the finalized root is different.
+  // - There is some internal error relating to invalid indices inside `self`.
   public void maybePrune(Bytes32 finalizedRoot) {
     int finalizedIndex = indices.get(finalizedRoot);
 
@@ -207,17 +218,17 @@ public class ProtoArray  {
     }
   }
 
-  /// Observe the parent at `parentIndex` with respect to the child at `childIndex` and
-  /// potentially modify the `parent.bestChild` and `parent.bestDescendant` values.
-  ///
-  /// ## Detail
-  ///
-  /// There are four outcomes:
-  ///
-  /// - The child is already the best child but it's now invalid due to a FFG change and should be removed.
-  /// - The child is already the best child and the parent is updated with the new best-descendant.
-  /// - The child is not the best child but becomes the best child.
-  /// - The child is not the best child and does not become the best child.
+  // Observe the parent at `parentIndex` with respect to the child at `childIndex` and
+  // potentially modify the `parent.bestChild` and `parent.bestDescendant` values.
+  //
+  // ## Detail
+  //
+  // There are four outcomes:
+  //
+  // - The child is already the best child but it's now invalid due to a FFG change and should be removed.
+  // - The child is already the best child and the parent is updated with the new best-descendant.
+  // - The child is not the best child but becomes the best child.
+  // - The child is not the best child and does not become the best child.
   private void maybeUpdateBestChildAndDescendant(int parentIndex, int childIndex) {
     ProtoNode child = nodes.get(childIndex);
     ProtoNode parent = nodes.get(parentIndex);
@@ -284,8 +295,8 @@ public class ProtoArray  {
     parent.setBestDescendantIndex(Optional.empty());
   }
 
-  /// Indicates if the node itself is viable for the head, or if it's best descendant is viable
-  /// for the head.
+  // Indicates if the node itself is viable for the head, or if it's best descendant is viable
+  // for the head.
   private boolean nodeLeadsToViableHead(ProtoNode node) {
     boolean bestDescendantIsViableForHead =
             node.getBestDescendantIndex()
@@ -296,12 +307,12 @@ public class ProtoArray  {
     return bestDescendantIsViableForHead || nodeIsViableForHead(node);
   }
 
-  /// This is the equivalent to the `filter_block_tree` function in the eth2 spec:
-  ///
-  /// https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/fork-choice.md#filter_block_tree
-  ///
-  /// Any node that has a different finalized or justified epoch should not be viable for the
-  /// head.
+  // This is the equivalent to the `filter_block_tree` function in the eth2 spec:
+  //
+  // https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/fork-choice.md#filter_block_tree
+  //
+  // Any node that has a different finalized or justified epoch should not be viable for the
+  // head.
   private boolean nodeIsViableForHead(ProtoNode node) {
     return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(UnsignedLong.ZERO))
             && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(UnsignedLong.ZERO));

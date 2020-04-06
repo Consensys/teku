@@ -7,7 +7,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ProtoBlockTest {
+public class ProtoArrayTest {
 
   @Test
   void listSplitTest() {
@@ -18,6 +18,4 @@ public class ProtoBlockTest {
     assertThat(list.get(0)).isEqualTo(3);
     assertThat(list.size()).isEqualTo(4);
   }
-
-
 }

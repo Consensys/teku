@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.protoArray;
+package tech.pegasys.artemis.statetransition.protoarray;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -27,9 +27,6 @@ public class ProtoNode {
   private final UnsignedLong finalizedEpoch;
 
   private UnsignedLong weight;
-
-
-
   private Optional<Integer> parentIndex;
   private Optional<Integer> bestChildIndex;
   private Optional<Integer> bestDescendantIndex;
