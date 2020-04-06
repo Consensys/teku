@@ -37,8 +37,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
@@ -86,14 +85,13 @@ public class GetValidatorsTest {
   @Test
   public void shouldReturnEmptyListWhenNoValidators() throws Exception {
     GetValidators handler = new GetValidators(provider, jsonProvider);
-    MutableBeaconState beaconStateW = this.beaconStateInternal.createWritableCopy();
-    beaconStateW.getValidators().clear();
+    tech.pegasys.artemis.datastructures.state.BeaconState beaconStateW =
+        this.beaconStateInternal.updated(state -> state.getValidators().clear());
 
     when(provider.isStoreAvailable()).thenReturn(true);
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(provider.getStateByBlockRoot(blockRoot))
-        .thenReturn(
-            SafeFuture.completedFuture(Optional.of(new BeaconState(beaconStateW.commitChanges()))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(new BeaconState(beaconStateW))));
 
     handler.handle(context);
 
@@ -303,18 +301,21 @@ public class GetValidatorsTest {
 
   private tech.pegasys.artemis.datastructures.state.BeaconState addActiveValidator(
       final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
-    MutableBeaconState beaconStateW = beaconState.createWritableCopy();
-
     // create an ACTIVE validator and add it to the list
-    MutableValidator v = dataStructureUtil.randomValidator().createWritableCopy();
-    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+    Validator v =
+        dataStructureUtil
+            .randomValidator()
+            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
+            .withActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
     assertThat(
             ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(beaconState)))
         .isTrue();
-    beaconStateW.getValidators().add(v);
-    // also add balance
-    beaconStateW.getBalances().add(UnsignedLong.ZERO);
-    return beaconStateW.commitChanges();
+
+    return beaconState.updated(
+        state -> {
+          state.getValidators().add(v);
+          // also add balance
+          state.getBalances().add(UnsignedLong.ZERO);
+        });
   }
 }

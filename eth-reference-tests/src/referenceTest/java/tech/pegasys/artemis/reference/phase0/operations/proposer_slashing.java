@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -43,17 +42,20 @@ public class proposer_slashing extends TestSuite {
     assertThrows(
         BlockProcessingException.class,
         () ->
-            process_proposer_slashings(
-                pre.createWritableCopy(), SSZList.singleton(proposerSlashing)));
+            pre.updated(
+                state -> process_proposer_slashings(state, SSZList.singleton(proposerSlashing))));
   }
 
   @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
   @MethodSource({"mainnetProposerSlashingSuccessSetup", "minimalProposerSlashingSuccessSetup"})
   void processProposerSlashing(
       ProposerSlashing proposerSlashing, BeaconState pre, BeaconState post) {
-    MutableBeaconState wState = pre.createWritableCopy();
-    assertDoesNotThrow(
-        () -> process_proposer_slashings(wState, SSZList.singleton(proposerSlashing)));
+    BeaconState wState =
+        assertDoesNotThrow(
+            () ->
+                pre.updated(
+                    state ->
+                        process_proposer_slashings(state, SSZList.singleton(proposerSlashing))));
     assertEquals(post, wState);
   }
 

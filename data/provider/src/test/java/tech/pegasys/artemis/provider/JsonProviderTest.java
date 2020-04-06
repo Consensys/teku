@@ -58,7 +58,7 @@ class JsonProviderTest {
     final String asJson = jsonProvider.objectToJSON(data);
     final Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
 
-    assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
+    assertThat(data).isEqualToIgnoringGivenFields(asData, "maxSize");
     assertThat(asData.getCurrentSize()).isEqualTo(BITLIST_SIZE);
   }
 

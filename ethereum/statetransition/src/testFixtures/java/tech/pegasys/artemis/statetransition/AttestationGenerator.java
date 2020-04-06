@@ -30,7 +30,6 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
@@ -48,16 +47,14 @@ import tech.pegasys.artemis.validator.client.signer.Signer;
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
   private final BLSKeyPair randomKeyPair = BLSKeyPair.random(12345);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   public AttestationGenerator(final List<BLSKeyPair> validatorKeys) {
     this.validatorKeys = validatorKeys;
   }
 
   public static int getSingleAttesterIndex(Attestation attestation) {
-    for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-      if (attestation.getAggregation_bits().getBit(i) == 1) return i;
-    }
-    return -1;
+    return attestation.getAggregation_bits().streamAllSetBits().findFirst().orElse(-1);
   }
 
   public static AttestationData diffSlotAttestationData(UnsignedLong slot, AttestationData data) {
@@ -65,10 +62,9 @@ public class AttestationGenerator {
         slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
   }
 
-  public static Attestation aggregateAttestation(int numAttesters) {
-    Attestation attestation = new DataStructureUtil(1).randomAttestation();
-    withNewAttesterBits(attestation, numAttesters);
-    return attestation;
+  public Attestation aggregateAttestation(int numAttesters) {
+    Attestation attestation = dataStructureUtil.randomAttestation();
+    return withNewAttesterBits(attestation, numAttesters);
   }
 
   public static Attestation withNewAttesterBits(Attestation oldAttestation, int numNewAttesters) {
@@ -76,7 +72,7 @@ public class AttestationGenerator {
     Bitlist newBitlist = attestation.getAggregation_bits().copy();
     List<Integer> unsetBits = new ArrayList<>();
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-      if (newBitlist.getBit(i) == 0) {
+      if (!newBitlist.getBit(i)) {
         unsetBits.add(i);
       }
     }
@@ -98,7 +94,7 @@ public class AttestationGenerator {
             attestation.getAggregation_bits().getMaxSize());
     List<Integer> unsetBits = new ArrayList<>();
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-      if (attestation.getAggregation_bits().getBit(i) == 0) {
+      if (!attestation.getAggregation_bits().getBit(i)) {
         unsetBits.add(i);
       }
     }
@@ -247,11 +243,7 @@ public class AttestationGenerator {
 
   private BeaconState processStateToSlot(BeaconState preState, UnsignedLong slot)
       throws EpochProcessingException, SlotProcessingException {
-    final StateTransition stateTransition = new StateTransition();
-    final MutableBeaconState postState = preState.createWritableCopy();
-
-    stateTransition.process_slots(postState, slot);
-    return postState;
+    return new StateTransition().process_slots(preState, slot);
   }
 
   private Attestation createAttestation(

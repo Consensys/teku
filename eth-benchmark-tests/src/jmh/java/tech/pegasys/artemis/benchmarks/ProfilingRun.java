@@ -32,6 +32,7 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
+import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -49,7 +50,7 @@ public class ProfilingRun {
     Constants.setConstants("mainnet");
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
-    int validatorsCount = 32 * 1024;
+    int validatorsCount = 16 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -63,30 +64,34 @@ public class ProfilingRun {
     //    List<BLSKeyPair> validatorKeys =
     // BlsKeyPairIO.createReaderWithDefaultSource().readAll(validatorsCount);
     List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")
+        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz")
             .readAll(validatorsCount);
 
-    EventBus localEventBus = mock(EventBus.class);
-    RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
-    BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
-    localChain.initializeStorage();
+    BeaconState initialState =
+        StartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
 
-    BlockImporter blockImporter = new BlockImporter(localStorage, localEventBus);
+    while (true) {
+      EventBus localEventBus = mock(EventBus.class);
+      RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
+      BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
+      localStorage.initializeFromGenesis(initialState);
+      BlockImporter blockImporter = new BlockImporter(localStorage, localEventBus);
 
-    System.out.println("Start blocks import from " + blocksFile);
-    try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
-      for (SignedBeaconBlock block : blockReader) {
-        long s = System.currentTimeMillis();
-        localChain.setSlot(block.getSlot());
-        BlockImportResult result = blockImporter.importBlock(block);
-        //        compareHashes(result.getBlockProcessingRecord().getPostState());
-        System.out.println(
-            "Imported block at #"
-                + block.getSlot()
-                + " in "
-                + (System.currentTimeMillis() - s)
-                + " ms: "
-                + result);
+      System.out.println("Start blocks import from " + blocksFile);
+      try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
+        for (SignedBeaconBlock block : blockReader) {
+          long s = System.currentTimeMillis();
+          localChain.setSlot(block.getSlot());
+          BlockImportResult result = blockImporter.importBlock(block);
+          //        compareHashes(result.getBlockProcessingRecord().getPostState());
+          System.out.println(
+              "Imported block at #"
+                  + block.getSlot()
+                  + " in "
+                  + (System.currentTimeMillis() - s)
+                  + " ms: "
+                  + result);
+        }
       }
     }
   }

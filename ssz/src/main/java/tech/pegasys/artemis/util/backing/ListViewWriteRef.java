@@ -19,11 +19,13 @@ import java.util.function.Consumer;
  * Represents a mutable List view which is able to return a mutable child 'by reference' Any
  * modifications made to such child are reflected in this list and its backing tree
  *
- * @param <R> Class of immutable child views
- * @param <W> Class of the corresponding mutable child views
+ * @param <ElementReadType> Class of immutable child views
+ * @param <ElementWriteType> Class of the corresponding mutable child views
  */
-public interface ListViewWriteRef<R extends ViewRead, W extends R>
-    extends CompositeViewWriteRef<R, W>, ListViewWrite<R> {
+public interface ListViewWriteRef<
+        ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+    extends CompositeViewWriteRef<ElementReadType, ElementWriteType>,
+        ListViewWrite<ElementReadType> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are
@@ -32,20 +34,20 @@ public interface ListViewWriteRef<R extends ViewRead, W extends R>
    * @throws IndexOutOfBoundsException if index >= size()
    */
   @Override
-  W getByRef(int index);
+  ElementWriteType getByRef(int index);
 
   /**
    * Appends a new empty element to the list and returns its writeable reference for modification
    */
-  default W append() {
+  default ElementWriteType append() {
     @SuppressWarnings("unchecked")
-    R newElement = (R) getType().getElementType().getDefault();
+    ElementReadType newElement = (ElementReadType) getType().getElementType().getDefault();
     append(newElement);
     return getByRef(size() - 1);
   }
 
   /** Just a functional style helper for {@link #append()} */
-  default void append(Consumer<W> mutator) {
+  default void append(Consumer<ElementWriteType> mutator) {
     mutator.accept(append());
   }
 }

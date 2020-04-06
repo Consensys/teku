@@ -61,13 +61,13 @@ public class ViewUtils {
             .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitlist.getCurrentSize(); i++) {
-      viewWrite.append(new BitView(bitlist.getBit(i) > 0));
+      viewWrite.append(new BitView(bitlist.getBit(i)));
     }
     return viewWrite.commitChanges();
   }
 
   /** Converts list of bits to {@link Bitlist} value */
-  public static Bitlist getBitvector(ListViewRead<BitView> bitlistView) {
+  public static Bitlist getBitlist(ListViewRead<BitView> bitlistView) {
     Bitlist ret = new Bitlist(bitlistView.size(), bitlistView.getType().getMaxLength());
     for (int i = 0; i < bitlistView.size(); i++) {
       if (bitlistView.get(i).get()) {

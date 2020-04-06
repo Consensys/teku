@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
+import java.util.function.Function;
+
 public interface SSZMutableCollection<E> extends SSZImmutableCollection<E> {
 
   /**
@@ -38,5 +40,9 @@ public interface SSZMutableCollection<E> extends SSZImmutableCollection<E> {
     for (int i = 0; i < other.size(); i++) {
       set(i, other.get(i));
     }
+  }
+
+  default void update(int index, Function<E, E> updater) {
+    set(index, updater.apply(get(index)));
   }
 }

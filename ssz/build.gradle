@@ -1,4 +1,18 @@
+plugins {
+  id 'me.champeau.gradle.jmh'
+}
+
 dependencies {
+  implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
+
+  jmh 'org.openjdk.jmh:jmh-generator-annprocess'
+  jmh 'org.apache.tuweni:tuweni-ssz'
+}
+
+jmh {
+  include = '.*'
+  resultFormat = 'CSV'
+  duplicateClassesStrategy = 'warn'
 }

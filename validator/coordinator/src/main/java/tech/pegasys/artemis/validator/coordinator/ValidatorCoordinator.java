@@ -43,7 +43,6 @@ import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.service.serviceutils.Service;
@@ -293,9 +292,9 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {
     try {
-      MutableBeaconState newState = previousState.createWritableCopy();
+
       // Process empty slots up to the new slot
-      stateTransition.process_slots(newState, newSlot);
+      BeaconState newState = stateTransition.process_slots(previousState, newSlot);
 
       // Check if we should be proposing
       final BLSPublicKey proposer = blockCreator.getProposerForSlot(newState, newSlot);

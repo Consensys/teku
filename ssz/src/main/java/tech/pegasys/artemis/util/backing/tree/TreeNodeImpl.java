@@ -14,14 +14,13 @@
 package tech.pegasys.artemis.util.backing.tree;
 
 import java.util.Objects;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.BranchNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.LeafNode;
 
-class TreeNodeImpl {
+abstract class TreeNodeImpl implements TreeNode {
 
-  static class LeafNodeImpl implements LeafNode {
+  static class LeafNodeImpl extends TreeNodeImpl implements LeafNode {
     private final Bytes32 root;
 
     public LeafNodeImpl(Bytes32 root) {
@@ -31,6 +30,16 @@ class TreeNodeImpl {
     @Override
     public Bytes32 getRoot() {
       return root;
+    }
+
+    @Override
+    public TreeNode updated(TreeUpdates newNodes) {
+      if (newNodes.size() == 0) {
+        return this;
+      } else {
+        newNodes.checkLeaf();
+        return newNodes.getNode(0);
+      }
     }
 
     @Override
@@ -56,7 +65,7 @@ class TreeNodeImpl {
     }
   }
 
-  static class BranchNodeImpl implements BranchNode {
+  static class BranchNodeImpl extends TreeNodeImpl implements BranchNode {
     private final TreeNode left;
     private final TreeNode right;
     private volatile Bytes32 cachedHash = null;
@@ -81,6 +90,19 @@ class TreeNodeImpl {
     @Override
     public BranchNode rebind(boolean left, TreeNode newNode) {
       return left ? new BranchNodeImpl(newNode, right()) : new BranchNodeImpl(left(), newNode);
+    }
+
+    @Override
+    public TreeNode updated(TreeUpdates newNodes) {
+      if (newNodes.size() == 0) {
+        return this;
+      } else if (newNodes.isFinal()) {
+        return newNodes.getNode(0);
+      } else {
+        Pair<TreeUpdates, TreeUpdates> children = newNodes.splitAtPivot();
+        return new BranchNodeImpl(
+            left().updated(children.getLeft()), right().updated(children.getRight()));
+      }
     }
 
     @Override

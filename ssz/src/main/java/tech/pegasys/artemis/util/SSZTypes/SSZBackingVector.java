@@ -15,25 +15,31 @@ package tech.pegasys.artemis.util.SSZTypes;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
 public class SSZBackingVector<C, R extends ViewRead> extends SSZAbstractCollection<C>
     implements SSZMutableVector<C> {
 
-  private final VectorViewWrite<R> delegate;
+  private final VectorViewRead<R> delegate;
   private final Function<C, R> wrapper;
   private final Function<R, C> unwrapper;
 
   public SSZBackingVector(
       Class<C> classInfo,
-      VectorViewWrite<R> delegate,
+      VectorViewRead<R> delegate,
       Function<C, R> wrapper,
       Function<R, C> unwrapper) {
     super(classInfo);
     this.delegate = delegate;
     this.wrapper = wrapper;
     this.unwrapper = unwrapper;
+  }
+
+  private VectorViewWrite<R> getWriteDelegate() {
+    // temporary workaround to have a single implementation class
+    return (VectorViewWrite<R>) delegate;
   }
 
   @Override
@@ -48,12 +54,12 @@ public class SSZBackingVector<C, R extends ViewRead> extends SSZAbstractCollecti
 
   @Override
   public void set(int index, C element) {
-    delegate.set(index, wrapper.apply(element));
+    getWriteDelegate().set(index, wrapper.apply(element));
   }
 
   @Override
   public void clear() {
-    delegate.clear();
+    getWriteDelegate().clear();
   }
 
   @Override

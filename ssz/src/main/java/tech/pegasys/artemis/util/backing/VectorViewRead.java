@@ -18,13 +18,13 @@ import tech.pegasys.artemis.util.backing.type.VectorViewType;
 /**
  * Immutable Vector view
  *
- * @param <C> Type of vector elements
+ * @param <ElementType> Type of vector elements
  */
-public interface VectorViewRead<C> extends CompositeViewRead<C> {
+public interface VectorViewRead<ElementType> extends CompositeViewRead<ElementType> {
 
   @Override
-  VectorViewWrite<C> createWritableCopy();
+  VectorViewWrite<ElementType> createWritableCopy();
 
   @Override
-  VectorViewType<C> getType();
+  VectorViewType<ElementType> getType();
 }

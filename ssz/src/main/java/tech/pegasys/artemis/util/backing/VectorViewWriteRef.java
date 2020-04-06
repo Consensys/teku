@@ -17,11 +17,13 @@ package tech.pegasys.artemis.util.backing;
  * Represents a mutable Vector view which is able to return a mutable child 'by reference' Any
  * modifications made to such child are reflected in this vector and its backing tree
  *
- * @param <R> Class of immutable child views
- * @param <W> Class of the corresponding mutable child views
+ * @param <ElementReadType> Class of immutable child views
+ * @param <ElementWriteType> Class of the corresponding mutable child views
  */
-public interface VectorViewWriteRef<R extends ViewRead, W extends R>
-    extends CompositeViewWriteRef<R, W>, VectorViewWrite<R> {
+public interface VectorViewWriteRef<
+        ElementReadType extends ViewRead, ElementWriteType extends ElementReadType>
+    extends CompositeViewWriteRef<ElementReadType, ElementWriteType>,
+        VectorViewWrite<ElementReadType> {
 
   /**
    * Returns a mutable child at index 'by reference' Any modifications made to such child are
@@ -30,5 +32,5 @@ public interface VectorViewWriteRef<R extends ViewRead, W extends R>
    * @throws IndexOutOfBoundsException if index >= size()
    */
   @Override
-  W getByRef(int index);
+  ElementWriteType getByRef(int index);
 }

@@ -17,10 +17,10 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.util.cache.Cache;
-import tech.pegasys.artemis.datastructures.util.cache.LRUCache;
-import tech.pegasys.artemis.datastructures.util.cache.NoOpCache;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.LRUCache;
+import tech.pegasys.artemis.util.cache.NoOpCache;
 
 /** The container class for all transition caches. */
 public class TransitionCaches {
@@ -60,7 +60,7 @@ public class TransitionCaches {
   private final Cache<UnsignedLong, List<Integer>> activeValidators;
   private final Cache<UnsignedLong, Integer> beaconProposerIndex;
   private final Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee;
-  private final Cache<UnsignedLong, UnsignedLong> totalActiveBalance;
+  private final Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> totalActiveBalance;
   private final Cache<UnsignedLong, BLSPublicKey> validatorsPubKeys;
   private final Cache<BLSPublicKey, Integer> validatorIndex;
   private final Cache<Bytes32, List<Integer>> committeeShuffle;
@@ -79,7 +79,7 @@ public class TransitionCaches {
       Cache<UnsignedLong, List<Integer>> activeValidators,
       Cache<UnsignedLong, Integer> beaconProposerIndex,
       Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee,
-      Cache<UnsignedLong, UnsignedLong> totalActiveBalance,
+      Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> totalActiveBalance,
       Cache<UnsignedLong, BLSPublicKey> validatorsPubKeys,
       Cache<BLSPublicKey, Integer> validatorIndex,
       Cache<Bytes32, List<Integer>> committeeShuffle) {
@@ -108,7 +108,7 @@ public class TransitionCaches {
   }
 
   /** (epoch) -> (total active balance) cache */
-  public Cache<UnsignedLong, UnsignedLong> getTotalActiveBalance() {
+  public Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> getTotalActiveBalance() {
     return totalActiveBalance;
   }
 

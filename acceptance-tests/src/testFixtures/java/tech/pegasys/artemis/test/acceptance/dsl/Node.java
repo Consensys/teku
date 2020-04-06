@@ -13,12 +13,15 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl;
 
+import static com.google.common.io.Files.createTempDir;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,11 +30,13 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import tech.pegasys.artemis.util.Waiter;
+import tech.pegasys.artemis.util.file.FileUtil;
 
 public abstract class Node {
   private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();
   protected final GenericContainer<?> container;
   protected final String nodeAlias;
+  private final List<File> tempDirectories = new ArrayList<>();
 
   public Node(final Network network, final String dockerImageName, final Logger log) {
     this.nodeAlias =
@@ -45,6 +50,7 @@ public abstract class Node {
 
   public void stop() {
     container.stop();
+    cleanupTemporaryDirectories();
   }
 
   protected void waitFor(final Waiter.Condition condition, final int timeoutSeconds) {
@@ -75,7 +81,17 @@ public abstract class Node {
         IOUtils.copy(inputStream, Files.newOutputStream(localTargetDir.toPath()));
       }
     } catch (final IOException e) {
-      throw new RuntimeException("Failed to capture artifacts for " + nodeAlias, e);
+      throw new RuntimeException("Failed to copy directory from " + nodeAlias, e);
     }
+  }
+
+  protected File createTempDirectory() {
+    File tmpDir = createTempDir();
+    tempDirectories.add(tmpDir);
+    return tmpDir;
+  }
+
+  private void cleanupTemporaryDirectories() {
+    FileUtil.recursivelyDeleteDirectories(tempDirectories);
   }
 }

@@ -14,19 +14,103 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.SSZBackingList;
+import tech.pegasys.artemis.util.SSZTypes.SSZBackingVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
+import tech.pegasys.artemis.util.backing.ViewWrite;
+import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.type.VectorViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractBasicView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public interface BeaconState
     extends ContainerViewRead, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+
+  Field GENESIS_TIME_FIELD = new Field(0, BasicViewTypes.UINT64_TYPE);
+  Field SLOT_FIELD = new Field(1, BasicViewTypes.UINT64_TYPE);
+  Field FORK_FIELD = new Field(2, Fork.TYPE);
+  Field LATEST_BLOCK_HEADER_FIELD = new Field(3, BeaconBlockHeader.TYPE);
+  Field BLOCK_ROOTS_FIELD =
+      new Field(
+          4,
+          () ->
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT));
+  Field STATE_ROOTS_FIELD =
+      new Field(
+          5,
+          () ->
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT));
+  Field HISTORICAL_ROOTS_FIELD =
+      new Field(
+          6,
+          () -> new ListViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT));
+  Field ETH1_DATA_FIELD = new Field(7, Eth1Data.TYPE);
+  Field ETH1_DATA_VOTES_FIELD =
+      new Field(8, () -> new ListViewType<>(Eth1Data.TYPE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD));
+  Field ETH1_DEPOSIT_INDEX_FIELD = new Field(9, BasicViewTypes.UINT64_TYPE);
+  Field VALIDATORS_FIELD =
+      new Field(10, () -> new ListViewType<>(Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT));
+  Field BALANCES_FIELD =
+      new Field(
+          11,
+          () -> new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT));
+  Field RANDAO_MIXES_FIELD =
+      new Field(
+          12,
+          () ->
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR));
+  Field SLASHINGS_FIELD =
+      new Field(
+          13,
+          () ->
+              new VectorViewType<>(
+                  BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR));
+  Field PREVIOUS_EPOCH_ATTESTATIONS_FIELD =
+      new Field(
+          14,
+          () ->
+              new ListViewType<>(
+                  PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+  Field CURRENT_EPOCH_ATTESTATIONS_FIELD =
+      new Field(
+          15,
+          () ->
+              new ListViewType<>(
+                  PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH));
+  Field JUSTIFICATION_BITS_FIELD =
+      new Field(
+          16,
+          () -> new VectorViewType<>(BasicViewTypes.BIT_TYPE, Constants.JUSTIFICATION_BITS_LENGTH));
+  Field PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD = new Field(17, Checkpoint.TYPE);
+  Field CURRENT_JUSTIFIED_CHECKPOINT_FIELD = new Field(18, Checkpoint.TYPE);
+  Field FINALIZED_CHECKPOINT_FIELD = new Field(19, Checkpoint.TYPE);
+
+  static ContainerViewType<BeaconState> getSSZType() {
+    return new ContainerViewType<>(
+        SSZContainer.listFields(BeaconState.class).stream()
+            .map(f -> f.getViewType().get())
+            .collect(Collectors.toList()),
+        BeaconStateImpl::new);
+  }
 
   static BeaconState createEmpty() {
     return new BeaconStateImpl();
@@ -70,80 +154,168 @@ public interface BeaconState
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
 
-    return new BeaconStateImpl(
-        genesis_time,
-        slot,
-        fork,
-        latest_block_header,
-        block_roots,
-        state_roots,
-        historical_roots,
-        eth1_data,
-        eth1_data_votes,
-        eth1_deposit_index,
-        validators,
-        balances,
-        randao_mixes,
-        slashings,
-        previous_epoch_attestations,
-        current_epoch_attestations,
-        justification_bits,
-        previous_justified_checkpoint,
-        current_justified_checkpoint,
-        finalized_checkpoint);
-  }
-
-  static void setConstants() {
-    BeaconStateImpl.resetSSZType();
+    return createEmpty()
+        .updated(
+            state -> {
+              state.setGenesis_time(genesis_time);
+              state.setSlot(slot);
+              state.setFork(fork);
+              state.setLatest_block_header(latest_block_header);
+              state.getBlock_roots().setAll(block_roots);
+              state.getState_roots().setAll(state_roots);
+              state.getHistorical_roots().setAll(historical_roots);
+              state.setEth1_data(eth1_data);
+              state.getEth1_data_votes().setAll(eth1_data_votes);
+              state.setEth1_deposit_index(eth1_deposit_index);
+              state.getValidators().setAll(validators);
+              state.getBalances().setAll(balances);
+              state.getRandao_mixes().setAll(randao_mixes);
+              state.getSlashings().setAll(slashings);
+              state.getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
+              state.getCurrent_epoch_attestations().setAll(current_epoch_attestations);
+              state.setJustification_bits(justification_bits);
+              state.setPrevious_justified_checkpoint(previous_justified_checkpoint);
+              state.setCurrent_justified_checkpoint(current_justified_checkpoint);
+              state.setFinalized_checkpoint(finalized_checkpoint);
+            });
   }
 
   // Versioning
-  UnsignedLong getGenesis_time();
+  default UnsignedLong getGenesis_time() {
+    return ((UInt64View) get(GENESIS_TIME_FIELD.getIndex())).get();
+  }
 
-  UnsignedLong getSlot();
+  default UnsignedLong getSlot() {
+    return ((UInt64View) get(SLOT_FIELD.getIndex())).get();
+  }
 
-  Fork getFork();
+  default Fork getFork() {
+    return getAny(FORK_FIELD.getIndex());
+  }
 
   // History
-  BeaconBlockHeader getLatest_block_header();
+  default BeaconBlockHeader getLatest_block_header() {
+    return getAny(LATEST_BLOCK_HEADER_FIELD.getIndex());
+  }
 
-  SSZVector<Bytes32> getBlock_roots();
+  default SSZVector<Bytes32> getBlock_roots() {
+    return new SSZBackingVector<>(
+        Bytes32.class,
+        getAny(BLOCK_ROOTS_FIELD.getIndex()),
+        Bytes32View::new,
+        AbstractBasicView::get);
+  }
 
-  SSZVector<Bytes32> getState_roots();
+  default SSZVector<Bytes32> getState_roots() {
+    return new SSZBackingVector<>(
+        Bytes32.class,
+        getAny(STATE_ROOTS_FIELD.getIndex()),
+        Bytes32View::new,
+        AbstractBasicView::get);
+  }
 
-  SSZList<Bytes32> getHistorical_roots();
+  default SSZList<Bytes32> getHistorical_roots() {
+    return new SSZBackingList<>(
+        Bytes32.class,
+        getAny(HISTORICAL_ROOTS_FIELD.getIndex()),
+        Bytes32View::new,
+        AbstractBasicView::get);
+  }
 
   // Eth1
-  Eth1Data getEth1_data();
+  default Eth1Data getEth1_data() {
+    return getAny(ETH1_DATA_FIELD.getIndex());
+  }
 
-  SSZList<Eth1Data> getEth1_data_votes();
+  default SSZList<Eth1Data> getEth1_data_votes() {
+    return new SSZBackingList<>(
+        Eth1Data.class,
+        getAny(ETH1_DATA_VOTES_FIELD.getIndex()),
+        Function.identity(),
+        Function.identity());
+  }
 
-  UnsignedLong getEth1_deposit_index();
+  default UnsignedLong getEth1_deposit_index() {
+    return ((UInt64View) get(ETH1_DEPOSIT_INDEX_FIELD.getIndex())).get();
+  }
 
   // Registry
-  SSZList<Validator> getValidators();
+  default SSZList<Validator> getValidators() {
+    return new SSZBackingList<>(
+        Validator.class,
+        getAny(VALIDATORS_FIELD.getIndex()),
+        Function.identity(),
+        Function.identity());
+  }
 
-  SSZList<UnsignedLong> getBalances();
+  default SSZList<UnsignedLong> getBalances() {
+    return new SSZBackingList<>(
+        UnsignedLong.class,
+        getAny(BALANCES_FIELD.getIndex()),
+        UInt64View::new,
+        AbstractBasicView::get);
+  }
 
-  SSZVector<Bytes32> getRandao_mixes();
+  default SSZVector<Bytes32> getRandao_mixes() {
+    return new SSZBackingVector<>(
+        Bytes32.class,
+        getAny(RANDAO_MIXES_FIELD.getIndex()),
+        Bytes32View::new,
+        AbstractBasicView::get);
+  }
 
   // Slashings
-  SSZVector<UnsignedLong> getSlashings();
+  default SSZVector<UnsignedLong> getSlashings() {
+    return new SSZBackingVector<>(
+        UnsignedLong.class,
+        getAny(SLASHINGS_FIELD.getIndex()),
+        UInt64View::new,
+        AbstractBasicView::get);
+  }
 
   // Attestations
-  SSZList<PendingAttestation> getPrevious_epoch_attestations();
+  default SSZList<PendingAttestation> getPrevious_epoch_attestations() {
+    return new SSZBackingList<>(
+        PendingAttestation.class,
+        getAny(PREVIOUS_EPOCH_ATTESTATIONS_FIELD.getIndex()),
+        Function.identity(),
+        Function.identity());
+  }
 
-  SSZList<PendingAttestation> getCurrent_epoch_attestations();
+  default SSZList<PendingAttestation> getCurrent_epoch_attestations() {
+    return new SSZBackingList<>(
+        PendingAttestation.class,
+        getAny(CURRENT_EPOCH_ATTESTATIONS_FIELD.getIndex()),
+        Function.identity(),
+        Function.identity());
+  }
 
   // Finality
-  Bitvector getJustification_bits();
+  default Bitvector getJustification_bits() {
+    return ViewUtils.getBitvector(getAny(JUSTIFICATION_BITS_FIELD.getIndex()));
+  }
 
-  Checkpoint getPrevious_justified_checkpoint();
+  default Checkpoint getPrevious_justified_checkpoint() {
+    return getAny(PREVIOUS_JUSTIFIED_CHECKPOINT_FIELD.getIndex());
+  }
 
-  Checkpoint getCurrent_justified_checkpoint();
+  default Checkpoint getCurrent_justified_checkpoint() {
+    return getAny(CURRENT_JUSTIFIED_CHECKPOINT_FIELD.getIndex());
+  }
 
-  Checkpoint getFinalized_checkpoint();
+  default Checkpoint getFinalized_checkpoint() {
+    return getAny(FINALIZED_CHECKPOINT_FIELD.getIndex());
+  }
 
   @Override
-  MutableBeaconState createWritableCopy();
+  default ViewWrite createWritableCopy() {
+    throw new UnsupportedOperationException("Use BeaconState.updated() to modify");
+  }
+
+  <E1 extends Exception, E2 extends Exception, E3 extends Exception> BeaconState updated(
+      Mutator<E1, E2, E3> mutator) throws E1, E2, E3;
+
+  interface Mutator<E1 extends Exception, E2 extends Exception, E3 extends Exception> {
+    void mutate(MutableBeaconState state) throws E1, E2, E3;
+  }
 }

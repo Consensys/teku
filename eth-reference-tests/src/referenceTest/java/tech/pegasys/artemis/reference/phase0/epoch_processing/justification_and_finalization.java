@@ -25,7 +25,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
@@ -35,8 +34,7 @@ public class justification_and_finalization extends TestSuite {
   @MethodSource("mainnetProcessJusticationAndFinalizationSetup")
   void mainnetProcessJusticationAndFinalization(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    MutableBeaconState wState = pre.createWritableCopy();
-    EpochProcessorUtil.process_justification_and_finalization(wState);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_justification_and_finalization);
     assertEquals(post, wState);
   }
 
@@ -44,8 +42,7 @@ public class justification_and_finalization extends TestSuite {
   @MethodSource("minimalProcessJusticationAndFinalizationSetup")
   void minimalProcessJusticationAndFinalization(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    MutableBeaconState wState = pre.createWritableCopy();
-    EpochProcessorUtil.process_justification_and_finalization(wState);
+    BeaconState wState = pre.updated(EpochProcessorUtil::process_justification_and_finalization);
     assertEquals(post, wState);
   }
 

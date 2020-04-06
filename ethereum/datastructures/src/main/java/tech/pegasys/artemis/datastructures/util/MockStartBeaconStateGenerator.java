@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 
 public class MockStartBeaconStateGenerator {
 
@@ -41,10 +40,8 @@ public class MockStartBeaconStateGenerator {
       DepositWithIndex deposit = new DepositWithIndex(data, UnsignedLong.valueOf(index));
       deposits.add(deposit);
     }
-    final MutableBeaconState initialState =
-        BeaconStateUtil.initialize_beacon_state_from_eth1(BLOCK_HASH, genesisTime, deposits)
-            .createWritableCopy();
-    initialState.setGenesis_time(genesisTime);
-    return initialState.commitChanges();
+    final BeaconState initialState =
+        BeaconStateUtil.initialize_beacon_state_from_eth1(BLOCK_HASH, genesisTime, deposits);
+    return initialState.updated(state -> state.setGenesis_time(genesisTime));
   }
 }

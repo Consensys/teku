@@ -16,7 +16,7 @@ package tech.pegasys.artemis.util.backing.type;
 import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
-import tech.pegasys.artemis.util.backing.view.VectorViewImpl;
+import tech.pegasys.artemis.util.backing.view.VectorViewReadImpl;
 
 public class VectorViewType<C> extends CollectionViewType {
   private final boolean isListBacking;
@@ -44,6 +44,6 @@ public class VectorViewType<C> extends CollectionViewType {
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public VectorViewRead<C> createFromBackingNode(TreeNode node) {
-    return new VectorViewImpl(this, node);
+    return new VectorViewReadImpl(this, node);
   }
 }
