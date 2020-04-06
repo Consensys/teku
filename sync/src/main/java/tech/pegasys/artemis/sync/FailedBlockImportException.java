@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.sync;
 
+import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 
 public class FailedBlockImportException extends InvalidResponseException {
   private final SignedBeaconBlock block;

@@ -1,5 +1,6 @@
 dependencies {
     implementation project(':data')
+    implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
     implementation project(':networking:p2p')

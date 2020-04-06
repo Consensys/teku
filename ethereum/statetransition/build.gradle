@@ -2,6 +2,7 @@ dependencies {
   implementation project(':bls')
   implementation project(':data')
   implementation project(':data:metrics')
+  implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':logging')
   implementation project(':pow')
@@ -25,6 +26,7 @@ dependencies {
   testFixturesApi testFixtures(project(':bls'))
   testFixturesApi testFixtures(project(':storage'))
 
+  testFixturesImplementation project(':ethereum:core')
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':validator:client')
