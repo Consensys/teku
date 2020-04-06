@@ -75,21 +75,6 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
   }
 
   @Test
-  public void shouldHandleMissingNonFinalizedState() throws Exception {
-    final int epoch = 1;
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(root));
-    when(store.getBlockState(root)).thenReturn(dataStructureUtil.randomBeaconState());
-    when(recentChainData.getStateBySlot(any())).thenReturn(Optional.empty());
-
-    final Response response = post(epoch, keys);
-    assertNotFound(response);
-  }
-
-  @Test
   public void shouldReturnEmptyListIfWhenPubKeysIsEmpty() throws Exception {
     final int epoch = 1;
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
