@@ -52,7 +52,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   public Attestation(Attestation attestation) {
     this.aggregation_bits = attestation.getAggregation_bits().copy();
     this.data = attestation.getData();
-    this.signature = BLSSignature.fromBytes(attestation.getAggregate_signature().toBytes());
+    this.signature = attestation.getAggregate_signature();
   }
 
   public Attestation() {

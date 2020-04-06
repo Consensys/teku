@@ -75,6 +75,34 @@ class BitlistTest {
   }
 
   @Test
+  void isSuperSetOf_sameBitsSet() {
+    Bitlist bitlist1 = create(1, 3, 5);
+    Bitlist bitlist2 = create(1, 3, 5);
+    assertThat(bitlist1.isSuperSetOf(bitlist2)).isTrue();
+  }
+
+  @Test
+  void isSuperSetOf_additionalBitsSet() {
+    Bitlist bitlist1 = create(1, 3, 5, 7, 9);
+    Bitlist bitlist2 = create(1, 3, 5);
+    assertThat(bitlist1.isSuperSetOf(bitlist2)).isTrue();
+  }
+
+  @Test
+  void isSuperSetOf_notAllBitsSet() {
+    Bitlist bitlist1 = create(1, 3);
+    Bitlist bitlist2 = create(1, 3, 5);
+    assertThat(bitlist1.isSuperSetOf(bitlist2)).isFalse();
+  }
+
+  @Test
+  void isSuperSetOf_differentBitsSet() {
+    Bitlist bitlist1 = create(2, 5, 6);
+    Bitlist bitlist2 = create(1, 3, 5);
+    assertThat(bitlist1.isSuperSetOf(bitlist2)).isFalse();
+  }
+
+  @Test
   void countSetBits() {
     assertThat(create(1, 2, 6, 7, 9).countSetBits()).isEqualTo(5);
   }

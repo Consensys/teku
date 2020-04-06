@@ -37,6 +37,11 @@ class AggregateAttestationBuilder {
         || !currentAggregateBits.intersects(candidate.getAggregation_bits());
   }
 
+  public boolean isFullyIncluded(final Attestation candidate) {
+    return currentAggregateBits != null
+        && currentAggregateBits.isSuperSetOf(candidate.getAggregation_bits());
+  }
+
   public void aggregate(final Attestation attestation) {
     includedAttestations.add(attestation);
     if (currentAggregateBits == null) {

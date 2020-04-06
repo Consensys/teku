@@ -60,6 +60,10 @@ public class Bitlist {
     return data.intersects(other.data);
   }
 
+  public boolean isSuperSetOf(final Bitlist other) {
+    return other.streamAllSetBits().allMatch(this::getBit);
+  }
+
   public List<Integer> getAllSetBits() {
     final List<Integer> setBits = new ArrayList<>();
     for (int i = data.nextSetBit(0); i > 0; i = data.nextSetBit(i + 1)) {

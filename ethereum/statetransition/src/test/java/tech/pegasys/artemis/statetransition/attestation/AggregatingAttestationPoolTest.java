@@ -14,17 +14,14 @@
 package tech.pegasys.artemis.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 class AggregatingAttestationPoolTest {
@@ -80,18 +77,5 @@ class AggregatingAttestationPoolTest {
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
     aggregatingPool.add(attestation);
     return attestation;
-  }
-
-  public static Attestation aggregateAttestations(
-      final Attestation firstAttestation, final Attestation... attestations) {
-    final Bitlist aggregateBits = firstAttestation.getAggregation_bits().copy();
-    final List<BLSSignature> signatures = new ArrayList<>();
-    signatures.add(firstAttestation.getAggregate_signature());
-
-    for (Attestation attestation : attestations) {
-      aggregateBits.setAllBits(attestation.getAggregation_bits());
-      signatures.add(attestation.getAggregate_signature());
-    }
-    return new Attestation(aggregateBits, firstAttestation.getData(), BLS.aggregate(signatures));
   }
 }
