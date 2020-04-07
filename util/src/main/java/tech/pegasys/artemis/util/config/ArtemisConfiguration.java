@@ -388,7 +388,7 @@ public class ArtemisConfiguration {
     if (interopNumberOfValidators < Constants.SLOTS_PER_EPOCH) {
       throw new IllegalArgumentException(
           String.format(
-              "Invalid configuration. Interop number of validators [%d] must be greater than [%d]",
+              "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
               interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
     }
     validateKeyStoreFilesAndPasswordFilesSize();
