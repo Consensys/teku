@@ -29,7 +29,6 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
-import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
@@ -49,7 +48,6 @@ public class PeerManager implements ConnectionHandler {
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final ReputationManager reputationManager;
   private final List<PeerHandler> peerHandlers;
-  private final SettableGauge peerGauge;
 
   private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
       Subscribers.create(true);
@@ -62,9 +60,8 @@ public class PeerManager implements ConnectionHandler {
     this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
-    peerGauge =
-        SettableGauge.create(
-            metricsSystem, ArtemisMetricCategory.NETWORK, "libp2p_peers", "Total number of peers");
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.NETWORK, "libp2p_peers", "Total number of peers", this::getPeerCount);
   }
 
   @Override
@@ -128,7 +125,6 @@ public class PeerManager implements ConnectionHandler {
       peerHandlers.forEach(h -> h.onConnect(peer));
       connectSubscribers.forEach(c -> c.onConnected(peer));
       peer.subscribeDisconnect(() -> onDisconnectedPeer(peer));
-      peerGauge.set(getPeerCount());
     } else {
       LOG.trace("Disconnecting duplicate connection to {}", peer::getId);
       throw new PeerAlreadyConnectedException(peer);
@@ -139,7 +135,6 @@ public class PeerManager implements ConnectionHandler {
   void onDisconnectedPeer(Peer peer) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
       LOG.debug("Peer disconnected: {}", peer.getId());
-      peerGauge.set(getPeerCount());
       peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
   }
