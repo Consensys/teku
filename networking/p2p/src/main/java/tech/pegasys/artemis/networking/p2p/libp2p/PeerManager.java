@@ -64,10 +64,7 @@ public class PeerManager implements ConnectionHandler {
     this.rpcHandlers = rpcHandlers;
     peerGauge =
         SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.NETWORK,
-            "libp2p_peers",
-            "Total number of peers");
+            metricsSystem, ArtemisMetricCategory.NETWORK, "libp2p_peers", "Total number of peers");
   }
 
   @Override
