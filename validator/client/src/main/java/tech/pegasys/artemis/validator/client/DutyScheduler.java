@@ -144,7 +144,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
         scheduleAttestationProduction(
             attestationCommitteeIndex, attestationCommitteePosition, validator, slot);
 
-    scheduleAggregationDuties(
+    scheduleAggregation(
         attestationCommitteeIndex,
         validatorIndex,
         validator,
@@ -163,7 +163,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
         .addValidator(validator, attestationCommitteeIndex, attestationCommitteePosition);
   }
 
-  public void scheduleAggregationDuties(
+  public void scheduleAggregation(
       final int attestationCommitteeIndex,
       final int validatorIndex,
       final Validator validator,
