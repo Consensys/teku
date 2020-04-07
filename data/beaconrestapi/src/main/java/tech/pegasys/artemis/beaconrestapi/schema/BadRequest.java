@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.schema;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class BadRequest {
@@ -24,6 +25,13 @@ public class BadRequest {
   public BadRequest(String message) {
     this.message = message;
     this.status = SC_BAD_REQUEST;
+  }
+
+  @JsonCreator
+  public BadRequest(
+      @JsonProperty("status") Integer status, @JsonProperty("message") String message) {
+    this.status = status;
+    this.message = message;
   }
 
   @JsonProperty("status")

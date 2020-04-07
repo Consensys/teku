@@ -16,6 +16,7 @@ package tech.pegasys.artemis.api;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
@@ -36,6 +37,12 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties.Duties;
 
 public class ValidatorDataProvider {
+  public static final String CANNOT_PRODUCE_FAR_FUTURE_BLOCK =
+      "Cannot produce a block more than " + SLOTS_PER_EPOCH + " slots in the future.";
+  public static final String CANNOT_PRODUCE_HISTORIC_BLOCK =
+      "Cannot produce a block for a historic slot.";
+  public static final String NO_SLOT_PROVIDED = "No slot was provided.";
+  public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
   private final ValidatorApiChannel validatorApiChannel;
   private CombinedChainDataClient combinedChainDataClient;
 
@@ -57,10 +64,17 @@ public class ValidatorDataProvider {
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
       UnsignedLong slot, BLSSignature randao) {
     if (slot == null) {
-      throw new IllegalArgumentException("no slot provided.");
+      throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }
     if (randao == null) {
-      throw new IllegalArgumentException("no randao_reveal provided.");
+      throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
+    }
+    UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
+    if (bestSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).compareTo(slot) < 0) {
+      throw new IllegalArgumentException(CANNOT_PRODUCE_FAR_FUTURE_BLOCK);
+    }
+    if (bestSlot.compareTo(slot) > 0) {
+      throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
 
     return validatorApiChannel

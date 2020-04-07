@@ -210,7 +210,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         SettableGauge.create(
             metricsSystem,
             ArtemisMetricCategory.BEACONCHAIN,
-            "current_slot",
+            "slot",
             "Latest slot recorded by the beacon chain");
     currentEpochGauge =
         SettableGauge.create(
