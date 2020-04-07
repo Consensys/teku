@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.hashToG2;
+package tech.pegasys.artemis.bls.hashToG2;
 
-import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
-import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
-import static tech.pegasys.artemis.util.hashToG2.Helper.isInG2;
-import static tech.pegasys.artemis.util.hashToG2.Helper.isOnCurve;
-import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
-import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.clear_h2;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.hashToBase;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.isInG2;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.isOnCurve;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.iso3;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.mapToCurve;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.ECP2;

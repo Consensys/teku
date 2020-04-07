@@ -28,8 +28,8 @@ import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLS;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 public class AttestationAggregator {
 

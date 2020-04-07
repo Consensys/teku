@@ -34,7 +34,7 @@ import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignment
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 
 public class GossipMessageHandlerIntegrationTest {
 

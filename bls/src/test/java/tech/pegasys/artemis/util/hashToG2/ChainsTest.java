@@ -15,18 +15,21 @@ package tech.pegasys.artemis.util.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.hashToG2.Chains.expChain;
-import static tech.pegasys.artemis.util.hashToG2.Chains.h2Chain;
-import static tech.pegasys.artemis.util.hashToG2.Chains.mxChain;
-import static tech.pegasys.artemis.util.hashToG2.Chains.qChain;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
+import static tech.pegasys.artemis.bls.hashToG2.Chains.expChain;
+import static tech.pegasys.artemis.bls.hashToG2.Chains.h2Chain;
+import static tech.pegasys.artemis.bls.hashToG2.Chains.mxChain;
+import static tech.pegasys.artemis.bls.hashToG2.Chains.qChain;
+import static tech.pegasys.artemis.bls.hashToG2.FP2Immutable.ONE;
+import static tech.pegasys.artemis.bls.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.DBIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.hashToG2.DBIGExtended;
+import tech.pegasys.artemis.bls.hashToG2.FP2Immutable;
+import tech.pegasys.artemis.bls.hashToG2.JacobianPoint;
 
 class ChainsTest {
 

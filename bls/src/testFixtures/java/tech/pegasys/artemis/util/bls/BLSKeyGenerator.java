@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.stream.Collectors;

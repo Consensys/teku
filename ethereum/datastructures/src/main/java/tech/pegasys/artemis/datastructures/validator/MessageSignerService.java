@@ -15,7 +15,7 @@ package tech.pegasys.artemis.datastructures.validator;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 public interface MessageSignerService {
 

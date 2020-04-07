@@ -41,9 +41,9 @@ import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLS;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)

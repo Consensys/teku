@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.apache.milagro.amcl.BLS381.DBIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.hashToG2.DBIGExtended;
 
 class DBIGExtendedTest {
 

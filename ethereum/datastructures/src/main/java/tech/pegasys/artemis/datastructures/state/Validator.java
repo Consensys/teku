@@ -33,7 +33,7 @@ import tech.pegasys.artemis.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 

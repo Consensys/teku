@@ -18,11 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.mikuli.G2Point.isInGroup;
+import static tech.pegasys.artemis.bls.mikuli.G2Point.isInGroup;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.mikuli.G2Point;
+import tech.pegasys.artemis.bls.mikuli.Scalar;
 
 class G2PointTest {
 

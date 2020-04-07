@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {

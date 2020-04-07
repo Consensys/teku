@@ -35,8 +35,8 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.TransitionCaches;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 // Note that genesis generation is also covered by the initialization acceptance test

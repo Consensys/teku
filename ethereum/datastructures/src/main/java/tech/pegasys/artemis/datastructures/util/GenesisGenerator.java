@@ -41,7 +41,7 @@ import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {

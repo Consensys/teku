@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLS;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 public class AggregatorUtil {
   public static Attestation aggregateAttestations(

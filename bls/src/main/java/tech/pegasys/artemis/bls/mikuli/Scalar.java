@@ -11,27 +11,34 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.mikuli;
+package tech.pegasys.artemis.bls.mikuli;
 
+import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ROM;
 
-class Util {
+/** This class represents an ordinary scalar value. */
+final class Scalar {
 
-  static final BIG P = new BIG(ROM.Modulus);
+  private final BIG value;
 
-  /**
-   * Calculate (y_im * 2) // q (which corresponds to the a1 flag in the Eth2 BLS spec)
-   *
-   * <p>This is used to disambiguate Y, given X, as per the spec. P is the curve modulus.
-   *
-   * @param yIm the imaginary part of the Y coordinate of the point
-   * @return true if the a1 flag and yIm correspond
-   */
-  static boolean calculateYFlag(BIG yIm) {
-    BIG tmp = new BIG(yIm);
-    tmp.add(yIm);
-    tmp.div(P);
-    return tmp.isunity();
+  Scalar(BIG value) {
+    this.value = value;
+  }
+
+  BIG value() {
+    return value;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Scalar scalar = (Scalar) o;
+    return Objects.equals(value.toString(), scalar.value.toString());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(value);
   }
 }

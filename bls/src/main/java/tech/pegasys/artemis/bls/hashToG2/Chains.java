@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.hashToG2;
+package tech.pegasys.artemis.bls.hashToG2;
 
 /**
  * This is just somewhere out of the way to put our addition chains. They are a bit intrusive in the

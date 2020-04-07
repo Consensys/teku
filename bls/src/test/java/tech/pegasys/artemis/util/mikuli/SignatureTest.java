@@ -20,7 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
+import tech.pegasys.artemis.bls.mikuli.Signature;
 
 class SignatureTest {
 

@@ -37,7 +37,7 @@ import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 
 public final class StartupUtil {
 

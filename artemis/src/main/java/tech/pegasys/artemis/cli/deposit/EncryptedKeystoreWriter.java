@@ -22,7 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;

@@ -24,9 +24,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSSecretKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLS;
+import tech.pegasys.artemis.bls.bls.BLSSecretKey;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 class Sign extends TestSuite {
 

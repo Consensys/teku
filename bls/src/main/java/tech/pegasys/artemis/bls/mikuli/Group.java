@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.mikuli;
+package tech.pegasys.artemis.bls.mikuli;
 
 /** Group is an interface that defines the necessary mathematical operators */
 interface Group<G> {

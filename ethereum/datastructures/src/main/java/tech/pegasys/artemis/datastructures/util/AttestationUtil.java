@@ -41,9 +41,9 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLS;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 public class AttestationUtil {
 

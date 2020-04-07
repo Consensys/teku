@@ -26,7 +26,7 @@ import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockPropagationIntegrationTest {

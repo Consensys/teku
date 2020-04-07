@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 
 class ValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

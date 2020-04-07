@@ -24,7 +24,7 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 @State(Scope.Thread)

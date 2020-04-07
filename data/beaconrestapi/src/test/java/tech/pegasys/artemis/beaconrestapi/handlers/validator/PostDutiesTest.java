@@ -37,8 +37,8 @@ import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 
 public class PostDutiesTest {
   private static final List<BLSKeyPair> keyPairs = BLSKeyGenerator.generateKeyPairs(1);

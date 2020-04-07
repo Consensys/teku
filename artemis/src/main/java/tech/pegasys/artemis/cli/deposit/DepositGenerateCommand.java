@@ -40,7 +40,7 @@ import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
 

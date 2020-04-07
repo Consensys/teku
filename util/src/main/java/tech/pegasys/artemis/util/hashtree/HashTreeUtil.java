@@ -32,7 +32,7 @@ import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZImmutableCollection;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 
 /** This class is a collection of tree hash root convenience methods */
 public final class HashTreeUtil {

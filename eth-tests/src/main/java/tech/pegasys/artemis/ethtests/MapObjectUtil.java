@@ -48,9 +48,9 @@ import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSecretKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSSecretKey;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class MapObjectUtil {

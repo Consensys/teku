@@ -43,9 +43,9 @@ import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 class CommitteeAssignmentManagerTest {
 

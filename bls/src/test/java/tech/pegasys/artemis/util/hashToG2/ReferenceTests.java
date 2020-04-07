@@ -35,7 +35,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.util.mikuli.G2Point;
+import tech.pegasys.artemis.bls.hashToG2.HashToCurve;
+import tech.pegasys.artemis.bls.mikuli.G2Point;
 
 /**
  * Test files are from https://github.com/algorand/bls_sigs_ref/tree/master/test-vectors/hash_g2

@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.hashToG2;
+package tech.pegasys.artemis.bls.hashToG2;
 
-import static tech.pegasys.artemis.util.hashToG2.Util.fpFromHex;
-import static tech.pegasys.artemis.util.hashToG2.Util.negate;
+import static tech.pegasys.artemis.bls.hashToG2.Util.fpFromHex;
+import static tech.pegasys.artemis.bls.hashToG2.Util.negate;
 
 import org.apache.milagro.amcl.BLS381.FP;
 

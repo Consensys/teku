@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.bls.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.bls.mikuli.PublicKey;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public final class BLSPublicKey implements SimpleOffsetSerializable {

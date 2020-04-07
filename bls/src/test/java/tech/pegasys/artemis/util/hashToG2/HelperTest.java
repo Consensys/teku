@@ -17,15 +17,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
-import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
-import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
-import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
-import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.clear_h2;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.hashToBase;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.iso3;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.mapToCurve;
+import static tech.pegasys.artemis.bls.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.hashToG2.FP2Immutable;
+import tech.pegasys.artemis.bls.hashToG2.Helper;
+import tech.pegasys.artemis.bls.hashToG2.JacobianPoint;
 
 class HelperTest {
 

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tech.pegasys.artemis.util.hashToG2.Util.os2ip_modP;
+import static tech.pegasys.artemis.bls.hashToG2.Util.os2ip_modP;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;

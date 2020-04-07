@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.bls.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.artemis.bls.mikuli.SecretKey;
 
 public final class BLSSecretKey {
 

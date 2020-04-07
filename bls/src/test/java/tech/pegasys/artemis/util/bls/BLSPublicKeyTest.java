@@ -21,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.mikuli.PublicKey;
 
 class BLSPublicKeyTest {
 

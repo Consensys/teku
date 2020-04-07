@@ -22,6 +22,14 @@ import java.util.List;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.mikuli.BLS12381;
+import tech.pegasys.artemis.bls.mikuli.G1Point;
+import tech.pegasys.artemis.bls.mikuli.G2Point;
+import tech.pegasys.artemis.bls.mikuli.KeyPair;
+import tech.pegasys.artemis.bls.mikuli.PublicKey;
+import tech.pegasys.artemis.bls.mikuli.Scalar;
+import tech.pegasys.artemis.bls.mikuli.SecretKey;
+import tech.pegasys.artemis.bls.mikuli.Signature;
 
 class BLS12381Test {
 

@@ -16,8 +16,8 @@ package tech.pegasys.artemis.util.hashToG2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.hashToG2.HashToCurve.hashToG2;
-import static tech.pegasys.artemis.util.hashToG2.Helper.isInG2;
+import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
+import static tech.pegasys.artemis.bls.hashToG2.Helper.isInG2;
 
 import java.util.ArrayList;
 import java.util.stream.Stream;
@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.artemis.bls.hashToG2.JacobianPoint;
 
 class hashToCurveTest {
 

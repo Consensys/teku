@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.bls.bls;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.mikuli.BLS12381;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.bls.mikuli.BLS12381;
+import tech.pegasys.artemis.bls.mikuli.PublicKey;
 
 /**
  * Implements the standard interfaces for BLS methods as defined in

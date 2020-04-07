@@ -45,7 +45,7 @@ import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
@@ -62,8 +62,8 @@ public class ValidatorDataProviderTest {
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
-  private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
-      tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
+  private final tech.pegasys.artemis.bls.bls.BLSSignature signatureInternal =
+      tech.pegasys.artemis.bls.bls.BLSSignature.random(1234);
   private final BLSSignature signature = new BLSSignature(signatureInternal);
   private final tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
       dataStructureUtil.randomBeaconState();
@@ -293,7 +293,7 @@ public class ValidatorDataProviderTest {
         new tech.pegasys.artemis.datastructures.operations.Attestation(
             new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE),
             attestationData,
-            tech.pegasys.artemis.util.bls.BLSSignature.empty());
+            tech.pegasys.artemis.bls.bls.BLSSignature.empty());
 
     final Attestation attestation = new Attestation(internalAttestation);
 

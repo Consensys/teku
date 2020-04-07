@@ -17,15 +17,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.THRESHOLD;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ZERO;
-import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
+import static tech.pegasys.artemis.bls.hashToG2.FP2Immutable.ONE;
+import static tech.pegasys.artemis.bls.hashToG2.FP2Immutable.THRESHOLD;
+import static tech.pegasys.artemis.bls.hashToG2.FP2Immutable.ZERO;
+import static tech.pegasys.artemis.bls.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.hashToG2.FP2Immutable;
 
 class FP2ImmutableTest {
 

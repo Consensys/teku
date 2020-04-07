@@ -18,7 +18,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 
 public class ValidatorDuties {
   private final BLSPublicKey publicKey;

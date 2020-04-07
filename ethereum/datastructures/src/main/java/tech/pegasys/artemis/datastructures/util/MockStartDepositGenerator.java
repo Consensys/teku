@@ -19,7 +19,7 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 
 public class MockStartDepositGenerator {
   private final DepositGenerator depositGenerator;

@@ -21,7 +21,7 @@ import java.util.Set;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.bls.bls.BLS;
 
 /**
  * Builds an aggregate attestation, providing functions to test if an attestation can be added or is

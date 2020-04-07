@@ -43,7 +43,7 @@ import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.client.FailedPrecommitException;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 public class Store implements ReadOnlyStore {
   private static final Logger LOG = LogManager.getLogger();

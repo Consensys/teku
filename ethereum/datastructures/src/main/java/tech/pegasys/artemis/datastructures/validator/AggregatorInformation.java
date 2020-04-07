@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.validator;
 
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 public class AggregatorInformation {
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.bls.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.util.mikuli.Signature;
+import tech.pegasys.artemis.bls.mikuli.Signature;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class BLSSignature implements SimpleOffsetSerializable {

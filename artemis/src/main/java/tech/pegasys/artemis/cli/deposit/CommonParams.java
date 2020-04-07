@@ -42,8 +42,8 @@ import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 
 public class CommonParams implements Closeable {
   private final Consumer<Integer> shutdownFunction;

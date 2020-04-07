@@ -16,6 +16,10 @@ package tech.pegasys.artemis.util.mikuli;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.mikuli.AtePairing;
+import tech.pegasys.artemis.bls.mikuli.G1Point;
+import tech.pegasys.artemis.bls.mikuli.G2Point;
+import tech.pegasys.artemis.bls.mikuli.GTPoint;
 
 class AtePairingTest {
 

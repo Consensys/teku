@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.bls.bls;
 
 import com.google.common.base.MoreObjects;
 import java.security.SecureRandom;
 import java.util.Objects;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.bls.mikuli.KeyPair;
 
 public final class BLSKeyPair {
 

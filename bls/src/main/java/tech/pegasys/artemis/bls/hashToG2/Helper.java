@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.hashToG2;
+package tech.pegasys.artemis.bls.hashToG2;
 
-import static tech.pegasys.artemis.util.hashToG2.Chains.expChain;
-import static tech.pegasys.artemis.util.hashToG2.Chains.h2Chain;
-import static tech.pegasys.artemis.util.hashToG2.Chains.mxChain;
-import static tech.pegasys.artemis.util.hashToG2.Chains.qChain;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.artemis.util.hashToG2.IetfTools.HKDF_Expand;
-import static tech.pegasys.artemis.util.hashToG2.IetfTools.HKDF_Extract;
-import static tech.pegasys.artemis.util.hashToG2.Util.os2ip_modP;
+import static tech.pegasys.artemis.bls.hashToG2.Chains.expChain;
+import static tech.pegasys.artemis.bls.hashToG2.Chains.h2Chain;
+import static tech.pegasys.artemis.bls.hashToG2.Chains.mxChain;
+import static tech.pegasys.artemis.bls.hashToG2.Chains.qChain;
+import static tech.pegasys.artemis.bls.hashToG2.FP2Immutable.ONE;
+import static tech.pegasys.artemis.bls.hashToG2.IetfTools.HKDF_Expand;
+import static tech.pegasys.artemis.bls.hashToG2.IetfTools.HKDF_Extract;
+import static tech.pegasys.artemis.bls.hashToG2.Util.os2ip_modP;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.FP;

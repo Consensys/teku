@@ -28,8 +28,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSSecretKey;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 class KeystoresValidatorKeyProviderTest {

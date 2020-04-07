@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.artemis.bls.bls.BLSSecretKey;
 
 class BLSSecretKeyTest {
   private static final String PRIVATE_KEY_32_BYTES =

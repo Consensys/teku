@@ -33,7 +33,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 
 public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 

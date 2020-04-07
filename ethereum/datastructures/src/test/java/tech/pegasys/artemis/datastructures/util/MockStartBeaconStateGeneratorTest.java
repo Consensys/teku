@@ -51,8 +51,8 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 
 class MockStartBeaconStateGeneratorTest {
   private static final Logger LOG = LogManager.getLogger();
