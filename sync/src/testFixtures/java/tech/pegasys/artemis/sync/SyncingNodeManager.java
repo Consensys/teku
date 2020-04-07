@@ -20,6 +20,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -33,7 +34,6 @@ import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
 public class SyncingNodeManager {

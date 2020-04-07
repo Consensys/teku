@@ -26,8 +26,8 @@ import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 
 class JsonProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -58,7 +58,7 @@ class JsonProviderTest {
     final String asJson = jsonProvider.objectToJSON(data);
     final Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
 
-    assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
+    assertThat(data).isEqualToIgnoringGivenFields(asData, "maxSize");
     assertThat(asData.getCurrentSize()).isEqualTo(BITLIST_SIZE);
   }
 

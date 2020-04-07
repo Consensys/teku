@@ -19,9 +19,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult.FAILED_NOT_FROM_PAST;
-import static tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
-import static tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.artemis.core.results.AttestationProcessingResult.FAILED_NOT_FROM_PAST;
+import static tech.pegasys.artemis.core.results.AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
+import static tech.pegasys.artemis.core.results.AttestationProcessingResult.SUCCESSFUL;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -30,20 +30,20 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.results.AttestationProcessingResult;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.util.EventSink;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

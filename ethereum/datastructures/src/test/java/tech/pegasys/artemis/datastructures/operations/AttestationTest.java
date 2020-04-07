@@ -21,10 +21,10 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 
 class AttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -33,39 +33,6 @@ class AttestationTest {
   private BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
 
   private Attestation attestation = new Attestation(aggregationBitfield, data, aggregateSignature);
-
-  @Test
-  void shouldNotBeProcessableBeforeSlotAfterCreationSlot() {
-    final Attestation attestation =
-        new Attestation(
-            aggregationBitfield,
-            new AttestationData(
-                UnsignedLong.valueOf(60),
-                UnsignedLong.ZERO,
-                Bytes32.ZERO,
-                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
-                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO)),
-            BLSSignature.empty());
-
-    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(UnsignedLong.valueOf(61));
-  }
-
-  @Test
-  void shouldNotBeProcessableBeforeFirstSlotOfTargetEpoch() {
-    final Checkpoint target = new Checkpoint(UnsignedLong.valueOf(10), Bytes32.ZERO);
-    final Attestation attestation =
-        new Attestation(
-            aggregationBitfield,
-            new AttestationData(
-                UnsignedLong.valueOf(1),
-                UnsignedLong.ZERO,
-                Bytes32.ZERO,
-                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
-                target),
-            BLSSignature.empty());
-
-    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochStartSlot());
-  }
 
   @Test
   public void shouldBeDependentOnTargetBlockAndBeaconBlockRoot() {

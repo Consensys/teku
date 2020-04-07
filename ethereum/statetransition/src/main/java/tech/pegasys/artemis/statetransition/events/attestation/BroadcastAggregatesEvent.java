@@ -13,7 +13,17 @@
 
 package tech.pegasys.artemis.statetransition.events.attestation;
 
+import com.google.common.primitives.UnsignedLong;
+
 public class BroadcastAggregatesEvent {
 
-  public BroadcastAggregatesEvent() {}
+  private final UnsignedLong slot;
+
+  public BroadcastAggregatesEvent(final UnsignedLong slot) {
+    this.slot = slot;
+  }
+
+  public UnsignedLong getSlot() {
+    return slot;
+  }
 }

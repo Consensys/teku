@@ -13,15 +13,15 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.get_head;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.Store;

@@ -30,10 +30,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
@@ -72,21 +72,6 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
 
     final Response response = post(1, keys);
     assertGone(response);
-  }
-
-  @Test
-  public void shouldHandleMissingNonFinalizedState() throws Exception {
-    final int epoch = 1;
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(root));
-    when(store.getBlockState(root)).thenReturn(dataStructureUtil.randomBeaconState());
-    when(recentChainData.getStateBySlot(any())).thenReturn(Optional.empty());
-
-    final Response response = post(epoch, keys);
-    assertNotFound(response);
   }
 
   @Test

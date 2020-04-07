@@ -27,12 +27,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.SSZTypes.SSZImmutableCollection;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZImmutableCollection;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 
 /** This class is a collection of tree hash root convenience methods */
 public final class HashTreeUtil {
@@ -282,7 +282,7 @@ public final class HashTreeUtil {
         merkleize(
             bitfield_bytes(bitlist.serialize()),
             chunk_count(SSZTypes.BITLIST, bitlist.getMaxSize())),
-        bitlist.getByteArray().length);
+        bitlist.getCurrentSize());
   }
 
   /**

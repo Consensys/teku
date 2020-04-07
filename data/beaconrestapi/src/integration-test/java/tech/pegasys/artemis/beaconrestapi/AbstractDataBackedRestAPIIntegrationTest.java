@@ -44,7 +44,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest
   protected static final UnsignedLong EIGHT = UnsignedLong.valueOf(8);
   protected static final UnsignedLong NINE = UnsignedLong.valueOf(9);
   protected static final UnsignedLong TEN = UnsignedLong.valueOf(10);
-  private BeaconChainUtil beaconChainUtil;
+  protected BeaconChainUtil beaconChainUtil;
   protected final JsonProvider jsonProvider = new JsonProvider();
 
   @Override

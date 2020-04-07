@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,15 +23,15 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
-import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
+import tech.pegasys.artemis.ssz.backing.view.AbstractImmutableContainer;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class AttestationData extends AbstractImmutableContainer
     implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
@@ -121,6 +124,23 @@ public class AttestationData extends AbstractImmutableContainer
     return hashTreeRoot().slice(0, 4).toInt();
   }
 
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", getSlot())
+        .add("index", getIndex())
+        .add("beacon_block_root", getBeacon_block_root())
+        .add("source", getSource())
+        .add("target", getTarget())
+        .toString();
+  }
+
+  public UnsignedLong getEarliestSlotForProcessing() {
+    // Attestations can't be processed until their slot is in the past and until we are in the same
+    // epoch as their target.
+    return max(getSlot().plus(UnsignedLong.ONE), getTarget().getEpochStartSlot());
+  }
+
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();
@@ -145,21 +165,5 @@ public class AttestationData extends AbstractImmutableContainer
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return "AttestationData{"
-        + "slot="
-        + getSlot()
-        + ", index="
-        + getIndex()
-        + ", beacon_block_root="
-        + getBeacon_block_root()
-        + ", source="
-        + getSource()
-        + ", target="
-        + getTarget()
-        + '}';
   }
 }

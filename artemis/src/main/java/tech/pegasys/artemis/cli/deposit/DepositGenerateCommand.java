@@ -31,14 +31,16 @@ import java.util.function.Function;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
+import picocli.CommandLine.TypeConversionException;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
 
@@ -65,10 +67,10 @@ public class DepositGenerateCommand implements Runnable {
   @Mixin private CommonParams params;
 
   @Option(
-      names = {"--Xnumber-of-validators"},
+      names = {"--number-of-validators"},
       paramLabel = "<NUMBER>",
       description = "The number of validators to create keys for and register",
-      hidden = true,
+      converter = PositiveIntegerTypeConverter.class,
       defaultValue = "1")
   private int validatorCount = 1;
 
@@ -272,6 +274,22 @@ public class DepositGenerateCommand implements Runnable {
     @Override
     public String getPasswordEnvironmentVariable() {
       return withdrawalPasswordEnv;
+    }
+  }
+
+  private static class PositiveIntegerTypeConverter implements ITypeConverter<Integer> {
+    @Override
+    public Integer convert(final String value) throws TypeConversionException {
+      try {
+        final int parsedValue = Integer.parseInt(value);
+        if (parsedValue <= 0) {
+          throw new TypeConversionException("Must be a positive number");
+        }
+        return parsedValue;
+      } catch (final NumberFormatException e) {
+        throw new TypeConversionException(
+            "Invalid format: must be a numeric value but was '" + value + "'");
+      }
     }
   }
 }

@@ -13,10 +13,11 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attestation;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_attestation;
 
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.results.AttestationProcessingResult;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 

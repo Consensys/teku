@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
@@ -38,6 +39,33 @@ class AttestationDataTest {
 
   private AttestationData attestationData =
       new AttestationData(slot, index, beaconBlockRoot, source, target);
+
+  @Test
+  void shouldNotBeProcessableBeforeSlotAfterCreationSlot() {
+    final AttestationData data =
+        new AttestationData(
+            UnsignedLong.valueOf(60),
+            UnsignedLong.ZERO,
+            Bytes32.ZERO,
+            new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
+            new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO));
+
+    assertThat(data.getEarliestSlotForProcessing()).isEqualTo(UnsignedLong.valueOf(61));
+  }
+
+  @Test
+  void shouldNotBeProcessableBeforeFirstSlotOfTargetEpoch() {
+    final Checkpoint target = new Checkpoint(UnsignedLong.valueOf(10), Bytes32.ZERO);
+    final AttestationData data =
+        new AttestationData(
+            UnsignedLong.valueOf(1),
+            UnsignedLong.ZERO,
+            Bytes32.ZERO,
+            new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
+            target);
+
+    assertThat(data.getEarliestSlotForProcessing()).isEqualTo(target.getEpochStartSlot());
+  }
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
@@ -64,7 +64,7 @@ public class ArtemisConfiguration {
   private final String eth1Endpoint;
 
   // Logging
-  private final boolean logColourEnabled;
+  private final boolean logColorEnabled;
   private final boolean logIncludeEventsEnabled;
   private final String logDestination;
   private final String logFile;
@@ -120,7 +120,7 @@ public class ArtemisConfiguration {
       final int validatorExternalSignerTimeout,
       final String eth1DepositContractAddress,
       final String eth1Endpoint,
-      final boolean logColourEnabled,
+      final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
       final String logDestination,
       final String logFile,
@@ -162,7 +162,7 @@ public class ArtemisConfiguration {
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
-    this.logColourEnabled = logColourEnabled;
+    this.logColorEnabled = logColorEnabled;
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
     this.logDestination = logDestination;
     this.logFile = logFile;
@@ -301,8 +301,8 @@ public class ArtemisConfiguration {
     return eth1Endpoint;
   }
 
-  public boolean isLogColourEnabled() {
-    return logColourEnabled;
+  public boolean isLogColorEnabled() {
+    return logColorEnabled;
   }
 
   public boolean isLogIncludeEventsEnabled() {

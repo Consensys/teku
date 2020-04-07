@@ -28,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
@@ -59,7 +60,8 @@ public class PeerManager implements ConnectionHandler {
     this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
-    // TODO - add metrics
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
   }
 
   @Override

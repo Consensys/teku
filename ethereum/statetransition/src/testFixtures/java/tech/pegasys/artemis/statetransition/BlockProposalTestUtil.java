@@ -17,6 +17,9 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -26,9 +29,8 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class BlockProposalTestUtil {

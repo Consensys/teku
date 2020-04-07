@@ -42,7 +42,7 @@ public class ArtemisConfigurationBuilder {
   private int validatorExternalSignerTimeout;
   private String eth1DepositContractAddress;
   private String eth1Endpoint;
-  private boolean logColourEnabled;
+  private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
   private String logDestination;
   private String logFile;
@@ -199,8 +199,8 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setLogColourEnabled(final boolean logColourEnabled) {
-    this.logColourEnabled = logColourEnabled;
+  public ArtemisConfigurationBuilder setLogColorEnabled(final boolean logColorEnabled) {
+    this.logColorEnabled = logColorEnabled;
     return this;
   }
 
@@ -309,7 +309,7 @@ public class ArtemisConfigurationBuilder {
         validatorExternalSignerTimeout,
         eth1DepositContractAddress,
         eth1Endpoint,
-        logColourEnabled,
+        logColorEnabled,
         logIncludeEventsEnabled,
         logDestination,
         logFile,

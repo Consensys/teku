@@ -26,6 +26,10 @@ import java.util.function.Supplier;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -49,17 +53,13 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
 public final class DataStructureUtil {
@@ -127,13 +127,15 @@ public final class DataStructureUtil {
   }
 
   public Bitlist randomBitlist(int n) {
-    byte[] byteArray = new byte[n];
+    Bitlist bitlist = new Bitlist(n, n);
     Random random = new Random(nextSeed());
 
     for (int i = 0; i < n; i++) {
-      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+      if (random.nextBoolean()) {
+        bitlist.setBit(i);
+      }
     }
-    return new Bitlist(byteArray, n);
+    return bitlist;
   }
 
   public Bitvector randomBitvector(int n) {

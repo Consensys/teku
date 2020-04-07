@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 
 public class BitvectorDeserializer extends JsonDeserializer<Bitvector> {
   @Override
