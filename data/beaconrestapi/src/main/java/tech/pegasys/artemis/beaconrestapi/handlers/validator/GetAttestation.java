@@ -33,6 +33,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,15 +63,18 @@ public class GetAttestation implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "Non-finalized slot for which to create the attestation.",
+            type = BigDecimal.class,
+            description = "`UnsignedLong` Non-finalized slot for which to create the attestation.",
             required = true),
         @OpenApiParam(
             name = COMMITTEE_INDEX,
-            description = "Index of the committee making the attestation.",
+            type = Integer.class,
+            description = "`Integer` Index of the committee making the attestation.",
             required = true)
       },
       description =
-          "Returns an unsigned attestation for the block at the specified non-finalized slot.\n\nThis endpoint is not protected against slashing. Signing the returned attestation can result in a slashable offence.",
+          "Returns an unsigned attestation for the block at the specified non-finalized slot.\n\n"
+              + "This endpoint is not protected against slashing. Signing the returned attestation can result in a slashable offence.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

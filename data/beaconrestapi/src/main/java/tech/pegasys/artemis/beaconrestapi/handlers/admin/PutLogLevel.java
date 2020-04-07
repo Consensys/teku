@@ -53,7 +53,8 @@ public class PutLogLevel implements Handler {
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = LogLevel.class)},
               description =
-                  "```\n{\n  \"level\": (String; acceptable values: ALL, TRACE, DEBUG, INFO, ERROR, FATAL, OFF ),\n  \"log_filter\": [(String; Optional)]\n}\n```"),
+                  "```\n{\n  \"level\": (String; acceptable values: ALL, TRACE, DEBUG, INFO, ERROR, FATAL, OFF ),\n"
+                      + "  \"log_filter\": [(String; Optional)]\n}\n```"),
       description =
           "Changes the log level without restarting. You can change the log level for all logs, or the log level for specific packages or classes.",
       responses = {
