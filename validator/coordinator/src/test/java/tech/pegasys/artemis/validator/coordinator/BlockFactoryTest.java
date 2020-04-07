@@ -37,8 +37,8 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
+import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
@@ -50,7 +50,8 @@ class BlockFactoryTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, recentChainData);
-  private final BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
+  private final AggregatingAttestationPool attestationsPool =
+      mock(AggregatingAttestationPool.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final StateTransition stateTransition = new StateTransition();
@@ -61,14 +62,14 @@ class BlockFactoryTest {
       new BlockFactory(
           new BlockProposalUtil(stateTransition),
           stateTransition,
-          blockAttestationsPool,
+          attestationsPool,
           depositProvider,
           eth1DataCache);
 
   @BeforeEach
   void setUp() {
     when(depositProvider.getDeposits(any())).thenReturn(deposits);
-    when(blockAttestationsPool.getAttestationsForSlot(any())).thenReturn(attestations);
+    when(attestationsPool.getAttestationsForBlock(any())).thenReturn(attestations);
     when(eth1DataCache.get_eth1_vote(any())).thenReturn(ETH1_DATA);
     beaconChainUtil.initializeStorage();
   }

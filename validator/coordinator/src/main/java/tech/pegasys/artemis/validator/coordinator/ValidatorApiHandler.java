@@ -36,6 +36,7 @@ import tech.pegasys.artemis.core.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -45,6 +46,7 @@ import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -53,6 +55,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
@@ -60,16 +63,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
   private final BlockFactory blockFactory;
+  private final AggregatingAttestationPool attestationPool;
   private final AttestationAggregator attestationAggregator;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
       final BlockFactory blockFactory,
+      final AggregatingAttestationPool attestationPool,
       final AttestationAggregator attestationAggregator,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.blockFactory = blockFactory;
+    this.attestationPool = attestationPool;
     this.attestationAggregator = attestationAggregator;
     this.eventBus = eventBus;
   }
@@ -158,9 +164,23 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
+    return SafeFuture.completedFuture(attestationPool.createAggregateFor(attestationData));
+  }
+
+  @Override
   public void sendSignedAttestation(final Attestation attestation) {
-    attestationAggregator.addOwnValidatorAttestation(attestation);
+    attestationPool.add(attestation);
+    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      attestationAggregator.addOwnValidatorAttestation(attestation);
+    }
     eventBus.post(attestation);
+  }
+
+  @Override
+  public void sendAggregateAndProof(final AggregateAndProof aggregateAndProof) {
+    attestationPool.add(aggregateAndProof.getAggregate());
+    eventBus.post(aggregateAndProof);
   }
 
   @Override

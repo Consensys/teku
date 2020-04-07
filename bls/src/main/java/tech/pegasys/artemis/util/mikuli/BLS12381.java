@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 
 /*
@@ -84,6 +85,18 @@ public final class BLS12381 {
    * @return the aggregated signature
    */
   public static Signature aggregate(List<Signature> signatures) {
+    return new Signature(Signature.aggregate(signatures));
+  }
+
+  /**
+   * Aggregates a stream of signatures into a single signature using BLS magic.
+   *
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.7
+   *
+   * @param signatures the stream of signatures to be aggregated
+   * @return the aggregated signature
+   */
+  public static Signature aggregate(Stream<Signature> signatures) {
     return new Signature(Signature.aggregate(signatures));
   }
 

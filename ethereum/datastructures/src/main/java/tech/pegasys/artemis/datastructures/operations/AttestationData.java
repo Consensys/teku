@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,6 +124,23 @@ public class AttestationData extends AbstractImmutableContainer
     return hashTreeRoot().slice(0, 4).toInt();
   }
 
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", getSlot())
+        .add("index", getIndex())
+        .add("beacon_block_root", getBeacon_block_root())
+        .add("source", getSource())
+        .add("target", getTarget())
+        .toString();
+  }
+
+  public UnsignedLong getEarliestSlotForProcessing() {
+    // Attestations can't be processed until their slot is in the past and until we are in the same
+    // epoch as their target.
+    return max(getSlot().plus(UnsignedLong.ONE), getTarget().getEpochStartSlot());
+  }
+
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();
@@ -145,21 +165,5 @@ public class AttestationData extends AbstractImmutableContainer
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
-  }
-
-  @Override
-  public String toString() {
-    return "AttestationData{"
-        + "slot="
-        + getSlot()
-        + ", index="
-        + getIndex()
-        + ", beacon_block_root="
-        + getBeacon_block_root()
-        + ", source="
-        + getSource()
-        + ", target="
-        + getTarget()
-        + '}';
   }
 }
