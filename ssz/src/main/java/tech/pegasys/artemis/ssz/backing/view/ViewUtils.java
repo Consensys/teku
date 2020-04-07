@@ -24,24 +24,25 @@ import tech.pegasys.artemis.ssz.backing.VectorViewWrite;
 import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.ssz.backing.type.ListViewType;
 import tech.pegasys.artemis.ssz.backing.type.VectorViewType;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.ByteView;
 
 /** Handy view tool methods */
 public class ViewUtils {
 
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
-  public static VectorViewRead<BasicViews.ByteView> createVectorFromBytes(Bytes bytes) {
-    VectorViewType<BasicViews.ByteView> type =
-        new VectorViewType<>(BasicViewTypes.BYTE_TYPE, bytes.size());
+  public static VectorViewRead<ByteView> createVectorFromBytes(Bytes bytes) {
+    VectorViewType<ByteView> type = new VectorViewType<>(BasicViewTypes.BYTE_TYPE, bytes.size());
     // TODO optimize
-    VectorViewWrite<BasicViews.ByteView> ret = type.getDefault().createWritableCopy();
+    VectorViewWrite<ByteView> ret = type.getDefault().createWritableCopy();
     for (int i = 0; i < bytes.size(); i++) {
-      ret.set(i, new BasicViews.ByteView(bytes.get(i)));
+      ret.set(i, new ByteView(bytes.get(i)));
     }
     return ret.commitChanges();
   }
 
   /** Retrieve bytes from vector of bytes to a {@link Bytes} instance */
-  public static Bytes getAllBytes(VectorViewRead<BasicViews.ByteView> vector) {
+  public static Bytes getAllBytes(VectorViewRead<ByteView> vector) {
     // TODO optimize
     MutableBytes bytes = MutableBytes.create((int) vector.getType().getMaxLength());
     for (int i = 0; i < bytes.size(); i++) {
@@ -54,19 +55,19 @@ public class ViewUtils {
    * Creates immutable list of bits with size `bitlist.size()` and maxSize = `bitlist.getMaxSize()`
    * from {@link Bitlist} value
    */
-  public static ListViewRead<BasicViews.BitView> createBitlistView(Bitlist bitlist) {
-    ListViewWrite<BasicViews.BitView> viewWrite =
-        new ListViewType<BasicViews.BitView>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize())
+  public static ListViewRead<BitView> createBitlistView(Bitlist bitlist) {
+    ListViewWrite<BitView> viewWrite =
+        new ListViewType<BitView>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize())
             .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitlist.getCurrentSize(); i++) {
-      viewWrite.append(new BasicViews.BitView(bitlist.getBit(i)));
+      viewWrite.append(new BitView(bitlist.getBit(i)));
     }
     return viewWrite.commitChanges();
   }
 
   /** Converts list of bits to {@link Bitlist} value */
-  public static Bitlist getBitlist(ListViewRead<BasicViews.BitView> bitlistView) {
+  public static Bitlist getBitlist(ListViewRead<BitView> bitlistView) {
     Bitlist ret = new Bitlist(bitlistView.size(), bitlistView.getType().getMaxLength());
     for (int i = 0; i < bitlistView.size(); i++) {
       if (bitlistView.get(i).get()) {
@@ -77,19 +78,19 @@ public class ViewUtils {
   }
 
   /** Creates immutable vector of bits with size `bitvector.size()` from {@link Bitvector} value */
-  public static VectorViewRead<BasicViews.BitView> createBitvectorView(Bitvector bitvector) {
-    VectorViewWrite<BasicViews.BitView> viewWrite =
-        new VectorViewType<BasicViews.BitView>(BasicViewTypes.BIT_TYPE, bitvector.getSize())
+  public static VectorViewRead<BitView> createBitvectorView(Bitvector bitvector) {
+    VectorViewWrite<BitView> viewWrite =
+        new VectorViewType<BitView>(BasicViewTypes.BIT_TYPE, bitvector.getSize())
             .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitvector.getSize(); i++) {
-      viewWrite.set(i, new BasicViews.BitView(bitvector.getBit(i) > 0));
+      viewWrite.set(i, new BitView(bitvector.getBit(i) > 0));
     }
     return viewWrite.commitChanges();
   }
 
   /** Converts vector of bits to {@link Bitvector} value */
-  public static Bitvector getBitvector(VectorViewRead<BasicViews.BitView> vectorView) {
+  public static Bitvector getBitvector(VectorViewRead<BitView> vectorView) {
     Bitvector ret = new Bitvector(vectorView.size());
     for (int i = 0; i < vectorView.size(); i++) {
       if (vectorView.get(i).get()) {

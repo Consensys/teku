@@ -13,13 +13,14 @@
 
 package tech.pegasys.artemis.bls.mikuli;
 
+import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.hashToG2.HashToCurve;
 
 /*
  * (Heavily) adapted from the ConsenSys/mikuli (Apache 2 License) implementation:
@@ -55,7 +56,7 @@ public final class BLS12381 {
    * @return The Signature, not null
    */
   public static Signature sign(SecretKey secretKey, Bytes message) {
-    G2Point hashInGroup2 = new G2Point(HashToCurve.hashToG2(message));
+    G2Point hashInGroup2 = new G2Point(hashToG2(message));
     return new Signature(secretKey.sign(hashInGroup2));
   }
 
@@ -151,7 +152,7 @@ public final class BLS12381 {
    * @return True if the verification is successful, false otherwise
    */
   private static boolean coreVerify(PublicKey publicKey, Bytes message, Signature signature) {
-    G2Point hashInGroup2 = new G2Point(HashToCurve.hashToG2(message));
+    G2Point hashInGroup2 = new G2Point(hashToG2(message));
     return signature.verify(publicKey, hashInGroup2);
   }
 
@@ -169,9 +170,7 @@ public final class BLS12381 {
   public static boolean coreAggregateVerify(
       List<PublicKey> publicKeys, List<Bytes> messages, Signature signature) {
     List<G2Point> hashesInG2 =
-        messages.stream()
-            .map(m -> new G2Point(HashToCurve.hashToG2(m)))
-            .collect(Collectors.toList());
+        messages.stream().map(m -> new G2Point(hashToG2(m))).collect(Collectors.toList());
     return signature.aggregateVerify(publicKeys, hashesInG2);
   }
 }

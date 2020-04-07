@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.ssz.backing.view;
 
+import static tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
+import static tech.pegasys.artemis.ssz.backing.view.ListViewReadImpl.ListContainerRead;
+
 import java.util.function.Consumer;
 import tech.pegasys.artemis.ssz.backing.ListViewRead;
 import tech.pegasys.artemis.ssz.backing.ListViewWrite;
@@ -34,18 +37,17 @@ public class ListViewWriteImpl<
       extends ContainerViewWriteImpl {
     private final VectorViewType<ElementReadType> vectorType;
 
-    public ListContainerWrite(
-        ListViewReadImpl.ListContainerRead<ElementReadType> backingImmutableView) {
+    public ListContainerWrite(ListContainerRead<ElementReadType> backingImmutableView) {
       super(backingImmutableView);
       vectorType = backingImmutableView.getVectorType();
     }
 
     public int getSize() {
-      return (int) ((BasicViews.UInt64View) get(1)).longValue();
+      return (int) ((UInt64View) get(1)).longValue();
     }
 
     public void setSize(int size) {
-      set(1, BasicViews.UInt64View.fromLong(size));
+      set(1, UInt64View.fromLong(size));
     }
 
     public VectorViewWriteRef<ElementReadType, ElementWriteType> getData() {
@@ -55,14 +57,13 @@ public class ListViewWriteImpl<
     @Override
     protected AbstractCompositeViewRead<ViewRead> createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
-      return new ListViewReadImpl.ListContainerRead<ElementReadType>(
-          vectorType, backingNode, viewCache);
+      return new ListContainerRead<ElementReadType>(vectorType, backingNode, viewCache);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public ListViewReadImpl.ListContainerRead<ElementReadType> commitChanges() {
-      return (ListViewReadImpl.ListContainerRead<ElementReadType>) super.commitChanges();
+    public ListContainerRead<ElementReadType> commitChanges() {
+      return (ListContainerRead<ElementReadType>) super.commitChanges();
     }
   }
 

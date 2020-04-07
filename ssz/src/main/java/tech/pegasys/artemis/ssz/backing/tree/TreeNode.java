@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 public interface TreeNode {
 
   static TreeNode createLeafNode(Bytes32 val) {
-    return new TreeNodeImpl.LeafNodeImpl(val);
+    return new LeafNodeImpl(val);
   }
 
   /**
