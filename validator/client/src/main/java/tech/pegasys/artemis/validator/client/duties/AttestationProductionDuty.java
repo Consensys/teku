@@ -58,7 +58,7 @@ public class AttestationProductionDuty implements Duty {
    * @param committeePosition the validator's position within the committee
    * @return a future which will be completed with the unsigned attestation for the committee.
    */
-  public synchronized SafeFuture<Optional<Attestation>> addValidator(
+  public SafeFuture<Optional<Attestation>> addValidator(
       final Validator validator, final int attestationCommitteeIndex, final int committeePosition) {
     final Committee committee =
         validatorsByCommitteeIndex.computeIfAbsent(
@@ -68,7 +68,7 @@ public class AttestationProductionDuty implements Duty {
   }
 
   @Override
-  public synchronized SafeFuture<?> performDuty() {
+  public SafeFuture<?> performDuty() {
     LOG.trace("Creating attestations at slot {}", slot);
     if (validatorsByCommitteeIndex.isEmpty()) {
       return SafeFuture.COMPLETE;
