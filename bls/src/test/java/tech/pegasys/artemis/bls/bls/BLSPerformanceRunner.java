@@ -29,11 +29,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.bls.bls.BLS;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 
 // This test is disabled by default so that it doesn't slow down other tests

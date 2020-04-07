@@ -29,7 +29,7 @@ import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.bls.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.bls.BLSSignature;
 

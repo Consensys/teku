@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.bls;
 
 import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 
