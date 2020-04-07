@@ -97,7 +97,7 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
-  public void iterator_shouldNotAggregateAttestaionsWhenValidatorsOverlap() {
+  public void iterator_shouldNotAggregateAttestationsWhenValidatorsOverlap() {
     final Attestation attestation1 = addAttestation(1, 2, 5);
     final Attestation attestation2 = addAttestation(1, 2, 3);
 
