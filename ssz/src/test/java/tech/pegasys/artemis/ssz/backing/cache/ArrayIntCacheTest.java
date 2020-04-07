@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.backing.cache;
+package tech.pegasys.artemis.ssz.backing.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

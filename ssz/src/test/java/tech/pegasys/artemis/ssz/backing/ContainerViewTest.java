@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.backing;
+package tech.pegasys.artemis.ssz.backing;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -25,16 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.ssz.backing.ContainerViewRead;
-import tech.pegasys.artemis.ssz.backing.ContainerViewWriteRef;
-import tech.pegasys.artemis.ssz.backing.ListViewRead;
-import tech.pegasys.artemis.ssz.backing.ListViewWrite;
-import tech.pegasys.artemis.ssz.backing.ListViewWriteRef;
-import tech.pegasys.artemis.ssz.backing.Utils;
-import tech.pegasys.artemis.ssz.backing.VectorViewRead;
-import tech.pegasys.artemis.ssz.backing.VectorViewWrite;
-import tech.pegasys.artemis.ssz.backing.ViewRead;
-import tech.pegasys.artemis.util.TestUtil;
+import tech.pegasys.artemis.ssz.TestUtil;
 import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.tree.TreeUtil;
