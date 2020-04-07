@@ -24,6 +24,7 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.artemis.validator.client.Validator;
 
 public class AggregationDuty implements Duty {
   private final ConcurrentMap<Integer, CommitteeAggregator> aggregatorsByCommitteeIndex =
@@ -36,6 +37,18 @@ public class AggregationDuty implements Duty {
     this.validatorApiChannel = validatorApiChannel;
   }
 
+  /**
+   * Adds a valiator to this duty. Only one aggregate per committee will be produced even if
+   * multiple validators are added for that committee. The aggregated attestations would be
+   * identical anyway so sending all of them would be a waste of network bandwidth.
+   *
+   * @param validatorIndex the validator's index
+   * @param proof the validator's slot signature proving it is the aggregator
+   * @param attestationCommitteeIndex the committee index to aggregate
+   * @param unsignedAttestationFuture the future returned by {@link
+   *     AttestationProductionDuty#addValidator(Validator, int, int)} which completes with the
+   *     unsigned attestation for this committee and slot.
+   */
   public void addValidator(
       final int validatorIndex,
       final BLSSignature proof,
@@ -56,11 +69,11 @@ public class AggregationDuty implements Duty {
             .toArray(SafeFuture[]::new));
   }
 
-  public SafeFuture<Void> aggregateCommittee(final CommitteeAggregator aggregators) {
-    return aggregators
+  public SafeFuture<Void> aggregateCommittee(final CommitteeAggregator aggregator) {
+    return aggregator
         .unsignedAttestationFuture
         .thenCompose(this::createAggregate)
-        .thenAccept(maybeAggregate -> sendAggregate(aggregators, maybeAggregate));
+        .thenAccept(maybeAggregate -> sendAggregate(aggregator, maybeAggregate));
   }
 
   public CompletionStage<Optional<Attestation>> createAggregate(
