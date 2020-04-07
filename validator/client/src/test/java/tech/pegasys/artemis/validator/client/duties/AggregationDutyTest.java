@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -110,6 +111,42 @@ class AggregationDutyTest {
         .sendAggregateAndProof(
             new AggregateAndProof(
                 UnsignedLong.valueOf(validator2Index), validator2Proof, committee2Aggregate));
+  }
+
+  @Test
+  public void shouldProduceSingleAggregateAndProofWhenMultipleValidatorsAggregateSameCommittee() {
+    final int committeeIndex = 2;
+
+    final int validator1Index = 1;
+    final BLSSignature validator1Proof = dataStructureUtil.randomSignature();
+
+    final int validator2Index = 6;
+    final BLSSignature validator2Proof = dataStructureUtil.randomSignature();
+
+    final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
+    final Attestation aggregate = dataStructureUtil.randomAttestation();
+    duty.addValidator(
+        validator1Index,
+        validator1Proof,
+        committeeIndex,
+        completedFuture(Optional.of(unsignedAttestation)));
+    duty.addValidator(
+        validator2Index,
+        validator2Proof,
+        committeeIndex,
+        completedFuture(Optional.of(unsignedAttestation)));
+
+    when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
+        .thenReturn(completedFuture(Optional.of(aggregate)));
+
+    assertThat(duty.performDuty()).isCompleted();
+
+    verify(validatorApiChannel)
+        .sendAggregateAndProof(
+            new AggregateAndProof(
+                UnsignedLong.valueOf(validator1Index), validator1Proof, aggregate));
+    // Only one proof should be sent.
+    verify(validatorApiChannel, times(1)).sendAggregateAndProof(any());
   }
 
   @Test
