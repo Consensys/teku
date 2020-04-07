@@ -11,28 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.mikuli;
+package tech.pegasys.artemis.bls.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.artemis.bls.hashToG2.Util.os2ip_modP;
 
+import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.mikuli.AtePairing;
-import tech.pegasys.artemis.bls.mikuli.G1Point;
-import tech.pegasys.artemis.bls.mikuli.G2Point;
-import tech.pegasys.artemis.bls.mikuli.GTPoint;
 
-class AtePairingTest {
+class UtilTest {
 
   @Test
-  void pairAndPair2AreEquivalent() {
-    G1Point p1 = G1Point.random(1L);
-    G2Point q2 = G2Point.random(2L);
-    G1Point r1 = G1Point.random(3L);
-    G2Point s2 = G2Point.random(4L);
-
-    GTPoint expected = AtePairing.pair(p1, q2).mul(AtePairing.pair(r1, s2));
-    GTPoint actual = AtePairing.pair2(p1, q2, r1, s2);
-
-    assertEquals(expected, actual);
+  void os2ipTest() {
+    // Big-endian bytes
+    byte[] bytes = {1, 2, 3, 4};
+    assertEquals(new BIG(0x01020304).toString(), os2ip_modP(Bytes.wrap(bytes)).toString());
   }
 }

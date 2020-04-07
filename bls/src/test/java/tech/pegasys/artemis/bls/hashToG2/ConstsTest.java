@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.hashToG2;
+package tech.pegasys.artemis.bls.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.bls.hashToG2.FP2Immutable.ONE;

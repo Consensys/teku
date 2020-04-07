@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.bls.bls;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -33,6 +33,7 @@ import tech.pegasys.artemis.bls.bls.BLS;
 import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.bls.BLSSignature;
+import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 
 // This test is disabled by default so that it doesn't slow down other tests
