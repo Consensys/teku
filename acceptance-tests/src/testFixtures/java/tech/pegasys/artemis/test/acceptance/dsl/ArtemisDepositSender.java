@@ -43,7 +43,7 @@ public class ArtemisDepositSender extends Node {
         ENCRYPTED_KEYSTORE_ENABLED,
         "--eth1-deposit-contract-address",
         eth1Node.getDepositContractAddress(),
-        "--Xnumber-of-validators",
+        "--number-of-validators",
         Integer.toString(numberOfValidators),
         "--eth1-private-key",
         eth1Node.getRichBenefactorKey(),
