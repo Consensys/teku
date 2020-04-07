@@ -38,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class CommitteeUtil {
 
@@ -267,5 +268,9 @@ public class CommitteeUtil {
     return TARGET_AGGREGATORS_PER_COMMITTEE == 0
         ? 1
         : Math.max(1, committeeSize / TARGET_AGGREGATORS_PER_COMMITTEE);
+  }
+
+  public static boolean isAggregator(final BLSSignature slot_signature, final int modulo) {
+    return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo) == 0;
   }
 }

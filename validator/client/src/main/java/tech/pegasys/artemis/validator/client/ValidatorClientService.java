@@ -48,7 +48,8 @@ public class ValidatorClientService extends Service {
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);
     final DutyScheduler validatorClient =
-        new DutyScheduler(asyncRunner, validatorApiChannel, validatorDutyFactory, validators);
+        new DutyScheduler(
+            asyncRunner, validatorApiChannel, forkProvider, validatorDutyFactory, validators);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 
