@@ -34,8 +34,6 @@ import tech.pegasys.artemis.validator.client.ForkProvider;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.signer.Signer;
 
-// We want to synchronize on the specific list to ensure we don't modify it while iterating
-// but are ok with other threads simultaneously operating on other lists.
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
   private final Map<Integer, Committee> validatorsByCommitteeIndex = new HashMap<>();
