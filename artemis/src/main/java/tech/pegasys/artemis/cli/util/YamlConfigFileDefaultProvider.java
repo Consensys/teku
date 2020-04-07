@@ -67,6 +67,7 @@ public class YamlConfigFileDefaultProvider implements IDefaultValueProvider {
     return argSpec.isOption() ? getConfigurationValue(((OptionSpec) argSpec)) : null;
   }
 
+  @SuppressWarnings("unchecked")
   private Map<String, Object> loadConfigurationFromFile() {
     try {
       final String configYaml = Files.readString(configFile.toPath());
