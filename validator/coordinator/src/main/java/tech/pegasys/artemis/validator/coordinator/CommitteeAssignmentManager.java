@@ -14,9 +14,9 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.artemis.util.config.Constants.COMMITTEE_INDEX_SUBSCRIPTION_LENGTH;
 
 import com.google.common.eventbus.EventBus;
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.core.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
@@ -154,6 +153,6 @@ public class CommitteeAssignmentManager {
       BLSSignature slot_signature) {
     List<Integer> committee = get_beacon_committee(state, slot, committeeIndex);
     int modulo = getAggregatorModulo(committee.size());
-    return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo) == 0;
+    return isAggregator(slot_signature, modulo);
   }
 }
