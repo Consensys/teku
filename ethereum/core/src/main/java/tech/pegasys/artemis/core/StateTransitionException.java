@@ -11,14 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.core;
 
-public final class SlotProcessingException extends Exception {
-  public SlotProcessingException(String err) {
-    super(err);
-  }
-
-  public SlotProcessingException(Exception e) {
+public class StateTransitionException extends Exception {
+  public StateTransitionException(Exception e) {
     super(e);
   }
 }

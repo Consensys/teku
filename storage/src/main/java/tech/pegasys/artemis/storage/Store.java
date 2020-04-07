@@ -35,11 +35,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
+import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.client.FailedPrecommitException;
-import tech.pegasys.artemis.storage.client.ReadOnlyStore;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -261,7 +262,7 @@ public class Store implements ReadOnlyStore {
     }
   }
 
-  public class Transaction implements ReadOnlyStore {
+  public class Transaction implements MutableStore {
 
     private final StorageUpdateChannel storageUpdateChannel;
     private Optional<UnsignedLong> time = Optional.empty();
@@ -281,38 +282,47 @@ public class Store implements ReadOnlyStore {
       this.updateHandler = updateHandler;
     }
 
+    @Override
     public void putLatestMessage(UnsignedLong validatorIndex, Checkpoint latestMessage) {
       latest_messages.put(validatorIndex, latestMessage);
     }
 
+    @Override
     public void putCheckpointState(Checkpoint checkpoint, BeaconState state) {
       checkpoint_states.put(checkpoint, state);
     }
 
+    @Override
     public void putBlockState(Bytes32 blockRoot, BeaconState state) {
       block_states.put(blockRoot, state);
     }
 
+    @Override
     public void putBlock(Bytes32 blockRoot, SignedBeaconBlock block) {
       blocks.put(blockRoot, block);
     }
 
+    @Override
     public void setTime(UnsignedLong time) {
       this.time = Optional.of(time);
     }
 
+    @Override
     public void setGenesis_time(UnsignedLong genesis_time) {
       this.genesis_time = Optional.of(genesis_time);
     }
 
+    @Override
     public void setJustifiedCheckpoint(Checkpoint justified_checkpoint) {
       this.justified_checkpoint = Optional.of(justified_checkpoint);
     }
 
+    @Override
     public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint) {
       this.finalized_checkpoint = Optional.of(finalized_checkpoint);
     }
 
+    @Override
     public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
       this.best_justified_checkpoint = Optional.of(best_justified_checkpoint);
     }

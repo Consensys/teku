@@ -24,6 +24,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.CommitteeAssignmentUtil;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -32,9 +36,6 @@ import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
-import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLS;
@@ -69,7 +70,10 @@ public class AttestationGenerator {
 
   public static Attestation withNewAttesterBits(Attestation oldAttestation, int numNewAttesters) {
     Attestation attestation = new Attestation(oldAttestation);
-    Bitlist newBitlist = attestation.getAggregation_bits().copy();
+    Bitlist newBitlist =
+        new Bitlist(
+            attestation.getAggregation_bits().getCurrentSize(),
+            attestation.getAggregation_bits().getMaxSize());
     List<Integer> unsetBits = new ArrayList<>();
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
       if (!newBitlist.getBit(i)) {

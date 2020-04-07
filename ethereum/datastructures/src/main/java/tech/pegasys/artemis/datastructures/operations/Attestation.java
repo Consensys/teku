@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   public Attestation(Attestation attestation) {
     this.aggregation_bits = attestation.getAggregation_bits().copy();
     this.data = attestation.getData();
-    this.signature = BLSSignature.fromBytes(attestation.getAggregate_signature().toBytes());
+    this.signature = attestation.getAggregate_signature();
   }
 
   public Attestation() {
@@ -60,17 +61,11 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   }
 
   public UnsignedLong getEarliestSlotForProcessing() {
-    // Attestations can't be processed until their slot is in the past and until we are in the same
-    // epoch as their target.
-    return max(data.getSlot().plus(UnsignedLong.ONE), data.getTarget().getEpochStartSlot());
+    return data.getEarliestSlotForProcessing();
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {
     return Sets.newHashSet(data.getTarget().getRoot(), data.getBeacon_block_root());
-  }
-
-  private static UnsignedLong max(final UnsignedLong a, final UnsignedLong b) {
-    return a.compareTo(b) > 0 ? a : b;
   }
 
   @Override
@@ -129,6 +124,15 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
     return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
         && Objects.equals(this.getData(), other.getData())
         && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("aggregation_bits", aggregation_bits)
+        .add("data", data)
+        .add("signature", signature)
+        .toString();
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

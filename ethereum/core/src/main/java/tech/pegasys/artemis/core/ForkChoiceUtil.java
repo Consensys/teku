@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.core;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
@@ -36,20 +36,19 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
+import tech.pegasys.artemis.core.results.AttestationProcessingResult;
+import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
+import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.Store.Transaction;
-import tech.pegasys.artemis.storage.client.ReadOnlyStore;
 
 public class ForkChoiceUtil {
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
@@ -100,7 +99,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_latest_attesting_balance</a>
    */
-  public static UnsignedLong get_latest_attesting_balance(Store store, Bytes32 root) {
+  public static UnsignedLong get_latest_attesting_balance(ReadOnlyStore store, Bytes32 root) {
     BeaconState state = store.getCheckpointState(store.getJustifiedCheckpoint());
     List<Integer> active_indices = get_active_validator_indices(state, get_current_epoch(state));
     return active_indices.stream()
@@ -160,7 +159,7 @@ public class ForkChoiceUtil {
    * @param store
    * @return
    */
-  public static Map<Bytes32, BeaconBlock> get_filtered_block_tree(Store store) {
+  public static Map<Bytes32, BeaconBlock> get_filtered_block_tree(ReadOnlyStore store) {
     Bytes32 base = store.getJustifiedCheckpoint().getRoot();
     Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
     filter_block_tree(store, base, blocks);
@@ -175,7 +174,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_head</a>
    */
-  public static Bytes32 get_head(Store store) {
+  public static Bytes32 get_head(ReadOnlyStore store) {
     // Get filtered block tree that only includes viable branches
     final Map<Bytes32, BeaconBlock> blocks = get_filtered_block_tree(store);
 
@@ -225,7 +224,7 @@ public class ForkChoiceUtil {
   */
 
   public static boolean should_update_justified_checkpoint(
-      Store.Transaction store, Checkpoint new_justified_checkpoint) {
+      ReadOnlyStore store, Checkpoint new_justified_checkpoint) {
     if (compute_slots_since_epoch_start(get_current_slot(store, true))
             .compareTo(UnsignedLong.valueOf(SAFE_SLOTS_TO_UPDATE_JUSTIFIED))
         < 0) {
@@ -246,7 +245,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
    */
-  public static void on_tick(Store.Transaction store, UnsignedLong time) {
+  public static void on_tick(MutableStore store, UnsignedLong time) {
     UnsignedLong previous_slot = get_current_slot(store);
 
     // Update store time
@@ -279,7 +278,7 @@ public class ForkChoiceUtil {
    */
   @CheckReturnValue
   public static BlockImportResult on_block(
-      Store.Transaction store, SignedBeaconBlock signed_block, StateTransition st) {
+      MutableStore store, SignedBeaconBlock signed_block, StateTransition st) {
     final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
@@ -410,7 +409,7 @@ public class ForkChoiceUtil {
    */
   @CheckReturnValue
   public static AttestationProcessingResult on_attestation(
-      Store.Transaction store, Attestation attestation, StateTransition stateTransition) {
+      MutableStore store, Attestation attestation, StateTransition stateTransition) {
 
     Checkpoint target = attestation.getData().getTarget();
 
@@ -494,7 +493,7 @@ public class ForkChoiceUtil {
   }
 
   private static void storeCheckpointState(
-      final Transaction store,
+      final MutableStore store,
       final StateTransition stateTransition,
       final Checkpoint target,
       final BeaconState targetRootState)

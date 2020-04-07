@@ -37,6 +37,7 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -47,9 +48,8 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
-import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
-import tech.pegasys.artemis.statetransition.StateTransition;
+import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
@@ -79,7 +79,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   private final BlockProposalUtil blockCreator;
   private final RecentChainData recentChainData;
   private final AttestationAggregator attestationAggregator;
-  private final BlockAttestationsPool blockAttestationsPool;
+  private final AggregatingAttestationPool attestationsPool;
   private final ValidatorApiChannel validatorApiChannel;
   private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
@@ -93,7 +93,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       ValidatorApiChannel validatorApiChannel,
       RecentChainData recentChainData,
       AttestationAggregator attestationAggregator,
-      BlockAttestationsPool blockAttestationsPool,
+      AggregatingAttestationPool attestationsPool,
       Eth1DataCache eth1DataCache,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
@@ -108,7 +108,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
                     tech.pegasys.artemis.validator.client.Validator::getPublicKey,
                     validator -> new ValidatorInfo(validator.getSigner())));
     this.attestationAggregator = attestationAggregator;
-    this.blockAttestationsPool = blockAttestationsPool;
+    this.attestationsPool = attestationsPool;
     this.eth1DataCache = eth1DataCache;
   }
 
@@ -159,22 +159,23 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   @Subscribe
   public void onProcessedAttestationEvent(ProcessedAttestationEvent event) {
-    attestationAggregator.processAttestation(event.getAttestation());
+    attestationsPool.add(event.getAttestation());
+    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      attestationAggregator.processAttestation(event.getAttestation());
+    }
   }
 
   @Subscribe
   public void onProcessedAggregateEvent(ProcessedAggregateEvent event) {
-    blockAttestationsPool.addUnprocessedAggregateAttestationToQueue(event.getAttestation());
+    attestationsPool.add(event.getAttestation());
+    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      attestationAggregator.processAttestation(event.getAttestation());
+    }
   }
 
   @Subscribe
   public void onBlockImported(ImportedBlockEvent event) {
-    event
-        .getBlock()
-        .getMessage()
-        .getBody()
-        .getAttestations()
-        .forEach(blockAttestationsPool::addAggregateAttestationProcessedInBlock);
+    event.getBlock().getMessage().getBody().getAttestations().forEach(attestationsPool::remove);
   }
 
   @Subscribe
@@ -278,6 +279,9 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   @Subscribe
   public void onAggregationEvent(BroadcastAggregatesEvent event) {
+    if (FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      return;
+    }
     List<AggregateAndProof> aggregateAndProofs = attestationAggregator.getAggregateAndProofs();
     for (AggregateAndProof aggregateAndProof : aggregateAndProofs) {
       this.eventBus.post(aggregateAndProof);

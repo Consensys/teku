@@ -193,7 +193,7 @@ public class ChainDataProvider {
                   : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
 
           return combinedChainDataClient
-              .getStateAtSlot(slot, bestBlockRoot)
+              .getBlockAndStateInEffectAtSlot(slot, bestBlockRoot)
               .thenApply(
                   optionalState ->
                       optionalState.map(

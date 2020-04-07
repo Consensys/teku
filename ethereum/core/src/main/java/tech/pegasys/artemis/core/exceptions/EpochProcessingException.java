@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.artemis.core.exceptions;
 
-public final class BlockProcessingException extends Exception {
-  public BlockProcessingException(String err) {
+public final class EpochProcessingException extends Exception {
+  public EpochProcessingException(String err) {
     super(err);
   }
 
-  public BlockProcessingException(RuntimeException e) {
+  public EpochProcessingException(RuntimeException e) {
     super(e);
   }
 }
