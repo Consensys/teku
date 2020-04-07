@@ -173,7 +173,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
     forkProvider
         .getFork()
         .thenCompose(fork -> validator.getSigner().signAggregationSlot(slot, fork))
-        .thenAccept(
+        .finish(
             slotSignature -> {
               if (CommitteeUtil.isAggregator(slotSignature, aggregatorModulo)) {
                 aggregationDuties
@@ -184,7 +184,8 @@ public class DutyScheduler implements ValidatorTimingChannel {
                         attestationCommitteeIndex,
                         unsignedAttestationFuture);
               }
-            });
+            },
+            error -> LOG.error("Failed to schedule aggregation duties", error));
   }
 
   @Override
