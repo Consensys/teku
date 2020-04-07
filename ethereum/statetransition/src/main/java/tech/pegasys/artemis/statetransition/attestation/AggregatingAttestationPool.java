@@ -25,6 +25,12 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 
+/**
+ * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
+ * or as an aggregate to publish as part of the naive attestation aggregation algorithm. In both
+ * cases the returned attestations are aggregated to maximise the number of validators that can be
+ * included.
+ */
 public class AggregatingAttestationPool {
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
@@ -65,7 +71,7 @@ public class AggregatingAttestationPool {
         .flatMap(attestations -> attestations.stream().findFirst());
   }
 
-  public boolean canBeIncluded(final MatchingDataAttestationGroup group, final UnsignedLong slot) {
+  private boolean canBeIncluded(final MatchingDataAttestationGroup group, final UnsignedLong slot) {
     return group.getAttestationData().getEarliestSlotForProcessing().compareTo(slot) <= 0;
   }
 }

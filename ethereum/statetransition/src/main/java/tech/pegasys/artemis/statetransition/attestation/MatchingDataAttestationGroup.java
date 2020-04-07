@@ -26,6 +26,18 @@ import java.util.stream.StreamSupport;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 
+/**
+ * Maintains an aggregated collection of attestations which all share the same {@link
+ * AttestationData}.
+ *
+ * <p>So that the added attestations can be aggregated into the smallest number of aggregates, even
+ * as the contents of the collection change, aggregation is actually done during iteration.
+ * Aggregation starts with the attestation that already includes the most validators then continues
+ * adding attestations in order of the number of validators they contain.
+ *
+ * <p>Note that the resulting aggregate will be invalid if attestations with different
+ * AttestationData are added.
+ */
 class MatchingDataAttestationGroup implements Iterable<Attestation> {
 
   private final NavigableMap<Integer, Set<Attestation>> attestationsByValidatorCount =
@@ -40,6 +52,12 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
     return attestationData;
   }
 
+  /**
+   * Adds an attestation to this group. When possible, the attestation will be aggregated with
+   * others during iteration.
+   *
+   * @param attestation the attestation to add
+   */
   public void add(final Attestation attestation) {
     attestationsByValidatorCount
         .computeIfAbsent(
@@ -47,6 +65,16 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
         .add(attestation);
   }
 
+  /**
+   * Iterates through the aggregation of attestations in this group. The iterator attempts to create
+   * the minimum number of attestations that include all attestations in the group.
+   *
+   * <p>While it is guaranteed that every validator from an attestation in this group is included in
+   * an aggregate produced by this iterator, there is no guarantee that the added attestation
+   * instances themselves will be included.
+   *
+   * @return an iterator including attestations for every validator included in this group.
+   */
   @Override
   public Iterator<Attestation> iterator() {
     return new AggregatingIterator();
@@ -56,10 +84,24 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
     return StreamSupport.stream(spliterator(), false);
   }
 
+  /**
+   * Returns true if there are no attestations in this group.
+   *
+   * @return true if this group is empty.
+   */
   public boolean isEmpty() {
     return attestationsByValidatorCount.isEmpty();
   }
 
+  /**
+   * Removes any attestation from this group whose validators are all included in the specified
+   * attestation. Attestations that include some but not all validators in the specified attestation
+   * are not removed.
+   *
+   * <p>This is well suited for removing attestations that have been included in a block.
+   *
+   * @param attestation the attestation to logically remove from the pool.
+   */
   public void remove(final Attestation attestation) {
     final Collection<Set<Attestation>> attestationSets = attestationsByValidatorCount.values();
     for (Iterator<Set<Attestation>> i = attestationSets.iterator(); i.hasNext(); ) {

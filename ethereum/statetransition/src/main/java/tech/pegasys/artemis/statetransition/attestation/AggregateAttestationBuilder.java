@@ -23,6 +23,10 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLS;
 
+/**
+ * Builds an aggregate attestation, providing functions to test if an attestation can be added or is
+ * made redundant by the current aggregate.
+ */
 class AggregateAttestationBuilder {
   private final Set<Attestation> includedAttestations = new HashSet<>();
   private final AttestationData attestationData;
