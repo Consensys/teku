@@ -17,7 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.cache.Cache;
 import tech.pegasys.artemis.util.cache.LRUCache;
 import tech.pegasys.artemis.util.cache.NoOpCache;

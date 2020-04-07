@@ -20,7 +20,7 @@ import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class SimpleOffsetSszEncoder<T> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();

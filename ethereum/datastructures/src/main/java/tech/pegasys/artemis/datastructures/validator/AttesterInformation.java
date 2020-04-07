@@ -14,9 +14,9 @@
 package tech.pegasys.artemis.datastructures.validator;
 
 import java.util.Optional;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.state.Committee;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class AttesterInformation {
 

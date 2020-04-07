@@ -16,7 +16,7 @@ package tech.pegasys.artemis.api.schema;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 
 public class PendingAttestation {
   public final Bitlist aggregation_bits;
