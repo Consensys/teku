@@ -28,11 +28,11 @@ import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 class AggregationDutyTest {

@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
@@ -35,8 +37,6 @@ import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class CommitteeAssignmentManager {
 

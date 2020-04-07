@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
@@ -33,8 +35,6 @@ import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class GossipMessageHandlerIntegrationTest {
 

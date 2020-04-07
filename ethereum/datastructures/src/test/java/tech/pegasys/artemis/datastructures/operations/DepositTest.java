@@ -26,8 +26,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)

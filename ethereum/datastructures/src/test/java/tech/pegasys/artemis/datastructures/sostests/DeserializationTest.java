@@ -42,9 +42,9 @@ import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class DeserializationTest {
