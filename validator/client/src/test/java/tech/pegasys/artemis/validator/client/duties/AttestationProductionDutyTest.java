@@ -200,10 +200,16 @@ class AttestationProductionDutyTest {
     final Attestation expectedAttestation3 =
         expectSignAttestation(validator3, validator3CommitteePosition, unsignedAttestation);
 
-    duty.addValidator(validator1, committeeIndex, validator1CommitteePosition);
-    duty.addValidator(validator2, committeeIndex, validator2CommitteePosition);
-    duty.addValidator(validator3, committeeIndex, validator3CommitteePosition);
+    final SafeFuture<Optional<Attestation>> attestationResult1 =
+        duty.addValidator(validator1, committeeIndex, validator1CommitteePosition);
+    final SafeFuture<Optional<Attestation>> attestationResult2 =
+        duty.addValidator(validator2, committeeIndex, validator2CommitteePosition);
+    final SafeFuture<Optional<Attestation>> attestationResult3 =
+        duty.addValidator(validator3, committeeIndex, validator3CommitteePosition);
     assertThat(duty.performDuty()).isCompleted();
+    assertThat(attestationResult1).isCompletedWithValue(Optional.of(unsignedAttestation));
+    assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation));
+    assertThat(attestationResult3).isCompletedWithValue(Optional.of(unsignedAttestation));
 
     verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1);
     verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2);
