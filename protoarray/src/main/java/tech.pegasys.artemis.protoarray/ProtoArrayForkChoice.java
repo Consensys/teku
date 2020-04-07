@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.protoarray;
+package tech.pegasys.artemis.protoarray;
 
 import static java.lang.Math.subtractExact;
 import static tech.pegasys.artemis.util.config.Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
@@ -27,6 +27,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class ProtoArrayForkChoice {
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
@@ -51,7 +52,7 @@ public class ProtoArrayForkChoice {
       Bytes32 finalizedRoot) {
     ProtoArray protoArray =
         new ProtoArray(
-            PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
             justifiedEpoch,
             finalizedEpoch,
             new ArrayList<>(),

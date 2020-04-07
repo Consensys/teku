@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.protoarray;
+package tech.pegasys.artemis.protoarray;
 
 import java.util.ArrayList;
 import java.util.Collections;
