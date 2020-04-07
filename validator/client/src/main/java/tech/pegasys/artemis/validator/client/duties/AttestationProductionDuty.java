@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSSignature;
@@ -34,8 +36,7 @@ import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
-  private final Map<Integer, List<ValidatorWithCommitteePosition>> validatorsByCommitteeIndex =
-      new HashMap<>();
+  private final Map<Integer, Committee> validatorsByCommitteeIndex = new HashMap<>();
   private final UnsignedLong slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
@@ -49,15 +50,25 @@ public class AttestationProductionDuty implements Duty {
     this.validatorApiChannel = validatorApiChannel;
   }
 
-  public synchronized void addValidator(
+  /**
+   * Adds a validator that should produce an attestation in this slot.
+   *
+   * @param validator the validator to produce an attestation
+   * @param attestationCommitteeIndex the committee index for the validator
+   * @param committeePosition the validator's position within the committee
+   * @return a future which will be completed with the unsigned attestation for the committee.
+   */
+  public SafeFuture<Optional<Attestation>> addValidator(
       final Validator validator, final int attestationCommitteeIndex, final int committeePosition) {
-    validatorsByCommitteeIndex
-        .computeIfAbsent(attestationCommitteeIndex, key -> new ArrayList<>())
-        .add(new ValidatorWithCommitteePosition(validator, committeePosition));
+    final Committee committee =
+        validatorsByCommitteeIndex.computeIfAbsent(
+            attestationCommitteeIndex, key -> new Committee());
+    committee.addValidator(validator, committeePosition);
+    return committee.attestationFuture;
   }
 
   @Override
-  public synchronized SafeFuture<?> performDuty() {
+  public SafeFuture<?> performDuty() {
     LOG.trace("Creating attestations at slot {}", slot);
     if (validatorsByCommitteeIndex.isEmpty()) {
       return SafeFuture.COMPLETE;
@@ -78,35 +89,30 @@ public class AttestationProductionDuty implements Duty {
   }
 
   private SafeFuture<Void> produceAttestationsForCommittee(
-      final Fork fork,
-      final int committeeIndex,
-      final List<ValidatorWithCommitteePosition> validators) {
-    return validatorApiChannel
-        .createUnsignedAttestation(slot, committeeIndex)
-        .thenCompose(
-            maybeUnsignedAttestation ->
-                maybeUnsignedAttestation
-                    .map(attestation -> signAttestationsForCommittee(fork, validators, attestation))
-                    .orElseGet(
-                        () -> {
-                          return failedFuture(
-                              new IllegalStateException(
-                                  "Unable to produce attestation for slot "
-                                      + slot
-                                      + " with committee "
-                                      + committeeIndex
-                                      + " because chain data was unavailable"));
-                        }));
+      final Fork fork, final int committeeIndex, final Committee committee) {
+    final SafeFuture<Optional<Attestation>> unsignedAttestationFuture =
+        validatorApiChannel.createUnsignedAttestation(slot, committeeIndex);
+    unsignedAttestationFuture.propagateTo(committee.attestationFuture);
+    return unsignedAttestationFuture.thenCompose(
+        maybeUnsignedAttestation ->
+            maybeUnsignedAttestation
+                .map(attestation -> signAttestationsForCommittee(fork, committee, attestation))
+                .orElseGet(
+                    () -> {
+                      return failedFuture(
+                          new IllegalStateException(
+                              "Unable to produce attestation for slot "
+                                  + slot
+                                  + " with committee "
+                                  + committeeIndex
+                                  + " because chain data was unavailable"));
+                    }));
   }
 
   private SafeFuture<Void> signAttestationsForCommittee(
-      final Fork fork,
-      final List<ValidatorWithCommitteePosition> validators,
-      final Attestation attestation) {
-    return SafeFuture.allOf(
-        validators.stream()
-            .map(validator -> signAttestationForValidator(fork, attestation, validator))
-            .toArray(SafeFuture[]::new));
+      final Fork fork, final Committee validators, final Attestation attestation) {
+    return validators.forEach(
+        validator -> signAttestationForValidator(fork, attestation, validator));
   }
 
   private SafeFuture<Void> signAttestationForValidator(
@@ -127,6 +133,20 @@ public class AttestationProductionDuty implements Duty {
     final Bitlist aggregationBits = new Bitlist(attestation.getAggregation_bits());
     aggregationBits.setBit(validator.getCommitteePosition());
     return new Attestation(aggregationBits, attestation.getData(), signature);
+  }
+
+  private static class Committee {
+    private final List<ValidatorWithCommitteePosition> validators = new ArrayList<>();
+    private final SafeFuture<Optional<Attestation>> attestationFuture = new SafeFuture<>();
+
+    public synchronized void addValidator(final Validator validator, final int committeePosition) {
+      validators.add(new ValidatorWithCommitteePosition(validator, committeePosition));
+    }
+
+    public synchronized SafeFuture<Void> forEach(
+        final Function<ValidatorWithCommitteePosition, SafeFuture<Void>> action) {
+      return SafeFuture.allOf(validators.stream().map(action).toArray(SafeFuture[]::new));
+    }
   }
 
   private static class ValidatorWithCommitteePosition {
