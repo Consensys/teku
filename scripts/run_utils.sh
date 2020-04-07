@@ -30,7 +30,7 @@ create_config() {
   # Create a list of all the peers for the configure node procedure to use
   PEERS=$(generate_peers 19000 $NUM $NODE)
   PEERS=$(echo $PEERS | tr -d '\n')
-  PEERS="[$(echo $PEERS | tr ' ' ',')]"
+  PEERS="[ $(echo $PEERS | tr ' ' ',') ]"
 
   # get the private key for this node
   local PRIVATE_KEY=$(sed "$(($NODE + 2))q;d" ../config/peer_ids.dat | cut -f 1)
@@ -43,25 +43,25 @@ create_config() {
 
   # Create the configuration file for the node
   cat $TEMPLATE | \
-    sed "s/#log-file\ =.*/log-file = \"teku-$NODE.log\"/"             |# Use a unique log file
-    sed "s/p2p-advertised-port\ =.*//"                                     |# Remove the advertised port field
+    sed "s/#log-file:\.*/log-file: \"teku-$NODE.log\"/"             |# Use a unique log file
+    sed "s/p2p-advertised-port:.*//"                                     |# Remove the advertised port field
 #    sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
 #    sed "s/isBootnode\ =.*/isBootnode\ =\ $IS_BOOTNODE/"              |# Update the bootnode flag
-    sed "s/p2p-discovery-bootnodes\ =.*/p2p-discovery-bootnodes\ =\ \"$BOOTNODES\"/"              |# Update the bootnodes
-    sed "s@p2p-private-key-file\ =.*@p2p-private-key-file\ =\ \"$PRIVATE_KEY_FILE\"@"          |# Update the private key
-    sed "s/p2p-port\ =.*/p2p-port\ =\ $PORT/"                                 |# Update the port field to the value set above
-    sed "s/rest-api-port\ =.*/rest-api-port\ =\ $RPC_PORT/"                 |# Update the REST API port field to the value set above
-    sed "s/rest-api-docs-enabled\ =.*/rest-api-docs-enabled\ =\ true/"                |# Update the REST API to enable the SWAGGER endpoint
-    sed "s/Xinterop-genesis-time\ =.*/Xinterop-genesis-time\ =\ $GENESIS_TIME/"           |# Update the genesis time
-    awk -v peers="$PEERS" '/p2p-port/{print;print "p2p-static-peers = "peers;next}1' |# Update the peer list
-    sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
-    sed "s/data-storage-mode\ =.*/data-storage-mode\ =\ \"archive\"/"   |# Update state storage mode to archive
-    sed "s/p2p-interface\ =.*/p2p-interface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
-    sed "s/p2p-enabled\ =.*/p2p-enabled\ =\ $MODE/"               |# Update the network mode
-    sed "s/X-interop-number-of-validators\ =.*/X-interop-number-of-validators\ =\ $NUM_VALIDATORS/"     | # Update validator count
-    sed "s/Xinterop-owned-validator-start-index\ =.*/Xinterop-owned-validator-start-index\ =\ $START_INDEX/" | # Update the validator start index
-    sed "s/Xinterop-owned-validator-count\ =.*/Xinterop-owned-validator-count\ =\ $OWNED_VALIDATOR_COUNT/" \
-    > ../config/runConfig.$NODE.toml
+#    sed "s/p2p-discovery-bootnodes\ =.*/p2p-discovery-bootnodes\ =\ \"$BOOTNODES\"/"              |# Update the bootnodes
+    sed "s@p2p-private-key-file:.*@p2p-private-key-file:\ \"$PRIVATE_KEY_FILE\"@"          |# Update the private key
+    sed "s/p2p-port:.*/p2p-port:\ $PORT/"                                 |# Update the port field to the value set above
+    sed "s/rest-api-port:.*/rest-api-port:\ $RPC_PORT/"                 |# Update the REST API port field to the value set above
+    sed "s/rest-api-docs-enabled:.*/rest-api-docs-enabled:\ True/"                |# Update the REST API to enable the SWAGGER endpoint
+    sed "s/Xinterop-genesis-time:.*/Xinterop-genesis-time:\ $GENESIS_TIME/"           |# Update the genesis time
+    awk -v peers="$PEERS" '/p2p-port/{print;print "p2p-static-peers: "peers;next}1' |# Update the peer list
+    sed "s/numNodes:.*/numNodes:\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
+    sed "s/data-storage-mode:.*/data-storage-mode:\ \"archive\"/"   |# Update state storage mode to archive
+    sed "s/p2p-interface:.*/p2p-interface:\ \"127.0.0.1\"/" |# Update the network interface to localhost
+    sed "s/p2p-enabled:.*/p2p-enabled:\ $MODE/"               |# Update the network mode
+    sed "s/X-interop-number-of-validators:.*/X-interop-number-of-validators:=\ $NUM_VALIDATORS/"     | # Update validator count
+    sed "s/Xinterop-owned-validator-start-index:.*/Xinterop-owned-validator-start-index:\ $START_INDEX/" | # Update the validator start index
+    sed "s/Xinterop-owned-validator-count:.*/Xinterop-owned-validator-count:\ $OWNED_VALIDATOR_COUNT/" \
+    > ../config/runConfig.$NODE.yaml
 }
 
 
@@ -87,7 +87,7 @@ configure_node() {
   # Create the configuration file for the node
   if [ "$CONFIG_FILE" == "" ]
   then 
-    create_config $MODE $NODE $NUM $NUM_VALIDATORS "../config/config.toml"
+    create_config $MODE $NODE $NUM $NUM_VALIDATORS "../config/config.yaml"
   else
     create_config $MODE $NODE $NUM $NUM_VALIDATORS $CONFIG_FILE
   fi
@@ -111,7 +111,7 @@ create_tmux_panes() {
   while [[ $idx -lt $NODES && $idx -lt $end ]]
   do
     # Split the window vertically and start the next node in the new vertical split
-    tmux split-window -v "cd node_$idx && ./teku --config-file=./config/runConfig.$idx.toml $LOG_FLAG"
+    tmux split-window -v "cd node_$idx && ./teku --config-file=./config/runConfig.$idx.yaml $LOG_FLAG"
     idx=$(($idx + 1))
   done
 }
@@ -125,7 +125,7 @@ create_tmux_windows() {
   cd demo/
 
   # Create a new tmux session and start it with the first teku node
-  tmux new-session -d -s foo "cd node_0 && ./teku --config-file=./config/runConfig.0.toml $LOG_FLAG"
+  tmux new-session -d -s foo "cd node_0 && ./teku --config-file=./config/runConfig.0.yaml $LOG_FLAG"
 
   # Start the index at 1 because the first node has already been created
   idx=1
@@ -148,7 +148,7 @@ create_tmux_windows() {
   while [[ $idx -lt $NODES ]]
   do
     # Start a new tmux window with the next node. Give it a name to add some more spice
-    tmux new-window -n 'the dude abides again...' "cd node_$idx && ./teku --config-file=./config/runConfig.$idx.toml $LOG_FLAG"
+    tmux new-window -n 'the dude abides again...' "cd node_$idx && ./teku --config-file=./config/runConfig.$idx.yaml $LOG_FLAG"
     idx=$(($idx + 1))
     # Create new tmux panes for the new 4 nodes, or as many as possible if there are less than 4
     create_tmux_panes $idx
