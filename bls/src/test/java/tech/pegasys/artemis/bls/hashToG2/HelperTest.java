@@ -26,9 +26,6 @@ import static tech.pegasys.artemis.bls.hashToG2.Util.bigFromHex;
 import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.hashToG2.FP2Immutable;
-import tech.pegasys.artemis.bls.hashToG2.Helper;
-import tech.pegasys.artemis.bls.hashToG2.JacobianPoint;
 
 class HelperTest {
 

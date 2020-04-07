@@ -26,7 +26,6 @@ import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.hashToG2.FP2Immutable;
 
 class FP2ImmutableTest {
 

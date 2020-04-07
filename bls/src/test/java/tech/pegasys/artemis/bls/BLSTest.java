@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.bls;
+package tech.pegasys.artemis.bls;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,10 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.bls.BLS;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 class BLSTest {
 

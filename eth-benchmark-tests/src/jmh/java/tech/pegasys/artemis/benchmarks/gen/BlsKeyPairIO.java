@@ -31,9 +31,9 @@ import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.bls.BLSSecretKey;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSecretKey;
 
 /**
  * Given a file or resource reads BLS {@link BLSKeyPair} instances from it.

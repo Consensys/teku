@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.bls;
+package tech.pegasys.artemis.bls;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 
 // This test is disabled by default so that it doesn't slow down other tests

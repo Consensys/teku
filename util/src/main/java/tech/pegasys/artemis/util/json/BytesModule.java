@@ -24,8 +24,8 @@ import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt64;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 
 public class BytesModule extends SimpleModule {
 

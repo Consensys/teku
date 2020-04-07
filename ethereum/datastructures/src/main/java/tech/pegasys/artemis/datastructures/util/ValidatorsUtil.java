@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ValidatorsUtil {

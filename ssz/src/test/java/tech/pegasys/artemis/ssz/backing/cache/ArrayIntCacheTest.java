@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.ssz.backing.cache.ArrayIntCache;
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 
 public class ArrayIntCacheTest {
 

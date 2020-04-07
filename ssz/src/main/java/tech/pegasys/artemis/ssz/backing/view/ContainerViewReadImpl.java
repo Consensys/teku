@@ -13,13 +13,13 @@
 
 package tech.pegasys.artemis.ssz.backing.view;
 
-import tech.pegasys.artemis.ssz.backing.cache.ArrayIntCache;
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
-import tech.pegasys.artemis.ssz.backing.type.CompositeViewType;
 import tech.pegasys.artemis.ssz.backing.ContainerViewRead;
 import tech.pegasys.artemis.ssz.backing.ContainerViewWrite;
 import tech.pegasys.artemis.ssz.backing.ViewRead;
+import tech.pegasys.artemis.ssz.backing.cache.ArrayIntCache;
+import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.artemis.ssz.backing.type.CompositeViewType;
 import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
 
 public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
@@ -34,7 +34,7 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ViewRead>
   }
 
   public ContainerViewReadImpl(
-          CompositeViewType type, TreeNode backingNode, IntCache<ViewRead> cache) {
+      CompositeViewType type, TreeNode backingNode, IntCache<ViewRead> cache) {
     super(type, backingNode, cache);
   }
 

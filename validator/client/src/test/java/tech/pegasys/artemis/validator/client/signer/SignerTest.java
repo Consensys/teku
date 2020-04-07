@@ -21,13 +21,13 @@ import static org.mockito.Mockito.when;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 class SignerTest {
 

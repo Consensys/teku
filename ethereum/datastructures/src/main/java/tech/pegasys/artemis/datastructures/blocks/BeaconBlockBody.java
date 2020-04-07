@@ -21,6 +21,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
@@ -29,10 +30,9 @@ import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 /** A Beacon block body */
 public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {

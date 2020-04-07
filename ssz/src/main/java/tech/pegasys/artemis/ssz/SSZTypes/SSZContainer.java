@@ -19,7 +19,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import tech.pegasys.artemis.ssz.backing.type.ViewType;
 
 public interface SSZContainer {

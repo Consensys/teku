@@ -21,9 +21,6 @@ import java.util.Collections;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.mikuli.PublicKey;
-import tech.pegasys.artemis.bls.mikuli.Scalar;
-import tech.pegasys.artemis.bls.mikuli.SecretKey;
 
 public class PublicKeyTest {
 

@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.ssz.backing.type;
 
 import tech.pegasys.artemis.ssz.backing.CompositeViewRead;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.Utils;
+import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 
 /** Abstract type of {@link CompositeViewRead} views */
 public interface CompositeViewType extends ViewType {

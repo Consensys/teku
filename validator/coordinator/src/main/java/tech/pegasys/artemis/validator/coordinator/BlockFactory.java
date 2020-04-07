@@ -15,6 +15,7 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
@@ -26,10 +27,9 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 public class BlockFactory {
   private final BlockProposalUtil blockCreator;

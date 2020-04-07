@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.ssz.backing.ListViewWrite;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.ssz.backing.type.ListViewType;

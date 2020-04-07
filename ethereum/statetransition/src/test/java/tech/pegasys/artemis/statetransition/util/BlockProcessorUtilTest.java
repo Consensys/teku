@@ -23,6 +23,7 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.core.BlockProcessorUtil;
 import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
@@ -34,7 +35,6 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)

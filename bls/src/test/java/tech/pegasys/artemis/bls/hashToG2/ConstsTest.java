@@ -17,8 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.bls.hashToG2.FP2Immutable.ONE;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.hashToG2.Consts;
-import tech.pegasys.artemis.bls.hashToG2.FP2Immutable;
 
 class ConstsTest {
 

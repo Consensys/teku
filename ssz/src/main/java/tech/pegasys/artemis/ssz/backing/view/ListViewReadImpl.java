@@ -14,12 +14,11 @@
 package tech.pegasys.artemis.ssz.backing.view;
 
 import java.util.Arrays;
-
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.ListViewRead;
 import tech.pegasys.artemis.ssz.backing.ListViewWrite;
 import tech.pegasys.artemis.ssz.backing.VectorViewRead;
 import tech.pegasys.artemis.ssz.backing.ViewRead;
+import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;

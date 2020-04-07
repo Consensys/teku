@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.bls.mikuli;
 
-import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -171,7 +169,9 @@ public final class BLS12381 {
   public static boolean coreAggregateVerify(
       List<PublicKey> publicKeys, List<Bytes> messages, Signature signature) {
     List<G2Point> hashesInG2 =
-        messages.stream().map(m -> new G2Point(HashToCurve.hashToG2(m))).collect(Collectors.toList());
+        messages.stream()
+            .map(m -> new G2Point(HashToCurve.hashToG2(m)))
+            .collect(Collectors.toList());
     return signature.aggregateVerify(publicKeys, hashesInG2);
   }
 }

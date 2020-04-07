@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;

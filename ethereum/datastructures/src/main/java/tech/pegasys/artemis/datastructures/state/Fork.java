@@ -28,8 +28,8 @@ import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
 import tech.pegasys.artemis.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
 public class Fork extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {

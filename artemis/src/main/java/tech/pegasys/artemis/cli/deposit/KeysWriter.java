@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.cli.deposit;
 
 import java.io.UncheckedIOException;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 
 /** To write the keys that are generated during Deposit Command */
 public interface KeysWriter {

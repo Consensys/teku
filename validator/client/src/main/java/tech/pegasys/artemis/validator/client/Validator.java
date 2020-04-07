@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class Validator {

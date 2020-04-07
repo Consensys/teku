@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.results.AttestationProcessingResult;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -37,13 +38,12 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.util.EventSink;
-import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

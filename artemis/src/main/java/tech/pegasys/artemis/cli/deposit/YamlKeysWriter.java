@@ -22,7 +22,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 
 public class YamlKeysWriter implements KeysWriter {
   private final Path outputPath;

@@ -23,12 +23,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.CompositeViewWrite;
 import tech.pegasys.artemis.ssz.backing.CompositeViewWriteRef;
 import tech.pegasys.artemis.ssz.backing.ViewRead;
 import tech.pegasys.artemis.ssz.backing.ViewWrite;
+import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.tree.TreeUpdates;
 import tech.pegasys.artemis.ssz.backing.type.CompositeViewType;

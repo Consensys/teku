@@ -23,14 +23,14 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 

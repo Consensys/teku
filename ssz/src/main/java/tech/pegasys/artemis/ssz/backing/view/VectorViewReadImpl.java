@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.ssz.backing.view;
 
-import tech.pegasys.artemis.ssz.backing.cache.ArrayIntCache;
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.VectorViewRead;
 import tech.pegasys.artemis.ssz.backing.ViewRead;
+import tech.pegasys.artemis.ssz.backing.cache.ArrayIntCache;
+import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.type.CompositeViewType;
 import tech.pegasys.artemis.ssz.backing.type.VectorViewType;

@@ -26,6 +26,10 @@ import java.util.function.Supplier;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -56,10 +60,6 @@ import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
-import tech.pegasys.artemis.bls.bls.BLS;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public final class DataStructureUtil {

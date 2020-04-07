@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.SSZTypes;
+package tech.pegasys.artemis.ssz.SSZTypes;
 
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;

@@ -27,9 +27,6 @@ import org.apache.milagro.amcl.BLS381.DBIG;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.hashToG2.DBIGExtended;
-import tech.pegasys.artemis.bls.hashToG2.FP2Immutable;
-import tech.pegasys.artemis.bls.hashToG2.JacobianPoint;
 
 class ChainsTest {
 

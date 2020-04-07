@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.bls;
+package tech.pegasys.artemis.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;

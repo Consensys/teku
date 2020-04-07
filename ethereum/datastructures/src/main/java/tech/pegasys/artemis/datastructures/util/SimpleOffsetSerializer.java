@@ -29,6 +29,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.ssz.SSZReader;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -62,8 +64,6 @@ import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 import tech.pegasys.artemis.ssz.sos.ReflectionInformation;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 

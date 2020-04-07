@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;

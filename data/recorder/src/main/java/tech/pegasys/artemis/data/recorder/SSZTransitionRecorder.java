@@ -26,9 +26,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class SSZTransitionRecorder {
 

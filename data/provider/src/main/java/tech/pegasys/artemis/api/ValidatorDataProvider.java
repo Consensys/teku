@@ -29,10 +29,10 @@ import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties.Duties;
 
@@ -79,7 +79,7 @@ public class ValidatorDataProvider {
 
     return validatorApiChannel
         .createUnsignedBlock(
-            slot, tech.pegasys.artemis.bls.bls.BLSSignature.fromBytes(randao.getBytes()))
+            slot, tech.pegasys.artemis.bls.BLSSignature.fromBytes(randao.getBytes()))
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 

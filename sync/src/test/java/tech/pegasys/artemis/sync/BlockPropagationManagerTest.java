@@ -25,6 +25,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
@@ -34,8 +36,6 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockPropagationManagerTest {

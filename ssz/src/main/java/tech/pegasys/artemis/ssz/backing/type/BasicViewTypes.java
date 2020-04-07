@@ -19,10 +19,10 @@ import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes32;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.ssz.backing.ViewRead;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews;
 
 /** The collection of commonly used basic types */
 public class BasicViewTypes {
@@ -90,7 +90,8 @@ public class BasicViewTypes {
       new BasicViewType<>(32) {
         @Override
         public BasicViews.Bytes4View createFromBackingNode(TreeNode node, int internalIndex) {
-          return new BasicViews.Bytes4View(new Bytes4(node.hashTreeRoot().slice(internalIndex * 4, 4)));
+          return new BasicViews.Bytes4View(
+              new Bytes4(node.hashTreeRoot().slice(internalIndex * 4, 4)));
         }
 
         @Override

@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.ForkChoiceUtil;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.BlockImportResult;
@@ -30,15 +34,11 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.bls.bls.BLS;
-import tech.pegasys.artemis.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconChainUtil {

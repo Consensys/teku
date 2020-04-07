@@ -16,11 +16,10 @@ package tech.pegasys.artemis.ssz.backing.view;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.VectorViewWrite;
 import tech.pegasys.artemis.ssz.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.ssz.backing.ViewRead;
+import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.tree.TreeUpdates;
 import tech.pegasys.artemis.ssz.backing.tree.TreeUtil;

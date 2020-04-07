@@ -23,10 +23,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 

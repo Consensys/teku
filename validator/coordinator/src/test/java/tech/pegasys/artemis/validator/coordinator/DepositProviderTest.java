@@ -38,8 +38,8 @@ import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MerkleTree;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class DepositProviderTest {

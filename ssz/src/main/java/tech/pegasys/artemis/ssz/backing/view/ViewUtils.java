@@ -30,7 +30,8 @@ public class ViewUtils {
 
   /** Creates immutable vector of bytes with size `bytes.size()` from {@link Bytes} value */
   public static VectorViewRead<BasicViews.ByteView> createVectorFromBytes(Bytes bytes) {
-    VectorViewType<BasicViews.ByteView> type = new VectorViewType<>(BasicViewTypes.BYTE_TYPE, bytes.size());
+    VectorViewType<BasicViews.ByteView> type =
+        new VectorViewType<>(BasicViewTypes.BYTE_TYPE, bytes.size());
     // TODO optimize
     VectorViewWrite<BasicViews.ByteView> ret = type.getDefault().createWritableCopy();
     for (int i = 0; i < bytes.size(); i++) {

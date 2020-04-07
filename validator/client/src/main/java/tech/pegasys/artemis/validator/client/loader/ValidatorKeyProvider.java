@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.validator.client.loader;
 
 import java.util.List;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public interface ValidatorKeyProvider {

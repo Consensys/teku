@@ -16,7 +16,6 @@ package tech.pegasys.artemis.ssz.backing;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.ssz.backing.ListViewRead;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
 

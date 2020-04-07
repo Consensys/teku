@@ -27,8 +27,8 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.bls.BLSSecretKey;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class YamlValidatorKeyProvider implements ValidatorKeyProvider {

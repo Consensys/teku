@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.bls;
+package tech.pegasys.artemis.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 class BLSSignatureTest {
 

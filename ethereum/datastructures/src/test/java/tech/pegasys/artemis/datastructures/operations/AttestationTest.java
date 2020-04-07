@@ -21,10 +21,10 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 class AttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

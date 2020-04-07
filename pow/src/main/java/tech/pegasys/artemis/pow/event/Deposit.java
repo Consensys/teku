@@ -18,9 +18,9 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 public class Deposit {
 

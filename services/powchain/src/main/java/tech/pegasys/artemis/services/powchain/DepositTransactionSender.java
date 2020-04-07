@@ -21,12 +21,12 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.FastRawTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.response.PollingTransactionReceiptProcessor;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.DepositGenerator;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 
 public class DepositTransactionSender {
   // Increase the poll rate for tx receipts but keep the default 10 min timeout.

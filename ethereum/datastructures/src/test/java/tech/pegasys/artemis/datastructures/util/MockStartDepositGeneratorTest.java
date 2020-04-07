@@ -23,9 +23,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSSecretKey;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.bls.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.bls.BLSSecretKey;
 
 class MockStartDepositGeneratorTest {
 

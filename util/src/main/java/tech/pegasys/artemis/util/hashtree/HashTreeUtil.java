@@ -27,12 +27,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZImmutableCollection;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 
 /** This class is a collection of tree hash root convenience methods */
 public final class HashTreeUtil {

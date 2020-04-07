@@ -17,10 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
-
-import tech.pegasys.artemis.ssz.backing.tree.TreeUtil;
 import tech.pegasys.artemis.ssz.backing.ContainerViewRead;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.artemis.ssz.backing.tree.TreeUtil;
 
 public class ContainerViewType<C extends ContainerViewRead> implements CompositeViewType {
 

@@ -26,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.bls.hashToG2.JacobianPoint;
 
 class hashToCurveTest {
 

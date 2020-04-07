@@ -30,6 +30,7 @@ import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -41,7 +42,6 @@ import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {

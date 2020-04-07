@@ -27,9 +27,9 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RequestRpcDecoder;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 

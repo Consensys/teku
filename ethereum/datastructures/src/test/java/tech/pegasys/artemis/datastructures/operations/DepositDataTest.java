@@ -20,9 +20,9 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.bls.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.bls.BLSSignature;
 
 class DepositDataTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

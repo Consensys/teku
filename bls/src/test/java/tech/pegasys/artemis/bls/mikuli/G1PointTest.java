@@ -23,8 +23,6 @@ import static tech.pegasys.artemis.bls.mikuli.G1Point.isInGroup;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.mikuli.G1Point;
-import tech.pegasys.artemis.bls.mikuli.Scalar;
 
 class G1PointTest {
 

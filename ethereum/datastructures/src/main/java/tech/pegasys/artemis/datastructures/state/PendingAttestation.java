@@ -33,9 +33,9 @@ import tech.pegasys.artemis.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class PendingAttestation extends AbstractImmutableContainer
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {

@@ -34,7 +34,7 @@ public class BLSSignature {
     this.bytes = bytes;
   }
 
-  public BLSSignature(tech.pegasys.artemis.bls.bls.BLSSignature signature) {
+  public BLSSignature(tech.pegasys.artemis.bls.BLSSignature signature) {
     this(signature.toBytes());
   }
 
@@ -76,7 +76,7 @@ public class BLSSignature {
     return bytes;
   }
 
-  public tech.pegasys.artemis.bls.bls.BLSSignature asInternalBLSSignature() {
-    return tech.pegasys.artemis.bls.bls.BLSSignature.fromBytes(bytes);
+  public tech.pegasys.artemis.bls.BLSSignature asInternalBLSSignature() {
+    return tech.pegasys.artemis.bls.BLSSignature.fromBytes(bytes);
   }
 }

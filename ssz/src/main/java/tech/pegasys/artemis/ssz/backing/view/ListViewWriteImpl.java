@@ -14,14 +14,13 @@
 package tech.pegasys.artemis.ssz.backing.view;
 
 import java.util.function.Consumer;
-
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.ListViewRead;
 import tech.pegasys.artemis.ssz.backing.ListViewWrite;
 import tech.pegasys.artemis.ssz.backing.ListViewWriteRef;
 import tech.pegasys.artemis.ssz.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.ssz.backing.ViewRead;
 import tech.pegasys.artemis.ssz.backing.ViewWrite;
+import tech.pegasys.artemis.ssz.backing.cache.IntCache;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.type.ListViewType;
 import tech.pegasys.artemis.ssz.backing.type.VectorViewType;
@@ -35,7 +34,8 @@ public class ListViewWriteImpl<
       extends ContainerViewWriteImpl {
     private final VectorViewType<ElementReadType> vectorType;
 
-    public ListContainerWrite(ListViewReadImpl.ListContainerRead<ElementReadType> backingImmutableView) {
+    public ListContainerWrite(
+        ListViewReadImpl.ListContainerRead<ElementReadType> backingImmutableView) {
       super(backingImmutableView);
       vectorType = backingImmutableView.getVectorType();
     }
@@ -55,7 +55,8 @@ public class ListViewWriteImpl<
     @Override
     protected AbstractCompositeViewRead<ViewRead> createViewRead(
         TreeNode backingNode, IntCache<ViewRead> viewCache) {
-      return new ListViewReadImpl.ListContainerRead<ElementReadType>(vectorType, backingNode, viewCache);
+      return new ListViewReadImpl.ListContainerRead<ElementReadType>(
+          vectorType, backingNode, viewCache);
     }
 
     @Override
