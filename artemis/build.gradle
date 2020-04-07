@@ -35,6 +35,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'tech.pegasys.signers.internal:bls-keystore'
+  implementation 'org.yaml:snakeyaml'
 
   testImplementation testFixtures(project(':util'))
 

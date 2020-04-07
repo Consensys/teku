@@ -15,7 +15,6 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
-import static org.apache.tuweni.toml.Toml.tomlEscape;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,14 +24,11 @@ import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -48,6 +44,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
+import org.yaml.snakeyaml.Yaml;
 import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -61,7 +58,7 @@ public class ArtemisNode extends Node {
 
   public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/teku:develop";
   private static final int REST_API_PORT = 9051;
-  private static final String CONFIG_FILE_PATH = "/config.toml";
+  private static final String CONFIG_FILE_PATH = "/config.yaml";
   protected static final String WORKING_DIRECTORY = "/artifacts/";
   private static final String DATA_PATH = WORKING_DIRECTORY + "data/";
   private static final int P2P_PORT = 9000;
@@ -394,7 +391,7 @@ public class ArtemisNode extends Node {
         configMap.put("p2p-private-key-file", P2P_PRIVATE_KEY_FILE_PATH);
       }
 
-      final File configFile = File.createTempFile("config", ".toml");
+      final File configFile = File.createTempFile("config", ".yaml");
       configFile.deleteOnExit();
       writeTo(configFile);
       configFiles.put(configFile, CONFIG_FILE_PATH);
@@ -402,35 +399,8 @@ public class ArtemisNode extends Node {
     }
 
     private void writeTo(final File configFile) throws Exception {
-      try (PrintWriter out =
-          new PrintWriter(Files.newBufferedWriter(configFile.toPath(), StandardCharsets.UTF_8))) {
-        for (final String key : configMap.keySet()) {
-          out.print(key + "=");
-          writeValue(configMap.get(key), out);
-          out.println();
-        }
-      }
-    }
-
-    private void writeValue(final Object value, final PrintWriter out) {
-      if (value instanceof String) {
-        out.print("\"" + tomlEscape((String) value) + "\"");
-      } else if (value instanceof List) {
-        out.print("[");
-        writeList((List<?>) value, out);
-        out.print("]");
-      } else {
-        out.print(value.toString());
-      }
-    }
-
-    private void writeList(final List<?> values, final PrintWriter out) {
-      for (int i = 0; i < values.size(); i++) {
-        writeValue(values.get(i), out);
-        if (i < values.size()) {
-          out.print(",");
-        }
-      }
+      final String yamlString = new Yaml().dump(configMap);
+      Files.writeString(configFile.toPath(), yamlString);
     }
   }
 }

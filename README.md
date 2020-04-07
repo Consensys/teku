@@ -105,7 +105,7 @@ Help is available for this script as well:
 ```
 sh run.sh -h
 Runs a simulation of Teku with NODES nodes, where NODES > 0 and NODES < 256
-Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
+Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.yaml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
                  [--help, -h]
 - If config files are specifed for specific nodes, those input files will be used to
 configure their respective nodes.
@@ -295,7 +295,7 @@ You can run the executable from the CLI with this command:
 ./build/install/teku/bin/teku
 ```
 
-Refer to `config/config.toml` for a set of default configuration settings.
+Refer to `config/config.yaml` for a set of default configuration settings.
 
 
 ## Special thanks

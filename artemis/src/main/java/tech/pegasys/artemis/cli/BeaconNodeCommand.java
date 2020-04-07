@@ -40,7 +40,7 @@ import tech.pegasys.artemis.cli.subcommand.PeerCommand;
 import tech.pegasys.artemis.cli.subcommand.TransitionCommand;
 import tech.pegasys.artemis.cli.util.CascadingDefaultProvider;
 import tech.pegasys.artemis.cli.util.EnvironmentVariableDefaultProvider;
-import tech.pegasys.artemis.cli.util.TomlConfigFileDefaultProvider;
+import tech.pegasys.artemis.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
@@ -68,7 +68,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
 public class BeaconNodeCommand implements Callable<Integer> {
 
   static final String CONFIG_FILE_OPTION_NAME = "--config-file";
-  static final String DEFAULT_CONFIG_FILE = "./config/config.toml";
+  static final String DEFAULT_CONFIG_FILE = "./config/config.yaml";
   private final Map<String, String> environment;
 
   @Option(
@@ -120,7 +120,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       defaultValueProvider =
           new CascadingDefaultProvider(
               environmentVariableDefaultProvider,
-              new TomlConfigFileDefaultProvider(commandLine, maybeConfigFile.get()));
+              new YamlConfigFileDefaultProvider(commandLine, maybeConfigFile.get()));
     } else {
       defaultValueProvider = environmentVariableDefaultProvider;
     }

@@ -384,8 +384,12 @@ public class ArtemisConfiguration {
   }
 
   public void validateConfig() throws IllegalArgumentException {
-    if (getInteropNumberOfValidators() < Constants.SLOTS_PER_EPOCH) {
-      throw new IllegalArgumentException("Invalid config.toml");
+    final int interopNumberOfValidators = getInteropNumberOfValidators();
+    if (interopNumberOfValidators < Constants.SLOTS_PER_EPOCH) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Invalid configuration. Interop number of validators [%d] must be greater than [%d]",
+              interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
     }
     validateKeyStoreFilesAndPasswordFilesSize();
   }
