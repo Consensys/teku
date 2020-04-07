@@ -13,27 +13,27 @@
 
 package tech.pegasys.artemis.statetransition.protoarray;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class ProtoArray  {
+public class ProtoArray {
 
-  private final int pruneThreshold;
-
+  private int pruneThreshold;
   private UnsignedLong justifiedEpoch;
   private UnsignedLong finalizedEpoch;
 
   private final List<ProtoNode> nodes;
+  private final Map<Bytes32, Integer> indices;
 
-  public ProtoArray(int pruneThreshold,
-                    UnsignedLong justifiedEpoch,
-                    UnsignedLong finalizedEpoch,
-                    List<ProtoNode> nodes,
-                    Map<Bytes32, Integer> indices) {
+  public ProtoArray(
+      int pruneThreshold,
+      UnsignedLong justifiedEpoch,
+      UnsignedLong finalizedEpoch,
+      List<ProtoNode> nodes,
+      Map<Bytes32, Integer> indices) {
     this.pruneThreshold = pruneThreshold;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
@@ -41,24 +41,36 @@ public class ProtoArray  {
     this.indices = indices;
   }
 
-  private final Map<Bytes32, Integer> indices;
+  public Map<Bytes32, Integer> getIndices() {
+    return indices;
+  }
+
+  public List<ProtoNode> getNodes() {
+    return nodes;
+  }
+
+  public void setPruneThreshold(int pruneThreshold) {
+    this.pruneThreshold = pruneThreshold;
+  }
 
   // Register a block with the fork choice.
   //
   // It is only sane to supply a `None` parent for the genesis block.
-  public void onBlock(UnsignedLong slot,
-                      Bytes32 root,
-                      Optional<Bytes32> optionalParentRoot,
-                      Bytes32 stateRoot,
-                      UnsignedLong justifiedEpoch,
-                      UnsignedLong finalizedEpoch) {
+  public void onBlock(
+      UnsignedLong slot,
+      Bytes32 root,
+      Optional<Bytes32> optionalParentRoot,
+      Bytes32 stateRoot,
+      UnsignedLong justifiedEpoch,
+      UnsignedLong finalizedEpoch) {
     if (indices.containsKey(root)) {
       return;
     }
 
     int nodeIndex = nodes.size();
 
-    ProtoNode node = new ProtoNode(
+    ProtoNode node =
+        new ProtoNode(
             slot,
             stateRoot,
             root,
@@ -67,14 +79,13 @@ public class ProtoArray  {
             finalizedEpoch,
             UnsignedLong.ZERO,
             Optional.empty(),
-            Optional.empty()
-    );
+            Optional.empty());
 
     indices.put(node.getRoot(), nodeIndex);
     nodes.add(node);
 
-    node.getParentIndex().ifPresent(parentIndex ->
-            maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex));
+    node.getParentIndex()
+        .ifPresent(parentIndex -> maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex));
   }
 
   // Follows the best-descendant links to find the best-block (i.e., head-block).
@@ -113,14 +124,14 @@ public class ProtoArray  {
   // - Compare the current node with the parents best-child, updating it if the current node
   // should become the best child.
   // - If required, update the parents best-descendant with the current node or its best-descendant.
-  private void applyScoreChanges(List<Long> deltas,
-                                UnsignedLong justifiedEpoch,
-                                UnsignedLong finalizedEpoch) {
+  public void applyScoreChanges(
+      List<Long> deltas, UnsignedLong justifiedEpoch, UnsignedLong finalizedEpoch) {
     if (deltas.size() != indices.size()) {
       throw new RuntimeException("ProtoArray: Invalid delta length");
     }
 
-    if (!justifiedEpoch.equals(this.justifiedEpoch) || !finalizedEpoch.equals(this.finalizedEpoch)) {
+    if (!justifiedEpoch.equals(this.justifiedEpoch)
+        || !finalizedEpoch.equals(this.finalizedEpoch)) {
       this.justifiedEpoch = justifiedEpoch;
       this.finalizedEpoch = finalizedEpoch;
     }
@@ -139,7 +150,7 @@ public class ProtoArray  {
       long nodeDelta = deltas.get(nodeIndex);
       node.adjustWeight(nodeDelta);
 
-      if (node.getParentIndex().isEmpty()){
+      if (node.getParentIndex().isEmpty()) {
         continue;
       }
 
@@ -180,41 +191,49 @@ public class ProtoArray  {
     nodes.subList(0, finalizedIndex).clear();
 
     // Adjust the indices map.
-    indices.replaceAll((key, value) -> {
-      int newIndex = value - finalizedIndex;
-      if (newIndex < 0) {
-        throw new RuntimeException("ProtoArray: New array index less than 0.");
-      }
-      return newIndex;
-    });
+    indices.replaceAll(
+        (key, value) -> {
+          int newIndex = value - finalizedIndex;
+          if (newIndex < 0) {
+            throw new RuntimeException("ProtoArray: New array index less than 0.");
+          }
+          return newIndex;
+        });
 
     // Iterate through all the existing nodes and adjust their indices to match the
     // new layout of nodes.
     for (ProtoNode node : nodes) {
-      node.getParentIndex().ifPresent(parentIndex -> {
-        // If node.parentIndex is less than finalizedIndex, set is to None.
-        if (parentIndex < finalizedIndex) {
-          node.setParentIndex(Optional.empty());
-        } else {
-          node.setParentIndex(Optional.of(parentIndex - finalizedIndex));
-        }
-      });
+      node.getParentIndex()
+          .ifPresent(
+              parentIndex -> {
+                // If node.parentIndex is less than finalizedIndex, set is to None.
+                if (parentIndex < finalizedIndex) {
+                  node.setParentIndex(Optional.empty());
+                } else {
+                  node.setParentIndex(Optional.of(parentIndex - finalizedIndex));
+                }
+              });
 
-      node.getBestChildIndex().ifPresent(bestChildIndex -> {
-        int newBestChildIndex = bestChildIndex - finalizedIndex;
-        if (newBestChildIndex < 0) {
-          throw new RuntimeException("ProtoArray: New best child index is less than 0");
-        }
-        node.setBestChildIndex(Optional.of(newBestChildIndex));
-      });
+      node.getBestChildIndex()
+          .ifPresent(
+              bestChildIndex -> {
+                int newBestChildIndex = bestChildIndex - finalizedIndex;
+                if (newBestChildIndex < 0) {
+                  throw new RuntimeException("ProtoArray: New best child index is less than 0");
+                }
+                node.setBestChildIndex(Optional.of(newBestChildIndex));
+              });
 
-      node.getBestDescendantIndex().ifPresent(bestDescendantIndex -> {
-        int newBestDescendantIndex = bestDescendantIndex - finalizedIndex;
-        if (newBestDescendantIndex < 0) {
-          throw new RuntimeException("ProtoArray: New best descendant index is less than 0");
-        }
-        node.setBestDescendantIndex(Optional.of(newBestDescendantIndex));
-      });
+      node.getBestDescendantIndex()
+          .ifPresent(
+              bestDescendantIndex -> {
+                int newBestDescendantIndex = bestDescendantIndex - finalizedIndex;
+                if (newBestDescendantIndex < 0) {
+                  throw new RuntimeException(
+                      "ProtoArray: New best descendant index is less than 0");
+                }
+                node.setBestDescendantIndex(Optional.of(newBestDescendantIndex));
+              });
     }
   }
 
@@ -225,7 +244,8 @@ public class ProtoArray  {
   //
   // There are four outcomes:
   //
-  // - The child is already the best child but it's now invalid due to a FFG change and should be removed.
+  // - The child is already the best child but it's now invalid due to a FFG change and should be
+  // removed.
   // - The child is already the best child and the parent is updated with the new best-descendant.
   // - The child is not the best child but becomes the best child.
   // - The child is not the best child and does not become the best child.
@@ -235,51 +255,55 @@ public class ProtoArray  {
 
     boolean childLeadsToViableHead = nodeLeadsToViableHead(child);
 
-    parent.getBestChildIndex().ifPresentOrElse(bestChildIndex -> {
-      if (bestChildIndex.equals(childIndex) && !childLeadsToViableHead) {
-        // If the child is already the best-child of the parent but it's not viable for
-        // the head, remove it.
-        changeToNone(parent);
-      } else if (bestChildIndex.equals(childIndex)){
-        // If the child is the best-child already, set it again to ensure that the
-        // best-descendant of the parent is updated.
-        changeToChild(parent, childIndex);
-      } else {
-        ProtoNode bestChild = nodes.get(bestChildIndex);
+    parent
+        .getBestChildIndex()
+        .ifPresentOrElse(
+            bestChildIndex -> {
+              if (bestChildIndex.equals(childIndex) && !childLeadsToViableHead) {
+                // If the child is already the best-child of the parent but it's not viable for
+                // the head, remove it.
+                changeToNone(parent);
+              } else if (bestChildIndex.equals(childIndex)) {
+                // If the child is the best-child already, set it again to ensure that the
+                // best-descendant of the parent is updated.
+                changeToChild(parent, childIndex);
+              } else {
+                ProtoNode bestChild = nodes.get(bestChildIndex);
 
-        boolean bestChildLeadsToViableHead = nodeLeadsToViableHead(bestChild);
+                boolean bestChildLeadsToViableHead = nodeLeadsToViableHead(bestChild);
 
-        if (childLeadsToViableHead && !bestChildLeadsToViableHead) {
-          // The child leads to a viable head, but the current best-child doesn't.
-          changeToChild(parent, childIndex);
-        } else if (!childLeadsToViableHead && bestChildLeadsToViableHead) {
-          // The best child leads to a viable head, but the child doesn't.
-          // No change.
-        } else if (child.getWeight().equals(bestChild.getWeight())) {
-          // Tie-breaker of equal weights by root.
-          if (child.getRoot().compareTo(bestChild.getRoot()) >= 0) {
-            changeToChild(parent, childIndex);
-          } else {
-            // No change.
-          }
-        } else {
-          // Choose the winner by weight.
-          if (child.getWeight().compareTo(bestChild.getWeight()) >= 0) {
-            changeToChild(parent, childIndex);
-          } else {
-            // No change.
-          }
-        }
-      }
-    }, () -> {
-      if (childLeadsToViableHead) {
-        // There is no current best-child and the child is viable.
-        changeToChild(parent, childIndex);
-      } else {
-        // There is no current best-child but the child is not not viable.
-        // No change.
-      }
-    });
+                if (childLeadsToViableHead && !bestChildLeadsToViableHead) {
+                  // The child leads to a viable head, but the current best-child doesn't.
+                  changeToChild(parent, childIndex);
+                } else if (!childLeadsToViableHead && bestChildLeadsToViableHead) {
+                  // The best child leads to a viable head, but the child doesn't.
+                  // No change.
+                } else if (child.getWeight().equals(bestChild.getWeight())) {
+                  // Tie-breaker of equal weights by root.
+                  if (child.getRoot().compareTo(bestChild.getRoot()) >= 0) {
+                    changeToChild(parent, childIndex);
+                  } else {
+                    // No change.
+                  }
+                } else {
+                  // Choose the winner by weight.
+                  if (child.getWeight().compareTo(bestChild.getWeight()) >= 0) {
+                    changeToChild(parent, childIndex);
+                  } else {
+                    // No change.
+                  }
+                }
+              }
+            },
+            () -> {
+              if (childLeadsToViableHead) {
+                // There is no current best-child and the child is viable.
+                changeToChild(parent, childIndex);
+              } else {
+                // There is no current best-child but the child is not not viable.
+                // No change.
+              }
+            });
   }
 
   // Helper for maybeUpdateBestChildAndDescendant
@@ -299,10 +323,7 @@ public class ProtoArray  {
   // for the head.
   private boolean nodeLeadsToViableHead(ProtoNode node) {
     boolean bestDescendantIsViableForHead =
-            node.getBestDescendantIndex()
-            .map(nodes::get)
-            .map(this::nodeIsViableForHead)
-            .orElse(false);
+        node.getBestDescendantIndex().map(nodes::get).map(this::nodeIsViableForHead).orElse(false);
 
     return bestDescendantIsViableForHead || nodeIsViableForHead(node);
   }
@@ -314,7 +335,9 @@ public class ProtoArray  {
   // Any node that has a different finalized or justified epoch should not be viable for the
   // head.
   private boolean nodeIsViableForHead(ProtoNode node) {
-    return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(UnsignedLong.ZERO))
-            && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(UnsignedLong.ZERO));
+    return (node.getJustifiedEpoch().equals(justifiedEpoch)
+            || justifiedEpoch.equals(UnsignedLong.ZERO))
+        && (node.getFinalizedEpoch().equals(finalizedEpoch)
+            || finalizedEpoch.equals(UnsignedLong.ZERO));
   }
 }

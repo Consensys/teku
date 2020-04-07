@@ -31,15 +31,16 @@ public class ProtoNode {
   private Optional<Integer> bestChildIndex;
   private Optional<Integer> bestDescendantIndex;
 
-  public ProtoNode(final UnsignedLong slot,
-                   final Bytes32 stateRoot,
-                   final Bytes32 root,
-                   final Optional<Integer> parentIndex,
-                   final UnsignedLong justifiedEpoch,
-                   final UnsignedLong finalizedEpoch,
-                   final UnsignedLong weight,
-                   final Optional<Integer> bestChildIndex,
-                   final Optional<Integer> bestDescendantIndex) {
+  public ProtoNode(
+      final UnsignedLong slot,
+      final Bytes32 stateRoot,
+      final Bytes32 root,
+      final Optional<Integer> parentIndex,
+      final UnsignedLong justifiedEpoch,
+      final UnsignedLong finalizedEpoch,
+      final UnsignedLong weight,
+      final Optional<Integer> bestChildIndex,
+      final Optional<Integer> bestDescendantIndex) {
     this.slot = slot;
     this.stateRoot = stateRoot;
     this.root = root;
@@ -55,7 +56,8 @@ public class ProtoNode {
     if (delta < 0) {
       UnsignedLong deltaAbsoluteValue = UnsignedLong.valueOf(Math.abs(delta));
       if (deltaAbsoluteValue.compareTo(weight) > 0) {
-        throw new RuntimeException("ProtoNode: Delta to be subtracted is greater than node weight.");
+        throw new RuntimeException(
+            "ProtoNode: Delta to be subtracted is greater than node weight.");
       }
       weight = weight.minus(deltaAbsoluteValue);
     } else {
