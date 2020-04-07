@@ -38,11 +38,11 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties.Duties;
 
 public class ValidatorDataProvider {
   public static final String CANNOT_PRODUCE_FAR_FUTURE_BLOCK =
-      "Cannot produce a block more than " + SLOTS_PER_EPOCH + " slots in the future";
+      "Cannot produce a block more than " + SLOTS_PER_EPOCH + " slots in the future.";
   public static final String CANNOT_PRODUCE_HISTORIC_BLOCK =
-      "Cannot produce a block for a historic slot";
-  public static final String NO_SLOT_PROVIDED = "no slot provided.";
-  public static final String NO_RANDAO_PROVIDED = "no randao_reveal provided.";
+      "Cannot produce a block for a historic slot.";
+  public static final String NO_SLOT_PROVIDED = "No slot was provided.";
+  public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
   private final ValidatorApiChannel validatorApiChannel;
   private CombinedChainDataClient combinedChainDataClient;
 
