@@ -35,39 +35,6 @@ class AttestationTest {
   private Attestation attestation = new Attestation(aggregationBitfield, data, aggregateSignature);
 
   @Test
-  void shouldNotBeProcessableBeforeSlotAfterCreationSlot() {
-    final Attestation attestation =
-        new Attestation(
-            aggregationBitfield,
-            new AttestationData(
-                UnsignedLong.valueOf(60),
-                UnsignedLong.ZERO,
-                Bytes32.ZERO,
-                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
-                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO)),
-            BLSSignature.empty());
-
-    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(UnsignedLong.valueOf(61));
-  }
-
-  @Test
-  void shouldNotBeProcessableBeforeFirstSlotOfTargetEpoch() {
-    final Checkpoint target = new Checkpoint(UnsignedLong.valueOf(10), Bytes32.ZERO);
-    final Attestation attestation =
-        new Attestation(
-            aggregationBitfield,
-            new AttestationData(
-                UnsignedLong.valueOf(1),
-                UnsignedLong.ZERO,
-                Bytes32.ZERO,
-                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
-                target),
-            BLSSignature.empty());
-
-    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochStartSlot());
-  }
-
-  @Test
   public void shouldBeDependentOnTargetBlockAndBeaconBlockRoot() {
     final Bytes32 targetRoot = Bytes32.fromHexString("0x01");
     final Bytes32 beaconBlockRoot = Bytes32.fromHexString("0x02");

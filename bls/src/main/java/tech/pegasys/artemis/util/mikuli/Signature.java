@@ -22,6 +22,7 @@ import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 
 /** This class represents a Signature on G2 */
@@ -39,9 +40,18 @@ public final class Signature {
    * @return Signature
    */
   static Signature aggregate(List<Signature> signatures) {
-    return signatures.isEmpty()
-        ? new Signature(new G2Point())
-        : signatures.stream().reduce(Signature::combine).get();
+    return aggregate(signatures.stream());
+  }
+
+  /**
+   * Aggregates a stream of Signature pairs, returns the signature that corresponds to G2 point at
+   * infinity if list is empty
+   *
+   * @param signatures The stream of signatures to aggregate
+   * @return Signature
+   */
+  static Signature aggregate(Stream<Signature> signatures) {
+    return signatures.reduce(Signature::combine).orElseGet(() -> new Signature(new G2Point()));
   }
 
   /**
@@ -207,7 +217,12 @@ public final class Signature {
 
   @Override
   public int hashCode() {
-    return point.hashCode();
+    try {
+      return point.get().hashCode();
+    } catch (final IllegalArgumentException e) {
+      // Invalid point so only equal if it has the same raw data, hence use that hashCode.
+      return rawData.hashCode();
+    }
   }
 
   @VisibleForTesting
@@ -230,6 +245,11 @@ public final class Signature {
     if (rawData.size() == other.rawData.size() && rawData.equals(other.rawData)) {
       return true;
     }
-    return point.get().equals(other.point.get());
+    try {
+      return point.get().equals(other.point.get());
+    } catch (final IllegalArgumentException e) {
+      // Invalid points are only equal if they have the exact some data.
+      return false;
+    }
   }
 }

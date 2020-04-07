@@ -46,7 +46,6 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.TrackingStorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.StorageUpdateResult;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public abstract class AbstractDatabaseTest {
@@ -706,7 +705,7 @@ public abstract class AbstractDatabaseTest {
     return new SignedBeaconBlock(
         new BeaconBlock(
             UnsignedLong.valueOf(slot), parentRoot, Bytes32.ZERO, new BeaconBlockBody()),
-        BLSSignature.empty());
+        dataStructureUtil.randomSignature());
   }
 
   protected StorageUpdateResult getLatestUpdateResult() {
