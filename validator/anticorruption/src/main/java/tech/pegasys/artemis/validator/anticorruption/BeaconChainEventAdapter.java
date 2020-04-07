@@ -15,6 +15,7 @@ package tech.pegasys.artemis.validator.anticorruption;
 
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
@@ -34,6 +35,11 @@ class BeaconChainEventAdapter implements SlotEventsChannel {
   @Subscribe
   public void onBroadcastAttestationEvent(final BroadcastAttestationEvent event) {
     validatorTimingChannel.onAttestationCreationDue(event.getNodeSlot());
+  }
+
+  @Subscribe
+  public void onAggregationEvent(BroadcastAggregatesEvent event) {
+    validatorTimingChannel.onAttestationAggregationDue(event.getSlot());
   }
 
   @Override
