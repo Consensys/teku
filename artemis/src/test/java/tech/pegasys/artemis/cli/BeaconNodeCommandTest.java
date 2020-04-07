@@ -30,6 +30,8 @@ import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KE
 
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -45,11 +47,19 @@ import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 public class BeaconNodeCommandTest {
 
   private BeaconNodeCommand beaconNodeCommand;
+  private StringWriter commandOutput;
+  private StringWriter commandError;
+  private PrintWriter outputWriter;
+  private PrintWriter errorWriter;
   @TempDir Path dataPath;
 
   @BeforeEach
   void setUp() {
-    beaconNodeCommand = new BeaconNodeCommand(Collections.emptyMap());
+    commandOutput = new StringWriter();
+    commandError = new StringWriter();
+    outputWriter = new PrintWriter(commandOutput, true);
+    errorWriter = new PrintWriter(commandError, true);
+    beaconNodeCommand = new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap());
   }
 
   @AfterEach
@@ -74,7 +84,8 @@ public class BeaconNodeCommandTest {
     final String[] args = createCliArgs();
     args[5] = "1.2.3.5";
     beaconNodeCommand =
-        new BeaconNodeCommand(Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"));
+        new BeaconNodeCommand(
+            outputWriter, errorWriter, Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"));
 
     beaconNodeCommand.parse(args);
 
@@ -89,7 +100,8 @@ public class BeaconNodeCommandTest {
     final Path configFile = createConfigFile();
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
     beaconNodeCommand =
-        new BeaconNodeCommand(Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"));
+        new BeaconNodeCommand(
+            outputWriter, errorWriter, Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"));
 
     beaconNodeCommand.parse(args);
 
@@ -118,6 +130,8 @@ public class BeaconNodeCommandTest {
   public void overrideDefaultValuesIfKeyIsPresentInEnvironmentVariables() {
     beaconNodeCommand =
         new BeaconNodeCommand(
+            outputWriter,
+            errorWriter,
             Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"));
 
     beaconNodeCommand.parse(new String[] {});
