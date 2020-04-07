@@ -16,7 +16,7 @@ package tech.pegasys.artemis.api.schema;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class Fork {
   public Bytes4 previous_version;

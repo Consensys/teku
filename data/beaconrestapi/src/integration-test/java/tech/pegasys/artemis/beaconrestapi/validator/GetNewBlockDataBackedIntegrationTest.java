@@ -41,8 +41,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   private final UnsignedLong SIX_HUNDRED = UnsignedLong.valueOf(600L);
-  private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
-      tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
+  private final tech.pegasys.artemis.bls.BLSSignature signatureInternal =
+      tech.pegasys.artemis.bls.BLSSignature.random(1234);
   private BLSSignature signature = new BLSSignature(signatureInternal);
 
   @Test

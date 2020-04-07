@@ -19,11 +19,11 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SignedBeaconBlockHeader implements SimpleOffsetSerializable, SSZContainer {
   private final BeaconBlockHeader message;

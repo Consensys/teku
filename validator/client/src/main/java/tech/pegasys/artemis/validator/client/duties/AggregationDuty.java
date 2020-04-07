@@ -18,11 +18,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.Validator;
 

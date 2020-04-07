@@ -18,8 +18,8 @@ import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconBlockBodyLists {

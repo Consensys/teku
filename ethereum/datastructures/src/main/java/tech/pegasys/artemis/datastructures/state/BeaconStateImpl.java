@@ -27,16 +27,16 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.backing.ContainerViewRead;
-import tech.pegasys.artemis.util.backing.ViewRead;
-import tech.pegasys.artemis.util.backing.cache.IntCache;
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.type.CompositeViewType;
-import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
+import tech.pegasys.artemis.ssz.backing.ContainerViewRead;
+import tech.pegasys.artemis.ssz.backing.ViewRead;
+import tech.pegasys.artemis.ssz.backing.cache.IntCache;
+import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.artemis.ssz.backing.type.CompositeViewType;
+import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
+import tech.pegasys.artemis.ssz.backing.view.ContainerViewReadImpl;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconStateImpl extends ContainerViewReadImpl

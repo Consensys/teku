@@ -21,12 +21,12 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockPropagationIntegrationTest {
