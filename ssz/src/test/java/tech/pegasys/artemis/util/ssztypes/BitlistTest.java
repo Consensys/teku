@@ -21,7 +21,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 
 class BitlistTest {
   private static int bitlistMaxSize = 4000;

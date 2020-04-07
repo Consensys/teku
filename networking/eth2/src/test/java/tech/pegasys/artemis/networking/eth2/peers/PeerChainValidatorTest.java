@@ -35,7 +35,7 @@ import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.Disconn
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 

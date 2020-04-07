@@ -74,7 +74,7 @@ import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 import tech.pegasys.artemis.storage.server.Database;
 import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.storage.server.StateStorageMode;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class RocksDbDatabase implements Database {
 

@@ -41,7 +41,7 @@ import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BlockFactoryTest {

@@ -27,7 +27,7 @@ import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
 

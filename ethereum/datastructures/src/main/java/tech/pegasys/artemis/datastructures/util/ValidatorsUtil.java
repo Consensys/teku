@@ -22,7 +22,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 

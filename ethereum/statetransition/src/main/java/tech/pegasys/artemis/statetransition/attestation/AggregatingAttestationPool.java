@@ -22,8 +22,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block

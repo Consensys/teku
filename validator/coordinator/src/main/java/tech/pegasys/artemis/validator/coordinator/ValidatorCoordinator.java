@@ -57,8 +57,8 @@ import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestat
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;

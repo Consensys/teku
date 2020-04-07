@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 
 class SSZListTest {
 

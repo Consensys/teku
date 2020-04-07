@@ -49,7 +49,7 @@ import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.ExceptionThrowingFunction;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;

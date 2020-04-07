@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 

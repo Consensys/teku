@@ -24,11 +24,11 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.artemis.util.backing.ListViewRead;
-import tech.pegasys.artemis.util.backing.ListViewWrite;
-import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.util.backing.type.ListViewType;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.ssz.backing.ListViewRead;
+import tech.pegasys.artemis.ssz.backing.ListViewWrite;
+import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.ssz.backing.type.ListViewType;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
 
 @State(Scope.Thread)
 public class ListBenchmark {

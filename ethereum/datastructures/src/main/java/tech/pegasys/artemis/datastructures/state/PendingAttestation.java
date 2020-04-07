@@ -23,19 +23,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.backing.type.ListViewType;
-import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
-import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ViewUtils;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
+import tech.pegasys.artemis.ssz.backing.type.ListViewType;
+import tech.pegasys.artemis.ssz.backing.view.AbstractImmutableContainer;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class PendingAttestation extends AbstractImmutableContainer
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {

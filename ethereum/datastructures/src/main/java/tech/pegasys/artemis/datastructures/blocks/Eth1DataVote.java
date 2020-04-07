@@ -25,7 +25,7 @@ import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public final class Eth1DataVote
     implements Copyable<Eth1DataVote>, Merkleizable, SimpleOffsetSerializable {

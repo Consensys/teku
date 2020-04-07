@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;

@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 
 class SSZVectorTest {
   @Test

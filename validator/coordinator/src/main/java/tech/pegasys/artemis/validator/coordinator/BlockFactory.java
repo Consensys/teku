@@ -28,7 +28,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class BlockFactory {

@@ -35,7 +35,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 

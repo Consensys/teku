@@ -22,7 +22,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.backing.tree.TreeUpdates.Update;
+import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.artemis.ssz.backing.tree.TreeUpdates;
+import tech.pegasys.artemis.ssz.backing.tree.TreeUpdates.Update;
 
 public class TreeUpdatesTest {
 

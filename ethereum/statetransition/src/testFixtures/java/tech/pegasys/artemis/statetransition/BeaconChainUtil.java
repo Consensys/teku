@@ -33,7 +33,7 @@ import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;

@@ -27,12 +27,12 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 /** A Beacon block body */
 public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {

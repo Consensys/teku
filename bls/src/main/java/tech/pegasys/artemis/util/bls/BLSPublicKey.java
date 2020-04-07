@@ -20,7 +20,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public final class BLSPublicKey implements SimpleOffsetSerializable {
 

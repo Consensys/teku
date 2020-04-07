@@ -20,13 +20,15 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.backing.type.ListViewType;
-import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
-import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.ssz.backing.ListViewRead;
+import tech.pegasys.artemis.ssz.backing.ListViewWrite;
+import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
+import tech.pegasys.artemis.ssz.backing.type.ListViewType;
+import tech.pegasys.artemis.ssz.backing.view.AbstractImmutableContainer;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
 
 public class ListViewTest {
 

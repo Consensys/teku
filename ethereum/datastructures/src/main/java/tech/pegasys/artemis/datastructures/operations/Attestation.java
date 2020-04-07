@@ -25,14 +25,14 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 

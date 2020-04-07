@@ -15,9 +15,10 @@ package tech.pegasys.artemis.util.backing;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
-import tech.pegasys.artemis.util.backing.view.ViewUtils;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.backing.ListViewRead;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
 
 public class BitlistViewTest {
 

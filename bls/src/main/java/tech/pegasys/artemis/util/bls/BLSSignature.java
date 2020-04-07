@@ -22,7 +22,7 @@ import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.mikuli.Signature;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class BLSSignature implements SimpleOffsetSerializable {
 

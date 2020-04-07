@@ -29,8 +29,8 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockBodyTest {

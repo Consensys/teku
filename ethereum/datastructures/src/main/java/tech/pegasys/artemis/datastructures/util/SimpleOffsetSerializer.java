@@ -55,17 +55,17 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.sos.ReflectionInformation;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.ReflectionInformation;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SimpleOffsetSerializer {

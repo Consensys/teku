@@ -21,9 +21,9 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer {
 

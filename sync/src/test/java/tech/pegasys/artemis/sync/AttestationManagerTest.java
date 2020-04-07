@@ -42,7 +42,7 @@ import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregat
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.util.EventSink;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationManagerTest {

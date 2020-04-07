@@ -25,7 +25,7 @@ import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 class ConstantsReader {
 

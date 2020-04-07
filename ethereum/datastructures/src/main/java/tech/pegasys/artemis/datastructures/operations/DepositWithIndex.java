@@ -16,7 +16,7 @@ package tech.pegasys.artemis.datastructures.operations;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 
 public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
 

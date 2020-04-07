@@ -17,11 +17,11 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.backing.ListViewRead;
-import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
-import tech.pegasys.artemis.util.backing.view.ViewUtils;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.backing.ListViewRead;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
 
 class BitvectorTest {
 
