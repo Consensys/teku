@@ -45,6 +45,16 @@ public class VersionProvider implements CommandLine.IVersionProvider {
     return detectedVM + "-java-" + detectedJavaVersion;
   }
 
+  public static String defaultStoragePath() {
+    final String detectedOS = normalizeOS(normalize("os.name"));
+    if (detectedOS.equals("windows")) {
+      return System.getenv("LOCALAPPDATA") + "/teku";
+    } else if (detectedOS.equals("osx")) {
+      return System.getenv("HOME") + "/Library/teku";
+    }
+    return "~/.teku";
+  }
+
   private static String normalizeOS(final String osName) {
     if (osName.startsWith("aix")) {
       return "aix";

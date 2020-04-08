@@ -55,6 +55,7 @@ create_config() {
     sed "s/Xinterop-genesis-time\ =.*/Xinterop-genesis-time\ =\ $GENESIS_TIME/"           |# Update the genesis time
     awk -v peers="$PEERS" '/p2p-port/{print;print "p2p-static-peers = "peers;next}1' |# Update the peer list
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
+    sed "s/#data-path\ =.*/data-path\ =\ \".\"/"                        |# Update the number of nodes to the total number of nodes
     sed "s/data-storage-mode\ =.*/data-storage-mode\ =\ \"archive\"/"   |# Update state storage mode to archive
     sed "s/p2p-interface\ =.*/p2p-interface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
     sed "s/p2p-enabled\ =.*/p2p-enabled\ =\ $MODE/"               |# Update the network mode

@@ -29,6 +29,13 @@ eth1-endpoint="http://localhost:8545"
 # output
 #Xtransaction-record-directory="/tmp/teku"
 
+# logging
+log-color-enabled=true
+log-include-events-enabled=true
+log-destination="both"
+log-file="teku.log"
+log-file-name-pattern="teku_%d{yyyy-MM-dd}.log"
+
 # metrics
 metrics-enabled=false
 metrics-port=8008
