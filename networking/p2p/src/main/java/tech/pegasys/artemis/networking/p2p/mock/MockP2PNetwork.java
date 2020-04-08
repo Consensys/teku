@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.p2p.mock;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
@@ -30,10 +29,6 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   private final int port = 6000;
   private final NodeId nodeId = new MockNodeId();
-
-  public MockP2PNetwork(EventBus eventBus) {
-    eventBus.register(this);
-  }
 
   @Override
   public SafeFuture<Peer> connect(PeerAddress peer) {

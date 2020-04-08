@@ -14,11 +14,11 @@
 package tech.pegasys.artemis.validator.client.signer;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class LocalMessageSignerService implements MessageSignerService {
   private final BLSKeyPair keypair;

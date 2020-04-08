@@ -27,6 +27,9 @@ import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
@@ -34,9 +37,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.TransitionCaches;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 // Note that genesis generation is also covered by the initialization acceptance test

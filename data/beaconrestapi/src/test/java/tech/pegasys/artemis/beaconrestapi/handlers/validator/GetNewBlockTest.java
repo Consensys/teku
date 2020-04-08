@@ -41,8 +41,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetNewBlockTest {
 
-  private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
-      tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
+  private final tech.pegasys.artemis.bls.BLSSignature signatureInternal =
+      tech.pegasys.artemis.bls.BLSSignature.random(1234);
   private BLSSignature signature = new BLSSignature(signatureInternal);
   private Context context = mock(Context.class);
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);

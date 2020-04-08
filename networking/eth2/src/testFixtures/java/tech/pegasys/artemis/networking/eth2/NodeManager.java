@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.eth2;
 import com.google.common.eventbus.EventBus;
 import java.util.List;
 import java.util.function.Consumer;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -23,7 +24,6 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class NodeManager {
   private final EventBus eventBus;

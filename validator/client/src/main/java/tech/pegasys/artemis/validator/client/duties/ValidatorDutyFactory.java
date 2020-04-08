@@ -36,4 +36,8 @@ public class ValidatorDutyFactory {
   public AttestationProductionDuty createAttestationProductionDuty(final UnsignedLong slot) {
     return new AttestationProductionDuty(slot, forkProvider, validatorApiChannel);
   }
+
+  public AggregationDuty createAggregationDuty(final UnsignedLong slot) {
+    return new AggregationDuty(slot, validatorApiChannel);
+  }
 }

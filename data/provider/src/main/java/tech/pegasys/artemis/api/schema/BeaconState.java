@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 
 public class BeaconState {
   public final UnsignedLong genesis_time;
