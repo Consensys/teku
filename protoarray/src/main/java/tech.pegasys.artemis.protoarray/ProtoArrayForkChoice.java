@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.protoarray;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
 
@@ -161,16 +162,34 @@ public class ProtoArrayForkChoice {
     }
   }
 
+  public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      int blockIndex =
+          checkNotNull(
+              protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
+      if (blockIndex >= protoArray.getNodes().size()) {
+        return Optional.empty();
+      } else {
+        ProtoNode node = protoArray.getNodes().get(blockIndex);
+        return Optional.of(node.getSlot());
+      }
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   public Optional<BlockSlotAndStateRoot> blockSlotAndStateRoot(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      int blockIndex = protoArray.getIndices().get(blockRoot);
-
-      if (protoArray.getNodes().size() > blockIndex) {
+      int blockIndex =
+          checkNotNull(
+              protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
+      if (blockIndex >= protoArray.getNodes().size()) {
+        return Optional.empty();
+      } else {
         ProtoNode node = protoArray.getNodes().get(blockIndex);
         return Optional.of(new BlockSlotAndStateRoot(node.getSlot(), node.getStateRoot()));
-      } else {
-        return Optional.empty();
       }
     } finally {
       protoArrayLock.readLock().unlock();
@@ -180,15 +199,15 @@ public class ProtoArrayForkChoice {
   public Optional<Checkpoint> latestMessage(int validatorIndex) {
     votesLock.readLock().lock();
     try {
-      if (validatorIndex < votes.size()) {
+      if (validatorIndex >= votes.size()) {
+        return Optional.empty();
+      } else {
         VoteTracker vote = votes.get(validatorIndex);
         if (vote.equals(VoteTracker.DEFAULT)) {
           return Optional.empty();
         } else {
           return Optional.of(new Checkpoint(vote.getNextEpoch(), vote.getNextRoot()));
         }
-      } else {
-        return Optional.empty();
       }
     } finally {
       votesLock.readLock().unlock();
@@ -199,14 +218,16 @@ public class ProtoArrayForkChoice {
    * Returns a list of `deltas`, where there is one delta for each of the indices in
    * `0..indices.size()`.
    *
-   * The deltas are formed by a change between `oldBalances` and `newBalances`,
-   * and/or a change of vote in `votes`.
+   * <p>The deltas are formed by a change between `oldBalances` and `newBalances`, and/or a change
+   * of vote in `votes`.
    *
-   * ## Errors
+   * <p>## Errors
    *
-   * - If a value in `indices` is greater to or equal to `indices.size()`.
-   * - If some `Bytes32` in `votes` is not a key in `indices` (except for `Bytes32.ZERO`, this is
-   * always valid).
+   * <ul>
+   *   <li>If a value in `indices` is greater to or equal to `indices.size()`.
+   *   <li>If some `Bytes32` in `votes` is not a key in `indices` (except for `Bytes32.ZERO`, this
+   *       is always valid).
+   * </ul>
    *
    * @param indices
    * @param votes

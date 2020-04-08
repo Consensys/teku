@@ -13,6 +13,10 @@
 
 package tech.pegasys.artemis.protoarray;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
@@ -53,11 +57,9 @@ public class ProtoArray {
     this.pruneThreshold = pruneThreshold;
   }
 
-
-
   /**
-   * Register a block with the fork choice.
-   * It is only sane to supply a `None` parent for the genesis block.
+   * Register a block with the fork choice. It is only sane to supply a `None` parent for the
+   * genesis block.
    *
    * @param slot
    * @param root
@@ -101,17 +103,18 @@ public class ProtoArray {
   /**
    * Follows the best-descendant links to find the best-block (i.e., head-block).
    *
-   * The result of this function is not guaranteed to be accurate if `onBlock` has
-   * been called without a subsequent `applyScoreChanges` call. This is because
-   * `onBlock` does not attempt to walk backwards through the tree and update the
-   * best child / best descendant links.
+   * <p>The result of this function is not guaranteed to be accurate if `onBlock` has been called
+   * without a subsequent `applyScoreChanges` call. This is because `onBlock` does not attempt to
+   * walk backwards through the tree and update the best child / best descendant links. </p>
    *
    * @param justifiedRoot
    * @return
    */
   public Bytes32 findHead(Bytes32 justifiedRoot) {
-    int justifiedIndex = indices.get(justifiedRoot);
-    ProtoNode justifiedNode = nodes.get(justifiedIndex);
+    int justifiedIndex =
+        checkNotNull(indices.get(justifiedRoot), "ProtoArray: Unknown justified root");
+    ProtoNode justifiedNode =
+        checkNotNull(nodes.get(justifiedIndex), "ProtoArray: Unknown justified index");
 
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
     ProtoNode bestNode = nodes.get(bestDescendantIndex);
@@ -125,29 +128,30 @@ public class ProtoArray {
   }
 
   /**
-   * Iterate backwards through the array, touching all nodes and their parents and potentially
-   * the bestChildIndex of each parent.
+   * Iterate backwards through the array, touching all nodes and their parents and potentially the
+   * bestChildIndex of each parent.
    *
-   * The structure of the `nodes` array ensures that the child of each node is always
-   * touched before its parent.
+   * The structure of the `nodes` array ensures that the child of each node is always touched
+   * before its parent.
    *
    * For each node, the following is done:
    *
-   * - Update the node's weight with the corresponding delta.
-   * - Back-propagate each node's delta to its parents delta.
-   * - Compare the current node with the parents best child, updating it if the current node
-   * should become the best child.
-   * - If required, update the parents best descendant with the current node or its best descendant.
-   *
+   * <ul>
+   *    <li>Update the node's weight with the corresponding delta.</li>
+   *    <li>Back-propagate each node's delta</li>
+   *    to its parents delta.</li>
+   *    <li>Compare the current node with the parents best child, updating it if
+   *    the current node should become the best child.</li>
+   *    <li>If required, update the parents best
+   * descendant with the current node or its best descendant.</li>
+   * </ul>
    * @param deltas
    * @param justifiedEpoch
    * @param finalizedEpoch
    */
   public void applyScoreChanges(
       List<Long> deltas, UnsignedLong justifiedEpoch, UnsignedLong finalizedEpoch) {
-    if (deltas.size() != indices.size()) {
-      throw new RuntimeException("ProtoArray: Invalid delta length");
-    }
+    checkArgument(deltas.size() == indices.size(), "ProtoArray: Invalid delta length");
 
     if (!justifiedEpoch.equals(this.justifiedEpoch)
         || !finalizedEpoch.equals(this.finalizedEpoch)) {
@@ -169,27 +173,28 @@ public class ProtoArray {
       long nodeDelta = deltas.get(nodeIndex);
       node.adjustWeight(nodeDelta);
 
-      if (node.getParentIndex().isEmpty()) {
-        continue;
+      if (node.getParentIndex().isPresent()) {
+        int parentIndex = node.getParentIndex().get();
+        deltas.set(parentIndex, deltas.get(parentIndex) + nodeDelta);
+        maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex);
       }
-
-      int parentIndex = node.getParentIndex().get();
-      deltas.set(parentIndex, deltas.get(parentIndex) + nodeDelta);
-      maybeUpdateBestChildAndDescendant(parentIndex, nodeIndex);
     }
   }
 
   /**
-   * Update the tree with new finalization information. The tree is only actually pruned if both
-   * of the two following criteria are met:
+   * Update the tree with new finalization information. The tree is only actually pruned if both of
+   * the two following criteria are met:
    *
-   * - The supplied finalized epoch and root are different to the current values.
-   * - The number of nodes in `this` is at least `this.pruneThreshold`.
+   * <ul>
+   *   <li>The supplied finalized epoch and root are different to the current values. </li>
+   *   <li>The number of nodes in `this` is at least `this.pruneThreshold`. </li>
+   * </ul>
    *
    * @param finalizedRoot
    */
   public void maybePrune(Bytes32 finalizedRoot) {
-    int finalizedIndex = indices.get(finalizedRoot);
+    int finalizedIndex =
+        checkNotNull(indices.get(finalizedRoot), "ProtoArray: Finalized root is unknown");
 
     if (finalizedIndex < pruneThreshold) {
       // Pruning at small numbers incurs more cost than benefit.
@@ -209,9 +214,7 @@ public class ProtoArray {
     indices.replaceAll(
         (key, value) -> {
           int newIndex = value - finalizedIndex;
-          if (newIndex < 0) {
-            throw new RuntimeException("ProtoArray: New array index less than 0.");
-          }
+          checkState(newIndex < 0, "ProtoArray: New array index less than 0.");
           return newIndex;
         });
 
@@ -233,9 +236,8 @@ public class ProtoArray {
           .ifPresent(
               bestChildIndex -> {
                 int newBestChildIndex = bestChildIndex - finalizedIndex;
-                if (newBestChildIndex < 0) {
-                  throw new RuntimeException("ProtoArray: New best child index is less than 0");
-                }
+                checkState(
+                    newBestChildIndex < 0, "ProtoArray: New best child index is less than 0");
                 node.setBestChildIndex(Optional.of(newBestChildIndex));
               });
 
@@ -243,32 +245,35 @@ public class ProtoArray {
           .ifPresent(
               bestDescendantIndex -> {
                 int newBestDescendantIndex = bestDescendantIndex - finalizedIndex;
-                if (newBestDescendantIndex < 0) {
-                  throw new RuntimeException(
-                      "ProtoArray: New best descendant index is less than 0");
-                }
+                checkState(
+                    newBestDescendantIndex < 0,
+                    "ProtoArray: New best descendant index is less than 0");
                 node.setBestDescendantIndex(Optional.of(newBestDescendantIndex));
               });
     }
   }
 
   /**
-   * Observe the parent at `parentIndex` with respect to the child at `childIndex` and
-   * potentially modify the `parent.bestChild` and `parent.bestDescendant` values.
+   * Observe the parent at `parentIndex` with respect to the child at `childIndex` and potentially
+   * modify the `parent.bestChild` and `parent.bestDescendant` values.
    *
-   * ## Detail
+   * <p>## Detail
    *
-   * There are four outcomes:
+   * <p>There are four outcomes:
    *
-   * - The child is already the best child but it's now invalid due to a FFG change and should be
-   * removed.
-   * - The child is already the best child and the parent is updated with the new best descendant.
-   * - The child is not the best child but becomes the best child.
-   * - The child is not the best child and does not become the best child.
+   * <ul>
+   *   <li>The child is already the best child but it's now invalid due to a FFG change and should be
+   * removed. </li>
+   *   <li>The child is already the best child and the parent is updated with the new best
+   * descendant. </li>
+   *   <li>The child is not the best child but becomes the best child. - The child is not
+   * the best child and does not become the best child. </li>
+   * </ul>
    *
    * @param parentIndex
    * @param childIndex
    */
+  @SuppressWarnings("StatementWithEmptyBody")
   private void maybeUpdateBestChildAndDescendant(int parentIndex, int childIndex) {
     ProtoNode child = nodes.get(childIndex);
     ProtoNode parent = nodes.get(parentIndex);
@@ -349,8 +354,9 @@ public class ProtoArray {
   }
 
   /**
-   * Indicates if the node itself is viable for the head, or if it's best descendant is viable
-   * for the head.
+   * Indicates if the node itself is viable for the head, or if it's best descendant is viable for
+   * the head.
+   *
    * @param node
    * @return
    */
@@ -362,12 +368,13 @@ public class ProtoArray {
   }
 
   /**
-   * This is the equivalent to the `filter_block_tree` function in the eth2 spec:
+   * <p> This is the equivalent to the
+   * <a href="https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/fork-choice.md#filter_block_tree">filter_block_tree</a>
+   * function in the eth2 spec: </p>
    *
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/fork-choice.md#filter_block_tree
+   * <p>Any node that has a different finalized or justified epoch should not be viable for the
+   * head.</p>
    *
-   * Any node that has a different finalized or justified epoch should not be viable for the
-   * head.
    * @param node
    * @return
    */

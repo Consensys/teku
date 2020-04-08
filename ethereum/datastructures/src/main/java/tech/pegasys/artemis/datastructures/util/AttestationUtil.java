@@ -100,10 +100,6 @@ public class AttestationUtil {
         attestation.getAggregate_signature());
   }
 
-  public static List<Integer> getParticipantIndices(BeaconState state, Attestation attestation) {
-    return get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
-  }
-
   /**
    * Return the sorted attesting indices corresponding to ``data`` and ``bits``.
    *
