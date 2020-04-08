@@ -127,7 +127,7 @@ public class Eth2NetworkFactory {
                 reputationManager,
                 config);
 
-        return new Eth2Network(network, eth2PeerManager, eventBus, recentChainData);
+        return new ActiveEth2Network(network, eth2PeerManager, eventBus, recentChainData);
       }
     }
 

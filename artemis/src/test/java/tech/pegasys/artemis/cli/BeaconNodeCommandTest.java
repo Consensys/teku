@@ -30,6 +30,8 @@ import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KE
 
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -45,11 +47,19 @@ import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 public class BeaconNodeCommandTest {
 
   private BeaconNodeCommand beaconNodeCommand;
+  private StringWriter commandOutput;
+  private StringWriter commandError;
+  private PrintWriter outputWriter;
+  private PrintWriter errorWriter;
   @TempDir Path dataPath;
 
   @BeforeEach
   void setUp() {
-    beaconNodeCommand = new BeaconNodeCommand(Collections.emptyMap());
+    commandOutput = new StringWriter();
+    commandError = new StringWriter();
+    outputWriter = new PrintWriter(commandOutput, true);
+    errorWriter = new PrintWriter(commandError, true);
+    beaconNodeCommand = new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap());
   }
 
   @AfterEach
@@ -74,7 +84,8 @@ public class BeaconNodeCommandTest {
     final String[] args = createCliArgs();
     args[5] = "1.2.3.5";
     beaconNodeCommand =
-        new BeaconNodeCommand(Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"));
+        new BeaconNodeCommand(
+            outputWriter, errorWriter, Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"));
 
     beaconNodeCommand.parse(args);
 
@@ -86,10 +97,11 @@ public class BeaconNodeCommandTest {
 
   @Test
   public void overrideConfigFileValuesIfKeyIsPresentInEnvironmentVariables() throws IOException {
-    final Path toml = createConfigFile();
-    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString()};
+    final Path configFile = createConfigFile();
+    final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
     beaconNodeCommand =
-        new BeaconNodeCommand(Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"));
+        new BeaconNodeCommand(
+            outputWriter, errorWriter, Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"));
 
     beaconNodeCommand.parse(args);
 
@@ -101,8 +113,10 @@ public class BeaconNodeCommandTest {
 
   @Test
   public void overrideConfigFileValuesIfKeyIsPresentInCLIOptions() throws IOException {
-    final Path toml = createConfigFile();
-    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString(), "--p2p-interface", "1.2.3.5"};
+    final Path configFile = createConfigFile();
+    final String[] args = {
+      CONFIG_FILE_OPTION_NAME, configFile.toString(), "--p2p-interface", "1.2.3.5"
+    };
 
     beaconNodeCommand.parse(args);
 
@@ -116,6 +130,8 @@ public class BeaconNodeCommandTest {
   public void overrideDefaultValuesIfKeyIsPresentInEnvironmentVariables() {
     beaconNodeCommand =
         new BeaconNodeCommand(
+            outputWriter,
+            errorWriter,
             Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"));
 
     beaconNodeCommand.parse(new String[] {});
@@ -138,8 +154,8 @@ public class BeaconNodeCommandTest {
 
   @Test
   public void overrideDefaultValuesIfKeyIsPresentInConfigFile() throws IOException {
-    final Path toml = createConfigFile();
-    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString()};
+    final Path configFile = createConfigFile();
+    final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
 
     beaconNodeCommand.parse(args);
 
@@ -149,11 +165,11 @@ public class BeaconNodeCommandTest {
   }
 
   private Path createConfigFile() throws IOException {
-    final URL configFile = this.getClass().getResource("/complete_config.toml");
+    final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
-            .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
-    return createTempFile("toml", updatedConfig.getBytes(UTF_8));
+            .replace("data-path: \".\"", "data-path: \"" + dataPath.toString() + "\"");
+    return createTempFile("yaml", updatedConfig.getBytes(UTF_8));
   }
 
   private String[] createCliArgs() {

@@ -19,8 +19,8 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
 public final class BeaconBlocksByRangeRequestMessage
     implements RpcRequest, SimpleOffsetSerializable, SSZContainer {

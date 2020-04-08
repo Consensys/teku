@@ -31,7 +31,7 @@ import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class voluntary_exit extends TestSuite {

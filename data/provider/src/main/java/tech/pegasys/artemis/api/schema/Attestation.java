@@ -15,7 +15,7 @@ package tech.pegasys.artemis.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 
 public class Attestation {
   public final Bitlist aggregation_bits;

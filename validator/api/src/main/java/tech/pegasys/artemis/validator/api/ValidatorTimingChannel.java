@@ -21,4 +21,6 @@ public interface ValidatorTimingChannel {
   void onBlockProductionDue(UnsignedLong slot);
 
   void onAttestationCreationDue(UnsignedLong slot);
+
+  void onAttestationAggregationDue(UnsignedLong slot);
 }

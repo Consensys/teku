@@ -15,10 +15,10 @@ package tech.pegasys.artemis.statetransition.attestation;
 
 import java.util.ArrayList;
 import java.util.List;
+import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 
 public class AggregatorUtil {
   public static Attestation aggregateAttestations(

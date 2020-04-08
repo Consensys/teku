@@ -43,24 +43,24 @@ rm -f ../config/runConfig.*
 NODE_INDEX=0
 NUM_NODES=1
 
-configure_node "mothra" $NODE_INDEX $NUM_NODES "$CONFIG_DIR/config.toml"
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-number-of-validators $VALIDATOR_COUNT
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" numNodes $NUM_NODES
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" active $INTEROP_MODE
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-genesis-time $GENESIS_TIME
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-owned-validator-start-index $OWNED_VALIDATOR_START_INDEX
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-owned-validator-count $OWNED_VALIDATOR_COUNT
-sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" Xinterop-start-state "\"$GENESIS_FILE"\"
+configure_node "mothra" $NODE_INDEX $NUM_NODES "$CONFIG_DIR/config.yaml"
+sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" Xinterop-number-of-validators $VALIDATOR_COUNT
+sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" numNodes $NUM_NODES
+sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" active $INTEROP_MODE
+sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" Xinterop-genesis-time $GENESIS_TIME
+sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" Xinterop-owned-validator-start-index $OWNED_VALIDATOR_START_INDEX
+sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" Xinterop-owned-validator-count $OWNED_VALIDATOR_COUNT
+sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" Xinterop-start-state "\"$GENESIS_FILE"\"
 
 
 if [ "$PEERS" != "" ]
 then
      ARTEMIS_PEERS=$(echo $PEERS | awk '{gsub(/\./,"\\.")}1' | awk '{gsub(/\//,"\\/")}1')
      ARTEMIS_PEERS=$(echo [\"$ARTEMIS_PEERS\"] )
-     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" p2p-static-peers $ARTEMIS_PEERS
-     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" p2p-discovery-enabled false
-     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
+     sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" p2p-static-peers $ARTEMIS_PEERS
+     sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" p2p-discovery-enabled false
+     sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" isBootnode false
 fi
 
-cd $SCRIPT_DIR/demo/node_0/ && ./teku --config-file=$CONFIG_DIR/runConfig.0.toml --logging=INFO
+cd $SCRIPT_DIR/demo/node_0/ && ./teku --config-file=$CONFIG_DIR/runConfig.0.yaml --logging=INFO
 
