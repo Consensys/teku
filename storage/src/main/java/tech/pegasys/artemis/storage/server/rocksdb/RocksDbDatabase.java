@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.storage.server.rocksdb;
 
+import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import tech.pegasys.artemis.storage.server.Database;
 import tech.pegasys.artemis.storage.server.StateStorageMode;
 import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance;
+import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance.Transaction;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstanceFactory;
 import tech.pegasys.artemis.storage.server.rocksdb.schema.V2Schema;
 
@@ -165,36 +167,37 @@ public class RocksDbDatabase implements Database {
     return db.getOrThrow(V2Schema.FINALIZED_CHECKPOINT);
   }
 
-  private StorageUpdateResult doUpdate(final StorageUpdate event) {
+  private StorageUpdateResult doUpdate(final StorageUpdate update) {
     try (final RocksDbInstance.Transaction transaction = db.startTransaction()) {
       final Checkpoint previousFinalizedCheckpoint = getFinalizedCheckpoint();
       final Checkpoint newFinalizedCheckpoint =
-          event.getFinalizedCheckpoint().orElse(previousFinalizedCheckpoint);
+          update.getFinalizedCheckpoint().orElse(previousFinalizedCheckpoint);
 
-      event.getGenesisTime().ifPresent(val -> transaction.put(V2Schema.GENESIS_TIME, val));
-      event
+      update.getGenesisTime().ifPresent(val -> transaction.put(V2Schema.GENESIS_TIME, val));
+      update
           .getFinalizedCheckpoint()
           .ifPresent(val -> transaction.put(V2Schema.FINALIZED_CHECKPOINT, val));
-      event
+      update
           .getJustifiedCheckpoint()
           .ifPresent(val -> transaction.put(V2Schema.JUSTIFIED_CHECKPOINT, val));
-      event
+      update
           .getBestJustifiedCheckpoint()
           .ifPresent(val -> transaction.put(V2Schema.BEST_JUSTIFIED_CHECKPOINT, val));
 
-      transaction.put(V2Schema.CHECKPOINT_STATES, event.getCheckpointStates());
-      transaction.put(V2Schema.LATEST_MESSAGES, event.getLatestMessages());
+      transaction.put(V2Schema.CHECKPOINT_STATES, update.getCheckpointStates());
+      transaction.put(V2Schema.LATEST_MESSAGES, update.getLatestMessages());
 
-      event.getBlocks().forEach((root, block) -> addHotBlock(transaction, root, block));
-      transaction.put(V2Schema.HOT_STATES_BY_ROOT, event.getBlockStates());
+      update.getBlocks().forEach((root, block) -> addHotBlock(transaction, root, block));
+      transaction.put(V2Schema.HOT_STATES_BY_ROOT, update.getBlockStates());
 
       final StorageUpdateResult result;
       if (previousFinalizedCheckpoint == null
           || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
-        recordFinalizedBlocks(transaction, newFinalizedCheckpoint);
+        recordFinalizedBlocks(transaction, update, newFinalizedCheckpoint);
         final Set<Checkpoint> prunedCheckpoints =
-            pruneCheckpointStates(transaction, newFinalizedCheckpoint);
-        final Set<Bytes32> prunedBlockRoots = pruneHotBlocks(transaction, newFinalizedCheckpoint);
+            pruneCheckpointStates(transaction, update, newFinalizedCheckpoint);
+        final Set<Bytes32> prunedBlockRoots =
+            pruneHotBlocks(transaction, update, newFinalizedCheckpoint);
         result = StorageUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
       } else {
         result = StorageUpdateResult.successfulWithNothingPruned();
@@ -228,11 +231,13 @@ public class RocksDbDatabase implements Database {
   }
 
   private Set<Checkpoint> pruneCheckpointStates(
-      final RocksDbInstance.Transaction transaction, final Checkpoint newFinalizedCheckpoint) {
+      final Transaction transaction,
+      final StorageUpdate update,
+      final Checkpoint newFinalizedCheckpoint) {
     final Set<Checkpoint> prunedCheckpoints = new HashSet<>();
     try (final Stream<ColumnEntry<Checkpoint, BeaconState>> stream =
         db.stream(V2Schema.CHECKPOINT_STATES)) {
-      stream
+      Streams.concat(stream, update.getCheckpointStates().entrySet().stream())
           .filter(e -> e.getKey().getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0)
           .forEach(
               entry -> {
@@ -244,9 +249,11 @@ public class RocksDbDatabase implements Database {
   }
 
   private Set<Bytes32> pruneHotBlocks(
-      final RocksDbInstance.Transaction transaction, final Checkpoint newFinalizedCheckpoint) {
+      final Transaction transaction,
+      final StorageUpdate update,
+      final Checkpoint newFinalizedCheckpoint) {
     Optional<SignedBeaconBlock> newlyFinalizedBlock =
-        db.get(V2Schema.HOT_BLOCKS_BY_ROOT, newFinalizedCheckpoint.getRoot());
+        getHotBlock(update, newFinalizedCheckpoint.getRoot());
     if (newlyFinalizedBlock.isEmpty()) {
       LOG.error(
           "Missing finalized block {} for epoch {}",
@@ -271,7 +278,9 @@ public class RocksDbDatabase implements Database {
   }
 
   private void recordFinalizedBlocks(
-      RocksDbInstance.Transaction transaction, final Checkpoint newFinalizedCheckpoint) {
+      Transaction transaction,
+      final StorageUpdate update,
+      final Checkpoint newFinalizedCheckpoint) {
     LOG.debug(
         "Record finalized blocks for epoch {} starting at block {}",
         newFinalizedCheckpoint.getEpoch(),
@@ -283,8 +292,7 @@ public class RocksDbDatabase implements Database {
             .orElse(UnsignedLong.ZERO);
 
     Bytes32 newlyFinalizedBlockRoot = newFinalizedCheckpoint.getRoot();
-    Optional<SignedBeaconBlock> newlyFinalizedBlock =
-        db.get(V2Schema.HOT_BLOCKS_BY_ROOT, newlyFinalizedBlockRoot);
+    Optional<SignedBeaconBlock> newlyFinalizedBlock = getHotBlock(update, newlyFinalizedBlockRoot);
     while (newlyFinalizedBlock.isPresent()
         && newlyFinalizedBlock.get().getSlot().compareTo(highestFinalizedSlot) > 0) {
       LOG.debug(
@@ -297,7 +305,7 @@ public class RocksDbDatabase implements Database {
           newlyFinalizedBlockRoot);
       transaction.put(
           V2Schema.FINALIZED_BLOCKS_BY_ROOT, newlyFinalizedBlockRoot, newlyFinalizedBlock.get());
-      final Optional<BeaconState> finalizedState = getState(newlyFinalizedBlockRoot);
+      final Optional<BeaconState> finalizedState = getHotState(update, newlyFinalizedBlockRoot);
       if (finalizedState.isPresent()) {
         putFinalizedState(transaction, newlyFinalizedBlockRoot, finalizedState.get());
       } else {
@@ -309,7 +317,7 @@ public class RocksDbDatabase implements Database {
 
       // Update for next round of iteration
       newlyFinalizedBlockRoot = newlyFinalizedBlock.get().getMessage().getParent_root();
-      newlyFinalizedBlock = db.get(V2Schema.HOT_BLOCKS_BY_ROOT, newlyFinalizedBlockRoot);
+      newlyFinalizedBlock = getHotBlock(update, newlyFinalizedBlockRoot);
     }
 
     if (newlyFinalizedBlock.isEmpty()) {
@@ -318,5 +326,15 @@ public class RocksDbDatabase implements Database {
           newlyFinalizedBlockRoot,
           newFinalizedCheckpoint.getEpoch());
     }
+  }
+
+  private Optional<SignedBeaconBlock> getHotBlock(final StorageUpdate update, final Bytes32 root) {
+    return Optional.ofNullable(update.getBlocks().get(root))
+        .or(() -> db.get(V2Schema.HOT_BLOCKS_BY_ROOT, root));
+  }
+
+  private Optional<BeaconState> getHotState(final StorageUpdate update, final Bytes32 root) {
+    return Optional.ofNullable(update.getBlockStates().get(root))
+        .or(() -> db.get(V2Schema.HOT_STATES_BY_ROOT, root));
   }
 }

@@ -133,10 +133,11 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void shouldStoreBlockWithLargeSlot() {
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
     final UnsignedLong slot = UnsignedLong.MAX_VALUE;
     final SignedBeaconBlock newBlock = dataStructureUtil.randomSignedBeaconBlock(slot);
     final Bytes32 root = newBlock.getMessage().hash_tree_root();
+
+    final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlock(root, newBlock);
     final UnsignedLong epoch = compute_epoch_at_slot(slot);
     transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
@@ -571,6 +572,82 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
+  @Test
+  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate() {
+    database = setupDatabase(StateStorageMode.ARCHIVE);
+    database.storeGenesis(store);
+
+    // Create blocks
+    final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
+    final SignedBeaconBlock block2 = blockAtSlot(2, block1);
+    final SignedBeaconBlock block3 = blockAtSlot(3, block2);
+    // Few skipped slots
+    final SignedBeaconBlock block7 = blockAtSlot(7, block3);
+    final SignedBeaconBlock block8 = blockAtSlot(8, block7);
+    final SignedBeaconBlock block9 = blockAtSlot(9, block8);
+    // Create some blocks on a different fork
+    final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
+    final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
+    final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
+    final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
+
+    // Create States
+    final Map<Bytes32, BeaconState> states = new HashMap<>();
+    final BeaconState block3State = dataStructureUtil.randomBeaconState(block3.getSlot());
+    final BeaconState block7State = dataStructureUtil.randomBeaconState(block7.getSlot());
+    final BeaconState forkBlock6State = dataStructureUtil.randomBeaconState(forkBlock6.getSlot());
+    final BeaconState forkBlock7State = dataStructureUtil.randomBeaconState(forkBlock7.getSlot());
+    // Store states in map
+    states.put(block3.getMessage().hash_tree_root(), block3State);
+    states.put(block7.getMessage().hash_tree_root(), block7State);
+    states.put(forkBlock6.getMessage().hash_tree_root(), forkBlock6State);
+    states.put(forkBlock7.getMessage().hash_tree_root(), forkBlock7State);
+
+    // Create batch transaction with blocks added and finalized within a single update
+    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    add(
+        transaction,
+        states,
+        block1,
+        block2,
+        block3,
+        block7,
+        block8,
+        block9,
+        forkBlock6,
+        forkBlock7,
+        forkBlock8,
+        forkBlock9);
+    transaction.setFinalizedCheckpoint(
+        new Checkpoint(UnsignedLong.ONE, block7.getMessage().hash_tree_root()));
+    transaction.commit().reportExceptions();
+
+    // Upon finalization, we should prune data
+    final Set<Bytes32> blocksToPrune =
+        Set.of(block1, block2, block3, forkBlock6).stream()
+            .map(b -> b.getMessage().hash_tree_root())
+            .collect(Collectors.toSet());
+    blocksToPrune.add(genesisBlock.hash_tree_root());
+    final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
+    assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
+
+    // Check data was pruned from store
+    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
+
+    assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
+    assertBlocksFinalized(block1, block2, block3, block7);
+    assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
+
+    // Should still be able to retrieve finalized blocks by root
+    assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
+
+    assertHotStatesAvailable(List.of(block7State, forkBlock7State));
+    final Map<Bytes32, BeaconState> expectedStates = new HashMap<>(states);
+    // We should've pruned non-canonical states prior to latest finalized slot
+    expectedStates.remove(forkBlock6.getMessage().hash_tree_root());
+    assertStatesAvailable(expectedStates);
+  }
+
   protected void assertBlocksFinalized(final SignedBeaconBlock... blocks) {
     for (SignedBeaconBlock block : blocks) {
       assertThat(database.getFinalizedRootAtSlot(block.getSlot()))
@@ -681,6 +758,14 @@ public abstract class AbstractDatabaseTest {
 
   protected void add(final Map<Bytes32, BeaconState> states, final SignedBeaconBlock... blocks) {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    add(transaction, states, blocks);
+    commit(transaction);
+  }
+
+  protected void add(
+      final Transaction transaction,
+      final Map<Bytes32, BeaconState> states,
+      final SignedBeaconBlock... blocks) {
     // Add states
     for (Bytes32 blockRoot : states.keySet()) {
       transaction.putBlockState(blockRoot, states.get(blockRoot));
@@ -689,7 +774,6 @@ public abstract class AbstractDatabaseTest {
     for (SignedBeaconBlock block : blocks) {
       transaction.putBlock(block.getMessage().hash_tree_root(), block);
     }
-    commit(transaction);
   }
 
   protected void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {

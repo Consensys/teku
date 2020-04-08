@@ -13,9 +13,10 @@
 
 package tech.pegasys.artemis.storage.server.rocksdb.core;
 
+import java.util.Map;
 import java.util.Objects;
 
-public class ColumnEntry<K, V> {
+public class ColumnEntry<K, V> implements Map.Entry<K, V> {
   private final K key;
   private final V value;
 
@@ -28,12 +29,19 @@ public class ColumnEntry<K, V> {
     return new ColumnEntry<>(key, value);
   }
 
+  @Override
   public K getKey() {
     return key;
   }
 
+  @Override
   public V getValue() {
     return value;
+  }
+
+  @Override
+  public V setValue(final V value) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
