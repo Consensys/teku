@@ -11,14 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2;
+package tech.pegasys.artemis.networking.eth2.mock;
 
+import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 
-public interface Eth2Network extends P2PNetwork<Eth2Peer> {
+public class MockEth2Network extends MockP2PNetwork<Eth2Peer> implements Eth2Network {
 
-  void subscribeToAttestationCommitteeTopic(int committeeIndex);
+  @Override
+  public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {}
 
-  void unsubscribeFromAttestationCommitteeTopic(int committeeIndex);
+  @Override
+  public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {}
 }
