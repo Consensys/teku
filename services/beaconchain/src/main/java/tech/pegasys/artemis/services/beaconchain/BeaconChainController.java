@@ -15,8 +15,8 @@ package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.core.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.eventbus.EventBus;
@@ -471,11 +471,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void processSlot() {
     try {
-      if (isFirstSlotOfNewEpoch(nodeSlot)) {
-        final UnsignedLong currentEpoch =
-            nodeSlot.plus(UnsignedLong.ONE).dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+      final UnsignedLong nodeEpoch = compute_epoch_at_slot(nodeSlot);
+      if (nodeSlot.equals(compute_start_slot_at_epoch(nodeEpoch))) {
         EVENT_LOG.epochEvent(
-            currentEpoch,
+            nodeEpoch,
             recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
             recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
             recentChainData.getFinalizedRoot());
@@ -483,7 +482,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
       slotEventsChannelPublisher.onSlot(nodeSlot);
       this.currentSlotGauge.set(nodeSlot.longValue());
-      this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
+      this.currentEpochGauge.set(nodeEpoch.longValue());
       this.finalizedEpochGauge.set(recentChainData.getFinalizedEpoch().longValue());
       this.justifiedEpochGauge.set(
           recentChainData.getStore().getBestJustifiedCheckpoint().getEpoch().longValue());
@@ -508,11 +507,5 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.stateProcessor.processHead();
     EVENT_LOG.syncEvent(nodeSlot, recentChainData.getBestSlot(), p2pNetwork.getPeerCount());
     nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
-  }
-
-  private boolean isFirstSlotOfNewEpoch(final UnsignedLong slot) {
-    return slot.plus(UnsignedLong.ONE)
-        .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-        .equals(UnsignedLong.ZERO);
   }
 }
