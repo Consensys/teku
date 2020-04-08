@@ -47,7 +47,10 @@ public class GetHead implements Handler {
       summary = "Get the head of the beacon chain from the node's perspective.",
       tags = {TAG_BEACON},
       description =
-          "Returns information about the head of the beacon chain from the node’s perspective.\n\nTo retrieve finalized and justified information use /beacon/chainhead instead.",
+          "Returns information about the head of the beacon chain from the node’s perspective.\n\n"
+              + "To retrieve finalized and justified information use "
+              + GetChainHead.ROUTE
+              + " instead.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconHead.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),

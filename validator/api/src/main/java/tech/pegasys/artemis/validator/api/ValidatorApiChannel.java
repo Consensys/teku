@@ -17,6 +17,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -24,8 +26,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public interface ValidatorApiChannel {
   SafeFuture<Optional<Fork>> getFork();
@@ -40,6 +40,8 @@ public interface ValidatorApiChannel {
       UnsignedLong slot, int committeeIndex);
 
   SafeFuture<Optional<Attestation>> createAggregate(AttestationData attestationData);
+
+  void subscribeToBeaconCommittee(int committeeIndex, UnsignedLong aggregationSlot);
 
   void sendSignedAttestation(Attestation attestation);
 

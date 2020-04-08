@@ -16,7 +16,7 @@ package tech.pegasys.artemis.networking.eth2.peers;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerStatusFactory {

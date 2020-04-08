@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 
 public class BLSPubKey {
   /** The number of bytes in this value - i.e. 48 */
@@ -35,7 +35,7 @@ public class BLSPubKey {
     this.bytes = bytes;
   }
 
-  public BLSPubKey(tech.pegasys.artemis.util.bls.BLSPublicKey publicKey) {
+  public BLSPubKey(BLSPublicKey publicKey) {
     this(publicKey.toBytes());
   }
 

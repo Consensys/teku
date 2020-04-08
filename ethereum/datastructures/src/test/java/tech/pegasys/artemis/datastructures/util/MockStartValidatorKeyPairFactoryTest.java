@@ -22,7 +22,7 @@ import java.util.Base64;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.bls.BLSKeyPair;
 
 class MockStartValidatorKeyPairFactoryTest {
   private static final String[] EXPECTED_PRIVATE_KEYS = {

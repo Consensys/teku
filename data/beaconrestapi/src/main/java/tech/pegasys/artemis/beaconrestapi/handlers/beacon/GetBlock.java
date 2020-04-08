@@ -17,11 +17,14 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSignedBlock;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT_QUERY_DESCRIPTION;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
@@ -37,6 +40,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,9 +73,9 @@ public class GetBlock implements Handler {
       summary = "Get the beacon chain block that matches the criteria.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(name = EPOCH, description = "Epoch number to query."),
-        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain."),
-        @OpenApiParam(name = ROOT, description = "Block root to query.")
+        @OpenApiParam(name = EPOCH, type = BigDecimal.class, description = EPOCH_QUERY_DESCRIPTION),
+        @OpenApiParam(name = SLOT, type = BigDecimal.class, description = SLOT_QUERY_DESCRIPTION),
+        @OpenApiParam(name = ROOT, description = ROOT_QUERY_DESCRIPTION)
       },
       description =
           "Returns the beacon chain block that matches the specified epoch, slot, or block root.",

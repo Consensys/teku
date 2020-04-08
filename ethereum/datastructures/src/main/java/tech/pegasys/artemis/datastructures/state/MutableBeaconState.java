@@ -18,16 +18,16 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.util.SSZTypes.Bitvector;
-import tech.pegasys.artemis.util.SSZTypes.SSZBackingList;
-import tech.pegasys.artemis.util.SSZTypes.SSZBackingVector;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
-import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
-import tech.pegasys.artemis.util.backing.view.AbstractBasicView;
-import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ViewUtils;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZBackingList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZBackingVector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.artemis.ssz.backing.ContainerViewWriteRef;
+import tech.pegasys.artemis.ssz.backing.view.AbstractBasicView;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
 
 public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
 
