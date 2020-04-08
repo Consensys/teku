@@ -16,6 +16,7 @@ package tech.pegasys.artemis.validator.client.duties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -37,14 +38,31 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 class AggregationDutyTest {
 
+  public static final UnsignedLong SLOT = UnsignedLong.valueOf(2832);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
-  private final AggregationDuty duty = new AggregationDuty(UnsignedLong.ONE, validatorApiChannel);
+  private final AggregationDuty duty = new AggregationDuty(SLOT, validatorApiChannel);
 
   @Test
   public void shouldBeCompleteWhenNoValidatorsAdded() {
     assertThat(duty.performDuty()).isCompleted();
+  }
+
+  @Test
+  public void shouldSubscribeToCommitteeTopicWhenNewCommitteeAdded() {
+    final int committeeIndex = 2;
+    duty.addValidator(1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
+    verify(validatorApiChannel).subscribeToBeaconCommittee(committeeIndex, SLOT);
+  }
+
+  @Test
+  public void shouldNotSubscribeToCommitteeTopicWhenAdditionalValidatorAdded() {
+    final int committeeIndex = 2;
+    duty.addValidator(1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
+    duty.addValidator(2, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
+
+    verify(validatorApiChannel, times(1)).subscribeToBeaconCommittee(committeeIndex, SLOT);
   }
 
   @Test
@@ -152,6 +170,7 @@ class AggregationDutyTest {
   @Test
   public void shouldFailWhenUnsignedAttestationNotCreated() {
     duty.addValidator(1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
+    verify(validatorApiChannel).subscribeToBeaconCommittee(anyInt(), any());
 
     assertThat(duty.performDuty()).isCompletedExceptionally();
     verifyNoMoreInteractions(validatorApiChannel);
