@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -73,10 +75,13 @@ public abstract class AbstractDatabaseTest {
           .get();
   protected final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
 
+  protected List<Database> databases = new ArrayList<>();
+
   protected abstract Database createDatabase(final StateStorageMode storageMode);
 
   protected Database setupDatabase(final StateStorageMode storageMode) {
     database = createDatabase(storageMode);
+    databases.add(database);
     storageUpdateChannel = new TrackingStorageUpdateChannel(database);
     return database;
   }
@@ -104,6 +109,13 @@ public abstract class AbstractDatabaseTest {
         new Checkpoint(UnsignedLong.valueOf(7), checkpoint2Block.getMessage().hash_tree_root());
     checkpoint3 =
         new Checkpoint(UnsignedLong.valueOf(8), checkpoint3Block.getMessage().hash_tree_root());
+  }
+
+  @AfterEach
+  public void tearDown() throws Exception {
+    for (Database db : databases) {
+      db.close();
+    }
   }
 
   @Test
