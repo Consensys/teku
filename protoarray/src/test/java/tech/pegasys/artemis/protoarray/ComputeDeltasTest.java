@@ -276,7 +276,7 @@ public class ComputeDeltasTest {
     }
   }
 
-  // Gives a hash that is not the zero hash (unless i is `usize::max_value)`.
+  // Gives a deterministic hash for a given integer
   private Bytes32 hashFromIndex(int i) {
     return Hash.sha2_256(Bytes.wrap(Integer.toHexString(i).getBytes()));
   }
