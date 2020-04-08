@@ -195,17 +195,25 @@ public class ProtoArrayForkChoice {
     }
   }
 
-  // Returns a list of `deltas`, where there is one delta for each of the indices in
-  // `0..indices.size()`.
-  //
-  // The deltas are formed by a change between `oldBalances` and `newBalances`,
-  //  and/or a change of vote in `votes`.
-  //
-  // ## Errors
-  //
-  // - If a value in `indices` is greater to or equal to `indices.size()`.
-  // - If some `Bytes32` in `votes` is not a key in `indices` (except for `Bytes32.ZERO`, this is
-  // always valid).
+  /**
+   * Returns a list of `deltas`, where there is one delta for each of the indices in
+   * `0..indices.size()`.
+   *
+   * The deltas are formed by a change between `oldBalances` and `newBalances`,
+   * and/or a change of vote in `votes`.
+   *
+   * ## Errors
+   *
+   * - If a value in `indices` is greater to or equal to `indices.size()`.
+   * - If some `Bytes32` in `votes` is not a key in `indices` (except for `Bytes32.ZERO`, this is
+   * always valid).
+   *
+   * @param indices
+   * @param votes
+   * @param oldBalances
+   * @param newBalances
+   * @return
+   */
   static List<Long> computeDeltas(
       Map<Bytes32, Integer> indices,
       ElasticList<VoteTracker> votes,
