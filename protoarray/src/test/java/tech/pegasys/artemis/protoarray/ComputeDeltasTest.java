@@ -217,7 +217,7 @@ public class ComputeDeltasTest {
     indices.put(hashFromIndex(2), 1);
 
     // There is only one validator in the old balances.
-    oldBalances.add((BALANCE));
+    oldBalances.add(BALANCE);
 
     // There are two validators in the new balances.
     newBalances.addAll(List.of(BALANCE, BALANCE));
@@ -251,7 +251,7 @@ public class ComputeDeltasTest {
     oldBalances.addAll(List.of(BALANCE, BALANCE));
 
     // There are two validators in the new balances.
-    newBalances.add((BALANCE));
+    newBalances.add(BALANCE);
 
     // Both validators move votes from block 1 to block 2.
     for (int __ = 0; __ < 2; __++) {
