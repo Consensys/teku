@@ -15,7 +15,6 @@ package tech.pegasys.artemis.protoarray;
 
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
-import static tech.pegasys.artemis.util.config.Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -195,7 +194,6 @@ public class ProtoArrayForkChoice {
       votesLock.readLock().unlock();
     }
   }
-
 
   // Returns a list of `deltas`, where there is one delta for each of the indices in
   // `0..indices.size()`.

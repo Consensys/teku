@@ -1,22 +1,34 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.protoarray;
-
-import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.protoarray.ProtoArrayForkChoice.computeDeltas;
+
+import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ComputeDeltasTest {
 
@@ -147,18 +159,10 @@ public class ComputeDeltasTest {
     newBalances = Collections.nCopies(2, BALANCE);
 
     // One validator moves their vote from the block to the zero hash.
-    votes.add(new VoteTracker(
-            hashFromIndex(1),
-            Bytes32.ZERO,
-            ZERO
-    ));
+    votes.add(new VoteTracker(hashFromIndex(1), Bytes32.ZERO, ZERO));
 
     // One validator moves their vote from the block to something outside the tree.
-    votes.add(new VoteTracker(
-            hashFromIndex(1),
-            hashFromIndex(1337),
-            ZERO
-    ));
+    votes.add(new VoteTracker(hashFromIndex(1), hashFromIndex(1337), ZERO));
 
     List<Long> deltas = computeDeltas(indices, votes, oldBalances, newBalances);
     assertThat(deltas).hasSize(1);
@@ -179,11 +183,7 @@ public class ComputeDeltasTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(hashFromIndex(i), i);
-      votes.add(new VoteTracker(
-              hashFromIndex(0),
-              hashFromIndex(1),
-              ZERO)
-      );
+      votes.add(new VoteTracker(hashFromIndex(0), hashFromIndex(1), ZERO));
       oldBalances.add(OLD_BALANCE);
       newBalances.add(NEW_BALANCE);
     }
@@ -198,7 +198,7 @@ public class ComputeDeltasTest {
         assertThat(delta).isEqualTo(-OLD_BALANCE.longValue() * validatorCount);
       } else if (i == 1) {
         // First root should have positive delta
-        assertThat(delta).isEqualTo(NEW_BALANCE.longValue()  * validatorCount);
+        assertThat(delta).isEqualTo(NEW_BALANCE.longValue() * validatorCount);
       } else {
         // All other deltas should be zero
         assertThat(delta).isEqualTo(0L);
@@ -224,10 +224,7 @@ public class ComputeDeltasTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int __ = 0; __ < 2; __++) {
-      votes.add(new VoteTracker(
-              hashFromIndex(1),
-              hashFromIndex(2),
-              ZERO));
+      votes.add(new VoteTracker(hashFromIndex(1), hashFromIndex(2), ZERO));
     }
 
     List<Long> deltas = computeDeltas(indices, votes, oldBalances, newBalances);
@@ -258,10 +255,7 @@ public class ComputeDeltasTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int __ = 0; __ < 2; __++) {
-      votes.add(new VoteTracker(
-              hashFromIndex(1),
-              hashFromIndex(2),
-              ZERO));
+      votes.add(new VoteTracker(hashFromIndex(1), hashFromIndex(2), ZERO));
     }
 
     List<Long> deltas = computeDeltas(indices, votes, oldBalances, newBalances);
