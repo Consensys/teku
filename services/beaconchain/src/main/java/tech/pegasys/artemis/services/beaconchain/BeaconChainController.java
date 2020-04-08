@@ -105,6 +105,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile SettableGauge currentSlotGauge;
   private volatile SettableGauge currentEpochGauge;
   private volatile SettableGauge finalizedEpochGauge;
+  private volatile SettableGauge justifiedEpochGauge;
   private volatile StateProcessor stateProcessor;
   private volatile BeaconRestApi beaconRestAPI;
   private volatile AttestationAggregator attestationAggregator;
@@ -210,21 +211,27 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     currentSlotGauge =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "slot",
             "Latest slot recorded by the beacon chain");
     currentEpochGauge =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "current_epoch",
             "Latest epoch recorded by the beacon chain");
     finalizedEpochGauge =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "finalized_epoch",
             "Current finalized epoch");
+    justifiedEpochGauge =
+        SettableGauge.create(
+            metricsSystem,
+            ArtemisMetricCategory.BEACON,
+            "justified_epoch",
+            "Current justified epoch");
   }
 
   public void initDepositProvider() {
@@ -478,6 +485,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
       this.finalizedEpochGauge.set(recentChainData.getFinalizedEpoch().longValue());
+      this.justifiedEpochGauge.set(
+          recentChainData.getStore().getBestJustifiedCheckpoint().getEpoch().longValue());
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
       EVENT_LOG.slotEvent(
