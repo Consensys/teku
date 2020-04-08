@@ -41,12 +41,12 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
+import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
+import tech.pegasys.artemis.networking.eth2.mock.NoOpEth2Network;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
-import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
@@ -101,7 +101,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final SlotEventsChannel slotEventsChannelPublisher;
 
   private volatile RecentChainData recentChainData;
-  private volatile P2PNetwork<Eth2Peer> p2pNetwork;
+  private volatile Eth2Network p2pNetwork;
   private volatile SettableGauge currentSlotGauge;
   private volatile SettableGauge currentEpochGauge;
   private volatile SettableGauge finalizedEpochGauge;
@@ -265,14 +265,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             depositProvider,
             eth1DataCache);
-    eventChannels.subscribe(
-        ValidatorApiChannel.class,
+    final AttestationTopicSubscriptions attestationTopicSubscriptions =
+        new AttestationTopicSubscriptions(p2pNetwork);
+    final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
             blockFactory,
             attestationPool,
             attestationAggregator,
-            eventBus));
+            attestationTopicSubscriptions,
+            eventBus);
+    eventChannels
+        .subscribe(SlotEventsChannel.class, attestationTopicSubscriptions)
+        .subscribe(ValidatorApiChannel.class, validatorApiHandler);
   }
 
   public void initStateProcessor() {
@@ -306,7 +311,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
     if (!config.isP2pEnabled()) {
-      this.p2pNetwork = new MockP2PNetwork<>(eventBus);
+      this.p2pNetwork = new NoOpEth2Network();
     } else {
       final Optional<Bytes> bytes = getP2pPrivateKeyBytes();
       PrivKey pk =
