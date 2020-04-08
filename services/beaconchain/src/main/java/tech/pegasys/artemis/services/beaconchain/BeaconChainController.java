@@ -104,6 +104,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile Eth2Network p2pNetwork;
   private volatile SettableGauge currentSlotGauge;
   private volatile SettableGauge currentEpochGauge;
+  private volatile SettableGauge finalizedEpochGauge;
   private volatile StateProcessor stateProcessor;
   private volatile BeaconRestApi beaconRestAPI;
   private volatile AttestationAggregator attestationAggregator;
@@ -218,6 +219,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             ArtemisMetricCategory.BEACONCHAIN,
             "current_epoch",
             "Latest epoch recorded by the beacon chain");
+    finalizedEpochGauge =
+        SettableGauge.create(
+            metricsSystem,
+            ArtemisMetricCategory.BEACONCHAIN,
+            "finalized_epoch",
+            "Current finalized epoch");
   }
 
   public void initDepositProvider() {
@@ -470,6 +477,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       slotEventsChannelPublisher.onSlot(nodeSlot);
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
+      this.finalizedEpochGauge.set(recentChainData.getFinalizedEpoch().longValue());
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
       EVENT_LOG.slotEvent(
