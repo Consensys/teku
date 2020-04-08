@@ -30,7 +30,7 @@ create_config() {
   # Create a list of all the peers for the configure node procedure to use
   PEERS=$(generate_peers 19000 $NUM $NODE)
   PEERS=$(echo $PEERS | tr -d '\n')
-  PEERS="[ $(echo $PEERS | tr ' ' ',') ]"
+  PEERS="[$(echo $PEERS | tr ' ' ',')]"
 
   # get the private key for this node
   local PRIVATE_KEY=$(sed "$(($NODE + 2))q;d" ../config/peer_ids.dat | cut -f 1)
@@ -43,7 +43,7 @@ create_config() {
 
   # Create the configuration file for the node
   cat $TEMPLATE | \
-    sed "s/#log-file:\.*/log-file: \"teku-$NODE.log\"/"             |# Use a unique log file
+    sed "s/#log-file:.*/log-file: \"teku-$NODE.log\"/"             |# Use a unique log file
     sed "s/p2p-advertised-port:.*//"                                     |# Remove the advertised port field
 #    sed "s/identity\ =.*/identity\ =\ \"$IDENTITY\"/"                 |# Update the identity field to the value set above
 #    sed "s/isBootnode\ =.*/isBootnode\ =\ $IS_BOOTNODE/"              |# Update the bootnode flag
