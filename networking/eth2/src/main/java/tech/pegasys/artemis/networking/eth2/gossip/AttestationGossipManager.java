@@ -72,21 +72,29 @@ public class AttestationGossipManager {
   public void onCommitteeAssignment(CommitteeAssignmentEvent assignmentEvent) {
     List<Integer> committeeIndices = assignmentEvent.getCommitteeIndices();
     for (int committeeIndex : committeeIndices) {
-      attestationChannels.computeIfAbsent(committeeIndex, this::createChannelForCommitteeIndex);
+      subscribeToCommitteeTopic(committeeIndex);
     }
+  }
+
+  public void subscribeToCommitteeTopic(final int committeeIndex) {
+    attestationChannels.computeIfAbsent(committeeIndex, this::createChannelForCommitteeIndex);
   }
 
   @Subscribe
   public void onCommitteeDismissal(CommitteeDismissalEvent dismissalEvent) {
     List<Integer> committeeIndices = dismissalEvent.getCommitteeIndices();
     for (int committeeIndex : committeeIndices) {
-      attestationChannels.computeIfPresent(
-          committeeIndex,
-          (index, channel) -> {
-            channel.close();
-            return null;
-          });
+      unsubscribeFromCommitteeTopic(committeeIndex);
     }
+  }
+
+  public void unsubscribeFromCommitteeTopic(final int committeeIndex) {
+    attestationChannels.computeIfPresent(
+        committeeIndex,
+        (index, channel) -> {
+          channel.close();
+          return null;
+        });
   }
 
   private TopicChannel createChannelForCommitteeIndex(final int committeeIndex) {
