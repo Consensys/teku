@@ -13,10 +13,13 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -44,7 +47,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
-import org.yaml.snakeyaml.Yaml;
 import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -62,6 +64,8 @@ public class ArtemisNode extends Node {
   protected static final String WORKING_DIRECTORY = "/artifacts/";
   private static final String DATA_PATH = WORKING_DIRECTORY + "data/";
   private static final int P2P_PORT = 9000;
+  private static final ObjectMapper YAML_MAPPER =
+      new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
 
   private final SimpleHttpClient httpClient;
   private final Config config;
@@ -399,8 +403,7 @@ public class ArtemisNode extends Node {
     }
 
     private void writeTo(final File configFile) throws Exception {
-      final String yamlString = new Yaml().dump(configMap);
-      Files.writeString(configFile.toPath(), yamlString);
+      YAML_MAPPER.writeValue(configFile, configMap);
     }
   }
 }

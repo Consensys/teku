@@ -3,8 +3,6 @@ dependencyManagement {
     dependency 'com.fasterxml.jackson.core:jackson-databind:2.10.1'
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1'
 
-    dependency 'org.yaml:snakeyaml:1.26'
-
     dependency 'com.google.auto.service:auto-service:1.0-rc6'
 
     dependency 'com.google.errorprone:javac:9+181-r4173-1'

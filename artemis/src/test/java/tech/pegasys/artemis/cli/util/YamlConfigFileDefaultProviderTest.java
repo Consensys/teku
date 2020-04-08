@@ -13,6 +13,10 @@
 
 package tech.pegasys.artemis.cli.util;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,10 +27,12 @@ import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.yaml.snakeyaml.Yaml;
 import picocli.CommandLine;
 
 class YamlConfigFileDefaultProviderTest {
+
+  private final ObjectMapper objectMapper =
+      new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
 
   @Test
   void parsingValidYamlFilePopulatesCommandObject(@TempDir final Path tempDir) throws IOException {
@@ -50,7 +56,7 @@ class YamlConfigFileDefaultProviderTest {
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(() -> commandLine.parseArgs())
+        .isThrownBy(commandLine::parseArgs)
         .withMessage("Empty yaml configuration file: %s", configFile);
   }
 
@@ -62,7 +68,7 @@ class YamlConfigFileDefaultProviderTest {
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(() -> commandLine.parseArgs())
+        .isThrownBy(commandLine::parseArgs)
         .withMessage("Unable to read yaml configuration. File not found: %s", configFile);
   }
 
@@ -75,7 +81,7 @@ class YamlConfigFileDefaultProviderTest {
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(() -> commandLine.parseArgs())
+        .isThrownBy(commandLine::parseArgs)
         .withMessageStartingWith(
             "Unable to read yaml configuration. Invalid yaml file [%s]:", configFile);
   }
@@ -90,7 +96,7 @@ class YamlConfigFileDefaultProviderTest {
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(() -> commandLine.parseArgs())
+        .isThrownBy(commandLine::parseArgs)
         .withMessage("Unexpected yaml content, expecting block mappings.");
   }
 
@@ -108,7 +114,7 @@ class YamlConfigFileDefaultProviderTest {
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
     Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(() -> commandLine.parseArgs())
+        .isThrownBy(commandLine::parseArgs)
         .withMessage(
             "Unknown options in yaml configuration file: additional-option-1, additional-option-2, additional-option-3");
   }
@@ -123,7 +129,8 @@ class YamlConfigFileDefaultProviderTest {
 
   private Path writeToYamlConfigFile(final Map<String, Object> options, final Path tempDir)
       throws IOException {
-    final String yamlString = new Yaml().dump(options);
-    return Files.writeString(tempDir.resolve("config.yaml"), yamlString);
+    final Path configFile = tempDir.resolve("config.yaml");
+    objectMapper.writeValue(configFile.toFile(), options);
+    return configFile;
   }
 }
