@@ -47,6 +47,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
@@ -65,6 +66,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationAggregator attestationAggregator;
+  private final AttestationTopicSubscriptions attestationTopicSubscriptions;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
@@ -72,11 +74,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
       final AttestationAggregator attestationAggregator,
+      final AttestationTopicSubscriptions attestationTopicSubscriptions,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
     this.attestationAggregator = attestationAggregator;
+    this.attestationTopicSubscriptions = attestationTopicSubscriptions;
     this.eventBus = eventBus;
   }
 
@@ -166,6 +170,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
     return SafeFuture.completedFuture(attestationPool.createAggregateFor(attestationData));
+  }
+
+  @Override
+  public void subscribeToBeaconCommittee(
+      final int committeeIndex, final UnsignedLong aggregationSlot) {
+    attestationTopicSubscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
   }
 
   @Override
