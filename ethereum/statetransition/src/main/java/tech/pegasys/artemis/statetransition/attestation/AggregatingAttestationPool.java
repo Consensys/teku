@@ -61,6 +61,7 @@ public class AggregatingAttestationPool {
     attestationGroupByDataHash.values().stream()
         .filter(group -> canBeIncluded(group, slot))
         .flatMap(MatchingDataAttestationGroup::stream)
+        .limit(attestations.getMaxSize())
         .forEach(attestations::add);
     return attestations;
   }
