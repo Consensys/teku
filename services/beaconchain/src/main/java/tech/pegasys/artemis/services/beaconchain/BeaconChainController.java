@@ -43,6 +43,7 @@ import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
 import tech.pegasys.artemis.networking.eth2.mock.MockEth2Network;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
@@ -257,14 +258,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             depositProvider,
             eth1DataCache);
-    eventChannels.subscribe(
-        ValidatorApiChannel.class,
+    final AttestationTopicSubscriptions attestationTopicSubscriptions =
+        new AttestationTopicSubscriptions(p2pNetwork);
+    final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
             blockFactory,
             attestationPool,
             attestationAggregator,
-            eventBus));
+            attestationTopicSubscriptions,
+            eventBus);
+    eventChannels
+        .subscribe(SlotEventsChannel.class, attestationTopicSubscriptions)
+        .subscribe(ValidatorApiChannel.class, validatorApiHandler);
   }
 
   public void initStateProcessor() {

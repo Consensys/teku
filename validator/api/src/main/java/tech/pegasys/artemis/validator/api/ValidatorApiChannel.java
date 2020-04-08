@@ -41,6 +41,8 @@ public interface ValidatorApiChannel {
 
   SafeFuture<Optional<Attestation>> createAggregate(AttestationData attestationData);
 
+  void subscribeToBeaconCommittee(int committeeIndex, UnsignedLong aggregationSlot);
+
   void sendSignedAttestation(Attestation attestation);
 
   void sendAggregateAndProof(AggregateAndProof aggregateAndProof);
