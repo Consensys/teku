@@ -20,7 +20,7 @@ public class UnsignedLongSerializer implements RocksDbSerializer<UnsignedLong> {
 
   @Override
   public UnsignedLong deserialize(final byte[] data) {
-    return UnsignedLong.valueOf(Longs.fromByteArray(data));
+    return UnsignedLong.fromLongBits(Longs.fromByteArray(data));
   }
 
   @Override

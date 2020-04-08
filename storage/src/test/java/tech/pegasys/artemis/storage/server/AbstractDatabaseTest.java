@@ -15,6 +15,7 @@ package tech.pegasys.artemis.storage.server;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.collect.Streams;
@@ -133,13 +134,16 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldStoreBlockWithLargeSlot() {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    final SignedBeaconBlock newBlock =
-        dataStructureUtil.randomSignedBeaconBlock(UnsignedLong.MAX_VALUE);
+    final UnsignedLong slot = UnsignedLong.MAX_VALUE;
+    final SignedBeaconBlock newBlock = dataStructureUtil.randomSignedBeaconBlock(slot);
     final Bytes32 root = newBlock.getMessage().hash_tree_root();
     transaction.putBlock(root, newBlock);
+    final UnsignedLong epoch = compute_epoch_at_slot(slot);
+    transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
     transaction.commit().reportExceptions();
 
     assertThat(database.getSignedBlock(root)).hasValue(newBlock);
+    assertThat(database.getFinalizedRootAtSlot(slot)).hasValue(root);
   }
 
   @Test
