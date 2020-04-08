@@ -19,6 +19,8 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class ProtoNode {
 
+  // The `slot` and `stateRoot` is not necessary for `ProtoArray`, it just exists so external components can
+  // easily query the block slot. This is useful for upstream fork choice logic.
   private final UnsignedLong slot;
   private final Bytes32 stateRoot;
 
