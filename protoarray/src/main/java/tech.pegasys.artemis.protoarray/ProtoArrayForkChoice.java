@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.protoarray;
 
+import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
 import static tech.pegasys.artemis.util.config.Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
 
@@ -195,6 +196,7 @@ public class ProtoArrayForkChoice {
     }
   }
 
+
   // Returns a list of `deltas`, where there is one delta for each of the indices in
   // `0..indices.size()`.
   //
@@ -206,7 +208,7 @@ public class ProtoArrayForkChoice {
   // - If a value in `indices` is greater to or equal to `indices.size()`.
   // - If some `Bytes32` in `votes` is not a key in `indices` (except for `Bytes32.ZERO`, this is
   // always valid).
-  private List<Long> computeDeltas(
+  static List<Long> computeDeltas(
       Map<Bytes32, Integer> indices,
       ElasticList<VoteTracker> votes,
       List<UnsignedLong> oldBalances,
@@ -254,7 +256,7 @@ public class ProtoArrayForkChoice {
           if (nextDeltaIndex >= deltas.size()) {
             throw new RuntimeException("ProtoArrayForkChoice: Invalid node delta index");
           }
-          long delta = subtractExact(deltas.get(nextDeltaIndex), newBalance.longValue());
+          long delta = addExact(deltas.get(nextDeltaIndex), newBalance.longValue());
           deltas.set(nextDeltaIndex, delta);
         }
 

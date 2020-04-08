@@ -2,5 +2,6 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-crypto'
 
     implementation project(':ethereum:datastructures')
+    implementation project(':ssz')
     implementation project(':util')
 }
