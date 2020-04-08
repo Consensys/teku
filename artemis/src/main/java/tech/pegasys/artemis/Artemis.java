@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.PrintWriter;
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.cli.BeaconNodeCommand;
@@ -20,6 +23,12 @@ import tech.pegasys.artemis.cli.BeaconNodeCommand;
 public final class Artemis {
   public static void main(final String... args) {
     Security.addProvider(new BouncyCastleProvider());
-    new BeaconNodeCommand(System.getenv()).parse(args);
+    final PrintWriter outputWriter = new PrintWriter(System.out, true, UTF_8);
+    final PrintWriter errorWriter = new PrintWriter(System.err, true, UTF_8);
+    final int result =
+        new BeaconNodeCommand(outputWriter, errorWriter, System.getenv()).parse(args);
+    if (result != 0) {
+      System.exit(result);
+    }
   }
 }

@@ -10,5 +10,7 @@ dependencies {
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
   testFixturesImplementation 'org.apache.tuweni:tuweni-toml'
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
-  testFixturesImplementation "org.testcontainers:testcontainers"
+  testFixturesImplementation 'org.testcontainers:testcontainers'
+  testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
+  testFixturesImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 }

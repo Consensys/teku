@@ -12,7 +12,7 @@
 usage() {
   echo "Runs a multiclient testnet"
   echo "Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]"
-  echo "Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Artemis"
+  echo "Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Teku"
   echo "         sh interop.sh 16 0 16 10"
 }
 
@@ -60,17 +60,17 @@ then
     NODE_INDEX=0
     NUM_NODES=1
 
-    configure_node "jvmlibp2p" $NODE_INDEX $NUM_NODES "$CONFIG_DIR/config.toml"
+    configure_node "jvmlibp2p" $NODE_INDEX $NUM_NODES "$CONFIG_DIR/config.yaml"
 
     export PEER_ID=$(sed "$(($NODE_INDEX + 2))q;d" ../config/peer_ids.dat | cut -f 3)
 
-    sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" numValidators $VALIDATOR_COUNT
-    sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" numNodes $NUM_NODES
-    sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" active true
-    sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" genesisTime $GENESIS_TIME
-    sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" startState "\"$GENESIS_FILE\""
-    sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorStartIndex $OWNED_VALIDATOR_START_INDEX
-    sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" ownedValidatorCount $OWNED_VALIDATOR_COUNT
+    sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" numValidators $VALIDATOR_COUNT
+    sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" numNodes $NUM_NODES
+    sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" active true
+    sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" genesisTime $GENESIS_TIME
+    sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" startState "\"$GENESIS_FILE\""
+    sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" ownedValidatorStartIndex $OWNED_VALIDATOR_START_INDEX
+    sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" ownedValidatorCount $OWNED_VALIDATOR_COUNT
 
 
     #if [ "$PEERS" != "" ]
@@ -78,11 +78,11 @@ then
     #     ARTEMIS_PEERS=$(echo $PEERS | awk '{gsub(/\./,"\\.")}1' | awk '{gsub(/\//,"\\/")}1')
     #     ARTEMIS_PEERS=$(echo [\"$ARTEMIS_PEERS\"] )
     #     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" peers $ARTEMIS_PEERS
-         sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" discovery "\"static\""
-         sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
+         sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" discovery "\"static\""
+         sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" isBootnode false
     #fi
-    sed -i "" '10d' "$CONFIG_DIR/runConfig.0.toml"
-    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./teku --config=$CONFIG_DIR/runConfig.0.toml --logging=DEBUG; sleep 20"
+    sed -i "" '10d' "$CONFIG_DIR/runConfig.0.yaml"
+    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./teku --config=$CONFIG_DIR/runConfig.0.yaml --logging=DEBUG; sleep 20"
 fi
 
 

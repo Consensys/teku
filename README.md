@@ -105,7 +105,7 @@ Help is available for this script as well:
 ```
 sh run.sh -h
 Runs a simulation of Teku with NODES nodes, where NODES > 0 and NODES < 256
-Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
+Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.yaml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
                  [--help, -h]
 - If config files are specifed for specific nodes, those input files will be used to
 configure their respective nodes.
@@ -140,20 +140,17 @@ Example: Run multiple clients in interop mode using static peering. 16 validator
 
 ### Manual configuration
 
-To configure it manually, set these options in the config.toml:
-
-```toml
-[interop]
-genesisTime = 5778872 #seconds since 1970-01-01 00:00:00 UTC
-ownedValidatorStartIndex = 0
-ownedValidatorCount = 8
-startState = "/tmp/genesis.ssz"
-privateKey = 0x00 #libp2p private key associated with this node's peerID
-
-[deposit]
-
-numValidators = 16
-
+To configure it manually, set these options in the config.yaml:
+```yaml
+# interop
+# when genesis time is set to 0, teku takes genesis time as currentTime + 5 seconds.
+#seconds since 1970-01-01 00:00:00 UTC
+Xinterop-genesis-time: 5778872 
+Xinterop-owned-validator-start-index: 0
+Xinterop-owned-validator-count: 8
+Xinterop-start-state: "/tmp/genesis.ssz"
+Xinterop-number-of-validators: 16
+Xinterop-enabled: True
 ```
 
 ## Deposit Simulation
@@ -194,7 +191,8 @@ Run the Teku beacon chain client and validator
 
 Options:
   -c, --config-file=<FILENAME>
-                             Path/filename of the config file
+                             Path/filename of the yaml config file (default:
+                               none)
       --data-path=<FILENAME> Path to output data files
       --data-storage-mode=<STORAGE_MODE>
                              Sets the strategy for handling historical chain
@@ -279,6 +277,7 @@ Options:
                              The list of password files to decrypt the
                                validator keystore files
 Commands:
+  help        Displays help information about the specified command
   transition  Manually run state transitions
   peer        Commands for LibP2P PeerID
   validator   Register validators by sending deposit transactions to an
@@ -295,7 +294,7 @@ You can run the executable from the CLI with this command:
 ./build/install/teku/bin/teku
 ```
 
-Refer to `config/config.toml` for a set of default configuration settings.
+Refer to `config/config.yaml` for a set of default configuration settings.
 
 
 ## Special thanks
