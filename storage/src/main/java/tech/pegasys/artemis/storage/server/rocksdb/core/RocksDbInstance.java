@@ -53,6 +53,7 @@ public class RocksDbInstance implements AutoCloseable {
   }
 
   public <T> Optional<T> get(RocksDbVariable<T> variableType) {
+    assertOpen();
     final ColumnFamilyHandle handle = defaultHandle;
     try {
       return Optional.ofNullable(db.get(handle, variableType.getId().toArrayUnsafe()))
@@ -63,10 +64,12 @@ public class RocksDbInstance implements AutoCloseable {
   }
 
   public <T> T getOrThrow(RocksDbVariable<T> variableType) {
+    assertOpen();
     return get(variableType).orElseThrow();
   }
 
   public <K, V> Optional<V> get(RocksDbColumn<K, V> column, K key) {
+    assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
     try {
@@ -78,6 +81,7 @@ public class RocksDbInstance implements AutoCloseable {
   }
 
   public <K, V> Map<K, V> getAll(RocksDbColumn<K, V> column) {
+    assertOpen();
     return stream(column).collect(Collectors.toMap(ColumnEntry::getKey, ColumnEntry::getValue));
   }
 
@@ -89,6 +93,7 @@ public class RocksDbInstance implements AutoCloseable {
    * @return The last entry with a key less than or equal to the given {@code key}
    */
   public <K, V> Optional<ColumnEntry<K, V>> getFloorEntry(RocksDbColumn<K, V> column, final K key) {
+    assertOpen();
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
     final Consumer<RocksIterator> setupIterator = it -> it.seekForPrev(keyBytes);
     try (final Stream<ColumnEntry<K, V>> stream = stream(column, setupIterator)) {
@@ -103,6 +108,7 @@ public class RocksDbInstance implements AutoCloseable {
    * @return The last entry in this column - the entry with the greatest key value
    */
   public <K, V> Optional<ColumnEntry<K, V>> getLastEntry(RocksDbColumn<K, V> column) {
+    assertOpen();
     try (final Stream<ColumnEntry<K, V>> stream =
         stream(column, AbstractRocksIterator::seekToLast)) {
       return stream.findFirst();
@@ -110,10 +116,12 @@ public class RocksDbInstance implements AutoCloseable {
   }
 
   public <K, V> Stream<ColumnEntry<K, V>> stream(RocksDbColumn<K, V> column) {
+    assertOpen();
     return stream(column, RocksIterator::seekToFirst);
   }
 
   public Transaction startTransaction() {
+    assertOpen();
     return new Transaction(db, defaultHandle, columnHandles);
   }
 
@@ -131,6 +139,12 @@ public class RocksDbInstance implements AutoCloseable {
       for (final AutoCloseable resource : resources) {
         resource.close();
       }
+    }
+  }
+
+  private void assertOpen() {
+    if (closed.get()) {
+      throw new IllegalStateException("Attempt to update a closed transaction");
     }
   }
 
@@ -189,6 +203,7 @@ public class RocksDbInstance implements AutoCloseable {
     }
 
     public <K, V> void delete(RocksDbColumn<K, V> column, K key) {
+      assertOpen();
       final ColumnFamilyHandle handle = columnHandles.get(column);
       try {
         rocksDbTx.delete(handle, column.getKeySerializer().serialize(key));

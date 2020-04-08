@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.LogManager;
@@ -30,7 +31,7 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
 
   private final RocksDbColumn<TKey, TValue> column;
   private final RocksIterator rocksIt;
-  private volatile boolean closed = false;
+  private final AtomicBoolean closed = new AtomicBoolean(false);
 
   private RocksDbIterator(final RocksDbColumn<TKey, TValue> column, final RocksIterator rocksIt) {
     this.column = column;
@@ -44,14 +45,13 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
 
   @Override
   public boolean hasNext() {
+    assertOpen();
     return rocksIt.isValid();
   }
 
   @Override
   public ColumnEntry<TKey, TValue> next() {
-    if (closed) {
-      throw new IllegalStateException("Attempt to read from a closed RocksDbEntryIterator.");
-    }
+    assertOpen();
     try {
       rocksIt.status();
     } catch (final RocksDBException e) {
@@ -68,6 +68,7 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   }
 
   public Stream<ColumnEntry<TKey, TValue>> toStream() {
+    assertOpen();
     final Spliterator<ColumnEntry<TKey, TValue>> split =
         Spliterators.spliteratorUnknownSize(
             this,
@@ -80,9 +81,16 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
     return StreamSupport.stream(split, false).onClose(this::close);
   }
 
+  private void assertOpen() {
+    if (closed.get()) {
+      throw new IllegalStateException("Attempt to update a closed transaction");
+    }
+  }
+
   @Override
   public void close() {
-    rocksIt.close();
-    closed = true;
+    if (closed.compareAndSet(false, true)) {
+      rocksIt.close();
+    }
   }
 }
