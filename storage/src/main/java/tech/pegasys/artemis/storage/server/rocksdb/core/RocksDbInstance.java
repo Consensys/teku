@@ -153,6 +153,7 @@ public class RocksDbInstance implements AutoCloseable {
     }
 
     public <T> void put(RocksDbVariable<T> variableType, T value) {
+      assertOpen();
       final byte[] serialized = variableType.getSerializer().serialize(value);
       try {
         rocksDbTx.put(defaultHandle, variableType.getId().toArrayUnsafe(), serialized);
@@ -162,6 +163,7 @@ public class RocksDbInstance implements AutoCloseable {
     }
 
     public <K, V> void put(RocksDbColumn<K, V> column, K key, V value) {
+      assertOpen();
       final byte[] keyBytes = column.getKeySerializer().serialize(key);
       final byte[] valueBytes = column.getValueSerializer().serialize(value);
       final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -173,6 +175,7 @@ public class RocksDbInstance implements AutoCloseable {
     }
 
     public <K, V> void put(RocksDbColumn<K, V> column, Map<K, V> data) {
+      assertOpen();
       final ColumnFamilyHandle handle = columnHandles.get(column);
       for (Entry<K, V> kvEntry : data.entrySet()) {
         final byte[] key = column.getKeySerializer().serialize(kvEntry.getKey());
@@ -195,6 +198,7 @@ public class RocksDbInstance implements AutoCloseable {
     }
 
     public void commit() {
+      assertOpen();
       try {
         this.rocksDbTx.commit();
         close();
@@ -205,11 +209,18 @@ public class RocksDbInstance implements AutoCloseable {
     }
 
     public void rollback() {
+      assertOpen();
       try {
         this.rocksDbTx.rollback();
         close();
       } catch (RocksDBException e) {
         throw new DatabaseStorageException("Failed to rollback transaction", e);
+      }
+    }
+
+    private void assertOpen() {
+      if (closed.get()) {
+        throw new IllegalStateException("Attempt to update a closed transaction");
       }
     }
 
