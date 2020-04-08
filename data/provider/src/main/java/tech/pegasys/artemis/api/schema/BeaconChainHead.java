@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
@@ -69,10 +71,11 @@ public class BeaconChainHead {
   }
 
   public BeaconChainHead(final BeaconState beaconState) {
-    final Checkpoint latestBlockHeader = beaconState.getCurrent_justified_checkpoint();
-    this.head_slot = latestBlockHeader.getEpochStartSlot();
-    this.head_epoch = latestBlockHeader.getEpoch();
-    this.head_block_root = latestBlockHeader.hash_tree_root();
+    final BeaconBlockHeader latestBlockHeader =
+        new BeaconBlockHeader(beaconState.getLatest_block_header());
+    this.head_slot = latestBlockHeader.slot;
+    this.head_epoch = compute_epoch_at_slot(latestBlockHeader.slot);
+    this.head_block_root = latestBlockHeader.body_root;
 
     final Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
     this.finalized_slot = finalizedCheckpoint.getEpochStartSlot();
