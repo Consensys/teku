@@ -67,7 +67,7 @@ public class GetValidators extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get validators that match the specified query.",
+      summary = "Get validators matching the specified query.",
       tags = {TAG_BEACON},
       description =
           "Returns validator information.\n\n"
