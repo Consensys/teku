@@ -59,7 +59,7 @@ class StatusMessageCompatibilityTest {
     assertThat(status).isNotNull();
     assertThat(status.getHeadForkVersion()).isEqualTo(Constants.GENESIS_FORK_VERSION);
 
-    // No validators so nothing should get finalised.
+    // No validators so nothing should get finalized.
     assertThat(status.getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);
     assertThat(status.getFinalizedRoot()).isEqualTo(Bytes32.ZERO);
     // But we can't verify anything about the slot details as they may have progressed.
