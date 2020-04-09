@@ -30,7 +30,7 @@ public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
   @Override
   protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
     final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
-    return RocksDbDatabase.createOnDisk(config, storageMode);
+    return RocksDbDatabase.createV2(config, storageMode);
   }
 
   @Test
