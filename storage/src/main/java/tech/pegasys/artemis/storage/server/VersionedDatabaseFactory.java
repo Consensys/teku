@@ -60,7 +60,7 @@ public class VersionedDatabaseFactory {
         database = createV2Database();
         break;
       default:
-        throw new IllegalStateException("Unhandled database version " + dbVersion);
+        throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
     LOG.trace("Created database ({}) at {}", dbVersion.getValue(), dbDirectory.getAbsolutePath());
     return database;

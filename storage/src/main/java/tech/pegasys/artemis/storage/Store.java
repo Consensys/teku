@@ -84,8 +84,7 @@ public class Store implements ReadOnlyStore {
     BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
     Bytes32 root = genesisBlock.hash_tree_root();
 
-    Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
-    Checkpoint finalized_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
+    Checkpoint genesis_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
@@ -93,14 +92,14 @@ public class Store implements ReadOnlyStore {
 
     blocks.put(root, new SignedBeaconBlock(genesisBlock, BLSSignature.empty()));
     block_states.put(root, genesisState);
-    checkpoint_states.put(justified_checkpoint, genesisState);
+    checkpoint_states.put(genesis_checkpoint, genesisState);
 
     return new Store(
         genesisState.getGenesis_time(),
         genesisState.getGenesis_time(),
-        justified_checkpoint,
-        finalized_checkpoint,
-        justified_checkpoint,
+        genesis_checkpoint,
+        genesis_checkpoint,
+        genesis_checkpoint,
         blocks,
         block_states,
         checkpoint_states,

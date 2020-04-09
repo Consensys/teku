@@ -59,7 +59,7 @@ public class GetCommittees extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the committee assignments for a given epoch.",
+      summary = "Get the committee assignments for an epoch.",
       tags = {TAG_BEACON},
       queryParams = {
         @OpenApiParam(
