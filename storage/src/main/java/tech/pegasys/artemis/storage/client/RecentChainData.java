@@ -222,10 +222,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .filter(block -> block.getSlot().equals(slot));
   }
 
-  public Optional<BeaconState> getStateBySlot(final UnsignedLong slot) {
-    return getBlockRootBySlot(slot)
-        .map(blockRoot -> store.getBlockState(blockRoot))
-        .filter(state -> state.getSlot().equals(slot));
+  public Optional<BeaconState> getStateInEffectAtSlot(final UnsignedLong slot) {
+    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlockState(blockRoot));
   }
 
   public boolean isIncludedInBestState(final Bytes32 blockRoot) {
@@ -246,8 +244,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       LOG.trace("No block root at slot {} because store or best block root is not set", slot);
       return Optional.empty();
     }
-    if (bestSlot.equals(slot)) {
-      LOG.trace("Block root at slot {} is the current best slot root", slot);
+    if (bestSlot.compareTo(slot) <= 0) {
+      LOG.trace("Block root at slot {} is at or after the current best slot root", slot);
       return bestBlockRoot;
     }
 
