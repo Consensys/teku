@@ -21,6 +21,9 @@ import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPO
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
+import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
+import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
+import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
@@ -30,6 +33,8 @@ import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KE
 
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -45,11 +50,19 @@ import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 public class BeaconNodeCommandTest {
 
   private BeaconNodeCommand beaconNodeCommand;
+  private StringWriter commandOutput;
+  private StringWriter commandError;
+  private PrintWriter outputWriter;
+  private PrintWriter errorWriter;
   @TempDir Path dataPath;
 
   @BeforeEach
   void setUp() {
-    beaconNodeCommand = new BeaconNodeCommand(Collections.emptyMap());
+    commandOutput = new StringWriter();
+    commandError = new StringWriter();
+    outputWriter = new PrintWriter(commandOutput, true);
+    errorWriter = new PrintWriter(commandError, true);
+    beaconNodeCommand = new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap());
   }
 
   @AfterEach
@@ -74,7 +87,8 @@ public class BeaconNodeCommandTest {
     final String[] args = createCliArgs();
     args[5] = "1.2.3.5";
     beaconNodeCommand =
-        new BeaconNodeCommand(Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"));
+        new BeaconNodeCommand(
+            outputWriter, errorWriter, Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"));
 
     beaconNodeCommand.parse(args);
 
@@ -86,36 +100,43 @@ public class BeaconNodeCommandTest {
 
   @Test
   public void overrideConfigFileValuesIfKeyIsPresentInEnvironmentVariables() throws IOException {
-    final Path toml = createConfigFile();
-    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString()};
+    final Path configFile = createConfigFile();
+    final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
     beaconNodeCommand =
-        new BeaconNodeCommand(Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"));
+        new BeaconNodeCommand(
+            outputWriter, errorWriter, Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"));
 
     beaconNodeCommand.parse(args);
 
     final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
-        artemisConfiguration, expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+        artemisConfiguration,
+        expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
   }
 
   @Test
   public void overrideConfigFileValuesIfKeyIsPresentInCLIOptions() throws IOException {
-    final Path toml = createConfigFile();
-    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString(), "--p2p-interface", "1.2.3.5"};
+    final Path configFile = createConfigFile();
+    final String[] args = {
+      CONFIG_FILE_OPTION_NAME, configFile.toString(), "--p2p-interface", "1.2.3.5"
+    };
 
     beaconNodeCommand.parse(args);
 
     final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
-        artemisConfiguration, expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+        artemisConfiguration,
+        expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
   }
 
   @Test
   public void overrideDefaultValuesIfKeyIsPresentInEnvironmentVariables() {
     beaconNodeCommand =
         new BeaconNodeCommand(
+            outputWriter,
+            errorWriter,
             Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"));
 
     beaconNodeCommand.parse(new String[] {});
@@ -138,22 +159,22 @@ public class BeaconNodeCommandTest {
 
   @Test
   public void overrideDefaultValuesIfKeyIsPresentInConfigFile() throws IOException {
-    final Path toml = createConfigFile();
-    final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString()};
+    final Path configFile = createConfigFile();
+    final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
 
     beaconNodeCommand.parse(args);
 
     final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
-    assertArtemisConfiguration(artemisConfiguration, expectedConfigurationBuilder().build());
+    assertArtemisConfiguration(artemisConfiguration, expectedCompleteConfigInFileBuilder().build());
   }
 
   private Path createConfigFile() throws IOException {
-    final URL configFile = this.getClass().getResource("/complete_config.toml");
+    final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
-            .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
-    return createTempFile("toml", updatedConfig.getBytes(UTF_8));
+            .replace("data-path: \".\"", "data-path: \"" + dataPath.toString() + "\"");
+    return createTempFile("yaml", updatedConfig.getBytes(UTF_8));
   }
 
   private String[] createCliArgs() {
@@ -176,7 +197,7 @@ public class BeaconNodeCommandTest {
       "--metrics-enabled", "false",
       "--metrics-port", "8008",
       "--metrics-interface", "127.0.0.1",
-      "--metrics-categories", "BEACONCHAIN,JVM,PROCESS",
+      "--metrics-categories", "BEACON,JVM,PROCESS",
       "--data-path", dataPath.toString(),
       "--data-storage-mode", "prune",
       "--rest-api-port", "5051",
@@ -198,7 +219,16 @@ public class BeaconNodeCommandTest {
         .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
         .setInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
         .setInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
-        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT);
+        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT)
+        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setLogFile(DEFAULT_LOG_FILE)
+        .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
+  }
+
+  private ArtemisConfigurationBuilder expectedCompleteConfigInFileBuilder() {
+    return expectedConfigurationBuilder()
+        .setLogFile("teku.log")
+        .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
@@ -226,11 +256,11 @@ public class BeaconNodeCommandTest {
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
-        .setMetricsCategories(Arrays.asList("BEACONCHAIN", "JVM", "PROCESS"))
+        .setMetricsCategories(Arrays.asList("BEACON", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
-        .setLogDestination("default_of_both")
-        .setLogFile("teku.log")
-        .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log")
+        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setLogFile(DEFAULT_LOG_FILE)
+        .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
         .setValidatorKeystoreFiles(Collections.emptyList())
         .setValidatorKeystorePasswordFiles(Collections.emptyList())

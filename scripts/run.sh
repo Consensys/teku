@@ -4,7 +4,7 @@
 
 usage() {
   echo "Runs a simulation of teku with NODES number of nodes, where NODES > 0 and NODES < 256 and VALIDATORS number of validators divided equally among nodes"
-  echo "Usage: sh run.sh [--numNodes, -n=NODES]  [--config-file=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]"
+  echo "Usage: sh run.sh [--numNodes, -n=NODES]  [--config-file=/path/to/your-config.yaml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]"
   echo "                 [--help, -h] [--numValidators, -v=VALIDATORS]"
   echo "Note: "
   echo "- If config files are specifed for specific nodes, those input files will be used to"
@@ -45,7 +45,7 @@ do
     # Match the -i or --inputFile option and update the INPUTS array with the output file path
     "--config-file"*)
       FILE="${arg#*=}"
-      IDX=$(echo $FILE | sed -E "s/.*[a-zA-Z0-9]+\.([0-9]+)\.toml/\1/")
+      IDX=$(echo $FILE | sed -E "s/.*[a-zA-Z0-9]+\.([0-9]+)\.yaml/\1/")
       INPUTS[$IDX]="$FILE" ;;
 
     # Match the -l or --logging option and set LOG mode to the provided argument

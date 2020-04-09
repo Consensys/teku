@@ -15,6 +15,8 @@ package tech.pegasys.artemis.cli;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
+import java.io.PrintWriter;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -23,6 +25,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Unmatched;
 import tech.pegasys.artemis.BeaconNode;
 import tech.pegasys.artemis.cli.options.BeaconRestApiOptions;
 import tech.pegasys.artemis.cli.options.DataOptions;
@@ -40,7 +43,7 @@ import tech.pegasys.artemis.cli.subcommand.PeerCommand;
 import tech.pegasys.artemis.cli.subcommand.TransitionCommand;
 import tech.pegasys.artemis.cli.util.CascadingDefaultProvider;
 import tech.pegasys.artemis.cli.util.EnvironmentVariableDefaultProvider;
-import tech.pegasys.artemis.cli.util.TomlConfigFileDefaultProvider;
+import tech.pegasys.artemis.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
@@ -51,6 +54,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
 @Command(
     name = "teku",
     subcommands = {
+      CommandLine.HelpCommand.class,
       TransitionCommand.class,
       PeerCommand.class,
       DepositCommand.class,
@@ -68,8 +72,22 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
 public class BeaconNodeCommand implements Callable<Integer> {
 
   static final String CONFIG_FILE_OPTION_NAME = "--config-file";
-  static final String DEFAULT_CONFIG_FILE = "./config/config.toml";
+  static final String TEKU_CONFIG_FILE_ENV = "TEKU_CONFIG_FILE";
+  private final PrintWriter outputWriter;
+  private final PrintWriter errorWriter;
   private final Map<String, String> environment;
+
+  // allows two pass approach to obtain optional config file
+  private static class ConfigFileCommand {
+    @Option(
+        names = {"-c", CONFIG_FILE_OPTION_NAME},
+        arity = "1")
+    File configFile;
+
+    @SuppressWarnings("UnunsedVariable")
+    @Unmatched
+    List<String> otherOptions;
+  }
 
   @Option(
       names = {"-l", "--logging"},
@@ -83,9 +101,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Option(
       names = {"-c", CONFIG_FILE_OPTION_NAME},
       paramLabel = "<FILENAME>",
-      description = "Path/filename of the config file",
+      description = "Path/filename of the yaml config file (default: none)",
       arity = "1")
-  private String configFile = DEFAULT_CONFIG_FILE;
+  private File configFile;
 
   @Mixin private NetworkOptions networkOptions;
   @Mixin private P2POptions p2POptions;
@@ -101,30 +119,75 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private ArtemisConfiguration artemisConfiguration;
   private BeaconNode node;
 
-  public BeaconNodeCommand(final Map<String, String> environment) {
+  public BeaconNodeCommand(
+      final PrintWriter outputWriter,
+      final PrintWriter errorWriter,
+      final Map<String, String> environment) {
+    this.outputWriter = outputWriter;
+    this.errorWriter = errorWriter;
     this.environment = environment;
   }
 
-  public String getConfigFile() {
-    return configFile;
+  public int parse(final String[] args) {
+    // first pass to obtain config file if specified and print usage/version help
+    final ConfigFileCommand configFileCommand = new ConfigFileCommand();
+    final CommandLine configFileCommandLine = new CommandLine(configFileCommand);
+    configFileCommandLine.parseArgs(args);
+    if (configFileCommandLine.isUsageHelpRequested()) {
+      return executeCommandUsageHelp();
+    } else if (configFileCommandLine.isVersionHelpRequested()) {
+      return executeCommandVersion();
+    }
+
+    final Optional<File> configFile = getConfigFileFromCliOrEnv(configFileCommand);
+
+    // final pass
+    final CommandLine commandLine = new CommandLine(this);
+    commandLine.setCaseInsensitiveEnumValuesAllowed(true);
+    commandLine.setOut(outputWriter);
+    commandLine.setErr(errorWriter);
+    commandLine.setParameterExceptionHandler(this::handleParseException);
+    commandLine.setDefaultValueProvider(defaultValueProvider(commandLine, configFile));
+
+    return commandLine.execute(args);
   }
 
-  public void parse(final String[] args) {
-    final CommandLine commandLine = new CommandLine(this).setCaseInsensitiveEnumValuesAllowed(true);
+  private Optional<File> getConfigFileFromCliOrEnv(final ConfigFileCommand configFileCommand) {
+    return Optional.ofNullable(configFileCommand.configFile)
+        .or(() -> Optional.ofNullable(environment.get(TEKU_CONFIG_FILE_ENV)).map(File::new));
+  }
 
-    final Optional<File> maybeConfigFile = maybeFindConfigFile(commandLine, args);
-    final EnvironmentVariableDefaultProvider environmentVariableDefaultProvider =
-        new EnvironmentVariableDefaultProvider(environment);
-    final CommandLine.IDefaultValueProvider defaultValueProvider;
-    if (maybeConfigFile.isPresent()) {
-      defaultValueProvider =
-          new CascadingDefaultProvider(
-              environmentVariableDefaultProvider,
-              new TomlConfigFileDefaultProvider(commandLine, maybeConfigFile.get()));
-    } else {
-      defaultValueProvider = environmentVariableDefaultProvider;
+  private int executeCommandVersion() {
+    final CommandLine baseCommandLine = new CommandLine(this);
+    baseCommandLine.printVersionHelp(outputWriter);
+    return baseCommandLine.getCommandSpec().exitCodeOnVersionHelp();
+  }
+
+  private int executeCommandUsageHelp() {
+    final CommandLine baseCommandLine = new CommandLine(this);
+    baseCommandLine.usage(outputWriter);
+    return baseCommandLine.getCommandSpec().exitCodeOnUsageHelp();
+  }
+
+  private CommandLine.IDefaultValueProvider defaultValueProvider(
+      final CommandLine commandLine, final Optional<File> configFile) {
+    if (configFile.isEmpty()) {
+      return new EnvironmentVariableDefaultProvider(environment);
     }
-    commandLine.setDefaultValueProvider(defaultValueProvider).execute(args);
+
+    return new CascadingDefaultProvider(
+        new EnvironmentVariableDefaultProvider(environment),
+        new YamlConfigFileDefaultProvider(commandLine, configFile.get()));
+  }
+
+  private int handleParseException(final CommandLine.ParameterException ex, final String[] args) {
+    errorWriter.println(ex.getMessage());
+
+    if (!CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter)) {
+      ex.getCommandLine().usage(outputWriter, CommandLine.Help.Ansi.AUTO);
+    }
+
+    return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }
 
   @Override
@@ -162,21 +225,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @VisibleForTesting
   public void stop() {
     node.stop();
-  }
-
-  private Optional<File> maybeFindConfigFile(final CommandLine commandLine, final String[] args) {
-    final CommandLine.ParseResult parseResult = commandLine.parseArgs(args);
-    if (parseResult.hasMatchedOption(CONFIG_FILE_OPTION_NAME)) {
-      final CommandLine.Model.OptionSpec configFileOption =
-          parseResult.matchedOption(CONFIG_FILE_OPTION_NAME);
-      try {
-        return Optional.of(new File(configFileOption.getter().get().toString()));
-      } catch (final Exception e) {
-        throw new CommandLine.ExecutionException(commandLine, e.getMessage(), e);
-      }
-    } else {
-      return Optional.empty();
-    }
   }
 
   private void setLogLevels() {

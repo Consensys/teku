@@ -24,18 +24,19 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetChainHeadTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private Context context = mock(Context.class);
   private ChainDataProvider provider = mock(ChainDataProvider.class);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private BeaconState beaconState = dataStructureUtil.randomBeaconState();
 
   @Test
   public void shouldReturnBeaconChainHeadResponse() throws Exception {
     final GetChainHead handler = new GetChainHead(provider, jsonProvider);
-    final BeaconState beaconState = new BeaconStateImpl();
     final BeaconChainHead beaconChainHead = new BeaconChainHead(beaconState);
     final String expected = jsonProvider.objectToJSON(beaconChainHead);
 

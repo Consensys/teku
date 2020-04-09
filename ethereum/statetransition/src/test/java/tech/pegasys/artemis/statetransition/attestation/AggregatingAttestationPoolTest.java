@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.statetransition.attestation.AggregatorUtil.ag
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -34,6 +35,11 @@ class AggregatingAttestationPoolTest {
   public static final UnsignedLong SLOT = UnsignedLong.valueOf(1234);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final AggregatingAttestationPool aggregatingPool = new AggregatingAttestationPool();
+
+  @AfterEach
+  public void tearDown() {
+    Constants.setConstants("minimal");
+  }
 
   @Test
   public void createAggregateFor_shouldReturnEmptyWhenNoAttestationsMatchGivenData() {
@@ -96,6 +102,19 @@ class AggregatingAttestationPoolTest {
 
     assertThat(aggregatingPool.getAttestationsForBlock(SLOT))
         .containsExactlyInAnyOrder(aggregateAttestations(attestation1, attestation2), attestation3);
+  }
+
+  @Test
+  public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
+    Constants.MAX_ATTESTATIONS = 2;
+    final AttestationData attestationData = randomValidationDataToIncludeInBlock();
+    final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
+    final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 5);
+    // Won't be included because of the 2 attestation limit.
+    addAttestationFromValidators(attestationData, 2, 6);
+
+    assertThat(aggregatingPool.getAttestationsForBlock(SLOT))
+        .containsExactly(attestation1, attestation2);
   }
 
   private Attestation addAttestationFromValidators(

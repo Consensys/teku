@@ -17,7 +17,7 @@ import java.util.Optional;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public enum ArtemisMetricCategory implements MetricCategory {
-  BEACONCHAIN("beacon"),
+  BEACON("beacon"),
   EVENTBUS("eventbus"),
   LIBP2P("libp2p"),
   NETWORK("network");
