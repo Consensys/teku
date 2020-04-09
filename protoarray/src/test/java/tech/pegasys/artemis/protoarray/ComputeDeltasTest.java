@@ -280,6 +280,6 @@ public class ComputeDeltasTest {
 
   // Gives a deterministic hash for a given integer
   private Bytes32 hashFromIndex(int i) {
-    return int_to_bytes32(Integer.toUnsignedLong(i));
+    return int_to_bytes32(Integer.toUnsignedLong(i + 1));
   }
 }
