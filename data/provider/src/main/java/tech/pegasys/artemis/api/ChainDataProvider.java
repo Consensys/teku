@@ -197,7 +197,7 @@ public class ChainDataProvider {
               .thenApply(
                   optionalState ->
                       optionalState.map(
-                          state -> new BeaconValidators(new BeaconState(state), request.pubkeys)));
+                          state -> new BeaconValidators(state.getState(), request.pubkeys)));
         });
   }
 

@@ -63,13 +63,14 @@ public class BeaconValidators {
         pageToken);
   }
 
-  public BeaconValidators(BeaconState state, List<BLSPubKey> filter) {
+  public BeaconValidators(
+      tech.pegasys.artemis.datastructures.state.BeaconState state, List<BLSPubKey> filter) {
     this.validators =
         filter.stream()
             .map(
                 pubkey ->
-                    state.validators.stream()
-                        .filter(val -> val.pubkey.equals(pubkey))
+                    state.getValidators().stream()
+                        .filter(val -> new BLSPubKey(val.getPubkey()).equals(pubkey))
                         .map(validator -> new ValidatorWithIndex(validator, state))
                         .findFirst()
                         .orElse(new ValidatorWithIndex(pubkey)))
