@@ -480,7 +480,8 @@ public class ForkChoiceUtil {
     try {
       indexed_attestation = get_indexed_attestation(target_state, attestation);
     } catch (IndexOutOfBoundsException e) {
-      return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid, IndexOutOfBoundsException: " + e.getMessage());
+      return AttestationProcessingResult.invalid(
+          "on_attestation: Attestation is not valid, IndexOutOfBoundsException: " + e.getMessage());
     }
     if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
       return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
