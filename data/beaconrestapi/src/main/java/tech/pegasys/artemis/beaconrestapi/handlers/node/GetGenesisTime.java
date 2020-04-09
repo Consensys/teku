@@ -44,7 +44,7 @@ public class GetGenesisTime implements Handler {
   @OpenApi(
       path = GetGenesisTime.ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the genesis time from the beacon node.",
+      summary = "Get genesis time.",
       tags = {TAG_NODE},
       description = "Returns the genesis time from the beacon node.",
       responses = {
