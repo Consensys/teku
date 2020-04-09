@@ -48,8 +48,10 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     return createDatabase(tmpDir, storageMode);
   }
 
+  @Override
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
+    super.tearDown();
     // Clean up tmp directories
     FileUtil.recursivelyDeleteDirectories(tmpDirectories);
     tmpDirectories.clear();
@@ -57,6 +59,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
   private Database setupDatabase(final File tempDir, final StateStorageMode storageMode) {
     database = createDatabase(tempDir, storageMode);
+    databases.add(database);
     storageUpdateChannel = new TrackingStorageUpdateChannel(database);
     return database;
   }
