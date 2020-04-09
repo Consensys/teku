@@ -29,7 +29,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
   private static final int BLS_PUBKEY_SIZE = 48;
 
   /**
-   * Generates a compressed, serialised, random, valid public key based on a seed.
+   * Generates a compressed, serialized, random, valid public key based on a seed.
    *
    * @return PublicKey The public key, not null
    */

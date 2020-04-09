@@ -75,7 +75,7 @@ class SignatureTest {
   }
 
   @Test
-  void succeedsWhenSerialisedSignaturesAre192BytesLong() {
+  void succeedsWhenSerializedSignaturesAre192BytesLong() {
     Signature signature = Signature.random(13);
     assertEquals(signature.toBytes().size(), 192);
   }

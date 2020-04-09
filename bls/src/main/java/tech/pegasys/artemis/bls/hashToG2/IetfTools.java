@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 
-/** A collection of useful IETF standardised tools. */
+/** A collection of useful IETF standardized tools. */
 public class IetfTools {
 
   private static final int SHA256_HASH_SIZE = 32;
