@@ -103,9 +103,9 @@ public class BLSSignature implements SimpleOffsetSerializable {
   }
 
   /**
-   * Returns the SSZ serialisation of the <em>compressed</em> form of the signature.
+   * Returns the SSZ serialization of the <em>compressed</em> form of the signature.
    *
-   * @return the serialisation of the compressed form of the signature.
+   * @return the serialization of the compressed form of the signature.
    */
   public Bytes toBytes() {
     return SSZ.encode(

@@ -102,28 +102,28 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenSerialiseDeserialiseRoundTripWorks() {
+  void succeedsWhenSerializeDeserializeRoundTripWorks() {
     G1Point point1 = G1Point.random(257L);
     G1Point point2 = G1Point.fromBytes(point1.toBytes());
     assertEquals(point1, point2);
   }
 
   @Test
-  void succeedsWhenSerialiseDeserialiseCompressedRoundTripWorks() {
+  void succeedsWhenSerializeDeserializeCompressedRoundTripWorks() {
     G1Point point1 = G1Point.random(513L);
     G1Point point2 = G1Point.fromBytesCompressed(point1.toBytesCompressed());
     assertEquals(point1, point2);
   }
 
   @Test
-  void succeedsWhenDeserialisingACorrectPointDoesNotThrow() {
+  void succeedsWhenDeserializingACorrectPointDoesNotThrow() {
     String xInput =
         "0xa491d1b0ecd9bb917989f0e74f0dea0422eac4a873e5e2644f368dffb9a6e20fd6e10c1b77654d067c0618f6e5a7f79a";
     assertAll(() -> G1Point.fromBytesCompressed(Bytes.fromHexString(xInput)));
   }
 
   @Test
-  void succeedsWhenDeserialisingAPointOnCurveButNotInG1ThrowsIllegalArgumentException() {
+  void succeedsWhenDeserializingAPointOnCurveButNotInG1ThrowsIllegalArgumentException() {
     String xInput =
         "0x8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     assertThrows(
@@ -132,7 +132,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenDeserialisingAnIncorrectPointThrowsIllegalArgumentException() {
+  void succeedsWhenDeserializingAnIncorrectPointThrowsIllegalArgumentException() {
     String xInput =
         "0x8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde0";
     assertThrows(
@@ -141,7 +141,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseXEqualToModulusThrowsIllegalArgumentException() {
+  void succeedsWhenAttemptToDeserializeXEqualToModulusThrowsIllegalArgumentException() {
     // Exactly the modulus, q
     String xInput =
         "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab";
@@ -151,7 +151,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseXGreaterThanModulusThrowsIllegalArgumentException() {
+  void succeedsWhenAttemptToDeserializeXGreaterThanModulusThrowsIllegalArgumentException() {
     // One more than the modulus, q
     String xInput =
         "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaac";
@@ -179,7 +179,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenRoundTripDeserialiseSerialiseCompressedReturnsTheOriginalInput() {
+  void succeedsWhenRoundTripDeserializeSerializeCompressedReturnsTheOriginalInput() {
     String xInput =
         "0xb301803f8b5ac4a1133581fc676dfedc60d891dd5fa99028805e5ea5b08d3491af75d0707adab3b70c6a6a580217bf81";
     String xOutput =
@@ -191,7 +191,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenDeserialiseCompressedInfinityWithTrueBFlagCreatesPointAtInfinity() {
+  void succeedsWhenDeserializeCompressedInfinityWithTrueBFlagCreatesPointAtInfinity() {
     String xInput =
         "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     G1Point point = G1Point.fromBytesCompressed(Bytes.fromHexString(xInput));
@@ -199,7 +199,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenDeserialiseCompressedInfinityWithFalseBFlagDoesNotCreatePointAtInfinity() {
+  void succeedsWhenDeserializeCompressedInfinityWithFalseBFlagDoesNotCreatePointAtInfinity() {
     String xInput =
         "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     assertThrows(
@@ -208,13 +208,13 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenSerialiseDeserialiseCompressedInfinityGivesOriginalInput() {
+  void succeedsWhenSerializeDeserializeCompressedInfinityGivesOriginalInput() {
     G1Point point = new G1Point();
     assertEquals(point, G1Point.fromBytesCompressed(point.toBytesCompressed()));
   }
 
   @Test
-  void succeedsWhenDeserialiseSerialiseCompressedInfinityGivesOriginalInput() {
+  void succeedsWhenDeserializeSerializeCompressedInfinityGivesOriginalInput() {
     String xInput =
         "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     String xOutput =
@@ -226,7 +226,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseWithWrongCFlagThrowsIllegalArgumentException() {
+  void succeedsWhenAttemptToDeserializeWithWrongCFlagThrowsIllegalArgumentException() {
     String xInput =
         "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     assertThrows(
@@ -235,7 +235,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseWithBFlagAndXNonzeroThrowsIllegalArgumentException1() {
+  void succeedsWhenAttemptToDeserializeWithBFlagAndXNonzeroThrowsIllegalArgumentException1() {
     String xInput =
         "0xc123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     assertThrows(
@@ -244,7 +244,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseWithBFlagAndAFlagTrueThrowsIllegalArgumentException1() {
+  void succeedsWhenAttemptToDeserializeWithBFlagAndAFlagTrueThrowsIllegalArgumentException1() {
     String xInput =
         "0xe00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     assertThrows(
@@ -253,7 +253,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenDifferentPointsHaveDifferentHashcodes() {
+  void succeedsWhenDifferentPointsHaveDifferentHashCodes() {
     G1Point point1 = G1Point.random(1234L);
     G1Point point2 = G1Point.random(4321L);
     assertNotEquals(point1, point2);
@@ -261,7 +261,7 @@ class G1PointTest {
   }
 
   @Test
-  void succeedsWhenTheSamePointsHaveTheSameHashcodes() {
+  void succeedsWhenTheSamePointsHaveTheSameHashCodes() {
     // Arrive at the same point in two different ways
     G1Point point1 = G1Point.random(1025L);
     G1Point point2 = new G1Point(point1.ecpPoint());
