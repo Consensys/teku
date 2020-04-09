@@ -42,10 +42,10 @@ public class GetListenAddresses implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Returns the list of MultiAddr that the client's libp2p service is listening on.",
+      summary = "Get the addresses the client's libp2p service is listening on.",
       tags = {TAG_NETWORK},
       description =
-          "Returns the list of MultiAddr that the client's libp2p service is listening on.",
+          "Returns the list of addresses that the client's libp2p service is listening on.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
