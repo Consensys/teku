@@ -43,7 +43,7 @@ eth1-endpoint: "http://localhost:8545"
 metrics-enabled: False
 metrics-port: 8008
 metrics-interface: "127.0.0.1"
-metrics-categories: ["BEACONCHAIN","JVM","PROCESS"]
+metrics-categories: ["BEACON","JVM","PROCESS"]
 
 # database
 #data-path: "."

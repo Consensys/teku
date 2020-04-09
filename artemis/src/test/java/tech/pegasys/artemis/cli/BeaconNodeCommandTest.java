@@ -197,7 +197,7 @@ public class BeaconNodeCommandTest {
       "--metrics-enabled", "false",
       "--metrics-port", "8008",
       "--metrics-interface", "127.0.0.1",
-      "--metrics-categories", "BEACONCHAIN,JVM,PROCESS",
+      "--metrics-categories", "BEACON,JVM,PROCESS",
       "--data-path", dataPath.toString(),
       "--data-storage-mode", "prune",
       "--rest-api-port", "5051",
@@ -256,7 +256,7 @@ public class BeaconNodeCommandTest {
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
-        .setMetricsCategories(Arrays.asList("BEACONCHAIN", "JVM", "PROCESS"))
+        .setMetricsCategories(Arrays.asList("BEACON", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
         .setLogDestination(DEFAULT_LOG_DESTINATION)
         .setLogFile(DEFAULT_LOG_FILE)
