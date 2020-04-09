@@ -52,7 +52,7 @@ class BLSPublicKeyTest {
   }
 
   @Test
-  void succeedsIfSerialisationOfEmptyPublicKeyIsCorrect() {
+  void succeedsIfSerializationOfEmptyPublicKeyIsCorrect() {
     BLSPublicKey emptyPublicKey = BLSPublicKey.empty();
     assertEquals(
         "0x000000000000000000000000000000000000000000000000"
@@ -61,19 +61,19 @@ class BLSPublicKeyTest {
   }
 
   @Test
-  void succeedsIfDeserialisationOfEmptyPublicKeyIsCorrect() {
+  void succeedsIfDeserializationOfEmptyPublicKeyIsCorrect() {
     BLSPublicKey emptyPublicKey = BLSPublicKey.empty();
     Bytes emptyBytesSsz =
         SSZ.encode(
             writer -> {
               writer.writeFixedBytes(Bytes.wrap(new byte[48]));
             });
-    BLSPublicKey deserialisedPublicKey = BLSPublicKey.fromBytes(emptyBytesSsz);
-    assertEquals(emptyPublicKey, deserialisedPublicKey);
+    BLSPublicKey deserializedPublicKey = BLSPublicKey.fromBytes(emptyBytesSsz);
+    assertEquals(emptyPublicKey, deserializedPublicKey);
   }
 
   @Test
-  void succeedsIfDeserialisationThrowsWithTooFewBytes() {
+  void succeedsIfDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[51]);
     assertThrows(IllegalArgumentException.class, () -> BLSPublicKey.fromBytes(tooFewBytes));
   }

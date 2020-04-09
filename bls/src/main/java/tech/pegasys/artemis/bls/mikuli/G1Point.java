@@ -62,12 +62,12 @@ public final class G1Point implements Group<G1Point> {
   }
 
   /**
-   * Deserialise the point from compressed form.
+   * Deserialize the point from compressed form.
    *
-   * <p>The standard follows the ZCash format for serialisation documented here:
+   * <p>The standard follows the ZCash format for serialization documented here:
    * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md#serialization
    *
-   * @param bytes the compressed serialised form of the point
+   * @param bytes the compressed serialized form of the point
    * @return the point
    */
   public static G1Point fromBytesCompressed(Bytes bytes) {
@@ -84,21 +84,21 @@ public final class G1Point implements Group<G1Point> {
     xBytes[0] &= (byte) 31;
 
     if (!cIn) {
-      throw new IllegalArgumentException("The serialised input does not have the C flag set.");
+      throw new IllegalArgumentException("The serialized input does not have the C flag set.");
     }
 
     if (bIn) {
       if (!aIn && Bytes.wrap(xBytes).isZero()) {
-        // This is a correctly formed serialisation of infinity
+        // This is a correctly formed serialization of infinity
         return new G1Point();
       } else {
         // The input is malformed
         throw new IllegalArgumentException(
-            "The serialised input has B flag set, but A flag is set, or X is non-zero.");
+            "The serialized input has B flag set, but A flag is set, or X is non-zero.");
       }
     }
 
-    // We must check that x < q (the curve modulus) for this serialisation to be valid
+    // We must check that x < q (the curve modulus) for this serialization to be valid
     // We raise an exception (that should be caught) if this check fails: somebody might feed us
     // faulty input.
     BIG xBig = BIG.fromBytes(xBytes);
@@ -114,7 +114,7 @@ public final class G1Point implements Group<G1Point> {
     }
 
     if (!isInGroup(point)) {
-      throw new IllegalArgumentException("The deserialised point is not in the G1 subgroup.");
+      throw new IllegalArgumentException("The deserialized point is not in the G1 subgroup.");
     }
 
     // Did we get the right branch of the sqrt?
@@ -193,21 +193,21 @@ public final class G1Point implements Group<G1Point> {
   }
 
   /**
-   * Serialise the point into compressed form.
+   * Serialize the point into compressed form.
    *
-   * <p>In compresssed form we (a) pass only the X coordinate, and (b) include flags in the higher
+   * <p>In compressed form we (a) pass only the X coordinate, and (b) include flags in the higher
    * order bits per the Eth2 BLS spec.
    *
-   * <p>The standard follows the ZCash format for serialisation documented here:
+   * <p>The standard follows the ZCash format for serialization documented here:
    * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md#serialization
    *
-   * @return the serialised compressed form of the point
+   * @return the serialized compressed form of the point
    */
   public Bytes toBytesCompressed() {
     byte[] xBytes = new byte[fpPointSize];
     point.getX().toBytes(xBytes);
 
-    // Serialisation flags as defined in the documentation
+    // Serialization flags as defined in the documentation
     boolean b = point.is_infinity();
     boolean a = !b && calculateYFlag(point.getY());
 
