@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -73,6 +76,16 @@ public class AggregatingAttestationPool {
   }
 
   private boolean canBeIncluded(final MatchingDataAttestationGroup group, final UnsignedLong slot) {
-    return group.getAttestationData().getEarliestSlotForProcessing().compareTo(slot) <= 0;
+    final AttestationData attestationData = group.getAttestationData();
+    return attestationData.getEarliestSlotForProcessing().compareTo(slot) <= 0
+        && isPreviousEpochOrLater(attestationData, slot);
+  }
+
+  private boolean isPreviousEpochOrLater(
+      final AttestationData attestationData, final UnsignedLong slot) {
+    return compute_epoch_at_slot(attestationData.getSlot())
+            .plus(ONE)
+            .compareTo(compute_epoch_at_slot(slot))
+        >= 0;
   }
 }
