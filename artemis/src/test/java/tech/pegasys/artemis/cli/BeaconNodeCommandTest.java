@@ -21,6 +21,9 @@ import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPO
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
+import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
+import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
+import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
@@ -108,7 +111,8 @@ public class BeaconNodeCommandTest {
     final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
-        artemisConfiguration, expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+        artemisConfiguration,
+        expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
   }
 
   @Test
@@ -123,7 +127,8 @@ public class BeaconNodeCommandTest {
     final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
-        artemisConfiguration, expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+        artemisConfiguration,
+        expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
   }
 
   @Test
@@ -161,7 +166,7 @@ public class BeaconNodeCommandTest {
 
     final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
-    assertArtemisConfiguration(artemisConfiguration, expectedConfigurationBuilder().build());
+    assertArtemisConfiguration(artemisConfiguration, expectedCompleteConfigInFileBuilder().build());
   }
 
   private Path createConfigFile() throws IOException {
@@ -214,7 +219,16 @@ public class BeaconNodeCommandTest {
         .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
         .setInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
         .setInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
-        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT);
+        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT)
+        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setLogFile(DEFAULT_LOG_FILE)
+        .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
+  }
+
+  private ArtemisConfigurationBuilder expectedCompleteConfigInFileBuilder() {
+    return expectedConfigurationBuilder()
+        .setLogFile("teku.log")
+        .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
@@ -244,9 +258,9 @@ public class BeaconNodeCommandTest {
         .setMetricsInterface("127.0.0.1")
         .setMetricsCategories(Arrays.asList("BEACON", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
-        .setLogDestination("default_of_both")
-        .setLogFile("teku.log")
-        .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log")
+        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setLogFile(DEFAULT_LOG_FILE)
+        .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
         .setValidatorKeystoreFiles(Collections.emptyList())
         .setValidatorKeystorePasswordFiles(Collections.emptyList())
