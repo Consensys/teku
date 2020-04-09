@@ -203,7 +203,10 @@ public class ProtoArray {
 
     // Remove the `indices` key/values for all the to-be-deleted nodes.
     for (int nodeIndex = 0; nodeIndex < finalizedIndex; nodeIndex++) {
-      Bytes32 root = nodes.get(nodeIndex).getRoot();
+      Bytes32 root = checkNotNull(
+              nodes.get(nodeIndex),
+              "ProtoArray: Invalid node index"
+      ).getRoot();
       indices.remove(root);
     }
 
@@ -214,7 +217,9 @@ public class ProtoArray {
     indices.replaceAll(
         (key, value) -> {
           int newIndex = value - finalizedIndex;
-          checkState(newIndex < 0, "ProtoArray: New array index less than 0.");
+          checkState(
+                  newIndex >= 0,
+                  "ProtoArray: New array index less than 0.");
           return newIndex;
         });
 
@@ -237,7 +242,8 @@ public class ProtoArray {
               bestChildIndex -> {
                 int newBestChildIndex = bestChildIndex - finalizedIndex;
                 checkState(
-                    newBestChildIndex < 0, "ProtoArray: New best child index is less than 0");
+                    newBestChildIndex >= 0,
+                        "ProtoArray: New best child index is less than 0");
                 node.setBestChildIndex(Optional.of(newBestChildIndex));
               });
 
@@ -246,7 +252,7 @@ public class ProtoArray {
               bestDescendantIndex -> {
                 int newBestDescendantIndex = bestDescendantIndex - finalizedIndex;
                 checkState(
-                    newBestDescendantIndex < 0,
+                    newBestDescendantIndex >= 0,
                     "ProtoArray: New best descendant index is less than 0");
                 node.setBestDescendantIndex(Optional.of(newBestDescendantIndex));
               });

@@ -513,7 +513,8 @@ public class VotesTest {
             valueOf(5)
     );
 
-    // Check the head is now 10.
+    // Check the head is now 10. (due to lexicographical ordering
+    // (when blocks have the same amount of votes))
     //
     //          0
     //         / \
@@ -553,6 +554,120 @@ public class VotesTest {
             getHash(5),
             valueOf(2),
             balances)).isEqualTo(getHash(9));
+
+    // Set the balances of the last two validators back to 1
+    balances = new ArrayList<>(List.of(ONE, ONE, ONE, ONE));
+
+    // Check the head is 10.
+    //
+    //          .
+    //          .
+    //          .
+    //          |
+    //          8
+    //         / \
+    //        9  10 <- head
+    assertThat(forkChoice.findHead(
+            valueOf(2),
+            getHash(5),
+            valueOf(2),
+            balances)).isEqualTo(getHash(10));
+
+    // Remove the last two validators
+    balances = new ArrayList<>(List.of(ONE, ONE));
+
+    // Check the head is 9 again.
+    //
+    //  (prior blocks omitted for brevity)
+    //          .
+    //          .
+    //          .
+    //          |
+    //          8
+    //         / \
+    // head-> 9  10
+    assertThat(forkChoice.findHead(
+            valueOf(2),
+            getHash(5),
+            valueOf(2),
+            balances)).isEqualTo(getHash(9));
+
+    // Ensure that pruning below the prune threshold does not prune.
+    forkChoice.setPruneThreshold(Integer.MAX_VALUE);
+    forkChoice.maybePrune(getHash(5));
+    assertThat(forkChoice.size()).isEqualTo(11);
+
+    // Run find-head, ensure the no-op prune didn't change the head.
+    assertThat(forkChoice.findHead(
+            valueOf(2),
+            getHash(5),
+            valueOf(2),
+            balances)).isEqualTo(getHash(9));
+
+    // Ensure that pruning above the prune threshold does prune.
+    //
+    //
+    //          0
+    //         / \
+    //        2   1
+    //            |
+    //            3
+    //            |
+    //            4
+    // -------pruned here ------
+    //          5   6
+    //          |
+    //          7
+    //          |
+    //          8
+    //         / \
+    //        9  10
+    forkChoice.setPruneThreshold(1);
+    forkChoice.maybePrune(getHash(5));
+    assertThat(forkChoice.size()).isEqualTo(6);
+
+    // Run find-head, ensure the prune didn't change the head.
+    assertThat(forkChoice.findHead(
+            valueOf(2),
+            getHash(5),
+            valueOf(2),
+            balances)).isEqualTo(getHash(9));
+
+    // Add block 11
+    //
+    //          5   6
+    //          |
+    //          7
+    //          |
+    //          8
+    //         / \
+    //        9  10
+    //        |
+    //        11
+    forkChoice.processBlock(
+            ZERO,
+            getHash(11),
+            getHash(9),
+            Bytes32.ZERO,
+            valueOf(2),
+            valueOf(2));
+
+    // Ensure the head is now 11
+    //
+    //          5   6
+    //          |
+    //          7
+    //          |
+    //          8
+    //         / \
+    //        9  10
+    //        |
+    // head-> 11
+    assertThat(forkChoice.findHead(
+            valueOf(2),
+            getHash(5),
+            valueOf(2),
+            balances)).isEqualTo(getHash(11));
   }
 
 
