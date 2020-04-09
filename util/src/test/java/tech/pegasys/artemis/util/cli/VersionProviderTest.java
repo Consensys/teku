@@ -29,7 +29,7 @@ class VersionProviderTest {
   void defaultStoragePath_shouldHandleWindowsPath() {
     final String homeFolder = "c:\\users\\myUser\\AppData\\local";
     final Map<String, String> env = Map.of(ENV_LOCALAPPDATA, homeFolder);
-    assertThat(VersionProvider.defaultStoragePathForNormalisedOS("windows", env))
+    assertThat(VersionProvider.defaultStoragePathForNormalizedOS("windows", env))
         .isEqualTo(homeFolder + "\\teku");
   }
 
@@ -37,7 +37,7 @@ class VersionProviderTest {
   void defaultStoragePath_shouldHandleMacPath() {
     final String homeFolder = "/Users/myUser";
     Map<String, String> env = Map.of(ENV_HOME, homeFolder);
-    assertThat(VersionProvider.defaultStoragePathForNormalisedOS("osx", env))
+    assertThat(VersionProvider.defaultStoragePathForNormalizedOS("osx", env))
         .isEqualTo(homeFolder + "/Library" + TEKU);
   }
 
@@ -45,7 +45,7 @@ class VersionProviderTest {
   void defaultStoragePath_shouldHandleXdgHome() {
     final String homeFolder = "/data/myUser";
     Map<String, String> env = Map.of(ENV_XDG_DATA_HOME, homeFolder);
-    assertThat(VersionProvider.defaultStoragePathForNormalisedOS("linux", env))
+    assertThat(VersionProvider.defaultStoragePathForNormalizedOS("linux", env))
         .isEqualTo(homeFolder + TEKU);
   }
 
@@ -53,7 +53,7 @@ class VersionProviderTest {
   void defaultStoragePath_shouldHandleEmptyXdgHome() {
     final String homeFolder = "/home/myUser";
     Map<String, String> env = Map.of(ENV_XDG_DATA_HOME, Strings.EMPTY, ENV_HOME, homeFolder);
-    assertThat(VersionProvider.defaultStoragePathForNormalisedOS("aix", env))
+    assertThat(VersionProvider.defaultStoragePathForNormalizedOS("aix", env))
         .isEqualTo(homeFolder + "/.local/share" + TEKU);
   }
 
@@ -61,7 +61,7 @@ class VersionProviderTest {
   void defaultStoragePath_shouldHandleLocalHome() {
     final String homeFolder = "/home/myUser";
     Map<String, String> env = Map.of(ENV_HOME, homeFolder);
-    assertThat(VersionProvider.defaultStoragePathForNormalisedOS("aix", env))
+    assertThat(VersionProvider.defaultStoragePathForNormalizedOS("aix", env))
         .isEqualTo(homeFolder + "/.local/share" + TEKU);
   }
 }

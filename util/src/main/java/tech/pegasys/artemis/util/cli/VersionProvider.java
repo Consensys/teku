@@ -51,10 +51,10 @@ public class VersionProvider implements CommandLine.IVersionProvider {
 
   public static String defaultStoragePath() {
     final String detectedOS = normalizeOS(normalize("os.name"));
-    return defaultStoragePathForNormalisedOS(detectedOS, System.getenv());
+    return defaultStoragePathForNormalizedOS(detectedOS, System.getenv());
   }
 
-  static String defaultStoragePathForNormalisedOS(
+  static String defaultStoragePathForNormalizedOS(
       final String detectedOS, Map<String, String> env) {
     if (detectedOS.equals("windows")) {
       return env.get(ENV_LOCALAPPDATA) + "\\teku";
