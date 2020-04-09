@@ -105,7 +105,7 @@ public class ProtoArray {
    *
    * <p>The result of this function is not guaranteed to be accurate if `onBlock` has been called
    * without a subsequent `applyScoreChanges` call. This is because `onBlock` does not attempt to
-   * walk backwards through the tree and update the best child / best descendant links. </p>
+   * walk backwards through the tree and update the best child / best descendant links.
    *
    * @param justifiedRoot
    * @return
@@ -117,9 +117,8 @@ public class ProtoArray {
         checkNotNull(nodes.get(justifiedIndex), "ProtoArray: Unknown justified index");
 
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
-    ProtoNode bestNode = checkNotNull(
-            nodes.get(bestDescendantIndex),
-            "ProtoArray: Unknown best descendant index");
+    ProtoNode bestNode =
+        checkNotNull(nodes.get(bestDescendantIndex), "ProtoArray: Unknown best descendant index");
 
     // Perform a sanity check that the node is indeed valid to be the head.
     if (!nodeIsViableForHead(bestNode)) {
@@ -133,20 +132,20 @@ public class ProtoArray {
    * Iterate backwards through the array, touching all nodes and their parents and potentially the
    * bestChildIndex of each parent.
    *
-   * The structure of the `nodes` array ensures that the child of each node is always touched
+   * <p>The structure of the `nodes` array ensures that the child of each node is always touched
    * before its parent.
    *
-   * For each node, the following is done:
+   * <p>For each node, the following is done:
    *
    * <ul>
-   *    <li>Update the node's weight with the corresponding delta.</li>
-   *    <li>Back-propagate each node's delta</li>
-   *    to its parents delta.</li>
-   *    <li>Compare the current node with the parents best child, updating it if
-   *    the current node should become the best child.</li>
-   *    <li>If required, update the parents best
-   * descendant with the current node or its best descendant.</li>
+   *   <li>Update the node's weight with the corresponding delta.
+   *   <li>Back-propagate each node's delta to its parents delta.
+   *   <li>Compare the current node with the parents best child, updating it if the current node
+   *       should become the best child.
+   *   <li>If required, update the parents best descendant with the current node or its best
+   *       descendant.
    * </ul>
+   *
    * @param deltas
    * @param justifiedEpoch
    * @param finalizedEpoch
@@ -188,8 +187,8 @@ public class ProtoArray {
    * the two following criteria are met:
    *
    * <ul>
-   *   <li>The supplied finalized epoch and root are different to the current values. </li>
-   *   <li>The number of nodes in `this` is at least `this.pruneThreshold`. </li>
+   *   <li>The supplied finalized epoch and root are different to the current values.
+   *   <li>The number of nodes in `this` is at least `this.pruneThreshold`.
    * </ul>
    *
    * @param finalizedRoot
@@ -205,10 +204,7 @@ public class ProtoArray {
 
     // Remove the `indices` key/values for all the to-be-deleted nodes.
     for (int nodeIndex = 0; nodeIndex < finalizedIndex; nodeIndex++) {
-      Bytes32 root = checkNotNull(
-              nodes.get(nodeIndex),
-              "ProtoArray: Invalid node index"
-      ).getRoot();
+      Bytes32 root = checkNotNull(nodes.get(nodeIndex), "ProtoArray: Invalid node index").getRoot();
       indices.remove(root);
     }
 
@@ -219,9 +215,7 @@ public class ProtoArray {
     indices.replaceAll(
         (key, value) -> {
           int newIndex = value - finalizedIndex;
-          checkState(
-                  newIndex >= 0,
-                  "ProtoArray: New array index less than 0.");
+          checkState(newIndex >= 0, "ProtoArray: New array index less than 0.");
           return newIndex;
         });
 
@@ -244,8 +238,7 @@ public class ProtoArray {
               bestChildIndex -> {
                 int newBestChildIndex = bestChildIndex - finalizedIndex;
                 checkState(
-                    newBestChildIndex >= 0,
-                        "ProtoArray: New best child index is less than 0");
+                    newBestChildIndex >= 0, "ProtoArray: New best child index is less than 0");
                 node.setBestChildIndex(Optional.of(newBestChildIndex));
               });
 
@@ -270,12 +263,12 @@ public class ProtoArray {
    * <p>There are four outcomes:
    *
    * <ul>
-   *   <li>The child is already the best child but it's now invalid due to a FFG change and should be
-   * removed. </li>
+   *   <li>The child is already the best child but it's now invalid due to a FFG change and should
+   *       be removed.
    *   <li>The child is already the best child and the parent is updated with the new best
-   * descendant. </li>
-   *   <li>The child is not the best child but becomes the best child. - The child is not
-   * the best child and does not become the best child. </li>
+   *       descendant.
+   *   <li>The child is not the best child but becomes the best child. - The child is not the best
+   *       child and does not become the best child.
    * </ul>
    *
    * @param parentIndex
@@ -313,7 +306,8 @@ public class ProtoArray {
                   // No change.
                 } else if (child.getWeight().equals(bestChild.getWeight())) {
                   // Tie-breaker of equal weights by root.
-                  if (child.getRoot().toHexString().compareTo(bestChild.getRoot().toHexString()) >= 0) {
+                  if (child.getRoot().toHexString().compareTo(bestChild.getRoot().toHexString())
+                      >= 0) {
                     changeToChild(parent, childIndex);
                   } else {
                     // No change.
@@ -376,12 +370,12 @@ public class ProtoArray {
   }
 
   /**
-   * <p> This is the equivalent to the
-   * <a href="https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/fork-choice.md#filter_block_tree">filter_block_tree</a>
-   * function in the eth2 spec: </p>
+   * This is the equivalent to the <a
+   * href="https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/fork-choice.md#filter_block_tree">filter_block_tree</a>
+   * function in the eth2 spec:
    *
    * <p>Any node that has a different finalized or justified epoch should not be viable for the
-   * head.</p>
+   * head.
    *
    * @param node
    * @return

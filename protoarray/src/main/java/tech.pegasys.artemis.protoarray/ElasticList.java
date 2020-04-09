@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.protoarray;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.function.Supplier;
 
 public class ElasticList<T> extends ArrayList<T> {

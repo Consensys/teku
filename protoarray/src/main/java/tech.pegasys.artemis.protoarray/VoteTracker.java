@@ -30,7 +30,7 @@ public class VoteTracker {
   }
 
   public static VoteTracker Default() {
-   return new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UnsignedLong.ZERO);
+    return new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UnsignedLong.ZERO);
   }
 
   public void setCurrentRoot(Bytes32 currentRoot) {

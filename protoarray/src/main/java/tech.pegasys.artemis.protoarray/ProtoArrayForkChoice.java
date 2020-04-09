@@ -257,8 +257,8 @@ public class ProtoArrayForkChoice {
         // of our tree (i.e. pre-finalization) and therefore not interesting.
         Integer currentDeltaIndex = indices.get(vote.getCurrentRoot());
         if (currentDeltaIndex != null) {
-          checkState(currentDeltaIndex < deltas.size(),
-                  "ProtoArrayForkChoice: Invalid node delta index");
+          checkState(
+              currentDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
           long delta = subtractExact(deltas.get(currentDeltaIndex), oldBalance.longValue());
           deltas.set(currentDeltaIndex, delta);
         }
@@ -267,8 +267,8 @@ public class ProtoArrayForkChoice {
         // of our tree (i.e. pre-finalization) and therefore not interesting.
         Integer nextDeltaIndex = indices.get(vote.getNextRoot());
         if (nextDeltaIndex != null) {
-          checkState(nextDeltaIndex < deltas.size(),
-                  "ProtoArrayForkChoice: Invalid node delta index");
+          checkState(
+              nextDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
           long delta = addExact(deltas.get(nextDeltaIndex), newBalance.longValue());
           deltas.set(nextDeltaIndex, delta);
         }

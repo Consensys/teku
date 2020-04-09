@@ -34,11 +34,8 @@ public class ElasticListTest {
     VoteTracker voteTracker1 = list.get(3);
     voteTracker1.setNextEpoch(UnsignedLong.valueOf(3));
     VoteTracker voteTracker2 = list.get(2);
-    assertThat(voteTracker1.getNextEpoch())
-            .isEqualTo(UnsignedLong.valueOf(3));
-    assertThat(voteTracker1.getNextEpoch())
-            .isNotEqualByComparingTo(voteTracker2.getNextEpoch());
-    assertThat(voteTracker2.getNextEpoch())
-            .isEqualTo(VoteTracker.Default().getNextEpoch());
+    assertThat(voteTracker1.getNextEpoch()).isEqualTo(UnsignedLong.valueOf(3));
+    assertThat(voteTracker1.getNextEpoch()).isNotEqualByComparingTo(voteTracker2.getNextEpoch());
+    assertThat(voteTracker2.getNextEpoch()).isEqualTo(VoteTracker.Default().getNextEpoch());
   }
 }
