@@ -16,6 +16,7 @@ package tech.pegasys.artemis.protoarray;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
 import static tech.pegasys.artemis.protoarray.ProtoArrayForkChoice.computeDeltas;
 
 import com.google.common.primitives.UnsignedLong;
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -40,7 +42,7 @@ public class ComputeDeltasTest {
   @BeforeEach
   void setUp() {
     indices = new HashMap<>();
-    votes = new ElasticList<>(VoteTracker.DEFAULT);
+    votes = new ElasticList<>(VoteTracker::Default);
     oldBalances = new ArrayList<>();
     newBalances = new ArrayList<>();
   }
@@ -278,6 +280,6 @@ public class ComputeDeltasTest {
 
   // Gives a deterministic hash for a given integer
   private Bytes32 hashFromIndex(int i) {
-    return Hash.sha2_256(Bytes.wrap(Integer.toHexString(i).getBytes()));
+    return int_to_bytes32(Integer.toUnsignedLong(i));
   }
 }

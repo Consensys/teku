@@ -23,13 +23,14 @@ public class VoteTracker {
   private Bytes32 nextRoot;
   private UnsignedLong nextEpoch;
 
-  public static VoteTracker DEFAULT =
-      new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UnsignedLong.ZERO);
-
   public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UnsignedLong nextEpoch) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEpoch = nextEpoch;
+  }
+
+  public static VoteTracker Default() {
+   return new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UnsignedLong.ZERO);
   }
 
   public void setCurrentRoot(Bytes32 currentRoot) {

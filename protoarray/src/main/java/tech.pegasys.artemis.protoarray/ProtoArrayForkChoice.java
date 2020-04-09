@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.protoarray;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
 
@@ -68,7 +69,7 @@ public class ProtoArrayForkChoice {
         finalizedEpoch);
 
     return new ProtoArrayForkChoice(
-        protoArray, new ElasticList<>(VoteTracker.DEFAULT), new ArrayList<>());
+        protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
   }
 
   public void processAttestation(int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
@@ -76,7 +77,7 @@ public class ProtoArrayForkChoice {
     try {
       VoteTracker vote = votes.get(validatorIndex);
 
-      if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.DEFAULT)) {
+      if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
         vote.setNextRoot(blockRoot);
         vote.setNextEpoch(targetEpoch);
       }
@@ -116,7 +117,7 @@ public class ProtoArrayForkChoice {
       List<Long> deltas = computeDeltas(protoArray.getIndices(), votes, oldBalances, newBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
-      balances = newBalances;
+      balances = new ArrayList<>(newBalances);
 
       return protoArray.findHead(justifiedRoot);
     } finally {
@@ -163,20 +164,7 @@ public class ProtoArrayForkChoice {
   }
 
   public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
-    protoArrayLock.readLock().lock();
-    try {
-      int blockIndex =
-          checkNotNull(
-              protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
-      if (blockIndex >= protoArray.getNodes().size()) {
-        return Optional.empty();
-      } else {
-        ProtoNode node = protoArray.getNodes().get(blockIndex);
-        return Optional.of(node.getSlot());
-      }
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
+    return blockSlotAndStateRoot(blockRoot).map(BlockSlotAndStateRoot::getBlockSlot);
   }
 
   public Optional<BlockSlotAndStateRoot> blockSlotAndStateRoot(Bytes32 blockRoot) {
@@ -203,7 +191,7 @@ public class ProtoArrayForkChoice {
         return Optional.empty();
       } else {
         VoteTracker vote = votes.get(validatorIndex);
-        if (vote.equals(VoteTracker.DEFAULT)) {
+        if (vote.equals(VoteTracker.Default())) {
           return Optional.empty();
         } else {
           return Optional.of(new Checkpoint(vote.getNextEpoch(), vote.getNextRoot()));
@@ -269,9 +257,8 @@ public class ProtoArrayForkChoice {
         // of our tree (i.e. pre-finalization) and therefore not interesting.
         Integer currentDeltaIndex = indices.get(vote.getCurrentRoot());
         if (currentDeltaIndex != null) {
-          if (currentDeltaIndex >= deltas.size()) {
-            throw new RuntimeException("ProtoArrayForkChoice: Invalid node delta index");
-          }
+          checkState(currentDeltaIndex < deltas.size(),
+                  "ProtoArrayForkChoice: Invalid node delta index");
           long delta = subtractExact(deltas.get(currentDeltaIndex), oldBalance.longValue());
           deltas.set(currentDeltaIndex, delta);
         }
@@ -280,9 +267,8 @@ public class ProtoArrayForkChoice {
         // of our tree (i.e. pre-finalization) and therefore not interesting.
         Integer nextDeltaIndex = indices.get(vote.getNextRoot());
         if (nextDeltaIndex != null) {
-          if (nextDeltaIndex >= deltas.size()) {
-            throw new RuntimeException("ProtoArrayForkChoice: Invalid node delta index");
-          }
+          checkState(nextDeltaIndex < deltas.size(),
+                  "ProtoArrayForkChoice: Invalid node delta index");
           long delta = addExact(deltas.get(nextDeltaIndex), newBalance.longValue());
           deltas.set(nextDeltaIndex, delta);
         }

@@ -15,15 +15,30 @@ package tech.pegasys.artemis.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
 
 public class ElasticListTest {
 
   @Test
   void listGrowsToMatchRequest() {
-    ElasticList<VoteTracker> list = new ElasticList<>(VoteTracker.DEFAULT);
+    ElasticList<VoteTracker> list = new ElasticList<>(VoteTracker::Default);
     VoteTracker voteTracker = list.get(3);
     assertThat(list).hasSize(4);
-    assertThat(voteTracker).isEqualTo(VoteTracker.DEFAULT);
+    assertThat(voteTracker).isEqualTo(VoteTracker.Default());
+  }
+
+  @Test
+  void testDefaultOtherObjectStaySameWhenAnObjectChange() {
+    ElasticList<VoteTracker> list = new ElasticList<>(VoteTracker::Default);
+    VoteTracker voteTracker1 = list.get(3);
+    voteTracker1.setNextEpoch(UnsignedLong.valueOf(3));
+    VoteTracker voteTracker2 = list.get(2);
+    assertThat(voteTracker1.getNextEpoch())
+            .isEqualTo(UnsignedLong.valueOf(3));
+    assertThat(voteTracker1.getNextEpoch())
+            .isNotEqualByComparingTo(voteTracker2.getNextEpoch());
+    assertThat(voteTracker2.getNextEpoch())
+            .isEqualTo(VoteTracker.Default().getNextEpoch());
   }
 }

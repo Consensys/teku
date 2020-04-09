@@ -15,19 +15,20 @@ package tech.pegasys.artemis.protoarray;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.function.Supplier;
 
 public class ElasticList<T> extends ArrayList<T> {
 
-  private T defaultObject;
+  private final Supplier<T> defaultObjectGenerator;
 
-  public ElasticList(T defaultObject) {
+  public ElasticList(Supplier<T> defaultObjectGenerator) {
     super();
-    this.defaultObject = defaultObject;
+    this.defaultObjectGenerator = defaultObjectGenerator;
   }
 
   private void ensure(int i) {
-    if (super.size() <= i) {
-      super.addAll(Collections.nCopies(i - super.size() + 1, defaultObject));
+    while (super.size() <= i) {
+      super.add(defaultObjectGenerator.get());
     }
   }
 

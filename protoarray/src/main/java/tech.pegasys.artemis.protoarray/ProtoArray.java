@@ -305,7 +305,7 @@ public class ProtoArray {
                   // No change.
                 } else if (child.getWeight().equals(bestChild.getWeight())) {
                   // Tie-breaker of equal weights by root.
-                  if (child.getRoot().compareTo(bestChild.getRoot()) >= 0) {
+                  if (child.getRoot().toHexString().compareTo(bestChild.getRoot().toHexString()) >= 0) {
                     changeToChild(parent, childIndex);
                   } else {
                     // No change.
