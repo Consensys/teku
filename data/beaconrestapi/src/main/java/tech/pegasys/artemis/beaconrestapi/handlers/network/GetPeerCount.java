@@ -42,7 +42,7 @@ public class GetPeerCount implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the number of peers connected to the beacon node.",
+      summary = "Get the number of connected peers.",
       tags = {TAG_NETWORK},
       description = "Returns the number of peers connected to the beacon node.",
       responses = {
