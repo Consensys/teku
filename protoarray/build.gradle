@@ -4,4 +4,7 @@ dependencies {
     implementation project(':ethereum:datastructures')
     implementation project(':ssz')
     implementation project(':util')
+
+    testFixturesApi 'org.apache.tuweni:tuweni-bytes'
+    testFixturesImplementation project(':ethereum:datastructures')
 }

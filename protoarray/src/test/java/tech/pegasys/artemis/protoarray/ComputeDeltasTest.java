@@ -16,7 +16,7 @@ package tech.pegasys.artemis.protoarray;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
+import static tech.pegasys.artemis.protoarray.HashUtil.getHash;
 import static tech.pegasys.artemis.protoarray.ProtoArrayForkChoice.computeDeltas;
 
 import com.google.common.primitives.UnsignedLong;
@@ -26,9 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.crypto.Hash;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +50,7 @@ public class ComputeDeltasTest {
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
-      indices.put(hashFromIndex(i), i);
+      indices.put(getHash(i), i);
       votes.add(new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, ZERO));
       oldBalances.add(ZERO);
       newBalances.add(ZERO);
@@ -71,8 +69,8 @@ public class ComputeDeltasTest {
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
-      indices.put(hashFromIndex(i), i);
-      votes.add(new VoteTracker(Bytes32.ZERO, hashFromIndex(0), ZERO));
+      indices.put(getHash(i), i);
+      votes.add(new VoteTracker(Bytes32.ZERO, getHash(0), ZERO));
       oldBalances.add(BALANCE);
       newBalances.add(BALANCE);
     }
@@ -100,8 +98,8 @@ public class ComputeDeltasTest {
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
-      indices.put(hashFromIndex(i), i);
-      votes.add(new VoteTracker(Bytes32.ZERO, hashFromIndex(i), ZERO));
+      indices.put(getHash(i), i);
+      votes.add(new VoteTracker(Bytes32.ZERO, getHash(i), ZERO));
       oldBalances.add(BALANCE);
       newBalances.add(BALANCE);
     }
@@ -121,8 +119,8 @@ public class ComputeDeltasTest {
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
-      indices.put(hashFromIndex(i), i);
-      votes.add(new VoteTracker(hashFromIndex(0), hashFromIndex(1), ZERO));
+      indices.put(getHash(i), i);
+      votes.add(new VoteTracker(getHash(0), getHash(1), ZERO));
       oldBalances.add(BALANCE);
       newBalances.add(BALANCE);
     }
@@ -154,17 +152,17 @@ public class ComputeDeltasTest {
     final UnsignedLong BALANCE = valueOf(42);
 
     // There is only one block.
-    indices.put(hashFromIndex(1), 0);
+    indices.put(getHash(1), 0);
 
     // There are two validators.
     oldBalances = Collections.nCopies(2, BALANCE);
     newBalances = Collections.nCopies(2, BALANCE);
 
     // One validator moves their vote from the block to the zero hash.
-    votes.add(new VoteTracker(hashFromIndex(1), Bytes32.ZERO, ZERO));
+    votes.add(new VoteTracker(getHash(1), Bytes32.ZERO, ZERO));
 
     // One validator moves their vote from the block to something outside the tree.
-    votes.add(new VoteTracker(hashFromIndex(1), hashFromIndex(1337), ZERO));
+    votes.add(new VoteTracker(getHash(1), getHash(1337), ZERO));
 
     List<Long> deltas = computeDeltas(indices, votes, oldBalances, newBalances);
     assertThat(deltas).hasSize(1);
@@ -184,8 +182,8 @@ public class ComputeDeltasTest {
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
-      indices.put(hashFromIndex(i), i);
-      votes.add(new VoteTracker(hashFromIndex(0), hashFromIndex(1), ZERO));
+      indices.put(getHash(i), i);
+      votes.add(new VoteTracker(getHash(0), getHash(1), ZERO));
       oldBalances.add(OLD_BALANCE);
       newBalances.add(NEW_BALANCE);
     }
@@ -215,8 +213,8 @@ public class ComputeDeltasTest {
     final UnsignedLong BALANCE = valueOf(42);
 
     // There are two blocks.
-    indices.put(hashFromIndex(1), 0);
-    indices.put(hashFromIndex(2), 1);
+    indices.put(getHash(1), 0);
+    indices.put(getHash(2), 1);
 
     // There is only one validator in the old balances.
     oldBalances.add(BALANCE);
@@ -226,7 +224,7 @@ public class ComputeDeltasTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int __ = 0; __ < 2; __++) {
-      votes.add(new VoteTracker(hashFromIndex(1), hashFromIndex(2), ZERO));
+      votes.add(new VoteTracker(getHash(1), getHash(2), ZERO));
     }
 
     List<Long> deltas = computeDeltas(indices, votes, oldBalances, newBalances);
@@ -246,8 +244,8 @@ public class ComputeDeltasTest {
     final UnsignedLong BALANCE = valueOf(42);
 
     // There are two blocks.
-    indices.put(hashFromIndex(1), 0);
-    indices.put(hashFromIndex(2), 1);
+    indices.put(getHash(1), 0);
+    indices.put(getHash(2), 1);
 
     // There is only one validator in the old balances.
     oldBalances.addAll(List.of(BALANCE, BALANCE));
@@ -257,7 +255,7 @@ public class ComputeDeltasTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int __ = 0; __ < 2; __++) {
-      votes.add(new VoteTracker(hashFromIndex(1), hashFromIndex(2), ZERO));
+      votes.add(new VoteTracker(getHash(1), getHash(2), ZERO));
     }
 
     List<Long> deltas = computeDeltas(indices, votes, oldBalances, newBalances);
@@ -276,10 +274,5 @@ public class ComputeDeltasTest {
     for (VoteTracker vote : votes) {
       assertThat(vote.getCurrentRoot()).isEqualTo(vote.getNextRoot());
     }
-  }
-
-  // Gives a deterministic hash for a given integer
-  private Bytes32 hashFromIndex(int i) {
-    return int_to_bytes32(Integer.toUnsignedLong(i + 1));
   }
 }

@@ -117,7 +117,9 @@ public class ProtoArray {
         checkNotNull(nodes.get(justifiedIndex), "ProtoArray: Unknown justified index");
 
     int bestDescendantIndex = justifiedNode.getBestDescendantIndex().orElse(justifiedIndex);
-    ProtoNode bestNode = nodes.get(bestDescendantIndex);
+    ProtoNode bestNode = checkNotNull(
+            nodes.get(bestDescendantIndex),
+            "ProtoArray: Unknown best descendant index");
 
     // Perform a sanity check that the node is indeed valid to be the head.
     if (!nodeIsViableForHead(bestNode)) {

@@ -26,21 +26,22 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
+import static tech.pegasys.artemis.protoarray.HashUtil.getHash;
 
 public class VotesTest {
 
-  private ProtoArrayForkChoice forkChoice = ProtoArrayForkChoice.create(
-          ZERO,
-          Bytes32.ZERO,
-          ONE,
-          ONE,
-          getHash(0)
-  );
-
-  private List<UnsignedLong> balances = new ArrayList<>(List.of(valueOf(1), valueOf(1)));
-
   @Test
   void votesTest() {
+
+    ProtoArrayForkChoice forkChoice = ProtoArrayForkChoice.create(
+            ZERO,
+            Bytes32.ZERO,
+            ONE,
+            ONE,
+            getHash(0)
+    );
+
+    List<UnsignedLong> balances = new ArrayList<>(List.of(valueOf(1), valueOf(1)));
 
     // Ensure that the head starts at the finalized block.
     assertThat(forkChoice.findHead(
@@ -668,11 +669,5 @@ public class VotesTest {
             getHash(5),
             valueOf(2),
             balances)).isEqualTo(getHash(11));
-  }
-
-
-  // Gives a deterministic hash for a given integer
-  private Bytes32 getHash(int i) {
-    return int_to_bytes32(Integer.toUnsignedLong(i));
   }
 }
