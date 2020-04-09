@@ -14,10 +14,14 @@
 package tech.pegasys.artemis.util.cli;
 
 import java.util.Locale;
+import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
 public class VersionProvider implements CommandLine.IVersionProvider {
-
+  public static final String ENV_XDG_DATA_HOME = "XDG_DATA_HOME";
+  public static final String ENV_LOCALAPPDATA = "LOCALAPPDATA";
+  public static final String ENV_HOME = "HOME";
   public static final String CLIENT_IDENTITY = "teku";
   public static final String IMPLEMENTATION_VERSION = "v" + getImplementationVersion();
   public static final String VERSION =
@@ -47,12 +51,21 @@ public class VersionProvider implements CommandLine.IVersionProvider {
 
   public static String defaultStoragePath() {
     final String detectedOS = normalizeOS(normalize("os.name"));
+    return defaultStoragePathForNormalisedOS(detectedOS, System.getenv());
+  }
+
+  static String defaultStoragePathForNormalisedOS(
+      final String detectedOS, Map<String, String> env) {
     if (detectedOS.equals("windows")) {
-      return System.getenv("LOCALAPPDATA") + "/teku";
+      return env.get(ENV_LOCALAPPDATA) + "\\teku";
     } else if (detectedOS.equals("osx")) {
-      return System.getenv("HOME") + "/Library/teku";
+      return env.get(ENV_HOME) + "/Library/teku";
     }
-    return "~/.teku";
+    String dataHome = env.get(ENV_XDG_DATA_HOME);
+    if (StringUtils.isEmpty(dataHome)) {
+      dataHome = env.get(ENV_HOME) + "/.local/share";
+    }
+    return dataHome + "/teku";
   }
 
   private static String normalizeOS(final String osName) {

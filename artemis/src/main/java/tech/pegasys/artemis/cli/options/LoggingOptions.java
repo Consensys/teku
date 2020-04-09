@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.cli.options;
 
+import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
@@ -28,10 +29,12 @@ public class LoggingOptions {
   public static final boolean DEFAULT_LOG_COLOR_ENABLED = true;
   public static final boolean DEFAULT_LOG_INCLUDE_EVENTS_ENABLED = true;
   public static final String DEFAULT_LOG_DESTINATION = "both";
+  private static final String SEP = System.getProperty("file.separator");
   public static final String DEFAULT_LOG_FILE =
-      VersionProvider.defaultStoragePath() + "/logs/teku.log";
+      StringUtils.joinWith(SEP, VersionProvider.defaultStoragePath(), "logs", "teku.log");
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN =
-      VersionProvider.defaultStoragePath() + "/logs/teku_%d{yyyy-MM-dd}.log";
+      StringUtils.joinWith(
+          SEP, VersionProvider.defaultStoragePath(), "logs", "teku_%d{yyyy-MM-dd}.log");
 
   @CommandLine.Option(
       names = {LOG_COLOR_ENABLED_OPTION_NAME},
