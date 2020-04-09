@@ -11,27 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb;
+package tech.pegasys.artemis.storage.server.rocksdb.serialization;
 
-public enum RocksDbDefaultColumnKey {
-  GENESIS_TIME_KEY((byte) 1, "genesisTimeKey"),
-  JUSTIFIED_CHECKPOINT_KEY((byte) 2, "justifiedCheckpointKey"),
-  BEST_JUSTIFIED_CHECKPOINT_KEY((byte) 3, "bestJustifiedCheckpointKey"),
-  FINALIZED_CHECKPOINT_KEY((byte) 4, "finalizedCheckpointKey");
+import org.apache.tuweni.bytes.Bytes;
 
-  private final byte[] id;
-  private final String name;
+public class BytesSerializer<T extends Bytes> implements RocksDbSerializer<T> {
 
-  RocksDbDefaultColumnKey(final byte id, final String name) {
-    this.id = new byte[] {id};
-    this.name = name;
+  private final BytesFactory<T> bytesFactory;
+
+  public BytesSerializer(final BytesFactory<T> bytesFactory) {
+    this.bytesFactory = bytesFactory;
   }
 
-  public byte[] getId() {
-    return id;
+  @Override
+  public T deserialize(final byte[] data) {
+    return bytesFactory.create(data);
   }
 
-  public String getName() {
-    return name;
+  @Override
+  public byte[] serialize(final T value) {
+    return value.toArrayUnsafe();
+  }
+
+  interface BytesFactory<T> {
+    T create(byte[] bytes);
   }
 }
