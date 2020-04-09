@@ -15,6 +15,8 @@ package tech.pegasys.artemis.api.schema;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 
 public class ValidatorWithIndex {
   public final BLSPubKey pubkey;
@@ -30,18 +32,20 @@ public class ValidatorWithIndex {
     this.pubkey = validator.pubkey;
   }
 
-  public ValidatorWithIndex(final Validator validator, BeaconState state) {
-    Optional<Validator> val =
-        state.validators.stream().filter(v -> v.pubkey.equals(validator.pubkey)).findFirst();
-    if (val.isPresent()) {
-      this.validator_index = state.validators.indexOf(val.get());
-      this.balance = state.balances.get(this.validator_index);
+  public ValidatorWithIndex(
+      final tech.pegasys.artemis.datastructures.state.Validator validator,
+      tech.pegasys.artemis.datastructures.state.BeaconState state) {
+    BLSPublicKey blsPublicKey = validator.getPubkey();
+    Optional<Integer> optionalInteger = ValidatorsUtil.getValidatorIndex(state, blsPublicKey);
+    if (optionalInteger.isPresent()) {
+      this.validator_index = optionalInteger.get();
+      this.balance = state.getBalances().get(this.validator_index);
     } else {
       this.validator_index = null;
       this.balance = null;
     }
-    this.validator = validator;
-    this.pubkey = validator.pubkey;
+    this.validator = new Validator(validator);
+    this.pubkey = new BLSPubKey(validator.getPubkey());
   }
 
   public ValidatorWithIndex(BLSPubKey pubkey) {
