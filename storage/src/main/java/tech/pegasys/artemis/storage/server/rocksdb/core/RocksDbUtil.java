@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb;
+package tech.pegasys.artemis.storage.server.rocksdb.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.rocksdb.RocksDB;
 
-public class RocksDbUtil {
+class RocksDbUtil {
   private static final Logger LOG = LogManager.getLogger();
 
   private RocksDbUtil() {}
