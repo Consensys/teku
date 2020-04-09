@@ -43,7 +43,7 @@ public class GetPeerId implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get this beacon node's PeerId.",
+      summary = "Get the node PeerId.",
       tags = {TAG_NETWORK},
       description = "Returns the beacon node's base58-encoded PeerId.",
       responses = {
