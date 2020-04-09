@@ -29,7 +29,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
   private static final int BLS_PUBKEY_SIZE = 48;
 
   /**
-   * Generates a compressed, serialised, random, valid public key based on a seed.
+   * Generates a compressed, serialized, random, valid public key based on a seed.
    *
    * @return PublicKey The public key, not null
    */
@@ -102,9 +102,9 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
   }
 
   /**
-   * Returns the SSZ serialisation of the <em>compressed</em> form of the signature.
+   * Returns the SSZ serialization of the <em>compressed</em> form of the signature.
    *
-   * @return the serialisation of the compressed form of the signature.
+   * @return the serialization of the compressed form of the signature.
    */
   public Bytes toBytes() {
     return SSZ.encode(

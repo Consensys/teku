@@ -94,21 +94,21 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenSerialiseDeserialiseRoundTripWorks() {
+  void succeedsWhenSerializeDeserializeRoundTripWorks() {
     G2Point point1 = G2Point.random(257L);
     G2Point point2 = G2Point.fromBytes(point1.toBytes());
     assertEquals(point1, point2);
   }
 
   @Test
-  void succeedsWhenSerialiseDeserialiseCompressedRoundTripWorks() {
+  void succeedsWhenSerializeDeserializeCompressedRoundTripWorks() {
     G2Point point1 = G2Point.random(513L);
     G2Point point2 = G2Point.fromBytesCompressed(point1.toBytesCompressed());
     assertEquals(point1, point2);
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseXReEqualToModulusThrowsIllegalArgumentException() {
+  void succeedsWhenAttemptToDeserializeXReEqualToModulusThrowsIllegalArgumentException() {
     // xRe is exactly the modulus, q, xIm is zero
     String x =
         "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -118,7 +118,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseXImEqualToModulusThrowsIllegalArgumentException() {
+  void succeedsWhenAttemptToDeserializeXImEqualToModulusThrowsIllegalArgumentException() {
     // xIm is exactly the modulus, q, xRe is zero
     String x =
         "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab"
@@ -128,7 +128,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseXReGreaterThanModulusThrowsIllegalArgumentException() {
+  void succeedsWhenAttemptToDeserializeXReGreaterThanModulusThrowsIllegalArgumentException() {
     // xRe is the modulus plus 1, xIm is zero
     String x =
         "0x800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -138,7 +138,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseXImGreaterThanModulusThrowsIllegalArgumentException() {
+  void succeedsWhenAttemptToDeserializeXImGreaterThanModulusThrowsIllegalArgumentException() {
     // xIm is the modulus plus 1, xRe is zero
     String x =
         "0x9a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaac"
@@ -148,7 +148,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenDeserialisingACorrectPointDoesNotThrow() {
+  void succeedsWhenDeserializingACorrectPointDoesNotThrow() {
     String xInput =
         "0x"
             + "b2cc74bc9f089ed9764bbceac5edba416bef5e73701288977b9cac1ccb6964269d4ebf78b4e8aa7792ba09d3e49c8e6a"
@@ -157,7 +157,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenDeserialisingAPointOnCurveButNotInG2ThrowsIllegalArgumentException() {
+  void succeedsWhenDeserializingAPointOnCurveButNotInG2ThrowsIllegalArgumentException() {
     String xInput =
         "0x"
             + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -168,7 +168,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenDeserialisingAnIncorrectPointThrowsIllegalArgumentException() {
+  void succeedsWhenDeserializingAnIncorrectPointThrowsIllegalArgumentException() {
     String xInput =
         "0x"
             + "8123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -201,7 +201,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenRoundTripDeserialiseSerialiseCompressedReturnsTheOriginalInput() {
+  void succeedsWhenRoundTripDeserializeSerializeCompressedReturnsTheOriginalInput() {
     String xInput =
         "0x"
             + "b2cc74bc9f089ed9764bbceac5edba416bef5e73701288977b9cac1ccb6964269d4ebf78b4e8aa7792ba09d3e49c8e6a"
@@ -215,7 +215,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenDeserialiseCompressedInfinityWithTrueBFlagCreatesPointAtInfinity() {
+  void succeedsWhenDeserializeCompressedInfinityWithTrueBFlagCreatesPointAtInfinity() {
     String xInput =
         "0x"
             + "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -225,7 +225,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenDeserialiseCompressedInfinityWithFalseBFlagDoesNotCreatePointAtInfinity() {
+  void succeedsWhenDeserializeCompressedInfinityWithFalseBFlagDoesNotCreatePointAtInfinity() {
     String xInput =
         "0x"
             + "800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -236,13 +236,13 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenSerialiseDeserialiseCompressedInfinityGivesOriginalInput() {
+  void succeedsWhenSerializeDeserializeCompressedInfinityGivesOriginalInput() {
     G2Point point = new G2Point();
     assertEquals(point, G2Point.fromBytesCompressed(point.toBytesCompressed()));
   }
 
   @Test
-  void succeedsWhenDeserialiseSerialiseCompressedInfinityGivesOriginalInput() {
+  void succeedsWhenDeserializeSerializeCompressedInfinityGivesOriginalInput() {
     String xInput =
         "0x"
             + "c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -256,7 +256,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseWithWrongCFlagThrowsIllegalArgumentException() {
+  void succeedsWhenAttemptToDeserializeWithWrongCFlagThrowsIllegalArgumentException() {
     String xInput =
         "0x"
             + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -267,7 +267,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseWithBFlagAndXNonzeroThrowsIllegalArgumentException1() {
+  void succeedsWhenAttemptToDeserializeWithBFlagAndXNonzeroThrowsIllegalArgumentException1() {
     String xInput =
         "0x"
             + "c123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -278,7 +278,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenAttemptToDeserialiseWithBFlagAndAFlagTrueThrowsIllegalArgumentException1() {
+  void succeedsWhenAttemptToDeserializeWithBFlagAndAFlagTrueThrowsIllegalArgumentException1() {
     String xInput =
         "0x"
             + "e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -289,7 +289,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenDifferentPointsHaveDifferentHashcodes() {
+  void succeedsWhenDifferentPointsHaveDifferentHashCodes() {
     G2Point point1 = G2Point.random(42L);
     G2Point point2 = G2Point.random(43L);
 
@@ -298,7 +298,7 @@ class G2PointTest {
   }
 
   @Test
-  void succeedsWhenTheSamePointsHaveTheSameHashcodes() {
+  void succeedsWhenTheSamePointsHaveTheSameHashCodes() {
     // Arrive at the same point in two different ways
     G2Point point1 = G2Point.random(23L);
     G2Point point2 = new G2Point(point1.ecp2Point());
