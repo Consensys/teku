@@ -44,7 +44,7 @@ public class GetHead implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get inforamtion about the chain head.",
+      summary = "Get information about the chain head.",
       tags = {TAG_BEACON},
       description =
           "Returns information about the head of the beacon chain from the node’s perspective.\n\n"
