@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -62,7 +59,7 @@ public class AggregatingAttestationPool {
   public synchronized SSZList<Attestation> getAttestationsForBlock(final UnsignedLong slot) {
     final SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
     attestationGroupByDataHash.values().stream()
-        .filter(group -> canBeIncluded(group, slot))
+        .filter(group -> group.getAttestationData().canIncludeInBlockAtSlot(slot))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestations.getMaxSize())
         .forEach(attestations::add);
@@ -73,19 +70,5 @@ public class AggregatingAttestationPool {
       final AttestationData attestationData) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationData.hash_tree_root()))
         .flatMap(attestations -> attestations.stream().findFirst());
-  }
-
-  private boolean canBeIncluded(final MatchingDataAttestationGroup group, final UnsignedLong slot) {
-    final AttestationData attestationData = group.getAttestationData();
-    return attestationData.getEarliestSlotForProcessing().compareTo(slot) <= 0
-        && isPreviousEpochOrLater(attestationData, slot);
-  }
-
-  private boolean isPreviousEpochOrLater(
-      final AttestationData attestationData, final UnsignedLong slot) {
-    return compute_epoch_at_slot(attestationData.getSlot())
-            .plus(ONE)
-            .compareTo(compute_epoch_at_slot(slot))
-        >= 0;
   }
 }
