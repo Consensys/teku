@@ -52,20 +52,19 @@ public class RocksDbInstance implements AutoCloseable {
     this.resources = resources;
   }
 
-  public <T> Optional<T> get(RocksDbVariable<T> variableType) {
+  public <T> Optional<T> get(RocksDbVariable<T> variable) {
     assertOpen();
-    final ColumnFamilyHandle handle = defaultHandle;
     try {
-      return Optional.ofNullable(db.get(handle, variableType.getId().toArrayUnsafe()))
-          .map(data -> variableType.getSerializer().deserialize(data));
+      return Optional.ofNullable(db.get(defaultHandle, variable.getId().toArrayUnsafe()))
+          .map(data -> variable.getSerializer().deserialize(data));
     } catch (RocksDBException e) {
       throw new DatabaseStorageException("Failed to get value", e);
     }
   }
 
-  public <T> T getOrThrow(RocksDbVariable<T> variableType) {
+  public <T> T getOrThrow(RocksDbVariable<T> variable) {
     assertOpen();
-    return get(variableType).orElseThrow();
+    return get(variable).orElseThrow();
   }
 
   public <K, V> Optional<V> get(RocksDbColumn<K, V> column, K key) {
@@ -86,6 +85,8 @@ public class RocksDbInstance implements AutoCloseable {
   }
 
   /**
+   * Returns the last entry with a key less than or equal to the given key.
+   *
    * @param column The column we want to query
    * @param key The requested key
    * @param <K> The key type of the column
@@ -102,6 +103,8 @@ public class RocksDbInstance implements AutoCloseable {
   }
 
   /**
+   * Returns the last entry in the given column.
+   *
    * @param column The column we want to query
    * @param <K> The key type of the column
    * @param <V> The value type of the column
@@ -166,11 +169,11 @@ public class RocksDbInstance implements AutoCloseable {
       this.rocksDbTx = db.beginTransaction(writeOptions);
     }
 
-    public <T> void put(RocksDbVariable<T> variableType, T value) {
+    public <T> void put(RocksDbVariable<T> variable, T value) {
       assertOpen();
-      final byte[] serialized = variableType.getSerializer().serialize(value);
+      final byte[] serialized = variable.getSerializer().serialize(value);
       try {
-        rocksDbTx.put(defaultHandle, variableType.getId().toArrayUnsafe(), serialized);
+        rocksDbTx.put(defaultHandle, variable.getId().toArrayUnsafe(), serialized);
       } catch (RocksDBException e) {
         throw new DatabaseStorageException("Failed to put variable", e);
       }

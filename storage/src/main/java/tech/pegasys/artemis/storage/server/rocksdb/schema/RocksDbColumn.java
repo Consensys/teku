@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.storage.server.rocksdb.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.storage.server.rocksdb.serialization.RocksDbSerializer;
 
@@ -31,17 +33,12 @@ public class RocksDbColumn<TKey, TValue> {
   }
 
   public static <K, V> RocksDbColumn<K, V> create(
-      final byte[] id,
-      final RocksDbSerializer<K> keySerializer,
-      final RocksDbSerializer<V> valueSerializer) {
-    return new RocksDbColumn<>(id, keySerializer, valueSerializer);
-  }
-
-  public static <K, V> RocksDbColumn<K, V> create(
       final int id,
       final RocksDbSerializer<K> keySerializer,
       final RocksDbSerializer<V> valueSerializer) {
-    return new RocksDbColumn<>(new byte[] {(byte) id}, keySerializer, valueSerializer);
+    final byte byteId = (byte) id;
+    checkArgument((int) byteId == id, "Invalid id supplied");
+    return new RocksDbColumn<>(new byte[] {byteId}, keySerializer, valueSerializer);
   }
 
   public Bytes getId() {

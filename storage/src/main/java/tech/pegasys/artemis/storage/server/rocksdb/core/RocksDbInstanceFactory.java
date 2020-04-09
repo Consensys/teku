@@ -40,22 +40,12 @@ public class RocksDbInstanceFactory {
     RocksDbUtil.loadNativeLibrary();
   }
 
-  private final ColumnFamilyHandle defaultHandle;
-  private final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles;
-  private final TransactionDB db;
-  private final List<AutoCloseable> resources = new ArrayList<>();
-
   public static RocksDbInstance create(
       final RocksDbConfiguration configuration, final Class<? extends Schema> schema)
       throws DatabaseStorageException {
-    final RocksDbInstanceFactory factory = new RocksDbInstanceFactory(configuration, schema);
-    return new RocksDbInstance(
-        factory.db, factory.defaultHandle, factory.columnHandles, factory.resources);
-  }
+    // Track resouces that need to be closed
+    final List<AutoCloseable> resources = new ArrayList<>();
 
-  private RocksDbInstanceFactory(
-      final RocksDbConfiguration configuration, final Class<? extends Schema> schema)
-      throws DatabaseStorageException {
     // Create options
     final TransactionDBOptions txOptions = new TransactionDBOptions();
     final DBOptions dbOptions = createDBOptions(configuration);
@@ -71,7 +61,7 @@ public class RocksDbInstanceFactory {
     try {
       // columnHandles will be filled when the db is opened
       final List<ColumnFamilyHandle> columnHandles = new ArrayList<>(columnDescriptors.size());
-      db =
+      final TransactionDB db =
           TransactionDB.open(
               dbOptions,
               txOptions,
@@ -90,16 +80,19 @@ public class RocksDbInstanceFactory {
         }
         resources.add(columnHandle);
       }
-      this.columnHandles = builder.build();
-      this.defaultHandle = getDefaultHandle(columnHandles);
+      final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandlesMap =
+          builder.build();
+      final ColumnFamilyHandle defaultHandle = getDefaultHandle(columnHandles);
       resources.add(db);
+
+      return new RocksDbInstance(db, defaultHandle, columnHandlesMap, resources);
     } catch (RocksDBException e) {
       throw new DatabaseStorageException(
           "Failed to open database at path: " + configuration.getDatabaseDir(), e);
     }
   }
 
-  private ColumnFamilyHandle getDefaultHandle(List<ColumnFamilyHandle> columnHandles) {
+  private static ColumnFamilyHandle getDefaultHandle(List<ColumnFamilyHandle> columnHandles) {
     return columnHandles.stream()
         .filter(
             handle -> {
@@ -113,7 +106,7 @@ public class RocksDbInstanceFactory {
         .orElseThrow(() -> new DatabaseStorageException("No default column defined"));
   }
 
-  private DBOptions createDBOptions(final RocksDbConfiguration configuration) {
+  private static DBOptions createDBOptions(final RocksDbConfiguration configuration) {
     return new DBOptions()
         .setCreateIfMissing(true)
         .setMaxOpenFiles(configuration.getMaxOpenFiles())
@@ -122,12 +115,13 @@ public class RocksDbInstanceFactory {
         .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()));
   }
 
-  private ColumnFamilyOptions createColumnFamilyOptions(final RocksDbConfiguration configuration) {
+  private static ColumnFamilyOptions createColumnFamilyOptions(
+      final RocksDbConfiguration configuration) {
     return new ColumnFamilyOptions()
         .setTableFormatConfig(createBlockBasedTableConfig(configuration));
   }
 
-  private List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
+  private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
       final Class<? extends Schema> schema, final ColumnFamilyOptions columnFamilyOptions) {
     List<ColumnFamilyDescriptor> columnDescriptors =
         Schema.streamColumns(schema)
@@ -139,7 +133,8 @@ public class RocksDbInstanceFactory {
     return columnDescriptors;
   }
 
-  private BlockBasedTableConfig createBlockBasedTableConfig(final RocksDbConfiguration config) {
+  private static BlockBasedTableConfig createBlockBasedTableConfig(
+      final RocksDbConfiguration config) {
     final LRUCache cache = new LRUCache(config.getCacheCapacity());
     return new BlockBasedTableConfig().setBlockCache(cache);
   }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.storage.server.rocksdb.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.storage.server.rocksdb.serialization.RocksDbSerializer;
 
@@ -25,12 +27,9 @@ public class RocksDbVariable<TValue> {
     this.serializer = serializer;
   }
 
-  public static <T> RocksDbVariable<T> create(
-      final byte[] id, final RocksDbSerializer<T> serializer) {
-    return new RocksDbVariable<T>(id, serializer);
-  }
-
   public static <T> RocksDbVariable<T> create(final int id, final RocksDbSerializer<T> serializer) {
+    final byte byteId = (byte) id;
+    checkArgument((int) byteId == id, "Invalid id supplied");
     return new RocksDbVariable<T>(new byte[] {(byte) id}, serializer);
   }
 

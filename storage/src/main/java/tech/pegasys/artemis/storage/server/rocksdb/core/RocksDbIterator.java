@@ -30,12 +30,13 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   private static final Logger LOG = LogManager.getLogger();
 
   private final RocksDbColumn<TKey, TValue> column;
-  private final RocksIterator rocksIt;
+  private final RocksIterator rocksIterator;
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
-  private RocksDbIterator(final RocksDbColumn<TKey, TValue> column, final RocksIterator rocksIt) {
+  private RocksDbIterator(
+      final RocksDbColumn<TKey, TValue> column, final RocksIterator rocksIterator) {
     this.column = column;
-    this.rocksIt = rocksIt;
+    this.rocksIterator = rocksIterator;
   }
 
   public static <K, V> RocksDbIterator<K, V> create(
@@ -46,24 +47,24 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   @Override
   public boolean hasNext() {
     assertOpen();
-    return rocksIt.isValid();
+    return rocksIterator.isValid();
   }
 
   @Override
   public ColumnEntry<TKey, TValue> next() {
     assertOpen();
     try {
-      rocksIt.status();
+      rocksIterator.status();
     } catch (final RocksDBException e) {
       LOG.error("RocksDbEntryIterator encountered a problem while iterating.", e);
     }
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
-    final TKey key = column.getKeySerializer().deserialize(rocksIt.key());
-    final TValue value = column.getValueSerializer().deserialize(rocksIt.value());
+    final TKey key = column.getKeySerializer().deserialize(rocksIterator.key());
+    final TValue value = column.getValueSerializer().deserialize(rocksIterator.value());
     final ColumnEntry<TKey, TValue> entry = ColumnEntry.create(key, value);
-    rocksIt.next();
+    rocksIterator.next();
     return entry;
   }
 
@@ -90,7 +91,7 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   @Override
   public void close() {
     if (closed.compareAndSet(false, true)) {
-      rocksIt.close();
+      rocksIterator.close();
     }
   }
 }
