@@ -14,13 +14,14 @@
 package tech.pegasys.artemis.cli.options;
 
 import picocli.CommandLine;
+import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class DataOptions {
-
   public static final String DATA_PATH_OPTION_NAME = "--data-path";
   public static final String DATA_STORAGE_MODE_OPTION_NAME = "--data-storage-mode";
 
-  public static final String DEFAULT_DATA_PATH = ".";
+  public static final String DEFAULT_DATA_PATH =
+      VersionProvider.defaultStoragePath() + System.getProperty("file.separator") + "data";
   public static final String DEFAULT_DATA_STORAGE_MODE = "prune";
 
   @CommandLine.Option(

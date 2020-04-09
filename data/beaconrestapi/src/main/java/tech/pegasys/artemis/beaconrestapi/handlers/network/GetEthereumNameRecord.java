@@ -40,9 +40,9 @@ public class GetEthereumNameRecord implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the listening Ethereum Node Record (ENR) address of the beacon node.",
+      summary = "Get the listening ENR address of the node.",
       tags = {TAG_NETWORK},
-      description = "Returns the beacon node's listening ENR address.",
+      description = "Returns the beacon node's listening Ethereum Node Record (ENR) address.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
