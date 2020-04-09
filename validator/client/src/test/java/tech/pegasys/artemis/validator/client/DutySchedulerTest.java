@@ -84,6 +84,8 @@ class DutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(any()))
         .thenReturn(mock(AttestationProductionDuty.class));
     when(forkProvider.getFork()).thenReturn(completedFuture(fork));
+    when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(new SafeFuture<>());
+    when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(new SafeFuture<>());
   }
 
   @Test
@@ -267,7 +269,7 @@ class DutySchedulerTest {
             validator2Index,
             validator2Committee,
             validator2CommitteePosition,
-            0, // Guaranteed not to be an aggregator
+            100000, // Won't be an aggregator
             emptyList(),
             attestationSlot);
     when(validatorApiChannel.getDuties(eq(ONE), any()))

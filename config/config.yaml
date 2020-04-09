@@ -1,0 +1,56 @@
+# network
+network: "minimal"
+
+# p2p
+# p2p-enabled options:
+# false - no discovery, only connect to static peers
+# true - Enable discovery v5
+p2p-enabled: False
+p2p-interface: "0.0.0.0"
+p2p-port: 9000
+p2p-discovery-enabled: False
+p2p-advertised-port: 9000
+#this.privKey.bytes().toHexString() who's corresponding sha2(publicKey) == 16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ
+p2p-private-key-file: "path/to/file"
+
+# interop
+# when genesis time is set to 0, teku takes genesis time as currentTime + 5 seconds.
+Xinterop-genesis-time: 0
+Xinterop-owned-validator-start-index: 0
+Xinterop-owned-validator-count: 64
+Xinterop-start-state: ""
+Xinterop-number-of-validators: 64
+Xinterop-enabled: True
+
+# validator
+#validators-key-file: "path/to/keys.yaml"
+
+# deposit
+eth1-deposit-contract-address: "0x77f7bED277449F51505a4C54550B074030d989bC"
+eth1-endpoint: "http://localhost:8545"
+
+# output
+#Xtransaction-record-directory: "/tmp/teku"
+
+# logging
+#log-color-enabled: False
+#log-include-events-enabled: False
+#log-destination: 'both', 'file' or 'console'
+#log-file: "teku.log"
+#log-file-name-pattern: "teku_%d{yyyy-MM-dd}.log"
+
+# metrics
+metrics-enabled: False
+metrics-port: 8008
+metrics-interface: "127.0.0.1"
+metrics-categories: ["BEACONCHAIN","JVM","PROCESS"]
+
+# database
+#data-path: "."
+data-storage-mode: "prune"
+
+# beacon rest api
+rest-api-port: 5051
+rest-api-docs-enabled: True
+rest-api-enabled: True
+rest-api-interface: "127.0.0.1"

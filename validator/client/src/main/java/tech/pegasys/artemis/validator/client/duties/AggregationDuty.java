@@ -56,9 +56,11 @@ public class AggregationDuty implements Duty {
       final SafeFuture<Optional<Attestation>> unsignedAttestationFuture) {
     aggregatorsByCommitteeIndex.computeIfAbsent(
         attestationCommitteeIndex,
-        __ ->
-            new CommitteeAggregator(
-                UnsignedLong.valueOf(validatorIndex), proof, unsignedAttestationFuture));
+        committeeIndex -> {
+          validatorApiChannel.subscribeToBeaconCommittee(committeeIndex, slot);
+          return new CommitteeAggregator(
+              UnsignedLong.valueOf(validatorIndex), proof, unsignedAttestationFuture);
+        });
   }
 
   @Override
