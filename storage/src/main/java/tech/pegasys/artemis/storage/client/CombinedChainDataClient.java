@@ -196,15 +196,18 @@ public class CombinedChainDataClient {
     }
 
     if (isHistoricalData(slot)) {
-      return historicalChainData.getFinalizedStateAtSlot(slot);
+      LOG.trace("Getting state at slot {} from historical chain data", slot);
+      return historicalChainData.getLatestFinalizedStateAtSlot(slot);
     }
 
     final BeaconState headState = store.getBlockState(headBlockRoot);
     if (headState.getSlot().equals(slot)) {
+      LOG.trace("State at slot {} was the requested state", slot);
       return completedFuture(Optional.of(headState));
     }
 
-    return completedFuture(recentChainData.getStateBySlot(slot));
+    LOG.trace("Getting state at slot {} from recent chain data", slot);
+    return completedFuture(recentChainData.getStateInEffectAtSlot(slot));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {

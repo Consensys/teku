@@ -35,6 +35,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.CommitteeAssignmentUtil;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -63,6 +66,7 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
+  private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationAggregator attestationAggregator;
@@ -71,12 +75,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
+      final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
       final AttestationAggregator attestationAggregator,
       final AttestationTopicSubscriptions attestationTopicSubscriptions,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
+    this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
     this.attestationAggregator = attestationAggregator;
@@ -101,7 +107,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .getStateAtSlot(slot)
         .thenApply(
             optionalState ->
-                optionalState.map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
+                optionalState
+                    .map(state -> processSlots(state, slot))
+                    .map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
+  }
+
+  private BeaconState processSlots(final BeaconState startingState, final UnsignedLong targetSlot) {
+    if (startingState.getSlot().equals(targetSlot)) {
+      return startingState;
+    }
+    try {
+      return stateTransition.process_slots(startingState, targetSlot);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new IllegalStateException("Unable to process slots", e);
+    }
   }
 
   @Override
