@@ -30,39 +30,39 @@ public class EpochMetrics {
     currentJustifiedEpoch =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "current_justified_epoch",
             "Current justified epoch");
     currentFinalizedEpoch =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "current_finalized_epoch",
             "Current finalized epoch");
     previousJustifiedEpoch =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "current_prev_justified_epoch",
             "Current previously justified epoch");
 
     currentEpochLiveValidators =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "current_epoch_live_validators",
             "Number of active validators who reported for the current epoch");
     previousEpochLiveValidators =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "previous_epoch_live_validators",
             "Number of active validators who reported for the previous epoch");
 
     pendingExits =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACONCHAIN,
+            ArtemisMetricCategory.BEACON,
             "pending_exits",
             "Number of pending exits");
   }

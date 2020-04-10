@@ -23,6 +23,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
@@ -35,6 +36,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,7 +63,7 @@ public class GetStateRoot implements Handler {
       summary = "Get the beacon chain state root for the specified slot.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain.")
+        @OpenApiParam(name = SLOT, type = BigDecimal.class, description = SLOT_QUERY_DESCRIPTION)
       },
       description = "Returns the beacon chain state root for the specified slot.",
       responses = {

@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -40,6 +41,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
@@ -57,14 +59,23 @@ class ValidatorApiHandlerTest {
       BeaconStateUtil.compute_start_slot_at_epoch(EPOCH.minus(UnsignedLong.ONE));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
+  private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
+  private final AttestationTopicSubscriptions attestationTopicSubscriptions =
+      mock(AttestationTopicSubscriptions.class);
   private final EventBus eventBus = mock(EventBus.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
-          chainDataClient, blockFactory, attestationPool, attestationAggregator, eventBus);
+          chainDataClient,
+          stateTransition,
+          blockFactory,
+          attestationPool,
+          attestationAggregator,
+          attestationTopicSubscriptions,
+          eventBus);
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
@@ -245,6 +256,15 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getHeadStateFromStore()).thenReturn(Optional.of(state));
 
     assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.of(state.getFork()));
+  }
+
+  @Test
+  public void subscribeToBeaconCommittee_shouldSubscribeViaAttestationTopicSubscriptions() {
+    final int committeeIndex = 10;
+    final UnsignedLong aggregationSlot = UnsignedLong.valueOf(13);
+    validatorApiHandler.subscribeToBeaconCommittee(committeeIndex, aggregationSlot);
+
+    verify(attestationTopicSubscriptions).subscribeToCommittee(committeeIndex, aggregationSlot);
   }
 
   @Test

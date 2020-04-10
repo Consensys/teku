@@ -494,7 +494,13 @@ public class ForkChoiceUtil {
     BeaconState target_state = store.getCheckpointState(target);
 
     // Get state at the `target` to validate attestation and calculate the committees
-    IndexedAttestation indexed_attestation = get_indexed_attestation(target_state, attestation);
+    IndexedAttestation indexed_attestation = null;
+    try {
+      indexed_attestation = get_indexed_attestation(target_state, attestation);
+    } catch (IndexOutOfBoundsException e) {
+      return AttestationProcessingResult.invalid(
+          "on_attestation: Attestation is not valid, IndexOutOfBoundsException: " + e.getMessage());
+    }
     if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
       return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
     }

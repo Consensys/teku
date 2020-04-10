@@ -22,7 +22,9 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT_QUERY_DESCRIPTION;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
@@ -37,6 +39,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,14 +63,13 @@ public class GetState extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain state that matches the specified tree hash root, or slot.",
+      summary = "Get the beacon chain state matching the criteria.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(name = ROOT, description = "Tree hash root to query."),
-        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain.")
+        @OpenApiParam(name = ROOT, description = ROOT_QUERY_DESCRIPTION),
+        @OpenApiParam(name = SLOT, type = BigDecimal.class, description = SLOT_QUERY_DESCRIPTION)
       },
-      description =
-          "Returns the beacon chain state that matches the specified slot or tree hash root.",
+      description = "Returns the beacon chain state that matches the specified slot or block root.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(

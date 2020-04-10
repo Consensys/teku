@@ -48,7 +48,7 @@ public class ErrorConditionsIntegrationTest {
     final Eth2Peer peer = network1.getPeer(network2.getNodeId()).orElseThrow();
 
     final Eth2RpcMethod<StatusMessage, StatusMessage> status =
-        network1.getBeaconChainMethods().status();
+        ((ActiveEth2Network) network1).getBeaconChainMethods().status();
     final SafeFuture<StatusMessage> response =
         peer.sendRequest(status, new InvalidStatusMessage())
             .thenCompose(ResponseStream::expectSingleResponse);

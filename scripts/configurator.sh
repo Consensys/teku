@@ -6,5 +6,5 @@ then
 fi
 
 
-sed -i.bak "s!#*.*$2\ =.*!$2\ =\ $3!g" $1
+sed -i.bak "s!#*.*$2:.*!$2:\ $3!g" $1
 rm -f $1.bak

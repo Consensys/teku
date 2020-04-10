@@ -35,6 +35,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.CommitteeAssignmentUtil;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -47,6 +50,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
@@ -62,21 +66,27 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
+  private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationAggregator attestationAggregator;
+  private final AttestationTopicSubscriptions attestationTopicSubscriptions;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
+      final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
       final AttestationAggregator attestationAggregator,
+      final AttestationTopicSubscriptions attestationTopicSubscriptions,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
+    this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
     this.attestationAggregator = attestationAggregator;
+    this.attestationTopicSubscriptions = attestationTopicSubscriptions;
     this.eventBus = eventBus;
   }
 
@@ -97,7 +107,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .getStateAtSlot(slot)
         .thenApply(
             optionalState ->
-                optionalState.map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
+                optionalState
+                    .map(state -> processSlots(state, slot))
+                    .map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
+  }
+
+  private BeaconState processSlots(final BeaconState startingState, final UnsignedLong targetSlot) {
+    if (startingState.getSlot().equals(targetSlot)) {
+      return startingState;
+    }
+    try {
+      return stateTransition.process_slots(startingState, targetSlot);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new IllegalStateException("Unable to process slots", e);
+    }
   }
 
   @Override
@@ -166,6 +189,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
     return SafeFuture.completedFuture(attestationPool.createAggregateFor(attestationData));
+  }
+
+  @Override
+  public void subscribeToBeaconCommittee(
+      final int committeeIndex, final UnsignedLong aggregationSlot) {
+    attestationTopicSubscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
   }
 
   @Override

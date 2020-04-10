@@ -40,9 +40,9 @@ public class GetVersion implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the version of the beacon node.",
+      summary = "Get client version.",
       tags = {TAG_NODE},
-      description = "Returns the beacon node version information.",
+      description = "Returns the client version.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)

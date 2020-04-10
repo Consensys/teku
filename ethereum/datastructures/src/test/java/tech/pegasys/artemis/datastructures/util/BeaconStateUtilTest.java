@@ -337,7 +337,7 @@ class BeaconStateUtilTest {
   void succeedsWhenGetPermutedIndexReturnsAPermutation() {
     Bytes32 seed = Bytes32.random();
     int listSize = 1000;
-    boolean[] done = new boolean[listSize]; // Initialised to false
+    boolean[] done = new boolean[listSize]; // Initialized to false
     for (int i = 0; i < listSize; i++) {
       int idx = CommitteeUtil.compute_shuffled_index(i, listSize, seed);
       assertFalse(done[idx]);

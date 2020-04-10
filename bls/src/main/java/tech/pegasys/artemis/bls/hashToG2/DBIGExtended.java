@@ -39,7 +39,7 @@ class DBIGExtended extends DBIG {
     super(0);
     checkArgument(bytes.length % 4 == 0, "The number of bytes must be a multiple of 4.");
     checkArgument(bytes.length <= 2 * BIG.MODBYTES, "Too many bytes to store in a DBIG.");
-    // Unroll the loop as an optimisation that reduces the number of shl() operations
+    // Unroll the loop as an optimization that reduces the number of shl() operations
     w[0] |=
         ((((long) bytes[0] & 0xff) << 24)
             | (((long) bytes[1] & 0xff) << 16)

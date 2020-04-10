@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_TOKEN_DEFAUL
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForBeaconState;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN;
@@ -38,6 +39,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,13 +67,16 @@ public class GetValidators extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get validators that match the specified query.",
+      summary = "Get validators matching the specified query.",
       tags = {TAG_BEACON},
       description =
           "Returns validator information.\n\n"
               + "Returns the first page of validators in the current epoch if you do not specify any parameters.",
       queryParams = {
-        @OpenApiParam(name = EPOCH, description = "Epoch to query. Defaults to the current epoch."),
+        @OpenApiParam(
+            name = EPOCH,
+            type = BigDecimal.class,
+            description = EPOCH_QUERY_DESCRIPTION + " Defaults to the current epoch."),
         @OpenApiParam(
             name = ACTIVE,
             description =
@@ -80,13 +85,16 @@ public class GetValidators extends AbstractHandler implements Handler {
                     + "**Note**: The field accepts any value to return active validators."),
         @OpenApiParam(
             name = PAGE_SIZE,
+            type = Integer.class,
             description =
-                "The amount of results to return per page. Defaults to "
+                "`Integer` The amount of results to return per page. Defaults to "
                     + PAGE_SIZE_DEFAULT
                     + " results."),
         @OpenApiParam(
             name = PAGE_TOKEN,
-            description = "Page number to return. Defaults to page " + PAGE_TOKEN_DEFAULT + ".")
+            type = Integer.class,
+            description =
+                "`Integer` Page number to return. Defaults to page " + PAGE_TOKEN_DEFAULT + ".")
       },
       responses = {
         @OpenApiResponse(

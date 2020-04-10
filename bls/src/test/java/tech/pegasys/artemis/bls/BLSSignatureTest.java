@@ -37,7 +37,7 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsIfSerialisationOfEmptySignatureIsCorrect() {
+  void succeedsIfSerializationOfEmptySignatureIsCorrect() {
     BLSSignature emptySignature = BLSSignature.empty();
     assertEquals(
         "0x0000000000000000000000000000000000000000000000000000000000000000"
@@ -47,16 +47,16 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsIfDeserialisationOfEmptySignatureIsCorrect() {
+  void succeedsIfDeserializationOfEmptySignatureIsCorrect() {
     BLSSignature emptySignature = BLSSignature.empty();
     Bytes zeroBytes = Bytes.wrap(new byte[96]);
     Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(zeroBytes));
-    BLSSignature deserialisedSignature = BLSSignature.fromBytes(emptyBytesSsz);
-    assertEquals(emptySignature, deserialisedSignature);
+    BLSSignature deserializedSignature = BLSSignature.fromBytes(emptyBytesSsz);
+    assertEquals(emptySignature, deserializedSignature);
   }
 
   @Test
-  void succeedsIfDeserialisationThrowsWithTooFewBytes() {
+  void succeedsIfDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[95]);
     assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromBytes(tooFewBytes));
   }

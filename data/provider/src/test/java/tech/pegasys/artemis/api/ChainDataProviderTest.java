@@ -138,7 +138,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     final SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(ZERO);
-    verify(historicalChainData, never()).getFinalizedStateAtSlot(any());
+    verify(historicalChainData, never()).getLatestFinalizedStateAtSlot(any());
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
@@ -401,13 +401,19 @@ public class ChainDataProviderTest {
     assertThat(validators.validators.size()).isEqualTo(3);
     assertThat(validators.validators.get(0))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(0), beaconState));
+        .isEqualTo(
+            new ValidatorWithIndex(
+                beaconStateInternal.getValidators().get(0), beaconStateInternal));
     assertThat(validators.validators.get(1))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(11), beaconState));
+        .isEqualTo(
+            new ValidatorWithIndex(
+                beaconStateInternal.getValidators().get(11), beaconStateInternal));
     assertThat(validators.validators.get(2))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(99), beaconState));
+        .isEqualTo(
+            new ValidatorWithIndex(
+                beaconStateInternal.getValidators().get(99), beaconStateInternal));
   }
 
   @Test

@@ -56,7 +56,7 @@ public class PostValidators extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Get validators that match specified public keys.",
+      summary = "Get validators matching specified public keys.",
       tags = {TAG_BEACON},
       description =
           "Returns information about validators that match the list of validator public keys and optional epoch.\n\n"
