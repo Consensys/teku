@@ -88,7 +88,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     storageUpdateChannel.onGenesis(store);
     eventBus.post(store);
 
-    // The genesis state is by definition finalised so just get the root from there.
+    // The genesis state is by definition finalized so just get the root from there.
     Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     updateBestBlock(headBlockRoot, headBlock.getSlot());

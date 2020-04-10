@@ -69,7 +69,7 @@ public class BeaconRestApi {
   private static final Logger LOG = LogManager.getLogger();
   public static final String FILE_NOT_FOUND_HTML = "404.html";
 
-  private void initialise(
+  private void initialize(
       final DataProvider dataProvider, final ArtemisConfiguration configuration) {
     app.server().setServerPort(configuration.getRestApiPort());
 
@@ -124,7 +124,7 @@ public class BeaconRestApi {
                   new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
               config.defaultContentType = "application/json";
             });
-    initialise(dataProvider, configuration);
+    initialize(dataProvider, configuration);
   }
 
   BeaconRestApi(
@@ -132,7 +132,7 @@ public class BeaconRestApi {
       final ArtemisConfiguration configuration,
       final Javalin app) {
     this.app = app;
-    initialise(dataProvider, configuration);
+    initialize(dataProvider, configuration);
   }
 
   public void start() {
