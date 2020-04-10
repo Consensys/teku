@@ -63,7 +63,7 @@ public class GetState extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain state that matches the specified block root, or slot.",
+      summary = "Get the beacon chain state matching the criteria.",
       tags = {TAG_BEACON},
       queryParams = {
         @OpenApiParam(name = ROOT, description = ROOT_QUERY_DESCRIPTION),

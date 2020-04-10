@@ -42,10 +42,9 @@ public class GetPeers implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get an array containing the PeerId Strings of each connected peer.",
+      summary = "Get the PeerIds of connected peers.",
       tags = {TAG_NETWORK},
-      description =
-          "Returns the base58-encoded multiaddr of each peer connected to the beacon node.",
+      description = "Returns the base58-encoded PeerId of each peer connected to the beacon node.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
