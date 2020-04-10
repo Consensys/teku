@@ -58,7 +58,7 @@ class ValidatorsUtilTest {
 
   @Test
   public void getValidatorIndex_shouldNotCacheValidatorMissing() {
-      final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BeaconState state = dataStructureUtil.randomBeaconState();
 
     final Validator validator = dataStructureUtil.randomValidator();
     // Lookup the validator before it's in the list.
