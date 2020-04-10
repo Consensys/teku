@@ -13,29 +13,27 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
-import static tech.pegasys.artemis.core.ForkChoiceUtil.on_attestation;
 
-import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.AttestationProcessingResult;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class ForkChoiceAttestationProcessor {
 
   private final RecentChainData recentChainData;
-  private final StateTransition stateTransition;
+  private final ForkChoice forkChoice;
 
   public ForkChoiceAttestationProcessor(
-          final RecentChainData recentChainData, final StateTransition stateTransition) {
+          final RecentChainData recentChainData, final ForkChoice forkChoice) {
     this.recentChainData = recentChainData;
-    this.stateTransition = stateTransition;
+    this.forkChoice = forkChoice;
   }
 
   public AttestationProcessingResult processAttestation(final Attestation attestation) {
     final Store.Transaction transaction = recentChainData.startStoreTransaction();
-    final AttestationProcessingResult result =
-        on_attestation(transaction, attestation, stateTransition);
+    final AttestationProcessingResult result = forkChoice.onAttestation(transaction, attestation);
     if (result.isSuccessful()) {
       transaction.commit(() -> {}, "Failed to persist attestation result");
     }

@@ -26,7 +26,6 @@ import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.ForkChoiceUtil;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;

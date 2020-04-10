@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import static tech.pegasys.artemis.core.ForkChoiceUtil.on_tick;
+import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -51,7 +51,6 @@ import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
-import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
@@ -287,7 +286,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final FutureItems<DelayableAttestation> futureAttestations =
         new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
     final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
-        new ForkChoiceAttestationProcessor(recentChainData, new StateTransition());
+        new ForkChoiceAttestationProcessor(recentChainData);
     attestationManager =
         AttestationManager.create(
             eventBus, pendingAttestations, futureAttestations, forkChoiceAttestationProcessor);

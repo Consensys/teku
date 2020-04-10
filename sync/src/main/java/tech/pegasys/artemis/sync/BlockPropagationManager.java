@@ -29,6 +29,7 @@ import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
@@ -109,6 +110,23 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
     final List<SignedBeaconBlock> children = pendingBlocks.getItemsDependingOn(blockRoot, false);
     children.forEach(pendingBlocks::remove);
     children.forEach(this::importBlock);
+  }
+
+  @Subscribe
+  @SuppressWarnings("unused")
+  private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
+    LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
+    final BlockImportResult result = blockImporter.importBlock(blockProposedEvent.getBlock());
+    if (result.isSuccessful()) {
+      LOG.trace("Successfully imported proposed block: {}", blockProposedEvent.getBlock());
+    } else {
+      LOG.error(
+              "Failed to import proposed block for reason + "
+                      + result.getFailureReason()
+                      + ": "
+                      + blockProposedEvent,
+              result.getFailureCause().orElse(null));
+    }
   }
 
   private void importBlock(final SignedBeaconBlock block) {

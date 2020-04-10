@@ -87,7 +87,7 @@ public class ProtoArrayForkChoice {
   }
 
   public void processBlock(
-      UnsignedLong slot,
+      UnsignedLong blockSlot,
       Bytes32 blockRoot,
       Bytes32 parentRoot,
       Bytes32 stateRoot,
@@ -96,7 +96,7 @@ public class ProtoArrayForkChoice {
     protoArrayLock.writeLock().lock();
     try {
       protoArray.onBlock(
-          slot, blockRoot, Optional.of(parentRoot), stateRoot, justifiedEpoch, finalizedEpoch);
+          blockSlot, blockRoot, Optional.of(parentRoot), stateRoot, justifiedEpoch, finalizedEpoch);
     } finally {
       protoArrayLock.writeLock().unlock();
     }

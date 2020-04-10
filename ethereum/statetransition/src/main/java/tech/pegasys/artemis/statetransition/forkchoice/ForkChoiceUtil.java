@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core;
+package tech.pegasys.artemis.statetransition.forkchoice;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.core.results.AttestationProcessingResult;
@@ -49,8 +51,9 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.protoarray.ProtoArrayForkChoice;
 
-public class ForkChoice {
+public class ForkChoiceUtil {
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
@@ -278,7 +281,10 @@ public class ForkChoice {
    */
   @CheckReturnValue
   public static BlockImportResult on_block(
-      MutableStore store, SignedBeaconBlock signed_block, StateTransition st) {
+      final MutableStore store,
+      final SignedBeaconBlock signed_block,
+      final StateTransition st,
+      final ProtoArrayForkChoice protoArrayForkChoice) {
     final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
@@ -355,6 +361,15 @@ public class ForkChoice {
       }
     }
 
+    protoArrayForkChoice.processBlock(
+            block.getSlot(),
+            block.hash_tree_root(),
+            block.getParent_root(),
+            block.getState_root(),
+            store.getJustifiedCheckpoint().getEpoch(),
+            store.getFinalizedCheckpoint().getEpoch()
+    );
+
     final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
     return BlockImportResult.successful(record);
   }
@@ -409,7 +424,10 @@ public class ForkChoice {
    */
   @CheckReturnValue
   public static AttestationProcessingResult on_attestation(
-      MutableStore store, Attestation attestation, StateTransition stateTransition) {
+          final MutableStore store,
+          final Attestation attestation,
+          final StateTransition stateTransition,
+          final ProtoArrayForkChoice protoArrayForkChoice) {
 
     Checkpoint target = attestation.getData().getTarget();
 
@@ -481,13 +499,16 @@ public class ForkChoice {
       return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
     }
 
-    // Update latest messages
-    for (UnsignedLong i : indexed_attestation.getAttesting_indices()) {
-      if (!store.containsLatestMessage(i)
-          || target.getEpoch().compareTo(store.getLatestMessage(i).getEpoch()) > 0) {
-        store.putLatestMessage(
-            i, new Checkpoint(target.getEpoch(), attestation.getData().getBeacon_block_root()));
-      }
+    // Update latest messages (in proto array vote tracker)
+    // TODO: this can be batched if ProtoArrayForkChoice implements a batched attestation processing
+    //  (otherwise it has to be run sequentially due to the write lock on the votes list)
+    // TODO: unsure if 2147483648 validator indices is a problem for the short term or if ints are fine to use here
+    for (UnsignedLong validatorIndex : indexed_attestation.getAttesting_indices()) {
+      protoArrayForkChoice.processAttestation(
+              Math.toIntExact(validatorIndex.longValue()),
+              attestation.getData().getBeacon_block_root(),
+              target.getEpoch()
+      );
     }
     return AttestationProcessingResult.SUCCESSFUL;
   }
