@@ -704,7 +704,11 @@ public abstract class AbstractDatabaseTest {
   protected SignedBeaconBlock blockAtSlot(final long slot, final Bytes32 parentRoot) {
     return new SignedBeaconBlock(
         new BeaconBlock(
-            UnsignedLong.valueOf(slot), parentRoot, Bytes32.ZERO, new BeaconBlockBody()),
+            UnsignedLong.valueOf(slot),
+            dataStructureUtil.randomUnsignedLong(),
+            parentRoot,
+            Bytes32.ZERO,
+            new BeaconBlockBody()),
         dataStructureUtil.randomSignature());
   }
 

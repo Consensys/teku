@@ -41,106 +41,110 @@ public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
     set(0, new UInt64View(genesis_time));
   }
 
+  default void setGenesis_validators_root(Bytes32 genesis_validators_root) {
+    set(1, new Bytes32View(genesis_validators_root));
+  }
+
   default void setSlot(UnsignedLong slot) {
-    set(1, new UInt64View(slot));
+    set(2, new UInt64View(slot));
   }
 
   default void setFork(Fork fork) {
-    set(2, fork);
+    set(3, fork);
   }
 
   // History
   default void setLatest_block_header(BeaconBlockHeader latest_block_header) {
-    set(3, latest_block_header);
+    set(4, latest_block_header);
   }
 
   @Override
   default SSZMutableVector<Bytes32> getBlock_roots() {
     return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(4), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getAnyByRef(5), Bytes32View::new, AbstractBasicView::get);
   }
 
   @Override
   default SSZMutableVector<Bytes32> getState_roots() {
     return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(5), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getAnyByRef(6), Bytes32View::new, AbstractBasicView::get);
   }
 
   @Override
   default SSZMutableList<Bytes32> getHistorical_roots() {
     return new SSZBackingList<>(
-        Bytes32.class, getAnyByRef(6), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getAnyByRef(7), Bytes32View::new, AbstractBasicView::get);
   }
 
   // Eth1
   default void setEth1_data(Eth1Data eth1_data) {
-    set(7, eth1_data);
+    set(8, eth1_data);
   }
 
   @Override
   default SSZMutableList<Eth1Data> getEth1_data_votes() {
     return new SSZBackingList<>(
-        Eth1Data.class, getAnyByRef(8), Function.identity(), Function.identity());
+        Eth1Data.class, getAnyByRef(9), Function.identity(), Function.identity());
   }
 
   default void setEth1_deposit_index(UnsignedLong eth1_deposit_index) {
-    set(9, new UInt64View(eth1_deposit_index));
+    set(10, new UInt64View(eth1_deposit_index));
   }
 
   // Registry
   @Override
   default SSZMutableList<Validator> getValidators() {
     return new SSZBackingList<>(
-        Validator.class, getAnyByRef(10), Function.identity(), Function.identity());
+        Validator.class, getAnyByRef(11), Function.identity(), Function.identity());
   }
 
   @Override
   default SSZMutableList<UnsignedLong> getBalances() {
     return new SSZBackingList<>(
-        UnsignedLong.class, getAnyByRef(11), UInt64View::new, AbstractBasicView::get);
+        UnsignedLong.class, getAnyByRef(12), UInt64View::new, AbstractBasicView::get);
   }
 
   @Override
   default SSZMutableVector<Bytes32> getRandao_mixes() {
     return new SSZBackingVector<>(
-        Bytes32.class, getAnyByRef(12), Bytes32View::new, AbstractBasicView::get);
+        Bytes32.class, getAnyByRef(13), Bytes32View::new, AbstractBasicView::get);
   }
 
   // Slashings
   @Override
   default SSZMutableVector<UnsignedLong> getSlashings() {
     return new SSZBackingVector<>(
-        UnsignedLong.class, getAnyByRef(13), UInt64View::new, AbstractBasicView::get);
+        UnsignedLong.class, getAnyByRef(14), UInt64View::new, AbstractBasicView::get);
   }
 
   // Attestations
   @Override
   default SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
     return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(14), Function.identity(), Function.identity());
+        PendingAttestation.class, getAnyByRef(15), Function.identity(), Function.identity());
   }
 
   @Override
   default SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
     return new SSZBackingList<>(
-        PendingAttestation.class, getAnyByRef(15), Function.identity(), Function.identity());
+        PendingAttestation.class, getAnyByRef(16), Function.identity(), Function.identity());
   }
 
   // Finality
   default void setJustification_bits(Bitvector justification_bits) {
-    set(16, ViewUtils.createBitvectorView(justification_bits));
+    set(17, ViewUtils.createBitvectorView(justification_bits));
   }
 
   default void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint) {
-    set(17, previous_justified_checkpoint);
+    set(18, previous_justified_checkpoint);
   }
 
   default void setCurrent_justified_checkpoint(Checkpoint current_justified_checkpoint) {
-    set(18, current_justified_checkpoint);
+    set(19, current_justified_checkpoint);
   }
 
   default void setFinalized_checkpoint(Checkpoint finalized_checkpoint) {
-    set(19, finalized_checkpoint);
+    set(20, finalized_checkpoint);
   }
 
   @Override

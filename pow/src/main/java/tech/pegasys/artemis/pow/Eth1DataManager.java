@@ -14,11 +14,12 @@
 package tech.pegasys.artemis.pow;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_REQUEST_BUFFER;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.math.LongMath;
@@ -347,7 +348,10 @@ public class Eth1DataManager implements TimeTickChannel {
 
   public static UnsignedLong getCacheRangeLowerBound(UnsignedLong currentTime) {
     return currentTime
-        .minus(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD * SECONDS_PER_SLOT))
+        .minus(
+            UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD)
+                .times(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+                .times(UnsignedLong.valueOf(SECONDS_PER_SLOT)))
         .minus(ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
   }
 

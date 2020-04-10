@@ -171,8 +171,8 @@ public class DutyScheduler implements ValidatorTimingChannel {
       final int aggregatorModulo,
       final SafeFuture<Optional<Attestation>> unsignedAttestationFuture) {
     forkProvider
-        .getFork()
-        .thenCompose(fork -> validator.getSigner().signAggregationSlot(slot, fork))
+        .getForkInfo()
+        .thenCompose(forkInfo -> validator.getSigner().signAggregationSlot(slot, forkInfo))
         .finish(
             slotSignature -> {
               if (CommitteeUtil.isAggregator(slotSignature, aggregatorModulo)) {

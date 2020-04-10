@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -33,7 +33,7 @@ class SignerTest {
 
   private final MessageSignerService signerService = mock(MessageSignerService.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Fork fork = dataStructureUtil.randomFork();
+  private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
   private final Signer signer = new Signer(signerService);
 

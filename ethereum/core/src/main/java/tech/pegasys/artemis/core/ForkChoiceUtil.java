@@ -79,7 +79,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
-  public static Bytes32 get_ancestor(ReadOnlyStore store, Bytes32 root, UnsignedLong slot) {
+  private static Bytes32 get_ancestor(ReadOnlyStore store, Bytes32 root, UnsignedLong slot) {
     BeaconBlock block = store.getBlock(root);
     if (block.getSlot().compareTo(slot) > 0) {
       return get_ancestor(store, block.getParent_root(), slot);
@@ -99,7 +99,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_latest_attesting_balance</a>
    */
-  public static UnsignedLong get_latest_attesting_balance(ReadOnlyStore store, Bytes32 root) {
+  private static UnsignedLong get_latest_attesting_balance(ReadOnlyStore store, Bytes32 root) {
     BeaconState state = store.getCheckpointState(store.getJustifiedCheckpoint());
     List<Integer> active_indices = get_active_validator_indices(state, get_current_epoch(state));
     return active_indices.stream()
@@ -115,7 +115,7 @@ public class ForkChoiceUtil {
         .reduce(UnsignedLong.ZERO, UnsignedLong::plus);
   }
 
-  public static boolean filter_block_tree(
+  private static boolean filter_block_tree(
       ReadOnlyStore store, Bytes32 block_root, Map<Bytes32, BeaconBlock> blocks) {
     BeaconBlock block = store.getBlock(block_root);
     List<Bytes32> children =
@@ -159,7 +159,7 @@ public class ForkChoiceUtil {
    * @param store
    * @return
    */
-  public static Map<Bytes32, BeaconBlock> get_filtered_block_tree(ReadOnlyStore store) {
+  private static Map<Bytes32, BeaconBlock> get_filtered_block_tree(ReadOnlyStore store) {
     Bytes32 base = store.getJustifiedCheckpoint().getRoot();
     Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
     filter_block_tree(store, base, blocks);
@@ -223,7 +223,7 @@ public class ForkChoiceUtil {
   See https://ethresear.ch/t/prevention-of-bouncing-attack-on-ffg/6114 for more detailed analysis and discussion.
   */
 
-  public static boolean should_update_justified_checkpoint(
+  private static boolean should_update_justified_checkpoint(
       ReadOnlyStore store, Checkpoint new_justified_checkpoint) {
     if (compute_slots_since_epoch_start(get_current_slot(store, true))
             .compareTo(UnsignedLong.valueOf(SAFE_SLOTS_TO_UPDATE_JUSTIFIED))

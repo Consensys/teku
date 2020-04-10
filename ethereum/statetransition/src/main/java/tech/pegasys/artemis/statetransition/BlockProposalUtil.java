@@ -46,6 +46,7 @@ public class BlockProposalUtil {
 
   public BeaconBlock createNewUnsignedBlock(
       final UnsignedLong newSlot,
+      final int proposerIndex,
       final BLSSignature randaoReveal,
       final BeaconState state,
       final Bytes32 parentBlockSigningRoot,
@@ -65,7 +66,12 @@ public class BlockProposalUtil {
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     BeaconBlock newBlock =
-        new BeaconBlock(newSlot, parentBlockSigningRoot, tmpStateRoot, beaconBlockBody);
+        new BeaconBlock(
+            newSlot,
+            UnsignedLong.valueOf(proposerIndex),
+            parentBlockSigningRoot,
+            tmpStateRoot,
+            beaconBlockBody);
 
     // Run state transition and set state root
     Bytes32 stateRoot =

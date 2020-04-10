@@ -26,6 +26,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 class SignedBeaconBlockHeaderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
+  private UnsignedLong proposer_index = dataStructureUtil.randomUnsignedLong();
   private Bytes32 previous_block_root = dataStructureUtil.randomBytes32();
   private Bytes32 state_root = dataStructureUtil.randomBytes32();
   private Bytes32 block_body_root = dataStructureUtil.randomBytes32();
@@ -33,7 +34,9 @@ class SignedBeaconBlockHeaderTest {
 
   private SignedBeaconBlockHeader signedBlockHeader =
       new SignedBeaconBlockHeader(
-          new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root), signature);
+          new BeaconBlockHeader(
+              slot, proposer_index, previous_block_root, state_root, block_body_root),
+          signature);
 
   @Test
   public void shouldRoundTripViaSsz() {

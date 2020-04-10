@@ -31,10 +31,11 @@ import tech.pegasys.artemis.util.hashtree.Merkleizable;
 public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 3;
+  public static final int SSZ_FIELD_COUNT = 4;
 
   // Header
   private UnsignedLong slot;
+  private UnsignedLong proposer_index;
   private Bytes32 parent_root;
   private Bytes32 state_root;
 
@@ -42,8 +43,13 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
   private BeaconBlockBody body;
 
   public BeaconBlock(
-      UnsignedLong slot, Bytes32 parent_root, Bytes32 state_root, BeaconBlockBody body) {
+      UnsignedLong slot,
+      UnsignedLong proposer_index,
+      Bytes32 parent_root,
+      Bytes32 state_root,
+      BeaconBlockBody body) {
     this.slot = slot;
+    this.proposer_index = proposer_index;
     this.parent_root = parent_root;
     this.state_root = state_root;
     this.body = body;
@@ -51,6 +57,7 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
 
   public BeaconBlock() {
     this.slot = UnsignedLong.ZERO;
+    this.proposer_index = UnsignedLong.ZERO;
     this.parent_root = Bytes32.ZERO;
     this.state_root = Bytes32.ZERO;
     this.body = new BeaconBlockBody();
@@ -58,6 +65,7 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
 
   public BeaconBlock(Bytes32 state_root) {
     this.slot = UnsignedLong.ZERO;
+    this.proposer_index = UnsignedLong.ZERO;
     this.parent_root = Bytes32.ZERO;
     this.state_root = state_root;
     this.body = new BeaconBlockBody();
@@ -72,6 +80,7 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
   public List<Bytes> get_fixed_parts() {
     return List.of(
         SSZ.encodeUInt64(slot.longValue()),
+        SSZ.encodeUInt64(proposer_index.longValue()),
         SSZ.encode(writer -> writer.writeFixedBytes(parent_root)),
         SSZ.encode(writer -> writer.writeFixedBytes(state_root)),
         Bytes.EMPTY);
@@ -79,12 +88,13 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
 
   @Override
   public List<Bytes> get_variable_parts() {
-    return List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, SimpleOffsetSerializer.serialize(body));
+    return List.of(
+        Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, SimpleOffsetSerializer.serialize(body));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, parent_root, state_root, body);
+    return Objects.hash(slot, proposer_index, parent_root, state_root, body);
   }
 
   @Override
@@ -103,6 +113,7 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
 
     BeaconBlock other = (BeaconBlock) obj;
     return Objects.equals(this.getSlot(), other.getSlot())
+        && Objects.equals(this.getProposer_index(), other.getProposer_index())
         && Objects.equals(this.getParent_root(), other.getParent_root())
         && Objects.equals(this.getState_root(), other.getState_root())
         && Objects.equals(this.getBody(), other.getBody());
@@ -129,11 +140,17 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
     return slot;
   }
 
+  public UnsignedLong getProposer_index() {
+    return proposer_index;
+  }
+
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
             body.hash_tree_root()));
@@ -144,6 +161,7 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
     return MoreObjects.toStringHelper(this)
         .add("root", hash_tree_root())
         .add("slot", slot)
+        .add("proposer_index", proposer_index)
         .add("parent_root", parent_root)
         .add("state_root", state_root)
         .add("body", body.hash_tree_root())

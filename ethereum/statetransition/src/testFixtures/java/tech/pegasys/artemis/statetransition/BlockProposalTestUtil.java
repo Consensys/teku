@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
@@ -54,11 +55,12 @@ public class BlockProposalTestUtil {
 
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     final BLSSignature randaoReveal =
-        new Signer(signer).createRandaoReveal(newEpoch, state.getFork()).join();
+        new Signer(signer).createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
     final BeaconBlock newBlock =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
+            get_beacon_proposer_index(state, newSlot),
             randaoReveal,
             state,
             parentBlockSigningRoot,
@@ -68,7 +70,8 @@ public class BlockProposalTestUtil {
             deposits);
 
     // Sign block and set block signature
-    BLSSignature blockSignature = new Signer(signer).signBlock(newBlock, state.getFork()).join();
+    BLSSignature blockSignature =
+        new Signer(signer).signBlock(newBlock, state.getForkInfo()).join();
 
     return new SignedBeaconBlock(newBlock, blockSignature);
   }

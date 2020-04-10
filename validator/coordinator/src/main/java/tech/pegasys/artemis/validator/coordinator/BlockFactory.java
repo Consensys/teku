@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSSignature;
@@ -74,6 +76,7 @@ public class BlockFactory {
 
     return blockCreator.createNewUnsignedBlock(
         newSlot,
+        get_beacon_proposer_index(newState, newSlot),
         randaoReveal,
         newState,
         parentRoot,

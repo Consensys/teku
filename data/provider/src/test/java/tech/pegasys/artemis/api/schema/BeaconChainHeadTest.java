@@ -30,6 +30,7 @@ class BeaconChainHeadTest {
   private BeaconState beaconState = mock(BeaconState.class);
   private static final UnsignedLong latestSlot =
       compute_start_slot_at_epoch(UnsignedLong.valueOf(100000L));
+  private static final UnsignedLong proposerIndex = UnsignedLong.valueOf(400000L);
   private static final UnsignedLong headEpoch = compute_epoch_at_slot(latestSlot);
   private static final Bytes32 headBlockRoot = Bytes32.random();
   private static final Bytes32 headParentRoot = Bytes32.random();
@@ -60,7 +61,7 @@ class BeaconChainHeadTest {
   public void shouldHaveDifferentValuesFromState() {
     tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader latestHeader =
         new tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader(
-            latestSlot, headParentRoot, headStateRoot, headBlockRoot);
+            latestSlot, proposerIndex, headParentRoot, headStateRoot, headBlockRoot);
     when(beaconState.getLatest_block_header()).thenReturn(latestHeader);
     when(beaconState.getCurrent_justified_checkpoint()).thenReturn(justifiedCheckpoint);
     when(beaconState.getPrevious_justified_checkpoint()).thenReturn(previousCheckpoint);

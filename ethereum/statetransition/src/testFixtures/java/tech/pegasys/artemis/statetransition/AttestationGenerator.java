@@ -262,7 +262,7 @@ public class AttestationGenerator {
 
     BLSSignature signature =
         new Signer(new LocalMessageSignerService(attesterKeyPair))
-            .signAttestationData(attestationData, state.getFork())
+            .signAttestationData(attestationData, state.getForkInfo())
             .join();
     return new Attestation(aggregationBitfield, attestationData, signature);
   }

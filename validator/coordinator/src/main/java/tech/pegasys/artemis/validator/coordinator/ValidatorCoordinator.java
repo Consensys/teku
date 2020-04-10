@@ -291,7 +291,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   private SafeFuture<BLSSignature> signAttestation(
       final BeaconState state, final BLSPublicKey attester, final AttestationData attestationData) {
-    return getSignerService(attester).signAttestationData(attestationData, state.getFork());
+    return getSignerService(attester).signAttestationData(attestationData, state.getForkInfo());
   }
 
   private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {
@@ -309,7 +309,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
       final Signer signer = getSignerService(proposer);
       final BLSSignature randaoReveal =
-          signer.createRandaoReveal(compute_epoch_at_slot(newSlot), newState.getFork()).join();
+          signer.createRandaoReveal(compute_epoch_at_slot(newSlot), newState.getForkInfo()).join();
       final BeaconBlock unsignedBlock =
           validatorApiChannel
               .createUnsignedBlock(newSlot, randaoReveal)
@@ -319,7 +319,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
                   () -> new NoSuchElementException("No block created for slot " + newSlot));
 
       final BLSSignature blockSignature =
-          signer.signBlock(unsignedBlock, newState.getFork()).join();
+          signer.signBlock(unsignedBlock, newState.getForkInfo()).join();
       final SignedBeaconBlock newBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
 
       validatorApiChannel.sendSignedBlock(newBlock);
