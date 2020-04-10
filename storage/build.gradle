@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':bls')
+  implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':logging')
   implementation project(':ssz')

@@ -71,6 +71,8 @@ public interface RocksDbDAO extends AutoCloseable {
 
     void setFinalizedCheckpoint(final Checkpoint checkpoint);
 
+    void setLatestFinalizedState(final BeaconState state);
+
     void addLatestMessage(UnsignedLong slot, final Checkpoint checkpoint);
 
     void addLatestMessages(Map<UnsignedLong, Checkpoint> latestMessages);

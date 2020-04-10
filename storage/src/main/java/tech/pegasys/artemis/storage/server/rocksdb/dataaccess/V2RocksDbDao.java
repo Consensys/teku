@@ -17,10 +17,10 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,7 +37,7 @@ public class V2RocksDbDao implements RocksDbDAO {
   // Persistent data
   private final RocksDbInstance db;
   // In-memory data
-  private final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache =
+  private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache =
       new ConcurrentSkipListMap<>();
 
   public V2RocksDbDao(final RocksDbInstance db) {
@@ -138,15 +138,15 @@ public class V2RocksDbDao implements RocksDbDAO {
   private static class V2Updater implements RocksDbDAO.Updater {
 
     private final Transaction transaction;
-    private final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache;
+    private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache;
 
-    private final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotAdditions =
+    private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotAdditions =
         new ConcurrentSkipListMap<>();
     private final Set<UnsignedLong> prunedSlots = new HashSet<>();
 
     V2Updater(
         final RocksDbInstance db,
-        final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache) {
+        final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache) {
       this.transaction = db.startTransaction();
       this.hotRootsBySlotCache = hotRootsBySlotCache;
     }
@@ -164,6 +164,11 @@ public class V2RocksDbDao implements RocksDbDAO {
     @Override
     public void setBestJustifiedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(V2Schema.BEST_JUSTIFIED_CHECKPOINT, checkpoint);
+    }
+
+    @Override
+    public void setLatestFinalizedState(final BeaconState state) {
+      // No-op for this implementation
     }
 
     @Override

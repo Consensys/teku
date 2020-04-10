@@ -41,7 +41,9 @@ import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstanceFactory;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDAO;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDAO.Updater;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.V2RocksDbDao;
+import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.artemis.storage.server.rocksdb.schema.V2Schema;
+import tech.pegasys.artemis.storage.server.rocksdb.schema.V3Schema;
 
 public class RocksDbDatabase implements Database {
 
@@ -54,6 +56,13 @@ public class RocksDbDatabase implements Database {
       final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
     final RocksDbInstance db = RocksDbInstanceFactory.create(configuration, V2Schema.class);
     final RocksDbDAO dao = new V2RocksDbDao(db);
+    return new RocksDbDatabase(dao, stateStorageMode);
+  }
+
+  public static Database createV3(
+      final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
+    final RocksDbInstance db = RocksDbInstanceFactory.create(configuration, V3Schema.class);
+    final RocksDbDAO dao = new V3RocksDbDao(db);
     return new RocksDbDatabase(dao, stateStorageMode);
   }
 
@@ -248,6 +257,7 @@ public class RocksDbDatabase implements Database {
     final UnsignedLong highestFinalizedSlot = dao.getHighestFinalizedSlot().orElse(ZERO);
     Bytes32 newlyFinalizedBlockRoot = newFinalizedCheckpoint.getRoot();
     Optional<SignedBeaconBlock> newlyFinalizedBlock = getHotBlock(update, newlyFinalizedBlockRoot);
+    boolean isLatestFinalizedBlock = true;
     while (newlyFinalizedBlock.isPresent()
         && newlyFinalizedBlock.get().getSlot().compareTo(highestFinalizedSlot) > 0) {
       LOG.debug(
@@ -258,6 +268,9 @@ public class RocksDbDatabase implements Database {
       final Optional<BeaconState> finalizedState = getHotState(update, newlyFinalizedBlockRoot);
       if (finalizedState.isPresent()) {
         putFinalizedState(updater, newlyFinalizedBlockRoot, finalizedState.get());
+        if (isLatestFinalizedBlock) {
+          updater.setLatestFinalizedState(finalizedState.get());
+        }
       } else {
         LOG.error(
             "Missing finalized state {} for epoch {}",
@@ -266,6 +279,7 @@ public class RocksDbDatabase implements Database {
       }
 
       // Update for next round of iteration
+      isLatestFinalizedBlock = false;
       newlyFinalizedBlockRoot = newlyFinalizedBlock.get().getMessage().getParent_root();
       newlyFinalizedBlock = getHotBlock(update, newlyFinalizedBlockRoot);
     }
