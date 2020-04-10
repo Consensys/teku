@@ -39,7 +39,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.Web3j;
@@ -69,13 +70,19 @@ public class Eth1DataManagerTest {
 
   private static final Bytes32 HEX_STRING = Bytes32.fromHexString("0xdeadbeef");
 
-  static {
+  @BeforeAll
+  static void setConstants() {
     ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(4);
     SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(6);
     ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(1);
     EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
     SLOTS_PER_EPOCH = 5;
     SECONDS_PER_SLOT = 2;
+  }
+
+  @AfterAll
+  static void restoreConstants() {
+    Constants.setConstants("minimal");
   }
 
   private final UnsignedLong testStartTime = UnsignedLong.valueOf(200);
@@ -110,11 +117,6 @@ public class Eth1DataManagerTest {
             depositContractAccessor,
             asyncRunner,
             timeProvider);
-  }
-
-  @AfterEach
-  void tearDown() {
-    Constants.setConstants("minimal");
   }
 
   @Test
