@@ -17,13 +17,12 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.server.AbstractStorageBackedDatabaseTest;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
@@ -45,7 +44,8 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setFinalizedCheckpoint(newValue);
 
-    assertThatThrownBy(transaction::commit).isInstanceOf(IllegalStateException.class);
+    final SafeFuture<Void> result = transaction.commit();
+    assertThatThrownBy(result::get).hasCauseInstanceOf(IllegalStateException.class);
   }
 
   @Test
@@ -88,15 +88,14 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     // Store genesis
     database.storeGenesis(store);
     // Add a new finalized block to supersede genesis
-    final SignedBeaconBlock newBlock =
-        dataStructureUtil.randomSignedBeaconBlock(genesisBlock.getSlot().plus(ONE));
-    final Bytes32 blockRoot = newBlock.getMessage().hash_tree_root();
-    final BeaconState newState = dataStructureUtil.randomBeaconState(newBlock.getSlot());
+    final SignedBlockAndState newBlock = chainBuilder.getBlockAtSlot(1);
+    final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putBlock(blockRoot, newBlock);
-    transaction.putBlockState(blockRoot, newState);
-    transaction.setFinalizedCheckpoint(new Checkpoint(ONE, blockRoot));
+    transaction.putBlock(newBlock.getRoot(), newBlock.getBlock());
+    transaction.putBlockState(newBlock.getRoot(), newBlock.getState());
+    transaction.setFinalizedCheckpoint(newCheckpoint);
     transaction.commit().reportExceptions();
+    // Close db
     database.close();
 
     assertThatThrownBy(() -> database.getState(genesisCheckpoint.getRoot()))

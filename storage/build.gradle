@@ -12,6 +12,8 @@ dependencies {
   implementation 'org.mapdb:mapdb'
   implementation 'org.rocksdb:rocksdbjni'
 
+  testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))
