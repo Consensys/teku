@@ -140,7 +140,8 @@ public class GenesisGenerator {
   private void finalizeState() {
     calculateRandaoMixes();
     calculateDepositRoot();
-    state.setGenesis_validators_root(state.getValidators().hash_tree_root());
+    final BeaconState readOnlyState = state.commitChanges();
+    state.setGenesis_validators_root(readOnlyState.getValidators().hash_tree_root());
   }
 
   private void calculateRandaoMixes() {
