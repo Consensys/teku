@@ -146,7 +146,7 @@ public final class G1Point implements Group<G1Point> {
     return (point.mul(cofactor));
   }
 
-  private final ECP point;
+  public final ECP point;
 
   private static final int fpPointSize = BIG.MODBYTES;
 
@@ -160,7 +160,7 @@ public final class G1Point implements Group<G1Point> {
    *
    * @param point the ecp point
    */
-  G1Point(ECP point) {
+  public G1Point(ECP point) {
     this.point = point;
   }
 
