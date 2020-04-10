@@ -22,10 +22,10 @@ public class ProtoNode {
   // The `slot` and `stateRoot` is not necessary for `ProtoArray`, it just exists so external
   // components can
   // easily query the block slot. This is useful for upstream fork choice logic.
-  private final UnsignedLong slot;
+  private final UnsignedLong blockSlot;
   private final Bytes32 stateRoot;
 
-  private final Bytes32 root;
+  private final Bytes32 blockRoot;
   private final UnsignedLong justifiedEpoch;
   private final UnsignedLong finalizedEpoch;
 
@@ -35,18 +35,18 @@ public class ProtoNode {
   private Optional<Integer> bestDescendantIndex;
 
   public ProtoNode(
-      final UnsignedLong slot,
+      final UnsignedLong blockSlot,
       final Bytes32 stateRoot,
-      final Bytes32 root,
+      final Bytes32 blockRoot,
       final Optional<Integer> parentIndex,
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch,
       final UnsignedLong weight,
       final Optional<Integer> bestChildIndex,
       final Optional<Integer> bestDescendantIndex) {
-    this.slot = slot;
+    this.blockSlot = blockSlot;
     this.stateRoot = stateRoot;
-    this.root = root;
+    this.blockRoot = blockRoot;
     this.parentIndex = parentIndex;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
@@ -72,16 +72,16 @@ public class ProtoNode {
     return weight;
   }
 
-  public UnsignedLong getSlot() {
-    return slot;
+  public UnsignedLong getBlockSlot() {
+    return blockSlot;
   }
 
   public Bytes32 getStateRoot() {
     return stateRoot;
   }
 
-  public Bytes32 getRoot() {
-    return root;
+  public Bytes32 getBlockRoot() {
+    return blockRoot;
   }
 
   public Optional<Integer> getParentIndex() {

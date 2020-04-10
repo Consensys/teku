@@ -23,17 +23,17 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class ForkChoiceAttestationProcessor {
 
-  private final RecentChainData storageClient;
+  private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
 
   public ForkChoiceAttestationProcessor(
-      final RecentChainData storageClient, final StateTransition stateTransition) {
-    this.storageClient = storageClient;
+          final RecentChainData recentChainData, final StateTransition stateTransition) {
+    this.recentChainData = recentChainData;
     this.stateTransition = stateTransition;
   }
 
   public AttestationProcessingResult processAttestation(final Attestation attestation) {
-    final Store.Transaction transaction = storageClient.startStoreTransaction();
+    final Store.Transaction transaction = recentChainData.startStoreTransaction();
     final AttestationProcessingResult result =
         on_attestation(transaction, attestation, stateTransition);
     if (result.isSuccessful()) {

@@ -61,21 +61,21 @@ public class ProtoArray {
    * Register a block with the fork choice. It is only sane to supply a `None` parent for the
    * genesis block.
    *
-   * @param slot
-   * @param root
+   * @param blockSlot
+   * @param blockRoot
    * @param optionalParentRoot
    * @param stateRoot
    * @param justifiedEpoch
    * @param finalizedEpoch
    */
   public void onBlock(
-      UnsignedLong slot,
-      Bytes32 root,
+      UnsignedLong blockSlot,
+      Bytes32 blockRoot,
       Optional<Bytes32> optionalParentRoot,
       Bytes32 stateRoot,
       UnsignedLong justifiedEpoch,
       UnsignedLong finalizedEpoch) {
-    if (indices.containsKey(root)) {
+    if (indices.containsKey(blockRoot)) {
       return;
     }
 
@@ -83,9 +83,9 @@ public class ProtoArray {
 
     ProtoNode node =
         new ProtoNode(
-            slot,
+            blockSlot,
             stateRoot,
-            root,
+            blockRoot,
             optionalParentRoot.map(indices::get),
             justifiedEpoch,
             finalizedEpoch,
@@ -93,7 +93,7 @@ public class ProtoArray {
             Optional.empty(),
             Optional.empty());
 
-    indices.put(node.getRoot(), nodeIndex);
+    indices.put(node.getBlockRoot(), nodeIndex);
     nodes.add(node);
 
     node.getParentIndex()
@@ -125,7 +125,7 @@ public class ProtoArray {
       throw new RuntimeException("ProtoArray: Best node is not viable for head");
     }
 
-    return bestNode.getRoot();
+    return bestNode.getBlockRoot();
   }
 
   /**
@@ -167,7 +167,7 @@ public class ProtoArray {
       // There is no need to adjust the balances or manage parent of the zero hash since it
       // is an alias to the genesis block. The weight applied to the genesis block is
       // irrelevant as we _always_ choose it and it's impossible for it to have a parent.
-      if (node.getRoot().equals(Bytes32.ZERO)) {
+      if (node.getBlockRoot().equals(Bytes32.ZERO)) {
         continue;
       }
 
@@ -204,7 +204,7 @@ public class ProtoArray {
 
     // Remove the `indices` key/values for all the to-be-deleted nodes.
     for (int nodeIndex = 0; nodeIndex < finalizedIndex; nodeIndex++) {
-      Bytes32 root = checkNotNull(nodes.get(nodeIndex), "ProtoArray: Invalid node index").getRoot();
+      Bytes32 root = checkNotNull(nodes.get(nodeIndex), "ProtoArray: Invalid node index").getBlockRoot();
       indices.remove(root);
     }
 
@@ -306,7 +306,7 @@ public class ProtoArray {
                   // No change.
                 } else if (child.getWeight().equals(bestChild.getWeight())) {
                   // Tie-breaker of equal weights by root.
-                  if (child.getRoot().toHexString().compareTo(bestChild.getRoot().toHexString())
+                  if (child.getBlockRoot().toHexString().compareTo(bestChild.getBlockRoot().toHexString())
                       >= 0) {
                     changeToChild(parent, childIndex);
                   } else {

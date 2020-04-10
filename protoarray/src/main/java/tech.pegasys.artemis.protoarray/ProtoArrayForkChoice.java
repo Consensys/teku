@@ -177,7 +177,7 @@ public class ProtoArrayForkChoice {
         return Optional.empty();
       } else {
         ProtoNode node = protoArray.getNodes().get(blockIndex);
-        return Optional.of(new BlockSlotAndStateRoot(node.getSlot(), node.getStateRoot()));
+        return Optional.of(new BlockSlotAndStateRoot(node.getBlockSlot(), node.getStateRoot()));
       }
     } finally {
       protoArrayLock.readLock().unlock();
