@@ -14,7 +14,6 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_block;
 
@@ -34,13 +33,12 @@ public class ForkChoice implements FinalizedCheckpointChannel {
 
   public Bytes32 processHead() {
     Store store = recentChainData.getStore();
+    Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
     Bytes32 headBlockRoot = protoArrayForkChoice.findHead(
-            store.getJustifiedCheckpoint().getEpoch(),
-            store.getJustifiedCheckpoint().getRoot(),
-            store.getJustifiedCheckpoint().getEpoch(),
-            recentChainData.getStateBySlot()
-
-
+            justifiedCheckpoint.getEpoch(),
+            justifiedCheckpoint.getRoot(),
+            store.getFinalizedCheckpoint().getEpoch(),
+            store.getCheckpointState(justifiedCheckpoint).getBalances().asList()
     );
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     recentChainData.updateBestBlock(headBlockRoot, headBlock.getSlot());

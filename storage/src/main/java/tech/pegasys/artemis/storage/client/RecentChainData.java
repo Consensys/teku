@@ -19,6 +19,7 @@ import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;

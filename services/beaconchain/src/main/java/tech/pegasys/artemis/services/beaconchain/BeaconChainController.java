@@ -105,7 +105,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile SettableGauge currentEpochGauge;
   private volatile SettableGauge finalizedEpochGauge;
   private volatile SettableGauge justifiedEpochGauge;
-  private volatile StateProcessor stateProcessor;
   private volatile BeaconRestApi beaconRestAPI;
   private volatile AttestationAggregator attestationAggregator;
   private volatile AggregatingAttestationPool attestationPool;
@@ -190,7 +189,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initEth1DataCache();
     initValidatorCoordinator();
     initGenesisHandler();
-    initStateProcessor();
     initAttestationPropagationManager();
     initP2PNetwork();
     initSyncManager();
@@ -285,11 +283,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriptions)
         .subscribe(ValidatorApiChannel.class, validatorApiHandler);
-  }
-
-  public void initStateProcessor() {
-    LOG.debug("BeaconChainController.initStateProcessor()");
-    this.stateProcessor = new StateProcessor(eventBus, recentChainData);
   }
 
   private void initGenesisHandler() {
