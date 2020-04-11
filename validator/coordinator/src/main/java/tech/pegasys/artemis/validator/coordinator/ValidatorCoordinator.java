@@ -39,6 +39,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.BlockProposalUtil;
+import tech.pegasys.artemis.core.Signer;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -52,7 +54,6 @@ import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
-import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
@@ -66,7 +67,6 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.client.signer.Signer;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
 public class ValidatorCoordinator extends Service implements SlotEventsChannel {
