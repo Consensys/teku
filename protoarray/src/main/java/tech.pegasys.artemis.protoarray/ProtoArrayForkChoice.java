@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -46,12 +47,23 @@ public class ProtoArrayForkChoice {
     this.balances = balances;
   }
 
-  public static ProtoArrayForkChoice create(
+  public static ProtoArrayForkChoice create(ReadOnlyStore store) {
+    Bytes32 finalizedBlockRoot = store.getFinalizedCheckpoint().getRoot();
+    return create(
+            store.getBlock(finalizedBlockRoot).getSlot(),
+            store.getBlockState(finalizedBlockRoot).hashTreeRoot(),
+            store.getFinalizedCheckpoint().getEpoch(),
+            store.getJustifiedCheckpoint().getEpoch(),
+            finalizedBlockRoot
+    );
+  }
+
+  private static ProtoArrayForkChoice create(
       UnsignedLong finalizedBlockSlot,
       Bytes32 finalizedBlockStateRoot,
       UnsignedLong justifiedEpoch,
       UnsignedLong finalizedEpoch,
-      Bytes32 finalizedRoot) {
+      Bytes32 finalizedBlockRoot) {
     ProtoArray protoArray =
         new ProtoArray(
             Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
@@ -62,7 +74,7 @@ public class ProtoArrayForkChoice {
 
     protoArray.onBlock(
         finalizedBlockSlot,
-        finalizedRoot,
+        finalizedBlockRoot,
         Optional.empty(),
         finalizedBlockStateRoot,
         justifiedEpoch,

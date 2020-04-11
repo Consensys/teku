@@ -46,6 +46,7 @@ public class VersionedDatabaseFactory {
 
   public Database createDatabase() {
     LOG.info("Data directory set to: {}", dataDirectory.getAbsolutePath());
+    System.out.println(dataDirectory.getAbsolutePath());
     validateDataPaths();
     final DatabaseVersion dbVersion = getDatabaseVersion();
     createDirectories();

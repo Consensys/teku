@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.get_current_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.get_current_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;

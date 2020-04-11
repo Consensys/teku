@@ -32,9 +32,8 @@ public class BlockImporter {
   private final ForkChoice forkChoice;
   private final EventBus eventBus;
 
-  public BlockImporter(final RecentChainData recentChainData,
-                       final ForkChoice forkChoice,
-                       final EventBus eventBus) {
+  public BlockImporter(
+          final RecentChainData recentChainData, final ForkChoice forkChoice, final EventBus eventBus) {
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
     this.eventBus = eventBus;

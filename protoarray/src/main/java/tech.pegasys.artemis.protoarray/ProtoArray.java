@@ -204,7 +204,8 @@ public class ProtoArray {
 
     // Remove the `indices` key/values for all the to-be-deleted nodes.
     for (int nodeIndex = 0; nodeIndex < finalizedIndex; nodeIndex++) {
-      Bytes32 root = checkNotNull(nodes.get(nodeIndex), "ProtoArray: Invalid node index").getBlockRoot();
+      Bytes32 root =
+          checkNotNull(nodes.get(nodeIndex), "ProtoArray: Invalid node index").getBlockRoot();
       indices.remove(root);
     }
 
@@ -306,7 +307,10 @@ public class ProtoArray {
                   // No change.
                 } else if (child.getWeight().equals(bestChild.getWeight())) {
                   // Tie-breaker of equal weights by root.
-                  if (child.getBlockRoot().toHexString().compareTo(bestChild.getBlockRoot().toHexString())
+                  if (child
+                          .getBlockRoot()
+                          .toHexString()
+                          .compareTo(bestChild.getBlockRoot().toHexString())
                       >= 0) {
                     changeToChild(parent, childIndex);
                   } else {

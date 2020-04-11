@@ -362,13 +362,12 @@ public class ForkChoiceUtil {
     }
 
     protoArrayForkChoice.processBlock(
-            block.getSlot(),
-            block.hash_tree_root(),
-            block.getParent_root(),
-            block.getState_root(),
-            store.getJustifiedCheckpoint().getEpoch(),
-            store.getFinalizedCheckpoint().getEpoch()
-    );
+        block.getSlot(),
+        block.hash_tree_root(),
+        block.getParent_root(),
+        block.getState_root(),
+        store.getJustifiedCheckpoint().getEpoch(),
+        store.getFinalizedCheckpoint().getEpoch());
 
     final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
     return BlockImportResult.successful(record);
@@ -424,10 +423,10 @@ public class ForkChoiceUtil {
    */
   @CheckReturnValue
   public static AttestationProcessingResult on_attestation(
-          final MutableStore store,
-          final Attestation attestation,
-          final StateTransition stateTransition,
-          final ProtoArrayForkChoice protoArrayForkChoice) {
+      final MutableStore store,
+      final Attestation attestation,
+      final StateTransition stateTransition,
+      final ProtoArrayForkChoice protoArrayForkChoice) {
 
     Checkpoint target = attestation.getData().getTarget();
 
@@ -508,13 +507,13 @@ public class ForkChoiceUtil {
     // Update latest messages (in proto array vote tracker)
     // TODO: this can be batched if ProtoArrayForkChoice implements a batched attestation processing
     //  (otherwise it has to be run sequentially due to the write lock on the votes list)
-    // TODO: unsure if 2147483648 validator indices is a problem for the short term or if ints are fine to use here
+    // TODO: unsure if 2147483648 validator indices is a problem for the short term or if ints are
+    // fine to use here
     for (UnsignedLong validatorIndex : indexed_attestation.getAttesting_indices()) {
       protoArrayForkChoice.processAttestation(
-              Math.toIntExact(validatorIndex.longValue()),
-              attestation.getData().getBeacon_block_root(),
-              target.getEpoch()
-      );
+          Math.toIntExact(validatorIndex.longValue()),
+          attestation.getData().getBeacon_block_root(),
+          target.getEpoch());
     }
     return AttestationProcessingResult.SUCCESSFUL;
   }

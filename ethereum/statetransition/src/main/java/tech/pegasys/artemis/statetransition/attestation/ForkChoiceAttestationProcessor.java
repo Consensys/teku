@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.attestation;
 
-
 import tech.pegasys.artemis.core.results.AttestationProcessingResult;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
@@ -26,7 +25,7 @@ public class ForkChoiceAttestationProcessor {
   private final ForkChoice forkChoice;
 
   public ForkChoiceAttestationProcessor(
-          final RecentChainData recentChainData, final ForkChoice forkChoice) {
+      final RecentChainData recentChainData, final ForkChoice forkChoice) {
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
   }

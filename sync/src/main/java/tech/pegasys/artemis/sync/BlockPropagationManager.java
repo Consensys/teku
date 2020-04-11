@@ -112,22 +112,6 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
     children.forEach(this::importBlock);
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
-    LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
-    final BlockImportResult result = blockImporter.importBlock(blockProposedEvent.getBlock());
-    if (result.isSuccessful()) {
-      LOG.trace("Successfully imported proposed block: {}", blockProposedEvent.getBlock());
-    } else {
-      LOG.error(
-              "Failed to import proposed block for reason + "
-                      + result.getFailureReason()
-                      + ": "
-                      + blockProposedEvent,
-              result.getFailureCause().orElse(null));
-    }
-  }
 
   private void importBlock(final SignedBeaconBlock block) {
     recentBlockFetcher.cancelRecentBlockRequest(block.getMessage().hash_tree_root());

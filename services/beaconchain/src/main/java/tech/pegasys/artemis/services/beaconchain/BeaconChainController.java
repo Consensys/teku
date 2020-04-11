@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
@@ -56,6 +56,7 @@ import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationPro
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.artemis.statetransition.genesis.GenesisHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.Store;
@@ -99,6 +100,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final boolean setupInitialState;
   private final SlotEventsChannel slotEventsChannelPublisher;
 
+  private volatile ForkChoice forkChoice;
+  private volatile StateTransition stateTransition;
   private volatile RecentChainData recentChainData;
   private volatile Eth2Network p2pNetwork;
   private volatile SettableGauge currentSlotGauge;
@@ -174,6 +177,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                 setupInitialState();
               }
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
+
               // Init other services
               this.initAll();
               eventChannels.subscribe(TimeTickChannel.class, this);
@@ -181,6 +185,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
+    initStateTransition();
+    initForkChoice();
     initCombinedChainDataClient();
     initMetrics();
     initAttestationAggregator();
@@ -201,6 +207,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     combinedChainDataClient =
         new CombinedChainDataClient(
             recentChainData, eventChannels.getPublisher(StorageQueryChannel.class));
+  }
+
+  private void initStateTransition() {
+    LOG.debug("BeaconChainController.initForkChoice()");
+    stateTransition = new StateTransition();
+  }
+
+  private void initForkChoice() {
+    LOG.debug("BeaconChainController.initForkChoice()");
+    forkChoice = new ForkChoice(
+            recentChainData,
+            stateTransition
+    );
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, forkChoice);
   }
 
   public void initMetrics() {
@@ -261,7 +281,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
-    final StateTransition stateTransition = new StateTransition();
     final BlockFactory blockFactory =
         new BlockFactory(
             new BlockProposalUtil(stateTransition),
@@ -299,7 +318,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final FutureItems<DelayableAttestation> futureAttestations =
         new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
     final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
-        new ForkChoiceAttestationProcessor(recentChainData);
+        new ForkChoiceAttestationProcessor(recentChainData, forkChoice);
     attestationManager =
         AttestationManager.create(
             eventBus, pendingAttestations, futureAttestations, forkChoiceAttestationProcessor);
@@ -387,7 +406,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (!config.isP2pEnabled()) {
       syncService = new NoopSyncService();
     } else {
-      BlockImporter blockImporter = new BlockImporter(recentChainData, eventBus);
+      BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
       final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
       final FutureItems<SignedBeaconBlock> futureBlocks =
           new FutureItems<>(SignedBeaconBlock::getSlot);
@@ -480,7 +499,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       this.justifiedEpochGauge.set(
           recentChainData.getStore().getBestJustifiedCheckpoint().getEpoch().longValue());
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-      Bytes32 headBlockRoot = this.stateProcessor.processHead();
+      Bytes32 headBlockRoot = this.forkChoice.processHead();
       EVENT_LOG.slotEvent(
           nodeSlot,
           recentChainData.getBestSlot(),
@@ -497,7 +516,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void processSlotWhileSyncing() {
-    this.stateProcessor.processHead();
+    this.forkChoice.processHead();
     EVENT_LOG.syncEvent(nodeSlot, recentChainData.getBestSlot(), p2pNetwork.getPeerCount());
     nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
   }
