@@ -138,7 +138,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     final SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(ZERO);
-    verify(historicalChainData, never()).getFinalizedStateAtSlot(any());
+    verify(historicalChainData, never()).getLatestFinalizedStateAtSlot(any());
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 

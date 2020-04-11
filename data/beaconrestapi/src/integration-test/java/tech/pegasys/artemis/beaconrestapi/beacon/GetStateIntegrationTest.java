@@ -74,7 +74,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
     when(recentChainData.getStore()).thenReturn(store);
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(finalizedEpoch));
-    when(historicalChainData.getFinalizedStateAtSlot(UnsignedLong.valueOf(slot)))
+    when(historicalChainData.getLatestFinalizedStateAtSlot(UnsignedLong.valueOf(slot)))
         .thenReturn(emptyStateResult);
 
     final Response response = getBySlot(slot);
