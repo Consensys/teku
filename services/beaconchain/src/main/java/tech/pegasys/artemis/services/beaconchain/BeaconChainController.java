@@ -102,6 +102,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
+  private volatile BlockImporter blockImporter;
   private volatile RecentChainData recentChainData;
   private volatile Eth2Network p2pNetwork;
   private volatile SettableGauge currentSlotGauge;
@@ -187,6 +188,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initAll() {
     initStateTransition();
     initForkChoice();
+    initBlockImporter();
     initCombinedChainDataClient();
     initMetrics();
     initAttestationAggregator();
@@ -216,10 +218,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
-    forkChoice = new ForkChoice(
-            recentChainData,
-            stateTransition
-    );
+    forkChoice = new ForkChoice(recentChainData, stateTransition);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, forkChoice);
   }
 
@@ -401,12 +400,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 
+  public void initBlockImporter() {
+    LOG.debug("BeaconChainController.initBlockImporter()");
+    blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
+  }
+
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
     if (!config.isP2pEnabled()) {
       syncService = new NoopSyncService();
     } else {
-      BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
       final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
       final FutureItems<SignedBeaconBlock> futureBlocks =
           new FutureItems<>(SignedBeaconBlock::getSlot);

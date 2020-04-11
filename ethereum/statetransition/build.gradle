@@ -28,6 +28,7 @@ dependencies {
   testFixturesApi testFixtures(project(':storage'))
 
   testFixturesImplementation project(':ethereum:core')
+  testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':validator:client')

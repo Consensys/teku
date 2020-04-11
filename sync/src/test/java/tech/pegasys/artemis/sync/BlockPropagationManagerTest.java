@@ -27,12 +27,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.ImportedBlocks;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
+import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -55,9 +57,12 @@ public class BlockPropagationManagerTest {
   private final RecentChainData remoteStorage = MemoryOnlyRecentChainData.create(remoteEventBus);
   private final BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys);
   private final BeaconChainUtil remoteChain = BeaconChainUtil.create(remoteStorage, validatorKeys);
+  private final ForkChoice forkChoice =
+      new ForkChoice(new MemoryOnlyRecentChainData(localEventBus), new StateTransition());
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
 
-  private final BlockImporter blockImporter = new BlockImporter(localStorage, localEventBus);
+  private final BlockImporter blockImporter =
+      new BlockImporter(localStorage, forkChoice, localEventBus);
   private final BlockPropagationManager blockPropagationManager =
       new BlockPropagationManager(
           localEventBus,

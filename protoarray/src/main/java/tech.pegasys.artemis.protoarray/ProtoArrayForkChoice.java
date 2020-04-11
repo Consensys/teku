@@ -28,16 +28,21 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class ProtoArrayForkChoice {
+public class ProtoArrayForkChoice implements ProtoArrayForkChoiceClient {
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   private final ProtoArray protoArray;
   private final ElasticList<VoteTracker> votes;
+
   private List<UnsignedLong> balances;
 
   private ProtoArrayForkChoice(
@@ -47,18 +52,69 @@ public class ProtoArrayForkChoice {
     this.balances = balances;
   }
 
+  // Public
+
   public static ProtoArrayForkChoice create(ReadOnlyStore store) {
     Bytes32 finalizedBlockRoot = store.getFinalizedCheckpoint().getRoot();
     return create(
-            store.getBlock(finalizedBlockRoot).getSlot(),
-            store.getBlockState(finalizedBlockRoot).hashTreeRoot(),
-            store.getFinalizedCheckpoint().getEpoch(),
-            store.getJustifiedCheckpoint().getEpoch(),
-            finalizedBlockRoot
-    );
+        store.getBlock(finalizedBlockRoot).getSlot(),
+        store.getBlockState(finalizedBlockRoot).hashTreeRoot(),
+        store.getFinalizedCheckpoint().getEpoch(),
+        store.getJustifiedCheckpoint().getEpoch(),
+        finalizedBlockRoot);
   }
 
-  private static ProtoArrayForkChoice create(
+  @Override
+  public Bytes32 findHead(final Store store) {
+    Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
+    return findHead(
+        justifiedCheckpoint.getEpoch(),
+        justifiedCheckpoint.getRoot(),
+        store.getFinalizedCheckpoint().getEpoch(),
+        store.getCheckpointState(justifiedCheckpoint).getBalances().asList());
+  }
+
+  @Override
+  public void onAttestation(final IndexedAttestation attestation) {
+    votesLock.writeLock().lock();
+    try {
+      attestation.getAttesting_indices().stream()
+          .parallel()
+          .forEach(
+              validatorIndex -> {
+                processAttestation(
+                    Math.toIntExact(validatorIndex.longValue()),
+                    attestation.getData().getBeacon_block_root(),
+                    attestation.getData().getTarget().getEpoch());
+              });
+    } finally {
+      votesLock.writeLock().unlock();
+    }
+  }
+
+  @Override
+  public void onBlock(final MutableStore store, final BeaconBlock block) {
+    processBlock(
+        block.getSlot(),
+        block.hash_tree_root(),
+        block.getParent_root(),
+        block.getState_root(),
+        store.getJustifiedCheckpoint().getEpoch(),
+        store.getFinalizedCheckpoint().getEpoch());
+  }
+
+  public void maybePrune(Bytes32 finalizedRoot) {
+    protoArrayLock.writeLock().lock();
+    try {
+      protoArray.maybePrune(finalizedRoot);
+    } finally {
+      protoArrayLock.writeLock().unlock();
+    }
+  }
+
+  // Internal
+
+  static ProtoArrayForkChoice create(
       UnsignedLong finalizedBlockSlot,
       Bytes32 finalizedBlockStateRoot,
       UnsignedLong justifiedEpoch,
@@ -84,21 +140,16 @@ public class ProtoArrayForkChoice {
         protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
   }
 
-  public void processAttestation(int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
-    votesLock.writeLock().lock();
-    try {
-      VoteTracker vote = votes.get(validatorIndex);
+  void processAttestation(int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
+    VoteTracker vote = votes.get(validatorIndex);
 
-      if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
-        vote.setNextRoot(blockRoot);
-        vote.setNextEpoch(targetEpoch);
-      }
-    } finally {
-      votesLock.writeLock().unlock();
+    if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
+      vote.setNextRoot(blockRoot);
+      vote.setNextEpoch(targetEpoch);
     }
   }
 
-  public void processBlock(
+  void processBlock(
       UnsignedLong blockSlot,
       Bytes32 blockRoot,
       Bytes32 parentRoot,
@@ -114,7 +165,7 @@ public class ProtoArrayForkChoice {
     }
   }
 
-  public Bytes32 findHead(
+  Bytes32 findHead(
       UnsignedLong justifiedEpoch,
       Bytes32 justifiedRoot,
       UnsignedLong finalizedEpoch,
@@ -136,15 +187,6 @@ public class ProtoArrayForkChoice {
       protoArrayLock.writeLock().unlock();
       votesLock.writeLock().unlock();
       balancesLock.writeLock().unlock();
-    }
-  }
-
-  public void maybePrune(Bytes32 finalizedRoot) {
-    protoArrayLock.writeLock().lock();
-    try {
-      protoArray.maybePrune(finalizedRoot);
-    } finally {
-      protoArrayLock.writeLock().unlock();
     }
   }
 

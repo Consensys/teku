@@ -17,8 +17,6 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_index
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
@@ -26,15 +24,8 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.StateTransitionException;
@@ -51,7 +42,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.protoarray.ProtoArrayForkChoice;
+import tech.pegasys.artemis.protoarray.ProtoArrayForkChoiceClient;
 
 public class ForkChoiceUtil {
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
@@ -94,131 +85,6 @@ public class ForkChoiceUtil {
     }
   }
 
-  /**
-   * Gets the latest attesting balance for the given block root
-   *
-   * @param store
-   * @param root
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_latest_attesting_balance</a>
-   */
-  public static UnsignedLong get_latest_attesting_balance(ReadOnlyStore store, Bytes32 root) {
-    BeaconState state = store.getCheckpointState(store.getJustifiedCheckpoint());
-    List<Integer> active_indices = get_active_validator_indices(state, get_current_epoch(state));
-    return active_indices.stream()
-        .filter(
-            i ->
-                store.containsLatestMessage(UnsignedLong.valueOf(i))
-                    && get_ancestor(
-                            store,
-                            store.getLatestMessage(UnsignedLong.valueOf(i)).getRoot(),
-                            store.getBlock(root).getSlot())
-                        .equals(root))
-        .map(i -> state.getValidators().get(i).getEffective_balance())
-        .reduce(UnsignedLong.ZERO, UnsignedLong::plus);
-  }
-
-  public static boolean filter_block_tree(
-      ReadOnlyStore store, Bytes32 block_root, Map<Bytes32, BeaconBlock> blocks) {
-    BeaconBlock block = store.getBlock(block_root);
-    List<Bytes32> children =
-        store.getBlockRoots().stream()
-            .filter(root -> store.getBlock(root).getParent_root().equals(block_root))
-            .collect(Collectors.toList());
-    // If any children branches contain expected finalized/justified checkpoints,
-    // add to filtered block-tree and signal viability to parent
-    if (!children.isEmpty()) {
-      boolean filter_block_tree_result =
-          children.stream()
-              .map(child -> filter_block_tree(store, child, blocks))
-              .reduce((a, b) -> a || b)
-              .orElse(false);
-      if (filter_block_tree_result) {
-        blocks.put(block_root, block);
-        return true;
-      }
-      return false;
-    }
-
-    BeaconState head_state = store.getBlockState(block_root);
-    boolean correct_justified =
-        store.getJustifiedCheckpoint().getEpoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))
-            || head_state.getCurrent_justified_checkpoint().equals(store.getJustifiedCheckpoint());
-    boolean correct_finalized =
-        store.getFinalizedCheckpoint().getEpoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))
-            || head_state.getFinalized_checkpoint().equals(store.getFinalizedCheckpoint());
-
-    if (correct_justified && correct_finalized) {
-      blocks.put(block_root, block);
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Retrieve a filtered block tree from store, only returning branches whose leaf state's
-   * justified/finalized info agrees with that in store.
-   *
-   * @param store
-   * @return
-   */
-  public static Map<Bytes32, BeaconBlock> get_filtered_block_tree(ReadOnlyStore store) {
-    Bytes32 base = store.getJustifiedCheckpoint().getRoot();
-    Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
-    filter_block_tree(store, base, blocks);
-    return blocks;
-  }
-
-  /**
-   * Gets the root of the head block according to LMD-GHOST
-   *
-   * @param store
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_head</a>
-   */
-  public static Bytes32 get_head(ReadOnlyStore store) {
-    // Get filtered block tree that only includes viable branches
-    final Map<Bytes32, BeaconBlock> blocks = get_filtered_block_tree(store);
-
-    // Execute the LMD-GHOST fork choice
-    Bytes32 head = store.getJustifiedCheckpoint().getRoot();
-    UnsignedLong justified_slot = store.getJustifiedCheckpoint().getEpochStartSlot();
-
-    while (true) {
-      final Bytes32 head_in_filter = head;
-      List<Bytes32> children =
-          blocks.entrySet().stream()
-              .filter(
-                  (entry) -> {
-                    final BeaconBlock block = entry.getValue();
-                    return block.getParent_root().equals(head_in_filter)
-                        && block.getSlot().compareTo(justified_slot) > 0;
-                  })
-              .map(Entry::getKey)
-              .collect(Collectors.toList());
-
-      if (children.size() == 0) {
-        return head;
-      }
-
-      // Sort by latest attesting balance with ties broken lexicographically
-      UnsignedLong max_value = UnsignedLong.ZERO;
-      for (Bytes32 child : children) {
-        UnsignedLong curr_value = get_latest_attesting_balance(store, child);
-        if (curr_value.compareTo(max_value) > 0) {
-          max_value = curr_value;
-        }
-      }
-
-      final UnsignedLong max = max_value;
-      head =
-          children.stream()
-              .filter(child -> get_latest_attesting_balance(store, child).compareTo(max) == 0)
-              .max(Comparator.comparing(Bytes::toHexString))
-              .get();
-    }
-  }
   /*
   To address the bouncing attack, only update conflicting justified
   checkpoints in the fork choice if in the early slots of the epoch.
@@ -284,7 +150,7 @@ public class ForkChoiceUtil {
       final MutableStore store,
       final SignedBeaconBlock signed_block,
       final StateTransition st,
-      final ProtoArrayForkChoice protoArrayForkChoice) {
+      final ProtoArrayForkChoiceClient protoArrayForkChoiceClient) {
     final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
@@ -361,13 +227,7 @@ public class ForkChoiceUtil {
       }
     }
 
-    protoArrayForkChoice.processBlock(
-        block.getSlot(),
-        block.hash_tree_root(),
-        block.getParent_root(),
-        block.getState_root(),
-        store.getJustifiedCheckpoint().getEpoch(),
-        store.getFinalizedCheckpoint().getEpoch());
+    protoArrayForkChoiceClient.onBlock(store, block);
 
     final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
     return BlockImportResult.successful(record);
@@ -426,7 +286,7 @@ public class ForkChoiceUtil {
       final MutableStore store,
       final Attestation attestation,
       final StateTransition stateTransition,
-      final ProtoArrayForkChoice protoArrayForkChoice) {
+      final ProtoArrayForkChoiceClient protoArrayForkChoiceClient) {
 
     Checkpoint target = attestation.getData().getTarget();
 
@@ -504,17 +364,8 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
     }
 
-    // Update latest messages (in proto array vote tracker)
-    // TODO: this can be batched if ProtoArrayForkChoice implements a batched attestation processing
-    //  (otherwise it has to be run sequentially due to the write lock on the votes list)
-    // TODO: unsure if 2147483648 validator indices is a problem for the short term or if ints are
-    // fine to use here
-    for (UnsignedLong validatorIndex : indexed_attestation.getAttesting_indices()) {
-      protoArrayForkChoice.processAttestation(
-          Math.toIntExact(validatorIndex.longValue()),
-          attestation.getData().getBeacon_block_root(),
-          target.getEpoch());
-    }
+    protoArrayForkChoiceClient.onAttestation(indexed_attestation);
+
     return AttestationProcessingResult.SUCCESSFUL;
   }
 

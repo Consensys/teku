@@ -33,7 +33,9 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.protoarray.StubForkChoiceClient;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -131,7 +133,7 @@ public class BeaconChainUtil {
     setSlot(slot);
     final Transaction transaction = storageClient.startStoreTransaction();
     final BlockImportResult importResult =
-        ForkChoiceUtil.on_block(transaction, block, stateTransition);
+        ForkChoiceUtil.on_block(transaction, block, stateTransition, new StubForkChoiceClient());
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "

@@ -26,8 +26,10 @@ dependencies {
     integrationTestImplementation testFixtures(project(':util'))
 
     testFixturesImplementation project(':services:serviceutils')
+    testFixturesImplementation project(':ethereum:statetransition')
     testFixturesImplementation project(':util')
 
+    testFixturesImplementation testFixtures(project(':ethereum:core'))
     testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
     testFixturesImplementation testFixtures(project('::networking:eth2'))
     testFixturesImplementation testFixtures(project('::networking:p2p'))

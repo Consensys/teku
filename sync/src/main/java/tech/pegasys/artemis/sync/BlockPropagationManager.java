@@ -29,7 +29,6 @@ import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
@@ -111,7 +110,6 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
     children.forEach(pendingBlocks::remove);
     children.forEach(this::importBlock);
   }
-
 
   private void importBlock(final SignedBeaconBlock block) {
     recentBlockFetcher.cancelRecentBlockRequest(block.getMessage().hash_tree_root());

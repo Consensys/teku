@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition.blockimport;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import java.util.Optional;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +23,7 @@ import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -33,10 +35,11 @@ public class BlockImporter {
   private final EventBus eventBus;
 
   public BlockImporter(
-          final RecentChainData recentChainData, final ForkChoice forkChoice, final EventBus eventBus) {
+      final RecentChainData recentChainData, final ForkChoice forkChoice, final EventBus eventBus) {
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
     this.eventBus = eventBus;
+    eventBus.register(this);
   }
 
   @CheckReturnValue
@@ -69,6 +72,23 @@ public class BlockImporter {
     } catch (Exception e) {
       LOG.error("Internal error while importing block: " + block.getMessage(), e);
       return BlockImportResult.internalError(e);
+    }
+  }
+
+  @Subscribe
+  @SuppressWarnings("unused")
+  private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
+    LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
+    final BlockImportResult result = importBlock(blockProposedEvent.getBlock());
+    if (result.isSuccessful()) {
+      LOG.trace("Successfully imported proposed block: {}", blockProposedEvent.getBlock());
+    } else {
+      LOG.error(
+          "Failed to import proposed block for reason + "
+              + result.getFailureReason()
+              + ": "
+              + blockProposedEvent,
+          result.getFailureCause().orElse(null));
     }
   }
 }
