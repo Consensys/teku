@@ -44,11 +44,11 @@ public class GetHead implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the head of the beacon chain from the node's perspective.",
+      summary = "Get information about the chain head.",
       tags = {TAG_BEACON},
       description =
           "Returns information about the head of the beacon chain from the node’s perspective.\n\n"
-              + "To retrieve finalized and justified information use "
+              + "To retrieve finalized and justified information, use "
               + GetChainHead.ROUTE
               + " instead.",
       responses = {
