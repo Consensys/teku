@@ -20,12 +20,10 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSI
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.BlockProposalTestUtil;
 import tech.pegasys.artemis.core.ForkChoiceUtil;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.BlockImportResult;
@@ -33,6 +31,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.validator.TestMessageSignerService;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
@@ -44,7 +43,7 @@ import tech.pegasys.artemis.util.config.Constants;
 public class BeaconChainUtil {
 
   private final StateTransition stateTransition = new StateTransition();
-  private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil(stateTransition);
+  private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
   private final RecentChainData storageClient;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
@@ -185,10 +184,11 @@ public class BeaconChainUtil {
 
     final MessageSignerService signer = getSigner(proposerIndex);
     if (attestations.isPresent()) {
-      return blockCreator.createBlockWithAttestations(
-          signer, slot, preState, bestBlockRoot, attestations.get());
+      return blockCreator
+          .createBlockWithAttestations(signer, slot, preState, bestBlockRoot, attestations.get())
+          .getBlock();
     } else {
-      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot);
+      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot).getBlock();
     }
   }
 
@@ -228,38 +228,5 @@ public class BeaconChainUtil {
 
   private MessageSignerService getSigner(final int proposerIndex) {
     return new TestMessageSignerService(validatorKeys.get(proposerIndex));
-  }
-
-  private static class TestMessageSignerService implements MessageSignerService {
-
-    private BLSKeyPair blsKeyPair;
-
-    public TestMessageSignerService(final BLSKeyPair blsKeyPair) {
-      this.blsKeyPair = blsKeyPair;
-    }
-
-    @Override
-    public SafeFuture<BLSSignature> signBlock(final Bytes signingRoot) {
-      return sign(signingRoot);
-    }
-
-    @Override
-    public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
-      return sign(signingRoot);
-    }
-
-    @Override
-    public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
-      return sign(signingRoot);
-    }
-
-    @Override
-    public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
-      return sign(signingRoot);
-    }
-
-    private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
-      return SafeFuture.completedFuture(BLS.sign(blsKeyPair.getSecretKey(), signingRoot));
-    }
   }
 }
