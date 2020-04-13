@@ -36,8 +36,8 @@ public class DelayableAttestation {
     onSuccessfulProcessing.run();
   }
 
-  public UnsignedLong getEarliestSlotForProcessing() {
-    return attestation.getEarliestSlotForProcessing();
+  public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
+    return attestation.getEarliestSlotForForkChoiceProcessing();
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {
