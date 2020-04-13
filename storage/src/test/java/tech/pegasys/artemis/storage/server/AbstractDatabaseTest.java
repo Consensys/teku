@@ -76,20 +76,16 @@ public abstract class AbstractDatabaseTest {
 
     genesisBlockAndState = chainBuilder.generateGenesis();
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
-    while (checkpoint3 == null) {
-      final SignedBlockAndState newBlockAndState = chainBuilder.generateNextBlock();
-      final UnsignedLong currentSlot = newBlockAndState.getBlock().getSlot();
-      if (isFirstSlotInEpoch(currentSlot, 1)) {
-        checkpoint1BlockAndState = newBlockAndState;
-        checkpoint1 = getCheckpointForBlock(checkpoint1BlockAndState.getBlock());
-      } else if (isFirstSlotInEpoch(currentSlot, 2)) {
-        checkpoint2BlockAndState = newBlockAndState;
-        checkpoint2 = getCheckpointForBlock(checkpoint2BlockAndState.getBlock());
-      } else if (isFirstSlotInEpoch(currentSlot, 3)) {
-        checkpoint3BlockAndState = newBlockAndState;
-        checkpoint3 = getCheckpointForBlock(checkpoint3BlockAndState.getBlock());
-      }
+    while (chainBuilder.getLatestEpoch().longValue() < 3) {
+      chainBuilder.generateNextBlock();
     }
+
+    checkpoint1BlockAndState = chainBuilder.getLatestBlockAtEpochBoundary(1);
+    checkpoint1 = chainBuilder.getCurrentCheckpointForEpoch(1);
+    checkpoint2BlockAndState = chainBuilder.getLatestBlockAtEpochBoundary(2);
+    checkpoint2 = chainBuilder.getCurrentCheckpointForEpoch(2);
+    checkpoint3BlockAndState = chainBuilder.getLatestBlockAtEpochBoundary(3);
+    checkpoint3 = chainBuilder.getCurrentCheckpointForEpoch(3);
 
     store = Store.get_genesis_store(genesisBlockAndState.getState());
     database.storeGenesis(store);
@@ -162,18 +158,16 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void shouldGetHotStateByRoot() throws StateTransitionException {
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    final BeaconState state1 = chainBuilder.generateNextBlock().getState();
-    final BeaconState state2 = chainBuilder.generateNextBlock().getState();
-    final Bytes32 block1Root = Bytes32.fromHexString("0x1234");
-    final Bytes32 block2Root = Bytes32.fromHexString("0x5822");
-    transaction.putBlockState(block1Root, state1);
-    transaction.putBlockState(block2Root, state2);
+    final SignedBlockAndState block1 = chainBuilder.getBlockAtSlot(1);
+    final SignedBlockAndState block2 = chainBuilder.getBlockAtSlot(2);
 
+    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    transaction.putBlockState(block1.getRoot(), block1.getState());
+    transaction.putBlockState(block2.getRoot(), block2.getState());
     commit(transaction);
 
-    assertThat(database.getState(block1Root)).contains(state1);
-    assertThat(database.getState(block2Root)).contains(state2);
+    assertThat(database.getState(block1.getRoot())).contains(block1.getState());
+    assertThat(database.getState(block2.getRoot())).contains(block2.getState());
   }
 
   @Test
@@ -381,7 +375,7 @@ public abstract class AbstractDatabaseTest {
     transaction1.putBlock(checkpoint1BlockAndState.getRoot(), checkpoint1BlockAndState.getBlock());
     transaction1.putBlock(checkpoint2BlockAndState.getRoot(), checkpoint2BlockAndState.getBlock());
     transaction1.putBlock(checkpoint3BlockAndState.getRoot(), checkpoint3BlockAndState.getBlock());
-    // Add checkpoitns
+    // Add checkpoints
     transaction1.putCheckpointState(checkpoint1, checkpoint1BlockAndState.getState());
     transaction1.putCheckpointState(checkpoint2, checkpoint2BlockAndState.getState());
     transaction1.putCheckpointState(checkpoint3, checkpoint3BlockAndState.getState());
@@ -420,8 +414,8 @@ public abstract class AbstractDatabaseTest {
     final Bytes32 genesisRoot = genesisBlockAndState.getRoot();
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
 
-    final SignedBlockAndState blockAndState1 = chainBuilder.getBlockAtSlot(UnsignedLong.valueOf(1));
-    final SignedBlockAndState blockAndState2 = chainBuilder.getBlockAtSlot(UnsignedLong.valueOf(2));
+    final SignedBlockAndState blockAndState1 = chainBuilder.getBlockAtSlot(1);
+    final SignedBlockAndState blockAndState2 = chainBuilder.getBlockAtSlot(2);
 
     transaction.putBlock(blockAndState1.getRoot(), blockAndState1.getBlock());
     transaction.putBlock(blockAndState2.getRoot(), blockAndState2.getBlock());
@@ -443,10 +437,9 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    final SignedBlockAndState block1 = chainBuilder.getBlockAtSlot(UnsignedLong.valueOf(1));
+    final SignedBlockAndState block1 = chainBuilder.getBlockAtSlot(1);
     final SignedBlockAndState block2 = checkpoint1BlockAndState;
-    final SignedBlockAndState unfinalizedBlock =
-        chainBuilder.getLatestBlockAtEpoch(UnsignedLong.valueOf(2));
+    final SignedBlockAndState unfinalizedBlock = chainBuilder.getLatestBlockAtEpochBoundary(2);
 
     transaction.putBlock(block1.getRoot(), block1.getBlock());
     transaction.putBlock(block2.getRoot(), block2.getBlock());
@@ -812,10 +805,6 @@ public abstract class AbstractDatabaseTest {
   protected StorageUpdateResult getLatestUpdateResult() {
     final List<StorageUpdateResult> updateResults = storageUpdateChannel.getStorageUpdates();
     return updateResults.get(updateResults.size() - 1);
-  }
-
-  private boolean isFirstSlotInEpoch(final UnsignedLong slot, final int epoch) {
-    return compute_start_slot_at_epoch(UnsignedLong.valueOf(epoch)).compareTo(slot) == 0;
   }
 
   protected Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {

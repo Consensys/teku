@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.core;
 
 import static org.assertj.core.util.Preconditions.checkState;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
@@ -32,6 +33,7 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
@@ -76,6 +78,17 @@ public class ChainBuilder {
     return Optional.ofNullable(blocks.lastEntry()).map(Entry::getValue).orElse(null);
   }
 
+  public UnsignedLong getLatestSlot() {
+    asserChainIsNotEmpty();
+    return getLatestBlock().getBlock().getSlot();
+  }
+
+  public UnsignedLong getLatestEpoch() {
+    asserChainIsNotEmpty();
+    final UnsignedLong slot = getLatestBlock().getBlock().getSlot();
+    return compute_epoch_at_slot(slot);
+  }
+
   public SignedBlockAndState getBlockAtSlot(final long slot) {
     return getBlockAtSlot(UnsignedLong.valueOf(slot));
   }
@@ -92,13 +105,24 @@ public class ChainBuilder {
     return Optional.ofNullable(blocks.floorEntry(slot)).map(Entry::getValue).orElse(null);
   }
 
-  public SignedBlockAndState getLatestBlockAtEpoch(final long epoch) {
-    return getLatestBlockAtEpoch(UnsignedLong.valueOf(epoch));
+  public SignedBlockAndState getLatestBlockAtEpochBoundary(final long epoch) {
+    return getLatestBlockAtEpochBoundary(UnsignedLong.valueOf(epoch));
   }
 
-  public SignedBlockAndState getLatestBlockAtEpoch(final UnsignedLong epoch) {
+  public SignedBlockAndState getLatestBlockAtEpochBoundary(final UnsignedLong epoch) {
+    asserChainIsNotEmpty();
     final UnsignedLong slot = compute_start_slot_at_epoch(epoch);
     return getLatestBlockAtSlot(slot);
+  }
+
+  public Checkpoint getCurrentCheckpointForEpoch(final long epoch) {
+    return getCurrentCheckpointForEpoch(UnsignedLong.valueOf(epoch));
+  }
+
+  public Checkpoint getCurrentCheckpointForEpoch(final UnsignedLong epoch) {
+    asserChainIsNotEmpty();
+    final SignedBeaconBlock block = getLatestBlockAtEpochBoundary(epoch).getBlock();
+    return new Checkpoint(epoch, block.getMessage().hash_tree_root());
   }
 
   public SignedBlockAndState generateGenesis() {
@@ -161,6 +185,10 @@ public class ChainBuilder {
         "Cannot generate block at historical slot");
 
     return appendNewBlockToChain(slot);
+  }
+
+  private void asserChainIsNotEmpty() {
+    checkState(!blocks.isEmpty(), "Unable to execute operation on empty chain");
   }
 
   private void assertBlockCanBeGenerated() {
