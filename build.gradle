@@ -197,7 +197,7 @@ allprojects {
     }
   }
 
-  // Normalise Xdoclint behaviour across JDKs (OpenJDK 8 is more lenient than Oracle JDK by default).
+  // Normalize Xdoclint behaviour across JDKs (OpenJDK 8 is more lenient than Oracle JDK by default).
   javadoc {
     options.addStringOption('Xdoclint:all', '-quiet')
     if (JavaVersion.current() == JavaVersion.VERSION_1_8) {

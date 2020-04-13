@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public class BeaconBlockAndState {
@@ -24,6 +25,10 @@ public class BeaconBlockAndState {
   public BeaconBlockAndState(final BeaconBlock block, final BeaconState state) {
     this.block = block;
     this.state = state;
+  }
+
+  public Bytes32 getRoot() {
+    return block.hash_tree_root();
   }
 
   public BeaconBlock getBlock() {
