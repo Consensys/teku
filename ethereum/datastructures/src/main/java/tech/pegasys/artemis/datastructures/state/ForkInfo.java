@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class ForkInfo {
@@ -31,6 +32,24 @@ public class ForkInfo {
 
   public Bytes32 getGenesisValidatorsRoot() {
     return genesisValidatorsRoot;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ForkInfo forkInfo = (ForkInfo) o;
+    return Objects.equals(fork, forkInfo.fork) &&
+        Objects.equals(genesisValidatorsRoot, forkInfo.genesisValidatorsRoot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(fork, genesisValidatorsRoot);
   }
 
   @Override
