@@ -18,15 +18,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
+import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -469,15 +470,22 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void shouldRecordFinalizedBlocksAndStates_pruneMode() throws StateTransitionException {
-    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE);
+    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE, false);
   }
 
   @Test
   public void shouldRecordFinalizedBlocksAndStates_archiveMode() throws StateTransitionException {
-    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE);
+    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, false);
   }
 
-  public void testShouldRecordFinalizedBlocksAndStates(final StateStorageMode storageMode)
+  @Test
+  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate()
+      throws StateTransitionException {
+    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, true);
+  }
+
+  public void testShouldRecordFinalizedBlocksAndStates(
+      final StateStorageMode storageMode, final boolean batchUpdate)
       throws StateTransitionException {
     // Setup chains
     // Both chains share block up to slot 3
@@ -498,169 +506,79 @@ public abstract class AbstractDatabaseTest {
     store = Store.get_genesis_store(genesis.getState());
     database.storeGenesis(store);
 
-    // Create blocks
-    final SignedBlockAndState block1 = primaryChain.getBlockAndStateAtSlot(1);
-    final SignedBlockAndState block2 = primaryChain.getBlockAndStateAtSlot(2);
-    final SignedBlockAndState block3 = primaryChain.getBlockAndStateAtSlot(3);
-    // Few skipped slots
-    final SignedBlockAndState block7 = primaryChain.getBlockAndStateAtSlot(7);
-    final SignedBlockAndState block8 = primaryChain.getBlockAndStateAtSlot(8);
-    final SignedBlockAndState block9 = primaryChain.getBlockAndStateAtSlot(9);
-    // Create some blocks on a different fork
-    final SignedBlockAndState forkBlock6 = forkChain.getBlockAndStateAtSlot(6);
-    final SignedBlockAndState forkBlock7 = forkChain.getBlockAndStateAtSlot(7);
-    final SignedBlockAndState forkBlock8 = forkChain.getBlockAndStateAtSlot(8);
-    final SignedBlockAndState forkBlock9 = forkChain.getBlockAndStateAtSlot(9);
+    final Set<SignedBlockAndState> allBlocksAndStates =
+        Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
+            .collect(Collectors.toSet());
 
-    final List<SignedBlockAndState> allBlocks =
-        List.of(
-            block1,
-            block2,
-            block3,
-            block7,
-            block8,
-            block9,
-            forkBlock6,
-            forkBlock7,
-            forkBlock8,
-            forkBlock9);
-    add(allBlocks);
-
-    assertThat(database.getSignedBlock(block7.getRoot())).contains(block7.getBlock());
-    assertLatestUpdateResultPrunedCollectionsAreEmpty();
     final Map<Bytes32, BeaconState> allStatesByRoot =
-        allBlocks.stream()
+        allBlocksAndStates.stream()
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
-    assertStatesAvailable(allStatesByRoot);
 
-    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(block7.getBlock());
-    finalizeCheckpoint(finalizedCheckpoint);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
+    if (batchUpdate) {
+      final Transaction transaction = store.startTransaction(storageUpdateChannel);
+      add(transaction, allBlocksAndStates);
+      transaction.setFinalizedCheckpoint(finalizedCheckpoint);
+      transaction.commit().reportExceptions();
+    } else {
+      add(allBlocksAndStates);
+      finalizeCheckpoint(finalizedCheckpoint);
+    }
 
     // Upon finalization, we should prune data
     final Set<Bytes32> blocksToPrune =
-        Set.of(block1, block2, block3, forkBlock6).stream()
+        Streams.concat(
+                primaryChain.streamBlocksAndStates(0, 6), forkChain.streamBlocksAndStates(0, 6))
             .map(SignedBlockAndState::getRoot)
             .collect(Collectors.toSet());
-    blocksToPrune.add(genesis.getRoot());
     final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
     assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
 
     // Check data was pruned from store
     assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
 
-    assertHotBlocksAndStates(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
+    // Check hot data
+    final List<SignedBlockAndState> expectedHotBlocksAndStates =
+        Streams.concat(
+                primaryChain.streamBlocksAndStates(7, 9), forkChain.streamBlocksAndStates(7, 9))
+            .collect(toList());
+    assertHotBlocksAndStates(expectedHotBlocksAndStates);
+
+    // Check finalized data
     final List<SignedBeaconBlock> expectedFinalizedBlocks =
-        Stream.of(block1, block2, block3, block7)
+        primaryChain
+            .streamBlocksAndStates(0, 7)
             .map(SignedBlockAndState::getBlock)
             .collect(toList());
     assertBlocksFinalized(expectedFinalizedBlocks);
     assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(expectedFinalizedBlocks);
-
-    // Should still be able to retrieve finalized blocks by root
-    assertThat(database.getSignedBlock(block1.getRoot())).contains(block1.getBlock());
+    assertBlocksAvailableByRoot(expectedFinalizedBlocks);
 
     switch (storageMode) {
       case ARCHIVE:
         final Map<Bytes32, BeaconState> expectedStates = new HashMap<>(allStatesByRoot);
         // We should've pruned non-canonical states prior to latest finalized slot
-        expectedStates.remove(forkBlock6.getRoot());
+        expectedStates.remove(forkChain.getBlockAtSlot(6).getRoot());
         assertStatesAvailable(expectedStates);
         break;
       case PRUNE:
-        assertStatesUnavailableForBlocks(block3.getBlock(), forkBlock6.getBlock());
-        assertStatesAvailable(
-            Map.of(
-                block7.getRoot(), block7.getState(), forkBlock7.getRoot(), forkBlock7.getState()));
+        // Check pruned states
+        final List<Bytes32> prunedRoots =
+            Streams.concat(
+                    primaryChain.streamBlocksAndStatesUpTo(6),
+                    forkChain.streamBlocksAndStatesUpTo(6))
+                .map(SignedBlockAndState::getRoot)
+                .collect(toList());
+        assertStatesUnavailable(prunedRoots);
+        // Check hot states
+        final Map<Bytes32, BeaconState> expectedHotStates =
+            Streams.concat(
+                    primaryChain.streamBlocksAndStates(7, 9), forkChain.streamBlocksAndStates(7, 9))
+                .collect(
+                    Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
+        assertStatesAvailable(expectedHotStates);
         break;
     }
-  }
-
-  @Test
-  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate()
-      throws StateTransitionException {
-    // Setup chains
-    // Both chains share block up to slot 3
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
-    final SignedBlockAndState genesis = primaryChain.generateGenesis();
-    primaryChain.generateBlocksUpToSlot(3);
-    final ChainBuilder forkChain = primaryChain.fork();
-    // Fork chain's next block is at 6
-    forkChain.generateBlockAtSlot(6);
-    forkChain.generateBlocksUpToSlot(9);
-    // Primary chain's next block is at 7
-    primaryChain.generateBlockAtSlot(7);
-    primaryChain.generateBlocksUpToSlot(9);
-
-    // Setup database
-    database = setupDatabase(StateStorageMode.ARCHIVE);
-    final Checkpoint genesisCheckpoint = getCheckpointForBlock(genesis.getBlock());
-    store = Store.get_genesis_store(genesis.getState());
-    database.storeGenesis(store);
-
-    // Create blocks
-    final SignedBlockAndState block1 = primaryChain.getBlockAndStateAtSlot(1);
-    final SignedBlockAndState block2 = primaryChain.getBlockAndStateAtSlot(2);
-    final SignedBlockAndState block3 = primaryChain.getBlockAndStateAtSlot(3);
-    // Few skipped slots
-    final SignedBlockAndState block7 = primaryChain.getBlockAndStateAtSlot(7);
-    final SignedBlockAndState block8 = primaryChain.getBlockAndStateAtSlot(8);
-    final SignedBlockAndState block9 = primaryChain.getBlockAndStateAtSlot(9);
-    // Create some blocks on a different fork
-    final SignedBlockAndState forkBlock6 = forkChain.getBlockAndStateAtSlot(6);
-    final SignedBlockAndState forkBlock7 = forkChain.getBlockAndStateAtSlot(7);
-    final SignedBlockAndState forkBlock8 = forkChain.getBlockAndStateAtSlot(8);
-    final SignedBlockAndState forkBlock9 = forkChain.getBlockAndStateAtSlot(9);
-
-    final List<SignedBlockAndState> allBlocks =
-        List.of(
-            block1,
-            block2,
-            block3,
-            block7,
-            block8,
-            block9,
-            forkBlock6,
-            forkBlock7,
-            forkBlock8,
-            forkBlock9);
-    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(block7.getBlock());
-
-    // Commit blocks and finalize them in one batch step
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    add(transaction, allBlocks);
-    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
-    transaction.commit().reportExceptions();
-
-    // Upon finalization, we should prune data
-    final Set<Bytes32> blocksToPrune =
-        Set.of(block1, block2, block3, forkBlock6).stream()
-            .map(SignedBlockAndState::getRoot)
-            .collect(Collectors.toSet());
-    blocksToPrune.add(genesis.getRoot());
-    final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
-    assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
-
-    // Check data was pruned from store
-    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
-
-    assertHotBlocksAndStates(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
-    final List<SignedBeaconBlock> expectedFinalizedBlocks =
-        Stream.of(block1, block2, block3, block7)
-            .map(SignedBlockAndState::getBlock)
-            .collect(toList());
-    assertBlocksFinalized(expectedFinalizedBlocks);
-    assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(expectedFinalizedBlocks);
-
-    // Should still be able to retrieve finalized blocks by root
-    assertThat(database.getSignedBlock(block1.getRoot())).contains(block1.getBlock());
-
-    final Map<Bytes32, BeaconState> allStatesByRoot =
-        allBlocks.stream()
-            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
-    final Map<Bytes32, BeaconState> expectedStates = new HashMap<>(allStatesByRoot);
-    // We should've pruned non-canonical states prior to latest finalized slot
-    expectedStates.remove(forkBlock6.getRoot());
-    assertStatesAvailable(expectedStates);
   }
 
   protected void assertBlocksFinalized(final List<SignedBeaconBlock> blocks) {
@@ -668,6 +586,14 @@ public abstract class AbstractDatabaseTest {
       assertThat(database.getFinalizedRootAtSlot(block.getSlot()))
           .describedAs("Block root at slot %s", block.getSlot())
           .contains(block.getMessage().hash_tree_root());
+    }
+  }
+
+  protected void assertBlocksAvailableByRoot(final List<SignedBeaconBlock> blocks) {
+    for (SignedBeaconBlock block : blocks) {
+      assertThat(database.getSignedBlock(block.getRoot()))
+          .describedAs("Block root at slot %s", block.getSlot())
+          .contains(block);
     }
   }
 
@@ -704,10 +630,11 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  protected void assertHotBlocksAndStates(final SignedBlockAndState... blocks) {
+  protected void assertHotBlocksAndStates(final Collection<SignedBlockAndState> blocksAndStates) {
     final Store memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore.getBlockRoots())
-        .hasSameElementsAs(Stream.of(blocks).map(SignedBlockAndState::getRoot).collect(toList()));
+        .hasSameElementsAs(
+            blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
 
     final List<BeaconState> hotStates =
         memoryStore.getBlockRoots().stream()
@@ -716,18 +643,24 @@ public abstract class AbstractDatabaseTest {
             .collect(toList());
 
     assertThat(hotStates)
-        .hasSameElementsAs(Stream.of(blocks).map(SignedBlockAndState::getState).collect(toList()));
+        .hasSameElementsAs(
+            blocksAndStates.stream().map(SignedBlockAndState::getState).collect(toList()));
   }
 
-  protected void assertHotStatesAvailable(final List<BeaconState> states) {
+  protected void assertHotBlocksAndStatesInclude(
+      final Collection<SignedBlockAndState> blocksAndStates) {
     final Store memoryStore = database.createMemoryStore().orElseThrow();
+    assertThat(memoryStore.getBlockRoots())
+        .containsAll(blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
+
     final List<BeaconState> hotStates =
         memoryStore.getBlockRoots().stream()
             .map(memoryStore::getBlockState)
             .filter(Objects::nonNull)
             .collect(toList());
 
-    assertThat(hotStates).hasSameElementsAs(states);
+    assertThat(hotStates)
+        .containsAll(blocksAndStates.stream().map(SignedBlockAndState::getState).collect(toList()));
   }
 
   protected void assertStatesAvailable(final Map<Bytes32, BeaconState> states) {
@@ -736,9 +669,8 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  protected void assertStatesUnavailableForBlocks(final SignedBeaconBlock... blocks) {
-    for (SignedBeaconBlock block : blocks) {
-      final Bytes32 root = block.getMessage().hash_tree_root();
+  protected void assertStatesUnavailable(final Collection<Bytes32> roots) {
+    for (Bytes32 root : roots) {
       assertThat(database.getState(root)).isEmpty();
     }
   }
@@ -777,14 +709,14 @@ public abstract class AbstractDatabaseTest {
     commit(transaction);
   }
 
-  protected void add(final List<SignedBlockAndState> blocks) {
+  protected void add(final Collection<SignedBlockAndState> blocks) {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     add(transaction, blocks);
     commit(transaction);
   }
 
   protected void add(
-      final Transaction transaction, final List<SignedBlockAndState> blocksAndStates) {
+      final Transaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
     for (SignedBlockAndState blockAndState : blocksAndStates) {
       transaction.putBlock(blockAndState.getRoot(), blockAndState.getBlock());
       transaction.putBlockState(blockAndState.getRoot(), blockAndState.getState());

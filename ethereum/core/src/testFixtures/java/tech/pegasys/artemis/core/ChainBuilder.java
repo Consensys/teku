@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
@@ -79,6 +80,29 @@ public class ChainBuilder {
     asserChainIsNotEmpty();
     final UnsignedLong slot = getLatestSlot();
     return compute_epoch_at_slot(slot);
+  }
+
+  public Stream<SignedBlockAndState> streamBlocksAndStates() {
+    return blocks.values().stream();
+  }
+
+  public Stream<SignedBlockAndState> streamBlocksAndStates(final long fromSlot, final long toSlot) {
+    return streamBlocksAndStates(UnsignedLong.valueOf(fromSlot), UnsignedLong.valueOf(toSlot));
+  }
+
+  public Stream<SignedBlockAndState> streamBlocksAndStates(
+      final UnsignedLong fromSlot, final UnsignedLong toSlot) {
+    return blocks.values().stream()
+        .filter(b -> b.getBlock().getSlot().compareTo(fromSlot) >= 0)
+        .filter(b -> b.getBlock().getSlot().compareTo(toSlot) <= 0);
+  }
+
+  public Stream<SignedBlockAndState> streamBlocksAndStatesUpTo(final long toSlot) {
+    return streamBlocksAndStatesUpTo(UnsignedLong.valueOf(toSlot));
+  }
+
+  public Stream<SignedBlockAndState> streamBlocksAndStatesUpTo(final UnsignedLong toSlot) {
+    return blocks.values().stream().filter(b -> b.getBlock().getSlot().compareTo(toSlot) <= 0);
   }
 
   public SignedBlockAndState getGenesis() {

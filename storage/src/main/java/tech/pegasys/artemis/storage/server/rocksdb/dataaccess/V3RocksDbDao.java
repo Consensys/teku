@@ -210,8 +210,8 @@ public class V3RocksDbDao implements RocksDbDAO {
     }
 
     if (hotStates.size() != hotBlocksByRoot.size()) {
-      LOG.error(
-          "Only {} hot states produced for {} hot blocks",
+      LOG.trace(
+          "Only {} hot states produced for {} hot blocks.  Some hot blocks must belong to a non-canonical fork.",
           hotStates.size(),
           hotBlocksByRoot.size());
     }
