@@ -59,7 +59,7 @@ public class AggregatingAttestationPool {
   public synchronized SSZList<Attestation> getAttestationsForBlock(final UnsignedLong slot) {
     final SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
     attestationGroupByDataHash.values().stream()
-        .filter(group -> canBeIncluded(group, slot))
+        .filter(group -> group.getAttestationData().canIncludeInBlockAtSlot(slot))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestations.getMaxSize())
         .forEach(attestations::add);
@@ -70,9 +70,5 @@ public class AggregatingAttestationPool {
       final AttestationData attestationData) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationData.hash_tree_root()))
         .flatMap(attestations -> attestations.stream().findFirst());
-  }
-
-  private boolean canBeIncluded(final MatchingDataAttestationGroup group, final UnsignedLong slot) {
-    return group.getAttestationData().getEarliestSlotForProcessing().compareTo(slot) <= 0;
   }
 }

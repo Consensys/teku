@@ -44,7 +44,7 @@ public class GetSyncing implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get synchronization information from the running beacon node.",
+      summary = "Get synchronization status.",
       tags = {TAG_NODE},
       description =
           "Returns an object with data about the synchronization status, or false if not synchronizing.",

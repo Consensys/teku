@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
+import tech.pegasys.artemis.core.BlockProposalUtil;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
@@ -50,7 +51,6 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
-import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
@@ -277,6 +277,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
+            stateTransition,
             blockFactory,
             attestationPool,
             attestationAggregator,
@@ -304,7 +305,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final PendingPool<DelayableAttestation> pendingAttestations =
         PendingPool.createForAttestations(eventBus);
     final FutureItems<DelayableAttestation> futureAttestations =
-        new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
+        new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
     final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
         new ForkChoiceAttestationProcessor(recentChainData, new StateTransition());
     attestationManager =

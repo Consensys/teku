@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition.attestation;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.attestation.AggregatorUtil.aggregateAttestations;
@@ -76,15 +77,24 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void getAttestationsForBlock_shouldNotIncludeAttestationsFromSameOrLaterSlotThanBlock() {
-    addAttestationFromValidators(dataStructureUtil.randomAttestationData(SLOT), 1);
-    addAttestationFromValidators(dataStructureUtil.randomAttestationData(SLOT.plus(ONE)), 2);
+    addAttestationFromValidators(randomAttestationDataToIncludeInBlock(SLOT), 1);
+    addAttestationFromValidators(randomAttestationDataToIncludeInBlock(SLOT.plus(ONE)), 2);
+    addAttestationFromValidators(randomAttestationDataToIncludeInBlock(ZERO), 3);
 
     assertThat(aggregatingPool.getAttestationsForBlock(SLOT)).isEmpty();
   }
 
   @Test
+  public void getAttestationsForBlock_shouldNotIncludeAttestationsFromBeforePreviousEpoch() {
+    addAttestationFromValidators(randomAttestationDataToIncludeInBlock(SLOT.minus(ONE)), 1);
+
+    final UnsignedLong twoEpochs = UnsignedLong.valueOf(2 * Constants.SLOTS_PER_EPOCH);
+    assertThat(aggregatingPool.getAttestationsForBlock(SLOT.plus(twoEpochs))).isEmpty();
+  }
+
+  @Test
   public void getAttestationsForBlock_shouldAggregateAttestationsWhenPossible() {
-    final AttestationData attestationData = randomValidationDataToIncludeInBlock();
+    final AttestationData attestationData = randomAttestationDataToIncludeInBlock();
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 3, 4);
 
@@ -94,11 +104,11 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void getAttestationsForBlock_shouldIncludeAttestationsWithDifferentData() {
-    final AttestationData attestationData = randomValidationDataToIncludeInBlock();
+    final AttestationData attestationData = randomAttestationDataToIncludeInBlock();
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 3, 4);
     final Attestation attestation3 =
-        addAttestationFromValidators(randomValidationDataToIncludeInBlock(), 3, 4);
+        addAttestationFromValidators(randomAttestationDataToIncludeInBlock(), 3, 4);
 
     assertThat(aggregatingPool.getAttestationsForBlock(SLOT))
         .containsExactlyInAnyOrder(aggregateAttestations(attestation1, attestation2), attestation3);
@@ -107,7 +117,7 @@ class AggregatingAttestationPoolTest {
   @Test
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
     Constants.MAX_ATTESTATIONS = 2;
-    final AttestationData attestationData = randomValidationDataToIncludeInBlock();
+    final AttestationData attestationData = randomAttestationDataToIncludeInBlock();
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 5);
     // Won't be included because of the 2 attestation limit.
@@ -127,14 +137,17 @@ class AggregatingAttestationPoolTest {
     return attestation;
   }
 
-  private AttestationData randomValidationDataToIncludeInBlock() {
+  private AttestationData randomAttestationDataToIncludeInBlock() {
     final UnsignedLong attestationSlot = SLOT.minus(ONE);
+    return randomAttestationDataToIncludeInBlock(attestationSlot);
+  }
+
+  private AttestationData randomAttestationDataToIncludeInBlock(final UnsignedLong slot) {
     return new AttestationData(
-        attestationSlot,
+        slot,
         dataStructureUtil.randomUnsignedLong(),
         dataStructureUtil.randomBytes32(),
-        new Checkpoint(
-            compute_epoch_at_slot(attestationSlot).minus(ONE), dataStructureUtil.randomBytes32()),
-        new Checkpoint(compute_epoch_at_slot(attestationSlot), dataStructureUtil.randomBytes32()));
+        new Checkpoint(compute_epoch_at_slot(slot).minus(ONE), dataStructureUtil.randomBytes32()),
+        new Checkpoint(compute_epoch_at_slot(slot), dataStructureUtil.randomBytes32()));
   }
 }

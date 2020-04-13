@@ -175,12 +175,12 @@ class RecentChainDataTest {
   }
 
   @Test
-  void getStateBySlot_returnEmptyWhenStoreNotSet() {
-    assertThat(preGenesisStorageClient.getStateBySlot(UnsignedLong.ZERO)).isEmpty();
+  void getStateInEffectAtSlot_returnEmptyWhenStoreNotSet() {
+    assertThat(preGenesisStorageClient.getStateInEffectAtSlot(UnsignedLong.ZERO)).isEmpty();
   }
 
   @Test
-  public void getStateBySlot_returnGenesisBlockWhenItIsTheBestState() {
+  public void getStateInEffectAtSlot_returnGenesisStateWhenItIsTheBestState() {
     storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
 
     final BeaconState bestState = dataStructureUtil.randomBeaconState(UnsignedLong.ZERO);
@@ -189,7 +189,33 @@ class RecentChainDataTest {
     when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(newState);
     when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
 
-    assertThat(storageClient.getBlockBySlot(UnsignedLong.ZERO)).contains(GENESIS_BLOCK);
+    assertThat(storageClient.getStateInEffectAtSlot(UnsignedLong.ZERO)).contains(newState);
+  }
+
+  @Test
+  public void getStateInEffectAtSlot_returnStateFromLastBlockWhenSlotsAreEmpty() {
+    storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ONE);
+
+    final BeaconState bestState = dataStructureUtil.randomBeaconState(UnsignedLong.ZERO);
+    final BeaconState newState =
+        bestState.updated(state -> state.getBlock_roots().set(0, GENESIS_BLOCK_ROOT));
+    when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(newState);
+    when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
+
+    assertThat(storageClient.getStateInEffectAtSlot(UnsignedLong.ONE)).contains(newState);
+  }
+
+  @Test
+  public void getStateInEffectAtSlot_returnStateFromLastBlockWhenHeadSlotIsEmpty() {
+    storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
+
+    final BeaconState bestState = dataStructureUtil.randomBeaconState(UnsignedLong.ZERO);
+    final BeaconState newState =
+        bestState.updated(state -> state.getBlock_roots().set(0, GENESIS_BLOCK_ROOT));
+    when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(newState);
+    when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
+
+    assertThat(storageClient.getStateInEffectAtSlot(UnsignedLong.ONE)).contains(newState);
   }
 
   @Test
