@@ -53,20 +53,23 @@ public class BlockPropagationManagerTest {
       new FutureItems<>(SignedBeaconBlock::getSlot);
   private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
 
-  private final RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
-  private final RecentChainData remoteStorage = MemoryOnlyRecentChainData.create(remoteEventBus);
-  private final BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys);
-  private final BeaconChainUtil remoteChain = BeaconChainUtil.create(remoteStorage, validatorKeys);
-  private final ForkChoice forkChoice =
-      new ForkChoice(new MemoryOnlyRecentChainData(localEventBus), new StateTransition());
+  private final RecentChainData localRecentChainData =
+      MemoryOnlyRecentChainData.create(localEventBus);
+  private final RecentChainData remoteRecentChainData =
+      MemoryOnlyRecentChainData.create(remoteEventBus);
+  private final BeaconChainUtil localChain =
+      BeaconChainUtil.create(localRecentChainData, validatorKeys);
+  private final BeaconChainUtil remoteChain =
+      BeaconChainUtil.create(remoteRecentChainData, validatorKeys);
+  private final ForkChoice forkChoice = new ForkChoice(localRecentChainData, new StateTransition());
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
 
   private final BlockImporter blockImporter =
-      new BlockImporter(localStorage, forkChoice, localEventBus);
+      new BlockImporter(localRecentChainData, forkChoice, localEventBus);
   private final BlockPropagationManager blockPropagationManager =
       new BlockPropagationManager(
           localEventBus,
-          localStorage,
+          localRecentChainData,
           blockImporter,
           pendingBlocks,
           futureBlocks,
