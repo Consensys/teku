@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.core;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
@@ -61,7 +60,7 @@ public class BlockProposalTestUtil {
     final BlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
-            get_beacon_proposer_index(state, newSlot),
+            blockProposalUtil.getProposerIndexForSlot(state, newSlot),
             randaoReveal,
             state,
             parentBlockSigningRoot,
