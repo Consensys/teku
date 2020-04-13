@@ -29,10 +29,10 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.core.Signer;
+import tech.pegasys.artemis.datastructures.validator.LocalMessageSignerService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
-import tech.pegasys.artemis.validator.client.signer.LocalMessageSignerService;
 
 public class ValidatorLoader {
 

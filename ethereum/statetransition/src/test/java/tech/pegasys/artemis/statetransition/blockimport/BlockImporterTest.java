@@ -30,14 +30,15 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.AttestationGenerator;
 import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.core.results.BlockImportResult.FailureReason;
+import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
@@ -243,7 +244,8 @@ public class BlockImporterTest {
 
     // Now create a new block that is not descendent from the finalized block
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final Attestation attestation = attestationGenerator.validAttestation(otherStorage);
+    final BlockAndState blockAndState = otherStorage.getBestBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final SignedBeaconBlock block =
         otherChain.createAndImportBlockAtSlot(currentSlot, List.of(attestation));
 

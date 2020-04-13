@@ -11,6 +11,7 @@ dependencies {
   implementation project(':storage')
   implementation project(':util')
 
+  implementation testFixtures(project(':ethereum:core'))
   implementation testFixtures(project(':ethereum:datastructures'))
   implementation testFixtures(project(':ethereum:statetransition'))
   implementation testFixtures(project(':storage'))

@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.core.AttestationGenerator;
 import tech.pegasys.artemis.core.BlockProposalTestUtil;
 import tech.pegasys.artemis.core.ForkChoiceUtil;
 import tech.pegasys.artemis.core.StateTransition;

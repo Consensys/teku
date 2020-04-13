@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.core;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
@@ -23,16 +23,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.CommitteeAssignmentUtil;
-import tech.pegasys.artemis.core.Signer;
-import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -40,10 +37,9 @@ import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.validator.LocalMessageSignerService;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.validator.client.signer.LocalMessageSignerService;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
@@ -150,31 +146,21 @@ public class AttestationGenerator {
     return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
   }
 
-  public Attestation validAttestation(final RecentChainData storageClient)
+  public Attestation validAttestation(final BlockAndState blockAndState)
       throws EpochProcessingException, SlotProcessingException {
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
-    BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
-    BeaconState state = storageClient.getStore().getBlockState(bestBlockRoot);
-    return createAttestation(block, state, true);
+    return createAttestation(blockAndState, true);
   }
 
-  public Attestation attestationWithInvalidSignature(final RecentChainData storageClient)
+  public Attestation attestationWithInvalidSignature(final BlockAndState blockAndState)
       throws EpochProcessingException, SlotProcessingException {
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
-    BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
-    BeaconState state = storageClient.getStore().getBlockState(bestBlockRoot);
-    return createAttestation(block, state, false);
-  }
-
-  public Attestation attestationWithInvalidSignature(
-      final BeaconBlock block, final BeaconState state)
-      throws EpochProcessingException, SlotProcessingException {
-    return createAttestation(block, state, false);
+    return createAttestation(blockAndState, false);
   }
 
   private Attestation createAttestation(
-      final BeaconBlock block, final BeaconState state, final boolean withValidSignature)
+      final BlockAndState blockAndState, final boolean withValidSignature)
       throws EpochProcessingException, SlotProcessingException {
+    final BeaconBlock block = blockAndState.getBlock();
+    final BeaconState state = blockAndState.getState();
     final UnsignedLong epoch = compute_epoch_at_slot(state.getSlot());
     Optional<CommitteeAssignment> committeeAssignment = Optional.empty();
     Optional<UnsignedLong> slot = Optional.empty();

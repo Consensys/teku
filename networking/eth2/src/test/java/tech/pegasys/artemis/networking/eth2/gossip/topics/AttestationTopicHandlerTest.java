@@ -25,10 +25,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.core.AttestationGenerator;
+import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -49,7 +50,8 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_validAttestation() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final Attestation attestation = attestationGenerator.validAttestation(storageClient);
+    final BlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
@@ -60,8 +62,9 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_invalidAttestationSignature() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final BlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
     final Attestation attestation =
-        attestationGenerator.attestationWithInvalidSignature(storageClient);
+        attestationGenerator.attestationWithInvalidSignature(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
@@ -80,7 +83,8 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_invalidAttestation_missingState() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final Attestation attestation = attestationGenerator.validAttestation(storageClient);
+    final BlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     // Set up state to be missing
