@@ -305,7 +305,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final PendingPool<DelayableAttestation> pendingAttestations =
         PendingPool.createForAttestations(eventBus);
     final FutureItems<DelayableAttestation> futureAttestations =
-        new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
+        new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
     final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
         new ForkChoiceAttestationProcessor(recentChainData, new StateTransition());
     attestationManager =
