@@ -88,7 +88,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     // Store genesis
     database.storeGenesis(store);
     // Add a new finalized block to supersede genesis
-    final SignedBlockAndState newBlock = chainBuilder.getBlockAtSlot(1);
+    final SignedBlockAndState newBlock = chainBuilder.getBlockAndStateAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlock(newBlock.getRoot(), newBlock.getBlock());

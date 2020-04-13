@@ -70,49 +70,65 @@ public class ChainBuilder {
     return new ChainBuilder(validatorKeys, blocks);
   }
 
-  public SignedBlockAndState getGenesis() {
-    return Optional.ofNullable(blocks.firstEntry()).map(Entry::getValue).orElse(null);
-  }
-
-  public SignedBlockAndState getLatestBlock() {
-    return Optional.ofNullable(blocks.lastEntry()).map(Entry::getValue).orElse(null);
-  }
-
   public UnsignedLong getLatestSlot() {
     asserChainIsNotEmpty();
-    return getLatestBlock().getBlock().getSlot();
+    return getLatestBlockAndState().getBlock().getSlot();
   }
 
   public UnsignedLong getLatestEpoch() {
     asserChainIsNotEmpty();
-    final UnsignedLong slot = getLatestBlock().getBlock().getSlot();
+    final UnsignedLong slot = getLatestSlot();
     return compute_epoch_at_slot(slot);
   }
 
-  public SignedBlockAndState getBlockAtSlot(final long slot) {
-    return getBlockAtSlot(UnsignedLong.valueOf(slot));
+  public SignedBlockAndState getGenesis() {
+    return Optional.ofNullable(blocks.firstEntry()).map(Entry::getValue).orElse(null);
   }
 
-  public SignedBlockAndState getBlockAtSlot(final UnsignedLong slot) {
+  public SignedBlockAndState getLatestBlockAndState() {
+    return Optional.ofNullable(blocks.lastEntry()).map(Entry::getValue).orElse(null);
+  }
+
+  public SignedBlockAndState getBlockAndStateAtSlot(final long slot) {
+    return getBlockAndStateAtSlot(UnsignedLong.valueOf(slot));
+  }
+
+  public SignedBlockAndState getBlockAndStateAtSlot(final UnsignedLong slot) {
     return Optional.ofNullable(blocks.get(slot)).orElse(null);
   }
 
-  public SignedBlockAndState getLatestBlockAtSlot(final long slot) {
-    return getLatestBlockAtSlot(UnsignedLong.valueOf(slot));
+  public SignedBeaconBlock getBlockAtSlot(final long slot) {
+    return getBlockAtSlot(UnsignedLong.valueOf(slot));
   }
 
-  public SignedBlockAndState getLatestBlockAtSlot(final UnsignedLong slot) {
+  public SignedBeaconBlock getBlockAtSlot(final UnsignedLong slot) {
+    return resultToBlock(getBlockAndStateAtSlot(slot));
+  }
+
+  public BeaconState getStateAtSlot(final long slot) {
+    return getStateAtSlot(UnsignedLong.valueOf(slot));
+  }
+
+  public BeaconState getStateAtSlot(final UnsignedLong slot) {
+    return resultToState(getBlockAndStateAtSlot(slot));
+  }
+
+  public SignedBlockAndState getLatestBlockAndStateAtSlot(final long slot) {
+    return getLatestBlockAndStateAtSlot(UnsignedLong.valueOf(slot));
+  }
+
+  public SignedBlockAndState getLatestBlockAndStateAtSlot(final UnsignedLong slot) {
     return Optional.ofNullable(blocks.floorEntry(slot)).map(Entry::getValue).orElse(null);
   }
 
-  public SignedBlockAndState getLatestBlockAtEpochBoundary(final long epoch) {
-    return getLatestBlockAtEpochBoundary(UnsignedLong.valueOf(epoch));
+  public SignedBlockAndState getLatestBlockAndStateAtEpochBoundary(final long epoch) {
+    return getLatestBlockAndStateAtEpochBoundary(UnsignedLong.valueOf(epoch));
   }
 
-  public SignedBlockAndState getLatestBlockAtEpochBoundary(final UnsignedLong epoch) {
+  public SignedBlockAndState getLatestBlockAndStateAtEpochBoundary(final UnsignedLong epoch) {
     asserChainIsNotEmpty();
     final UnsignedLong slot = compute_start_slot_at_epoch(epoch);
-    return getLatestBlockAtSlot(slot);
+    return getLatestBlockAndStateAtSlot(slot);
   }
 
   public Checkpoint getCurrentCheckpointForEpoch(final long epoch) {
@@ -121,7 +137,7 @@ public class ChainBuilder {
 
   public Checkpoint getCurrentCheckpointForEpoch(final UnsignedLong epoch) {
     asserChainIsNotEmpty();
-    final SignedBeaconBlock block = getLatestBlockAtEpochBoundary(epoch).getBlock();
+    final SignedBeaconBlock block = getLatestBlockAndStateAtEpochBoundary(epoch).getBlock();
     return new Checkpoint(epoch, block.getMessage().hash_tree_root());
   }
 
@@ -152,7 +168,7 @@ public class ChainBuilder {
   public void generateBlocksUpToSlot(final UnsignedLong slot) throws StateTransitionException {
     assertBlockCanBeGenerated();
 
-    SignedBlockAndState latestBlock = getLatestBlock();
+    SignedBlockAndState latestBlock = getLatestBlockAndState();
     while (latestBlock.getState().getSlot().compareTo(slot) < 0) {
       latestBlock = generateNextBlock();
     }
@@ -166,7 +182,7 @@ public class ChainBuilder {
   public SignedBlockAndState generateNextBlock(final int skipSlots)
       throws StateTransitionException {
     assertBlockCanBeGenerated();
-    final SignedBlockAndState latest = getLatestBlock();
+    final SignedBlockAndState latest = getLatestBlockAndState();
     final UnsignedLong nextSlot =
         latest.getState().getSlot().plus(UnsignedLong.valueOf(1 + skipSlots));
     return generateBlockAtSlot(nextSlot);
@@ -179,7 +195,7 @@ public class ChainBuilder {
   public SignedBlockAndState generateBlockAtSlot(final UnsignedLong slot)
       throws StateTransitionException {
     assertBlockCanBeGenerated();
-    final SignedBlockAndState latest = getLatestBlock();
+    final SignedBlockAndState latest = getLatestBlockAndState();
     checkState(
         slot.compareTo(latest.getState().getSlot()) > 0,
         "Cannot generate block at historical slot");
@@ -197,7 +213,7 @@ public class ChainBuilder {
 
   private SignedBlockAndState appendNewBlockToChain(final UnsignedLong slot)
       throws StateTransitionException {
-    final SignedBlockAndState latestBlockAndState = getLatestBlock();
+    final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState = latestBlockAndState.getState();
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hash_tree_root();
 
@@ -208,6 +224,14 @@ public class ChainBuilder {
 
     blocks.put(slot, nextBlockAndState);
     return nextBlockAndState;
+  }
+
+  private BeaconState resultToState(final SignedBlockAndState result) {
+    return Optional.ofNullable(result).map(SignedBlockAndState::getState).orElse(null);
+  }
+
+  private SignedBeaconBlock resultToBlock(final SignedBlockAndState result) {
+    return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
   }
 
   private MessageSignerService getSigner(final int proposerIndex) {

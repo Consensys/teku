@@ -102,18 +102,18 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     database.storeGenesis(store);
 
     // Create blocks
-    final SignedBlockAndState block1 = primaryChain.getBlockAtSlot(1);
-    final SignedBlockAndState block2 = primaryChain.getBlockAtSlot(2);
-    final SignedBlockAndState block3 = primaryChain.getBlockAtSlot(3);
+    final SignedBlockAndState block1 = primaryChain.getBlockAndStateAtSlot(1);
+    final SignedBlockAndState block2 = primaryChain.getBlockAndStateAtSlot(2);
+    final SignedBlockAndState block3 = primaryChain.getBlockAndStateAtSlot(3);
     // Few skipped slots
-    final SignedBlockAndState block7 = primaryChain.getBlockAtSlot(7);
-    final SignedBlockAndState block8 = primaryChain.getBlockAtSlot(8);
-    final SignedBlockAndState block9 = primaryChain.getBlockAtSlot(9);
+    final SignedBlockAndState block7 = primaryChain.getBlockAndStateAtSlot(7);
+    final SignedBlockAndState block8 = primaryChain.getBlockAndStateAtSlot(8);
+    final SignedBlockAndState block9 = primaryChain.getBlockAndStateAtSlot(9);
     // Create some blocks on a different fork
-    final SignedBlockAndState forkBlock6 = forkChain.getBlockAtSlot(6);
-    final SignedBlockAndState forkBlock7 = forkChain.getBlockAtSlot(7);
-    final SignedBlockAndState forkBlock8 = forkChain.getBlockAtSlot(8);
-    final SignedBlockAndState forkBlock9 = forkChain.getBlockAtSlot(9);
+    final SignedBlockAndState forkBlock6 = forkChain.getBlockAndStateAtSlot(6);
+    final SignedBlockAndState forkBlock7 = forkChain.getBlockAndStateAtSlot(7);
+    final SignedBlockAndState forkBlock8 = forkChain.getBlockAndStateAtSlot(8);
+    final SignedBlockAndState forkBlock9 = forkChain.getBlockAndStateAtSlot(9);
 
     final List<SignedBlockAndState> allBlocks =
         List.of(

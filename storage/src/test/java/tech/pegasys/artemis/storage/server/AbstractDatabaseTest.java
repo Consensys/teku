@@ -80,11 +80,11 @@ public abstract class AbstractDatabaseTest {
       chainBuilder.generateNextBlock();
     }
 
-    checkpoint1BlockAndState = chainBuilder.getLatestBlockAtEpochBoundary(1);
+    checkpoint1BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(1);
     checkpoint1 = chainBuilder.getCurrentCheckpointForEpoch(1);
-    checkpoint2BlockAndState = chainBuilder.getLatestBlockAtEpochBoundary(2);
+    checkpoint2BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(2);
     checkpoint2 = chainBuilder.getCurrentCheckpointForEpoch(2);
-    checkpoint3BlockAndState = chainBuilder.getLatestBlockAtEpochBoundary(3);
+    checkpoint3BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(3);
     checkpoint3 = chainBuilder.getCurrentCheckpointForEpoch(3);
 
     store = Store.get_genesis_store(genesisBlockAndState.getState());
@@ -140,16 +140,16 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldGetHotBlockByRoot() {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    final SignedBlockAndState block1 = chainBuilder.getBlockAtSlot(1);
-    final SignedBlockAndState block2 = chainBuilder.getBlockAtSlot(2);
+    final SignedBeaconBlock block1 = chainBuilder.getBlockAtSlot(1);
+    final SignedBeaconBlock block2 = chainBuilder.getBlockAtSlot(2);
 
-    transaction.putBlock(block1.getRoot(), block1.getBlock());
-    transaction.putBlock(block2.getRoot(), block2.getBlock());
+    transaction.putBlock(block1.getRoot(), block1);
+    transaction.putBlock(block2.getRoot(), block2);
 
     commit(transaction);
 
-    assertThat(database.getSignedBlock(block1.getRoot())).contains(block1.getBlock());
-    assertThat(database.getSignedBlock(block2.getRoot())).contains(block2.getBlock());
+    assertThat(database.getSignedBlock(block1.getRoot())).contains(block1);
+    assertThat(database.getSignedBlock(block2.getRoot())).contains(block2);
   }
 
   protected void commit(final Transaction transaction) {
@@ -158,8 +158,8 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void shouldGetHotStateByRoot() throws StateTransitionException {
-    final SignedBlockAndState block1 = chainBuilder.getBlockAtSlot(1);
-    final SignedBlockAndState block2 = chainBuilder.getBlockAtSlot(2);
+    final SignedBlockAndState block1 = chainBuilder.getBlockAndStateAtSlot(1);
+    final SignedBlockAndState block2 = chainBuilder.getBlockAndStateAtSlot(2);
 
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlockState(block1.getRoot(), block1.getState());
@@ -414,8 +414,8 @@ public abstract class AbstractDatabaseTest {
     final Bytes32 genesisRoot = genesisBlockAndState.getRoot();
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
 
-    final SignedBlockAndState blockAndState1 = chainBuilder.getBlockAtSlot(1);
-    final SignedBlockAndState blockAndState2 = chainBuilder.getBlockAtSlot(2);
+    final SignedBlockAndState blockAndState1 = chainBuilder.getBlockAndStateAtSlot(1);
+    final SignedBlockAndState blockAndState2 = chainBuilder.getBlockAndStateAtSlot(2);
 
     transaction.putBlock(blockAndState1.getRoot(), blockAndState1.getBlock());
     transaction.putBlock(blockAndState2.getRoot(), blockAndState2.getBlock());
@@ -437,9 +437,10 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    final SignedBlockAndState block1 = chainBuilder.getBlockAtSlot(1);
+    final SignedBlockAndState block1 = chainBuilder.getBlockAndStateAtSlot(1);
     final SignedBlockAndState block2 = checkpoint1BlockAndState;
-    final SignedBlockAndState unfinalizedBlock = chainBuilder.getLatestBlockAtEpochBoundary(2);
+    final SignedBlockAndState unfinalizedBlock =
+        chainBuilder.getLatestBlockAndStateAtEpochBoundary(2);
 
     transaction.putBlock(block1.getRoot(), block1.getBlock());
     transaction.putBlock(block2.getRoot(), block2.getBlock());
@@ -498,18 +499,18 @@ public abstract class AbstractDatabaseTest {
     database.storeGenesis(store);
 
     // Create blocks
-    final SignedBlockAndState block1 = primaryChain.getBlockAtSlot(1);
-    final SignedBlockAndState block2 = primaryChain.getBlockAtSlot(2);
-    final SignedBlockAndState block3 = primaryChain.getBlockAtSlot(3);
+    final SignedBlockAndState block1 = primaryChain.getBlockAndStateAtSlot(1);
+    final SignedBlockAndState block2 = primaryChain.getBlockAndStateAtSlot(2);
+    final SignedBlockAndState block3 = primaryChain.getBlockAndStateAtSlot(3);
     // Few skipped slots
-    final SignedBlockAndState block7 = primaryChain.getBlockAtSlot(7);
-    final SignedBlockAndState block8 = primaryChain.getBlockAtSlot(8);
-    final SignedBlockAndState block9 = primaryChain.getBlockAtSlot(9);
+    final SignedBlockAndState block7 = primaryChain.getBlockAndStateAtSlot(7);
+    final SignedBlockAndState block8 = primaryChain.getBlockAndStateAtSlot(8);
+    final SignedBlockAndState block9 = primaryChain.getBlockAndStateAtSlot(9);
     // Create some blocks on a different fork
-    final SignedBlockAndState forkBlock6 = forkChain.getBlockAtSlot(6);
-    final SignedBlockAndState forkBlock7 = forkChain.getBlockAtSlot(7);
-    final SignedBlockAndState forkBlock8 = forkChain.getBlockAtSlot(8);
-    final SignedBlockAndState forkBlock9 = forkChain.getBlockAtSlot(9);
+    final SignedBlockAndState forkBlock6 = forkChain.getBlockAndStateAtSlot(6);
+    final SignedBlockAndState forkBlock7 = forkChain.getBlockAndStateAtSlot(7);
+    final SignedBlockAndState forkBlock8 = forkChain.getBlockAndStateAtSlot(8);
+    final SignedBlockAndState forkBlock9 = forkChain.getBlockAndStateAtSlot(9);
 
     final List<SignedBlockAndState> allBlocks =
         List.of(
@@ -597,18 +598,18 @@ public abstract class AbstractDatabaseTest {
     database.storeGenesis(store);
 
     // Create blocks
-    final SignedBlockAndState block1 = primaryChain.getBlockAtSlot(1);
-    final SignedBlockAndState block2 = primaryChain.getBlockAtSlot(2);
-    final SignedBlockAndState block3 = primaryChain.getBlockAtSlot(3);
+    final SignedBlockAndState block1 = primaryChain.getBlockAndStateAtSlot(1);
+    final SignedBlockAndState block2 = primaryChain.getBlockAndStateAtSlot(2);
+    final SignedBlockAndState block3 = primaryChain.getBlockAndStateAtSlot(3);
     // Few skipped slots
-    final SignedBlockAndState block7 = primaryChain.getBlockAtSlot(7);
-    final SignedBlockAndState block8 = primaryChain.getBlockAtSlot(8);
-    final SignedBlockAndState block9 = primaryChain.getBlockAtSlot(9);
+    final SignedBlockAndState block7 = primaryChain.getBlockAndStateAtSlot(7);
+    final SignedBlockAndState block8 = primaryChain.getBlockAndStateAtSlot(8);
+    final SignedBlockAndState block9 = primaryChain.getBlockAndStateAtSlot(9);
     // Create some blocks on a different fork
-    final SignedBlockAndState forkBlock6 = forkChain.getBlockAtSlot(6);
-    final SignedBlockAndState forkBlock7 = forkChain.getBlockAtSlot(7);
-    final SignedBlockAndState forkBlock8 = forkChain.getBlockAtSlot(8);
-    final SignedBlockAndState forkBlock9 = forkChain.getBlockAtSlot(9);
+    final SignedBlockAndState forkBlock6 = forkChain.getBlockAndStateAtSlot(6);
+    final SignedBlockAndState forkBlock7 = forkChain.getBlockAndStateAtSlot(7);
+    final SignedBlockAndState forkBlock8 = forkChain.getBlockAndStateAtSlot(8);
+    final SignedBlockAndState forkBlock9 = forkChain.getBlockAndStateAtSlot(9);
 
     final List<SignedBlockAndState> allBlocks =
         List.of(
