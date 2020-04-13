@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
+import tech.pegasys.artemis.core.BlockProposalUtil;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
@@ -178,7 +179,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                 setupInitialState();
               }
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
-
               // Init other services
               this.initAll();
               eventChannels.subscribe(TimeTickChannel.class, this);

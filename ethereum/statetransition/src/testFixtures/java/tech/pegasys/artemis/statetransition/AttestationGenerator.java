@@ -28,6 +28,7 @@ import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.CommitteeAssignmentUtil;
+import tech.pegasys.artemis.core.Signer;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
@@ -43,7 +44,6 @@ import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.client.signer.LocalMessageSignerService;
-import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;

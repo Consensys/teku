@@ -3,7 +3,7 @@ dependencies {
   implementation project(':logging')
   implementation project(':pow')
   implementation project(':ssz')
-  implementation project(':util')
+  implementation project(':util') 
 
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-bytes'
