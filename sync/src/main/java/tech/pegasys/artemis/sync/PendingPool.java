@@ -109,7 +109,7 @@ public class PendingPool<T> extends Service
         DEFAULT_FUTURE_SLOT_TOLERANCE,
         DelayableAttestation::hash_tree_root,
         DelayableAttestation::getDependentBlockRoots,
-        DelayableAttestation::getEarliestSlotForProcessing);
+        DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
   @Override
