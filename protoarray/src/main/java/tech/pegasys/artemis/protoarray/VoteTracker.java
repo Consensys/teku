@@ -17,7 +17,7 @@ import com.google.common.base.Objects;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class VoteTracker {
+class VoteTracker {
 
   private Bytes32 currentRoot;
   private Bytes32 nextRoot;

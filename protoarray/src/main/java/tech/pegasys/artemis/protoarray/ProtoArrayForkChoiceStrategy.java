@@ -36,7 +36,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class ProtoArrayForkChoice implements ProtoArrayForkChoiceClient {
+public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
@@ -45,7 +45,7 @@ public class ProtoArrayForkChoice implements ProtoArrayForkChoiceClient {
 
   private List<UnsignedLong> balances;
 
-  private ProtoArrayForkChoice(
+  private ProtoArrayForkChoiceStrategy(
       ProtoArray protoArray, ElasticList<VoteTracker> votes, List<UnsignedLong> balances) {
     this.protoArray = protoArray;
     this.votes = votes;
@@ -54,7 +54,7 @@ public class ProtoArrayForkChoice implements ProtoArrayForkChoiceClient {
 
   // Public
 
-  public static ProtoArrayForkChoice create(ReadOnlyStore store) {
+  public static ProtoArrayForkChoiceStrategy create(ReadOnlyStore store) {
     Bytes32 finalizedBlockRoot = store.getFinalizedCheckpoint().getRoot();
     return create(
         store.getBlock(finalizedBlockRoot).getSlot(),
@@ -114,7 +114,7 @@ public class ProtoArrayForkChoice implements ProtoArrayForkChoiceClient {
 
   // Internal
 
-  static ProtoArrayForkChoice create(
+  static ProtoArrayForkChoiceStrategy create(
       UnsignedLong finalizedBlockSlot,
       Bytes32 finalizedBlockStateRoot,
       UnsignedLong justifiedEpoch,
@@ -136,7 +136,7 @@ public class ProtoArrayForkChoice implements ProtoArrayForkChoiceClient {
         justifiedEpoch,
         finalizedEpoch);
 
-    return new ProtoArrayForkChoice(
+    return new ProtoArrayForkChoiceStrategy(
         protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
   }
 

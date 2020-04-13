@@ -34,7 +34,7 @@ public class ProtoNode {
   private Optional<Integer> bestChildIndex;
   private Optional<Integer> bestDescendantIndex;
 
-  public ProtoNode(
+  ProtoNode(
       final UnsignedLong blockSlot,
       final Bytes32 stateRoot,
       final Bytes32 blockRoot,

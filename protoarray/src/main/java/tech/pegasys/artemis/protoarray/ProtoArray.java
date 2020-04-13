@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class ProtoArray {
+class ProtoArray {
 
   private int pruneThreshold;
   private UnsignedLong justifiedEpoch;

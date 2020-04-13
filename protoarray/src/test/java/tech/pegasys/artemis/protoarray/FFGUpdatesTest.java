@@ -31,8 +31,8 @@ public class FFGUpdatesTest {
   @Test
   void case1() {
 
-    ProtoArrayForkChoice forkChoice =
-        ProtoArrayForkChoice.create(ZERO, Bytes32.ZERO, ONE, ONE, getHash(0));
+    ProtoArrayForkChoiceStrategy forkChoice =
+        ProtoArrayForkChoiceStrategy.create(ZERO, Bytes32.ZERO, ONE, ONE, getHash(0));
 
     List<UnsignedLong> balances = new ArrayList<>(List.of(valueOf(1), valueOf(1)));
 
@@ -94,8 +94,8 @@ public class FFGUpdatesTest {
 
   @Test
   void case2() {
-    ProtoArrayForkChoice forkChoice =
-        ProtoArrayForkChoice.create(ZERO, Bytes32.ZERO, ONE, ONE, getHash(0));
+    ProtoArrayForkChoiceStrategy forkChoice =
+        ProtoArrayForkChoiceStrategy.create(ZERO, Bytes32.ZERO, ONE, ONE, getHash(0));
 
     List<UnsignedLong> balances = new ArrayList<>(List.of(valueOf(1), valueOf(1)));
 

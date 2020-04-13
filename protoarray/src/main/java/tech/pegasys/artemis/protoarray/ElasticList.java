@@ -13,22 +13,27 @@
 
 package tech.pegasys.artemis.protoarray;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
-import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
-import tech.pegasys.artemis.storage.Store;
+import java.util.ArrayList;
+import java.util.function.Supplier;
 
-public class StubForkChoiceClient implements ProtoArrayForkChoiceClient {
+class ElasticList<T> extends ArrayList<T> {
 
-  @Override
-  public Bytes32 findHead(final Store store) {
-    return Bytes32.ZERO;
+  private final Supplier<T> defaultObjectGenerator;
+
+  public ElasticList(Supplier<T> defaultObjectGenerator) {
+    super();
+    this.defaultObjectGenerator = defaultObjectGenerator;
+  }
+
+  private void ensure(int i) {
+    while (super.size() <= i) {
+      super.add(defaultObjectGenerator.get());
+    }
   }
 
   @Override
-  public void onAttestation(final IndexedAttestation attestation) {}
-
-  @Override
-  public void onBlock(final MutableStore store, final BeaconBlock block) {}
+  public T get(int i) {
+    ensure(i);
+    return super.get(i);
+  }
 }

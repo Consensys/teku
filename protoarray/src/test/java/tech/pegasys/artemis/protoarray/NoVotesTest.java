@@ -31,8 +31,8 @@ public class NoVotesTest {
 
   @Test
   void noVotesTest() {
-    ProtoArrayForkChoice forkChoice =
-        ProtoArrayForkChoice.create(ZERO, Bytes32.ZERO, ONE, ONE, getHash(0));
+    ProtoArrayForkChoiceStrategy forkChoice =
+        ProtoArrayForkChoiceStrategy.create(ZERO, Bytes32.ZERO, ONE, ONE, getHash(0));
 
     List<UnsignedLong> balances = new ArrayList<>(Collections.nCopies(16, ZERO));
 

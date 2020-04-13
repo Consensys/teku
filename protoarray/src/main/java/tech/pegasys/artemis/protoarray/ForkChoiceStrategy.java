@@ -13,27 +13,17 @@
 
 package tech.pegasys.artemis.protoarray;
 
-import java.util.ArrayList;
-import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
+import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
+import tech.pegasys.artemis.storage.Store;
 
-public class ElasticList<T> extends ArrayList<T> {
+public interface ForkChoiceStrategy {
 
-  private final Supplier<T> defaultObjectGenerator;
+  Bytes32 findHead(final Store store);
 
-  public ElasticList(Supplier<T> defaultObjectGenerator) {
-    super();
-    this.defaultObjectGenerator = defaultObjectGenerator;
-  }
+  void onAttestation(final IndexedAttestation attestation);
 
-  private void ensure(int i) {
-    while (super.size() <= i) {
-      super.add(defaultObjectGenerator.get());
-    }
-  }
-
-  @Override
-  public T get(int i) {
-    ensure(i);
-    return super.get(i);
-  }
+  void onBlock(final MutableStore store, final BeaconBlock block);
 }

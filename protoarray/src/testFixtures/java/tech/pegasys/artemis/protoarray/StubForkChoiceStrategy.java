@@ -19,11 +19,16 @@ import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.storage.Store;
 
-public interface ProtoArrayForkChoiceClient {
+public class StubForkChoiceStrategy implements ForkChoiceStrategy {
 
-  Bytes32 findHead(final Store store);
+  @Override
+  public Bytes32 findHead(final Store store) {
+    return Bytes32.ZERO;
+  }
 
-  void onAttestation(final IndexedAttestation attestation);
+  @Override
+  public void onAttestation(final IndexedAttestation attestation) {}
 
-  void onBlock(final MutableStore store, final BeaconBlock block);
+  @Override
+  public void onBlock(final MutableStore store, final BeaconBlock block) {}
 }

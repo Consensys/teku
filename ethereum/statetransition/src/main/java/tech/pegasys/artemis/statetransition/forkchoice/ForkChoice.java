@@ -25,7 +25,7 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.protoarray.ProtoArrayForkChoice;
+import tech.pegasys.artemis.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -35,7 +35,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
 
-  private ProtoArrayForkChoice protoArrayForkChoice;
+  private ProtoArrayForkChoiceStrategy protoArrayForkChoiceStrategy;
 
   public ForkChoice(final RecentChainData recentChainData, final StateTransition stateTransition) {
     this.recentChainData = recentChainData;
@@ -44,28 +44,28 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   private void initializeProtoArrayForkChoice() {
-    protoArrayForkChoice = ProtoArrayForkChoice.create(recentChainData.getStore());
+    protoArrayForkChoiceStrategy = ProtoArrayForkChoiceStrategy.create(recentChainData.getStore());
   }
 
   public Bytes32 processHead() {
     Store store = recentChainData.getStore();
-    Bytes32 headBlockRoot = protoArrayForkChoice.findHead(store);
+    Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     recentChainData.updateBestBlock(headBlockRoot, headBlock.getSlot());
     return headBlockRoot;
   }
 
   public BlockImportResult onBlock(final MutableStore store, final SignedBeaconBlock block) {
-    return on_block(store, block, stateTransition, protoArrayForkChoice);
+    return on_block(store, block, stateTransition, protoArrayForkChoiceStrategy);
   }
 
   public AttestationProcessingResult onAttestation(
       final MutableStore store, final Attestation attestation) {
-    return on_attestation(store, attestation, stateTransition, protoArrayForkChoice);
+    return on_attestation(store, attestation, stateTransition, protoArrayForkChoiceStrategy);
   }
 
   @Override
   public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
-    protoArrayForkChoice.maybePrune(checkpoint.getRoot());
+    protoArrayForkChoiceStrategy.maybePrune(checkpoint.getRoot());
   }
 }

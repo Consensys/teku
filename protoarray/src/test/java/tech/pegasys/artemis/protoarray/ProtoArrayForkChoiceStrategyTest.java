@@ -17,7 +17,7 @@ import static com.google.common.primitives.UnsignedLong.ZERO;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.protoarray.HashUtil.getHash;
-import static tech.pegasys.artemis.protoarray.ProtoArrayForkChoice.computeDeltas;
+import static tech.pegasys.artemis.protoarray.ProtoArrayForkChoiceStrategy.computeDeltas;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ComputeDeltasTest {
+public class ProtoArrayForkChoiceStrategyTest {
 
   private Map<Bytes32, Integer> indices;
   private ElasticList<VoteTracker> votes;
@@ -222,7 +222,7 @@ public class ComputeDeltasTest {
     newBalances.addAll(List.of(BALANCE, BALANCE));
 
     // Both validators move votes from block 1 to block 2.
-    for (int __ = 0; __ < 2; __++) {
+    for (int i = 0; i < 2; i++) {
       votes.add(new VoteTracker(getHash(1), getHash(2), ZERO));
     }
 
@@ -253,7 +253,7 @@ public class ComputeDeltasTest {
     newBalances.add(BALANCE);
 
     // Both validators move votes from block 1 to block 2.
-    for (int __ = 0; __ < 2; __++) {
+    for (int i = 0; i < 2; i++) {
       votes.add(new VoteTracker(getHash(1), getHash(2), ZERO));
     }
 

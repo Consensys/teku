@@ -42,7 +42,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.protoarray.ProtoArrayForkChoiceClient;
+import tech.pegasys.artemis.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtil {
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
@@ -150,7 +150,7 @@ public class ForkChoiceUtil {
       final MutableStore store,
       final SignedBeaconBlock signed_block,
       final StateTransition st,
-      final ProtoArrayForkChoiceClient protoArrayForkChoiceClient) {
+      final ForkChoiceStrategy forkChoiceStrategy) {
     final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
@@ -227,7 +227,7 @@ public class ForkChoiceUtil {
       }
     }
 
-    protoArrayForkChoiceClient.onBlock(store, block);
+    forkChoiceStrategy.onBlock(store, block);
 
     final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
     return BlockImportResult.successful(record);
@@ -286,7 +286,7 @@ public class ForkChoiceUtil {
       final MutableStore store,
       final Attestation attestation,
       final StateTransition stateTransition,
-      final ProtoArrayForkChoiceClient protoArrayForkChoiceClient) {
+      final ForkChoiceStrategy forkChoiceStrategy) {
 
     Checkpoint target = attestation.getData().getTarget();
 
@@ -364,7 +364,7 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
     }
 
-    protoArrayForkChoiceClient.onAttestation(indexed_attestation);
+    forkChoiceStrategy.onAttestation(indexed_attestation);
 
     return AttestationProcessingResult.SUCCESSFUL;
   }
