@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.base.MoreObjects;
@@ -138,28 +137,26 @@ public class AttestationData extends AbstractImmutableContainer
         .toString();
   }
 
-  public UnsignedLong getEarliestSlotForProcessing() {
-    // Attestations can't be processed until their slot is in the past and until we are in the same
-    // epoch as their target.
+  public UnsignedLong getEarliestSlotForForkChoice() {
+    // Attestations can't be processed by fork choice until their slot is in the past and until we
+    // are in the same epoch as their target.
     return max(getSlot().plus(UnsignedLong.ONE), getTarget().getEpochStartSlot());
   }
 
-  public boolean canIncludeInBlockAtSlot(final UnsignedLong slot) {
-    return notPriorToPreviousEpoch(slot)
-        && notSubmittedTooFarInHistory(slot)
-        && notSubmittedTooQuickly(slot);
+  public boolean canIncludeInBlockAtSlot(final UnsignedLong blockSlot) {
+    return isBlockWithinOneEpochOfAttestation(blockSlot)
+        && isBlockAtLeastMinInclusionDelayAfterAttestation(blockSlot);
   }
 
-  public boolean notPriorToPreviousEpoch(final UnsignedLong slot) {
-    return compute_epoch_at_slot(getSlot()).plus(ONE).compareTo(compute_epoch_at_slot(slot)) >= 0;
+  private boolean isBlockWithinOneEpochOfAttestation(final UnsignedLong blockSlot) {
+    return blockSlot.compareTo(getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) <= 0;
   }
 
-  public boolean notSubmittedTooFarInHistory(final UnsignedLong slot) {
-    return slot.compareTo(getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) <= 0;
-  }
-
-  public boolean notSubmittedTooQuickly(final UnsignedLong slot) {
-    return getEarliestSlotForProcessing().compareTo(slot) <= 0;
+  private boolean isBlockAtLeastMinInclusionDelayAfterAttestation(final UnsignedLong blockSlot) {
+    return getSlot()
+            .plus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
+            .compareTo(blockSlot)
+        <= 0;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

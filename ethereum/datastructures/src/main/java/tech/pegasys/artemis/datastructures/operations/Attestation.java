@@ -60,8 +60,8 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
         new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
-  public UnsignedLong getEarliestSlotForProcessing() {
-    return data.getEarliestSlotForProcessing();
+  public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
+    return data.getEarliestSlotForForkChoice();
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {
