@@ -51,7 +51,7 @@ class AttestationManagerTest {
   private final PendingPool<DelayableAttestation> pendingAttestations =
       PendingPool.createForAttestations(eventBus);
   private final FutureItems<DelayableAttestation> futureAttestations =
-      new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
+      new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
 
   private final ForkChoiceAttestationProcessor attestationProcessor =
       mock(ForkChoiceAttestationProcessor.class);

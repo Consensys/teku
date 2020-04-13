@@ -11,38 +11,39 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.core;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
+import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class BlockProposalTestUtil {
 
   private final BlockProposalUtil blockProposalUtil;
 
-  public BlockProposalTestUtil(final StateTransition stateTransition) {
-    blockProposalUtil = new BlockProposalUtil(stateTransition);
+  public BlockProposalTestUtil() {
+    blockProposalUtil = new BlockProposalUtil(new StateTransition());
   }
 
-  public SignedBeaconBlock createNewBlock(
+  public SignedBlockAndState createNewBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
       final BeaconState state,
@@ -57,7 +58,7 @@ public class BlockProposalTestUtil {
     final BLSSignature randaoReveal =
         new Signer(signer).createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
-    final BeaconBlock newBlock =
+    final BlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
             get_beacon_proposer_index(state, newSlot),
@@ -70,13 +71,14 @@ public class BlockProposalTestUtil {
             deposits);
 
     // Sign block and set block signature
-    BLSSignature blockSignature =
-        new Signer(signer).signBlock(newBlock, state.getForkInfo()).join();
+    final BeaconBlock block = newBlockAndState.getBlock();
+    BLSSignature blockSignature = new Signer(signer).signBlock(block, state.getForkInfo()).join();
 
-    return new SignedBeaconBlock(newBlock, blockSignature);
+    final SignedBeaconBlock signedBlock = new SignedBeaconBlock(block, blockSignature);
+    return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
   }
 
-  public SignedBeaconBlock createEmptyBlock(
+  public SignedBlockAndState createEmptyBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
       final BeaconState previousState,
@@ -88,13 +90,13 @@ public class BlockProposalTestUtil {
         newSlot,
         previousState,
         parentBlockRoot,
-        StartupUtil.get_eth1_data_stub(previousState, newEpoch),
+        get_eth1_data_stub(previousState, newEpoch),
         BeaconBlockBodyLists.createAttestations(),
         BeaconBlockBodyLists.createProposerSlashings(),
         BeaconBlockBodyLists.createDeposits());
   }
 
-  public SignedBeaconBlock createBlockWithAttestations(
+  public SignedBlockAndState createBlockWithAttestations(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
       final BeaconState previousState,
@@ -107,10 +109,19 @@ public class BlockProposalTestUtil {
         newSlot,
         previousState,
         parentBlockSigningRoot,
-        StartupUtil.get_eth1_data_stub(previousState, newEpoch),
+        get_eth1_data_stub(previousState, newEpoch),
         attestations,
         BeaconBlockBodyLists.createProposerSlashings(),
         BeaconBlockBodyLists.createDeposits());
+  }
+
+  private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
+    UnsignedLong epochs_per_period = UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD);
+    UnsignedLong voting_period = current_epoch.dividedBy(epochs_per_period);
+    return new Eth1Data(
+        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
+        state.getEth1_deposit_index(),
+        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {

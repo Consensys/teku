@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.core;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
@@ -19,12 +19,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -44,11 +43,11 @@ public class BlockProposalUtil {
     this.stateTransition = stateTransition;
   }
 
-  public BeaconBlock createNewUnsignedBlock(
+  public BlockAndState createNewUnsignedBlock(
       final UnsignedLong newSlot,
       final int proposerIndex,
       final BLSSignature randaoReveal,
-      final BeaconState state,
+      final BeaconState preState,
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final SSZList<Attestation> attestations,
@@ -74,13 +73,14 @@ public class BlockProposalUtil {
             beaconBlockBody);
 
     // Run state transition and set state root
-    Bytes32 stateRoot =
-        stateTransition
-            .initiate(state, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false)
-            .hash_tree_root();
+    final BeaconState newState =
+        stateTransition.initiate(
+            preState, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false);
+
+    Bytes32 stateRoot = newState.hash_tree_root();
     newBlock.setState_root(stateRoot);
 
-    return newBlock;
+    return new BlockAndState(newBlock, newState);
   }
 
   public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {

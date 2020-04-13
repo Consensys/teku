@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beaco
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.BlockProposalUtil;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
@@ -30,7 +31,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 
 public class BlockFactory {
@@ -74,15 +74,17 @@ public class BlockFactory {
     Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
     final Bytes32 parentRoot = previousBlock.hash_tree_root();
 
-    return blockCreator.createNewUnsignedBlock(
-        newSlot,
-        get_beacon_proposer_index(newState, newSlot),
-        randaoReveal,
-        newState,
-        parentRoot,
-        eth1Data,
-        attestations,
-        slashingsInBlock,
-        deposits);
+    return blockCreator
+        .createNewUnsignedBlock(
+            newSlot,
+            get_beacon_proposer_index(newState, newSlot),
+            randaoReveal,
+            newState,
+            parentRoot,
+            eth1Data,
+            attestations,
+            slashingsInBlock,
+            deposits)
+        .getBlock();
   }
 }

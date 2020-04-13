@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
@@ -24,10 +22,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
@@ -41,15 +36,6 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 public final class StartupUtil {
 
   public static final Logger LOG = LogManager.getLogger();
-
-  public static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
-    UnsignedLong epochs_per_period = UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD);
-    UnsignedLong voting_period = current_epoch.dividedBy(epochs_per_period);
-    return new Eth1Data(
-        Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
-        state.getEth1_deposit_index(),
-        Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
-  }
 
   public static BeaconState createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys) {

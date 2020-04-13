@@ -13,51 +13,34 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import com.google.common.base.MoreObjects;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
-public class BeaconBlockAndState {
-  private final BeaconBlock block;
+/** Helper datastructure that holds a signed block with its corresponding state */
+public class SignedBlockAndState {
+  private final SignedBeaconBlock block;
   private final BeaconState state;
 
-  public BeaconBlockAndState(final BeaconBlock block, final BeaconState state) {
+  public SignedBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
+    checkArgument(
+        Objects.equals(block.getMessage().getState_root(), state.hash_tree_root()),
+        "State must belong to the given block");
     this.block = block;
     this.state = state;
   }
 
   public Bytes32 getRoot() {
-    return block.hash_tree_root();
+    return block.getMessage().hash_tree_root();
   }
 
-  public BeaconBlock getBlock() {
+  public SignedBeaconBlock getBlock() {
     return block;
   }
 
   public BeaconState getState() {
     return state;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final BeaconBlockAndState that = (BeaconBlockAndState) o;
-    return Objects.equals(block, that.block) && Objects.equals(state, that.state);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(block, state);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("block", block).add("state", state).toString();
   }
 }

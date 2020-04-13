@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -49,6 +50,7 @@ import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
 class ValidatorApiHandlerTest {
@@ -58,6 +60,7 @@ class ValidatorApiHandlerTest {
       BeaconStateUtil.compute_start_slot_at_epoch(EPOCH.minus(UnsignedLong.ONE));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
+  private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
@@ -68,6 +71,7 @@ class ValidatorApiHandlerTest {
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
           chainDataClient,
+          stateTransition,
           blockFactory,
           attestationPool,
           attestationAggregator,
@@ -271,7 +275,9 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendSignedAttestation(attestation);
 
     verify(attestationPool).add(attestation);
-    verify(attestationAggregator).addOwnValidatorAttestation(attestation);
+    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      verify(attestationAggregator).addOwnValidatorAttestation(attestation);
+    }
     verify(eventBus).post(attestation);
   }
 

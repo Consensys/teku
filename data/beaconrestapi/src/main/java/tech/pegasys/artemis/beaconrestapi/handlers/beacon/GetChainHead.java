@@ -49,10 +49,11 @@ public class GetChainHead implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get information about the canonical head from the beacon node.",
+      summary = "Get information about the chain head.",
       tags = {TAG_BEACON},
       description =
-          "Returns information about the head of the beacon chain from the node’s perspective.",
+          "Returns information about the head of the beacon chain including the finalized and "
+              + "justified information.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconChainHead.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),

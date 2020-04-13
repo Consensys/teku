@@ -95,7 +95,7 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
     when(recentChainData.getStore()).thenReturn(store);
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
-    when(historicalChainData.getFinalizedStateAtSlot(any()))
+    when(historicalChainData.getLatestFinalizedStateAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final Response response = getByEpoch(epoch);

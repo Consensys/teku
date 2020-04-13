@@ -25,6 +25,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.Signer;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
@@ -32,7 +33,6 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.ForkProvider;
 import tech.pegasys.artemis.validator.client.Validator;
-import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();

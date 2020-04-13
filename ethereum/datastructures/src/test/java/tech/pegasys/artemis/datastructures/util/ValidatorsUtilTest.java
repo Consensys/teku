@@ -55,4 +55,18 @@ class ValidatorsUtilTest {
         .contains(nextState.getValidators().size() - 1);
     assertThat(ValidatorsUtil.getValidatorIndex(state, validator.getPubkey())).isEmpty();
   }
+
+  @Test
+  public void getValidatorIndex_shouldNotCacheValidatorMissing() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+
+    final Validator validator = dataStructureUtil.randomValidator();
+    // Lookup the validator before it's in the list.
+    assertThat(ValidatorsUtil.getValidatorIndex(state, validator.getPubkey())).isEmpty();
+
+    // Then add it to the list and we should be able to find the index.
+    final BeaconState nextState = state.updated(s -> s.getValidators().add(validator));
+    assertThat(ValidatorsUtil.getValidatorIndex(nextState, validator.getPubkey()))
+        .contains(nextState.getValidators().size() - 1);
+  }
 }

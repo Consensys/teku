@@ -37,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.Signer;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -48,7 +49,6 @@ import tech.pegasys.artemis.validator.client.duties.AggregationDuty;
 import tech.pegasys.artemis.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.artemis.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
-import tech.pegasys.artemis.validator.client.signer.Signer;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 class DutySchedulerTest {
