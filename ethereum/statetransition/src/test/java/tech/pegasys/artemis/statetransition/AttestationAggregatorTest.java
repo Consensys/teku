@@ -22,6 +22,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLS;
@@ -83,7 +85,7 @@ class AttestationAggregatorTest {
   void addOwnValidatorAttestation_oldData_newAttester() throws Exception {
     final BeaconBlockAndState bestBlockAndState =
         storageClient.getBestBlockAndState().orElseThrow();
-    Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
+    Attestation attestation = attestationForNonSingletonCommittee(bestBlockAndState);
     BLSSignature sig1 = attestation.getAggregate_signature();
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
@@ -149,7 +151,7 @@ class AttestationAggregatorTest {
   void processAttestation_oldData_newAttester() throws Exception {
     final BeaconBlockAndState bestBlockAndState =
         storageClient.getBestBlockAndState().orElseThrow();
-    Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
+    Attestation attestation = attestationForNonSingletonCommittee(bestBlockAndState);
     BLSSignature sig1 = attestation.getAggregate_signature();
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
@@ -175,10 +177,10 @@ class AttestationAggregatorTest {
   }
 
   @Test
-  void reset() throws Exception {
+  void reset() {
     final BeaconBlockAndState bestBlockAndState =
         storageClient.getBestBlockAndState().orElseThrow();
-    Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
+    Attestation attestation = attestationForNonSingletonCommittee(bestBlockAndState);
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
@@ -190,5 +192,15 @@ class AttestationAggregatorTest {
     aggregator.processAttestation(newAttestation);
     aggregator.reset();
     assertEquals(aggregator.getAggregateAndProofs().size(), 0);
+  }
+
+  private Attestation attestationForNonSingletonCommittee(final BeaconBlockAndState chainHead) {
+    final AtomicLong assignedSlot = new AtomicLong(chainHead.getSlot().longValue());
+    return LongStream.generate(assignedSlot::getAndIncrement)
+        .mapToObj(UnsignedLong::valueOf)
+        .flatMap(slot -> attestationGenerator.streamAttestations(chainHead, slot))
+        .filter(a -> a.getAggregation_bits().getCurrentSize() > 1)
+        .findFirst()
+        .orElseThrow();
   }
 }
