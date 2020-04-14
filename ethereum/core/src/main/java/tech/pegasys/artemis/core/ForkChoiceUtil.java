@@ -49,6 +49,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 
 public class ForkChoiceUtil {
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
@@ -413,6 +414,49 @@ public class ForkChoiceUtil {
 
     Checkpoint target = attestation.getData().getTarget();
 
+    return validateOnAttestation(store, attestation)
+        .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
+        .ifSuccessful(
+            () -> {
+              BeaconState target_state = store.getCheckpointState(target);
+
+              // Get state at the `target` to validate attestation and calculate the committees
+              IndexedAttestation indexed_attestation;
+              try {
+                indexed_attestation = get_indexed_attestation(target_state, attestation);
+              } catch (IndexOutOfBoundsException e) {
+                return AttestationProcessingResult.invalid(
+                    "on_attestation: Attestation is not valid, IndexOutOfBoundsException: "
+                        + e.getMessage());
+              }
+              if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
+                return AttestationProcessingResult.invalid(
+                    "on_attestation: Attestation is not valid");
+              }
+              update_latest_messages(
+                  store, indexed_attestation.getAttesting_indices(), attestation);
+
+              return AttestationProcessingResult.SUCCESSFUL;
+            });
+  }
+
+  private static AttestationProcessingResult storeTargetCheckpointState(
+      final MutableStore store, final StateTransition stateTransition, final Checkpoint target) {
+    // Store target checkpoint state if not yet seen
+    BeaconState targetRootState = store.getBlockState(target.getRoot());
+    try {
+      storeCheckpointState(store, stateTransition, target, targetRootState);
+    } catch (SlotProcessingException e) {
+      return AttestationProcessingResult.failedStateTransition(e);
+    } catch (EpochProcessingException e) {
+      return AttestationProcessingResult.failedStateTransition(e);
+    }
+    return AttestationProcessingResult.SUCCESSFUL;
+  }
+
+  private static AttestationProcessingResult validateOnAttestation(
+      final MutableStore store, final Attestation attestation) {
+    final Checkpoint target = attestation.getData().getTarget();
     UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store));
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
@@ -464,38 +508,21 @@ public class ForkChoiceUtil {
           "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
     }
 
-    // Store target checkpoint state if not yet seen
-    BeaconState targetRootState = store.getBlockState(target.getRoot());
-    try {
-      storeCheckpointState(store, stateTransition, target, targetRootState);
-    } catch (SlotProcessingException e) {
-      return AttestationProcessingResult.failedStateTransition(e);
-    } catch (EpochProcessingException e) {
-      return AttestationProcessingResult.failedStateTransition(e);
-    }
-    BeaconState target_state = store.getCheckpointState(target);
+    return AttestationProcessingResult.SUCCESSFUL;
+  }
 
-    // Get state at the `target` to validate attestation and calculate the committees
-    IndexedAttestation indexed_attestation = null;
-    try {
-      indexed_attestation = get_indexed_attestation(target_state, attestation);
-    } catch (IndexOutOfBoundsException e) {
-      return AttestationProcessingResult.invalid(
-          "on_attestation: Attestation is not valid, IndexOutOfBoundsException: " + e.getMessage());
-    }
-    if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
-      return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
-    }
-
-    // Update latest messages
-    for (UnsignedLong i : indexed_attestation.getAttesting_indices()) {
+  public static void update_latest_messages(
+      final MutableStore store,
+      final SSZList<UnsignedLong> attestingIndices,
+      final Attestation attestation) {
+    final Checkpoint target = attestation.getData().getTarget();
+    for (UnsignedLong i : attestingIndices) {
       if (!store.containsLatestMessage(i)
           || target.getEpoch().compareTo(store.getLatestMessage(i).getEpoch()) > 0) {
         store.putLatestMessage(
             i, new Checkpoint(target.getEpoch(), attestation.getData().getBeacon_block_root()));
       }
     }
-    return AttestationProcessingResult.SUCCESSFUL;
   }
 
   private static void storeCheckpointState(
