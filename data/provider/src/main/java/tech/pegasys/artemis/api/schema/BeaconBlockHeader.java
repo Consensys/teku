@@ -43,4 +43,10 @@ public class BeaconBlockHeader {
     this.state_root = header.getState_root();
     this.body_root = header.getBody_root();
   }
+
+  public tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader
+      asInternalBeaconBlockHeader() {
+    return new tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader(
+        slot, parent_root, state_root, body_root);
+  }
 }

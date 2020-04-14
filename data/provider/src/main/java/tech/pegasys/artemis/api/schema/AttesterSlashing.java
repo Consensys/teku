@@ -22,4 +22,10 @@ public class AttesterSlashing {
     this.attestation_1 = new IndexedAttestation(attesterSlashing.getAttestation_1());
     this.attestation_2 = new IndexedAttestation(attesterSlashing.getAttestation_2());
   }
+
+  public tech.pegasys.artemis.datastructures.operations.AttesterSlashing
+      asInternalAttesterSlashing() {
+    return new tech.pegasys.artemis.datastructures.operations.AttesterSlashing(
+        attestation_1.asInternalIndexedAttestation(), attestation_2.asInternalIndexedAttestation());
+  }
 }
