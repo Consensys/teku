@@ -105,14 +105,11 @@ public class BlockImporterTest {
     UnsignedLong currentSlot = UnsignedLong.ONE;
     SignedBeaconBlock block1 = localChain.createAndImportBlockAtSlot(currentSlot);
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
-    SignedBeaconBlock block2 = localChain.createAndImportBlockAtSlot(currentSlot);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconState block2PostState =
-        recentChainData.getBlockState(block2.getMessage().hash_tree_root()).orElseThrow();
+    final BeaconState state = recentChainData.getBlockState(block1.getRoot()).orElseThrow();
     List<Attestation> attestations =
-        attestationGenerator.getAttestationsForSlot(
-            block2PostState, block1.getMessage(), currentSlot);
+        attestationGenerator.getAttestationsForSlot(state, block1.getMessage(), currentSlot);
     List<Attestation> aggregatedAttestations =
         AttestationGenerator.groupAndAggregateAttestations(attestations);
 
@@ -127,14 +124,11 @@ public class BlockImporterTest {
     UnsignedLong currentSlot = UnsignedLong.ONE;
     SignedBeaconBlock block1 = localChain.createAndImportBlockAtSlot(currentSlot);
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
-    SignedBeaconBlock block2 = localChain.createAndImportBlockAtSlot(currentSlot);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconState block2PostState =
-        recentChainData.getBlockState(block2.getMessage().hash_tree_root()).orElseThrow();
+    final BeaconState state = recentChainData.getBlockState(block1.getRoot()).orElseThrow();
     List<Attestation> attestations =
-        attestationGenerator.getAttestationsForSlot(
-            block2PostState, block1.getMessage(), currentSlot);
+        attestationGenerator.getAttestationsForSlot(state, block1.getMessage(), currentSlot);
     List<Attestation> aggregatedAttestations =
         AttestationGenerator.groupAndAggregateAttestations(attestations);
 
