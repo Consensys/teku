@@ -23,4 +23,8 @@ public class VoluntaryExit {
     this.epoch = voluntaryExit.getEpoch();
     this.validator_index = voluntaryExit.getValidator_index();
   }
+
+  public tech.pegasys.artemis.datastructures.operations.VoluntaryExit asInternalVoluntaryExit() {
+    return new tech.pegasys.artemis.datastructures.operations.VoluntaryExit(epoch, validator_index);
+  }
 }
