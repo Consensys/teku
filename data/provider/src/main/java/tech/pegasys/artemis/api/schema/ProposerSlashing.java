@@ -26,7 +26,6 @@ public class ProposerSlashing {
   public tech.pegasys.artemis.datastructures.operations.ProposerSlashing
       asInternalProposerSlashing() {
     return new tech.pegasys.artemis.datastructures.operations.ProposerSlashing(
-        proposer_index,
         header_1.asInternalSignedBeaconBlockHeader(),
         header_2.asInternalSignedBeaconBlockHeader());
   }

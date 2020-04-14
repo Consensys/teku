@@ -51,6 +51,6 @@ public class BeaconBlockHeader {
   public tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader
       asInternalBeaconBlockHeader() {
     return new tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader(
-        slot, parent_root, state_root, body_root);
+        slot, proposer_index, parent_root, state_root, body_root);
   }
 }
