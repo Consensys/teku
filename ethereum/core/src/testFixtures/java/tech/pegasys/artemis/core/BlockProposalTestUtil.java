@@ -23,8 +23,8 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
-import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
@@ -58,7 +58,7 @@ public class BlockProposalTestUtil {
     final BLSSignature randaoReveal =
         new Signer(signer).createRandaoReveal(newEpoch, state.getFork()).join();
 
-    final BlockAndState newBlockAndState =
+    final BeaconBlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
             randaoReveal,

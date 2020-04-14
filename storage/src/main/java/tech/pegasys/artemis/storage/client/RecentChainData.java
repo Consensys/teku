@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -171,7 +171,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    *
    * @return The best block along with its corresponding state.
    */
-  public Optional<BlockAndState> getBestBlockAndState() {
+  public Optional<BeaconBlockAndState> getBestBlockAndState() {
     if (isPreGenesis()) {
       return Optional.empty();
     }
@@ -180,7 +180,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         (bestRoot) -> {
           BeaconBlock block = getStore().getBlock(bestRoot);
           BeaconState state = getStore().getBlockState(bestRoot);
-          return new BlockAndState(block, state);
+          return new BeaconBlockAndState(block, state);
         });
   }
 

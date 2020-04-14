@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.core.AttestationGenerator;
-import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -50,7 +50,7 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_validAttestation() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
@@ -62,7 +62,7 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_invalidAttestationSignature() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
     final Attestation attestation =
         attestationGenerator.attestationWithInvalidSignature(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
@@ -83,7 +83,7 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_invalidAttestation_missingState() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 

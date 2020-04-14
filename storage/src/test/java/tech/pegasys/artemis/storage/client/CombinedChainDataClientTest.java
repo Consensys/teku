@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -324,18 +325,18 @@ class CombinedChainDataClientTest {
   @Test
   public void getBlockAndStateInEffectAtSlot_returnBlockAndStateWhenBothAreAvailable() {
     final UnsignedLong requestedSlot = UnsignedLong.valueOf(100);
-    final SignedBeaconBlock block = block(requestedSlot);
-    final BeaconState state = beaconState(requestedSlot);
-    final Bytes32 headBlockRoot = block.getMessage().hash_tree_root();
+    final SignedBlockAndState blockAndState =
+        dataStructureUtil.randomSignedBlockAndState(requestedSlot);
 
-    when(store.getBlockState(headBlockRoot)).thenReturn(state);
-    when(store.getSignedBlock(headBlockRoot)).thenReturn(block);
+    when(store.getBlockState(blockAndState.getRoot())).thenReturn(blockAndState.getState());
+    when(store.getSignedBlock(blockAndState.getRoot())).thenReturn(blockAndState.getBlock());
 
     final SafeFuture<Optional<BeaconBlockAndState>> result =
-        client.getBlockAndStateInEffectAtSlot(requestedSlot, headBlockRoot);
+        client.getBlockAndStateInEffectAtSlot(requestedSlot, blockAndState.getRoot());
 
-    assertThat(result)
-        .isCompletedWithValue(Optional.of(new BeaconBlockAndState(block.getMessage(), state)));
+    final BeaconBlockAndState expectedResult =
+        new BeaconBlockAndState(blockAndState.getBlock().getMessage(), blockAndState.getState());
+    assertThat(result).isCompletedWithValue(Optional.of(expectedResult));
   }
 
   @Test

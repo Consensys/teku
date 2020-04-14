@@ -33,7 +33,7 @@ import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.AttestationGenerator;
 import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.core.results.BlockImportResult.FailureReason;
-import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -244,7 +244,7 @@ public class BlockImporterTest {
 
     // Now create a new block that is not descendent from the finalized block
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BlockAndState blockAndState = otherStorage.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = otherStorage.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final SignedBeaconBlock block =
         otherChain.createAndImportBlockAtSlot(currentSlot, List.of(attestation));

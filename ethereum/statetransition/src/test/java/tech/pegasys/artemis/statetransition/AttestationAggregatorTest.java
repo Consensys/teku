@@ -29,7 +29,7 @@ import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.AttestationGenerator;
-import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
@@ -50,7 +50,8 @@ class AttestationAggregatorTest {
 
   @Test
   void addOwnValidatorAttestation_newData() throws Exception {
-    final BlockAndState bestBlockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState bestBlockAndState =
+        storageClient.getBestBlockAndState().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
@@ -63,7 +64,8 @@ class AttestationAggregatorTest {
 
   @Test
   void addOwnValidatorAttestation_oldData_noNewAttester() throws Exception {
-    final BlockAndState bestBlockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState bestBlockAndState =
+        storageClient.getBestBlockAndState().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
@@ -79,7 +81,8 @@ class AttestationAggregatorTest {
 
   @Test
   void addOwnValidatorAttestation_oldData_newAttester() throws Exception {
-    final BlockAndState bestBlockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState bestBlockAndState =
+        storageClient.getBestBlockAndState().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
     BLSSignature sig1 = attestation.getAggregate_signature();
     int validatorIndex = new Random().nextInt(1000);
@@ -107,7 +110,8 @@ class AttestationAggregatorTest {
 
   @Test
   void processAttestation_newData_noOwnValidatorAttestationExists() throws Exception {
-    final BlockAndState bestBlockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState bestBlockAndState =
+        storageClient.getBestBlockAndState().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
@@ -126,7 +130,8 @@ class AttestationAggregatorTest {
 
   @Test
   void processAttestation_oldData_noNewAttester() throws Exception {
-    final BlockAndState bestBlockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState bestBlockAndState =
+        storageClient.getBestBlockAndState().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
@@ -142,7 +147,8 @@ class AttestationAggregatorTest {
 
   @Test
   void processAttestation_oldData_newAttester() throws Exception {
-    final BlockAndState bestBlockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState bestBlockAndState =
+        storageClient.getBestBlockAndState().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
     BLSSignature sig1 = attestation.getAggregate_signature();
     int validatorIndex = new Random().nextInt(1000);
@@ -170,7 +176,8 @@ class AttestationAggregatorTest {
 
   @Test
   void reset() throws Exception {
-    final BlockAndState bestBlockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState bestBlockAndState =
+        storageClient.getBestBlockAndState().orElseThrow();
     Attestation attestation = attestationGenerator.validAttestation(bestBlockAndState);
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(

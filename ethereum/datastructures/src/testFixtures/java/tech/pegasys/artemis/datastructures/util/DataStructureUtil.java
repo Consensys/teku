@@ -31,11 +31,13 @@ import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -210,6 +212,25 @@ public final class DataStructureUtil {
     BeaconBlockBody body = randomBeaconBlockBody();
 
     return new BeaconBlock(slotNum, previous_root, state_root, body);
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(final UnsignedLong slot) {
+    final BeaconBlockAndState blockAndState = randomBlockAndState(slot);
+
+    final SignedBeaconBlock signedBlock =
+        new SignedBeaconBlock(blockAndState.getBlock(), randomSignature());
+    return new SignedBlockAndState(signedBlock, blockAndState.getState());
+  }
+
+  public BeaconBlockAndState randomBlockAndState(final UnsignedLong slot) {
+    final BeaconState state = randomBeaconState(slot);
+
+    Bytes32 parentRoot = randomBytes32();
+    Bytes32 state_root = state.hash_tree_root();
+    BeaconBlockBody body = randomBeaconBlockBody();
+    final BeaconBlock block = new BeaconBlock(slot, parentRoot, state_root, body);
+
+    return new BeaconBlockAndState(block, state);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot) {
