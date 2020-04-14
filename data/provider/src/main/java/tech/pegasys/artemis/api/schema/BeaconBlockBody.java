@@ -13,6 +13,12 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTER_SLASHINGS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_PROPOSER_SLASHINGS;
+import static tech.pegasys.artemis.util.config.Constants.MAX_VOLUNTARY_EXITS;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -79,23 +85,23 @@ public class BeaconBlockBody {
         graffiti,
         SSZList.createMutable(
             proposer_slashings.stream().map(ProposerSlashing::asInternalProposerSlashing),
-            proposer_slashings.size(),
+            MAX_PROPOSER_SLASHINGS,
             tech.pegasys.artemis.datastructures.operations.ProposerSlashing.class),
         SSZList.createMutable(
             attester_slashings.stream().map(AttesterSlashing::asInternalAttesterSlashing),
-            attester_slashings.size(),
+            MAX_ATTESTER_SLASHINGS,
             tech.pegasys.artemis.datastructures.operations.AttesterSlashing.class),
         SSZList.createMutable(
             attestations.stream().map(Attestation::asInternalAttestation),
-            attestations.size(),
+            MAX_ATTESTATIONS,
             tech.pegasys.artemis.datastructures.operations.Attestation.class),
         SSZList.createMutable(
             deposits.stream().map(Deposit::asInternalDeposit),
-            deposits.size(),
+            MAX_DEPOSITS,
             tech.pegasys.artemis.datastructures.operations.Deposit.class),
         SSZList.createMutable(
             voluntary_exits.stream().map(SignedVoluntaryExit::asInternalSignedVoluntaryExit),
-            voluntary_exits.size(),
+            MAX_VOLUNTARY_EXITS,
             tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit.class));
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,7 +36,7 @@ public class IndexedAttestation {
   public tech.pegasys.artemis.datastructures.operations.IndexedAttestation
       asInternalIndexedAttestation() {
     return new tech.pegasys.artemis.datastructures.operations.IndexedAttestation(
-        SSZList.createMutable(attesting_indices, attesting_indices.size(), UnsignedLong.class),
+        SSZList.createMutable(attesting_indices, MAX_VALIDATORS_PER_COMMITTEE, UnsignedLong.class),
         data.asInternalAttestationData(),
         signature.asInternalBLSSignature());
   }
