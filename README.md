@@ -31,7 +31,6 @@ Raise a [documentation issue](https://github.com/PegaSysEng/doc.teku/issues) or 
 ### Install Prerequisites
 
 * Java 11
-* Gradle 
 
 ### Build and Dist
 
@@ -73,10 +72,6 @@ After a successful build, distribution packages are available in `build/distribu
 | distZip      | Full distribution in build/distributions (as `.zip`)
 | installDist  | Expanded distribution in `build/install/teku`
 | distDocker   | The `pegasyseng/teku` docker image
-
-## Configuration Defaults 
-
-Refer to `config/config.yaml` for a set of default configuration settings.
 
 ## Code Style
 
