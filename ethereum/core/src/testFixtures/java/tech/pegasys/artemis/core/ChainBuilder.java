@@ -16,6 +16,7 @@ package tech.pegasys.artemis.core;
 import static org.assertj.core.util.Preconditions.checkState;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
@@ -23,15 +24,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -40,12 +45,15 @@ import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.validator.TestMessageSignerService;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
 public class ChainBuilder {
 
   private final List<BLSKeyPair> validatorKeys;
+  private final AttestationGenerator attestationGenerator;
   private final NavigableMap<UnsignedLong, SignedBlockAndState> blocks = new TreeMap<>();
 
   private BlockProposalTestUtil blockProposalTestUtil = new BlockProposalTestUtil();
@@ -54,6 +62,8 @@ public class ChainBuilder {
       final List<BLSKeyPair> validatorKeys,
       final Map<UnsignedLong, SignedBlockAndState> existingBlocks) {
     this.validatorKeys = validatorKeys;
+
+    attestationGenerator = new AttestationGenerator(validatorKeys);
     blocks.putAll(existingBlocks);
   }
 
@@ -218,13 +228,54 @@ public class ChainBuilder {
 
   public SignedBlockAndState generateBlockAtSlot(final UnsignedLong slot)
       throws StateTransitionException {
+    return generateBlockAtSlot(slot, BlockOptions.create());
+  }
+
+  public SignedBlockAndState generateBlockAtSlot(
+      final UnsignedLong slot, final BlockOptions options) throws StateTransitionException {
     assertBlockCanBeGenerated();
     final SignedBlockAndState latest = getLatestBlockAndState();
     checkState(
         slot.compareTo(latest.getState().getSlot()) > 0,
         "Cannot generate block at historical slot");
 
-    return appendNewBlockToChain(slot);
+    return appendNewBlockToChain(slot, options);
+  }
+
+  /**
+   * Utility for streaming valid attestations available for inclusion at the given slot. This
+   * utility can be used to assign valid attestations to a generated block.
+   *
+   * @param slot The slot at which attestations are to be included
+   * @return A stream of valid attestations that can be included in a block generated at the given
+   *     slot
+   */
+  public Stream<Attestation> streamValidAttestationsForBlockAtSlot(final UnsignedLong slot) {
+    // Calculate bounds for valid head blocks
+    final UnsignedLong currentEpoch = compute_epoch_at_slot(slot);
+    final UnsignedLong prevEpoch =
+        currentEpoch.compareTo(UnsignedLong.ZERO) == 0
+            ? currentEpoch
+            : currentEpoch.minus(UnsignedLong.ONE);
+    final UnsignedLong minBlockSlot = compute_start_slot_at_epoch(prevEpoch);
+
+    // Calculate valid assigned slots to be included in a block at the given slot
+    final UnsignedLong slotsPerEpoch = UnsignedLong.valueOf(SLOTS_PER_EPOCH);
+    final UnsignedLong minAssignedSlot =
+        slot.compareTo(slotsPerEpoch) <= 0 ? UnsignedLong.ZERO : slot.minus(slotsPerEpoch);
+    final UnsignedLong minInclusionDiff =
+        UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY);
+    final UnsignedLong maxAssignedSlot =
+        slot.compareTo(minInclusionDiff) <= 0 ? slot : slot.minus(minInclusionDiff);
+
+    // Generate stream of consistent, valid attestations for inclusion
+    return LongStream.rangeClosed(minAssignedSlot.longValue(), maxAssignedSlot.longValue())
+        .mapToObj(UnsignedLong::valueOf)
+        .map(this::getLatestBlockAndStateAtSlot)
+        .filter(Objects::nonNull)
+        .filter(b -> b.getSlot().compareTo(minBlockSlot) >= 0)
+        .map(SignedBlockAndState::toUnsigned)
+        .flatMap(head -> attestationGenerator.streamAttestations(head, head.getSlot()));
   }
 
   private void asserChainIsNotEmpty() {
@@ -235,8 +286,8 @@ public class ChainBuilder {
     checkState(!blocks.isEmpty(), "Genesis block must be created before blocks can be added.");
   }
 
-  private SignedBlockAndState appendNewBlockToChain(final UnsignedLong slot)
-      throws StateTransitionException {
+  private SignedBlockAndState appendNewBlockToChain(
+      final UnsignedLong slot, final BlockOptions options) throws StateTransitionException {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState = latestBlockAndState.getState();
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hash_tree_root();
@@ -244,7 +295,8 @@ public class ChainBuilder {
     final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     final MessageSignerService signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState =
-        blockProposalTestUtil.createEmptyBlock(signer, slot, preState, parentRoot);
+        blockProposalTestUtil.createBlockWithAttestations(
+            signer, slot, preState, parentRoot, options.getAttestations());
 
     blocks.put(slot, nextBlockAndState);
     return nextBlockAndState;
@@ -260,5 +312,24 @@ public class ChainBuilder {
 
   private MessageSignerService getSigner(final int proposerIndex) {
     return new TestMessageSignerService(validatorKeys.get(proposerIndex));
+  }
+
+  public static final class BlockOptions {
+    private SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+
+    private BlockOptions() {}
+
+    public static BlockOptions create() {
+      return new BlockOptions();
+    }
+
+    public BlockOptions addAttestation(final Attestation attestation) {
+      attestations.add(attestation);
+      return this;
+    }
+
+    private SSZList<Attestation> getAttestations() {
+      return attestations;
+    }
   }
 }

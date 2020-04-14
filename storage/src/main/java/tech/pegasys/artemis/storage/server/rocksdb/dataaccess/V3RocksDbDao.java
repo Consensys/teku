@@ -306,8 +306,7 @@ public class V3RocksDbDao implements RocksDbDAO {
       final Bytes32 blockRoot = block.getMessage().hash_tree_root();
       transaction.put(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot, block);
       hotRootsBySlotAdditions
-          .computeIfAbsent(
-              block.getSlot(), key -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
+          .computeIfAbsent(block.getSlot(), key -> new HashSet<>())
           .add(blockRoot);
     }
 
@@ -368,7 +367,13 @@ public class V3RocksDbDao implements RocksDbDAO {
     public void commit() {
       // Commit slot updates
       hotRootsBySlotCache.keySet().removeAll(prunedSlots);
-      hotRootsBySlotCache.putAll(hotRootsBySlotAdditions);
+      hotRootsBySlotAdditions.forEach(
+          (slot, roots) -> {
+            final Set<Bytes32> currentRoots =
+                hotRootsBySlotCache.computeIfAbsent(
+                    slot, __ -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
+            currentRoots.addAll(roots);
+          });
       // Commit hot state updates
       deletedStates.forEach(hotStates::remove);
       hotStates.putAll(newHotStates);

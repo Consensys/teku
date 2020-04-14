@@ -24,7 +24,11 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
 
-/** An interface to abstract interactions with underlying database. */
+/**
+ * A RocksDB "data access object" interface to abstract interactions with underlying database.
+ *
+ * @see <a href="https://en.wikipedia.org/wiki/Data_access_object">DAO</a>
+ */
 public interface RocksDbDAO extends AutoCloseable {
 
   Optional<UnsignedLong> getGenesisTime();

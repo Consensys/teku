@@ -23,6 +23,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.core.ChainBuilder;
+import tech.pegasys.artemis.core.ChainBuilder.BlockOptions;
 import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -72,7 +74,7 @@ public abstract class AbstractDatabaseTest {
 
   @BeforeEach
   public void setup() throws StateTransitionException {
-    Constants.SLOTS_PER_EPOCH = 2;
+    Constants.SLOTS_PER_EPOCH = 3;
     setupDatabase(StateStorageMode.ARCHIVE);
 
     genesisBlockAndState = chainBuilder.generateGenesis();
@@ -155,6 +157,56 @@ public abstract class AbstractDatabaseTest {
 
   protected void commit(final Transaction transaction) {
     assertThat(transaction.commit()).isCompleted();
+  }
+
+  @Test
+  public void shouldPruneHotBlocksAddedOverMultipleSessions() throws Exception {
+    final ChainBuilder forkA = chainBuilder.fork();
+    final ChainBuilder forkB = chainBuilder.fork();
+
+    // Set target slot at which to create duplicate blocks
+    // and generate block options to make each block unique
+    final UnsignedLong targetSlot = UnsignedLong.valueOf(10);
+    final List<BlockOptions> blockOptions =
+        chainBuilder
+            .streamValidAttestationsForBlockAtSlot(targetSlot)
+            .map(attestation -> BlockOptions.create().addAttestation(attestation))
+            .limit(2)
+            .collect(toList());
+
+    // Create several different blocks at the same slot
+    final SignedBlockAndState blockA = forkA.generateBlockAtSlot(targetSlot, blockOptions.get(0));
+    final SignedBlockAndState blockB = forkB.generateBlockAtSlot(targetSlot, blockOptions.get(1));
+    final SignedBlockAndState blockC = chainBuilder.generateBlockAtSlot(10);
+    final Set<Bytes32> block10Roots = Set.of(blockA.getRoot(), blockB.getRoot(), blockC.getRoot());
+    // Sanity check
+    assertThat(block10Roots.size()).isEqualTo(3);
+
+    // Add blocks at same height sequentially
+    add(List.of(blockA));
+    add(List.of(blockB));
+    add(List.of(blockC));
+
+    // Verify all blocks are available
+    assertThat(store.getBlock(blockA.getRoot())).isEqualTo(blockA.getBlock().getMessage());
+    assertThat(store.getBlock(blockB.getRoot())).isEqualTo(blockB.getBlock().getMessage());
+    assertThat(store.getBlock(blockC.getRoot())).isEqualTo(blockC.getBlock().getMessage());
+
+    // Finalize subsequent block to prune blocks a, b, and c
+    final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
+    add(List.of(finalBlock));
+    final UnsignedLong finalEpoch = chainBuilder.getLatestEpoch().plus(UnsignedLong.ONE);
+    final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(finalEpoch);
+    finalizeCheckpoint(finalizedCheckpoint);
+
+    // Check pruning result
+    final Set<Bytes32> rootsToPrune = new HashSet<>(block10Roots);
+    rootsToPrune.add(genesisBlockAndState.getRoot());
+    final StorageUpdateResult updateResult = getLatestUpdateResult();
+    assertThat(updateResult.getPrunedBlockRoots())
+        .containsExactlyInAnyOrderElementsOf(rootsToPrune);
+    // Check that all blocks at slot 10 were pruned
+    assertStoreWasPruned(store, rootsToPrune, Set.of(genesisCheckpoint));
   }
 
   @Test
