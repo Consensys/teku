@@ -33,11 +33,13 @@ import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO;
 import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
+import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.config.Constants;
@@ -48,7 +50,7 @@ import tech.pegasys.artemis.util.config.Constants;
 @Threads(1)
 public abstract class TransitionBenchmark {
 
-  RecentChainData localStorage;
+  RecentChainData recentChainData;
   BeaconChainUtil localChain;
   BlockImporter blockImporter;
   Iterator<SignedBeaconBlock> blockIterator;
@@ -76,11 +78,12 @@ public abstract class TransitionBenchmark {
         BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
-    localStorage = MemoryOnlyRecentChainData.create(localEventBus);
-    localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
+    recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
+    localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
-    blockImporter = new BlockImporter(localStorage, localEventBus);
+    ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+    blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
     blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);
   }
