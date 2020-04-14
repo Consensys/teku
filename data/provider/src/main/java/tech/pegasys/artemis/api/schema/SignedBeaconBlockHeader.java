@@ -22,4 +22,10 @@ public class SignedBeaconBlockHeader {
     this.message = new BeaconBlockHeader(signedHeader.getMessage());
     this.signature = new BLSSignature(signedHeader.getSignature());
   }
+
+  public tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader
+      asInternalSignedBeaconBlockHeader() {
+    return new tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader(
+        message.asInternalBeaconBlockHeader(), signature.asInternalBLSSignature());
+  }
 }
