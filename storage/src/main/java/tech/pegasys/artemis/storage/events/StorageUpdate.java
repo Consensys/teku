@@ -30,7 +30,6 @@ public class StorageUpdate {
   private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final Map<Bytes32, BeaconState> blockStates;
   private final Map<Checkpoint, BeaconState> checkpointStates;
-  private final Map<UnsignedLong, Checkpoint> latestMessages;
 
   public StorageUpdate(
       final Optional<UnsignedLong> genesisTime,
@@ -39,8 +38,7 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> blockStates,
-      final Map<Checkpoint, BeaconState> checkpointStates,
-      final Map<UnsignedLong, Checkpoint> latestMessages) {
+      final Map<Checkpoint, BeaconState> checkpointStates) {
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.finalizedCheckpoint = finalizedCheckpoint;
@@ -48,7 +46,6 @@ public class StorageUpdate {
     this.blocks = blocks;
     this.blockStates = blockStates;
     this.checkpointStates = checkpointStates;
-    this.latestMessages = latestMessages;
   }
 
   public boolean isEmpty() {
@@ -58,8 +55,7 @@ public class StorageUpdate {
         && bestJustifiedCheckpoint.isEmpty()
         && blocks.isEmpty()
         && blockStates.isEmpty()
-        && checkpointStates.isEmpty()
-        && latestMessages.isEmpty();
+        && checkpointStates.isEmpty();
   }
 
   public Optional<UnsignedLong> getGenesisTime() {
@@ -88,9 +84,5 @@ public class StorageUpdate {
 
   public Map<Checkpoint, BeaconState> getCheckpointStates() {
     return checkpointStates;
-  }
-
-  public Map<UnsignedLong, Checkpoint> getLatestMessages() {
-    return latestMessages;
   }
 }

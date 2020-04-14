@@ -48,8 +48,4 @@ public interface ReadOnlyStore {
   BeaconState getCheckpointState(Checkpoint checkpoint);
 
   boolean containsCheckpointState(Checkpoint checkpoint);
-
-  Checkpoint getLatestMessage(UnsignedLong validatorIndex);
-
-  boolean containsLatestMessage(UnsignedLong validatorIndex);
 }

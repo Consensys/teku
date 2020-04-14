@@ -33,4 +33,10 @@ public class SignedBeaconBlock {
     this.message = message;
     this.signature = signature;
   }
+
+  public tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock
+      asInternalSignedBeaconBlock() {
+    return new tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock(
+        message.asInternalBeaconBlock(), signature.asInternalBLSSignature());
+  }
 }

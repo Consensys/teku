@@ -1,0 +1,12 @@
+dependencies {
+    implementation 'org.apache.tuweni:tuweni-crypto'
+
+    implementation project(':storage')
+    implementation project(':ethereum:datastructures')
+    implementation project(':ssz')
+    implementation project(':util')
+
+    testFixturesApi 'org.apache.tuweni:tuweni-bytes'
+    testFixturesImplementation project(':ethereum:datastructures')
+    testFixturesImplementation project(':storage')
+}
