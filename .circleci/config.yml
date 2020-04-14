@@ -1,4 +1,9 @@
+---
 version: 2.1
+
+orbs:
+  gh-pages: sugarshin/gh-pages@0.0.6
+
 executors:
   small_executor:
     docker:
@@ -63,6 +68,15 @@ commands:
             sudo apt update
             sudo apt install -y openjdk-11-jdk
             sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
+  install_redoc:
+    description: "Install Packages - Node JS 13 and ReDoc"
+    steps:
+      - run:
+          name: Install ReDoc CLI
+          command: |
+            sudo curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            sudo npm install -g redoc-cli
   capture_test_results:
     description: "Capture test results"
     steps:
@@ -266,57 +280,90 @@ jobs:
             docker login --username "${DOCKER_USER}" --password "${DOCKER_PASSWORD}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
+  publishAPIDoc:
+    executor: small_executor
+    steps:
+      - prepare
+      - install_redoc
+      - run:
+          name: Build runnable Teku binaries
+          command: |
+            ./gradlew --no-daemon --parallel installDist
+      - run:
+          name: Extract OpenAPI JSON
+          command: |
+            cd build/install/teku
+            bin/teku --rest-api-docs-enabled=true &
+            wget -O api.json http://localhost:5051/swagger-docs
+      - run:
+          name: Generate ReDoc static HTML
+          command: |
+            cd build/install/teku
+            redoc-cli bundle api.json
+      - store_artifacts:
+          path: build/install/teku/redoc-static.html
+      #      - gh-pages/deploy:
+      #          build-dir: build
+      #          requires:
+      #            - build
+      #          ssh-fingerprints: 'eb:56:42:72:7c:9e:c7:5b:d3:a2:eb:53:0f:ef:ec:18'
+
 workflows:
   version: 2
   circleci:
     jobs:
-      - assemble
-      - spotless
-      - referenceTests:
-          requires:
-            - assemble
-            - spotless
-      - unitTests:
-          requires:
-            - assemble
-            - spotless
-      - integrationTests:
-          requires:
-            - assemble
-            - spotless
-      - acceptanceTests:
-          requires:
-            - assemble
-            - spotless
-      - docker:
-          requires:
-            - assemble
-            - unitTests
-            - spotless
-      - publish:
+      #      - assemble
+      #      - spotless
+      #      - referenceTests:
+      #          requires:
+      #            - assemble
+      #            - spotless
+      #      - unitTests:
+      #          requires:
+      #            - assemble
+      #            - spotless
+      #      - integrationTests:
+      #          requires:
+      #            - assemble
+      #            - spotless
+      #      - acceptanceTests:
+      #          requires:
+      #            - assemble
+      #            - spotless
+      #      - docker:
+      #          requires:
+      #            - assemble
+      #            - unitTests
+      #            - spotless
+      #      - publish:
+      #          filters:
+      #            branches:
+      #              only:
+      #                - master
+      #                - /^release-.*/
+      #          requires:
+      #            - unitTests
+      #            - integrationTests
+      #            - acceptanceTests
+      #            - referenceTests
+      #            - docker
+      #      - publishDocker:
+      #          filters:
+      #            branches:
+      #              only:
+      #                - master
+      #                - /^release-.*/
+      #          requires:
+      #            - unitTests
+      #            - integrationTests
+      #            - acceptanceTests
+      #            - referenceTests
+      #            - docker
+      - publishAPIDoc:
           filters:
             branches:
-              only:
-                - master
-                - /^release-.*/
-          requires:
-            - unitTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - docker
-      - publishDocker:
-          filters:
-            branches:
-              only:
-                - master
-                - /^release-.*/
-          requires:
-            - unitTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - docker
+              only: publish_openapi_to_gh-pages
+
   nightly:
     triggers:
       - schedule:
