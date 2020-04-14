@@ -22,4 +22,10 @@ public class SignedVoluntaryExit {
     this.signature = new BLSSignature(signedVoluntaryExit.getSignature());
     this.message = new VoluntaryExit(signedVoluntaryExit.getMessage());
   }
+
+  public tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit
+      asInternalSignedVoluntaryExit() {
+    return new tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit(
+        message.asInternalVoluntaryExit(), signature.asInternalBLSSignature());
+  }
 }
