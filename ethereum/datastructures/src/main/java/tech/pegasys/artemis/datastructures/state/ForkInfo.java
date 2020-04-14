@@ -43,8 +43,8 @@ public class ForkInfo {
       return false;
     }
     final ForkInfo forkInfo = (ForkInfo) o;
-    return Objects.equals(fork, forkInfo.fork) &&
-        Objects.equals(genesisValidatorsRoot, forkInfo.genesisValidatorsRoot);
+    return Objects.equals(fork, forkInfo.fork)
+        && Objects.equals(genesisValidatorsRoot, forkInfo.genesisValidatorsRoot);
   }
 
   @Override
