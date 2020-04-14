@@ -15,6 +15,7 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -48,9 +49,11 @@ import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.config.FeatureToggles;
+import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
 class ValidatorApiHandlerTest {
@@ -60,6 +63,7 @@ class ValidatorApiHandlerTest {
       BeaconStateUtil.compute_start_slot_at_epoch(EPOCH.minus(UnsignedLong.ONE));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
+  private final SyncService syncService = mock(SyncService.class);
   private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -71,12 +75,22 @@ class ValidatorApiHandlerTest {
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
           chainDataClient,
+          syncService,
           stateTransition,
           blockFactory,
           attestationPool,
           attestationAggregator,
           attestationTopicSubscriptions,
           eventBus);
+
+  @Test
+  public void getDuties_shouldFailWhenNodeIsSyncing() {
+    when(syncService.isSyncActive()).thenReturn(true);
+    final SafeFuture<Optional<List<ValidatorDuties>>> duties =
+        validatorApiHandler.getDuties(EPOCH, List.of(dataStructureUtil.randomPublicKey()));
+    assertThat(duties).isCompletedExceptionally();
+    assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
@@ -158,6 +172,17 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void createUnsignedBlock_shouldFailWhenNodeIsSyncing() {
+    when(syncService.isSyncActive()).thenReturn(true);
+    final SafeFuture<Optional<BeaconBlock>> result =
+        validatorApiHandler.createUnsignedBlock(
+            UnsignedLong.ONE, dataStructureUtil.randomSignature());
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
+
+  @Test
   public void createUnsignedBlock_shouldReturnEmptyWhenBestBlockNotSet() {
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
@@ -191,6 +216,16 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal);
 
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
+  }
+
+  @Test
+  public void createUnsignedAttestation_shouldFailWhenNodeIsSyncing() {
+    when(syncService.isSyncActive()).thenReturn(true);
+    final SafeFuture<Optional<Attestation>> result =
+        validatorApiHandler.createUnsignedAttestation(UnsignedLong.ONE, 1);
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
   }
 
   @Test
@@ -232,6 +267,16 @@ class ValidatorApiHandlerTest {
     assertThat(attestation.getData().getSlot()).isEqualTo(slot);
     assertThat(attestation.getAggregate_signature().toBytes())
         .isEqualTo(BLSSignature.empty().toBytes());
+  }
+
+  @Test
+  public void createAggregate_shouldFailWhenNodeIsSyncing() {
+    when(syncService.isSyncActive()).thenReturn(true);
+    final SafeFuture<Optional<Attestation>> result =
+        validatorApiHandler.createAggregate(dataStructureUtil.randomAttestationData());
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
   }
 
   @Test
