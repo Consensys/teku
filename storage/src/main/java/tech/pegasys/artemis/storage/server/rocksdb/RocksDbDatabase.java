@@ -83,6 +83,7 @@ public class RocksDbDatabase implements Database {
       final BeaconState genesisState =
           store.getBlockState(store.getFinalizedCheckpoint().getRoot());
       updater.addCheckpointState(store.getFinalizedCheckpoint(), genesisState);
+      updater.setLatestFinalizedState(genesisState);
 
       for (Bytes32 root : store.getBlockRoots()) {
         // Since we're storing genesis, we should only have 1 root here corresponding to genesis

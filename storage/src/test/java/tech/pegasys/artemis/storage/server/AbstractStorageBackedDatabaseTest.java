@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.storage.server;
 
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.collect.Streams;
 import com.google.common.io.Files;
@@ -64,6 +65,33 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     databases.add(database);
     storageUpdateChannel = new TrackingStorageUpdateChannel(database);
     return database;
+  }
+
+  @Test
+  public void shouldRecreateGenesisStateOnRestart_archiveMode(@TempDir final Path tempDir)
+      throws Exception {
+    testShouldRecreateGenesisStateOnRestart(tempDir, StateStorageMode.ARCHIVE);
+  }
+
+  @Test
+  public void shouldRecreateGenesisStateOnRestart_pruneMode(@TempDir final Path tempDir)
+      throws Exception {
+    testShouldRecreateGenesisStateOnRestart(tempDir, StateStorageMode.PRUNE);
+  }
+
+  public void testShouldRecreateGenesisStateOnRestart(
+      final Path tempDir, final StateStorageMode storageMode) throws Exception {
+    // Set up database with genesis state
+    database = setupDatabase(tempDir.toFile(), storageMode);
+    store = Store.get_genesis_store(genesisBlockAndState.getState());
+    database.storeGenesis(store);
+
+    // Shutdown and restart
+    database.close();
+    database = setupDatabase(tempDir.toFile(), storageMode);
+
+    final Store memoryStore = database.createMemoryStore().orElseThrow();
+    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
   }
 
   @Test
