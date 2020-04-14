@@ -262,11 +262,11 @@ public class AttestationGenerator {
 
       final BeaconState headState = headBlockAndState.getState();
       final BeaconBlock headBlock = headBlockAndState.getBlock();
-      int validatorIndex;
-      for (validatorIndex = currentValidatorIndex;
+      int lastProcessedValidatorIndex = currentValidatorIndex;
+      for (int validatorIndex = currentValidatorIndex;
           validatorIndex < validatorKeys.size();
           validatorIndex++) {
-
+        lastProcessedValidatorIndex = validatorIndex;
         final Optional<CommitteeAssignment> maybeAssignment =
             CommitteeAssignmentUtil.get_committee_assignment(
                 headState, assignedSlotEpoch, validatorIndex);
@@ -299,7 +299,7 @@ public class AttestationGenerator {
         break;
       }
 
-      currentValidatorIndex = validatorIndex;
+      currentValidatorIndex = lastProcessedValidatorIndex + 1;
     }
 
     private Attestation createAttestation(
