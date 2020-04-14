@@ -29,7 +29,7 @@ public class ValidatorDutyFactory {
   }
 
   public BlockProductionDuty createBlockProductionDuty(
-      final Validator validator, final UnsignedLong slot) {
+      final UnsignedLong slot, final Validator validator) {
     return new BlockProductionDuty(validator, slot, forkProvider, validatorApiChannel);
   }
 
