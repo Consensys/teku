@@ -59,8 +59,6 @@ public interface RocksDbDAO extends AutoCloseable {
 
   Map<Checkpoint, BeaconState> getCheckpointStates();
 
-  Map<UnsignedLong, Checkpoint> getLatestMessages();
-
   Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates();
 
   Updater updater();
@@ -76,10 +74,6 @@ public interface RocksDbDAO extends AutoCloseable {
     void setFinalizedCheckpoint(final Checkpoint checkpoint);
 
     void setLatestFinalizedState(final BeaconState state);
-
-    void addLatestMessage(UnsignedLong slot, final Checkpoint checkpoint);
-
-    void addLatestMessages(Map<UnsignedLong, Checkpoint> latestMessages);
 
     void addCheckpointState(final Checkpoint checkpoint, final BeaconState state);
 

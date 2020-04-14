@@ -130,11 +130,6 @@ public class V3RocksDbDao implements RocksDbDAO {
   }
 
   @Override
-  public Map<UnsignedLong, Checkpoint> getLatestMessages() {
-    return db.getAll(V3Schema.LATEST_MESSAGES);
-  }
-
-  @Override
   public Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates() {
     return db.stream(V3Schema.CHECKPOINT_STATES);
   }
@@ -274,16 +269,6 @@ public class V3RocksDbDao implements RocksDbDAO {
     @Override
     public void setLatestFinalizedState(final BeaconState state) {
       transaction.put(V3Schema.LATEST_FINALIZED_STATE, state);
-    }
-
-    @Override
-    public void addLatestMessage(final UnsignedLong slot, final Checkpoint checkpoint) {
-      transaction.put(V3Schema.LATEST_MESSAGES, slot, checkpoint);
-    }
-
-    @Override
-    public void addLatestMessages(final Map<UnsignedLong, Checkpoint> latestMessages) {
-      latestMessages.forEach(this::addLatestMessage);
     }
 
     @Override

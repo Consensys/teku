@@ -38,8 +38,6 @@ public interface V3Schema extends Schema {
       RocksDbColumn.create(4, BYTES32_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
   RocksDbColumn<Checkpoint, BeaconState> CHECKPOINT_STATES =
       RocksDbColumn.create(5, CHECKPOINT_SERIALIZER, STATE_SERIALIZER);
-  RocksDbColumn<UnsignedLong, Checkpoint> LATEST_MESSAGES =
-      RocksDbColumn.create(6, UNSIGNED_LONG_SERIALIZER, CHECKPOINT_SERIALIZER);
 
   // Variables
   RocksDbVariable<UnsignedLong> GENESIS_TIME = RocksDbVariable.create(1, UNSIGNED_LONG_SERIALIZER);
