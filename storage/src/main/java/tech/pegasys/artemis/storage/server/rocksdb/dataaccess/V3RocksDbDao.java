@@ -144,7 +144,7 @@ public class V3RocksDbDao implements RocksDbDAO {
 
   @Override
   public Updater updater() {
-    return new V2Updater(db, hotRootsBySlotCache, hotStates);
+    return new V3Updater(db, hotRootsBySlotCache, hotStates);
   }
 
   @Override
@@ -206,7 +206,7 @@ public class V3RocksDbDao implements RocksDbDAO {
 
     if (hotStates.size() != hotBlocksByRoot.size()) {
       LOG.trace(
-          "Only {} hot states produced for {} hot blocks.  Some hot blocks must belong to a non-canonical fork.",
+          "Only {} hot states produced for {} hot blocks.  Some hot blocks must belong to non-canonical forks.",
           hotStates.size(),
           hotBlocksByRoot.size());
     }
@@ -227,7 +227,7 @@ public class V3RocksDbDao implements RocksDbDAO {
     }
   }
 
-  private static class V2Updater implements Updater {
+  private static class V3Updater implements Updater {
 
     private final Transaction transaction;
     private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache;
@@ -242,7 +242,7 @@ public class V3RocksDbDao implements RocksDbDAO {
     private final Map<Bytes32, BeaconState> newHotStates = new HashMap<>();
     private final Set<Bytes32> deletedStates = new HashSet<>();
 
-    V2Updater(
+    V3Updater(
         final RocksDbInstance db,
         final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache,
         final Map<Bytes32, BeaconState> hotStates) {
@@ -305,7 +305,6 @@ public class V3RocksDbDao implements RocksDbDAO {
     @Override
     public void addHotState(final Bytes32 blockRoot, final BeaconState state) {
       newHotStates.put(blockRoot, state);
-      deletedStates.remove(blockRoot);
     }
 
     @Override
