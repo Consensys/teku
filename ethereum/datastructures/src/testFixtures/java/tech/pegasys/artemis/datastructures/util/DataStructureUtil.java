@@ -222,9 +222,18 @@ public final class DataStructureUtil {
     return new SignedBlockAndState(signedBlock, blockAndState.getState());
   }
 
+  public BeaconBlockAndState randomBlockAndState(final long slot, final BeaconState beaconState) {
+    final UnsignedLong unsignedSlot = UnsignedLong.valueOf(slot);
+    final BeaconState state = beaconState.updated(b -> b.setSlot(unsignedSlot));
+    return randomBlockAndState(unsignedSlot, state);
+  }
+
   public BeaconBlockAndState randomBlockAndState(final UnsignedLong slot) {
     final BeaconState state = randomBeaconState(slot);
+    return randomBlockAndState(slot, state);
+  }
 
+  public BeaconBlockAndState randomBlockAndState(final UnsignedLong slot, final BeaconState state) {
     Bytes32 parentRoot = randomBytes32();
     Bytes32 state_root = state.hash_tree_root();
     BeaconBlockBody body = randomBeaconBlockBody();

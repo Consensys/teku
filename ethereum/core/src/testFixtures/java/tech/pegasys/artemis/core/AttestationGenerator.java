@@ -179,7 +179,10 @@ public class AttestationGenerator {
         .toStream();
   };
 
-  /** Iterates through valid attestations given the supplied */
+  /**
+   * Iterates through valid attestations with the supplied head block, produced at the given
+   * assigned slot.
+   */
   private static class AttestationIterator implements Iterator<Attestation> {
     // The head block to attest to with its corresponding state
     private final BeaconBlockAndState headBlockAndState;
