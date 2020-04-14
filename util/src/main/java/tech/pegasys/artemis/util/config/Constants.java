@@ -140,6 +140,7 @@ public class Constants {
   public static final int REPUTATION_MANAGER_CAPACITY = 100;
   public static long STORAGE_REQUEST_TIMEOUT = 3; // in sec
   public static int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
+  public static int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
 
   // Teku Validator Client Specific
   public static final long VALIDATOR_DUTIES_TIMEOUT = 15; // in sec
