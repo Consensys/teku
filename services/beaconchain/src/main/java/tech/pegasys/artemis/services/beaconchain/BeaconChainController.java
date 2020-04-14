@@ -346,6 +346,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               config.isP2pDiscoveryEnabled(),
               config.getP2pDiscoveryBootnodes(),
               new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
+              config.isP2pSnappyEnabled(),
               true,
               true,
               true);

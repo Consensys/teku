@@ -71,23 +71,25 @@ public class BeaconChainMethods {
       final CombinedChainDataClient combinedChainDataClient,
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
-      final StatusMessageFactory statusMessageFactory) {
+      final StatusMessageFactory statusMessageFactory,
+      final RpcEncoding encoding) {
     return new BeaconChainMethods(
-        createStatus(asyncRunner, statusMessageFactory, peerLookup),
-        createGoodBye(asyncRunner, metricsSystem, peerLookup),
-        createBeaconBlocksByRoot(asyncRunner, recentChainData, peerLookup),
-        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup));
+        createStatus(asyncRunner, statusMessageFactory, peerLookup, encoding),
+        createGoodBye(asyncRunner, metricsSystem, peerLookup, encoding),
+        createBeaconBlocksByRoot(asyncRunner, recentChainData, peerLookup, encoding),
+        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup, encoding));
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
       final AsyncRunner asyncRunner,
       final StatusMessageFactory statusMessageFactory,
-      final PeerLookup peerLookup) {
+      final PeerLookup peerLookup,
+      final RpcEncoding encoding) {
     final StatusMessageHandler statusHandler = new StatusMessageHandler(statusMessageFactory);
     return new Eth2RpcMethod<>(
         asyncRunner,
         STATUS,
-        RpcEncoding.SSZ,
+        encoding,
         StatusMessage.class,
         StatusMessage.class,
         true,
@@ -98,12 +100,13 @@ public class BeaconChainMethods {
   private static Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> createGoodBye(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final PeerLookup peerLookup) {
+      final PeerLookup peerLookup,
+      final RpcEncoding encoding) {
     final GoodbyeMessageHandler goodbyeHandler = new GoodbyeMessageHandler(metricsSystem);
     return new Eth2RpcMethod<>(
         asyncRunner,
         GOODBYE,
-        RpcEncoding.SSZ,
+        encoding,
         GoodbyeMessage.class,
         GoodbyeMessage.class,
         false,
@@ -115,13 +118,14 @@ public class BeaconChainMethods {
       createBeaconBlocksByRoot(
           final AsyncRunner asyncRunner,
           final RecentChainData recentChainData,
-          final PeerLookup peerLookup) {
+          final PeerLookup peerLookup,
+          final RpcEncoding encoding) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
         new BeaconBlocksByRootMessageHandler(recentChainData);
     return new Eth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_ROOT,
-        RpcEncoding.SSZ,
+        encoding,
         BeaconBlocksByRootRequestMessage.class,
         SignedBeaconBlock.class,
         true,
@@ -133,14 +137,15 @@ public class BeaconChainMethods {
       createBeaconBlocksByRange(
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
-          final PeerLookup peerLookup) {
+          final PeerLookup peerLookup,
+          final RpcEncoding encoding) {
 
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
         new BeaconBlocksByRangeMessageHandler(combinedChainDataClient);
     return new Eth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_RANGE,
-        RpcEncoding.SSZ,
+        encoding,
         BeaconBlocksByRangeRequestMessage.class,
         SignedBeaconBlock.class,
         true,

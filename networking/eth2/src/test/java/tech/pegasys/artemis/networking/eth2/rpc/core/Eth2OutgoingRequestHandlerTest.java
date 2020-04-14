@@ -37,6 +37,7 @@ import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
@@ -63,7 +64,8 @@ public class Eth2OutgoingRequestHandlerTest {
           combinedChainDataClient,
           recentChainData,
           new NoOpMetricsSystem(),
-          new StatusMessageFactory(recentChainData));
+          new StatusMessageFactory(recentChainData),
+          RpcEncoding.SSZ);
 
   private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       blocksByRangeMethod = beaconChainMethods.beaconBlocksByRange();

@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -50,7 +51,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final CombinedChainDataClient combinedChainDataClient,
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
-      final PeerValidatorFactory peerValidatorFactory) {
+      final PeerValidatorFactory peerValidatorFactory,
+      final RpcEncoding encoding) {
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
@@ -60,13 +62,15 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             combinedChainDataClient,
             storageClient,
             metricsSystem,
-            statusMessageFactory);
+            statusMessageFactory,
+            encoding);
   }
 
   public static Eth2PeerManager create(
       final RecentChainData storageClient,
       final StorageQueryChannel historicalChainData,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final RpcEncoding encoding) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
             PeerChainValidator.create(storageClient, historicalChainData, peer, status);
@@ -74,7 +78,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         new CombinedChainDataClient(storageClient, historicalChainData),
         storageClient,
         metricsSystem,
-        peerValidatorFactory);
+        peerValidatorFactory,
+        encoding);
   }
 
   @Override

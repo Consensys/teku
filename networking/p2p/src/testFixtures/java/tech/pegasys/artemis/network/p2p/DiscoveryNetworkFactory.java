@@ -86,6 +86,7 @@ public class DiscoveryNetworkFactory {
                 new TargetPeerRange(20, 30),
                 false,
                 false,
+                false,
                 false);
         final ReputationManager reputationManager =
             new ReputationManager(

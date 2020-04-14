@@ -32,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
@@ -112,7 +113,8 @@ public class Eth2NetworkFactory {
         // Setup eth2 handlers
         final StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
         final Eth2PeerManager eth2PeerManager =
-            Eth2PeerManager.create(recentChainData, historicalChainData, METRICS_SYSTEM);
+            Eth2PeerManager.create(
+                recentChainData, historicalChainData, METRICS_SYSTEM, RpcEncoding.SSZ);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
@@ -148,6 +150,7 @@ public class Eth2NetworkFactory {
           false,
           emptyList(),
           new TargetPeerRange(20, 30),
+          false,
           false,
           false,
           false);

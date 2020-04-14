@@ -22,26 +22,50 @@ import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.snappy.SnappyRpcPayloadEncoderProvider;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.SimpleOffsetSszEncoder;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.StringSszEncoder;
 
 public class LengthPrefixedEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MAX_CHUNK_SIZE = 1048576;
+  public static final int MAX_CHUNK_SIZE = 1048576;
   // Any protobuf length requiring more bytes than this will also be bigger.
   private static final int MAXIMUM_VARINT_LENGTH = writeVarInt(MAX_CHUNK_SIZE).size();
 
   private final String name;
-  private final RpcPayloadEncoders payloadEncoder;
+  private final RpcPayloadEncoderProvider encoderProvider;
 
-  LengthPrefixedEncoding(final String name, final RpcPayloadEncoders payloadEncoder) {
+  private LengthPrefixedEncoding(
+      final String name, final RpcPayloadEncoderProvider encoderProvider) {
     this.name = name;
-    this.payloadEncoder = payloadEncoder;
+    this.encoderProvider = encoderProvider;
+  }
+
+  public static RpcEncoding createUncompressed() {
+    return new LengthPrefixedEncoding("ssz", createEncoderProvider());
+  }
+
+  public static RpcEncoding createWithSnappyCompression() {
+    return new LengthPrefixedEncoding(
+        "ssz_snappy", new SnappyRpcPayloadEncoderProvider(createEncoderProvider()));
+  }
+
+  private static RpcPayloadEncoderProvider createEncoderProvider() {
+    return RpcPayloadEncoders.builder()
+        .withEncoder(
+            BeaconBlocksByRootRequestMessage.class, new BeaconBlocksByRootRequestMessageEncoder())
+        .withEncoder(String.class, new StringSszEncoder())
+        .defaultEncoderProvider(SimpleOffsetSszEncoder::new)
+        .build();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T> Bytes encode(final T message) {
-    final RpcPayloadEncoder<T> encoder = payloadEncoder.getEncoder((Class<T>) message.getClass());
+    final RpcPayloadEncoder<T> encoder = encoderProvider.getEncoder((Class<T>) message.getClass());
     final Bytes payload = encoder.encode(message);
     return encodeMessageWithLength(payload);
   }
@@ -53,7 +77,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
 
   @Override
   public <T> T decode(final Bytes message, final Class<T> clazz) throws RpcException {
-    return decode(message, payloadEncoder.getEncoder(clazz));
+    return decode(message, encoderProvider.getEncoder(clazz));
   }
 
   private <T> T decode(final Bytes message, final RpcPayloadEncoder<T> parser) throws RpcException {

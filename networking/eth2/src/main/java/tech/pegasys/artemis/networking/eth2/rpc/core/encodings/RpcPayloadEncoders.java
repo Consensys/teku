@@ -19,8 +19,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.snappy.SnappyCompressor;
 
-public class RpcPayloadEncoders {
+public class RpcPayloadEncoders implements RpcPayloadEncoderProvider {
 
   private final Map<Class<?>, RpcPayloadEncoder<?>> encoders;
   private final Function<Class<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
@@ -36,6 +37,7 @@ public class RpcPayloadEncoders {
     return new RpcPayloadEncoders.Builder();
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public <T> RpcPayloadEncoder<T> getEncoder(final Class<T> clazz) {
     RpcPayloadEncoder<?> encoder = encoders.get(clazz);
@@ -49,7 +51,7 @@ public class RpcPayloadEncoders {
     private Builder() {}
 
     public <T> Builder withEncoder(final Class<T> clazz, final RpcPayloadEncoder<T> encoder) {
-      encoders.put(clazz, encoder);
+      encoders.put(clazz, new SnappyCompressor<>(encoder));
       return this;
     }
 
@@ -59,7 +61,7 @@ public class RpcPayloadEncoders {
       return this;
     }
 
-    public RpcPayloadEncoders build() {
+    public RpcPayloadEncoderProvider build() {
       checkNotNull(defaultEncoderProvider, "Must provide a default encoder");
       return new RpcPayloadEncoders(Collections.unmodifiableMap(encoders), defaultEncoderProvider);
     }

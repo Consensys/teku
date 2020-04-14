@@ -31,6 +31,7 @@ public class NetworkConfig {
   private final boolean isDiscoveryEnabled;
   private final List<String> bootnodes;
   private final TargetPeerRange targetPeerRange;
+  private final boolean isSnappyEnabled;
   private final boolean logWireCipher;
   private final boolean logWirePlain;
   private final boolean logMuxFrames;
@@ -45,11 +46,13 @@ public class NetworkConfig {
       final boolean isDiscoveryEnabled,
       final List<String> bootnodes,
       final TargetPeerRange targetPeerRange,
+      final boolean isSnappyEnabled,
       final boolean logWireCipher,
       final boolean logWirePlain,
       final boolean logMuxFrames) {
     this.privateKey = privateKey;
     this.networkInterface = networkInterface;
+    this.isSnappyEnabled = isSnappyEnabled;
 
     if (advertisedIp.trim().isEmpty()) {
       this.advertisedIp = Optional.empty();
@@ -104,6 +107,10 @@ public class NetworkConfig {
 
   public TargetPeerRange getTargetPeerRange() {
     return targetPeerRange;
+  }
+
+  public boolean isSnappyEnabled() {
+    return isSnappyEnabled;
   }
 
   public boolean isLogWireCipher() {

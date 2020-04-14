@@ -126,6 +126,7 @@ class DiscoveryNetworkTest {
                 new TargetPeerRange(20, 30),
                 false,
                 false,
+                false,
                 false));
     assertThat(network.getEnr()).isEmpty();
   }

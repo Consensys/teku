@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,20 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core.encodings;
 
-import java.util.OptionalInt;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
+public interface RpcPayloadEncoderProvider {
 
-public interface RpcEncoding {
-  RpcEncoding SSZ = LengthPrefixedEncoding.createUncompressed();
-
-  RpcEncoding SSZ_SNAPPY = LengthPrefixedEncoding.createWithSnappyCompression();
-
-  <T> Bytes encode(T message);
-
-  <T> T decode(Bytes message, Class<T> clazz) throws RpcException;
-
-  String getName();
-
-  OptionalInt getMessageLength(Bytes message) throws RpcException;
+  <T> RpcPayloadEncoder<T> getEncoder(Class<T> clazz);
 }

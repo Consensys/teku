@@ -12,6 +12,7 @@ p2p-discovery-enabled: False
 p2p-advertised-port: 9000
 #this.privKey.bytes().toHexString() who's corresponding sha2(publicKey) == 16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ
 p2p-private-key-file: "path/to/file"
+p2p-snappy-enabled: False
 
 # interop
 # when genesis time is set to 0, teku takes genesis time as currentTime + 5 seconds.

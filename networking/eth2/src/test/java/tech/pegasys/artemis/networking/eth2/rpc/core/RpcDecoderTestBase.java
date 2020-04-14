@@ -69,7 +69,8 @@ public class RpcDecoderTestBase {
           combinedChainDataClient,
           RECENT_CHAIN_DATA,
           new NoOpMetricsSystem(),
-          new StatusMessageFactory(RECENT_CHAIN_DATA));
+          new StatusMessageFactory(RECENT_CHAIN_DATA),
+          RpcEncoding.SSZ);
 
   @SuppressWarnings("unchecked")
   protected static final Eth2RpcMethod<

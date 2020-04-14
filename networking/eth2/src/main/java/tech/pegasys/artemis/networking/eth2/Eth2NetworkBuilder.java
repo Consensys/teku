@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
@@ -53,10 +54,12 @@ public class Eth2NetworkBuilder {
 
   public Eth2Network build() {
     validate();
+    final RpcEncoding encoding =
+        config.isSnappyEnabled() ? RpcEncoding.SSZ_SNAPPY : RpcEncoding.SSZ;
 
     // Setup eth2 handlers
     final Eth2PeerManager eth2PeerManager =
-        Eth2PeerManager.create(recentChainData, historicalChainData, metricsSystem);
+        Eth2PeerManager.create(recentChainData, historicalChainData, metricsSystem, encoding);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
