@@ -40,6 +40,8 @@ public interface V2Schema extends Schema {
       RocksDbColumn.create(5, BYTES32_SERIALIZER, STATE_SERIALIZER);
   RocksDbColumn<Checkpoint, BeaconState> CHECKPOINT_STATES =
       RocksDbColumn.create(6, CHECKPOINT_SERIALIZER, STATE_SERIALIZER);
+  // No longer read but needs to be included so existing databases can be opened
+  @SuppressWarnings("unused")
   RocksDbColumn<UnsignedLong, Checkpoint> LATEST_MESSAGES =
       RocksDbColumn.create(7, UNSIGNED_LONG_SERIALIZER, CHECKPOINT_SERIALIZER);
 

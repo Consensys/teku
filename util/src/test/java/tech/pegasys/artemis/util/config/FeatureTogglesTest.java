@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 // Ensure that toggles changed during local development are not accidentally committed
 class FeatureTogglesTest {
   @Test
-  public void shouldToggleOffValidatorClientService() {
-    assertThat(FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE).isFalse();
+  public void shouldToggleOnValidatorClientService() {
+    assertThat(FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE).isTrue();
   }
 }

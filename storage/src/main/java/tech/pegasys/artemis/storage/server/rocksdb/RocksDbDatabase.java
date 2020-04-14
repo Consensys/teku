@@ -126,7 +126,6 @@ public class RocksDbDatabase implements Database {
     final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot = dao.getHotBlocks();
     final Map<Bytes32, BeaconState> hotStatesByRoot = dao.getHotStates();
     final Map<Checkpoint, BeaconState> checkpointStates = dao.getCheckpointStates();
-    final Map<UnsignedLong, Checkpoint> latestMessages = dao.getLatestMessages();
 
     return Optional.of(
         new Store(
@@ -137,8 +136,7 @@ public class RocksDbDatabase implements Database {
             bestJustifiedCheckpoint,
             hotBlocksByRoot,
             hotStatesByRoot,
-            checkpointStates,
-            latestMessages));
+            checkpointStates));
   }
 
   @Override
@@ -182,7 +180,6 @@ public class RocksDbDatabase implements Database {
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
 
       updater.addCheckpointStates(update.getCheckpointStates());
-      updater.addLatestMessages(update.getLatestMessages());
       updater.addHotBlocks(update.getBlocks());
       updater.addHotStates(update.getBlockStates());
 

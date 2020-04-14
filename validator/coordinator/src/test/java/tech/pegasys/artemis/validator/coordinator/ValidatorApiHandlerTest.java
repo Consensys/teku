@@ -50,6 +50,7 @@ import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
 class ValidatorApiHandlerTest {
@@ -273,7 +274,9 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendSignedAttestation(attestation);
 
     verify(attestationPool).add(attestation);
-    verify(attestationAggregator).addOwnValidatorAttestation(attestation);
+    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
+      verify(attestationAggregator).addOwnValidatorAttestation(attestation);
+    }
     verify(eventBus).post(attestation);
   }
 

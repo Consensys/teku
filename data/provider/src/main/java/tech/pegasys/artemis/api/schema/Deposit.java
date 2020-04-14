@@ -16,6 +16,7 @@ package tech.pegasys.artemis.api.schema;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 
 public class Deposit {
   public final List<Bytes32> proof;
@@ -24,5 +25,10 @@ public class Deposit {
   public Deposit(tech.pegasys.artemis.datastructures.operations.Deposit deposit) {
     this.proof = deposit.getProof().stream().collect(Collectors.toList());
     this.data = new DepositData(deposit.getData());
+  }
+
+  public tech.pegasys.artemis.datastructures.operations.Deposit asInternalDeposit() {
+    return new tech.pegasys.artemis.datastructures.operations.Deposit(
+        SSZVector.createMutable(proof, Bytes32.class), data.asInternalDepositData());
   }
 }

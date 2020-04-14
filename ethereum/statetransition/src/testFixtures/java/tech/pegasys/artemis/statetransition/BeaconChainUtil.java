@@ -25,7 +25,6 @@ import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.core.AttestationGenerator;
 import tech.pegasys.artemis.core.BlockProposalTestUtil;
-import tech.pegasys.artemis.core.ForkChoiceUtil;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -34,7 +33,9 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.validator.TestMessageSignerService;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.protoarray.StubForkChoiceStrategy;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -132,7 +133,7 @@ public class BeaconChainUtil {
     setSlot(slot);
     final Transaction transaction = storageClient.startStoreTransaction();
     final BlockImportResult importResult =
-        ForkChoiceUtil.on_block(transaction, block, stateTransition);
+        ForkChoiceUtil.on_block(transaction, block, stateTransition, new StubForkChoiceStrategy());
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "

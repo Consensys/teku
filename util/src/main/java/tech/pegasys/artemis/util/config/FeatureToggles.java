@@ -24,5 +24,5 @@ public class FeatureToggles {
    * Controls whether the ValidatorClientService is used to generate blocks and attestations or if
    * ValidatorCoordinator performs those duties.
    */
-  public static final boolean USE_VALIDATOR_CLIENT_SERVICE = false;
+  public static final boolean USE_VALIDATOR_CLIENT_SERVICE = true;
 }
