@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
@@ -67,9 +68,9 @@ class ScheduledDutiesTest {
     when(dutyFactory.createAttestationProductionDuty(ONE)).thenReturn(duty1);
     when(dutyFactory.createAttestationProductionDuty(TWO)).thenReturn(duty2);
 
-    duties.scheduleAttestationProduction(ZERO, validator, 0, 0).reportExceptions();
-    duties.scheduleAttestationProduction(ONE, validator, 0, 0).reportExceptions();
-    duties.scheduleAttestationProduction(TWO, validator, 0, 0).reportExceptions();
+    ignoreFuture(duties.scheduleAttestationProduction(ZERO, validator, 0, 0));
+    ignoreFuture(duties.scheduleAttestationProduction(ONE, validator, 0, 0));
+    ignoreFuture(duties.scheduleAttestationProduction(TWO, validator, 0, 0));
 
     duties.produceAttestations(ONE);
     verify(duty1).performDuty();
