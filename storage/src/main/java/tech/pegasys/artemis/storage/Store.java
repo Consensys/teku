@@ -57,7 +57,6 @@ public class Store implements ReadOnlyStore {
   private Map<Bytes32, SignedBeaconBlock> blocks;
   private Map<Bytes32, BeaconState> block_states;
   private Map<Checkpoint, BeaconState> checkpoint_states;
-  private Map<UnsignedLong, Checkpoint> latest_messages;
 
   public Store(
       final UnsignedLong time,
@@ -67,8 +66,7 @@ public class Store implements ReadOnlyStore {
       final Checkpoint best_justified_checkpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
-      final Map<Checkpoint, BeaconState> checkpoint_states,
-      final Map<UnsignedLong, Checkpoint> latest_messages) {
+      final Map<Checkpoint, BeaconState> checkpoint_states) {
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -77,7 +75,6 @@ public class Store implements ReadOnlyStore {
     this.blocks = new ConcurrentHashMap<>(blocks);
     this.block_states = new ConcurrentHashMap<>(block_states);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
-    this.latest_messages = new ConcurrentHashMap<>(latest_messages);
   }
 
   public static Store get_genesis_store(final BeaconState genesisState) {
@@ -88,7 +85,6 @@ public class Store implements ReadOnlyStore {
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
     blocks.put(root, new SignedBeaconBlock(genesisBlock, BLSSignature.empty()));
     block_states.put(root, genesisState);
@@ -102,8 +98,7 @@ public class Store implements ReadOnlyStore {
         genesis_checkpoint,
         blocks,
         block_states,
-        checkpoint_states,
-        latest_messages);
+        checkpoint_states);
   }
 
   public Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
@@ -241,26 +236,6 @@ public class Store implements ReadOnlyStore {
     }
   }
 
-  @Override
-  public Checkpoint getLatestMessage(UnsignedLong validatorIndex) {
-    readLock.lock();
-    try {
-      return latest_messages.get(validatorIndex);
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
-  public boolean containsLatestMessage(UnsignedLong validatorIndex) {
-    readLock.lock();
-    try {
-      return latest_messages.containsKey(validatorIndex);
-    } finally {
-      readLock.unlock();
-    }
-  }
-
   public class Transaction implements MutableStore {
 
     private final StorageUpdateChannel storageUpdateChannel;
@@ -272,18 +247,12 @@ public class Store implements ReadOnlyStore {
     private Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     private Map<Bytes32, BeaconState> block_states = new HashMap<>();
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
     private final StoreUpdateHandler updateHandler;
 
     Transaction(
         final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
       this.storageUpdateChannel = storageUpdateChannel;
       this.updateHandler = updateHandler;
-    }
-
-    @Override
-    public void putLatestMessage(UnsignedLong validatorIndex, Checkpoint latestMessage) {
-      latest_messages.put(validatorIndex, latestMessage);
     }
 
     @Override
@@ -336,8 +305,7 @@ public class Store implements ReadOnlyStore {
               best_justified_checkpoint,
               blocks,
               block_states,
-              checkpoint_states,
-              latest_messages);
+              checkpoint_states);
       return storageUpdateChannel
           .onStorageUpdate(updateEvent)
           .thenAccept(
@@ -358,7 +326,6 @@ public class Store implements ReadOnlyStore {
                   Store.this.blocks.putAll(blocks);
                   Store.this.block_states.putAll(block_states);
                   Store.this.checkpoint_states.putAll(checkpoint_states);
-                  Store.this.latest_messages.putAll(latest_messages);
                   // Prune old data
                   updateResult.getPrunedCheckpoints().forEach(Store.this.checkpoint_states::remove);
                   updateResult
@@ -456,17 +423,6 @@ public class Store implements ReadOnlyStore {
       return checkpoint_states.containsKey(checkpoint)
           || Store.this.containsCheckpointState(checkpoint);
     }
-
-    @Override
-    public Checkpoint getLatestMessage(final UnsignedLong validatorIndex) {
-      return either(validatorIndex, latest_messages::get, Store.this::getLatestMessage);
-    }
-
-    @Override
-    public boolean containsLatestMessage(final UnsignedLong validatorIndex) {
-      return latest_messages.containsKey(validatorIndex)
-          || Store.this.containsLatestMessage(validatorIndex);
-    }
   }
 
   @Override
@@ -485,8 +441,7 @@ public class Store implements ReadOnlyStore {
         && Objects.equals(best_justified_checkpoint, store.best_justified_checkpoint)
         && Objects.equals(blocks, store.blocks)
         && Objects.equals(block_states, store.block_states)
-        && Objects.equals(checkpoint_states, store.checkpoint_states)
-        && Objects.equals(latest_messages, store.latest_messages);
+        && Objects.equals(checkpoint_states, store.checkpoint_states);
   }
 
   @Override
@@ -499,16 +454,11 @@ public class Store implements ReadOnlyStore {
         best_justified_checkpoint,
         blocks,
         block_states,
-        checkpoint_states,
-        latest_messages);
+        checkpoint_states);
   }
 
   public interface StoreUpdateHandler {
-    StoreUpdateHandler NOOP =
-        new StoreUpdateHandler() {
-          @Override
-          public void onNewFinalizedCheckpoint(final Checkpoint finalizedCheckpoint) {}
-        };
+    StoreUpdateHandler NOOP = finalizedCheckpoint -> {};
 
     void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint);
   }

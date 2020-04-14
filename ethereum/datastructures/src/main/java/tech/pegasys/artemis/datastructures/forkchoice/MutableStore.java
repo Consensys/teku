@@ -21,8 +21,6 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
 public interface MutableStore extends ReadOnlyStore {
 
-  void putLatestMessage(UnsignedLong validatorIndex, Checkpoint latestMessage);
-
   void putCheckpointState(Checkpoint checkpoint, BeaconState state);
 
   void putBlockState(Bytes32 blockRoot, BeaconState state);
