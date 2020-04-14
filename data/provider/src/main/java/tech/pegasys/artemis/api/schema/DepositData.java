@@ -15,6 +15,7 @@ package tech.pegasys.artemis.api.schema;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 
 public class DepositData {
   public final BLSPubKey pubkey;
@@ -27,5 +28,13 @@ public class DepositData {
     this.withdrawal_credentials = depositData.getWithdrawal_credentials();
     this.amount = depositData.getAmount();
     this.signature = new BLSSignature(depositData.getSignature());
+  }
+
+  public tech.pegasys.artemis.datastructures.operations.DepositData asInternalDepositData() {
+    return new tech.pegasys.artemis.datastructures.operations.DepositData(
+        BLSPublicKey.fromBytes(pubkey.toBytes()),
+        withdrawal_credentials,
+        amount,
+        signature.asInternalBLSSignature());
   }
 }

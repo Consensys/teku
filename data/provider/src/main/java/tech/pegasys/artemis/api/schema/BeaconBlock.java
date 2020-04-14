@@ -42,4 +42,9 @@ public class BeaconBlock {
     this.state_root = state_root;
     this.body = body;
   }
+
+  public tech.pegasys.artemis.datastructures.blocks.BeaconBlock asInternalBeaconBlock() {
+    return new tech.pegasys.artemis.datastructures.blocks.BeaconBlock(
+        slot, parent_root, state_root, body.asInternalBeaconBlockBody());
+  }
 }

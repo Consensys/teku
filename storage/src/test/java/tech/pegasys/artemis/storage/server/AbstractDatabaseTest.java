@@ -306,51 +306,6 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_latestMessage() {
-    final UnsignedLong validatorIndex = UnsignedLong.valueOf(999);
-    final Checkpoint latestMessage = checkpoint3;
-    // Sanity check
-    assertThat(store.getLatestMessage(validatorIndex)).isNull();
-
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putLatestMessage(validatorIndex, latestMessage);
-    commit(transaction);
-
-    final Store result = database.createMemoryStore().orElseThrow();
-    assertThat(result.getLatestMessage(validatorIndex)).isEqualTo(latestMessage);
-  }
-
-  @Test
-  public void shouldStoreLatestMessageFromEachValidator() {
-    final UnsignedLong validator1 = UnsignedLong.valueOf(1);
-    final UnsignedLong validator2 = UnsignedLong.valueOf(2);
-    final UnsignedLong validator3 = UnsignedLong.valueOf(3);
-
-    addBlocks(checkpoint1Block, checkpoint2Block, checkpoint3Block);
-
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putLatestMessage(validator1, checkpoint1);
-    transaction.putLatestMessage(validator2, checkpoint2);
-    transaction.putLatestMessage(validator3, checkpoint1);
-    commit(transaction);
-
-    final Store result1 = database.createMemoryStore().orElseThrow();
-    assertThat(result1.getLatestMessage(validator1)).isEqualTo(checkpoint1);
-    assertThat(result1.getLatestMessage(validator2)).isEqualTo(checkpoint2);
-    assertThat(result1.getLatestMessage(validator3)).isEqualTo(checkpoint1);
-
-    // Should overwrite when later changes are made.
-    final Transaction transaction2 = store.startTransaction(storageUpdateChannel);
-    transaction2.putLatestMessage(validator3, checkpoint2);
-    commit(transaction2);
-
-    final Store result2 = database.createMemoryStore().orElseThrow();
-    assertThat(result2.getLatestMessage(validator1)).isEqualTo(checkpoint1);
-    assertThat(result2.getLatestMessage(validator2)).isEqualTo(checkpoint2);
-    assertThat(result2.getLatestMessage(validator3)).isEqualTo(checkpoint2);
-  }
-
-  @Test
   public void shouldStoreCheckpointStates() {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
 

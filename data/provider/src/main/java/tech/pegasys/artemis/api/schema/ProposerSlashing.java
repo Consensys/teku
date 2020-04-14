@@ -22,4 +22,12 @@ public class ProposerSlashing {
     header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_1());
     header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_2());
   }
+
+  public tech.pegasys.artemis.datastructures.operations.ProposerSlashing
+      asInternalProposerSlashing() {
+    return new tech.pegasys.artemis.datastructures.operations.ProposerSlashing(
+        proposer_index,
+        header_1.asInternalSignedBeaconBlockHeader(),
+        header_2.asInternalSignedBeaconBlockHeader());
+  }
 }

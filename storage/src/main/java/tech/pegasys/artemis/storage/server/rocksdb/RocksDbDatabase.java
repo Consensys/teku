@@ -121,7 +121,6 @@ public class RocksDbDatabase implements Database {
     final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot = db.getAll(V2Schema.HOT_BLOCKS_BY_ROOT);
     final Map<Bytes32, BeaconState> hotStatesByRoot = db.getAll(V2Schema.HOT_STATES_BY_ROOT);
     final Map<Checkpoint, BeaconState> checkpointStates = db.getAll(V2Schema.CHECKPOINT_STATES);
-    final Map<UnsignedLong, Checkpoint> latestMessages = db.getAll(V2Schema.LATEST_MESSAGES);
 
     return Optional.of(
         new Store(
@@ -132,8 +131,7 @@ public class RocksDbDatabase implements Database {
             bestJustifiedCheckpoint,
             hotBlocksByRoot,
             hotStatesByRoot,
-            checkpointStates,
-            latestMessages));
+            checkpointStates));
   }
 
   @Override
@@ -185,7 +183,6 @@ public class RocksDbDatabase implements Database {
           .ifPresent(val -> transaction.put(V2Schema.BEST_JUSTIFIED_CHECKPOINT, val));
 
       transaction.put(V2Schema.CHECKPOINT_STATES, update.getCheckpointStates());
-      transaction.put(V2Schema.LATEST_MESSAGES, update.getLatestMessages());
 
       update.getBlocks().forEach((root, block) -> addHotBlock(transaction, root, block));
       transaction.put(V2Schema.HOT_STATES_BY_ROOT, update.getBlockStates());
