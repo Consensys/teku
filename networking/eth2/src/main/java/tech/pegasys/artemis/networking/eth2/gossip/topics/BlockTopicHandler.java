@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
-import static tech.pegasys.artemis.core.ForkChoiceUtil.get_current_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.get_current_slot;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
 import com.google.common.eventbus.EventBus;
