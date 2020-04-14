@@ -16,6 +16,7 @@ package tech.pegasys.artemis.validator.client;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,7 @@ import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
@@ -87,6 +89,10 @@ public class DutyScheduler implements ValidatorTimingChannel {
         .thenAccept(duties -> duties.forEach(this::scheduleDuties))
         .exceptionallyCompose(
             error -> {
+              if (Throwables.getRootCause(error) instanceof NodeSyncingException) {
+                LOG.debug("Unable to schedule duties for epoch {} because node was syncing", epoch);
+                return SafeFuture.COMPLETE;
+              }
               LOG.error(
                   "Failed to request validator duties for epoch "
                       + epoch

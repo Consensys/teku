@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.validator.client.duties;
 
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.client.Validator;
 
 public class ScheduledDuties {
@@ -89,7 +91,13 @@ public class ScheduledDuties {
     duty.performDuty()
         .finish(
             () -> LOG.trace("{} completed successfully", duty::describe),
-            error -> LOG.error(duty.describe() + " failed", error));
+            error -> {
+              if (Throwables.getRootCause(error) instanceof NodeSyncingException) {
+                LOG.debug("{} skipped because node was syncing", duty::describe);
+                return;
+              }
+              LOG.error(duty.describe() + " failed", error);
+            });
   }
 
   private void discardDutiesBeforeSlot(
