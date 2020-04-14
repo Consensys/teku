@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
-
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
@@ -40,6 +38,7 @@ import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.client.FailedPrecommitException;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
@@ -80,26 +79,26 @@ public class Store implements ReadOnlyStore {
     this.latest_messages = new ConcurrentHashMap<>(latest_messages);
   }
 
-  public static Store get_genesis_store(final BeaconState genesisState) {
-    BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
-    Bytes32 root = genesisBlock.hash_tree_root();
-
-    Checkpoint genesis_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
+  public static Store getForkChoiceStore(final BeaconState anchorState) {
+    final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
+    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
+    final UnsignedLong anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
+    final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
-    blocks.put(root, new SignedBeaconBlock(genesisBlock, BLSSignature.empty()));
-    block_states.put(root, genesisState);
-    checkpoint_states.put(genesis_checkpoint, genesisState);
+    blocks.put(anchorRoot, new SignedBeaconBlock(anchorBlock, BLSSignature.empty()));
+    block_states.put(anchorRoot, anchorState);
+    checkpoint_states.put(anchorCheckpoint, anchorState);
 
     return new Store(
-        genesisState.getGenesis_time(),
-        genesisState.getGenesis_time(),
-        genesis_checkpoint,
-        genesis_checkpoint,
-        genesis_checkpoint,
+        anchorState.getGenesis_time(),
+        anchorState.getGenesis_time(),
+        anchorCheckpoint,
+        anchorCheckpoint,
+        anchorCheckpoint,
         blocks,
         block_states,
         checkpoint_states,

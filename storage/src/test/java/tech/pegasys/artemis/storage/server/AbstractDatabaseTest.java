@@ -67,7 +67,7 @@ public abstract class AbstractDatabaseTest {
   protected Database database;
   protected TrackingStorageUpdateChannel storageUpdateChannel;
 
-  protected final Store store = Store.get_genesis_store(GENESIS_STATE);
+  protected final Store store = Store.getForkChoiceStore(GENESIS_STATE);
   protected final BeaconBlock genesisBlock =
       store.getBlockRoots().stream()
           .map(store::getBlock)
