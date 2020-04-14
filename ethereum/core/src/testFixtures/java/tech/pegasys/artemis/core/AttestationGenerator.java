@@ -136,12 +136,19 @@ public class AttestationGenerator {
 
   private Attestation createAttestation(
       final BeaconBlockAndState blockAndState, final boolean withValidSignature) {
-    final UnsignedLong assignedSlot = blockAndState.getBlock().getSlot().plus(UnsignedLong.ONE);
-    if (withValidSignature) {
-      return streamAttestations(blockAndState, assignedSlot).findFirst().orElseThrow();
-    } else {
-      return streamInvalidAttestations(blockAndState, assignedSlot).findFirst().orElseThrow();
+
+    Optional<Attestation> attestation = Optional.empty();
+    UnsignedLong assignedSlot = blockAndState.getBlock().getSlot();
+    while (attestation.isEmpty()) {
+      Stream<Attestation> attestations =
+          withValidSignature
+              ? streamAttestations(blockAndState, assignedSlot)
+              : streamInvalidAttestations(blockAndState, assignedSlot);
+      attestation = attestations.findFirst();
+      assignedSlot = assignedSlot.plus(UnsignedLong.ONE);
     }
+
+    return attestation.orElseThrow();
   }
 
   public List<Attestation> getAttestationsForSlot(
@@ -292,7 +299,7 @@ public class AttestationGenerator {
         break;
       }
 
-      currentValidatorIndex = validatorIndex + 1;
+      currentValidatorIndex = validatorIndex;
     }
 
     private Attestation createAttestation(
