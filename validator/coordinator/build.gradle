@@ -12,6 +12,7 @@ dependencies {
   implementation project(':logging')
   implementation project(':pow')
   implementation project(':ssz')
+  implementation project(':sync')
   implementation project(':events')
 
   implementation 'org.apache.tuweni:tuweni-kv'
