@@ -48,6 +48,7 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 import tech.pegasys.artemis.validator.client.duties.AggregationDuty;
 import tech.pegasys.artemis.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.artemis.validator.client.duties.BlockProductionDuty;
+import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
 
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -74,7 +75,7 @@ class DutySchedulerTest {
           asyncRunner,
           validatorApiChannel,
           forkProvider,
-          dutyFactory,
+          new ScheduledDuties(dutyFactory),
           Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
 
   @BeforeEach
@@ -159,7 +160,7 @@ class DutySchedulerTest {
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createBlockProductionDuty(validator1, blockProposerSlot))
+    when(dutyFactory.createBlockProductionDuty(blockProposerSlot, validator1))
         .thenReturn(blockCreationDuty);
 
     // Load duties
@@ -181,7 +182,7 @@ class DutySchedulerTest {
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createBlockProductionDuty(validator1, blockProposerSlot))
+    when(dutyFactory.createBlockProductionDuty(blockProposerSlot, validator1))
         .thenReturn(blockCreationDuty);
 
     // Load duties

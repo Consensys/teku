@@ -20,8 +20,6 @@ import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
@@ -36,37 +34,27 @@ import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
-import tech.pegasys.artemis.validator.client.duties.AggregationDuty;
-import tech.pegasys.artemis.validator.client.duties.AttestationProductionDuty;
-import tech.pegasys.artemis.validator.client.duties.BlockProductionDuty;
-import tech.pegasys.artemis.validator.client.duties.Duty;
-import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
+import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 
 public class DutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
-  final AtomicReference<UnsignedLong> latestScheduledEpoch = new AtomicReference<>();
-  private final ConcurrentMap<UnsignedLong, BlockProductionDuty> blockProposalDuties =
-      new ConcurrentHashMap<>();
-  private final ConcurrentMap<UnsignedLong, AttestationProductionDuty> attestationProposalDuties =
-      new ConcurrentHashMap<>();
-  private final ConcurrentMap<UnsignedLong, AggregationDuty> aggregationDuties =
-      new ConcurrentHashMap<>();
+  private final AtomicReference<UnsignedLong> latestScheduledEpoch = new AtomicReference<>();
+  private final ScheduledDuties scheduledDuties;
   private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
-  private final ValidatorDutyFactory dutyFactory;
   private final Map<BLSPublicKey, Validator> validators;
 
   public DutyScheduler(
       final AsyncRunner asyncRunner,
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
-      final ValidatorDutyFactory dutyFactory,
+      final ScheduledDuties scheduledDuties,
       final Map<BLSPublicKey, Validator> validators) {
     this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
-    this.dutyFactory = dutyFactory;
+    this.scheduledDuties = scheduledDuties;
     this.validators = validators;
   }
 
@@ -136,7 +124,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   private void scheduleBlockProduction(final Validator validator, final UnsignedLong slot) {
-    blockProposalDuties.put(slot, dutyFactory.createBlockProductionDuty(validator, slot));
+    scheduledDuties.scheduleBlockProduction(slot, validator);
   }
 
   private void scheduleAttestationDuties(
@@ -164,12 +152,11 @@ public class DutyScheduler implements ValidatorTimingChannel {
       final int attestationCommitteePosition,
       final Validator validator,
       final UnsignedLong slot) {
-    return attestationProposalDuties
-        .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
-        .addValidator(validator, attestationCommitteeIndex, attestationCommitteePosition);
+    return scheduledDuties.scheduleAttestationProduction(
+        slot, validator, attestationCommitteeIndex, attestationCommitteePosition);
   }
 
-  public void scheduleAggregation(
+  private void scheduleAggregation(
       final int attestationCommitteeIndex,
       final int validatorIndex,
       final Validator validator,
@@ -182,13 +169,12 @@ public class DutyScheduler implements ValidatorTimingChannel {
         .finish(
             slotSignature -> {
               if (CommitteeUtil.isAggregator(slotSignature, aggregatorModulo)) {
-                aggregationDuties
-                    .computeIfAbsent(slot, dutyFactory::createAggregationDuty)
-                    .addValidator(
-                        validatorIndex,
-                        slotSignature,
-                        attestationCommitteeIndex,
-                        unsignedAttestationFuture);
+                scheduledDuties.scheduleAggregationDuties(
+                    slot,
+                    validatorIndex,
+                    slotSignature,
+                    attestationCommitteeIndex,
+                    unsignedAttestationFuture);
               }
             },
             error -> LOG.error("Failed to schedule aggregation duties", error));
@@ -196,34 +182,16 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onBlockProductionDue(final UnsignedLong slot) {
-    performDutyForSlot(blockProposalDuties, slot);
+    scheduledDuties.produceBlock(slot);
   }
 
   @Override
   public void onAttestationCreationDue(final UnsignedLong slot) {
-    performDutyForSlot(attestationProposalDuties, slot);
+    scheduledDuties.produceAttestations(slot);
   }
 
   @Override
   public void onAttestationAggregationDue(final UnsignedLong slot) {
-    performDutyForSlot(aggregationDuties, slot);
-  }
-
-  public void performDutyForSlot(
-      final Map<UnsignedLong, ? extends Duty> duties, final UnsignedLong slot) {
-    final Duty duty = duties.remove(slot);
-    if (duty == null) {
-      return;
-    }
-    duty.performDuty()
-        .finish(
-            () -> LOG.trace("{} completed successfully", duty::describe),
-            error -> {
-              if (Throwables.getRootCause(error) instanceof NodeSyncingException) {
-                LOG.debug("{} skipped because node was syncing", duty::describe);
-                return;
-              }
-              LOG.error(duty.describe() + " failed", error);
-            });
+    scheduledDuties.performAggregation(slot);
   }
 }
