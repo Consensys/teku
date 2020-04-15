@@ -16,8 +16,9 @@ package tech.pegasys.artemis.ssz.SSZTypes;
 import static com.google.common.base.Preconditions.checkElementIndex;
 
 import java.util.BitSet;
-import java.util.Objects;
 import java.util.stream.IntStream;
+
+import com.google.common.base.Objects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Bitvector {
@@ -41,12 +42,12 @@ public class Bitvector {
   }
 
   public void setBit(int i) {
-    checkElementIndex(i, data.size());
+    checkElementIndex(i, size);
     data.set(i);
   }
 
   public boolean getBit(int i) {
-    checkElementIndex(i, data.size());
+    checkElementIndex(i, size);
     return data.get(i);
   }
 
@@ -89,15 +90,16 @@ public class Bitvector {
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hashCode(data);
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof Bitvector)) return false;
     Bitvector bitvector = (Bitvector) o;
-    return com.google.common.base.Objects.equal(data, bitvector.data);
+    return getSize() == bitvector.getSize() &&
+            Objects.equal(data, bitvector.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(data, getSize());
   }
 }
