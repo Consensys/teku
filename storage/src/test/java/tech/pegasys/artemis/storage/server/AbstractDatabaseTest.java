@@ -67,7 +67,7 @@ public abstract class AbstractDatabaseTest {
   protected Database database;
   protected TrackingStorageUpdateChannel storageUpdateChannel;
 
-  protected final Store store = Store.get_genesis_store(GENESIS_STATE);
+  protected final Store store = Store.getForkChoiceStore(GENESIS_STATE);
   protected final BeaconBlock genesisBlock =
       store.getBlockRoots().stream()
           .map(store::getBlock)
@@ -759,7 +759,11 @@ public abstract class AbstractDatabaseTest {
   protected SignedBeaconBlock blockAtSlot(final long slot, final Bytes32 parentRoot) {
     return new SignedBeaconBlock(
         new BeaconBlock(
-            UnsignedLong.valueOf(slot), parentRoot, Bytes32.ZERO, new BeaconBlockBody()),
+            UnsignedLong.valueOf(slot),
+            dataStructureUtil.randomUnsignedLong(),
+            parentRoot,
+            Bytes32.ZERO,
+            new BeaconBlockBody()),
         dataStructureUtil.randomSignature());
   }
 

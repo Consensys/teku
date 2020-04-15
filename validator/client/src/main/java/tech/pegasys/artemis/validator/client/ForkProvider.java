@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
@@ -31,7 +31,7 @@ public class ForkProvider {
   private AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
 
-  private volatile Optional<Fork> currentFork = Optional.empty();
+  private volatile Optional<ForkInfo> currentFork = Optional.empty();
 
   public ForkProvider(
       final AsyncRunner asyncRunner, final ValidatorApiChannel validatorApiChannel) {
@@ -39,37 +39,37 @@ public class ForkProvider {
     this.validatorApiChannel = validatorApiChannel;
   }
 
-  public SafeFuture<Fork> getFork() {
-    return currentFork.map(SafeFuture::completedFuture).orElseGet(this::loadFork);
+  public SafeFuture<ForkInfo> getForkInfo() {
+    return currentFork.map(SafeFuture::completedFuture).orElseGet(this::loadForkInfo);
   }
 
-  public SafeFuture<Fork> loadFork() {
-    return requestFork()
+  public SafeFuture<ForkInfo> loadForkInfo() {
+    return requestForkInfo()
         .exceptionallyCompose(
             error -> {
-              LOG.error("Failed to retrieve current fork. Retrying after delay", error);
+              LOG.error("Failed to retrieve current fork info. Retrying after delay", error);
               return asyncRunner.runAfterDelay(
-                  this::getFork, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+                  this::getForkInfo, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
             });
   }
 
-  public SafeFuture<Fork> requestFork() {
+  public SafeFuture<ForkInfo> requestForkInfo() {
     return validatorApiChannel
-        .getFork()
+        .getForkInfo()
         .thenCompose(
-            maybeFork -> {
-              if (maybeFork.isEmpty()) {
-                LOG.trace("Fork not available, retrying");
+            maybeForkInfo -> {
+              if (maybeForkInfo.isEmpty()) {
+                LOG.trace("Fork info not available, retrying");
                 return asyncRunner.runAfterDelay(
-                    this::requestFork, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+                    this::requestForkInfo, FORK_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
               }
-              final Fork fork = maybeFork.orElseThrow();
-              currentFork = Optional.of(fork);
-              // Periodically refresh the current fork.
+              final ForkInfo forkInfo = maybeForkInfo.orElseThrow();
+              currentFork = Optional.of(forkInfo);
+              // Periodically refresh the current fork info.
               asyncRunner
-                  .runAfterDelay(this::loadFork, FORK_REFRESH_TIME_SECONDS, TimeUnit.SECONDS)
+                  .runAfterDelay(this::loadForkInfo, FORK_REFRESH_TIME_SECONDS, TimeUnit.SECONDS)
                   .reportExceptions();
-              return SafeFuture.completedFuture(fork);
+              return SafeFuture.completedFuture(forkInfo);
             });
   }
 }

@@ -23,11 +23,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_REQUEST_BUFFER;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -38,6 +39,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.Web3j;
@@ -67,12 +70,19 @@ public class Eth1DataManagerTest {
 
   private static final Bytes32 HEX_STRING = Bytes32.fromHexString("0xdeadbeef");
 
-  static {
+  @BeforeAll
+  static void setConstants() {
     ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(4);
     SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(6);
     ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(1);
-    SLOTS_PER_ETH1_VOTING_PERIOD = 5;
+    EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
+    SLOTS_PER_EPOCH = 5;
     SECONDS_PER_SLOT = 2;
+  }
+
+  @AfterAll
+  static void restoreConstants() {
+    Constants.setConstants("minimal");
   }
 
   private final UnsignedLong testStartTime = UnsignedLong.valueOf(200);

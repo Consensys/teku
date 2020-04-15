@@ -13,16 +13,12 @@
 
 package tech.pegasys.artemis.api.schema;
 
-import com.google.common.primitives.UnsignedLong;
-
 public class ProposerSlashing {
-  public final UnsignedLong proposer_index;
   public final SignedBeaconBlockHeader header_1;
   public final SignedBeaconBlockHeader header_2;
 
   public ProposerSlashing(
       tech.pegasys.artemis.datastructures.operations.ProposerSlashing proposerSlashing) {
-    proposer_index = proposerSlashing.getProposer_index();
     header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_1());
     header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_2());
   }
@@ -30,8 +26,6 @@ public class ProposerSlashing {
   public tech.pegasys.artemis.datastructures.operations.ProposerSlashing
       asInternalProposerSlashing() {
     return new tech.pegasys.artemis.datastructures.operations.ProposerSlashing(
-        proposer_index,
-        header_1.asInternalSignedBeaconBlockHeader(),
-        header_2.asInternalSignedBeaconBlockHeader());
+        header_1.asInternalSignedBeaconBlockHeader(), header_2.asInternalSignedBeaconBlockHeader());
   }
 }

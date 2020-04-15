@@ -59,7 +59,8 @@ public class GenesisGenerator {
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
     final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
-        new BeaconBlockHeader(genesisSlot, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
+        new BeaconBlockHeader(
+            genesisSlot, UnsignedLong.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatest_block_header(beaconBlockHeader);
     state.setFork(
         new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UnsignedLong.valueOf(GENESIS_EPOCH)));
@@ -99,7 +100,7 @@ public class GenesisGenerator {
     UnsignedLong balance = state.getBalances().get(index);
     UnsignedLong effective_balance =
         BeaconStateUtil.min(
-            balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
+            balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)),
             UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
 
     UnsignedLong activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
@@ -141,6 +142,8 @@ public class GenesisGenerator {
   private void finalizeState() {
     calculateRandaoMixes();
     calculateDepositRoot();
+    final BeaconState readOnlyState = state.commitChanges();
+    state.setGenesis_validators_root(readOnlyState.getValidators().hash_tree_root());
   }
 
   private void calculateRandaoMixes() {

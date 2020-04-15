@@ -41,17 +41,20 @@ public class Constants {
   public static int SHUFFLE_ROUND_COUNT;
   public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   public static UnsignedLong MIN_GENESIS_TIME;
+  public static UnsignedLong HYSTERESIS_QUOTIENT;
+  public static UnsignedLong HYSTERESIS_DOWNWARD_MULTIPLIER;
+  public static UnsignedLong HYSTERESIS_UPWARD_MULTIPLIER;
 
   // Gwei values
   public static long MIN_DEPOSIT_AMOUNT;
   public static long MAX_EFFECTIVE_BALANCE;
   public static long EJECTION_BALANCE;
-  public static long EFFECTIVE_BALANCE_INCREMENT;
+  public static UnsignedLong EFFECTIVE_BALANCE_INCREMENT;
 
   // Initial values
   public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
-  public static long GENESIS_SLOT;
-  public static long GENESIS_EPOCH;
+  public static final long GENESIS_SLOT = 0;
+  public static final long GENESIS_EPOCH = 0;
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
@@ -62,13 +65,11 @@ public class Constants {
   public static int MIN_SEED_LOOKAHEAD;
   public static int MAX_SEED_LOOKAHEAD;
   public static int MIN_EPOCHS_TO_INACTIVITY_PENALTY;
-  public static int SLOTS_PER_ETH1_VOTING_PERIOD;
+  public static int EPOCHS_PER_ETH1_VOTING_PERIOD;
   public static int SLOTS_PER_HISTORICAL_ROOT;
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
   public static int PERSISTENT_COMMITTEE_PERIOD;
   public static int MAX_EPOCHS_PER_CROSSLINK;
-  public static int EPOCHS_PER_CUSTODY_PERIOD;
-  public static int CUSTODY_PERIOD_TO_RANDAO_PADDING;
 
   // State list lengths
   public static int EPOCHS_PER_HISTORICAL_VECTOR;
@@ -96,9 +97,8 @@ public class Constants {
   public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
   public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
   public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
-  public static Bytes4 DOMAIN_CUSTODY_BIT_CHALLENGE = Bytes4.fromHexString("0x06000000");
-  public static Bytes4 DOMAIN_SHARD_PROPOSER = Bytes4.fromHexString("0x80000000");
-  public static Bytes4 DOMAIN_SHARD_ATTESTER = Bytes4.fromHexString("0x81000000");
+  public static Bytes4 DOMAIN_SELECTION_PROOF;
+  public static Bytes4 DOMAIN_AGGREGATE_AND_PROOF;
 
   // Honest Validator
   public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
@@ -121,17 +121,9 @@ public class Constants {
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
-  public static int EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS;
-
   public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
 
   public static UnsignedLong ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(1024);
-
-  // Phase 1
-  public static int SHARD_SLOTS_PER_BEACON_SLOT;
-  public static int EPOCHS_PER_SHARD_PERIOD;
-  public static int PHASE_1_FORK_EPOCH;
-  public static int PHASE_1_FORK_SLOT;
 
   // Artemis specific
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;

@@ -143,7 +143,7 @@ public class CommitteeAssignmentManager {
   }
 
   BLSSignature get_slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
-    return validators.get(signer).getSigner().signAggregationSlot(slot, state.getFork()).join();
+    return validators.get(signer).getSigner().signAggregationSlot(slot, state.getForkInfo()).join();
   }
 
   boolean is_aggregator(
