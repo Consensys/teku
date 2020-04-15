@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,21 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util.validator;
+package tech.pegasys.artemis.core.signatures;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class TestMessageSignerService implements MessageSignerService {
+public class LocalMessageSignerService implements MessageSignerService {
+  private final BLSKeyPair keypair;
 
-  private BLSKeyPair blsKeyPair;
-
-  public TestMessageSignerService(final BLSKeyPair blsKeyPair) {
-    this.blsKeyPair = blsKeyPair;
+  public LocalMessageSignerService(final BLSKeyPair keypair) {
+    this.keypair = keypair;
   }
 
   @Override
@@ -48,7 +46,7 @@ public class TestMessageSignerService implements MessageSignerService {
     return sign(signingRoot);
   }
 
-  private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
-    return SafeFuture.completedFuture(BLS.sign(blsKeyPair.getSecretKey(), signingRoot));
+  private SafeFuture<BLSSignature> sign(final Bytes signing_root) {
+    return SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root));
   }
 }

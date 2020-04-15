@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import tech.pegasys.artemis.core.Signer;
+import tech.pegasys.artemis.core.signatures.Signer;
 
 public class ValidatorInfo {
 

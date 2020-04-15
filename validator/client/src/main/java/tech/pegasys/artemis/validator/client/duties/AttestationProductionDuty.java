@@ -25,7 +25,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.Signer;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;

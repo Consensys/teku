@@ -35,6 +35,8 @@ import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
+import tech.pegasys.artemis.core.signatures.LocalMessageSignerService;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -43,7 +45,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
-import tech.pegasys.artemis.datastructures.validator.LocalMessageSignerService;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.config.Constants;
 
