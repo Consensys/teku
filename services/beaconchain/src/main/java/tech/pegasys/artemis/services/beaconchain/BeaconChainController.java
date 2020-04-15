@@ -259,14 +259,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
-    eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
+    eth1DataCache = new Eth1DataCache(eventBus);
     recentChainData.subscribeBestBlockInitialized(
         () -> {
           final Bytes32 head = recentChainData.getBestBlockRoot().orElseThrow();
           final BeaconState headState = recentChainData.getStore().getBlockState(head);
           eth1DataCache.startBeaconChainMode(headState);
         });
-    eventChannels.subscribe(TimeTickChannel.class, eth1DataCache);
   }
 
   public void initValidatorApiHandler() {
@@ -481,7 +480,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData.getFinalizedRoot());
       }
 
-      eth1DataCache.onSlot(nodeSlot);
       slotEventsChannelPublisher.onSlot(nodeSlot);
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.forkChoice.processHead();
