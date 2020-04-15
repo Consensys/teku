@@ -15,7 +15,6 @@ package tech.pegasys.artemis.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 
 public class ProposerSlashing {
   public final SignedBeaconBlockHeader header_1;
