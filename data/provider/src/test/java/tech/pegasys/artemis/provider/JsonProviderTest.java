@@ -52,6 +52,13 @@ class JsonProviderTest {
   }
 
   @Test
+  public void maxUunsignedLongShouldSerializeToJson() throws JsonProcessingException {
+    UnsignedLong data = UnsignedLong.MAX_VALUE;
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, Q + data.toString() + Q);
+  }
+
+  @Test
   public void bitListShouldSerializeAndDeserialize() throws JsonProcessingException {
     final int BITLIST_SIZE = 40;
     final Bitlist data = dataStructureUtil.randomBitlist(BITLIST_SIZE);
