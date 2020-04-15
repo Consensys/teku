@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
@@ -21,4 +22,6 @@ public interface Eth2Network extends P2PNetwork<Eth2Peer> {
   void subscribeToAttestationCommitteeTopic(int committeeIndex);
 
   void unsubscribeFromAttestationCommitteeTopic(int committeeIndex);
+
+  void updateAttestationSubnetENRField(Bytes value);
 }

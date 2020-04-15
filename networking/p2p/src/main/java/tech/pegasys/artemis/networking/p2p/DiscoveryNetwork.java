@@ -120,6 +120,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   @Override
+  public void updateCustomENRField(String fieldName, Bytes value) {
+    discoveryService.updateCustomENRField(fieldName, value);
+  }
+
+  @Override
   public long subscribeConnect(final PeerConnectedSubscriber<P> subscriber) {
     return p2pNetwork.subscribeConnect(subscriber);
   }

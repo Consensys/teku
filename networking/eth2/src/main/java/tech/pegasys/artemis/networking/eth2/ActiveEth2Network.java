@@ -17,6 +17,7 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
@@ -32,6 +33,7 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
+  private static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
   private final P2PNetwork<?> network;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
@@ -121,5 +123,10 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
     attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
+  }
+
+  @Override
+  public void updateAttestationSubnetENRField(final Bytes bitfield) {
+    network.updateCustomENRField(ATTESTATION_SUBNET_ENR_FIELD, bitfield);
   }
 }

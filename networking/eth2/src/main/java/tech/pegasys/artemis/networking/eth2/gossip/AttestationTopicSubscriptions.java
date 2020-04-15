@@ -15,18 +15,27 @@ package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
 public class AttestationTopicSubscriptions implements SlotEventsChannel {
   private final Map<Integer, UnsignedLong> unsubscriptionSlotByCommittee = new HashMap<>();
+  private final Map<Integer, Integer> subscribedCommitteeCountBySubnetIndex =
+      IntStream.range(0, ATTESTATION_SUBNET_COUNT)
+          .boxed()
+          .collect(Collectors.toMap(i -> i, i -> 0));
   private final Eth2Network eth2Network;
+  private final Bitvector attestationSubnetBitfield = new Bitvector(ATTESTATION_SUBNET_COUNT);
 
   public AttestationTopicSubscriptions(final Eth2Network eth2Network) {
     this.eth2Network = eth2Network;
@@ -38,6 +47,7 @@ public class AttestationTopicSubscriptions implements SlotEventsChannel {
     final UnsignedLong currentUnsubscribeSlot =
         unsubscriptionSlotByCommittee.getOrDefault(committeeIndex, ZERO);
     unsubscriptionSlotByCommittee.put(committeeIndex, max(currentUnsubscribeSlot, aggregationSlot));
+    handleCommitteeSubscriptionENRChange(committeeIndex);
   }
 
   @Override
@@ -48,8 +58,30 @@ public class AttestationTopicSubscriptions implements SlotEventsChannel {
       final Entry<Integer, UnsignedLong> entry = iterator.next();
       if (entry.getValue().compareTo(slot) < 0) {
         iterator.remove();
-        eth2Network.unsubscribeFromAttestationCommitteeTopic(entry.getKey());
+        int committeeIndex = entry.getKey();
+        eth2Network.unsubscribeFromAttestationCommitteeTopic(committeeIndex);
+        handleCommitteeUnsubscriptionENRChange(committeeIndex);
       }
+    }
+  }
+
+  private void handleCommitteeSubscriptionENRChange(int committeeIndex) {
+    int subnetIndex = committeeIndex % ATTESTATION_SUBNET_COUNT;
+    Integer committeeCount = subscribedCommitteeCountBySubnetIndex.get(subnetIndex);
+    committeeCount++;
+    if (committeeCount == 1) {
+      attestationSubnetBitfield.setBit(subnetIndex);
+      eth2Network.updateAttestationSubnetENRField(attestationSubnetBitfield.serialize());
+    }
+  }
+
+  private void handleCommitteeUnsubscriptionENRChange(int committeeIndex) {
+    int subnetIndex = committeeIndex % ATTESTATION_SUBNET_COUNT;
+    Integer committeeCount = subscribedCommitteeCountBySubnetIndex.get(subnetIndex);
+    committeeCount--;
+    if (committeeCount == 0) {
+      // attestationSubnetBitfield.unsetBit(subnetIndex);
+      eth2Network.updateAttestationSubnetENRField(attestationSubnetBitfield.serialize());
     }
   }
 }

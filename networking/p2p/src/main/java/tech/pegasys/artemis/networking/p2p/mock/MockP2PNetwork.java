@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.mock;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
@@ -89,6 +90,9 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   public Optional<String> getEnr() {
     return Optional.empty();
   }
+
+  @Override
+  public void updateCustomENRField(String fieldName, Bytes value) {}
 
   @Override
   public int getListenPort() {
