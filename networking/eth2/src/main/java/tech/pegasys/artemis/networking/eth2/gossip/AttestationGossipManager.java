@@ -13,20 +13,17 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip;
 
-import static java.lang.StrictMath.toIntExact;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
@@ -36,28 +33,25 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final GossipNetwork gossipNetwork;
   private final EventBus eventBus;
-  private final RecentChainData recentChainData;
-
-  private final Map<Integer, TopicChannel> attestationChannels = new ConcurrentHashMap<>();
+  private final AttestationSubnetSubscriptions subnetSubscriptions;
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttestationGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
       final RecentChainData recentChainData) {
-    this.gossipNetwork = gossipNetwork;
+    subnetSubscriptions =
+        new AttestationSubnetSubscriptions(gossipNetwork, recentChainData, eventBus);
     this.eventBus = eventBus;
-    this.recentChainData = recentChainData;
     eventBus.register(this);
   }
 
   @Subscribe
   public void onNewAttestation(final Attestation attestation) {
-    final int committeeIndex = toIntExact(attestation.getData().getIndex().longValue());
-    final TopicChannel channel = attestationChannels.get(committeeIndex);
-    if (channel == null) {
+    final UnsignedLong committeeIndex = attestation.getData().getIndex();
+    final Optional<TopicChannel> channel = subnetSubscriptions.getChannel(committeeIndex);
+    if (channel.isEmpty()) {
       // We're not managing attestations for this committee right now
       LOG.trace(
           "Ignoring attestation for committee {}, which does not correspond to any currently assigned committee.",
@@ -65,19 +59,18 @@ public class AttestationGossipManager {
       return;
     }
     final Bytes data = SimpleOffsetSerializer.serialize(attestation);
-    channel.gossip(data);
+    channel.get().gossip(data);
   }
 
   @Subscribe
   public void onCommitteeAssignment(CommitteeAssignmentEvent assignmentEvent) {
-    List<Integer> committeeIndices = assignmentEvent.getCommitteeIndices();
-    for (int committeeIndex : committeeIndices) {
-      subscribeToCommitteeTopic(committeeIndex);
+    for (int committeeIndex : assignmentEvent.getCommitteeIndices()) {
+      subnetSubscriptions.subscribeToCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
     }
   }
 
   public void subscribeToCommitteeTopic(final int committeeIndex) {
-    attestationChannels.computeIfAbsent(committeeIndex, this::createChannelForCommitteeIndex);
+    subnetSubscriptions.subscribeToCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
   }
 
   @Subscribe
@@ -89,25 +82,13 @@ public class AttestationGossipManager {
   }
 
   public void unsubscribeFromCommitteeTopic(final int committeeIndex) {
-    attestationChannels.computeIfPresent(
-        committeeIndex,
-        (index, channel) -> {
-          channel.close();
-          return null;
-        });
-  }
-
-  private TopicChannel createChannelForCommitteeIndex(final int committeeIndex) {
-    final AttestationTopicHandler topicHandler =
-        new AttestationTopicHandler(eventBus, recentChainData, committeeIndex);
-    return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+    subnetSubscriptions.unsubscribeFromCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
   }
 
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
       eventBus.unregister(this);
-      // Close gossip channels
-      attestationChannels.values().forEach(TopicChannel::close);
+      subnetSubscriptions.close();
     }
   }
 }

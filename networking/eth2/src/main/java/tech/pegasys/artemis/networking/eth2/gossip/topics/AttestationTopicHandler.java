@@ -30,18 +30,19 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
   private static final Logger LOG = LogManager.getLogger();
+
   private final String attestationsTopic;
   private final RecentChainData recentChainData;
 
   public AttestationTopicHandler(
-      final EventBus eventBus, final RecentChainData recentChainData, final int committeeIndex) {
+      final EventBus eventBus, final RecentChainData recentChainData, final int subnetId) {
     super(eventBus);
-    this.attestationsTopic = getTopic(committeeIndex);
+    this.attestationsTopic = getTopic(subnetId);
     this.recentChainData = recentChainData;
   }
 
-  private static String getTopic(final int committeeIndex) {
-    return "/eth2/index" + committeeIndex + "_beacon_attestation/ssz";
+  private static String getTopic(final int subnetId) {
+    return "/eth2/committee_index" + subnetId + "_beacon_attestation/ssz";
   }
 
   @Override

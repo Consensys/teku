@@ -42,7 +42,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
@@ -68,8 +68,8 @@ class ValidatorApiHandlerTest {
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
-  private final AttestationTopicSubscriptions attestationTopicSubscriptions =
-      mock(AttestationTopicSubscriptions.class);
+  private final AttestationTopicSubscriber attestationTopicSubscriptions =
+      mock(AttestationTopicSubscriber.class);
   private final EventBus eventBus = mock(EventBus.class);
 
   private final ValidatorApiHandler validatorApiHandler =

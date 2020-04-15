@@ -26,8 +26,8 @@ class AttestationTopicSubscriptionsTest {
 
   private final Eth2Network eth2Network = mock(Eth2Network.class);
 
-  private final AttestationTopicSubscriptions subscriptions =
-      new AttestationTopicSubscriptions(eth2Network);
+  private final AttestationTopicSubscriber subscriptions =
+      new AttestationTopicSubscriber(eth2Network);
 
   @Test
   public void shouldSubscribeToCommittee() {
