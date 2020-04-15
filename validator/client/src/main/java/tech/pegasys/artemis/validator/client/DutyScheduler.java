@@ -20,8 +20,11 @@ import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSPublicKey;
@@ -39,6 +42,8 @@ import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 public class DutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final AtomicReference<UnsignedLong> latestScheduledEpoch = new AtomicReference<>();
+  private final ConcurrentMap<UnsignedLong, SafeFuture<Void>> pendingDutiesByEpoch =
+      new ConcurrentHashMap<>();
   private final ScheduledDuties scheduledDuties;
   private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
@@ -69,13 +74,19 @@ public class DutyScheduler implements ValidatorTimingChannel {
           for (UnsignedLong currentEpoch = startEpoch;
               currentEpoch.compareTo(endEpoch) <= 0;
               currentEpoch = currentEpoch.plus(ONE)) {
-            scheduleDutiesForEpoch(currentEpoch).reportExceptions();
+            scheduleDutiesForEpoch(currentEpoch);
           }
           return startEpoch.compareTo(endEpoch) > 0 ? lastRequestedEpoch : endEpoch;
         });
   }
 
-  private SafeFuture<Void> scheduleDutiesForEpoch(final UnsignedLong epoch) {
+  private void scheduleDutiesForEpoch(final UnsignedLong epoch) {
+    final SafeFuture<Void> future = requestAndScheduleDutiesForEpoch(epoch);
+    pendingDutiesByEpoch.put(epoch, future);
+    future.always(() -> pendingDutiesByEpoch.remove(epoch));
+  }
+
+  private SafeFuture<Void> requestAndScheduleDutiesForEpoch(final UnsignedLong epoch) {
     LOG.trace("Requesting duties for epoch {}", epoch);
     return validatorApiChannel
         .getDuties(epoch, validators.keySet())
@@ -99,7 +110,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
                       + ". Retrying after delay.",
                   error);
               return asyncRunner.runAfterDelay(
-                  () -> scheduleDutiesForEpoch(epoch), 5, TimeUnit.SECONDS);
+                  () -> requestAndScheduleDutiesForEpoch(epoch), 5, TimeUnit.SECONDS);
             });
   }
 
@@ -182,16 +193,22 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onBlockProductionDue(final UnsignedLong slot) {
-    scheduledDuties.produceBlock(slot);
+    whenDutiesScheduled(slot, scheduledDuties::produceBlock);
   }
 
   @Override
   public void onAttestationCreationDue(final UnsignedLong slot) {
-    scheduledDuties.produceAttestations(slot);
+    whenDutiesScheduled(slot, scheduledDuties::produceAttestations);
   }
 
   @Override
   public void onAttestationAggregationDue(final UnsignedLong slot) {
-    scheduledDuties.performAggregation(slot);
+    whenDutiesScheduled(slot, scheduledDuties::performAggregation);
+  }
+
+  private void whenDutiesScheduled(final UnsignedLong slot, final Consumer<UnsignedLong> action) {
+    pendingDutiesByEpoch
+        .getOrDefault(compute_epoch_at_slot(slot), SafeFuture.COMPLETE)
+        .finish(() -> action.accept(slot));
   }
 }
