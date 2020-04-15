@@ -13,22 +13,25 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.MoreObjects;
+import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
+/** Helper datastructure that holds an unsigned block with its corresponding state */
 public class BeaconBlockAndState {
   private final BeaconBlock block;
   private final BeaconState state;
 
   public BeaconBlockAndState(final BeaconBlock block, final BeaconState state) {
+    checkArgument(
+        Objects.equals(block.getState_root(), state.hash_tree_root()),
+        "State must belong to the given block");
     this.block = block;
     this.state = state;
-  }
-
-  public Bytes32 getRoot() {
-    return block.hash_tree_root();
   }
 
   public BeaconBlock getBlock() {
@@ -37,6 +40,14 @@ public class BeaconBlockAndState {
 
   public BeaconState getState() {
     return state;
+  }
+
+  public Bytes32 getRoot() {
+    return block.hash_tree_root();
+  }
+
+  public UnsignedLong getSlot() {
+    return block.getSlot();
   }
 
   @Override

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.validator.client;
 
 import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.core.Signer;
+import tech.pegasys.artemis.core.signatures.Signer;
 
 public class Validator {
   private final BLSPublicKey publicKey;
