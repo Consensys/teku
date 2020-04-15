@@ -14,8 +14,7 @@
 package tech.pegasys.artemis.core;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
@@ -56,11 +55,12 @@ public class BlockProposalTestUtil {
 
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     final BLSSignature randaoReveal =
-        new Signer(signer).createRandaoReveal(newEpoch, state.getFork()).join();
+        new Signer(signer).createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
     final BlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
+            blockProposalUtil.getProposerIndexForSlot(state, newSlot),
             randaoReveal,
             state,
             parentBlockSigningRoot,
@@ -71,7 +71,7 @@ public class BlockProposalTestUtil {
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
-    BLSSignature blockSignature = new Signer(signer).signBlock(block, state.getFork()).join();
+    BLSSignature blockSignature = new Signer(signer).signBlock(block, state.getForkInfo()).join();
 
     final SignedBeaconBlock signedBlock = new SignedBeaconBlock(block, blockSignature);
     return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
@@ -115,9 +115,7 @@ public class BlockProposalTestUtil {
   }
 
   private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
-    UnsignedLong epochs_per_period =
-        UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
-            .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    UnsignedLong epochs_per_period = UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD);
     UnsignedLong voting_period = current_epoch.dividedBy(epochs_per_period);
     return new Eth1Data(
         Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),

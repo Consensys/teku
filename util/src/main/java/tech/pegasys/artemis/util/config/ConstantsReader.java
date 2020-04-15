@@ -29,30 +29,30 @@ import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 class ConstantsReader {
 
-  private static final ImmutableMap<Class<?>, Function<String, ?>> PARSERS =
-      ImmutableMap.<Class<?>, Function<String, ?>>builder()
+  private static final ImmutableMap<Class<?>, Function<Object, ?>> PARSERS =
+      ImmutableMap.<Class<?>, Function<Object, ?>>builder()
           .put(Integer.TYPE, ConstantsReader::parseInt)
-          .put(Long.TYPE, Long::valueOf)
-          .put(UnsignedLong.class, UnsignedLong::valueOf)
+          .put(Long.TYPE, toString(Long::valueOf))
+          .put(UnsignedLong.class, toString(UnsignedLong::valueOf))
           .put(String.class, Function.identity())
-          .put(Bytes.class, Bytes::fromHexString)
-          .put(Bytes4.class, Bytes4::fromHexString)
+          .put(Bytes.class, toString(Bytes::fromHexString))
+          .put(Bytes4.class, toString(Bytes4::fromHexString))
           .build();
 
   @SuppressWarnings("unchecked")
   public static void loadConstantsFrom(final InputStream source) throws IOException {
     final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    final Map<String, String> values =
-        (Map<String, String>)
+    final Map<String, Object> values =
+        (Map<String, Object>)
             mapper
                 .readerFor(
-                    mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class))
+                    mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class))
                 .readValues(source)
                 .next();
     values.forEach(ConstantsReader::setField);
   }
 
-  private static void setField(final String key, final String value) {
+  private static void setField(final String key, final Object value) {
     try {
       final Field field = Constants.class.getField(key);
       if (!Modifier.isStatic(field.getModifiers())) {
@@ -61,11 +61,13 @@ class ConstantsReader {
       field.set(null, parseValue(field, value));
     } catch (NoSuchFieldException | IllegalAccessException e) {
       throw new IllegalArgumentException("Unknown constant: " + key, e);
+    } catch (Throwable t) {
+      throw new IllegalArgumentException("Unable to set constant: " + key, t);
     }
   }
 
-  private static Object parseValue(final Field field, final String value) {
-    final Function<String, ?> parser = PARSERS.get(field.getType());
+  private static Object parseValue(final Field field, final Object value) {
+    final Function<Object, ?> parser = PARSERS.get(field.getType());
     if (parser == null) {
       throw new IllegalArgumentException("Unknown constant type: " + field.getType());
     }
@@ -77,7 +79,11 @@ class ConstantsReader {
     }
   }
 
-  private static Integer parseInt(final String value) {
+  private static Integer parseInt(final Object input) {
+    if (input instanceof Integer) {
+      return (Integer) input;
+    }
+    final String value = input.toString();
     if (value.startsWith("0x")) {
       return Bytes.fromHexString(value)
           .toUnsignedBigInteger(ByteOrder.LITTLE_ENDIAN)
@@ -85,5 +91,9 @@ class ConstantsReader {
     } else {
       return Integer.valueOf(value);
     }
+  }
+
+  private static <T> Function<Object, T> toString(final Function<String, T> function) {
+    return value -> function.apply(value.toString());
   }
 }

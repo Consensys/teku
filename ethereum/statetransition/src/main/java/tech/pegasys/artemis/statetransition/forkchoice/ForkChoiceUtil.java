@@ -73,7 +73,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
-  public static Bytes32 get_ancestor(ReadOnlyStore store, Bytes32 root, UnsignedLong slot) {
+  private static Bytes32 get_ancestor(ReadOnlyStore store, Bytes32 root, UnsignedLong slot) {
     BeaconBlock block = store.getBlock(root);
     if (block.getSlot().compareTo(slot) > 0) {
       return get_ancestor(store, block.getParent_root(), slot);
@@ -92,7 +92,7 @@ public class ForkChoiceUtil {
   See https://ethresear.ch/t/prevention-of-bouncing-attack-on-ffg/6114 for more detailed analysis and discussion.
   */
 
-  public static boolean should_update_justified_checkpoint(
+  private static boolean should_update_justified_checkpoint(
       ReadOnlyStore store, Checkpoint new_justified_checkpoint) {
     if (compute_slots_since_epoch_start(get_current_slot(store, true))
             .compareTo(UnsignedLong.valueOf(SAFE_SLOTS_TO_UPDATE_JUSTIFIED))
@@ -290,6 +290,49 @@ public class ForkChoiceUtil {
 
     Checkpoint target = attestation.getData().getTarget();
 
+    return validateOnAttestation(store, attestation)
+        .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
+        .ifSuccessful(
+            () -> {
+              BeaconState target_state = store.getCheckpointState(target);
+
+              // Get state at the `target` to validate attestation and calculate the committees
+              IndexedAttestation indexed_attestation;
+              try {
+                indexed_attestation = get_indexed_attestation(target_state, attestation);
+              } catch (IndexOutOfBoundsException e) {
+                return AttestationProcessingResult.invalid(
+                    "on_attestation: Attestation is not valid, IndexOutOfBoundsException: "
+                        + e.getMessage());
+              }
+              if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
+                return AttestationProcessingResult.invalid(
+                    "on_attestation: Attestation is not valid");
+              }
+
+              forkChoiceStrategy.onAttestation(indexed_attestation);
+
+              return AttestationProcessingResult.SUCCESSFUL;
+            });
+  }
+
+  private static AttestationProcessingResult storeTargetCheckpointState(
+      final MutableStore store, final StateTransition stateTransition, final Checkpoint target) {
+    // Store target checkpoint state if not yet seen
+    BeaconState targetRootState = store.getBlockState(target.getRoot());
+    try {
+      storeCheckpointState(store, stateTransition, target, targetRootState);
+    } catch (SlotProcessingException e) {
+      return AttestationProcessingResult.failedStateTransition(e);
+    } catch (EpochProcessingException e) {
+      return AttestationProcessingResult.failedStateTransition(e);
+    }
+    return AttestationProcessingResult.SUCCESSFUL;
+  }
+
+  private static AttestationProcessingResult validateOnAttestation(
+      final MutableStore store, final Attestation attestation) {
+    final Checkpoint target = attestation.getData().getTarget();
     UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store));
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
@@ -340,31 +383,6 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.invalid(
           "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
     }
-
-    // Store target checkpoint state if not yet seen
-    BeaconState targetRootState = store.getBlockState(target.getRoot());
-    try {
-      storeCheckpointState(store, stateTransition, target, targetRootState);
-    } catch (SlotProcessingException e) {
-      return AttestationProcessingResult.failedStateTransition(e);
-    } catch (EpochProcessingException e) {
-      return AttestationProcessingResult.failedStateTransition(e);
-    }
-    BeaconState target_state = store.getCheckpointState(target);
-
-    // Get state at the `target` to validate attestation and calculate the committees
-    IndexedAttestation indexed_attestation = null;
-    try {
-      indexed_attestation = get_indexed_attestation(target_state, attestation);
-    } catch (IndexOutOfBoundsException e) {
-      return AttestationProcessingResult.invalid(
-          "on_attestation: Attestation is not valid, IndexOutOfBoundsException: " + e.getMessage());
-    }
-    if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
-      return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
-    }
-
-    forkChoiceStrategy.onAttestation(indexed_attestation);
 
     return AttestationProcessingResult.SUCCESSFUL;
   }

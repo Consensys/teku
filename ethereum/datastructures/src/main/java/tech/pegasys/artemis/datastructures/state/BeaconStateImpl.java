@@ -53,6 +53,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   private final UnsignedLong genesis_time = null;
 
   @SuppressWarnings("unused")
+  private final Bytes32 genesis_validators_root = null;
+
+  @SuppressWarnings("unused")
   private final UnsignedLong slot = null;
 
   @SuppressWarnings("unused")
@@ -87,7 +90,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   private final SSZList<Eth1Data> eth1_data_votes =
       SSZList.createMutable(
           Eth1Data.class,
-          Constants.SLOTS_PER_ETH1_VOTING_PERIOD); // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
+          Constants.EPOCHS_PER_ETH1_VOTING_PERIOD
+              * Constants.SLOTS_PER_EPOCH); // List Bounded by EPOCHS_PER_ETH1_VOTING_PERIOD *
+  // SLOTS_PER_PERIOD
 
   @SuppressWarnings("unused")
   private final UnsignedLong eth1_deposit_index = null;
@@ -197,6 +202,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   public BeaconStateImpl(
       // Versioning
       UnsignedLong genesis_time,
+      Bytes32 genesis_validators_root,
       UnsignedLong slot,
       Fork fork,
 
@@ -235,6 +241,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
         BeaconState.getSSZType(),
         BeaconState.create(
                 genesis_time,
+                genesis_validators_root,
                 slot,
                 fork,
                 latest_block_header,
@@ -282,6 +289,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   public List<Bytes> get_fixed_parts() {
     return List.of(
         SSZ.encodeUInt64(getGenesis_time().longValue()),
+        getGenesis_validators_root(),
         SSZ.encodeUInt64(getSlot().longValue()),
         SimpleOffsetSerializer.serialize(getFork()),
         SimpleOffsetSerializer.serialize(getLatest_block_header()),
@@ -312,7 +320,14 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList =
         new ArrayList<>(
-            List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+            List.of(
+                Bytes.EMPTY,
+                Bytes.EMPTY,
+                Bytes.EMPTY,
+                Bytes.EMPTY,
+                Bytes.EMPTY,
+                Bytes.EMPTY,
+                Bytes.EMPTY));
     variablePartsList.add(
         SSZ.encode(writer -> writer.writeFixedBytesVector(getHistorical_roots().asList())));
     variablePartsList.add(Bytes.EMPTY);
@@ -384,6 +399,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   static String toString(BeaconState state) {
     return MoreObjects.toStringHelper(state)
         .add("genesis_time", state.getGenesis_time())
+        .add("genesis_validators_root", state.getGenesis_validators_root())
         .add("slot", state.getSlot())
         .add("fork", state.getFork())
         .add("latest_block_header", state.getLatest_block_header())

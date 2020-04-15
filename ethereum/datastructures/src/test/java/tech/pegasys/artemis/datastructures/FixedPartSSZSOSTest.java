@@ -87,12 +87,14 @@ class FixedPartSSZSOSTest {
   @Test
   void testBeaconBlockHeaderSOS() {
     UnsignedLong slot = UnsignedLong.valueOf(27);
+    UnsignedLong proposerIndex = UnsignedLong.valueOf(29);
     Bytes32 previous_block_root = Bytes32.random(new Random(100));
     Bytes32 state_root = Bytes32.random(new Random(101));
     Bytes32 block_body_root = Bytes32.random(new Random(102));
 
     BeaconBlockHeader beaconBlockHeader =
-        new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root);
+        new BeaconBlockHeader(
+            slot, proposerIndex, previous_block_root, state_root, block_body_root);
 
     Bytes sszBeaconBlockHeaderBytes = beaconBlockHeader.toBytes();
     Bytes sosBeaconBlockHeaderBytes = SimpleOffsetSerializer.serialize(beaconBlockHeader);
