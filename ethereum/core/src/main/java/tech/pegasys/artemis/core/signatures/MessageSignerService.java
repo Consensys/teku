@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,28 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.artemis.core.signatures;
 
-import tech.pegasys.artemis.core.signatures.Signer;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class ValidatorInfo {
+public interface MessageSignerService {
 
-  private final Signer signer;
-  private int validatorIndex = -1;
+  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
 
-  public ValidatorInfo(final Signer signer) {
-    this.signer = signer;
-  }
+  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
 
-  public Signer getSigner() {
-    return signer;
-  }
+  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
 
-  public int getValidatorIndex() {
-    return validatorIndex;
-  }
-
-  public void setValidatorIndex(int validatorIndex) {
-    this.validatorIndex = validatorIndex;
-  }
+  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
 }

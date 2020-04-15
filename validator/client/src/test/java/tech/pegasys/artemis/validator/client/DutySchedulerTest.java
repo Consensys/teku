@@ -38,7 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.Signer;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;

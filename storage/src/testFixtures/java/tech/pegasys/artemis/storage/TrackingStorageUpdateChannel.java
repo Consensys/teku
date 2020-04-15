@@ -41,9 +41,12 @@ public class TrackingStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
   public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {
-    final StorageUpdateResult result = database.update(event);
-    updateResults.add(result);
-    return SafeFuture.completedFuture(result);
+    return SafeFuture.of(
+        () -> {
+          final StorageUpdateResult result = database.update(event);
+          updateResults.add(result);
+          return result;
+        });
   }
 
   @Override

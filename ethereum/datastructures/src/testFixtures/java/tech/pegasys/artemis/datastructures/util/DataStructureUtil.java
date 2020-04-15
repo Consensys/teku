@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.LongStream;
@@ -32,11 +33,13 @@ import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -141,13 +144,15 @@ public final class DataStructureUtil {
   }
 
   public Bitvector randomBitvector(int n) {
-    byte[] byteArray = new byte[n];
+    BitSet bitSet = new BitSet(n);
     Random random = new Random(nextSeed());
 
     for (int i = 0; i < n; i++) {
-      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+      if (random.nextBoolean()) {
+        bitSet.set(i);
+      }
     }
-    return new Bitvector(byteArray, n);
+    return new Bitvector(bitSet, n);
   }
 
   public BLSPublicKey randomPublicKey() {
@@ -213,6 +218,35 @@ public final class DataStructureUtil {
     BeaconBlockBody body = randomBeaconBlockBody();
 
     return new BeaconBlock(slotNum, proposer_index, previous_root, state_root, body);
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(final UnsignedLong slot) {
+    final BeaconBlockAndState blockAndState = randomBlockAndState(slot);
+
+    final SignedBeaconBlock signedBlock =
+        new SignedBeaconBlock(blockAndState.getBlock(), randomSignature());
+    return new SignedBlockAndState(signedBlock, blockAndState.getState());
+  }
+
+  public BeaconBlockAndState randomBlockAndState(final long slot, final BeaconState beaconState) {
+    final UnsignedLong unsignedSlot = UnsignedLong.valueOf(slot);
+    final BeaconState state = beaconState.updated(b -> b.setSlot(unsignedSlot));
+    return randomBlockAndState(unsignedSlot, state);
+  }
+
+  public BeaconBlockAndState randomBlockAndState(final UnsignedLong slot) {
+    final BeaconState state = randomBeaconState(slot);
+    return randomBlockAndState(slot, state);
+  }
+
+  public BeaconBlockAndState randomBlockAndState(final UnsignedLong slot, final BeaconState state) {
+    final Bytes32 parentRoot = randomBytes32();
+    final Bytes32 state_root = state.hash_tree_root();
+    final BeaconBlockBody body = randomBeaconBlockBody();
+    final UnsignedLong proposer_index = randomUnsignedLong();
+    final BeaconBlock block = new BeaconBlock(slot, proposer_index, parentRoot, state_root, body);
+
+    return new BeaconBlockAndState(block, state);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot) {
