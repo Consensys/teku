@@ -80,7 +80,7 @@ public class AttestationTopicSubscriptions implements SlotEventsChannel {
     Integer committeeCount = subscribedCommitteeCountBySubnetIndex.get(subnetIndex);
     committeeCount--;
     if (committeeCount == 0) {
-      // attestationSubnetBitfield.unsetBit(subnetIndex);
+      attestationSubnetBitfield.clearBit(subnetIndex);
       eth2Network.updateAttestationSubnetENRField(attestationSubnetBitfield.serialize());
     }
   }
