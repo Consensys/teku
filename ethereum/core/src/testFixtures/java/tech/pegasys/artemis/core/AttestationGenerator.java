@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -315,7 +315,7 @@ public class AttestationGenerator {
 
       BLSSignature signature =
           new Signer(new LocalMessageSignerService(attesterKeyPair))
-              .signAttestationData(attestationData, state.getFork())
+              .signAttestationData(attestationData, state.getForkInfo())
               .join();
       return new Attestation(aggregationBitfield, attestationData, signature);
     }

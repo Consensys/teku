@@ -33,7 +33,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,7 +62,6 @@ public class GetAttestation implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            type = BigDecimal.class,
             description = "`UnsignedLong` Non-finalized slot for which to create the attestation.",
             required = true),
         @OpenApiParam(

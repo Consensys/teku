@@ -68,7 +68,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
     // Setup database
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = Store.get_genesis_store(genesis.getState());
+    store = Store.getForkChoiceStore(genesis.getState());
     database.storeGenesis(store);
 
     final Set<SignedBlockAndState> allBlocksAndStates =

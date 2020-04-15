@@ -74,7 +74,7 @@ class BeaconStateTest {
 
       Constants.SLOTS_PER_HISTORICAL_ROOT = 123;
       Constants.HISTORICAL_ROOTS_LIMIT = 123;
-      Constants.SLOTS_PER_ETH1_VOTING_PERIOD = 123;
+      Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 123;
       Constants.VALIDATOR_REGISTRY_LIMIT = 123;
       Constants.EPOCHS_PER_HISTORICAL_VECTOR = 123;
       Constants.EPOCHS_PER_SLASHINGS_VECTOR = 123;

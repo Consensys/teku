@@ -79,7 +79,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
-    final Store store = Store.get_genesis_store(genesisState);
+    final Store store = Store.getForkChoiceStore(genesisState);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(

@@ -24,11 +24,11 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface ValidatorApiChannel {
-  SafeFuture<Optional<Fork>> getFork();
+  SafeFuture<Optional<ForkInfo>> getForkInfo();
 
   SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       UnsignedLong epoch, Collection<BLSPublicKey> publicKeys);

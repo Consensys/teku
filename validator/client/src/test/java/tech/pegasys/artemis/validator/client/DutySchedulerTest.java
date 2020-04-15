@@ -39,7 +39,7 @@ import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
@@ -68,7 +68,7 @@ class DutySchedulerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Fork fork = dataStructureUtil.randomFork();
+  private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
   private final DutyScheduler dutyScheduler =
       new DutyScheduler(
@@ -84,7 +84,7 @@ class DutySchedulerTest {
         .thenReturn(completedFuture(Optional.of(emptyList())));
     when(dutyFactory.createAttestationProductionDuty(any()))
         .thenReturn(mock(AttestationProductionDuty.class));
-    when(forkProvider.getFork()).thenReturn(completedFuture(fork));
+    when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
     when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(new SafeFuture<>());
     when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(new SafeFuture<>());
   }

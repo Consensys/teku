@@ -90,7 +90,7 @@ public abstract class AbstractDatabaseTest {
     checkpoint3BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(3);
     checkpoint3 = chainBuilder.getCurrentCheckpointForEpoch(3);
 
-    store = Store.get_genesis_store(genesisBlockAndState.getState());
+    store = Store.getForkChoiceStore(genesisBlockAndState.getState());
     database.storeGenesis(store);
   }
 
@@ -507,7 +507,7 @@ public abstract class AbstractDatabaseTest {
     // Setup database
     database = setupDatabase(storageMode);
     final Checkpoint genesisCheckpoint = getCheckpointForBlock(genesis.getBlock());
-    store = Store.get_genesis_store(genesis.getState());
+    store = Store.getForkChoiceStore(genesis.getState());
     database.storeGenesis(store);
 
     final Set<SignedBlockAndState> allBlocksAndStates =

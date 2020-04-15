@@ -83,7 +83,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = Store.get_genesis_store(genesisBlockAndState.getState());
+    store = Store.getForkChoiceStore(genesisBlockAndState.getState());
     database.storeGenesis(store);
 
     // Shutdown and restart
@@ -121,7 +121,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
     // Setup database
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = Store.get_genesis_store(genesis.getState());
+    store = Store.getForkChoiceStore(genesis.getState());
     database.storeGenesis(store);
 
     final Set<SignedBlockAndState> allBlocksAndStates =

@@ -48,7 +48,14 @@ class JsonProviderTest {
   public void unsignedLongShouldSerializeToJson() throws JsonProcessingException {
     UnsignedLong data = dataStructureUtil.randomUnsignedLong();
     String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, data.toString());
+    assertEquals(serialized, Q + data.toString() + Q);
+  }
+
+  @Test
+  public void maxUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
+    UnsignedLong data = UnsignedLong.MAX_VALUE;
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, Q + data.toString() + Q);
   }
 
   @Test
