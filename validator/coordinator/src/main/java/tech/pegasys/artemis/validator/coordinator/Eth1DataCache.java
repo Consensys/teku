@@ -92,9 +92,9 @@ public class Eth1DataCache {
     // Worst case this slot is at the very end of the current voting period
     cacheDurationSeconds += (EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH * SECONDS_PER_SLOT);
 
-    // We need 2 * ETH1_FOLLOW_DISTANCE prior to that
-    cacheDurationSeconds +=
-        SECONDS_PER_ETH1_BLOCK.longValue() * ETH1_FOLLOW_DISTANCE.longValue() * 2;
+    // We need 2 * ETH1_FOLLOW_DISTANCE prior to that but the blocks we get from Eth1DataManager are
+    // already ETH1_FOLLOW_DISTANCE behind head and the current time is taken from that.
+    cacheDurationSeconds += SECONDS_PER_ETH1_BLOCK.longValue() * ETH1_FOLLOW_DISTANCE.longValue();
 
     // And we want to be able to create blocks for at least the past epoch
     cacheDurationSeconds += SLOTS_PER_EPOCH * SECONDS_PER_SLOT;
