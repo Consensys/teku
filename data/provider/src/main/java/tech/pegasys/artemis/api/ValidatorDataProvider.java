@@ -22,14 +22,19 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
+import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.api.schema.ValidatorBlockResult;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.core.results.BlockImportResult;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -45,12 +50,15 @@ public class ValidatorDataProvider {
   public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
   private final ValidatorApiChannel validatorApiChannel;
   private CombinedChainDataClient combinedChainDataClient;
+  private final BlockImporter blockImporter;
 
   public ValidatorDataProvider(
       final ValidatorApiChannel validatorApiChannel,
+      final BlockImporter blockImporter,
       final CombinedChainDataClient combinedChainDataClient) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
+    this.blockImporter = blockImporter;
   }
 
   public boolean isStoreAvailable() {
@@ -147,5 +155,32 @@ public class ValidatorDataProvider {
       throw new IllegalArgumentException("Signed attestations must have a non zero signature");
     }
     validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());
+  }
+
+  public SafeFuture<ValidatorBlockResult> submitSignedBlock(
+      final SignedBeaconBlock signedBeaconBlock) {
+
+    return blockImporter
+        .importBlockAsync(signedBeaconBlock.asInternalSignedBeaconBlock())
+        .thenApply(
+            blockImportResult -> {
+              int responseCode;
+              Bytes32 hashRoot = null;
+
+              if (!blockImportResult.isSuccessful()) {
+                if (blockImportResult.getFailureReason()
+                    == BlockImportResult.FailureReason.INTERNAL_ERROR) {
+                  responseCode = 500;
+                } else {
+                  responseCode = 202;
+                }
+              } else {
+                responseCode = 200;
+                hashRoot = blockImportResult.getBlock().getMessage().hash_tree_root();
+              }
+
+              return new ValidatorBlockResult(
+                  responseCode, blockImportResult.getFailureCause(), Optional.ofNullable(hashRoot));
+            });
   }
 }
