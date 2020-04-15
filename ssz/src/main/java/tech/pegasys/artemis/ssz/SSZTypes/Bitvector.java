@@ -13,67 +13,71 @@
 
 package tech.pegasys.artemis.ssz.SSZTypes;
 
-import static java.util.Objects.isNull;
+import static com.google.common.base.Preconditions.checkElementIndex;
 
-import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Bitvector {
 
-  private int size;
-  private byte[] byteArray;
+  private final BitSet data;
+  private final int size;
 
   public Bitvector(int size) {
-    this.byteArray = new byte[size];
+    this.data = new BitSet(size);
     this.size = size;
   }
 
-  public Bitvector(byte[] byteArray, int size) {
-    this.byteArray = byteArray;
+  public Bitvector(BitSet bitSet, int size) {
+    this.data = bitSet;
     this.size = size;
+  }
+
+  public Bitvector(Bitvector bitvector) {
+    this.data = (BitSet) bitvector.data.clone();
+    this.size = bitvector.size;
   }
 
   public void setBit(int i) {
-    this.byteArray[i] = 1;
+    checkElementIndex(i, data.size());
+    data.set(i);
   }
 
-  public int getBit(int i) {
-    return byteArray[i];
+  public boolean getBit(int i) {
+    checkElementIndex(i, data.size());
+    return data.get(i);
   }
 
   public int getSize() {
     return size;
   }
 
-  public byte[] getByteArray() {
-    return byteArray;
-  }
-
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     byte[] array = new byte[(size + 7) / 8];
-    IntStream.range(0, size).forEach(i -> array[i / 8] |= (((int) this.byteArray[i]) << (i % 8)));
+    IntStream.range(0, size).forEach(i -> array[i / 8] |= ((data.get(i) ? 1 : 0) << (i % 8)));
     return Bytes.wrap(array);
   }
 
   public static Bitvector fromBytes(Bytes bytes, int size) {
-    byte[] byteArray = new byte[size];
+    BitSet bitset = new BitSet(size);
 
     for (int i = size - 1; i >= 0; i--) {
       if (((bytes.get(i / 8) >>> (i % 8)) & 0x01) == 1) {
-        byteArray[i] = 1;
+        bitset.set(i);
       }
     }
 
-    return new Bitvector(byteArray, size);
+    return new Bitvector(bitset, size);
   }
 
   public Bitvector rightShift(int i) {
     int length = this.getSize();
-    Bitvector newBitvector = new Bitvector(new byte[length], length);
+    Bitvector newBitvector = new Bitvector(getSize());
     for (int j = 0; j < length - i; j++) {
-      if (this.getBit(j) == 1) {
+      if (this.getBit(j)) {
         newBitvector.setBit(j + i);
       }
     }
@@ -81,26 +85,19 @@ public class Bitvector {
   }
 
   public Bitvector copy() {
-    return new Bitvector(this.getByteArray(), this.getSize());
+    return new Bitvector(this);
   }
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(byteArray);
+    return Objects.hashCode(data);
   }
 
   @Override
-  public boolean equals(Object obj) {
-    if (isNull(obj)) {
-      return false;
-    }
-    if (this == obj) {
-      return true;
-    }
-    if (!(obj instanceof Bitvector)) {
-      return false;
-    }
-    Bitvector other = (Bitvector) obj;
-    return Arrays.equals(this.getByteArray(), other.getByteArray());
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Bitvector)) return false;
+    Bitvector bitvector = (Bitvector) o;
+    return com.google.common.base.Objects.equal(data, bitvector.data);
   }
 }
