@@ -13,11 +13,11 @@
 
 package tech.pegasys.artemis.storage.client;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
@@ -26,7 +26,6 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
-  private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
 
   public StorageBackedRecentChainData(
@@ -51,14 +50,14 @@ public class StorageBackedRecentChainData extends RecentChainData {
   }
 
   private SafeFuture<RecentChainData> initializeFromStorage() {
-    LOG.trace("Begin initializing ChainStorageClient from storage");
+    STATUS_LOG.beginInitializingChainData();
     return requestInitialStore()
         .thenApply(
             maybeStore -> {
               maybeStore.ifPresent(
                   (store) -> {
                     this.setStore(store);
-                    LOG.debug("Finish initializing ChainStorageClient from storage");
+                    STATUS_LOG.finishInitializingChainData();
                   });
               return this;
             });

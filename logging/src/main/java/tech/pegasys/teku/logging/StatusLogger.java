@@ -58,4 +58,12 @@ public class StatusLogger {
       final String message, final Path file, final String cause) {
     log.error(message, file.toString(), cause);
   }
+
+  public void beginInitializingChainData() {
+    log.info("Begin initializing chain data from storage");
+  }
+
+  public void finishInitializingChainData() {
+    log.info("Finish initializing chain data from storage");
+  }
 }
