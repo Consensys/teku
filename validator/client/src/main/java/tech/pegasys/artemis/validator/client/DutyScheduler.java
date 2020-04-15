@@ -42,8 +42,20 @@ import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 public class DutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final AtomicReference<UnsignedLong> latestScheduledEpoch = new AtomicReference<>();
-  private final ConcurrentMap<UnsignedLong, SafeFuture<Void>> pendingDutiesByEpoch =
+
+  /**
+   * Maintains a map of epoch number to a SafeFuture representing the tail of a list of actions to
+   * be performed in that epoch. This ensures that tasks for an epoch are always executed in order.
+   *
+   * <p>The first task for an epoch is to request and schedule the duties for that epoch. After that
+   * the execution of those duties are added to the end of the list as they become due.
+   *
+   * <p>If there is no entry for a given epoch, it's duties have already been loaded and the task
+   * should be performed immediately.
+   */
+  private final ConcurrentMap<UnsignedLong, SafeFuture<Void>> pendingTasksByEpoch =
       new ConcurrentHashMap<>();
+
   private final ScheduledDuties scheduledDuties;
   private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
@@ -82,8 +94,8 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   private void scheduleDutiesForEpoch(final UnsignedLong epoch) {
     final SafeFuture<Void> future = requestAndScheduleDutiesForEpoch(epoch);
-    pendingDutiesByEpoch.put(epoch, future);
-    future.always(() -> pendingDutiesByEpoch.remove(epoch));
+    pendingTasksByEpoch.put(epoch, future);
+    removeWhenAllTasksComplete(epoch, future);
   }
 
   private SafeFuture<Void> requestAndScheduleDutiesForEpoch(final UnsignedLong epoch) {
@@ -208,12 +220,20 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   private void whenDutiesScheduled(final UnsignedLong slot, final Consumer<UnsignedLong> action) {
     // We chain the futures to ensure all actions always happen in their original order.
+    final UnsignedLong epoch = compute_epoch_at_slot(slot);
     final SafeFuture<Void> delayedAction =
-        pendingDutiesByEpoch.computeIfPresent(
-            compute_epoch_at_slot(slot),
-            (epoch, future) -> future.thenRun(() -> action.accept(slot)));
+        pendingTasksByEpoch.computeIfPresent(
+            epoch, (key, previousTask) -> previousTask.thenRun(() -> action.accept(slot)));
     if (delayedAction == null) {
+      // There was no pending tasks so execute immediately.
       action.accept(slot);
+    } else {
+      removeWhenAllTasksComplete(epoch, delayedAction);
     }
+  }
+
+  private void removeWhenAllTasksComplete(
+      final UnsignedLong epoch, final SafeFuture<Void> enqueuedAction) {
+    enqueuedAction.always(() -> pendingTasksByEpoch.remove(epoch, enqueuedAction));
   }
 }
