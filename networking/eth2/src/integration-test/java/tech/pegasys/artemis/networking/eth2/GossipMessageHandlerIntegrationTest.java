@@ -28,9 +28,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.core.AttestationGenerator;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.util.Waiter;
 
@@ -157,7 +158,9 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    Attestation validAttestation = attestationGenerator.validAttestation(node1.storageClient());
+    final BeaconBlockAndState bestBlockAndState =
+        node1.storageClient().getBestBlockAndState().orElseThrow();
+    Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     node1.eventBus().post(validAttestation);
 
     ensureConditionRemainsMet(() -> assertThat(network2Attestations.getAttestations()).isEmpty());
@@ -187,7 +190,9 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    Attestation validAttestation = attestationGenerator.validAttestation(node1.storageClient());
+    final BeaconBlockAndState bestBlockAndState =
+        node1.storageClient().getBestBlockAndState().orElseThrow();
+    Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
 
     node1
         .network()
@@ -228,7 +233,9 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    Attestation validAttestation = attestationGenerator.validAttestation(node1.storageClient());
+    final BeaconBlockAndState bestBlockAndState =
+        node1.storageClient().getBestBlockAndState().orElseThrow();
+    Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
 
     node1
         .network()

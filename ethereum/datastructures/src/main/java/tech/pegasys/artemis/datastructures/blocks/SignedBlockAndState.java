@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -32,8 +33,16 @@ public class SignedBlockAndState {
     this.state = state;
   }
 
+  public BeaconBlockAndState toUnsigned() {
+    return new BeaconBlockAndState(block.getMessage(), state);
+  }
+
   public Bytes32 getRoot() {
-    return block.getMessage().hash_tree_root();
+    return block.getRoot();
+  }
+
+  public UnsignedLong getSlot() {
+    return getBlock().getSlot();
   }
 
   public SignedBeaconBlock getBlock() {

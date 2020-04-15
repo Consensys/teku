@@ -113,6 +113,8 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(mockRecentChainData, mockCombinedChainDataClient);
     final Bytes32 bestBlockRoot = dataStructureUtil.randomBytes32();
+    final BeaconBlockAndState blockAndState =
+        dataStructureUtil.randomBlockAndState(1, beaconStateInternal);
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(bestBlockRoot));
@@ -120,9 +122,7 @@ public class ChainDataProviderTest {
         .thenReturn(committeeAssignments);
     when(mockRecentChainData.getBestSlot()).thenReturn(beaconStateInternal.getSlot());
     when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any(), any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(new BeaconBlockAndState(null, beaconStateInternal))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
     final SafeFuture<Optional<List<Committee>>> future =
         provider.getCommitteesAtEpoch(beaconStateInternal.getSlot());
 
@@ -306,7 +306,8 @@ public class ChainDataProviderTest {
   void getStateBySlot_shouldReturnBeaconStateWhenFound()
       throws ExecutionException, InterruptedException {
     final Bytes32 chainHead = dataStructureUtil.randomBytes32();
-    final BeaconBlockAndState blockAndState = new BeaconBlockAndState(null, beaconStateInternal);
+    final BeaconBlockAndState blockAndState =
+        dataStructureUtil.randomBlockAndState(beaconStateInternal.getSlot(), beaconStateInternal);
     final SafeFuture<Optional<BeaconBlockAndState>> safeFuture =
         completedFuture(Optional.of(blockAndState));
 
@@ -355,7 +356,8 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
-    final BeaconBlockAndState blockAndState = new BeaconBlockAndState(null, beaconStateInternal);
+    final BeaconBlockAndState blockAndState =
+        dataStructureUtil.randomBlockAndState(1, beaconStateInternal);
     final SafeFuture<Optional<BeaconBlockAndState>> safeFuture =
         completedFuture(Optional.of(blockAndState));
     final ValidatorsRequest smallRequest =
@@ -379,7 +381,9 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
-    final BeaconBlockAndState blockAndState = new BeaconBlockAndState(null, beaconStateInternal);
+    final BeaconBlockAndState blockAndState =
+        dataStructureUtil.randomBlockAndState(1, beaconStateInternal);
+    final tech.pegasys.artemis.datastructures.state.BeaconState state = blockAndState.getState();
     final SafeFuture<Optional<BeaconBlockAndState>> safeFuture =
         completedFuture(Optional.of(blockAndState));
     final ValidatorsRequest validatorsRequest =
@@ -401,19 +405,13 @@ public class ChainDataProviderTest {
     assertThat(validators.validators.size()).isEqualTo(3);
     assertThat(validators.validators.get(0))
         .usingRecursiveComparison()
-        .isEqualTo(
-            new ValidatorWithIndex(
-                beaconStateInternal.getValidators().get(0), beaconStateInternal));
+        .isEqualTo(new ValidatorWithIndex(state.getValidators().get(0), state));
     assertThat(validators.validators.get(1))
         .usingRecursiveComparison()
-        .isEqualTo(
-            new ValidatorWithIndex(
-                beaconStateInternal.getValidators().get(11), beaconStateInternal));
+        .isEqualTo(new ValidatorWithIndex(state.getValidators().get(11), state));
     assertThat(validators.validators.get(2))
         .usingRecursiveComparison()
-        .isEqualTo(
-            new ValidatorWithIndex(
-                beaconStateInternal.getValidators().get(99), beaconStateInternal));
+        .isEqualTo(new ValidatorWithIndex(state.getValidators().get(99), state));
   }
 
   @Test

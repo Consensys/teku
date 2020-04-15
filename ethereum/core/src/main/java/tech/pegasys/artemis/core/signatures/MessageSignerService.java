@@ -11,25 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.artemis.core.signatures;
 
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.core.signatures.Signer;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class Validator {
-  private final BLSPublicKey publicKey;
-  private final Signer signer;
+public interface MessageSignerService {
 
-  public Validator(final BLSPublicKey publicKey, final Signer signer) {
-    this.publicKey = publicKey;
-    this.signer = signer;
-  }
+  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
 
-  public BLSPublicKey getPublicKey() {
-    return publicKey;
-  }
+  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
 
-  public Signer getSigner() {
-    return signer;
-  }
+  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
+
+  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
 }

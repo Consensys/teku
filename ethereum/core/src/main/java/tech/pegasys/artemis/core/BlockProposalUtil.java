@@ -17,8 +17,8 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -35,7 +35,7 @@ public class BlockProposalUtil {
     this.stateTransition = stateTransition;
   }
 
-  public BlockAndState createNewUnsignedBlock(
+  public BeaconBlockAndState createNewUnsignedBlock(
       final UnsignedLong newSlot,
       final int proposerIndex,
       final BLSSignature randaoReveal,
@@ -72,6 +72,6 @@ public class BlockProposalUtil {
     Bytes32 stateRoot = newState.hash_tree_root();
     newBlock.setState_root(stateRoot);
 
-    return new BlockAndState(newBlock, newState);
+    return new BeaconBlockAndState(newBlock, newState);
   }
 }

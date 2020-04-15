@@ -84,7 +84,7 @@ public class ViewUtils {
             .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitvector.getSize(); i++) {
-      viewWrite.set(i, new BitView(bitvector.getBit(i) > 0));
+      viewWrite.set(i, new BitView(bitvector.getBit(i)));
     }
     return viewWrite.commitChanges();
   }

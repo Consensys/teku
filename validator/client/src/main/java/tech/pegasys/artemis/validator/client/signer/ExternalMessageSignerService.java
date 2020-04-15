@@ -26,7 +26,7 @@ import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.core.signatures.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ExternalMessageSignerService implements MessageSignerService {

@@ -18,7 +18,9 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.eventbus.EventBus;
@@ -271,8 +273,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private Map<Integer, List<UnsignedLong>> getBeaconProposalSlotsByValidatorIndex(
       final BeaconState state, final UnsignedLong epoch) {
-    final UnsignedLong startSlot = compute_start_slot_at_epoch(epoch);
-    final UnsignedLong endSlot = startSlot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
+    final UnsignedLong epochStartSlot = compute_start_slot_at_epoch(epoch);
+    // Don't calculate a proposer for the genesis slot
+    final UnsignedLong startSlot = max(epochStartSlot, UnsignedLong.valueOf(GENESIS_SLOT + 1));
+    final UnsignedLong endSlot =
+        epochStartSlot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
     final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex = new HashMap<>();
     for (UnsignedLong slot = startSlot;
         slot.compareTo(endSlot) < 0;

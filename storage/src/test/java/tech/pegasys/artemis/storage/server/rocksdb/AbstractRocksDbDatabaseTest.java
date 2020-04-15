@@ -13,25 +13,18 @@
 
 package tech.pegasys.artemis.storage.server.rocksdb;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.google.common.primitives.UnsignedLong;
-import java.io.File;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.server.AbstractStorageBackedDatabaseTest;
-import tech.pegasys.artemis.storage.server.Database;
-import tech.pegasys.artemis.storage.server.StateStorageMode;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
-
-  @Override
-  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
-    final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
-    return RocksDbDatabase.createOnDisk(config, storageMode);
-  }
+public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Test
   public void shouldThrowIfClosedDatabaseIsModified_setGenesis() throws Exception {
@@ -51,7 +44,8 @@ public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setFinalizedCheckpoint(newValue);
 
-    assertThatThrownBy(transaction::commit).isInstanceOf(IllegalStateException.class);
+    final SafeFuture<Void> result = transaction.commit();
+    assertThatThrownBy(result::get).hasCauseInstanceOf(IllegalStateException.class);
   }
 
   @Test
@@ -67,7 +61,7 @@ public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
     database.storeGenesis(store);
     database.close();
 
-    assertThatThrownBy(() -> database.getFinalizedRootAtSlot(UnsignedLong.ONE))
+    assertThatThrownBy(() -> database.getFinalizedRootAtSlot(ONE))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -76,7 +70,7 @@ public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
     database.storeGenesis(store);
     database.close();
 
-    assertThatThrownBy(() -> database.getLatestFinalizedRootAtSlot(UnsignedLong.ONE))
+    assertThatThrownBy(() -> database.getLatestFinalizedRootAtSlot(ONE))
         .isInstanceOf(IllegalStateException.class);
   }
 
@@ -90,8 +84,18 @@ public class RocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
   }
 
   @Test
-  public void shouldThrowIfClosedDatabaseIsRead_getState() throws Exception {
+  public void shouldThrowIfClosedDatabaseIsRead_getHistoricalState() throws Exception {
+    // Store genesis
     database.storeGenesis(store);
+    // Add a new finalized block to supersede genesis
+    final SignedBlockAndState newBlock = chainBuilder.getBlockAndStateAtSlot(1);
+    final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
+    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    transaction.putBlock(newBlock.getRoot(), newBlock.getBlock());
+    transaction.putBlockState(newBlock.getRoot(), newBlock.getState());
+    transaction.setFinalizedCheckpoint(newCheckpoint);
+    transaction.commit().reportExceptions();
+    // Close db
     database.close();
 
     assertThatThrownBy(() -> database.getState(genesisCheckpoint.getRoot()))

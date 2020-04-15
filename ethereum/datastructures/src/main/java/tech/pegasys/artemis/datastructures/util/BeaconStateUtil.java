@@ -832,7 +832,7 @@ public class BeaconStateUtil {
 
   public static boolean all(Bitvector bitvector, int start, int end) {
     for (int i = start; i < end; i++) {
-      if (bitvector.getBit(i) == 0) {
+      if (!bitvector.getBit(i)) {
         return false;
       }
     }
