@@ -67,8 +67,8 @@ public class AttestationTopicSubscriptions implements SlotEventsChannel {
 
   private void handleCommitteeSubscriptionENRChange(int committeeIndex) {
     int subnetIndex = committeeIndex % ATTESTATION_SUBNET_COUNT;
-    Integer committeeCount = subscribedCommitteeCountBySubnetIndex.get(subnetIndex);
-    committeeCount++;
+    int committeeCount = subscribedCommitteeCountBySubnetIndex.get(subnetIndex) + 1;
+    subscribedCommitteeCountBySubnetIndex.put(subnetIndex, committeeCount);
     if (committeeCount == 1) {
       attestationSubnetBitfield.setBit(subnetIndex);
       eth2Network.updateAttestationSubnetENRField(attestationSubnetBitfield.serialize());
@@ -77,8 +77,8 @@ public class AttestationTopicSubscriptions implements SlotEventsChannel {
 
   private void handleCommitteeUnsubscriptionENRChange(int committeeIndex) {
     int subnetIndex = committeeIndex % ATTESTATION_SUBNET_COUNT;
-    Integer committeeCount = subscribedCommitteeCountBySubnetIndex.get(subnetIndex);
-    committeeCount--;
+    int committeeCount = subscribedCommitteeCountBySubnetIndex.get(subnetIndex) - 1;
+    subscribedCommitteeCountBySubnetIndex.put(subnetIndex, committeeCount);
     if (committeeCount == 0) {
       attestationSubnetBitfield.clearBit(subnetIndex);
       eth2Network.updateAttestationSubnetENRField(attestationSubnetBitfield.serialize());
