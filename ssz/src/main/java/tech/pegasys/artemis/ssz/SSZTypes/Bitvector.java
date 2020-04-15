@@ -45,6 +45,11 @@ public class Bitvector {
     data.set(i);
   }
 
+  public void clearBit(int i) {
+    checkElementIndex(i, size);
+    data.clear(i);
+  }
+
   public boolean getBit(int i) {
     checkElementIndex(i, size);
     return data.get(i);
@@ -84,14 +89,6 @@ public class Bitvector {
     return newBitvector;
   }
 
-  public byte[] getByteArray() {
-    byte[] array = new byte[size];
-    for (int i = 0; i < size; i++) {
-      array[i] = (byte) (data.get(i) ? 1 : 0);
-    }
-    return array;
-  }
-
   public Bitvector copy() {
     return new Bitvector(this);
   }
@@ -107,5 +104,10 @@ public class Bitvector {
   @Override
   public int hashCode() {
     return Objects.hashCode(data, getSize());
+  }
+
+  @Override
+  public String toString() {
+    return "Bitvector{" + "data=" + data + ", size=" + size + '}';
   }
 }

@@ -144,15 +144,15 @@ public final class DataStructureUtil {
   }
 
   public Bitvector randomBitvector(int n) {
-    BitSet byteArray = new BitSet(n);
+    BitSet bitSet = new BitSet(n);
     Random random = new Random(nextSeed());
 
     for (int i = 0; i < n; i++) {
       if (random.nextBoolean()) {
-        byteArray.set(i);
+        bitSet.set(i);
       }
     }
-    return new Bitvector(byteArray, n);
+    return new Bitvector(bitSet, n);
   }
 
   public BLSPublicKey randomPublicKey() {
