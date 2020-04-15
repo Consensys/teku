@@ -84,6 +84,14 @@ public class Bitvector {
     return newBitvector;
   }
 
+  public byte[] getByteArray() {
+    byte[] array = new byte[size];
+    for (int i = 0; i < size; i++) {
+      array[i] = (byte) (data.get(i) ? 1 : 0);
+    }
+    return array;
+  }
+
   public Bitvector copy() {
     return new Bitvector(this);
   }
