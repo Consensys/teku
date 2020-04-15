@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.mock;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
@@ -24,4 +25,7 @@ public class NoOpEth2Network extends MockP2PNetwork<Eth2Peer> implements Eth2Net
 
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {}
+
+  @Override
+  public void updateAttestationSubnetENRField(Bytes value) {}
 }
