@@ -232,8 +232,16 @@ public class DutyScheduler implements ValidatorTimingChannel {
     }
   }
 
+  /**
+   * Once each new task has been added to {@link #pendingTasksByEpoch}, this function ensures that
+   * the task queue is removed when that tasks completes, if and only if it is still the last task
+   * in the queue.
+   *
+   * @param epoch the epoch the task was queued for
+   * @param enqueuedTask the task that was queued
+   */
   private void removeWhenAllTasksComplete(
-      final UnsignedLong epoch, final SafeFuture<Void> enqueuedAction) {
-    enqueuedAction.always(() -> pendingTasksByEpoch.remove(epoch, enqueuedAction));
+      final UnsignedLong epoch, final SafeFuture<Void> enqueuedTask) {
+    enqueuedTask.always(() -> pendingTasksByEpoch.remove(epoch, enqueuedTask));
   }
 }
