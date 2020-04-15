@@ -52,7 +52,7 @@ class JsonProviderTest {
   }
 
   @Test
-  public void maxUunsignedLongShouldSerializeToJson() throws JsonProcessingException {
+  public void maxUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     UnsignedLong data = UnsignedLong.MAX_VALUE;
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, Q + data.toString() + Q);
