@@ -76,7 +76,7 @@ class JsonProviderTest {
     final String asJson = jsonProvider.objectToJSON(data);
     final Bitvector asData = jsonProvider.jsonToObject(asJson, Bitvector.class);
 
-    assertThat(data.getByteArray()).isEqualTo(asData.getByteArray());
+    assertThat(data).isEqualTo(asData);
     assertThat(asData.getSize()).isEqualTo(BITVECTOR_SIZE);
   }
 
