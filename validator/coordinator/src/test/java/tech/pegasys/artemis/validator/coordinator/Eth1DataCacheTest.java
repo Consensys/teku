@@ -17,12 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Date;
 import java.util.List;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -43,13 +44,6 @@ public class Eth1DataCacheTest {
   private final EventBus eventBus = new EventBus();
   private final BeaconState genesisState = mock(BeaconState.class);
 
-  static {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(3);
-    Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(5);
-    SLOTS_PER_ETH1_VOTING_PERIOD = 6;
-    Constants.SECONDS_PER_SLOT = 4;
-  }
-
   private final UnsignedLong START_SLOT = UnsignedLong.valueOf(100);
   private final UnsignedLong NEXT_VOTING_PERIOD_SLOT = UnsignedLong.valueOf(102);
   private final UnsignedLong testStartTime = UnsignedLong.valueOf(1000);
@@ -69,6 +63,20 @@ public class Eth1DataCacheTest {
   // Next Voting Period Start Slot = 102
   // Next Voting Period Start Time = 408
   // Next Voting Period Lower Bound = 378
+
+  @BeforeAll
+  static void setConstants() {
+    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(3);
+    Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(5);
+    Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
+    Constants.SLOTS_PER_EPOCH = 6;
+    Constants.SECONDS_PER_SLOT = 4;
+  }
+
+  @AfterAll
+  static void restoreConstants() {
+    Constants.setConstants("minimal");
+  }
 
   @BeforeEach
   void setUp() {

@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_b
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -68,6 +69,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkData;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.SigningRoot;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -177,8 +179,7 @@ public class BeaconStateUtil {
                   pubkey,
                   deposit.getData().getWithdrawal_credentials(),
                   min(
-                      amount.minus(
-                          amount.mod(UnsignedLong.valueOf(Constants.EFFECTIVE_BALANCE_INCREMENT))),
+                      amount.minus(amount.mod(Constants.EFFECTIVE_BALANCE_INCREMENT)),
                       UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)),
                   false,
                   FAR_FUTURE_EPOCH,
@@ -250,8 +251,8 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Return the combined effective balance of the ``indices``. (1 Gwei minimum to avoid divisions by
-   * zero.)
+   * Return the combined effective balance of the ``indices``. (EFFECTIVE_BALANCE_INCREMENT Gwei
+   * minimum to avoid divisions by zero.)
    *
    * @param state
    * @param indices
@@ -265,7 +266,7 @@ public class BeaconStateUtil {
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
-    return max(sum, UnsignedLong.ONE);
+    return max(sum, EFFECTIVE_BALANCE_INCREMENT);
   }
 
   /**
@@ -295,18 +296,41 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the 32-byte fork data root for the current_version and genesis_validators_root. This is
+   * used primarily in signature domains to avoid collisions across forks/chains.
+   *
+   * @param current_version
+   * @param genesis_validators_root
+   * @return
+   */
+  public static Bytes32 compute_fork_data_root(
+      Bytes4 current_version, Bytes32 genesis_validators_root) {
+    return new ForkData(current_version, genesis_validators_root).hash_tree_root();
+  }
+
+  public static Bytes4 compute_fork_digest(
+      Bytes4 current_version, Bytes32 genesis_validators_root) {
+    return new Bytes4(compute_fork_data_root(current_version, genesis_validators_root).slice(0, 4));
+  }
+
+  /**
    * Return the domain for the ``domain_type`` and ``fork_version``.
    *
    * @param domain_type
    * @param fork_version
+   * @param genesis_validators_root
    * @return domain
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
-  public static Bytes compute_domain(Bytes4 domain_type, Bytes4 fork_version) {
-    Bytes domain = Bytes.concatenate(domain_type.getWrappedBytes(), fork_version.getWrappedBytes());
-    checkArgument(domain.size() == 8, "domain must be of type Bytes8");
-    return domain;
+  public static Bytes compute_domain(
+      Bytes4 domain_type, Bytes4 fork_version, Bytes32 genesis_validators_root) {
+    final Bytes32 fork_data_root = compute_fork_data_root(fork_version, genesis_validators_root);
+    return compute_domain(domain_type, fork_data_root);
+  }
+
+  public static Bytes compute_domain(final Bytes4 domain_type, final Bytes32 fork_data_root) {
+    return Bytes.concatenate(domain_type.getWrappedBytes(), fork_data_root.slice(0, 28));
   }
 
   /**
@@ -318,7 +342,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
   public static Bytes compute_domain(Bytes4 domain_type) {
-    return compute_domain(domain_type, GENESIS_FORK_VERSION);
+    return compute_domain(domain_type, GENESIS_FORK_VERSION, Bytes32.ZERO);
   }
 
   /**
@@ -738,7 +762,7 @@ public class BeaconStateUtil {
   public static Bytes get_domain(
       BeaconState state, Bytes4 domain_type, UnsignedLong message_epoch) {
     UnsignedLong epoch = (message_epoch == null) ? get_current_epoch(state) : message_epoch;
-    return get_domain(domain_type, epoch, state.getFork());
+    return get_domain(domain_type, epoch, state.getFork(), state.getGenesis_validators_root());
   }
   /**
    * Return the signature domain (fork version concatenated with domain type) of a message.
@@ -746,18 +770,22 @@ public class BeaconStateUtil {
    * @param domain_type the domain for the message
    * @param epoch the epoch the message being signed is from
    * @param fork the current fork
+   * @param genesis_validators_root the validators root from genesis
    * @return The fork version and signature domain. This format ((fork version << 32) +
    *     SignatureDomain) is used to partition BLS signatures.
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
   public static Bytes get_domain(
-      final Bytes4 domain_type, final UnsignedLong epoch, final Fork fork) {
+      final Bytes4 domain_type,
+      final UnsignedLong epoch,
+      final Fork fork,
+      final Bytes32 genesis_validators_root) {
     Bytes4 fork_version =
         (epoch.compareTo(fork.getEpoch()) < 0)
             ? fork.getPrevious_version()
             : fork.getCurrent_version();
-    return compute_domain(domain_type, fork_version);
+    return compute_domain(domain_type, fork_version, genesis_validators_root);
   }
 
   /**

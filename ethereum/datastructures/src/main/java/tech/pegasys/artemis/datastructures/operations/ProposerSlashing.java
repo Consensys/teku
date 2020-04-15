@@ -13,35 +13,27 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
 public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  public static final int SSZ_FIELD_COUNT = 0;
 
-  private final UnsignedLong proposer_index;
   private final SignedBeaconBlockHeader header_1;
   private final SignedBeaconBlockHeader header_2;
 
-  public ProposerSlashing(
-      UnsignedLong proposer_index,
-      SignedBeaconBlockHeader header_1,
-      SignedBeaconBlockHeader header_2) {
-    this.proposer_index = proposer_index;
+  public ProposerSlashing(SignedBeaconBlockHeader header_1, SignedBeaconBlockHeader header_2) {
     this.header_1 = header_1;
     this.header_2 = header_2;
   }
@@ -53,8 +45,7 @@ public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable,
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList =
-        new ArrayList<>(List.of(SSZ.encodeUInt64(proposer_index.longValue())));
+    List<Bytes> fixedPartsList = new ArrayList<>();
     fixedPartsList.addAll(header_1.get_fixed_parts());
     fixedPartsList.addAll(header_2.get_fixed_parts());
     return fixedPartsList;
@@ -62,7 +53,7 @@ public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable,
 
   @Override
   public int hashCode() {
-    return Objects.hash(proposer_index, header_1, header_2);
+    return Objects.hash(header_1, header_2);
   }
 
   @Override
@@ -80,16 +71,11 @@ public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable,
     }
 
     ProposerSlashing other = (ProposerSlashing) obj;
-    return Objects.equals(this.getProposer_index(), other.getProposer_index())
-        && Objects.equals(this.getHeader_1(), other.getHeader_1())
+    return Objects.equals(this.getHeader_1(), other.getHeader_1())
         && Objects.equals(this.getHeader_2(), other.getHeader_2());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getProposer_index() {
-    return proposer_index;
-  }
-
   public SignedBeaconBlockHeader getHeader_1() {
     return header_1;
   }
@@ -101,10 +87,6 @@ public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable,
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue())),
-            header_1.hash_tree_root(),
-            header_2.hash_tree_root()));
+        Arrays.asList(header_1.hash_tree_root(), header_2.hash_tree_root()));
   }
 }

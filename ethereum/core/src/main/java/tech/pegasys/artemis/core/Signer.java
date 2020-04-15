@@ -17,13 +17,14 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_SELECTION_PROOF;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -35,29 +36,49 @@ public class Signer {
     this.signerService = signerService;
   }
 
-  public SafeFuture<BLSSignature> createRandaoReveal(final UnsignedLong epoch, final Fork fork) {
-    Bytes domain = get_domain(Constants.DOMAIN_RANDAO, epoch, fork);
+  public SafeFuture<BLSSignature> createRandaoReveal(
+      final UnsignedLong epoch, final ForkInfo forkInfo) {
+    Bytes domain =
+        get_domain(
+            Constants.DOMAIN_RANDAO,
+            epoch,
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
     Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
     return signerService.signRandaoReveal(signing_root);
   }
 
-  public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final Fork fork) {
+  public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
     final Bytes domain =
-        get_domain(Constants.DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(block.getSlot()), fork);
+        get_domain(
+            Constants.DOMAIN_BEACON_PROPOSER,
+            compute_epoch_at_slot(block.getSlot()),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
     final Bytes signing_root = compute_signing_root(block, domain);
     return signerService.signBlock(signing_root);
   }
 
   public SafeFuture<BLSSignature> signAttestationData(
-      final AttestationData attestationData, final Fork fork) {
+      final AttestationData attestationData, final ForkInfo forkInfo) {
     final Bytes domain =
-        get_domain(DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch(), fork);
+        get_domain(
+            DOMAIN_BEACON_ATTESTER,
+            attestationData.getTarget().getEpoch(),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(attestationData, domain);
     return signerService.signAttestation(signingRoot);
   }
 
-  public SafeFuture<BLSSignature> signAggregationSlot(final UnsignedLong slot, final Fork fork) {
-    final Bytes domain = get_domain(DOMAIN_BEACON_ATTESTER, compute_epoch_at_slot(slot), fork);
+  public SafeFuture<BLSSignature> signAggregationSlot(
+      final UnsignedLong slot, final ForkInfo forkInfo) {
+    final Bytes domain =
+        get_domain(
+            DOMAIN_SELECTION_PROOF,
+            compute_epoch_at_slot(slot),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(slot.longValue(), domain);
     return signerService.signAggregationSlot(signingRoot);
   }

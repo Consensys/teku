@@ -38,9 +38,13 @@ import static tech.pegasys.artemis.util.config.Constants.BASE_REWARDS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.BASE_REWARD_FACTOR;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.EJECTION_BALANCE;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.HYSTERESIS_DOWNWARD_MULTIPLIER;
+import static tech.pegasys.artemis.util.config.Constants.HYSTERESIS_QUOTIENT;
+import static tech.pegasys.artemis.util.config.Constants.HYSTERESIS_UPWARD_MULTIPLIER;
 import static tech.pegasys.artemis.util.config.Constants.INACTIVITY_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
@@ -76,7 +80,6 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.util.config.Constants;
 
 public final class EpochProcessorUtil {
 
@@ -130,7 +133,7 @@ public final class EpochProcessorUtil {
    */
   private static SSZList<PendingAttestation> get_matching_head_attestations(
       BeaconState state, UnsignedLong epoch) throws IllegalArgumentException {
-    return get_matching_source_attestations(state, epoch)
+    return get_matching_target_attestations(state, epoch)
         .filter(
             a ->
                 a.getData()
@@ -168,8 +171,9 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * Returns the total balance of all the distinct validators that have attested in the given
-   * attestations
+   * Returns the combined effective balance of the set of unslashed validators participating in
+   * attestations. Note: get_total_balance returns EFFECTIVE_BALANCE_INCREMENT Gwei minimum to avoid
+   * divisions by zero. attestations
    *
    * @param state
    * @param attestations
@@ -347,15 +351,11 @@ public final class EpochProcessorUtil {
           eligible_validator_base_rewards.entrySet()) {
         int index = index_base_reward.getKey();
         if (unslashed_attesting_indices.contains(index)) {
-          rewards.set(
-              index,
-              rewards
-                  .get(index)
-                  .plus(
-                      index_base_reward
-                          .getValue()
-                          .times(attesting_balance)
-                          .dividedBy(total_balance)));
+          // Factored out from balance totals to avoid uint64 overflow
+          UnsignedLong increment = EFFECTIVE_BALANCE_INCREMENT;
+          final UnsignedLong reward_numerator =
+              index_base_reward.getValue().times(attesting_balance.dividedBy(increment));
+          rewards.set(index, reward_numerator.dividedBy(total_balance.dividedBy(increment)));
         } else {
           penalties.set(index, penalties.get(index).plus(index_base_reward.getValue()));
         }
@@ -569,7 +569,7 @@ public final class EpochProcessorUtil {
           && epoch
               .plus(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR / 2))
               .equals(validator.getWithdrawable_epoch())) {
-        UnsignedLong increment = UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT);
+        UnsignedLong increment = EFFECTIVE_BALANCE_INCREMENT;
         UnsignedLong penalty_numerator =
             validator
                 .getEffective_balance()
@@ -598,10 +598,8 @@ public final class EpochProcessorUtil {
     UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
     // Reset eth1 data votes
-    if (state
-        .getSlot()
-        .plus(UnsignedLong.ONE)
-        .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_ETH1_VOTING_PERIOD))
+    if (next_epoch
+        .mod(UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD))
         .equals(UnsignedLong.ZERO)) {
       state.getEth1_data_votes().clear();
     }
@@ -612,22 +610,22 @@ public final class EpochProcessorUtil {
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);
       UnsignedLong balance = balances.get(index);
-      long HALF_INCREMENT = Constants.EFFECTIVE_BALANCE_INCREMENT / 2;
-      if (balance.compareTo(validator.getEffective_balance()) < 0
-          || validator
-                  .getEffective_balance()
-                  .plus(UnsignedLong.valueOf(3 * HALF_INCREMENT))
-                  .compareTo(balance)
-              < 0) {
 
+      final UnsignedLong hysteresis_increment =
+          EFFECTIVE_BALANCE_INCREMENT.dividedBy(HYSTERESIS_QUOTIENT);
+      final UnsignedLong downward_threshold =
+          hysteresis_increment.times(HYSTERESIS_DOWNWARD_MULTIPLIER);
+      final UnsignedLong upward_threshold =
+          hysteresis_increment.times(HYSTERESIS_UPWARD_MULTIPLIER);
+      if (balance.plus(downward_threshold).compareTo(validator.getEffective_balance()) < 0
+          || validator.getEffective_balance().plus(upward_threshold).compareTo(balance) < 0) {
         state
             .getValidators()
             .set(
                 index,
                 validator.withEffective_balance(
                     min(
-                        balance.minus(
-                            balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
+                        balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)),
                         UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))));
       }
     }

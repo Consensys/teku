@@ -15,9 +15,10 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.pow.Eth1DataManager.getCacheRangeLowerBound;
 import static tech.pegasys.artemis.pow.Eth1DataManager.hasBeenApproximately;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -124,7 +125,7 @@ public class Eth1DataCache implements TimeTickChannel {
 
   private UnsignedLong getVotingPeriodStartTime(UnsignedLong slot) {
     UnsignedLong eth1VotingPeriodStartSlot =
-        slot.minus(slot.mod(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)));
+        slot.minus(slot.mod(UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH)));
     return computeTimeAtSlot(eth1VotingPeriodStartSlot);
   }
 

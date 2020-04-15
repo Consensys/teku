@@ -63,7 +63,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
     storeRequestFuture.complete(Optional.of(genesisStore));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -94,7 +94,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.get().getStore()).isNull();
 
     // Now set the genesis state
-    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
     client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -123,7 +123,7 @@ public class StorageBackedRecentChainDataTest {
     asyncRunner.executeQueuedActions();
 
     // Now set the genesis state
-    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
     storeRequestFuture.complete(Optional.of(genesisStore));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
