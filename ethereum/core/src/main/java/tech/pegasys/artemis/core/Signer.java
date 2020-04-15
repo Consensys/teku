@@ -37,13 +37,13 @@ public class Signer {
   }
 
   public SafeFuture<BLSSignature> createRandaoReveal(
-      final UnsignedLong epoch, final ForkInfo forkIfno) {
+      final UnsignedLong epoch, final ForkInfo forkInfo) {
     Bytes domain =
         get_domain(
             Constants.DOMAIN_RANDAO,
             epoch,
-            forkIfno.getFork(),
-            forkIfno.getGenesisValidatorsRoot());
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
     Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
     return signerService.signRandaoReveal(signing_root);
   }
