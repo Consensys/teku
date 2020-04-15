@@ -166,7 +166,9 @@ public class V3RocksDbDao implements RocksDbDao {
       throw new DatabaseStorageException("Missing latest finalized block information");
     }
 
+    LOG.info("Initializing hot states from hot blocks");
     initializeHotStates(finalizedRoot.get(), finalizedState.get(), hotBlocksByRoot);
+    LOG.info("Finished initializing hot states from hot blocks");
   }
 
   private void initializeHotStates(
