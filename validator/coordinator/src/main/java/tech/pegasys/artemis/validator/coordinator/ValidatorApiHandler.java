@@ -52,7 +52,6 @@ import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
@@ -60,7 +59,6 @@ import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.async.ExceptionThrowingFunction;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
@@ -72,7 +70,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
-  private final AttestationAggregator attestationAggregator;
   private final AttestationTopicSubscriptions attestationTopicSubscriptions;
   private final EventBus eventBus;
 
@@ -82,7 +79,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
-      final AttestationAggregator attestationAggregator,
       final AttestationTopicSubscriptions attestationTopicSubscriptions,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
@@ -90,7 +86,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
-    this.attestationAggregator = attestationAggregator;
     this.attestationTopicSubscriptions = attestationTopicSubscriptions;
     this.eventBus = eventBus;
   }
@@ -217,9 +212,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
     attestationPool.add(attestation);
-    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
-      attestationAggregator.addOwnValidatorAttestation(attestation);
-    }
     eventBus.post(attestation);
   }
 

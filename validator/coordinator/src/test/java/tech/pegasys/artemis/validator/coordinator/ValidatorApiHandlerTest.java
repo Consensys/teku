@@ -45,14 +45,12 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
@@ -67,7 +65,6 @@ class ValidatorApiHandlerTest {
   private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
-  private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
   private final AttestationTopicSubscriptions attestationTopicSubscriptions =
       mock(AttestationTopicSubscriptions.class);
   private final EventBus eventBus = mock(EventBus.class);
@@ -79,7 +76,6 @@ class ValidatorApiHandlerTest {
           stateTransition,
           blockFactory,
           attestationPool,
-          attestationAggregator,
           attestationTopicSubscriptions,
           eventBus);
 
@@ -320,9 +316,6 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendSignedAttestation(attestation);
 
     verify(attestationPool).add(attestation);
-    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
-      verify(attestationAggregator).addOwnValidatorAttestation(attestation);
-    }
     verify(eventBus).post(attestation);
   }
 
