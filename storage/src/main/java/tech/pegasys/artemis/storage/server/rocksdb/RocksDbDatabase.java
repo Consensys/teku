@@ -38,8 +38,8 @@ import tech.pegasys.artemis.storage.server.StateStorageMode;
 import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstanceFactory;
-import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDAO;
-import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDAO.Updater;
+import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDao;
+import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDao.Updater;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.V2RocksDbDao;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.artemis.storage.server.rocksdb.schema.V2Schema;
@@ -50,23 +50,23 @@ public class RocksDbDatabase implements Database {
   private static final Logger LOG = LogManager.getLogger();
   private final StateStorageMode stateStorageMode;
 
-  private final RocksDbDAO dao;
+  private final RocksDbDao dao;
 
   public static Database createV2(
       final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
     final RocksDbInstance db = RocksDbInstanceFactory.create(configuration, V2Schema.class);
-    final RocksDbDAO dao = new V2RocksDbDao(db);
+    final RocksDbDao dao = new V2RocksDbDao(db);
     return new RocksDbDatabase(dao, stateStorageMode);
   }
 
   public static Database createV3(
       final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
     final RocksDbInstance db = RocksDbInstanceFactory.create(configuration, V3Schema.class);
-    final RocksDbDAO dao = new V3RocksDbDao(db);
+    final RocksDbDao dao = new V3RocksDbDao(db);
     return new RocksDbDatabase(dao, stateStorageMode);
   }
 
-  private RocksDbDatabase(final RocksDbDAO dao, final StateStorageMode stateStorageMode) {
+  private RocksDbDatabase(final RocksDbDao dao, final StateStorageMode stateStorageMode) {
     this.stateStorageMode = stateStorageMode;
     this.dao = dao;
   }
@@ -242,7 +242,7 @@ public class RocksDbDatabase implements Database {
       return Collections.emptySet();
     }
     final UnsignedLong finalizedSlot = newlyFinalizedBlock.get().getSlot();
-    return updater.pruneHotBlocksAtSlotsGreaterThan(finalizedSlot);
+    return updater.pruneHotBlocksAtSlotsOlderThan(finalizedSlot);
   }
 
   private void recordFinalizedBlocks(
@@ -268,6 +268,7 @@ public class RocksDbDatabase implements Database {
         putFinalizedState(updater, newlyFinalizedBlockRoot, finalizedState.get());
         if (isLatestFinalizedBlock) {
           updater.setLatestFinalizedState(finalizedState.get());
+          isLatestFinalizedBlock = false;
         }
       } else {
         LOG.error(
@@ -277,7 +278,6 @@ public class RocksDbDatabase implements Database {
       }
 
       // Update for next round of iteration
-      isLatestFinalizedBlock = false;
       newlyFinalizedBlockRoot = newlyFinalizedBlock.get().getMessage().getParent_root();
       newlyFinalizedBlock = getHotBlock(update, newlyFinalizedBlockRoot);
     }

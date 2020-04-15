@@ -44,7 +44,7 @@ import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance.Transaction;
 import tech.pegasys.artemis.storage.server.rocksdb.schema.V3Schema;
 
-public class V3RocksDbDao implements RocksDbDAO {
+public class V3RocksDbDao implements RocksDbDao {
   private static final Logger LOG = LogManager.getLogger();
 
   // Persistent data
@@ -206,7 +206,7 @@ public class V3RocksDbDao implements RocksDbDAO {
 
     if (hotStates.size() != hotBlocksByRoot.size()) {
       LOG.trace(
-          "Only {} hot states produced for {} hot blocks.  Some hot blocks must belong to non-canonical forks.",
+          "Only {} hot states produced for {} hot blocks.  Some hot blocks must be incompatible with the latest finalized block.",
           hotStates.size(),
           hotBlocksByRoot.size());
     }
@@ -328,9 +328,9 @@ public class V3RocksDbDao implements RocksDbDAO {
     }
 
     @Override
-    public Set<Bytes32> pruneHotBlocksAtSlotsGreaterThan(final UnsignedLong slot) {
-      final Map<UnsignedLong, Set<Bytes32>> toRemove = hotRootsBySlotCache.headMap(slot);
-      toRemove.putAll(hotRootsBySlotAdditions.headMap(slot));
+    public Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot) {
+      final Map<UnsignedLong, Set<Bytes32>> toRemove = hotRootsBySlotAdditions.headMap(slot);
+      toRemove.putAll(hotRootsBySlotCache.headMap(slot));
 
       final Set<Bytes32> prunedRoots =
           toRemove.values().stream().flatMap(Set::stream).collect(Collectors.toSet());

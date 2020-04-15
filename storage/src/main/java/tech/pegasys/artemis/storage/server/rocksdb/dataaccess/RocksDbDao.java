@@ -29,7 +29,7 @@ import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
  *
  * @see <a href="https://en.wikipedia.org/wiki/Data_access_object">DAO</a>
  */
-public interface RocksDbDAO extends AutoCloseable {
+public interface RocksDbDao extends AutoCloseable {
 
   Optional<UnsignedLong> getGenesisTime();
 
@@ -94,12 +94,13 @@ public interface RocksDbDAO extends AutoCloseable {
     void deleteCheckpointState(final Checkpoint checkpoint);
 
     /**
-     * Prune hot blocks and associated states at slots greater than the given slot
+     * Prune hot blocks and associated states at slots less than the given slot. Blocks at the
+     * height of {@code slot} are not pruned.
      *
-     * @param slot The last slot that we want to keep in hot storage
+     * @param slot The oldest slot that we want to keep in hot storage
      * @return A list of pruned block roots
      */
-    Set<Bytes32> pruneHotBlocksAtSlotsGreaterThan(final UnsignedLong slot);
+    Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot);
 
     void commit();
 

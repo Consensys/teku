@@ -48,7 +48,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
   @Test
   public void shouldHandleRestartWithUnrecoverableForkBlocks_prune(@TempDir final Path tempDir)
       throws Exception {
-    testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.ARCHIVE);
+    testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.PRUNE);
   }
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(

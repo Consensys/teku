@@ -33,7 +33,7 @@ import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance.Transaction;
 import tech.pegasys.artemis.storage.server.rocksdb.schema.V2Schema;
 
-public class V2RocksDbDao implements RocksDbDAO {
+public class V2RocksDbDao implements RocksDbDao {
   // Persistent data
   private final RocksDbInstance db;
   // In-memory data
@@ -130,7 +130,7 @@ public class V2RocksDbDao implements RocksDbDAO {
     db.close();
   }
 
-  private static class V2Updater implements RocksDbDAO.Updater {
+  private static class V2Updater implements RocksDbDao.Updater {
 
     private final Transaction transaction;
     private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache;
@@ -223,9 +223,9 @@ public class V2RocksDbDao implements RocksDbDAO {
     }
 
     @Override
-    public Set<Bytes32> pruneHotBlocksAtSlotsGreaterThan(final UnsignedLong slot) {
-      final Map<UnsignedLong, Set<Bytes32>> toRemove = hotRootsBySlotCache.headMap(slot);
-      toRemove.putAll(hotRootsBySlotAdditions.headMap(slot));
+    public Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot) {
+      final Map<UnsignedLong, Set<Bytes32>> toRemove = hotRootsBySlotAdditions.headMap(slot);
+      toRemove.putAll(hotRootsBySlotCache.headMap(slot));
 
       final Set<Bytes32> prunedRoots =
           toRemove.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
