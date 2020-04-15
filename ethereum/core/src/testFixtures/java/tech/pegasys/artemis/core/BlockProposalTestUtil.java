@@ -21,6 +21,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.core.signatures.MessageSignerService;
 import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -33,14 +35,17 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 
 public class BlockProposalTestUtil {
 
   private final BlockProposalUtil blockProposalUtil;
+  private final StateTransition stateTransition;
 
   public BlockProposalTestUtil() {
-    blockProposalUtil = new BlockProposalUtil(new StateTransition());
+    stateTransition = new StateTransition();
+    blockProposalUtil = new BlockProposalUtil(stateTransition);
   }
 
   public SignedBlockAndState createNewBlock(
@@ -61,7 +66,7 @@ public class BlockProposalTestUtil {
     final BeaconBlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
-            blockProposalUtil.getProposerIndexForSlot(state, newSlot),
+            getProposerIndexForSlot(state, newSlot),
             randaoReveal,
             state,
             parentBlockSigningRoot,
@@ -125,6 +130,12 @@ public class BlockProposalTestUtil {
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
-    return blockProposalUtil.getProposerIndexForSlot(preState, slot);
+    BeaconState state;
+    try {
+      state = stateTransition.process_slots(preState, slot);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    return BeaconStateUtil.get_beacon_proposer_index(state);
   }
 }
