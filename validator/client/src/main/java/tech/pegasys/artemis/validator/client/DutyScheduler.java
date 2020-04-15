@@ -207,8 +207,13 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   private void whenDutiesScheduled(final UnsignedLong slot, final Consumer<UnsignedLong> action) {
-    pendingDutiesByEpoch
-        .getOrDefault(compute_epoch_at_slot(slot), SafeFuture.COMPLETE)
-        .finish(() -> action.accept(slot));
+    // We chain the futures to ensure all actions always happen in their original order.
+    final SafeFuture<Void> delayedAction =
+        pendingDutiesByEpoch.computeIfPresent(
+            compute_epoch_at_slot(slot),
+            (epoch, future) -> future.thenRun(() -> action.accept(slot)));
+    if (delayedAction == null) {
+      action.accept(slot);
+    }
   }
 }
