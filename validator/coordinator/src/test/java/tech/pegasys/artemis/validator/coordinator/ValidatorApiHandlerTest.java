@@ -198,18 +198,17 @@ class ValidatorApiHandlerTest {
     final UnsignedLong newSlot = UnsignedLong.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final BeaconState previousState = dataStructureUtil.randomBeaconState();
-    final BeaconBlock previousBlock =
-        dataStructureUtil.randomBeaconBlock(previousState.getSlot().longValue());
+    final BeaconBlockAndState previousBlockAndState =
+        dataStructureUtil.randomBlockAndState(previousState.getSlot(), previousState);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getBestSlot()).thenReturn(UnsignedLong.valueOf(24));
     when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE), blockRoot))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(new BeaconBlockAndState(previousBlock, previousState))));
-    when(blockFactory.createUnsignedBlock(previousState, previousBlock, newSlot, randaoReveal))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(previousBlockAndState)));
+    when(blockFactory.createUnsignedBlock(
+            previousState, previousBlockAndState.getBlock(), newSlot, randaoReveal))
         .thenReturn(createdBlock);
 
     final SafeFuture<Optional<BeaconBlock>> result =
@@ -243,12 +242,13 @@ class ValidatorApiHandlerTest {
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final BeaconState state = createStateWithActiveValidators();
     final UnsignedLong slot = state.getSlot().plus(UnsignedLong.valueOf(5));
-    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(state.getSlot().longValue());
+    final BeaconBlockAndState blockAndState =
+        dataStructureUtil.randomBlockAndState(state.getSlot(), state);
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getBestSlot()).thenReturn(slot);
     when(chainDataClient.getBlockAndStateInEffectAtSlot(slot, blockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(new BeaconBlockAndState(block, state))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
 
     final int committeeIndex = 0;
     final SafeFuture<Optional<Attestation>> result =
@@ -263,7 +263,7 @@ class ValidatorApiHandlerTest {
     assertThat(attestation.getData())
         .isEqualTo(
             AttestationUtil.getGenericAttestationData(
-                slot, state, block, UnsignedLong.valueOf(committeeIndex)));
+                slot, state, blockAndState.getBlock(), UnsignedLong.valueOf(committeeIndex)));
     assertThat(attestation.getData().getSlot()).isEqualTo(slot);
     assertThat(attestation.getAggregate_signature().toBytes())
         .isEqualTo(BLSSignature.empty().toBytes());

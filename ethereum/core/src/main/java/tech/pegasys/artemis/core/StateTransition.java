@@ -212,7 +212,9 @@ public class StateTransition {
     try {
       checkArgument(
           preState.getSlot().compareTo(slot) <= 0,
-          "process_slots: State slot higher than given slot");
+          "process_slots: State slot %s higher than given slot %s",
+          preState.getSlot(),
+          slot);
       BeaconState state = preState;
       while (state.getSlot().compareTo(slot) < 0) {
         state = process_slot(state);

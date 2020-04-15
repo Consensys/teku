@@ -11,13 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.signer;
+package tech.pegasys.artemis.core.signatures;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class LocalMessageSignerService implements MessageSignerService {

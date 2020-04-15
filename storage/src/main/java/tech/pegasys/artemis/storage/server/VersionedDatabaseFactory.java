@@ -59,6 +59,9 @@ public class VersionedDatabaseFactory {
       case V2:
         database = createV2Database();
         break;
+      case V3:
+        database = createV3Database();
+        break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
@@ -73,7 +76,13 @@ public class VersionedDatabaseFactory {
   private Database createV2Database() {
     final RocksDbConfiguration rocksDbConfiguration =
         RocksDbConfiguration.withDataDirectory(dbDirectory.toPath());
-    return RocksDbDatabase.createOnDisk(rocksDbConfiguration, stateStorageMode);
+    return RocksDbDatabase.createV2(rocksDbConfiguration, stateStorageMode);
+  }
+
+  private Database createV3Database() {
+    final RocksDbConfiguration rocksDbConfiguration =
+        RocksDbConfiguration.withDataDirectory(dbDirectory.toPath());
+    return RocksDbDatabase.createV3(rocksDbConfiguration, stateStorageMode);
   }
 
   private void validateDataPaths() {

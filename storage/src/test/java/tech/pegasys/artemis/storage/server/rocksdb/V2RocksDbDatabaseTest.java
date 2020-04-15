@@ -11,19 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.validator;
+package tech.pegasys.artemis.storage.server.rocksdb;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import java.io.File;
+import tech.pegasys.artemis.storage.server.Database;
+import tech.pegasys.artemis.storage.server.StateStorageMode;
 
-public interface MessageSignerService {
+public class V2RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
-  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
+  @Override
+  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
+    final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
+    return RocksDbDatabase.createV2(config, storageMode);
+  }
 }
