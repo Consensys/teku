@@ -41,7 +41,6 @@ import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
-import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
@@ -105,10 +104,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile BlockImporter blockImporter;
   private volatile RecentChainData recentChainData;
   private volatile Eth2Network p2pNetwork;
-  private volatile SettableGauge currentSlotGauge;
-  private volatile SettableGauge currentEpochGauge;
-  private volatile SettableGauge finalizedEpochGauge;
-  private volatile SettableGauge justifiedEpochGauge;
   private volatile BeaconRestApi beaconRestAPI;
   private volatile AttestationAggregator attestationAggregator;
   private volatile AggregatingAttestationPool attestationPool;
@@ -221,32 +216,44 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(FinalizedCheckpointChannel.class, forkChoice);
   }
 
+  private long getCurrentSlotValue() {
+    return nodeSlot.longValue();
+  }
+
+  private long getCurrentEpochValue() {
+    return compute_epoch_at_slot(nodeSlot).longValue();
+  }
+
+  private long getFinalizedEpochValue() {
+    return recentChainData.getFinalizedEpoch().longValue();
+  }
+
+  private long getJustifiedEpochValue() {
+    return recentChainData.getStore().getBestJustifiedCheckpoint().getEpoch().longValue();
+  }
+
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
-    currentSlotGauge =
-        SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.BEACON,
-            "slot",
-            "Latest slot recorded by the beacon chain");
-    currentEpochGauge =
-        SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.BEACON,
-            "current_epoch",
-            "Latest epoch recorded by the beacon chain");
-    finalizedEpochGauge =
-        SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.BEACON,
-            "finalized_epoch",
-            "Current finalized epoch");
-    justifiedEpochGauge =
-        SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.BEACON,
-            "justified_epoch",
-            "Current justified epoch");
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "slot",
+        "Latest slot recorded by the beacon chain",
+        this::getCurrentSlotValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "current_epoch",
+        "Latest epoch recorded by the beacon chain",
+        this::getCurrentEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "finalized_epoch",
+        "Current finalized epoch",
+        this::getFinalizedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "justified_epoch",
+        "Current justified epoch",
+        this::getJustifiedEpochValue);
   }
 
   public void initDepositProvider() {
@@ -496,11 +503,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       }
 
       slotEventsChannelPublisher.onSlot(nodeSlot);
-      this.currentSlotGauge.set(nodeSlot.longValue());
-      this.currentEpochGauge.set(nodeEpoch.longValue());
-      this.finalizedEpochGauge.set(recentChainData.getFinalizedEpoch().longValue());
-      this.justifiedEpochGauge.set(
-          recentChainData.getStore().getBestJustifiedCheckpoint().getEpoch().longValue());
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.forkChoice.processHead();
       EVENT_LOG.slotEvent(
