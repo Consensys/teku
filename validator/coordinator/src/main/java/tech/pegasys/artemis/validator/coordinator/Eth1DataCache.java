@@ -51,10 +51,10 @@ public class Eth1DataCache implements TimeTickChannel {
     eventBus.register(this);
   }
 
-  public void startBeaconChainMode(BeaconState genesisState) {
-    this.genesisTime = Optional.of(genesisState.getGenesis_time());
-    this.currentVotingPeriodStartTime = getVotingPeriodStartTime(genesisState.getSlot());
-    this.onSlot(genesisState.getSlot());
+  public void startBeaconChainMode(BeaconState headState) {
+    this.genesisTime = Optional.of(headState.getGenesis_time());
+    this.currentVotingPeriodStartTime = getVotingPeriodStartTime(headState.getSlot());
+    this.onSlot(headState.getSlot());
   }
 
   @Subscribe
@@ -72,7 +72,7 @@ public class Eth1DataCache implements TimeTickChannel {
     prune();
   }
 
-  // Called by ValidatorCoordinator not the event bus to ensure we process slot events in sync
+  // Called by BeaconChainController not the event bus to ensure we process slot events in sync
   public void onSlot(UnsignedLong slot) {
     if (genesisTime.isEmpty()) {
       return;
