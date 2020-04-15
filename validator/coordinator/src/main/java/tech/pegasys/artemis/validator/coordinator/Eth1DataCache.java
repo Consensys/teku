@@ -72,7 +72,7 @@ public class Eth1DataCache implements TimeTickChannel {
     prune();
   }
 
-  // Called by ValidatorCoordinator not the event bus to ensure we process slot events in sync
+  // Called by BeaconChainController not the event bus to ensure we process slot events in sync
   public void onSlot(UnsignedLong slot) {
     if (genesisTime.isEmpty()) {
       return;
