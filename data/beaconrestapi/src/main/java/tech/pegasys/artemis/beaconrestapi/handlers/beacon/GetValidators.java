@@ -39,7 +39,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,7 +74,6 @@ public class GetValidators extends AbstractHandler implements Handler {
       queryParams = {
         @OpenApiParam(
             name = EPOCH,
-            type = BigDecimal.class,
             description = EPOCH_QUERY_DESCRIPTION + " Defaults to the current epoch."),
         @OpenApiParam(
             name = ACTIVE,
