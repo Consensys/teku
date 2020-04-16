@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,6 +27,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
@@ -45,14 +47,12 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.config.FeatureToggles;
 import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
@@ -67,7 +67,6 @@ class ValidatorApiHandlerTest {
   private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
-  private final AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
   private final EventBus eventBus = mock(EventBus.class);
@@ -79,7 +78,6 @@ class ValidatorApiHandlerTest {
           stateTransition,
           blockFactory,
           attestationPool,
-          attestationAggregator,
           attestationTopicSubscriptions,
           eventBus);
 
@@ -132,6 +130,23 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void getDuties_shouldNotIncludeBlockProductionDutyForGenesisSlot() {
+    final BeaconState state = createStateWithActiveValidators(ZERO);
+    when(chainDataClient.getStateAtSlot(ZERO)).thenReturn(completedFuture(Optional.of(state)));
+
+    final List<BLSPublicKey> allValidatorKeys =
+        state.getValidators().stream().map(Validator::getPubkey).collect(Collectors.toList());
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
+        validatorApiHandler.getDuties(ZERO, allValidatorKeys);
+    final List<ValidatorDuties> duties = assertCompletedSuccessfully(result).orElseThrow();
+    assertThat(
+            duties.stream()
+                .flatMap(duty -> duty.getDuties().stream())
+                .flatMap(duty -> duty.getBlockProposalSlots().stream()))
+        .doesNotContain(ZERO);
+  }
+
+  @Test
   public void getDuties_shouldReturnDutiesForMixOfKnownAndUnknownValidators() {
     final BeaconState state = createStateWithActiveValidators();
     when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
@@ -165,10 +180,10 @@ class ValidatorApiHandlerTest {
   public void getDuties_shouldUseGenesisStateForFirstEpoch() {
     when(chainDataClient.getStateAtSlot(any())).thenReturn(new SafeFuture<>());
     validatorApiHandler
-        .getDuties(UnsignedLong.ZERO, List.of(dataStructureUtil.randomPublicKey()))
+        .getDuties(ZERO, List.of(dataStructureUtil.randomPublicKey()))
         .reportExceptions();
 
-    verify(chainDataClient).getStateAtSlot(UnsignedLong.ZERO);
+    verify(chainDataClient).getStateAtSlot(ZERO);
   }
 
   @Test
@@ -320,9 +335,6 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendSignedAttestation(attestation);
 
     verify(attestationPool).add(attestation);
-    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
-      verify(attestationAggregator).addOwnValidatorAttestation(attestation);
-    }
     verify(eventBus).post(attestation);
   }
 
@@ -349,19 +361,23 @@ class ValidatorApiHandlerTest {
   }
 
   private BeaconState createStateWithActiveValidators() {
+    return createStateWithActiveValidators(PREVIOUS_EPOCH_START_SLOT);
+  }
+
+  private BeaconState createStateWithActiveValidators(final UnsignedLong slot) {
     return dataStructureUtil
         .randomBeaconState(32)
         .updated(
             state -> {
-              state.setSlot(PREVIOUS_EPOCH_START_SLOT);
+              state.setSlot(slot);
               final SSZMutableList<Validator> validators = state.getValidators();
               for (int i = 0; i < validators.size(); i++) {
                 validators.update(
                     i,
                     validator ->
                         validator
-                            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
-                            .withActivation_epoch(UnsignedLong.ZERO)
+                            .withActivation_eligibility_epoch(ZERO)
+                            .withActivation_epoch(ZERO)
                             .withExit_epoch(Constants.FAR_FUTURE_EPOCH)
                             .withWithdrawable_epoch(Constants.FAR_FUTURE_EPOCH));
               }

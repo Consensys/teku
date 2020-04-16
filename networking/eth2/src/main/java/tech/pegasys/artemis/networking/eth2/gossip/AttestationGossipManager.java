@@ -18,6 +18,8 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,25 +28,19 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final EventBus eventBus;
   private final AttestationSubnetSubscriptions subnetSubscriptions;
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttestationGossipManager(
       final GossipNetwork gossipNetwork,
-      final EventBus eventBus,
       final RecentChainData recentChainData) {
     subnetSubscriptions =
-        new AttestationSubnetSubscriptions(gossipNetwork, recentChainData, eventBus);
-    this.eventBus = eventBus;
-    eventBus.register(this);
+        new AttestationSubnetSubscriptions(gossipNetwork, recentChainData);
   }
 
   @Subscribe
@@ -62,23 +58,8 @@ public class AttestationGossipManager {
     channel.get().gossip(data);
   }
 
-  @Subscribe
-  public void onCommitteeAssignment(CommitteeAssignmentEvent assignmentEvent) {
-    for (int committeeIndex : assignmentEvent.getCommitteeIndices()) {
-      subnetSubscriptions.subscribeToCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
-    }
-  }
-
   public void subscribeToCommitteeTopic(final int committeeIndex) {
     subnetSubscriptions.subscribeToCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
-  }
-
-  @Subscribe
-  public void onCommitteeDismissal(CommitteeDismissalEvent dismissalEvent) {
-    List<Integer> committeeIndices = dismissalEvent.getCommitteeIndices();
-    for (int committeeIndex : committeeIndices) {
-      unsubscribeFromCommitteeTopic(committeeIndex);
-    }
   }
 
   public void unsubscribeFromCommitteeTopic(final int committeeIndex) {
@@ -87,7 +68,6 @@ public class AttestationGossipManager {
 
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
-      eventBus.unregister(this);
       subnetSubscriptions.close();
     }
   }

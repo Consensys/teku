@@ -18,6 +18,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -27,6 +29,7 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.Validator;
 
 public class AggregationDuty implements Duty {
+  private static final Logger LOG = LogManager.getLogger();
   private final ConcurrentMap<Integer, CommitteeAggregator> aggregatorsByCommitteeIndex =
       new ConcurrentHashMap<>();
   private final UnsignedLong slot;
@@ -65,6 +68,7 @@ public class AggregationDuty implements Duty {
 
   @Override
   public SafeFuture<?> performDuty() {
+    LOG.trace("Aggregating attestations at slot {}", slot);
     return SafeFuture.allOf(
         aggregatorsByCommitteeIndex.values().stream()
             .map(this::aggregateCommittee)

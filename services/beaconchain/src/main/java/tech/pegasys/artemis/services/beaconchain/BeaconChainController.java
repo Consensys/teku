@@ -39,6 +39,7 @@ import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.core.BlockProposalUtil;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -49,7 +50,6 @@ import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
@@ -86,7 +86,6 @@ import tech.pegasys.artemis.validator.coordinator.BlockFactory;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.Eth1DataCache;
 import tech.pegasys.artemis.validator.coordinator.ValidatorApiHandler;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -105,12 +104,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile RecentChainData recentChainData;
   private volatile Eth2Network p2pNetwork;
   private volatile BeaconRestApi beaconRestAPI;
-  private volatile AttestationAggregator attestationAggregator;
   private volatile AggregatingAttestationPool attestationPool;
   private volatile DepositProvider depositProvider;
   private volatile SyncService syncService;
   private volatile AttestationManager attestationManager;
-  private volatile ValidatorCoordinator validatorCoordinator;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
 
@@ -140,7 +137,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .thenCompose(
             __ ->
                 SafeFuture.allOfFailFast(
-                    validatorCoordinator.start(),
                     attestationManager.start(),
                     p2pNetwork.start(),
                     syncService.start(),
@@ -153,7 +149,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
         SafeFuture.fromRunnable(beaconRestAPI::stop),
-        validatorCoordinator.stop(),
         syncService.stop(),
         attestationManager.stop(),
         SafeFuture.fromRunnable(p2pNetwork::stop));
@@ -185,11 +180,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initBlockImporter();
     initCombinedChainDataClient();
     initMetrics();
-    initAttestationAggregator();
     initAttestationPool();
     initDepositProvider();
     initEth1DataCache();
-    initValidatorCoordinator();
     initGenesisHandler();
     initAttestationPropagationManager();
     initP2PNetwork();
@@ -266,22 +259,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
-    eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
-    eventChannels.subscribe(TimeTickChannel.class, eth1DataCache);
-  }
-
-  public void initValidatorCoordinator() {
-    LOG.debug("BeaconChainController.initValidatorCoordinator()");
-    this.validatorCoordinator =
-        new ValidatorCoordinator(
-            eventBus,
-            eventChannels.getPublisher(ValidatorApiChannel.class),
-            recentChainData,
-            attestationAggregator,
-            attestationPool,
-            eth1DataCache,
-            config);
-    eventChannels.subscribe(SlotEventsChannel.class, validatorCoordinator);
+    eth1DataCache = new Eth1DataCache(eventBus);
+    recentChainData.subscribeBestBlockInitialized(
+        () -> {
+          final Bytes32 head = recentChainData.getBestBlockRoot().orElseThrow();
+          final BeaconState headState = recentChainData.getStore().getBlockState(head);
+          eth1DataCache.startBeaconChainMode(headState);
+        });
   }
 
   public void initValidatorApiHandler() {
@@ -302,7 +286,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             stateTransition,
             blockFactory,
             attestationPool,
-            attestationAggregator,
             attestationTopicSubscriptions,
             eventBus);
     eventChannels
@@ -388,11 +371,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool = new AggregatingAttestationPool();
-  }
-
-  public void initAttestationAggregator() {
-    LOG.debug("BeaconChainController.initAttestationAggregator()");
-    attestationAggregator = new AttestationAggregator();
   }
 
   public void initRestAPI() {

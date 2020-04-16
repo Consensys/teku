@@ -33,8 +33,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
 
 public class GossipMessageHandlerIntegrationTest {
@@ -197,15 +195,11 @@ public class GossipMessageHandlerIntegrationTest {
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
 
     node1
-        .eventBus()
-        .post(
-            new CommitteeAssignmentEvent(
-                List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
     node2
-        .eventBus()
-        .post(
-            new CommitteeAssignmentEvent(
-                List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
 
     waitForTopicRegistration();
 
@@ -244,15 +238,11 @@ public class GossipMessageHandlerIntegrationTest {
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
 
     node1
-        .eventBus()
-        .post(
-            new CommitteeAssignmentEvent(
-                List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
     node2
-        .eventBus()
-        .post(
-            new CommitteeAssignmentEvent(
-                List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
 
     waitForTopicRegistration();
 
@@ -263,13 +253,11 @@ public class GossipMessageHandlerIntegrationTest {
     assertTrue(network2Attestations.getAttestations().contains(validAttestation));
 
     node1
-        .eventBus()
-        .post(
-            new CommitteeDismissalEvent(List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .unsubscribeFromAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
     node2
-        .eventBus()
-        .post(
-            new CommitteeDismissalEvent(List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .unsubscribeFromAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
 
     waitForTopicDeregistration();
 

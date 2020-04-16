@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -169,6 +170,37 @@ class DutySchedulerTest {
     // Execute
     dutyScheduler.onBlockProductionDue(blockProposerSlot);
     verify(blockCreationDuty).performDuty();
+  }
+
+  @Test
+  public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
+    final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+    final DutyScheduler dutyScheduler =
+        new DutyScheduler(
+            asyncRunner,
+            validatorApiChannel,
+            forkProvider,
+            scheduledDuties,
+            Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
+    final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
+
+    when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
+    when(validatorApiChannel.getDuties(eq(ONE), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
+    dutyScheduler.onSlot(ZERO);
+
+    dutyScheduler.onBlockProductionDue(ZERO);
+    dutyScheduler.onAttestationCreationDue(ZERO);
+    dutyScheduler.onAttestationAggregationDue(ZERO);
+    // Duties haven't been loaded yet.
+    verify(scheduledDuties, never()).produceBlock(ZERO);
+    verify(scheduledDuties, never()).produceAttestations(ZERO);
+    verify(scheduledDuties, never()).performAggregation(ZERO);
+
+    epoch0Duties.complete(Optional.of(emptyList()));
+    verify(scheduledDuties).produceBlock(ZERO);
+    verify(scheduledDuties).produceAttestations(ZERO);
+    verify(scheduledDuties).performAggregation(ZERO);
   }
 
   @Test

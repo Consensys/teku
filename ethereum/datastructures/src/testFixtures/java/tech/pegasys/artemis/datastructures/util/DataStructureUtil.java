@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.LongStream;
@@ -143,13 +144,15 @@ public final class DataStructureUtil {
   }
 
   public Bitvector randomBitvector(int n) {
-    byte[] byteArray = new byte[n];
+    BitSet bitSet = new BitSet(n);
     Random random = new Random(nextSeed());
 
     for (int i = 0; i < n; i++) {
-      byteArray[i] = (byte) (random.nextBoolean() ? 1 : 0);
+      if (random.nextBoolean()) {
+        bitSet.set(i);
+      }
     }
-    return new Bitvector(byteArray, n);
+    return new Bitvector(bitSet, n);
   }
 
   public BLSPublicKey randomPublicKey() {
