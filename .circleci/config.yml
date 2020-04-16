@@ -1,9 +1,6 @@
 ---
 version: 2.1
 
-orbs:
-  gh-pages: sugarshin/gh-pages@0.0.6
-
 executors:
   small_executor:
     docker:
@@ -275,22 +272,55 @@ jobs:
     executor: medium_executor
     steps:
       - prepare
+      #      - run:
+      #          name: Build runnable Teku binaries
+      #          command: |
+      #            ./gradlew --no-daemon --parallel installDist
+      #      - run:
+      #          name: Extract OpenAPI JSON
+      #          command: |
+      #            cd build/install/teku
+      #            bin/teku --rest-api-docs-enabled=true &
+      #            wget -O api.json http://localhost:5051/swagger-docs
+      - add_ssh_keys:
+          fingerprints:
+            - 'eb:56:42:72:7c:9e:c7:5b:d3:a2:eb:53:0f:ef:ec:18'
       - run:
-          name: Build runnable Teku binaries
+          name: Set Git user params
           command: |
-            ./gradlew --no-daemon --parallel installDist
+            git config --global user.name $CIRCLE_USERNAME
+            git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
       - run:
-          name: Extract OpenAPI JSON
+          name: Deploy to GitHub Pages
           command: |
-            cd build/install/teku
-            bin/teku --rest-api-docs-enabled=true &
-            wget -O api.json http://localhost:5051/swagger-docs
-      #      - gh-pages/deploy:
-      #          build-dir: build
-      #          requires:
-      #            - build
-      #          ssh-fingerprints: 'eb:56:42:72:7c:9e:c7:5b:d3:a2:eb:53:0f:ef:ec:18'
+            readonly USERNAME=<< parameters.project-username >>
+            readonly REPONAME=<< parameters.project-reponame >>
+            readonly GIT_URL=git@github.com:${USERNAME:-$CIRCLE_PROJECT_USERNAME}/${REPONAME:-$CIRCLE_PROJECT_REPONAME}.git
+            readonly BRANCH=gh-pages
+            readonly COMMIT=$(git rev-parse --short HEAD)
+            readonly COMMIT_MESSAGE=<< parameters.commit-message >>
+            readonly DEFAULT_COMMIT_MESSAGE="Built artifacts of ${COMMIT} [ci skip]"
+            readonly MESSAGE=${COMMIT_MESSAGE:-$DEFAULT_COMMIT_MESSAGE}
+            readonly DIST=<< parameters.build-dir >>
+            readonly DIR=<< parameters.tmp-dir >>
 
+            echo $USERNAME
+            echo $REPONAME
+            echo $GIT_URL
+            echo $BRANCH
+            echo $COMMIT
+            echo $COMMIT_MESSAGE
+            echo $DEFAULT_COMMIT_MESSAGE
+            echo $MESSAGE
+            echo $DIST
+            echo $DIR
+#            git clone --depth=1 $GIT_URL -b $BRANCH $DIR || (git init $DIR && cd $DIR && git remote add origin $GIT_URL && git checkout -b $BRANCH)
+#            rm -rf ${DIR}/*
+#            cp -R ${DIR}/../${DIST}/. $DIR
+#            cd $DIR
+#            git add --all
+#            git commit -m "${MESSAGE}" || true
+#            git push origin $BRANCH
 workflows:
   version: 2
   circleci:
