@@ -31,6 +31,7 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 @Command(
     name = "peer",
     description = "Commands for LibP2P PeerID",
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
@@ -45,6 +46,7 @@ public class PeerCommand {
       name = "generate",
       description = "Generate a list of peer ids",
       mixinStandardHelpOptions = true,
+      showDefaultValues = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
       synopsisHeading = "%n",
