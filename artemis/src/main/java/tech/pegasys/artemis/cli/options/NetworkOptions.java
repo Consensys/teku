@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.cli.options;
 
 import picocli.CommandLine.Option;
-import tech.pegasys.artemis.util.config.PredefinedNetwork;
 
 public class NetworkOptions {
 
@@ -23,9 +22,9 @@ public class NetworkOptions {
       paramLabel = "<NETWORK>",
       description = "Represents which network to use",
       arity = "1")
-  private PredefinedNetwork network = PredefinedNetwork.MINIMAL;
+  private String network = "minimal";
 
-  public PredefinedNetwork getNetwork() {
+  public String getNetwork() {
     return network;
   }
 }

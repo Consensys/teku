@@ -178,7 +178,6 @@ public class ArtemisConfiguration {
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
-    System.out.println(eth1DepositContractAddress);
   }
 
   public String getConstants() {

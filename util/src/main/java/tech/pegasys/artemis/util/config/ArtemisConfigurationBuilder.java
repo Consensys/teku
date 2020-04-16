@@ -60,7 +60,7 @@ public class ArtemisConfigurationBuilder {
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
   private String restApiInterface;
-  private PredefinedNetwork network;
+  private NetworkDefinition network;
 
   public ArtemisConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -284,7 +284,7 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setNetwork(final PredefinedNetwork network) {
+  public ArtemisConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
   }

@@ -41,6 +41,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.config.NetworkDefinition;
 
 @Command(
     name = "transition",
@@ -115,7 +116,8 @@ public class TransitionCommand implements Runnable {
 
   private void processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
-    Constants.setConstants(params.networkOptions.getNetwork().getConstants());
+    Constants.setConstants(
+        NetworkDefinition.fromCliArg(params.networkOptions.getNetwork()).getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
