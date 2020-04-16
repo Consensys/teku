@@ -26,6 +26,7 @@ import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -218,22 +219,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return recentChainData.getBestSlot().longValue();
   }
 
-  private long lastEightBytesLittleEndian(Bytes32 bytes32) {
-    return Longs.fromBytes(
-        bytes32.get(31),
-        bytes32.get(30),
-        bytes32.get(29),
-        bytes32.get(28),
-        bytes32.get(27),
-        bytes32.get(26),
-        bytes32.get(25),
-        bytes32.get(24));
-  }
-
   private long getHeadRootValue() {
     Optional<Bytes32> maybeBlockRoot = recentChainData.getBestBlockRoot();
     if (maybeBlockRoot.isPresent()) {
-      return lastEightBytesLittleEndian(maybeBlockRoot.get());
+      return maybeBlockRoot.get().getLong(24, ByteOrder.LITTLE_ENDIAN);
     }
     return 0L;
   }
