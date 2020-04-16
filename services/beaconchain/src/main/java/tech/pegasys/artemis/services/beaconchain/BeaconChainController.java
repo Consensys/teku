@@ -219,16 +219,43 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return recentChainData.getBestSlot().longValue();
   }
 
-  private long getHeadRootValue() {
-    Optional<Bytes32> maybeBlockRoot = recentChainData.getBestBlockRoot();
-    if (maybeBlockRoot.isPresent()) {
-      return maybeBlockRoot.get().getLong(24, ByteOrder.LITTLE_ENDIAN);
+  private static long getLongFromRoot(Bytes32 root) {
+    return root.getLong(24, ByteOrder.LITTLE_ENDIAN);
+  }
+
+  private long getFinalizedRootValue() {
+    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
+    if (maybeBlockAndState.isPresent()) {
+      Bytes32 root =
+          maybeBlockAndState.get().getState().getCurrent_justified_checkpoint().getRoot();
+      return getLongFromRoot(root);
     }
     return 0L;
   }
 
-  private long getCurrentEpochValue() {
-    return compute_epoch_at_slot(nodeSlot).longValue();
+  private long getPreviousJustifiedRootValue() {
+    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
+    if (maybeBlockAndState.isPresent()) {
+      Bytes32 root =
+          maybeBlockAndState.get().getState().getPrevious_justified_checkpoint().getRoot();
+      return getLongFromRoot(root);
+    }
+    return 0L;
+  }
+
+  private long getJustifiedRootValue() {
+    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
+    if (maybeBlockAndState.isPresent()) {
+      Bytes32 root =
+          maybeBlockAndState.get().getState().getCurrent_justified_checkpoint().getRoot();
+      return getLongFromRoot(root);
+    }
+    return 0L;
+  }
+
+  private long getHeadRootValue() {
+    Optional<Bytes32> maybeBlockRoot = recentChainData.getBestBlockRoot();
+    return maybeBlockRoot.isPresent() ? getLongFromRoot(maybeBlockRoot.get()) : 0L;
   }
 
   private long getFinalizedEpochValue() {
@@ -261,26 +288,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         this::getCurrentSlotValue);
     metricsSystem.createGauge(
         ArtemisMetricCategory.BEACON,
-        "current_epoch",
-        "Latest epoch recorded by the beacon chain",
-        this::getCurrentEpochValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "finalized_epoch",
-        "Current finalized epoch",
-        this::getFinalizedEpochValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "current_justified_epoch",
-        "Current justified epoch",
-        this::getJustifiedEpochValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "previous_justified_epoch",
-        "Current previously justified epoch",
-        this::getPreviousJustifiedEpochValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
         "head_slot",
         "Slot of the head block of the beacon chain",
         this::getHeadSlotValue);
@@ -289,6 +296,39 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         "head_root",
         "Root of the head block of the beacon chain",
         this::getHeadRootValue);
+
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "finalized_epoch",
+        "Current finalized epoch",
+        this::getFinalizedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "finalized_root",
+        "Current finalized root",
+        this::getFinalizedRootValue);
+
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "current_justified_epoch",
+        "Current justified epoch",
+        this::getJustifiedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "current_justified_root",
+        "Current justified root",
+        this::getJustifiedRootValue);
+
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "previous_justified_epoch",
+        "Current previously justified epoch",
+        this::getPreviousJustifiedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "previous_justified_root",
+        "Current previously justified root",
+        this::getPreviousJustifiedRootValue);
   }
 
   public void initDepositProvider() {
