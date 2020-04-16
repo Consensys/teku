@@ -297,7 +297,7 @@ jobs:
             readonly COMMIT=$(git rev-parse --short HEAD)
             readonly BRANCH='gh-pages-test-do-not-remove-yet'
 
-            git clone --depth=1 $GIT_URL -b $BRANCH
+            git clone --depth=1 $GIT_URL -b $BRANCH $BRANCH
             cd $BRANCH
             touch testfile.txt
             git add --all
