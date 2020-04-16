@@ -16,10 +16,7 @@ package tech.pegasys.artemis.networking.eth2.gossip;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.List;
 import java.util.Optional;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,14 +30,18 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final EventBus eventBus;
   private final AttestationSubnetSubscriptions subnetSubscriptions;
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttestationGossipManager(
       final GossipNetwork gossipNetwork,
+      final EventBus eventBus,
       final RecentChainData recentChainData) {
     subnetSubscriptions =
-        new AttestationSubnetSubscriptions(gossipNetwork, recentChainData);
+        new AttestationSubnetSubscriptions(gossipNetwork, recentChainData, eventBus);
+    this.eventBus = eventBus;
+    eventBus.register(this);
   }
 
   @Subscribe
@@ -68,6 +69,7 @@ public class AttestationGossipManager {
 
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
+      eventBus.unregister(this);
       subnetSubscriptions.close();
     }
   }
