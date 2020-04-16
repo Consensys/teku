@@ -233,7 +233,7 @@ public class BeaconNodeCommandTest {
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
     return ArtemisConfiguration.builder()
-        .setNetwork("minimal")
+        .setConstants("minimal")
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
         .setP2pPort(1234)

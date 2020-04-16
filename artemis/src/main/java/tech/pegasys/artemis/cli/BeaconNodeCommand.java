@@ -48,6 +48,7 @@ import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.NetworkDefinition;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 
 @SuppressWarnings("unused")
@@ -237,8 +238,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   private ArtemisConfiguration artemisConfiguration() {
     // TODO: validate option dependencies
+
+    networkOptions.getNetwork();
     return ArtemisConfiguration.builder()
-        .setNetwork(networkOptions.getNetwork())
+        .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
