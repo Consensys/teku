@@ -250,9 +250,6 @@ public class StateTransition {
                   .count();
 
           metrics.onEpoch(
-              state.getPrevious_justified_checkpoint().getEpoch(),
-              state.getCurrent_justified_checkpoint().getEpoch(),
-              state.getFinalized_checkpoint().getEpoch(),
               state.getPrevious_epoch_attestations().size(),
               state.getCurrent_epoch_attestations().size(),
               pendingExits);
