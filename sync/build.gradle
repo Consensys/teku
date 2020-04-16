@@ -17,6 +17,7 @@ dependencies {
     testImplementation testFixtures(project(':ethereum:datastructures'))
     testImplementation testFixtures(project(':ethereum:statetransition'))
     testImplementation testFixtures(project('::networking:eth2'))
+    testImplementation testFixtures(project('::networking:p2p'))
     testImplementation testFixtures(project(':util'))
 
     integrationTestImplementation testFixtures(project(':bls'))
