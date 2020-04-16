@@ -213,6 +213,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return nodeSlot.longValue();
   }
 
+  private long getHeadSlotValue() {
+    return recentChainData.getBestSlot().longValue();
+  }
+
   private long getCurrentEpochValue() {
     return compute_epoch_at_slot(nodeSlot).longValue();
   }
@@ -247,6 +251,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         "justified_epoch",
         "Current justified epoch",
         this::getJustifiedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "head_slot",
+        "Slot of the head block of the beacon chain",
+        this::getHeadSlotValue);
   }
 
   public void initDepositProvider() {
