@@ -272,7 +272,7 @@ jobs:
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
   publishAPIDoc:
-    executor: small_executor
+    executor: medium_executor
     steps:
       - prepare
       - run:
