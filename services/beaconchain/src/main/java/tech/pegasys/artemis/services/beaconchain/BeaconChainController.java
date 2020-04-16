@@ -38,6 +38,7 @@ import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.core.BlockProposalUtil;
 import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.events.EventChannels;
@@ -229,6 +230,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return recentChainData.getStore().getBestJustifiedCheckpoint().getEpoch().longValue();
   }
 
+  private long getPreviousJustifiedEpochValue() {
+    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
+    if (maybeBlockAndState.isPresent()) {
+      return maybeBlockAndState
+          .get()
+          .getState()
+          .getPrevious_justified_checkpoint()
+          .getEpoch()
+          .longValue();
+    }
+    return 0L;
+  }
+
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
     metricsSystem.createGauge(
@@ -248,9 +262,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         this::getFinalizedEpochValue);
     metricsSystem.createGauge(
         ArtemisMetricCategory.BEACON,
-        "justified_epoch",
+        "current_justified_epoch",
         "Current justified epoch",
         this::getJustifiedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "previous_justified_epoch",
+        "Current previously justified epoch",
+        this::getPreviousJustifiedEpochValue);
     metricsSystem.createGauge(
         ArtemisMetricCategory.BEACON,
         "head_slot",
