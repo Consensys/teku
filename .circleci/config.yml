@@ -287,7 +287,7 @@ jobs:
             - 'b6:75:f8:21:79:a8:df:70:e4:b4:9a:22:23:51:52:f7'
       - run:
           name: check ssh key test
-          command |
+          command: |
             ssh-add -l
 #      - run:
 #          name: Set Git user params
