@@ -33,7 +33,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.artemis.api.SyncDataProvider;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
-import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PostBlock implements Handler {
@@ -98,7 +97,6 @@ public class PostBlock implements Handler {
 
     } catch (final JsonMappingException | JsonParseException ex) {
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
     } catch (final Exception ex) {
       ctx.status(SC_INTERNAL_SERVER_ERROR);
     }

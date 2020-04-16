@@ -159,7 +159,6 @@ public class ValidatorDataProvider {
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
       final SignedBeaconBlock signedBeaconBlock) {
-
     return blockImporter
         .importBlockAsync(signedBeaconBlock.asInternalSignedBeaconBlock())
         .thenApply(
