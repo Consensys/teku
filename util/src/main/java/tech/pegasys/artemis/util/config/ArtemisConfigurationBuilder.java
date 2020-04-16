@@ -291,7 +291,6 @@ public class ArtemisConfigurationBuilder {
 
   public ArtemisConfiguration build() {
     if (network != null) {
-      System.out.println("Applying network " + network);
       constants = getEffectiveValue(constants, () -> Optional.of(network.getConstants()));
       eth1DepositContractAddress =
           getEffectiveValue(eth1DepositContractAddress, network::getEth1DepositContractAddress);
