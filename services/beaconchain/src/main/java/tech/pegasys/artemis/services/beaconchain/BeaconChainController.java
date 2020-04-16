@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.Longs;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
@@ -217,6 +218,26 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return recentChainData.getBestSlot().longValue();
   }
 
+  private long lastEightBytesLittleEndian(Bytes32 bytes32) {
+    return Longs.fromBytes(
+        bytes32.get(31),
+        bytes32.get(30),
+        bytes32.get(29),
+        bytes32.get(28),
+        bytes32.get(27),
+        bytes32.get(26),
+        bytes32.get(25),
+        bytes32.get(24));
+  }
+
+  private long getHeadRootValue() {
+    Optional<Bytes32> maybeBlockRoot = recentChainData.getBestBlockRoot();
+    if (maybeBlockRoot.isPresent()) {
+      return lastEightBytesLittleEndian(maybeBlockRoot.get());
+    }
+    return 0L;
+  }
+
   private long getCurrentEpochValue() {
     return compute_epoch_at_slot(nodeSlot).longValue();
   }
@@ -256,6 +277,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         "head_slot",
         "Slot of the head block of the beacon chain",
         this::getHeadSlotValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "head_root",
+        "Root of the head block of the beacon chain",
+        this::getHeadRootValue);
   }
 
   public void initDepositProvider() {
