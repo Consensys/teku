@@ -14,28 +14,20 @@
 package tech.pegasys.artemis.core;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
-import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 
 public class BlockProposalUtil {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final StateTransition stateTransition;
 
@@ -43,8 +35,9 @@ public class BlockProposalUtil {
     this.stateTransition = stateTransition;
   }
 
-  public BlockAndState createNewUnsignedBlock(
+  public BeaconBlockAndState createNewUnsignedBlock(
       final UnsignedLong newSlot,
+      final int proposerIndex,
       final BLSSignature randaoReveal,
       final BeaconState preState,
       final Bytes32 parentBlockSigningRoot,
@@ -64,7 +57,12 @@ public class BlockProposalUtil {
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     BeaconBlock newBlock =
-        new BeaconBlock(newSlot, parentBlockSigningRoot, tmpStateRoot, beaconBlockBody);
+        new BeaconBlock(
+            newSlot,
+            UnsignedLong.valueOf(proposerIndex),
+            parentBlockSigningRoot,
+            tmpStateRoot,
+            beaconBlockBody);
 
     // Run state transition and set state root
     final BeaconState newState =
@@ -74,21 +72,6 @@ public class BlockProposalUtil {
     Bytes32 stateRoot = newState.hash_tree_root();
     newBlock.setState_root(stateRoot);
 
-    return new BlockAndState(newBlock, newState);
-  }
-
-  public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
-    int proposerIndex = getProposerIndexForSlot(preState, slot);
-    return preState.getValidators().get(proposerIndex).getPubkey();
-  }
-
-  public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
-    BeaconState state = preState;
-    try {
-      state = stateTransition.process_slots(preState, slot);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      LOG.fatal("Coordinator checking proposer index exception", e);
-    }
-    return BeaconStateUtil.get_beacon_proposer_index(state);
+    return new BeaconBlockAndState(newBlock, newState);
   }
 }

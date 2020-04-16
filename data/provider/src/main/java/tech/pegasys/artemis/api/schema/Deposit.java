@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,6 +27,14 @@ public class Deposit {
   public Deposit(tech.pegasys.artemis.datastructures.operations.Deposit deposit) {
     this.proof = deposit.getProof().stream().collect(Collectors.toList());
     this.data = new DepositData(deposit.getData());
+  }
+
+  @JsonCreator
+  public Deposit(
+      @JsonProperty("proof") final List<Bytes32> proof,
+      @JsonProperty("data") final DepositData data) {
+    this.proof = proof;
+    this.data = data;
   }
 
   public tech.pegasys.artemis.datastructures.operations.Deposit asInternalDeposit() {

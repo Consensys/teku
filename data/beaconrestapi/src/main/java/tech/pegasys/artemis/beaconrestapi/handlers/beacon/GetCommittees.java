@@ -34,7 +34,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
@@ -62,11 +61,7 @@ public class GetCommittees extends AbstractHandler implements Handler {
       summary = "Get the committee assignments for an epoch.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(
-            name = EPOCH,
-            type = BigDecimal.class,
-            description = EPOCH_QUERY_DESCRIPTION,
-            required = true),
+        @OpenApiParam(name = EPOCH, description = EPOCH_QUERY_DESCRIPTION, required = true),
       },
       description = "Returns committee assignments for each slot in a specified epoch.",
       responses = {

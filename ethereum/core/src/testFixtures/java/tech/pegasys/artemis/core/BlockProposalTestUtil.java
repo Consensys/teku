@@ -14,17 +14,20 @@
 package tech.pegasys.artemis.core;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
+import tech.pegasys.artemis.core.signatures.MessageSignerService;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
-import tech.pegasys.artemis.datastructures.blocks.BlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
@@ -32,15 +35,17 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
 
 public class BlockProposalTestUtil {
 
   private final BlockProposalUtil blockProposalUtil;
+  private final StateTransition stateTransition;
 
   public BlockProposalTestUtil() {
-    blockProposalUtil = new BlockProposalUtil(new StateTransition());
+    stateTransition = new StateTransition();
+    blockProposalUtil = new BlockProposalUtil(stateTransition);
   }
 
   public SignedBlockAndState createNewBlock(
@@ -56,11 +61,12 @@ public class BlockProposalTestUtil {
 
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     final BLSSignature randaoReveal =
-        new Signer(signer).createRandaoReveal(newEpoch, state.getFork()).join();
+        new Signer(signer).createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
-    final BlockAndState newBlockAndState =
+    final BeaconBlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
+            getProposerIndexForSlot(state, newSlot),
             randaoReveal,
             state,
             parentBlockSigningRoot,
@@ -71,7 +77,7 @@ public class BlockProposalTestUtil {
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
-    BLSSignature blockSignature = new Signer(signer).signBlock(block, state.getFork()).join();
+    BLSSignature blockSignature = new Signer(signer).signBlock(block, state.getForkInfo()).join();
 
     final SignedBeaconBlock signedBlock = new SignedBeaconBlock(block, blockSignature);
     return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
@@ -115,9 +121,7 @@ public class BlockProposalTestUtil {
   }
 
   private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
-    UnsignedLong epochs_per_period =
-        UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
-            .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    UnsignedLong epochs_per_period = UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD);
     UnsignedLong voting_period = current_epoch.dividedBy(epochs_per_period);
     return new Eth1Data(
         Hash.sha2_256(SSZ.encodeUInt64(epochs_per_period.longValue())),
@@ -126,6 +130,12 @@ public class BlockProposalTestUtil {
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
-    return blockProposalUtil.getProposerIndexForSlot(preState, slot);
+    BeaconState state;
+    try {
+      state = stateTransition.process_slots(preState, slot);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      throw new RuntimeException(e);
+    }
+    return BeaconStateUtil.get_beacon_proposer_index(state);
   }
 }

@@ -18,7 +18,9 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.eventbus.EventBus;
@@ -46,59 +48,62 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.async.ExceptionThrowingFunction;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.config.FeatureToggles;
+import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
+  private final SyncService syncService;
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
-  private final AttestationAggregator attestationAggregator;
   private final AttestationTopicSubscriptions attestationTopicSubscriptions;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
+      final SyncService syncService,
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
-      final AttestationAggregator attestationAggregator,
       final AttestationTopicSubscriptions attestationTopicSubscriptions,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
+    this.syncService = syncService;
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
-    this.attestationAggregator = attestationAggregator;
     this.attestationTopicSubscriptions = attestationTopicSubscriptions;
     this.eventBus = eventBus;
   }
 
   @Override
-  public SafeFuture<Optional<Fork>> getFork() {
+  public SafeFuture<Optional<ForkInfo>> getForkInfo() {
     return SafeFuture.completedFuture(
-        combinedChainDataClient.getHeadStateFromStore().map(BeaconState::getFork));
+        combinedChainDataClient.getHeadStateFromStore().map(BeaconState::getForkInfo));
   }
 
   @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
+    if (syncService.isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
     final UnsignedLong slot =
         compute_start_slot_at_epoch(
             epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
@@ -126,6 +131,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UnsignedLong slot, final BLSSignature randaoReveal) {
+    if (syncService.isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
     return createFromBlockAndState(
         slot.minus(UnsignedLong.ONE),
         blockAndState ->
@@ -160,6 +168,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UnsignedLong slot, final int committeeIndex) {
+    if (syncService.isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
     return createFromBlockAndState(
         slot,
         blockAndState -> {
@@ -188,6 +199,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
+    if (syncService.isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
     return SafeFuture.completedFuture(attestationPool.createAggregateFor(attestationData));
   }
 
@@ -200,9 +214,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
     attestationPool.add(attestation);
-    if (!FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE) {
-      attestationAggregator.addOwnValidatorAttestation(attestation);
-    }
     eventBus.post(attestation);
   }
 
@@ -262,8 +273,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private Map<Integer, List<UnsignedLong>> getBeaconProposalSlotsByValidatorIndex(
       final BeaconState state, final UnsignedLong epoch) {
-    final UnsignedLong startSlot = compute_start_slot_at_epoch(epoch);
-    final UnsignedLong endSlot = startSlot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
+    final UnsignedLong epochStartSlot = compute_start_slot_at_epoch(epoch);
+    // Don't calculate a proposer for the genesis slot
+    final UnsignedLong startSlot = max(epochStartSlot, UnsignedLong.valueOf(GENESIS_SLOT + 1));
+    final UnsignedLong endSlot =
+        epochStartSlot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
     final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex = new HashMap<>();
     for (UnsignedLong slot = startSlot;
         slot.compareTo(endSlot) < 0;

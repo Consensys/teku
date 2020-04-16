@@ -28,12 +28,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.core.AttestationGenerator;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
 
 public class GossipMessageHandlerIntegrationTest {
@@ -159,7 +158,9 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    Attestation validAttestation = attestationGenerator.validAttestation(node1.storageClient());
+    final BeaconBlockAndState bestBlockAndState =
+        node1.storageClient().getBestBlockAndState().orElseThrow();
+    Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     node1.eventBus().post(validAttestation);
 
     ensureConditionRemainsMet(() -> assertThat(network2Attestations.getAttestations()).isEmpty());
@@ -189,18 +190,16 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    Attestation validAttestation = attestationGenerator.validAttestation(node1.storageClient());
+    final BeaconBlockAndState bestBlockAndState =
+        node1.storageClient().getBestBlockAndState().orElseThrow();
+    Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
 
     node1
-        .eventBus()
-        .post(
-            new CommitteeAssignmentEvent(
-                List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
     node2
-        .eventBus()
-        .post(
-            new CommitteeAssignmentEvent(
-                List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
 
     waitForTopicRegistration();
 
@@ -234,18 +233,16 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    Attestation validAttestation = attestationGenerator.validAttestation(node1.storageClient());
+    final BeaconBlockAndState bestBlockAndState =
+        node1.storageClient().getBestBlockAndState().orElseThrow();
+    Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
 
     node1
-        .eventBus()
-        .post(
-            new CommitteeAssignmentEvent(
-                List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
     node2
-        .eventBus()
-        .post(
-            new CommitteeAssignmentEvent(
-                List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
 
     waitForTopicRegistration();
 
@@ -256,13 +253,11 @@ public class GossipMessageHandlerIntegrationTest {
     assertTrue(network2Attestations.getAttestations().contains(validAttestation));
 
     node1
-        .eventBus()
-        .post(
-            new CommitteeDismissalEvent(List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .unsubscribeFromAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
     node2
-        .eventBus()
-        .post(
-            new CommitteeDismissalEvent(List.of(validAttestation.getData().getIndex().intValue())));
+        .network()
+        .unsubscribeFromAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
 
     waitForTopicDeregistration();
 

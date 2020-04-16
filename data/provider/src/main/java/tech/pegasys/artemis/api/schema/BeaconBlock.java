@@ -20,12 +20,14 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class BeaconBlock {
   public final UnsignedLong slot;
+  public final UnsignedLong proposer_index;
   public final Bytes32 parent_root;
   public final Bytes32 state_root;
   public final BeaconBlockBody body;
 
   public BeaconBlock(tech.pegasys.artemis.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
+    this.proposer_index = message.getProposer_index();
     this.parent_root = message.getParent_root();
     this.state_root = message.getState_root();
     this.body = new BeaconBlockBody(message.getBody());
@@ -34,10 +36,12 @@ public class BeaconBlock {
   @JsonCreator
   public BeaconBlock(
       @JsonProperty("slot") final UnsignedLong slot,
+      @JsonProperty("proposer_index") final UnsignedLong proposer_index,
       @JsonProperty("parent_root") final Bytes32 parent_root,
       @JsonProperty("state_root") final Bytes32 state_root,
       @JsonProperty("body") final BeaconBlockBody body) {
     this.slot = slot;
+    this.proposer_index = proposer_index;
     this.parent_root = parent_root;
     this.state_root = state_root;
     this.body = body;
@@ -45,6 +49,6 @@ public class BeaconBlock {
 
   public tech.pegasys.artemis.datastructures.blocks.BeaconBlock asInternalBeaconBlock() {
     return new tech.pegasys.artemis.datastructures.blocks.BeaconBlock(
-        slot, parent_root, state_root, body.asInternalBeaconBlockBody());
+        slot, proposer_index, parent_root, state_root, body.asInternalBeaconBlockBody());
   }
 }

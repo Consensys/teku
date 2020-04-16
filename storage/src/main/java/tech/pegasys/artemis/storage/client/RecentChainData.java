@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -78,7 +79,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
-    final Store store = Store.get_genesis_store(genesisState);
+    final Store store = Store.getForkChoiceStore(genesisState);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
@@ -163,6 +164,24 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    */
   public Optional<Bytes32> getBestBlockRoot() {
     return this.bestBlockRoot;
+  }
+
+  /**
+   * If available, return the best block and state.
+   *
+   * @return The best block along with its corresponding state.
+   */
+  public Optional<BeaconBlockAndState> getBestBlockAndState() {
+    if (isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return bestBlockRoot.map(
+        (bestRoot) -> {
+          BeaconBlock block = getStore().getBlock(bestRoot);
+          BeaconState state = getStore().getBlockState(bestRoot);
+          return new BeaconBlockAndState(block, state);
+        });
   }
 
   /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,28 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.artemis.storage.server.rocksdb;
 
-import tech.pegasys.artemis.core.Signer;
+import java.io.File;
+import tech.pegasys.artemis.storage.server.Database;
+import tech.pegasys.artemis.storage.server.StateStorageMode;
 
-public class ValidatorInfo {
+public class V2RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
-  private final Signer signer;
-  private int validatorIndex = -1;
-
-  public ValidatorInfo(final Signer signer) {
-    this.signer = signer;
-  }
-
-  public Signer getSigner() {
-    return signer;
-  }
-
-  public int getValidatorIndex() {
-    return validatorIndex;
-  }
-
-  public void setValidatorIndex(int validatorIndex) {
-    this.validatorIndex = validatorIndex;
+  @Override
+  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
+    final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
+    return RocksDbDatabase.createV2(config, storageMode);
   }
 }

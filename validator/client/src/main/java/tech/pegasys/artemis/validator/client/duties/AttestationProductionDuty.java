@@ -25,9 +25,9 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.Signer;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
@@ -73,7 +73,7 @@ public class AttestationProductionDuty implements Duty {
     if (validatorsByCommitteeIndex.isEmpty()) {
       return SafeFuture.COMPLETE;
     }
-    return forkProvider.getFork().thenCompose(this::produceAttestations);
+    return forkProvider.getForkInfo().thenCompose(this::produceAttestations);
   }
 
   @Override
@@ -81,22 +81,24 @@ public class AttestationProductionDuty implements Duty {
     return "Attestation production for slot " + slot;
   }
 
-  private SafeFuture<Void> produceAttestations(final Fork fork) {
+  private SafeFuture<Void> produceAttestations(final ForkInfo forkInfo) {
     return SafeFuture.allOf(
         validatorsByCommitteeIndex.entrySet().stream()
-            .map(entry -> produceAttestationsForCommittee(fork, entry.getKey(), entry.getValue()))
+            .map(
+                entry ->
+                    produceAttestationsForCommittee(forkInfo, entry.getKey(), entry.getValue()))
             .toArray(SafeFuture[]::new));
   }
 
   private SafeFuture<Void> produceAttestationsForCommittee(
-      final Fork fork, final int committeeIndex, final Committee committee) {
+      final ForkInfo forkInfo, final int committeeIndex, final Committee committee) {
     final SafeFuture<Optional<Attestation>> unsignedAttestationFuture =
         validatorApiChannel.createUnsignedAttestation(slot, committeeIndex);
     unsignedAttestationFuture.propagateTo(committee.attestationFuture);
     return unsignedAttestationFuture.thenCompose(
         maybeUnsignedAttestation ->
             maybeUnsignedAttestation
-                .map(attestation -> signAttestationsForCommittee(fork, committee, attestation))
+                .map(attestation -> signAttestationsForCommittee(forkInfo, committee, attestation))
                 .orElseGet(
                     () -> {
                       return failedFuture(
@@ -110,18 +112,18 @@ public class AttestationProductionDuty implements Duty {
   }
 
   private SafeFuture<Void> signAttestationsForCommittee(
-      final Fork fork, final Committee validators, final Attestation attestation) {
+      final ForkInfo forkInfo, final Committee validators, final Attestation attestation) {
     return validators.forEach(
-        validator -> signAttestationForValidator(fork, attestation, validator));
+        validator -> signAttestationForValidator(forkInfo, attestation, validator));
   }
 
   private SafeFuture<Void> signAttestationForValidator(
-      final Fork fork,
+      final ForkInfo forkInfo,
       final Attestation attestation,
       final ValidatorWithCommitteePosition validator) {
     return validator
         .getSigner()
-        .signAttestationData(attestation.getData(), fork)
+        .signAttestationData(attestation.getData(), forkInfo)
         .thenApply(signature -> createSignedAttestation(attestation, validator, signature))
         .thenAccept(validatorApiChannel::sendSignedAttestation);
   }

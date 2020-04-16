@@ -35,12 +35,12 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_slashab
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.PERSISTENT_COMMITTEE_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
@@ -93,6 +93,9 @@ public final class BlockProcessorUtil {
           block.getSlot().equals(state.getSlot()),
           "process_block_header: Verify that the slots match");
       checkArgument(
+          block.getProposer_index().longValue() == get_beacon_proposer_index(state),
+          "process_block_header: Verify that proposer index is the correct index");
+      checkArgument(
           block.getParent_root().equals(state.getLatest_block_header().hash_tree_root()),
           "process_block_header: Verify that the parent matches");
 
@@ -100,12 +103,14 @@ public final class BlockProcessorUtil {
       state.setLatest_block_header(
           new BeaconBlockHeader(
               block.getSlot(),
+              block.getProposer_index(),
               block.getParent_root(),
               Bytes32.ZERO, // Overwritten in the next `process_slot` call
               block.getBody().hash_tree_root()));
 
       // Only if we are processing blocks (not proposing them)
-      Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+      Validator proposer =
+          state.getValidators().get(toIntExact(block.getProposer_index().longValue()));
       checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
 
     } catch (IllegalArgumentException e) {
@@ -162,7 +167,7 @@ public final class BlockProcessorUtil {
         state.getEth1_data_votes().stream()
             .filter(item -> item.equals(body.getEth1_data()))
             .count();
-    if (vote_count * 2 > SLOTS_PER_ETH1_VOTING_PERIOD) {
+    if (vote_count * 2 > EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH) {
       state.setEth1_data(body.getEth1_data());
     }
   }
@@ -219,28 +224,29 @@ public final class BlockProcessorUtil {
     try {
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposer_slashing : proposerSlashings) {
-        checkArgument(
-            UnsignedLong.valueOf(state.getValidators().size())
-                    .compareTo(proposer_slashing.getProposer_index())
-                > 0,
-            "process_proposer_slashings: Invalid proposer index");
+        final BeaconBlockHeader header1 = proposer_slashing.getHeader_1().getMessage();
+        final BeaconBlockHeader header2 = proposer_slashing.getHeader_2().getMessage();
 
         checkArgument(
-            proposer_slashing
-                .getHeader_1()
-                .getMessage()
-                .getSlot()
-                .equals(proposer_slashing.getHeader_2().getMessage().getSlot()),
+            header1.getSlot().equals(header2.getSlot()),
             "process_proposer_slashings: Verify header slots match");
+
+        checkArgument(
+            header1.getProposer_index().equals(header2.getProposer_index()),
+            "process_proposer_slashings: Verify header proposer indices match");
 
         checkArgument(
             !Objects.equals(proposer_slashing.getHeader_1(), proposer_slashing.getHeader_2()),
             "process_proposer_slashings: Verify the headers are different");
 
+        checkArgument(
+            UnsignedLong.valueOf(state.getValidators().size())
+                    .compareTo(header1.getProposer_index())
+                > 0,
+            "process_proposer_slashings: Invalid proposer index");
+
         final Validator proposer =
-            state
-                .getValidators()
-                .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
+            state.getValidators().get(toIntExact(header1.getProposer_index().longValue()));
         checkArgument(
             is_slashable_validator(proposer, get_current_epoch(state)),
             "process_proposer_slashings: Verify the proposer is slashable");
@@ -249,12 +255,9 @@ public final class BlockProcessorUtil {
             BLS.verify(
                 proposer.getPubkey(),
                 compute_signing_root(
-                    proposer_slashing.getHeader_1().getMessage(),
+                    header1,
                     get_domain(
-                        state,
-                        DOMAIN_BEACON_PROPOSER,
-                        compute_epoch_at_slot(
-                            proposer_slashing.getHeader_1().getMessage().getSlot()))),
+                        state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header1.getSlot()))),
                 proposer_slashing.getHeader_1().getSignature()),
             "process_proposer_slashings: Verify signatures are valid 1");
 
@@ -262,16 +265,13 @@ public final class BlockProcessorUtil {
             BLS.verify(
                 proposer.getPubkey(),
                 compute_signing_root(
-                    proposer_slashing.getHeader_2().getMessage(),
+                    header2,
                     get_domain(
-                        state,
-                        DOMAIN_BEACON_PROPOSER,
-                        compute_epoch_at_slot(
-                            proposer_slashing.getHeader_2().getMessage().getSlot()))),
+                        state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header2.getSlot()))),
                 proposer_slashing.getHeader_2().getSignature()),
             "process_proposer_slashings: Verify signatures are valid 2");
 
-        slash_validator(state, toIntExact(proposer_slashing.getProposer_index().longValue()));
+        slash_validator(state, toIntExact(header1.getProposer_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());

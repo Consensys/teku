@@ -11,16 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.config;
+package tech.pegasys.artemis.core.signatures;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-import org.junit.jupiter.api.Test;
+public interface MessageSignerService {
 
-// Ensure that toggles changed during local development are not accidentally committed
-class FeatureTogglesTest {
-  @Test
-  public void shouldToggleOnValidatorClientService() {
-    assertThat(FeatureToggles.USE_VALIDATOR_CLIENT_SERVICE).isTrue();
-  }
+  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
+
+  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
+
+  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
+
+  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
 }

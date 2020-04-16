@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events.committee;
+package tech.pegasys.artemis.validator.api;
 
-import java.util.List;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class CommitteeDismissalEvent {
+/** Indicates that the request couldn't be completed because the node is currently syncing. */
+public class NodeSyncingException extends RuntimeException {
 
-  List<Integer> committeeIndices;
-
-  public CommitteeDismissalEvent(List<Integer> committeeIndices) {
-    this.committeeIndices = committeeIndices;
-  }
-
-  public List<Integer> getCommitteeIndices() {
-    return this.committeeIndices;
+  public static <T> SafeFuture<T> failedFuture() {
+    return SafeFuture.failedFuture(new NodeSyncingException());
   }
 }

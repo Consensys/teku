@@ -1,8 +1,3 @@
-//exec {
-//  workingDir '../ganache-cli'
-//  commandLine 'npm', 'install'
-//}
-
 dependencies {
   implementation project(':bls')
   implementation project(':ssz')

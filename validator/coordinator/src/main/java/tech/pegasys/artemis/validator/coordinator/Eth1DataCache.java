@@ -13,18 +13,15 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.artemis.pow.Eth1DataManager.getCacheRangeLowerBound;
-import static tech.pegasys.artemis.pow.Eth1DataManager.hasBeenApproximately;
+import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -34,61 +31,32 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.TimeProvider;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
-public class Eth1DataCache implements TimeTickChannel {
+public class Eth1DataCache {
 
-  private final TimeProvider timeProvider;
+  private final UnsignedLong cacheDuration;
   private volatile Optional<UnsignedLong> genesisTime = Optional.empty();
 
   private final NavigableMap<UnsignedLong, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
-  private volatile UnsignedLong currentVotingPeriodStartTime;
 
-  public Eth1DataCache(EventBus eventBus, TimeProvider timeProvider) {
-    this.timeProvider = timeProvider;
+  public Eth1DataCache(EventBus eventBus) {
     eventBus.register(this);
+    cacheDuration = calculateCacheDuration();
   }
 
-  public void startBeaconChainMode(BeaconState genesisState) {
-    this.genesisTime = Optional.of(genesisState.getGenesis_time());
-    this.currentVotingPeriodStartTime = getVotingPeriodStartTime(genesisState.getSlot());
-    this.onSlot(genesisState.getSlot());
+  public void startBeaconChainMode(BeaconState headState) {
+    this.genesisTime = Optional.of(headState.getGenesis_time());
   }
 
   @Subscribe
   public void onCacheEth1BlockEvent(CacheEth1BlockEvent cacheEth1BlockEvent) {
-    eth1ChainCache.put(
-        cacheEth1BlockEvent.getBlockTimestamp(), createEth1Data(cacheEth1BlockEvent));
-  }
-
-  @Override
-  public void onTick(Date date) {
-    if (genesisTime.isPresent()
-        || !hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, timeProvider.getTimeInSeconds())) {
-      return;
-    }
-    prune();
-  }
-
-  // Called by ValidatorCoordinator not the event bus to ensure we process slot events in sync
-  public void onSlot(UnsignedLong slot) {
-    if (genesisTime.isEmpty()) {
-      return;
-    }
-
-    UnsignedLong voting_period_start_time = getVotingPeriodStartTime(slot);
-
-    if (voting_period_start_time.equals(currentVotingPeriodStartTime)) {
-      return;
-    }
-
-    currentVotingPeriodStartTime = voting_period_start_time;
-    prune();
+    final UnsignedLong latestBlockTimestamp = cacheEth1BlockEvent.getBlockTimestamp();
+    eth1ChainCache.put(latestBlockTimestamp, createEth1Data(cacheEth1BlockEvent));
+    prune(latestBlockTimestamp);
   }
 
   public Eth1Data get_eth1_vote(BeaconState state) {
-    NavigableMap<UnsignedLong, Eth1Data> votesToConsider = getVotesToConsider();
+    NavigableMap<UnsignedLong, Eth1Data> votesToConsider = getVotesToConsider(state.getSlot());
     Map<Eth1Data, Eth1Vote> validVotes = new HashMap<>();
 
     int i = 0;
@@ -112,34 +80,56 @@ public class Eth1DataCache implements TimeTickChannel {
     return vote.orElse(defaultVote);
   }
 
-  private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider() {
-    return eth1ChainCache.subMap(getSpecRangeLowerBound(), true, getSpecRangeUpperBound(), true);
+  private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider(final UnsignedLong slot) {
+    return eth1ChainCache.subMap(
+        getSpecRangeLowerBound(slot), true, getSpecRangeUpperBound(slot), true);
   }
 
-  private void prune() {
-    while (!eth1ChainCache.isEmpty() && isBlockTooOld(eth1ChainCache.firstKey())) {
-      eth1ChainCache.remove(eth1ChainCache.firstKey());
+  private UnsignedLong calculateCacheDuration() {
+    // Worst case we're in the very last moment of the current slot
+    long cacheDurationSeconds = SECONDS_PER_SLOT;
+
+    // Worst case this slot is at the very end of the current voting period
+    cacheDurationSeconds += (EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH * SECONDS_PER_SLOT);
+
+    // We need 2 * ETH1_FOLLOW_DISTANCE prior to that but the blocks we get from Eth1DataManager are
+    // already ETH1_FOLLOW_DISTANCE behind head and the current time is taken from that.
+    cacheDurationSeconds += SECONDS_PER_ETH1_BLOCK.longValue() * ETH1_FOLLOW_DISTANCE.longValue();
+
+    // And we want to be able to create blocks for at least the past epoch
+    cacheDurationSeconds += SLOTS_PER_EPOCH * SECONDS_PER_SLOT;
+    return UnsignedLong.valueOf(cacheDurationSeconds);
+  }
+
+  private void prune(final UnsignedLong latestBlockTimestamp) {
+    while (!eth1ChainCache.isEmpty()) {
+      final UnsignedLong earliestBlockTimestamp = eth1ChainCache.firstKey();
+      if (earliestBlockTimestamp.plus(cacheDuration).compareTo(latestBlockTimestamp) >= 0) {
+        break;
+      }
+      eth1ChainCache.remove(earliestBlockTimestamp);
     }
   }
 
   private UnsignedLong getVotingPeriodStartTime(UnsignedLong slot) {
     UnsignedLong eth1VotingPeriodStartSlot =
-        slot.minus(slot.mod(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)));
+        slot.minus(slot.mod(UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH)));
     return computeTimeAtSlot(eth1VotingPeriodStartSlot);
   }
 
-  UnsignedLong getSpecRangeLowerBound() {
+  UnsignedLong getSpecRangeLowerBound(final UnsignedLong slot) {
     return secondsBeforeCurrentVotingPeriodStartTime(
-        ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
+        slot, ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
   }
 
-  UnsignedLong getSpecRangeUpperBound() {
+  UnsignedLong getSpecRangeUpperBound(final UnsignedLong slot) {
     return secondsBeforeCurrentVotingPeriodStartTime(
-        ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK));
+        slot, ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK));
   }
 
   private UnsignedLong secondsBeforeCurrentVotingPeriodStartTime(
-      final UnsignedLong valueToSubtract) {
+      final UnsignedLong slot, final UnsignedLong valueToSubtract) {
+    final UnsignedLong currentVotingPeriodStartTime = getVotingPeriodStartTime(slot);
     if (currentVotingPeriodStartTime.compareTo(valueToSubtract) > 0) {
       return currentVotingPeriodStartTime.minus(valueToSubtract);
     } else {
@@ -154,14 +144,6 @@ public class Eth1DataCache implements TimeTickChannel {
         .plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
   }
 
-  private boolean isBlockTooOld(UnsignedLong blockTimestamp) {
-    if (genesisTime.isPresent()) {
-      return blockTimestamp.compareTo(getSpecRangeLowerBound()) < 0;
-    } else {
-      return blockTimestamp.compareTo(getCacheRangeLowerBound(timeProvider.getTimeInSeconds())) < 0;
-    }
-  }
-
   public static Eth1Data createEth1Data(CacheEth1BlockEvent eth1BlockEvent) {
     return new Eth1Data(
         eth1BlockEvent.getDepositRoot(),
@@ -169,8 +151,11 @@ public class Eth1DataCache implements TimeTickChannel {
         eth1BlockEvent.getBlockHash());
   }
 
-  @VisibleForTesting
-  NavigableMap<UnsignedLong, Eth1Data> getMapForTesting() {
-    return Collections.unmodifiableNavigableMap(eth1ChainCache);
+  UnsignedLong getCacheDuration() {
+    return cacheDuration;
+  }
+
+  int size() {
+    return eth1ChainCache.size();
   }
 }

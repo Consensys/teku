@@ -17,7 +17,6 @@ import static java.lang.StrictMath.toIntExact;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,8 +28,6 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationGossipManager {
@@ -68,24 +65,8 @@ public class AttestationGossipManager {
     channel.gossip(data);
   }
 
-  @Subscribe
-  public void onCommitteeAssignment(CommitteeAssignmentEvent assignmentEvent) {
-    List<Integer> committeeIndices = assignmentEvent.getCommitteeIndices();
-    for (int committeeIndex : committeeIndices) {
-      subscribeToCommitteeTopic(committeeIndex);
-    }
-  }
-
   public void subscribeToCommitteeTopic(final int committeeIndex) {
     attestationChannels.computeIfAbsent(committeeIndex, this::createChannelForCommitteeIndex);
-  }
-
-  @Subscribe
-  public void onCommitteeDismissal(CommitteeDismissalEvent dismissalEvent) {
-    List<Integer> committeeIndices = dismissalEvent.getCommitteeIndices();
-    for (int committeeIndex : committeeIndices) {
-      unsubscribeFromCommitteeTopic(committeeIndex);
-    }
   }
 
   public void unsubscribeFromCommitteeTopic(final int committeeIndex) {

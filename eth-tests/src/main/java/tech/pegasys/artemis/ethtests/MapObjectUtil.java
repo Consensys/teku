@@ -157,6 +157,8 @@ public class MapObjectUtil {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static BeaconState getBeaconState(Map map) {
     UnsignedLong genesis_time = UnsignedLong.valueOf(map.get("genesis_time").toString());
+    final Bytes32 genesis_validators_root =
+        Bytes32.fromHexString(map.get("genesis_validators_root").toString());
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     Fork fork = getFork((Map) map.get("fork"));
     BeaconBlockHeader latest_block_header =
@@ -185,7 +187,7 @@ public class MapObjectUtil {
         SSZList.createMutable(
             ((List<Map>) map.get("eth1_data_votes"))
                 .stream().map(e -> getEth1Data(e)).collect(Collectors.toList()),
-            Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
+            Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH,
             Eth1Data.class);
     UnsignedLong eth1_deposit_index =
         UnsignedLong.valueOf(map.get("eth1_deposit_index").toString());
@@ -241,6 +243,7 @@ public class MapObjectUtil {
 
     return BeaconState.create(
         genesis_time,
+        genesis_validators_root,
         slot,
         fork,
         latest_block_header,
@@ -321,11 +324,12 @@ public class MapObjectUtil {
   @SuppressWarnings({"rawtypes"})
   private static BeaconBlock getBeaconBlock(Map map) {
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
+    UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("proposer_index").toString());
     Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
     Bytes32 state_root = Bytes32.fromHexString(map.get("state_root").toString());
     BeaconBlockBody body = getBeaconBlockBody((Map) map.get("body"));
 
-    return new BeaconBlock(slot, parent_root, state_root, body);
+    return new BeaconBlock(slot, proposer_index, parent_root, state_root, body);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -427,21 +431,21 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"rawtypes"})
   private static ProposerSlashing getProposerSlashing(Map map) {
-    UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("proposer_index").toString());
     SignedBeaconBlockHeader header_1 = getSignedBeaconBlockHeader((Map) map.get("header_1"));
     SignedBeaconBlockHeader header_2 = getSignedBeaconBlockHeader((Map) map.get("header_2"));
 
-    return new ProposerSlashing(proposer_index, header_1, header_2);
+    return new ProposerSlashing(header_1, header_2);
   }
 
   @SuppressWarnings({"rawtypes"})
   private static BeaconBlockHeader getBeaconBlockHeader(Map map) {
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
+    UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("slot").toString());
     Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
     Bytes32 state_root = Bytes32.fromHexString(map.get("state_root").toString());
     Bytes32 body_root = Bytes32.fromHexString(map.get("body_root").toString());
 
-    return new BeaconBlockHeader(slot, parent_root, state_root, body_root);
+    return new BeaconBlockHeader(slot, proposer_index, parent_root, state_root, body_root);
   }
 
   @SuppressWarnings({"rawtypes"})
