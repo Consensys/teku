@@ -68,15 +68,6 @@ commands:
             sudo apt update
             sudo apt install -y openjdk-11-jdk
             sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
-  install_redoc:
-    description: "Install Packages - Node JS 13 and ReDoc"
-    steps:
-      - run:
-          name: Install ReDoc CLI
-          command: |
-            sudo curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-            sudo npm install -g redoc-cli
   capture_test_results:
     description: "Capture test results"
     steps:
@@ -284,7 +275,6 @@ jobs:
     executor: small_executor
     steps:
       - prepare
-      - install_redoc
       - run:
           name: Build runnable Teku binaries
           command: |
@@ -295,13 +285,6 @@ jobs:
             cd build/install/teku
             bin/teku --rest-api-docs-enabled=true &
             wget -O api.json http://localhost:5051/swagger-docs
-      - run:
-          name: Generate ReDoc static HTML
-          command: |
-            cd build/install/teku
-            redoc-cli bundle api.json
-      - store_artifacts:
-          path: build/install/teku/redoc-static.html
       #      - gh-pages/deploy:
       #          build-dir: build
       #          requires:
