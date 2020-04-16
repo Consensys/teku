@@ -61,6 +61,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
       DepositCommand.class,
       GenesisCommand.class
     },
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     description = "Run the Teku beacon chain client and validator",
     mixinStandardHelpOptions = true,

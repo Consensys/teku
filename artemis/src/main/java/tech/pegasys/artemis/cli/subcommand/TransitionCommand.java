@@ -46,6 +46,7 @@ import tech.pegasys.artemis.util.config.NetworkDefinition;
 @Command(
     name = "transition",
     description = "Manually run state transitions",
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
@@ -60,6 +61,7 @@ public class TransitionCommand implements Runnable {
       name = "blocks",
       description = "Process blocks on the pre-state to get a post-state",
       mixinStandardHelpOptions = true,
+      showDefaultValues = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
       synopsisHeading = "%n",
@@ -88,6 +90,7 @@ public class TransitionCommand implements Runnable {
       name = "slots",
       description = "Process empty slots on the pre-state to get a post-state",
       mixinStandardHelpOptions = true,
+      showDefaultValues = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
       synopsisHeading = "%n",
