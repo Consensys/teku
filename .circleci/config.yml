@@ -269,40 +269,44 @@ jobs:
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
   publishAPIDoc:
-    executor: medium_executor
+    executor: small_executor
     steps:
-      - prepare
-      #      - run:
-      #          name: Build runnable Teku binaries
-      #          command: |
-      #            ./gradlew --no-daemon --parallel installDist
-      #      - run:
-      #          name: Extract OpenAPI JSON
-      #          command: |
-      #            cd build/install/teku
-      #            bin/teku --rest-api-docs-enabled=true &
-      #            wget -O api.json http://localhost:5051/swagger-docs
+#      - prepare
+#      - run:
+#          name: Build runnable Teku binaries
+#          command: |
+#            ./gradlew --no-daemon --parallel installDist
+#      - run:
+#          name: Extract OpenAPI JSON
+#          command: |
+#            cd build/install/teku
+#            bin/teku --rest-api-docs-enabled=true &
+#            wget -O api.json http://localhost:5051/swagger-docs
       - add_ssh_keys:
           fingerprints:
             - 'b6:75:f8:21:79:a8:df:70:e4:b4:9a:22:23:51:52:f7'
       - run:
-          name: Set Git user params
-          command: |
-            git config --global user.name $CIRCLE_USERNAME
-            git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
-      - run:
-          name: Deploy to GitHub Pages
-          command: |
-            readonly GIT_URL=git@github.com:$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git
-            readonly COMMIT=$(git rev-parse --short HEAD)
-            readonly BRANCH='gh-pages-test-do-not-remove-yet'
-
-            git clone --depth=1 $GIT_URL -b $BRANCH $BRANCH
-            cd $BRANCH
-            touch testfile.txt
-            git add --all
-            git commit -m "test" || true
-            git push origin $BRANCH
+          name: check ssh key test
+          command |
+            ssh-add -l
+#      - run:
+#          name: Set Git user params
+#          command: |
+#            git config --global user.name $CIRCLE_USERNAME
+#            git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
+#      - run:
+#          name: Deploy to GitHub Pages
+#          command: |
+#            readonly GIT_URL=git@github.com:$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git
+#            readonly COMMIT=$(git rev-parse --short HEAD)
+#            readonly BRANCH='gh-pages-test-do-not-remove-yet'
+#
+#            git clone --depth=1 $GIT_URL -b $BRANCH $BRANCH
+#            cd $BRANCH
+#            touch testfile.txt
+#            git add --all
+#            git commit -m "[skip ci] test" || true
+#            git push origin $BRANCH
 workflows:
   version: 2
   circleci:
