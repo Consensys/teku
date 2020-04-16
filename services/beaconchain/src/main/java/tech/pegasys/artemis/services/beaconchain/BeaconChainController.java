@@ -27,6 +27,7 @@ import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Date;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -74,6 +75,7 @@ import tech.pegasys.artemis.sync.FutureItems;
 import tech.pegasys.artemis.sync.PendingPool;
 import tech.pegasys.artemis.sync.SyncManager;
 import tech.pegasys.artemis.sync.SyncService;
+import tech.pegasys.artemis.sync.SyncStateTracker;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -90,6 +92,7 @@ import tech.pegasys.artemis.validator.coordinator.ValidatorApiHandler;
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
+  private DelayedExecutorAsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final ArtemisConfiguration config;
@@ -113,6 +116,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   // Only accessed from `onTick` handler which is single threaded.
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
+  private SyncStateTracker syncStateTracker;
 
   public BeaconChainController(
       TimeProvider timeProvider,
@@ -140,7 +144,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     attestationManager.start(),
                     p2pNetwork.start(),
                     syncService.start(),
-                    SafeFuture.fromRunnable(beaconRestAPI::start)));
+                    SafeFuture.fromRunnable(beaconRestAPI::start),
+                    syncStateTracker.start()));
   }
 
   @Override
@@ -149,6 +154,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
         SafeFuture.fromRunnable(beaconRestAPI::stop),
+        syncStateTracker.stop(),
         syncService.stop(),
         attestationManager.stop(),
         SafeFuture.fromRunnable(p2pNetwork::stop));
@@ -156,7 +162,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private SafeFuture<?> initialize() {
     return StorageBackedRecentChainData.create(
-            DelayedExecutorAsyncRunner.create(),
+            asyncRunner,
             eventChannels.getPublisher(StorageUpdateChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
             eventBus)
@@ -187,6 +193,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initAttestationPropagationManager();
     initP2PNetwork();
     initSyncManager();
+    initSyncStateTracker();
     initValidatorApiHandler();
     initRestAPI();
   }
@@ -268,6 +275,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         });
   }
 
+  private void initSyncStateTracker() {
+    LOG.debug("BeaconChainController.initSyncStateTracker");
+    // TODO: Make startup conditions configurable and set reasonable defaults based on the network
+    syncStateTracker =
+        new SyncStateTracker(asyncRunner, syncService, p2pNetwork, 5, Duration.ofSeconds(10));
+  }
+
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
@@ -282,7 +296,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
-            syncService,
+            syncStateTracker,
             stateTransition,
             blockFactory,
             attestationPool,
