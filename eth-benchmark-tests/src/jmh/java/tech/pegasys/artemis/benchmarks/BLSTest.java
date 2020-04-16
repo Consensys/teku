@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.benchmarks;
 
+import static java.util.Collections.singletonList;
 import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
 
 import com.google.common.collect.Streams;
@@ -61,10 +62,25 @@ public class BLSTest {
   }
 
   @Test
-  public void verifySignatureBatched() {
+  public void verifySignatureByAtes() {
     FP12 ate1 = PAIR.ate(signatures.get(0).getSignature().g2Point().point, g1Generator.point);
     FP12 ate2 = PAIR.ate(hashToG2(messages.get(0)), keyPairs.get(0).getPublicKey().getPublicKey().g1Point().point);
-    assert ate1.equals(ate2);
+    if (!PAIR.fexp(ate1).equals(PAIR.fexp(ate2))) throw new IllegalStateException();
+  }
+
+  @Test
+  public void aggregateVerify() {
+    boolean res = signatures
+        .get(0)
+        .getSignature()
+        .aggregateVerify(
+            singletonList(keyPairs.get(0).getPublicKey().getPublicKey()),
+            singletonList(new G2Point(hashToG2(messages.get(0)))));
+      if (!res) throw new IllegalStateException();
+  }
+
+  @Test
+  public void verifySignatureBatched() {
 
     G2Point sigSum = null;
     for (int i = 0; i < sigCnt; i++) {
@@ -85,7 +101,7 @@ public class BLSTest {
     }
 
     FP12 ateSig = PAIR.ate(sigSum.point, g1Generator.point);
-    boolean res = ateSig.equals(atesProduct);
+    boolean res = PAIR.fexp(ateSig).equals(PAIR.fexp(atesProduct));
     if (!res) {
       throw new IllegalStateException();
     }

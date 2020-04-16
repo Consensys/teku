@@ -165,7 +165,7 @@ public final class Signature {
    * @param hashesInG2 The list of G2 point corresponding to the messages to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  boolean aggregateVerify(List<PublicKey> publicKeys, List<G2Point> hashesInG2) {
+  public boolean aggregateVerify(List<PublicKey> publicKeys, List<G2Point> hashesInG2) {
     checkArgument(
         publicKeys.size() == hashesInG2.size(),
         "List of public keys and list of messages differ in length");

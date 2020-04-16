@@ -47,7 +47,7 @@ import tech.pegasys.artemis.bls.mikuli.Scalar;
 @State(Scope.Thread)
 public class BLSBenchmark {
 
-  @Param({"128"})
+  @Param({/*"4", "8", */"16", "32"/*, "64", "128"*/})
   int sigCnt = 128;
   static final G1Point g1Generator = new G1Point(ECP.generator());
 
@@ -61,10 +61,6 @@ public class BLSBenchmark {
       (keyPair, msg) -> BLS.sign(keyPair.getSecretKey(), msg))
       .collect(Collectors.toList());
 
-  public BLSBenchmark() {
-//    Constants.setConstants("mainnet");
-  }
-
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
@@ -72,7 +68,7 @@ public class BLSBenchmark {
     for (int i = 0; i < sigCnt; i++) {
       boolean res = BLS
           .verify(keyPairs.get(i).getPublicKey(), messages.get(i), signatures.get(i));
-//      if (!res) throw new IllegalStateException();
+      if (!res) throw new IllegalStateException();
     }
   }
 
@@ -104,8 +100,7 @@ public class BLSBenchmark {
     }
 
     FP12 ateSig = PAIR.ate(sigSum.point, g1Generator.point);
-    boolean res = ateSig.equals(atesProduct);
-//    if (!res) throw new IllegalStateException();
-
+    boolean res = PAIR.fexp(ateSig).equals(PAIR.fexp(atesProduct));
+    if (!res) throw new IllegalStateException();
   }
 }
