@@ -25,6 +25,7 @@ import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -218,6 +219,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return recentChainData.getBestSlot().longValue();
   }
 
+  private long getHeadRootValue() {
+    Optional<Bytes32> maybeBlockRoot = recentChainData.getBestBlockRoot();
+    if (maybeBlockRoot.isPresent()) {
+      return maybeBlockRoot.get().getLong(24, ByteOrder.LITTLE_ENDIAN);
+    }
+    return 0L;
+  }
+
   private long getCurrentEpochValue() {
     return compute_epoch_at_slot(nodeSlot).longValue();
   }
@@ -275,6 +284,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         "head_slot",
         "Slot of the head block of the beacon chain",
         this::getHeadSlotValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "head_root",
+        "Root of the head block of the beacon chain",
+        this::getHeadRootValue);
   }
 
   public void initDepositProvider() {
