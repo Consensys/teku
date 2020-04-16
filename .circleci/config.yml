@@ -362,7 +362,7 @@ workflows:
       - publishAPIDoc:
           filters:
             branches:
-              only: publish_openapi_to_gh-pages
+              only: pull/1585
 
   nightly:
     triggers:
