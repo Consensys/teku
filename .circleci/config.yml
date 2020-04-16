@@ -295,19 +295,14 @@ jobs:
           command: |
             readonly GIT_URL=git@github.com:$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME.git
             readonly COMMIT=$(git rev-parse --short HEAD)
+            readonly BRANCH='gh-pages-test-do-not-remove-yet'
 
-            echo $USERNAME
-            echo $REPONAME
-            echo $GIT_URL
-            echo $BRANCH
-            echo $DEFAULT_COMMIT_MESSAGE
-#            git clone --depth=1 $GIT_URL -b $BRANCH $DIR || (git init $DIR && cd $DIR && git remote add origin $GIT_URL && git checkout -b $BRANCH)
-#            rm -rf ${DIR}/*
-#            cp -R ${DIR}/../${DIST}/. $DIR
-#            cd $DIR
-#            git add --all
-#            git commit -m "${MESSAGE}" || true
-#            git push origin $BRANCH
+            git clone --depth=1 $GIT_URL -b $BRANCH
+            cd $BRANCH
+            touch testfile.txt
+            git add --all
+            git commit -m "test" || true
+            git push origin $BRANCH
 workflows:
   version: 2
   circleci:
