@@ -13,22 +13,19 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
+import tech.pegasys.artemis.util.config.PredefinedNetwork;
 
 public class NetworkOptions {
 
-  public static final String NETWORK_OPTION_NAME = "--network";
-
-  public static final String DEFAULT_NETWORK = "minimal";
-
-  @CommandLine.Option(
-      names = {"-n", NETWORK_OPTION_NAME},
+  @Option(
+      names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
       description = "Represents which network to use",
       arity = "1")
-  private String network = DEFAULT_NETWORK;
+  private PredefinedNetwork network = PredefinedNetwork.MINIMAL;
 
-  public String getNetwork() {
+  public PredefinedNetwork getNetwork() {
     return network;
   }
 }

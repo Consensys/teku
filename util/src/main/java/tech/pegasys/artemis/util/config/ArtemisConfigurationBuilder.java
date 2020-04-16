@@ -14,9 +14,11 @@
 package tech.pegasys.artemis.util.config;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class ArtemisConfigurationBuilder {
-  private String network;
+  private String constants;
   private boolean p2pEnabled;
   private String p2pInterface;
   private int p2pPort;
@@ -58,9 +60,10 @@ public class ArtemisConfigurationBuilder {
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
   private String restApiInterface;
+  private PredefinedNetwork network;
 
-  public ArtemisConfigurationBuilder setNetwork(final String network) {
-    this.network = network;
+  public ArtemisConfigurationBuilder setConstants(final String constants) {
+    this.constants = constants;
     return this;
   }
 
@@ -281,9 +284,23 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
+  public ArtemisConfigurationBuilder setNetwork(final PredefinedNetwork network) {
+    this.network = network;
+    return this;
+  }
+
   public ArtemisConfiguration build() {
+    if (network != null) {
+      System.out.println("Applying network " + network);
+      constants = getEffectiveValue(constants, () -> Optional.of(network.getConstants()));
+      eth1DepositContractAddress =
+          getEffectiveValue(eth1DepositContractAddress, network::getEth1DepositContractAddress);
+      p2pDiscoveryBootnodes =
+          getEffectiveValue(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
+      eth1Endpoint = getEffectiveValue(eth1Endpoint, network::getEth1Endpoint);
+    }
     return new ArtemisConfiguration(
-        network,
+        constants,
         p2pEnabled,
         p2pInterface,
         p2pPort,
@@ -325,5 +342,10 @@ public class ArtemisConfigurationBuilder {
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface);
+  }
+
+  private <T> T getEffectiveValue(
+      final T explicitValue, final Supplier<Optional<T>> predefinedNetworkValue) {
+    return explicitValue != null ? explicitValue : predefinedNetworkValue.get().orElse(null);
   }
 }

@@ -27,7 +27,7 @@ import tech.pegasys.artemis.bls.BLSPublicKey;
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
   // Network
-  private final String network;
+  private final String constants;
 
   // P2P
   private final boolean p2pEnabled;
@@ -94,7 +94,7 @@ public class ArtemisConfiguration {
   }
 
   ArtemisConfiguration(
-      final String network,
+      final String constants,
       final boolean p2pEnabled,
       final String p2pInterface,
       final int p2pPort,
@@ -136,7 +136,7 @@ public class ArtemisConfiguration {
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
       final String restApiInterface) {
-    this.network = network;
+    this.constants = constants;
     this.p2pEnabled = p2pEnabled;
     this.p2pInterface = p2pInterface;
     this.p2pPort = p2pPort;
@@ -178,10 +178,11 @@ public class ArtemisConfiguration {
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
+    System.out.println(eth1DepositContractAddress);
   }
 
-  public String getNetwork() {
-    return network;
+  public String getConstants() {
+    return constants;
   }
 
   public boolean isP2pEnabled() {
