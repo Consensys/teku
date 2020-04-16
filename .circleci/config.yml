@@ -293,16 +293,14 @@ jobs:
       - run:
           name: Deploy to GitHub Pages
           command: |
-            readonly USERNAME=<< parameters.project-username >>
-            readonly REPONAME=<< parameters.project-reponame >>
+            # readonly USERNAME=<< parameters.project-username >>
+            # readonly REPONAME=<< parameters.project-reponame >>
             readonly GIT_URL=git@github.com:${USERNAME:-$CIRCLE_PROJECT_USERNAME}/${REPONAME:-$CIRCLE_PROJECT_REPONAME}.git
             readonly BRANCH=gh-pages
             readonly COMMIT=$(git rev-parse --short HEAD)
-            readonly COMMIT_MESSAGE=<< parameters.commit-message >>
+            # readonly COMMIT_MESSAGE=<< parameters.commit-message >>
             readonly DEFAULT_COMMIT_MESSAGE="Built artifacts of ${COMMIT} [ci skip]"
             readonly MESSAGE=${COMMIT_MESSAGE:-$DEFAULT_COMMIT_MESSAGE}
-            readonly DIST=<< parameters.build-dir >>
-            readonly DIR=<< parameters.tmp-dir >>
 
             echo $USERNAME
             echo $REPONAME
@@ -312,8 +310,6 @@ jobs:
             echo $COMMIT_MESSAGE
             echo $DEFAULT_COMMIT_MESSAGE
             echo $MESSAGE
-            echo $DIST
-            echo $DIR
 #            git clone --depth=1 $GIT_URL -b $BRANCH $DIR || (git init $DIR && cd $DIR && git remote add origin $GIT_URL && git checkout -b $BRANCH)
 #            rm -rf ${DIR}/*
 #            cp -R ${DIR}/../${DIST}/. $DIR
