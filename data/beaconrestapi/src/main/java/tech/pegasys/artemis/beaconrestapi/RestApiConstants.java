@@ -36,6 +36,7 @@ public class RestApiConstants {
   public static final String RES_NOT_FOUND = "404"; // SC_NOT_FOUND
   public static final String RES_CONFLICT = "406"; // SC_CONFLICT
   public static final String RES_INTERNAL_ERROR = "500"; // SC_INTERNAL_SERVER_ERROR
+  public static final String RES_SERVICE_UNAVAILABLE = "503"; // SC_SERVICE_UNAVAILABLE
 
   public static final String NO_CONTENT_PRE_GENESIS =
       "No content may be returned if the genesis block has not been set, meaning that there is no head to query.";

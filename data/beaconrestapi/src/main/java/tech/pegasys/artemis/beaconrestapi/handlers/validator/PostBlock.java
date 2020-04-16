@@ -17,8 +17,10 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_ACCEPTED;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -44,7 +46,7 @@ public class PostBlock implements Handler {
 
   public PostBlock(
       final ValidatorDataProvider validatorDataProvider,
-      SyncDataProvider syncDataProvider,
+      final SyncDataProvider syncDataProvider,
       final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.validatorDataProvider = validatorDataProvider;
@@ -62,11 +64,20 @@ public class PostBlock implements Handler {
           "Submit a signed beacon block to the beacon node to be imported."
               + " Validation is expected to be performed by the beacon node.",
       responses = {
-        @OpenApiResponse(status = RES_OK, description = ""),
+        @OpenApiResponse(
+            status = RES_OK,
+            description = "Block has been successfully broadcast, validated and imported."),
         @OpenApiResponse(
             status = RES_ACCEPTED,
-            description = "Block has failed validation, but has still been broadcast"),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
+            description =
+                "Block has been successfully broadcast, but failed validation and has not been imported."),
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Unable to parse request body."),
+        @OpenApiResponse(
+            status = RES_INTERNAL_ERROR,
+            description = "Beacon node experienced an internal error."),
+        @OpenApiResponse(
+            status = RES_SERVICE_UNAVAILABLE,
+            description = "Beacon node is currently syncing.")
       })
   @SuppressWarnings("FutureReturnValueIgnored")
   @Override
