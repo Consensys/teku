@@ -14,5 +14,12 @@
 package tech.pegasys.artemis.storage.api;
 
 public interface ReorgEventChannel {
+
+  /**
+   * Called each time the chain switches forks.
+   *
+   * <p>This method is not called when the initial best block is set at startup or when the chain
+   * advances on the same fork.
+   */
   void reorgOccurred();
 }
