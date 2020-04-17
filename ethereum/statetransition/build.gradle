@@ -6,6 +6,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':logging')
   implementation project(':pow')
+  implementation project(':protoarray')
   implementation project(':services:serviceutils')
   implementation project(':ssz')
   implementation project(':storage')
@@ -19,6 +20,7 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
 
   testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))
@@ -27,6 +29,8 @@ dependencies {
   testFixturesApi testFixtures(project(':storage'))
 
   testFixturesImplementation project(':ethereum:core')
+  testFixturesImplementation testFixtures(project(':protoarray'))
+  testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':validator:client')

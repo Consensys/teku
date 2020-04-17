@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.core.results;
 
+import java.util.function.Supplier;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 
@@ -36,6 +37,10 @@ public interface AttestationProcessingResult {
   }
 
   boolean isSuccessful();
+
+  default AttestationProcessingResult ifSuccessful(Supplier<AttestationProcessingResult> nextStep) {
+    return isSuccessful() ? nextStep.get() : this;
+  }
 
   /** @return If failed, returns a non-null failure reason, otherwise returns null. */
   FailureReason getFailureReason();

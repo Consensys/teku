@@ -25,6 +25,6 @@ public class UnsignedLongDeserializer extends JsonDeserializer<UnsignedLong> {
   @Override
   public UnsignedLong deserialize(JsonParser p, DeserializationContext ctxt)
       throws IOException, JsonProcessingException {
-    return UnsignedLong.valueOf(p.getBigIntegerValue());
+    return UnsignedLong.valueOf(p.getValueAsString(), 10);
   }
 }

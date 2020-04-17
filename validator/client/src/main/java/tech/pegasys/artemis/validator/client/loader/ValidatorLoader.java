@@ -28,11 +28,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.core.signatures.LocalMessageSignerService;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
-import tech.pegasys.artemis.validator.client.signer.LocalMessageSignerService;
-import tech.pegasys.artemis.validator.client.signer.Signer;
 
 public class ValidatorLoader {
 

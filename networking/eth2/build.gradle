@@ -22,6 +22,7 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.xerial.snappy:snappy-java'
 
+  testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':util'))
@@ -29,6 +30,7 @@ dependencies {
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
+  integrationTestImplementation testFixtures(project(':ethereum:core'))
   integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
   integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
   integrationTestImplementation testFixtures(project(':networking:eth2'))

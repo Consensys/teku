@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':bls')
+  implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':logging')
   implementation project(':ssz')
@@ -11,6 +12,8 @@ dependencies {
   implementation 'org.mapdb:mapdb'
   implementation 'org.rocksdb:rocksdbjni'
 
+  testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))

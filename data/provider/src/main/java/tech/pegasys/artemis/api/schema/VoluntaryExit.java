@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 
 public class VoluntaryExit {
@@ -22,5 +24,17 @@ public class VoluntaryExit {
   public VoluntaryExit(tech.pegasys.artemis.datastructures.operations.VoluntaryExit voluntaryExit) {
     this.epoch = voluntaryExit.getEpoch();
     this.validator_index = voluntaryExit.getValidator_index();
+  }
+
+  @JsonCreator
+  public VoluntaryExit(
+      @JsonProperty("epoch") final UnsignedLong epoch,
+      @JsonProperty("validator_index") final UnsignedLong validator_index) {
+    this.epoch = epoch;
+    this.validator_index = validator_index;
+  }
+
+  public tech.pegasys.artemis.datastructures.operations.VoluntaryExit asInternalVoluntaryExit() {
+    return new tech.pegasys.artemis.datastructures.operations.VoluntaryExit(epoch, validator_index);
   }
 }

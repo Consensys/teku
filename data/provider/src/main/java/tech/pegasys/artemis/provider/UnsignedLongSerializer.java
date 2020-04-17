@@ -23,6 +23,6 @@ public class UnsignedLongSerializer extends JsonSerializer<UnsignedLong> {
   @Override
   public void serialize(UnsignedLong value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeNumber(value.bigIntegerValue());
+    gen.writeString(value.toString(10));
   }
 }

@@ -30,8 +30,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -39,14 +40,13 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.ForkProvider;
 import tech.pegasys.artemis.validator.client.Validator;
-import tech.pegasys.artemis.validator.client.signer.Signer;
 
 class AttestationProductionDutyTest {
 
   private static final UnsignedLong SLOT = UnsignedLong.valueOf(1488);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Fork fork = dataStructureUtil.randomFork();
+  private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
@@ -55,7 +55,7 @@ class AttestationProductionDutyTest {
 
   @BeforeEach
   public void setUp() {
-    when(forkProvider.getFork()).thenReturn(completedFuture(fork));
+    when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
   }
 
   @Test

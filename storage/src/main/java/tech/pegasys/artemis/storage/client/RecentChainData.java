@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -78,7 +79,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
-    final Store store = Store.get_genesis_store(genesisState);
+    final Store store = Store.getForkChoiceStore(genesisState);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
@@ -88,7 +89,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     storageUpdateChannel.onGenesis(store);
     eventBus.post(store);
 
-    // The genesis state is by definition finalised so just get the root from there.
+    // The genesis state is by definition finalized so just get the root from there.
     Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     updateBestBlock(headBlockRoot, headBlock.getSlot());
@@ -166,6 +167,24 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   /**
+   * If available, return the best block and state.
+   *
+   * @return The best block along with its corresponding state.
+   */
+  public Optional<BeaconBlockAndState> getBestBlockAndState() {
+    if (isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return bestBlockRoot.map(
+        (bestRoot) -> {
+          BeaconBlock block = getStore().getBlock(bestRoot);
+          BeaconState state = getStore().getBlockState(bestRoot);
+          return new BeaconBlockAndState(block, state);
+        });
+  }
+
+  /**
    * Retrieves the state of the block chosen by fork choice to build and attest on
    *
    * @return
@@ -222,10 +241,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .filter(block -> block.getSlot().equals(slot));
   }
 
-  public Optional<BeaconState> getStateBySlot(final UnsignedLong slot) {
-    return getBlockRootBySlot(slot)
-        .map(blockRoot -> store.getBlockState(blockRoot))
-        .filter(state -> state.getSlot().equals(slot));
+  public Optional<BeaconState> getStateInEffectAtSlot(final UnsignedLong slot) {
+    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlockState(blockRoot));
   }
 
   public boolean isIncludedInBestState(final Bytes32 blockRoot) {
@@ -246,8 +263,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       LOG.trace("No block root at slot {} because store or best block root is not set", slot);
       return Optional.empty();
     }
-    if (bestSlot.equals(slot)) {
-      LOG.trace("Block root at slot {} is the current best slot root", slot);
+    if (bestSlot.compareTo(slot) <= 0) {
+      LOG.trace("Block root at slot {} is at or after the current best slot root", slot);
       return bestBlockRoot;
     }
 

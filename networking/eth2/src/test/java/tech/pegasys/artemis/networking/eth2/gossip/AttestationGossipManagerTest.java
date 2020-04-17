@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,8 +34,6 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
@@ -48,6 +45,7 @@ public class AttestationGossipManagerTest {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
+  private AttestationGossipManager attestationGossipManager;
 
   @BeforeEach
   public void setup() {
@@ -55,16 +53,14 @@ public class AttestationGossipManagerTest {
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(argThat((val) -> val.matches(topicRegex)), any());
-    new AttestationGossipManager(gossipNetwork, eventBus, storageClient);
+    attestationGossipManager = new AttestationGossipManager(gossipNetwork, eventBus, storageClient);
   }
 
   @Test
   public void onNewAttestation_afterMatchingAssignment() {
     // Setup committee assignment
     final int committeeIndex = 2;
-    final CommitteeAssignmentEvent assignment =
-        new CommitteeAssignmentEvent(List.of(committeeIndex));
-    eventBus.post(assignment);
+    attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
 
     // Post new attestation
     final Attestation attestation = dataStructureUtil.randomAttestation();
@@ -79,9 +75,7 @@ public class AttestationGossipManagerTest {
   public void onNewAttestation_noMatchingAssignment() {
     // Setup committee assignment
     final int committeeIndex = 2;
-    final CommitteeAssignmentEvent assignment =
-        new CommitteeAssignmentEvent(List.of(committeeIndex));
-    eventBus.post(assignment);
+    attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
 
     // Post new attestation
     final Attestation attestation = dataStructureUtil.randomAttestation();
@@ -96,14 +90,10 @@ public class AttestationGossipManagerTest {
     // Setup committee assignment
     final int committeeIndex = 2;
     final int dismissedIndex = 3;
-    final CommitteeAssignmentEvent assignment =
-        new CommitteeAssignmentEvent(List.of(committeeIndex, dismissedIndex));
-    eventBus.post(assignment);
+    attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
 
     // Unassign
-    final CommitteeDismissalEvent dismissalEvent =
-        new CommitteeDismissalEvent(List.of(dismissedIndex));
-    eventBus.post(dismissalEvent);
+    attestationGossipManager.unsubscribeFromCommitteeTopic(dismissedIndex);
 
     // Attestation for dismissed assignment should be ignored
     final Attestation attestation = dataStructureUtil.randomAttestation();

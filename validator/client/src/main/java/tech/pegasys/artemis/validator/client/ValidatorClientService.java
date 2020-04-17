@@ -24,6 +24,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.validator.anticorruption.ValidatorAnticorruptionLayer;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
+import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.artemis.validator.client.loader.ValidatorLoader;
 
@@ -47,9 +48,10 @@ public class ValidatorClientService extends Service {
         ValidatorLoader.initializeValidators(config.getConfig());
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);
+    final ScheduledDuties scheduledDuties = new ScheduledDuties(validatorDutyFactory);
     final DutyScheduler validatorClient =
         new DutyScheduler(
-            asyncRunner, validatorApiChannel, forkProvider, validatorDutyFactory, validators);
+            asyncRunner, validatorApiChannel, forkProvider, scheduledDuties, validators);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 

@@ -13,8 +13,10 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 
 public class DepositData {
   public final BLSPubKey pubkey;
@@ -27,5 +29,24 @@ public class DepositData {
     this.withdrawal_credentials = depositData.getWithdrawal_credentials();
     this.amount = depositData.getAmount();
     this.signature = new BLSSignature(depositData.getSignature());
+  }
+
+  public DepositData(
+      @JsonProperty("pubkey") final BLSPubKey pubkey,
+      @JsonProperty("withdrawal_credentials") final Bytes32 withdrawal_credentials,
+      @JsonProperty("amount") final UnsignedLong amount,
+      @JsonProperty("signature") final BLSSignature signature) {
+    this.pubkey = pubkey;
+    this.withdrawal_credentials = withdrawal_credentials;
+    this.amount = amount;
+    this.signature = signature;
+  }
+
+  public tech.pegasys.artemis.datastructures.operations.DepositData asInternalDepositData() {
+    return new tech.pegasys.artemis.datastructures.operations.DepositData(
+        BLSPublicKey.fromBytes(pubkey.toBytes()),
+        withdrawal_credentials,
+        amount,
+        signature.asInternalBLSSignature());
   }
 }

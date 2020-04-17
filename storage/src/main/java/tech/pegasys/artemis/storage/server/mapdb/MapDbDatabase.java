@@ -61,7 +61,6 @@ public class MapDbDatabase implements Database {
   private final ConcurrentMap<Bytes32, BeaconState> hotStatesByRoot;
 
   private final ConcurrentMap<Checkpoint, BeaconState> checkpointStates;
-  private final ConcurrentMap<UnsignedLong, Checkpoint> latestMessages;
 
   // In memory only
   private final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache =
@@ -127,13 +126,6 @@ public class MapDbDatabase implements Database {
                 new MapDBSerializer<BeaconState>(BeaconStateImpl.class))
             .createOrOpen();
 
-    latestMessages =
-        db.hashMap(
-                "latestMessages",
-                new UnsignedLongSerializer(),
-                new MapDBSerializer<>(Checkpoint.class))
-            .createOrOpen();
-
     // Recreate hotRootsBySlotCache
     hotBlocksByRoot.forEach(this::addToHotRootsBySlotCache);
   }
@@ -188,7 +180,6 @@ public class MapDbDatabase implements Database {
       event.getJustifiedCheckpoint().ifPresent(justifiedCheckpoint::set);
       event.getBestJustifiedCheckpoint().ifPresent(bestJustifiedCheckpoint::set);
       checkpointStates.putAll(event.getCheckpointStates());
-      latestMessages.putAll(event.getLatestMessages());
 
       event.getBlocks().forEach(this::addHotBlock);
       hotStatesByRoot.putAll(event.getBlockStates());
@@ -326,8 +317,7 @@ public class MapDbDatabase implements Database {
             bestJustifiedCheckpoint.get(),
             hotBlocksByRoot,
             hotStatesByRoot,
-            checkpointStates,
-            latestMessages));
+            checkpointStates));
   }
 
   @Override

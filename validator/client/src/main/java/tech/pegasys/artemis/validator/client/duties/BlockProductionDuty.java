@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.client.ForkProvider;
@@ -49,7 +49,7 @@ public class BlockProductionDuty implements Duty {
   @Override
   public SafeFuture<?> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
-    return forkProvider.getFork().thenCompose(this::produceBlock);
+    return forkProvider.getForkInfo().thenCompose(this::produceBlock);
   }
 
   @Override
@@ -57,10 +57,10 @@ public class BlockProductionDuty implements Duty {
     return "Block production for slot " + slot + " by " + validator.getPublicKey();
   }
 
-  public SafeFuture<Void> produceBlock(final Fork fork) {
-    return createRandaoReveal(fork)
+  public SafeFuture<Void> produceBlock(final ForkInfo forkInfo) {
+    return createRandaoReveal(forkInfo)
         .thenCompose(this::createUnsignedBlock)
-        .thenCompose(unsignedBlock -> signBlock(fork, unsignedBlock))
+        .thenCompose(unsignedBlock -> signBlock(forkInfo, unsignedBlock))
         .thenAccept(validatorApiChannel::sendSignedBlock);
   }
 
@@ -68,15 +68,15 @@ public class BlockProductionDuty implements Duty {
     return validatorApiChannel.createUnsignedBlock(slot, randaoReveal);
   }
 
-  public SafeFuture<BLSSignature> createRandaoReveal(final Fork fork) {
-    return validator.getSigner().createRandaoReveal(compute_epoch_at_slot(slot), fork);
+  public SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
+    return validator.getSigner().createRandaoReveal(compute_epoch_at_slot(slot), forkInfo);
   }
 
   public SafeFuture<SignedBeaconBlock> signBlock(
-      final Fork fork, final Optional<BeaconBlock> unsignedBlock) {
+      final ForkInfo forkInfo, final Optional<BeaconBlock> unsignedBlock) {
     return validator
         .getSigner()
-        .signBlock(unsignedBlock.orElseThrow(), fork)
+        .signBlock(unsignedBlock.orElseThrow(), forkInfo)
         .thenApply(signature -> new SignedBeaconBlock(unsignedBlock.orElseThrow(), signature));
   }
 }

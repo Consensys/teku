@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -37,8 +38,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
@@ -47,8 +49,8 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 import tech.pegasys.artemis.validator.client.duties.AggregationDuty;
 import tech.pegasys.artemis.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.artemis.validator.client.duties.BlockProductionDuty;
+import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
-import tech.pegasys.artemis.validator.client.signer.Signer;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 class DutySchedulerTest {
@@ -67,14 +69,14 @@ class DutySchedulerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Fork fork = dataStructureUtil.randomFork();
+  private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
   private final DutyScheduler dutyScheduler =
       new DutyScheduler(
           asyncRunner,
           validatorApiChannel,
           forkProvider,
-          dutyFactory,
+          new ScheduledDuties(dutyFactory),
           Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
 
   @BeforeEach
@@ -83,7 +85,7 @@ class DutySchedulerTest {
         .thenReturn(completedFuture(Optional.of(emptyList())));
     when(dutyFactory.createAttestationProductionDuty(any()))
         .thenReturn(mock(AttestationProductionDuty.class));
-    when(forkProvider.getFork()).thenReturn(completedFuture(fork));
+    when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
     when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(new SafeFuture<>());
     when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(new SafeFuture<>());
   }
@@ -159,7 +161,7 @@ class DutySchedulerTest {
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createBlockProductionDuty(validator1, blockProposerSlot))
+    when(dutyFactory.createBlockProductionDuty(blockProposerSlot, validator1))
         .thenReturn(blockCreationDuty);
 
     // Load duties
@@ -168,6 +170,37 @@ class DutySchedulerTest {
     // Execute
     dutyScheduler.onBlockProductionDue(blockProposerSlot);
     verify(blockCreationDuty).performDuty();
+  }
+
+  @Test
+  public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
+    final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+    final DutyScheduler dutyScheduler =
+        new DutyScheduler(
+            asyncRunner,
+            validatorApiChannel,
+            forkProvider,
+            scheduledDuties,
+            Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
+    final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
+
+    when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
+    when(validatorApiChannel.getDuties(eq(ONE), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
+    dutyScheduler.onSlot(ZERO);
+
+    dutyScheduler.onBlockProductionDue(ZERO);
+    dutyScheduler.onAttestationCreationDue(ZERO);
+    dutyScheduler.onAttestationAggregationDue(ZERO);
+    // Duties haven't been loaded yet.
+    verify(scheduledDuties, never()).produceBlock(ZERO);
+    verify(scheduledDuties, never()).produceAttestations(ZERO);
+    verify(scheduledDuties, never()).performAggregation(ZERO);
+
+    epoch0Duties.complete(Optional.of(emptyList()));
+    verify(scheduledDuties).produceBlock(ZERO);
+    verify(scheduledDuties).produceAttestations(ZERO);
+    verify(scheduledDuties).performAggregation(ZERO);
   }
 
   @Test
@@ -181,7 +214,7 @@ class DutySchedulerTest {
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
     when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createBlockProductionDuty(validator1, blockProposerSlot))
+    when(dutyFactory.createBlockProductionDuty(blockProposerSlot, validator1))
         .thenReturn(blockCreationDuty);
 
     // Load duties

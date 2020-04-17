@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class SignedVoluntaryExit {
   public final VoluntaryExit message;
   public final BLSSignature signature;
@@ -21,5 +23,18 @@ public class SignedVoluntaryExit {
       tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit) {
     this.signature = new BLSSignature(signedVoluntaryExit.getSignature());
     this.message = new VoluntaryExit(signedVoluntaryExit.getMessage());
+  }
+
+  public SignedVoluntaryExit(
+      @JsonProperty("message") final VoluntaryExit message,
+      @JsonProperty("signature") final BLSSignature signature) {
+    this.message = message;
+    this.signature = signature;
+  }
+
+  public tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit
+      asInternalSignedVoluntaryExit() {
+    return new tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit(
+        message.asInternalVoluntaryExit(), signature.asInternalBLSSignature());
   }
 }

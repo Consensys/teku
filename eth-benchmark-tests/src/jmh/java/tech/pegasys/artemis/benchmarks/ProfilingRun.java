@@ -27,12 +27,14 @@ import tech.pegasys.artemis.benchmarks.gen.BlockIO;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.BlockImportResult;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
+import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -72,10 +74,11 @@ public class ProfilingRun {
 
     while (true) {
       EventBus localEventBus = mock(EventBus.class);
-      RecentChainData localStorage = MemoryOnlyRecentChainData.create(localEventBus);
-      BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
-      localStorage.initializeFromGenesis(initialState);
-      BlockImporter blockImporter = new BlockImporter(localStorage, localEventBus);
+      RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
+      BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
+      recentChainData.initializeFromGenesis(initialState);
+      ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+      BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
 
       System.out.println("Start blocks import from " + blocksFile);
       try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {

@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class SignedBeaconBlockHeader {
   public final BeaconBlockHeader message;
   public final BLSSignature signature;
@@ -21,5 +24,19 @@ public class SignedBeaconBlockHeader {
       tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader signedHeader) {
     this.message = new BeaconBlockHeader(signedHeader.getMessage());
     this.signature = new BLSSignature(signedHeader.getSignature());
+  }
+
+  @JsonCreator
+  public SignedBeaconBlockHeader(
+      @JsonProperty("message") final BeaconBlockHeader message,
+      @JsonProperty("signature") final BLSSignature signature) {
+    this.message = message;
+    this.signature = signature;
+  }
+
+  public tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader
+      asInternalSignedBeaconBlockHeader() {
+    return new tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader(
+        message.asInternalBeaconBlockHeader(), signature.asInternalBLSSignature());
   }
 }

@@ -39,7 +39,7 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> getFinalizedStateAtSlot(UnsignedLong slot) {
+  public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(UnsignedLong slot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 

@@ -40,7 +40,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,11 +69,11 @@ public class GetBlock implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain block that matches the criteria.",
+      summary = "Get the beacon chain block matching the criteria.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(name = EPOCH, type = BigDecimal.class, description = EPOCH_QUERY_DESCRIPTION),
-        @OpenApiParam(name = SLOT, type = BigDecimal.class, description = SLOT_QUERY_DESCRIPTION),
+        @OpenApiParam(name = EPOCH, description = EPOCH_QUERY_DESCRIPTION),
+        @OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION),
         @OpenApiParam(name = ROOT, description = ROOT_QUERY_DESCRIPTION)
       },
       description =
