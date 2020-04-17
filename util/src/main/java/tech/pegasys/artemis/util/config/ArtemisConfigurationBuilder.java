@@ -304,17 +304,16 @@ public class ArtemisConfigurationBuilder {
 
   public ArtemisConfiguration build() {
     if (network != null) {
-      constants = getEffectiveValue(constants, network::getConstants);
+      constants = getOrDefault(constants, network::getConstants);
       startupTargetPeerCount =
-          getEffectiveValue(startupTargetPeerCount, network::getStartupTargetPeerCount);
+          getOrDefault(startupTargetPeerCount, network::getStartupTargetPeerCount);
       startupTimeoutSeconds =
-          getEffectiveValue(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
+          getOrDefault(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
       eth1DepositContractAddress =
-          getEffectiveValueOptional(
-              eth1DepositContractAddress, network::getEth1DepositContractAddress);
+          getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
       p2pDiscoveryBootnodes =
-          getEffectiveValueOptional(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
-      eth1Endpoint = getEffectiveValueOptional(eth1Endpoint, network::getEth1Endpoint);
+          getOrOptionalDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
+      eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
     }
     return new ArtemisConfiguration(
         constants,
@@ -363,12 +362,11 @@ public class ArtemisConfigurationBuilder {
         restApiInterface);
   }
 
-  private <T> T getEffectiveValue(final T explicitValue, final Supplier<T> predefinedNetworkValue) {
-    return getEffectiveValueOptional(
-        explicitValue, () -> Optional.of(predefinedNetworkValue.get()));
+  private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {
+    return getOrOptionalDefault(explicitValue, () -> Optional.of(predefinedNetworkValue.get()));
   }
 
-  private <T> T getEffectiveValueOptional(
+  private <T> T getOrOptionalDefault(
       final T explicitValue, final Supplier<Optional<T>> predefinedNetworkValue) {
     return explicitValue != null ? explicitValue : predefinedNetworkValue.get().orElse(null);
   }
