@@ -29,7 +29,6 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerStatusIntegrationTest {
 
@@ -94,7 +93,7 @@ public class PeerStatusIntegrationTest {
   }
 
   private void assertPreGenesisStatus(final PeerStatus status) {
-    assertThat(PeerStatus.isPreGenesisStatus(status, Constants.GENESIS_FORK_VERSION)).isTrue();
+    assertThat(PeerStatus.isPreGenesisStatus(status)).isTrue();
   }
 
   private void assertStatusMatchesStorage(
@@ -102,7 +101,7 @@ public class PeerStatusIntegrationTest {
     final Store network2Store = storageClient.getStore();
     assertStatus(
         status,
-        storageClient.getBestBlockRootState().orElseThrow().getFork().getCurrent_version(),
+        storageClient.getCurrentForkDigest(),
         network2Store.getFinalizedCheckpoint().getRoot(),
         network2Store.getFinalizedCheckpoint().getEpoch(),
         storageClient.getBestBlockRoot().orElseThrow(),
@@ -111,15 +110,15 @@ public class PeerStatusIntegrationTest {
 
   private void assertStatus(
       final PeerStatus status,
-      final Bytes4 versionZero,
-      final Bytes32 zero,
-      final UnsignedLong zero2,
-      final Bytes32 zero3,
-      final UnsignedLong zero4) {
-    assertThat(status.getHeadForkVersion()).isEqualTo(versionZero);
-    assertThat(status.getFinalizedRoot()).isEqualTo(zero);
-    assertThat(status.getFinalizedEpoch()).isEqualTo(zero2);
-    assertThat(status.getHeadRoot()).isEqualTo(zero3);
-    assertThat(status.getHeadSlot()).isEqualTo(zero4);
+      final Bytes4 forkDigest,
+      final Bytes32 finalizedRoot,
+      final UnsignedLong finalizedEpoch,
+      final Bytes32 headRoot,
+      final UnsignedLong headSlot) {
+    assertThat(status.getForkDigest()).isEqualTo(forkDigest);
+    assertThat(status.getFinalizedRoot()).isEqualTo(finalizedRoot);
+    assertThat(status.getFinalizedEpoch()).isEqualTo(finalizedEpoch);
+    assertThat(status.getHeadRoot()).isEqualTo(headRoot);
+    assertThat(status.getHeadSlot()).isEqualTo(headSlot);
   }
 }
