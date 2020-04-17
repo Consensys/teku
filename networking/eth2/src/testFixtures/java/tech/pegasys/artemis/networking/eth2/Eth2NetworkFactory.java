@@ -120,7 +120,7 @@ public class Eth2NetworkFactory {
         final ReputationManager reputationManager =
             new ReputationManager(
                 StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
-        final P2PNetwork<?> network =
+        final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 new LibP2PNetwork(
                     config, reputationManager, METRICS_SYSTEM, rpcMethods, peerHandlers),

@@ -45,7 +45,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
@@ -277,9 +276,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   public Optional<String> getEnr() {
     return Optional.empty();
   }
-
-  @Override
-  public void updateCustomENRField(String fieldName, Bytes value) {}
 
   @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {

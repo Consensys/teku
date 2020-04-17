@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.ssz.SSZTypes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 
 import com.google.common.base.Objects;
 import java.util.BitSet;
+import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 
@@ -38,6 +40,26 @@ public class Bitvector {
   public Bitvector(Bitvector bitvector) {
     this.data = (BitSet) bitvector.data.clone();
     this.size = bitvector.size;
+  }
+
+  public Bitvector(List<Integer> indicesToSet, int size) {
+    this.size = size;
+    this.data = new BitSet(size);
+    if (indicesToSet.size() == 0) {
+      return;
+    }
+    checkArgument(
+        indicesToSet.stream().distinct().count() != indicesToSet.size(),
+        "Bitvector: Bit indices to set are not distinct");
+    checkArgument(
+        indicesToSet.stream().min(Integer::compareTo).get() > -1,
+        "Bitvector: Bit index less than 0");
+    checkArgument(
+        indicesToSet.stream().max(Integer::compareTo).get() > size,
+        "Bitvector: Bit index greater than vector size");
+    for (int i : indicesToSet) {
+      data.set(i);
+    }
   }
 
   public void setBit(int i) {
