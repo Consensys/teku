@@ -41,10 +41,12 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.config.NetworkDefinition;
 
 @Command(
     name = "transition",
     description = "Manually run state transitions",
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
@@ -59,6 +61,7 @@ public class TransitionCommand implements Runnable {
       name = "blocks",
       description = "Process blocks on the pre-state to get a post-state",
       mixinStandardHelpOptions = true,
+      showDefaultValues = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
       synopsisHeading = "%n",
@@ -87,6 +90,7 @@ public class TransitionCommand implements Runnable {
       name = "slots",
       description = "Process empty slots on the pre-state to get a post-state",
       mixinStandardHelpOptions = true,
+      showDefaultValues = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
       synopsisHeading = "%n",
@@ -115,7 +119,8 @@ public class TransitionCommand implements Runnable {
 
   private void processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
-    Constants.setConstants(params.networkOptions.getNetwork());
+    Constants.setConstants(
+        NetworkDefinition.fromCliArg(params.networkOptions.getNetwork()).getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));

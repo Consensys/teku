@@ -22,6 +22,7 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 @Command(
     name = "validator",
     description = "Register validators by sending deposit transactions to an Ethereum 1 node",
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     subcommands = {DepositGenerateCommand.class, DepositRegisterCommand.class},
