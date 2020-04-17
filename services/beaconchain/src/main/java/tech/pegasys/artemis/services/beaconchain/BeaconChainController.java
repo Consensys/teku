@@ -62,6 +62,7 @@ import tech.pegasys.artemis.statetransition.genesis.GenesisHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
@@ -161,6 +162,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             DelayedExecutorAsyncRunner.create(),
             eventChannels.getPublisher(StorageUpdateChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
+            eventChannels.getPublisher(ReorgEventChannel.class),
             eventBus)
         .thenAccept(
             client -> {
