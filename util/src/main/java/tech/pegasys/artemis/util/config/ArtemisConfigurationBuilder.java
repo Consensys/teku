@@ -18,6 +18,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public class ArtemisConfigurationBuilder {
+  private static boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
+
   private String constants;
   private Integer startupTargetPeerCount;
   private Integer startupTimeoutSeconds;
@@ -32,7 +34,7 @@ public class ArtemisConfigurationBuilder {
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
   private List<String> p2pStaticPeers;
-  private boolean p2pSnappyEnabled;
+  private Boolean p2pSnappyEnabled;
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
@@ -142,7 +144,7 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setP2pSnappyEnabled(final boolean p2pSnappyEnabled) {
+  public ArtemisConfigurationBuilder setP2pSnappyEnabled(final Boolean p2pSnappyEnabled) {
     this.p2pSnappyEnabled = p2pSnappyEnabled;
     return this;
   }
@@ -350,7 +352,11 @@ public class ArtemisConfigurationBuilder {
           getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
       p2pDiscoveryBootnodes = getOrDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
       eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
+      p2pSnappyEnabled =
+          getOrOptionalDefault(p2pSnappyEnabled, network::getSnappyCompressionEnabled);
     }
+
+    p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
     return new ArtemisConfiguration(
         constants,
         startupTargetPeerCount,

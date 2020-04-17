@@ -16,9 +16,10 @@ package tech.pegasys.artemis.cli.options;
 import picocli.CommandLine.Option;
 
 public class NetworkOptions {
+  public static final String NETWORK_OPTION_NAME = "--network";
 
   @Option(
-      names = {"-n", "--network"},
+      names = {"-n", NETWORK_OPTION_NAME},
       paramLabel = "<NETWORK>",
       description = "Represents which network to use.",
       arity = "1")
