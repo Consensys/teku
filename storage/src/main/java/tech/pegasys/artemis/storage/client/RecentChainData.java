@@ -140,13 +140,18 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.bestSlot = slot;
     bestBlockInitialized.complete(null);
 
-    if (originalBestRoot.map(original -> isReorg(original, originalBestSlot)).orElse(false)) {
+    if (originalBestRoot
+        .map(original -> hasReorgedFrom(original, originalBestSlot))
+        .orElse(false)) {
       reorgEventChannel.reorgOccurred();
     }
   }
 
-  private boolean isReorg(final Bytes32 originalBestRoot, final UnsignedLong originalBestSlot) {
-    // Get the block root in effect at the old best slot on the new chain
+  private boolean hasReorgedFrom(
+      final Bytes32 originalBestRoot, final UnsignedLong originalBestSlot) {
+    // Get the block root in effect at the old best slot on the current best chain. If this is a
+    // different fork to the previous chain the root at originalBestSlot will be different from
+    // originalBestRoot. If it's an extension of the same chain it will match.
     return getBlockRootBySlot(originalBestSlot)
         .map(rootAtOldBestSlot -> !rootAtOldBestSlot.equals(originalBestRoot))
         .orElse(true);
