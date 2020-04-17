@@ -79,7 +79,6 @@ public class PostBlock implements Handler {
             status = RES_SERVICE_UNAVAILABLE,
             description = "Beacon node is currently syncing.")
       })
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
@@ -91,20 +90,19 @@ public class PostBlock implements Handler {
       final SignedBeaconBlock signedBeaconBlock =
           jsonProvider.jsonToObject(ctx.body(), SignedBeaconBlock.class);
 
-      validatorDataProvider
-          .submitSignedBlock(signedBeaconBlock)
-          .thenApplyChecked(
-              validatorBlockResult -> {
-                ctx.status(validatorBlockResult.getResponseCode());
-                if (validatorBlockResult.getFailureReason().isPresent()) {
-                  ctx.result(
-                      jsonProvider.objectToJSON(
-                          validatorBlockResult.getFailureReason().get().getMessage()));
-                } else {
-                  ctx.result(jsonProvider.objectToJSON(validatorBlockResult.getHash_tree_root()));
-                }
-                return null;
-              });
+      ctx.result(
+          validatorDataProvider
+              .submitSignedBlock(signedBeaconBlock)
+              .thenApplyChecked(
+                  validatorBlockResult -> {
+                    ctx.status(validatorBlockResult.getResponseCode());
+                    if (validatorBlockResult.getFailureReason().isPresent()) {
+                      return jsonProvider.objectToJSON(
+                          validatorBlockResult.getFailureReason().get().getMessage());
+                    } else {
+                      return jsonProvider.objectToJSON(validatorBlockResult.getHash_tree_root());
+                    }
+                  }));
 
     } catch (final JsonMappingException | JsonParseException ex) {
       ctx.status(SC_BAD_REQUEST);
