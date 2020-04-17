@@ -225,7 +225,7 @@ public class PeerChainValidatorTest {
   @Test
   public void chainsAreCompatible_sameFork_peerIsPreGenesis() {
     // Setup peer to report a pre-genesis status
-    remoteStatus = PeerStatus.createPreGenesisStatus(remoteFork);
+    remoteStatus = PeerStatus.createPreGenesisStatus();
     peerChainValidator =
         PeerChainValidator.create(recentChainData, historicalChainData, peer, remoteStatus);
 
@@ -268,11 +268,11 @@ public class PeerChainValidatorTest {
   }
 
   private void forksMatch() {
-    when(recentChainData.getForkAtSlot(remoteStatus.getHeadSlot())).thenReturn(remoteFork);
+    when(recentChainData.getCurrentForkDigest()).thenReturn(remoteFork);
   }
 
   private void forksDontMatch() {
-    when(recentChainData.getForkAtSlot(remoteStatus.getHeadSlot())).thenReturn(otherFork);
+    when(recentChainData.getCurrentForkDigest()).thenReturn(otherFork);
   }
 
   private void finalizedCheckpointsMatch() {
