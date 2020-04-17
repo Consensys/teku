@@ -28,18 +28,16 @@ public class StatusMessageFactory {
   }
 
   public StatusMessage createStatusMessage() {
-    final Bytes32 finalizedRoot;
-    final UnsignedLong finalizedEpoch;
-    if (recentChainData.getStore() != null) {
-      final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
-      finalizedRoot = finalizedCheckpoint.getRoot();
-      finalizedEpoch = finalizedCheckpoint.getEpoch();
-    } else {
-      finalizedRoot = Bytes32.ZERO;
-      finalizedEpoch = UnsignedLong.ZERO;
+    if (recentChainData.isPreGenesis()) {
+      return StatusMessage.createPreGenesisStatus();
     }
+
+    final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
+    final Bytes32 finalizedRoot = finalizedCheckpoint.getRoot();
+    final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
+
     return new StatusMessage(
-        recentChainData.getForkAtHead(),
+        recentChainData.getCurrentForkDigest(),
         finalizedRoot,
         finalizedEpoch,
         recentChainData.getBestBlockRoot().orElse(Bytes32.ZERO),
