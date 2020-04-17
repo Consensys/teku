@@ -29,13 +29,7 @@ public interface AsyncRunner {
 
   default SafeFuture<Void> runAfterDelay(
       final Runnable action, long delayAmount, TimeUnit delayUnit) {
-    return runAfterDelay(
-        () -> {
-          action.run();
-          return SafeFuture.COMPLETE;
-        },
-        delayAmount,
-        delayUnit);
+    return runAfterDelay(() -> SafeFuture.fromRunnable(action), delayAmount, delayUnit);
   }
 
   default SafeFuture<Void> getDelayedFuture(long delayAmount, TimeUnit delayUnit) {
