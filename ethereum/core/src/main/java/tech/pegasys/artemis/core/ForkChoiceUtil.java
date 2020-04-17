@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.forkchoice;
+package tech.pegasys.artemis.core;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
@@ -27,8 +27,6 @@ import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.core.results.AttestationProcessingResult;

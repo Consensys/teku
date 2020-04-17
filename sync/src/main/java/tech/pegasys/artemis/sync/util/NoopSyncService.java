@@ -41,4 +41,12 @@ public class NoopSyncService implements SyncService {
   public boolean isSyncActive() {
     return false;
   }
+
+  @Override
+  public long subscribeToSyncChanges(final SyncSubscriber subscriber) {
+    return 0;
+  }
+
+  @Override
+  public void unsubscribeFromSyncChanges(final long subscriberId) {}
 }

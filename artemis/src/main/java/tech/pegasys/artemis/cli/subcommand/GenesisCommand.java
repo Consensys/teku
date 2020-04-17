@@ -32,6 +32,7 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 @Command(
     name = "genesis",
     description = "Commands for generating genesis state",
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
@@ -46,6 +47,7 @@ public class GenesisCommand {
       name = "mock",
       description = "Generate a mock genesis state",
       mixinStandardHelpOptions = true,
+      showDefaultValues = true,
       abbreviateSynopsis = true,
       versionProvider = VersionProvider.class,
       synopsisHeading = "%n",

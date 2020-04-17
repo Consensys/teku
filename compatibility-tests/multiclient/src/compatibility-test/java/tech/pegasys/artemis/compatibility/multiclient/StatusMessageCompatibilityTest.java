@@ -57,7 +57,6 @@ class StatusMessageCompatibilityTest {
     final Eth2Peer prysm = artemis.getPeer(PRYSM_NODE.getId()).orElseThrow();
     final PeerStatus status = prysm.getStatus();
     assertThat(status).isNotNull();
-    assertThat(status.getHeadForkVersion()).isEqualTo(Constants.GENESIS_FORK_VERSION);
 
     // No validators so nothing should get finalized.
     assertThat(status.getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);

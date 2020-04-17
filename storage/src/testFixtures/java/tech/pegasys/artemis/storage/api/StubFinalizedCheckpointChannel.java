@@ -11,25 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.artemis.storage.api;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
-public interface SyncService {
+public class StubFinalizedCheckpointChannel implements FinalizedCheckpointChannel {
 
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  SyncingStatus getSyncStatus();
-
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
-  }
+  @Override
+  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {}
 }

@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.forkchoice;
 
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_block;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_attestation;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_block;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.StateTransition;
