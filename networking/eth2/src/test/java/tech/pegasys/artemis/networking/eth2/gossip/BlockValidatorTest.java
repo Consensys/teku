@@ -95,24 +95,24 @@ public class BlockValidatorTest {
     final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);
 
-    final SignedBeaconBlock signedBlock =
-        beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBeaconBlock signedBlock = beaconChainUtil.createBlockAtSlot(nextSlot);
 
-    UnsignedLong invalidProposerIndex =
-            signedBlock.getMessage().getProposer_index().minus(ONE);
+    UnsignedLong invalidProposerIndex = signedBlock.getMessage().getProposer_index().minus(ONE);
 
-    final BeaconBlock block = new BeaconBlock(
+    final BeaconBlock block =
+        new BeaconBlock(
             signedBlock.getSlot(),
             invalidProposerIndex,
             signedBlock.getParent_root(),
             signedBlock.getMessage().getState_root(),
-            signedBlock.getMessage().getBody()
-    );
+            signedBlock.getMessage().getBody());
 
-    BLSSignature blockSignature = new Signer(beaconChainUtil
-            .getSigner(invalidProposerIndex.intValue()))
-            .signBlock(block, recentChainData.getBestBlockRootState().get().getForkInfo()).join();
-    final SignedBeaconBlock invalidProposerSignedBlock = new SignedBeaconBlock(block, blockSignature );
+    BLSSignature blockSignature =
+        new Signer(beaconChainUtil.getSigner(invalidProposerIndex.intValue()))
+            .signBlock(block, recentChainData.getBestBlockRootState().get().getForkInfo())
+            .join();
+    final SignedBeaconBlock invalidProposerSignedBlock =
+        new SignedBeaconBlock(block, blockSignature);
 
     BlockValidationResult result = blockValidator.validate(invalidProposerSignedBlock);
     assertThat(result).isEqualTo(BlockValidationResult.INVALID);
@@ -124,9 +124,8 @@ public class BlockValidatorTest {
     beaconChainUtil.setSlot(nextSlot);
 
     final SignedBeaconBlock block =
-            new SignedBeaconBlock(
-                    beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(),
-                    BLSSignature.random(0));
+        new SignedBeaconBlock(
+            beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(), BLSSignature.random(0));
 
     BlockValidationResult result = blockValidator.validate(block);
     assertThat(result).isEqualTo(BlockValidationResult.INVALID);

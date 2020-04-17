@@ -206,7 +206,9 @@ public class BeaconChainUtil {
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       BeaconState headState =
-          recentChainData.getStore().getBlockState(recentChainData.getBestBlockRoot().orElseThrow());
+          recentChainData
+              .getStore()
+              .getBlockState(recentChainData.getBestBlockRoot().orElseThrow());
       BeaconBlock headBlock =
           recentChainData.getStore().getBlock(recentChainData.getBestBlockRoot().orElseThrow());
       UnsignedLong slot = recentChainData.getBestSlot();
@@ -216,7 +218,8 @@ public class BeaconChainUtil {
               Constants.MAX_ATTESTATIONS,
               Attestation.class);
       createAndImportBlockAtSlot(
-          recentChainData.getBestSlot().plus(UnsignedLong.ONE), Optional.of(currentSlotAssignments));
+          recentChainData.getBestSlot().plus(UnsignedLong.ONE),
+          Optional.of(currentSlotAssignments));
     }
   }
 
