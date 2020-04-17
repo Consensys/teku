@@ -13,20 +13,19 @@
 
 package tech.pegasys.artemis.cli;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
-import tech.pegasys.artemis.BeaconNode;
 import tech.pegasys.artemis.cli.options.BeaconRestApiOptions;
 import tech.pegasys.artemis.cli.options.DataOptions;
 import tech.pegasys.artemis.cli.options.DepositOptions;
@@ -78,6 +77,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter outputWriter;
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
+  private final Consumer<ArtemisConfiguration> startAction;
 
   // allows two pass approach to obtain optional config file
   private static class ConfigFileCommand {
@@ -133,16 +133,15 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin private DataOptions dataOptions;
   @Mixin private BeaconRestApiOptions beaconRestApiOptions;
 
-  private ArtemisConfiguration artemisConfiguration;
-  private BeaconNode node;
-
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
-      final Map<String, String> environment) {
+      final Map<String, String> environment,
+      final Consumer<ArtemisConfiguration> startAction) {
     this.outputWriter = outputWriter;
     this.errorWriter = errorWriter;
     this.environment = environment;
+    this.startAction = startAction;
   }
 
   public int parse(final String[] args) {
@@ -211,17 +210,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   public Integer call() {
     try {
       setLogLevels();
-      artemisConfiguration = artemisConfiguration();
-      node = new BeaconNode(artemisConfiguration);
-      node.start();
-      // Detect SIGTERM
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread(
-                  () -> {
-                    System.out.println("Teku is shutting down");
-                    node.stop();
-                  }));
+      final ArtemisConfiguration artemisConfiguration = artemisConfiguration();
+      startAction.accept(artemisConfiguration);
       return 0;
     } catch (DatabaseStorageException ex) {
       System.err.println(ex.getMessage());
@@ -232,16 +222,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
       System.exit(1);
     }
     return 1;
-  }
-
-  @VisibleForTesting
-  ArtemisConfiguration getArtemisConfiguration() {
-    return artemisConfiguration;
-  }
-
-  @VisibleForTesting
-  public void stop() {
-    node.stop();
   }
 
   private void setLogLevels() {
