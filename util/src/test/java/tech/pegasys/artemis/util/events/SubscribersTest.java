@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 
 public class SubscribersTest {
@@ -84,5 +85,20 @@ public class SubscribersTest {
 
     // No Exception should be thrown
     subscribers.forEach(Runnable::run);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void shouldDeliverEventToEachSubscriber() {
+    final Subscribers<Consumer<String>> subscribers = Subscribers.create(false);
+    final Consumer<String> subscriber1 = mock(Consumer.class);
+    final Consumer<String> subscriber2 = mock(Consumer.class);
+    subscribers.subscribe(subscriber1);
+    subscribers.subscribe(subscriber2);
+
+    final String event = "Hello";
+    subscribers.deliver(Consumer::accept, event);
+    verify(subscriber1).accept(event);
+    verify(subscriber2).accept(event);
   }
 }

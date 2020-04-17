@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
@@ -32,6 +33,7 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.sync.SyncService.SyncSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
@@ -39,12 +41,6 @@ import tech.pegasys.artemis.util.config.Constants;
 public class SyncManagerTest {
 
   private static final long SUBSCRIPTION_ID = 3423;
-  private RecentChainData storageClient = mock(RecentChainData.class);
-  private Eth2Network network = mock(Eth2Network.class);
-  private final PeerSync peerSync = mock(PeerSync.class);
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
-  private SyncManager syncManager = new SyncManager(asyncRunner, network, storageClient, peerSync);
-  private final Eth2Peer peer = mock(Eth2Peer.class);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(20);
   private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
@@ -56,6 +52,14 @@ public class SyncManagerTest {
               PEER_FINALIZED_EPOCH,
               PEER_HEAD_BLOCK_ROOT,
               PEER_HEAD_SLOT));
+
+  private RecentChainData storageClient = mock(RecentChainData.class);
+  private Eth2Network network = mock(Eth2Network.class);
+  private final PeerSync peerSync = mock(PeerSync.class);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private SyncManager syncManager = new SyncManager(asyncRunner, network, storageClient, peerSync);
+  private final Eth2Peer peer = mock(Eth2Peer.class);
+  private final SyncSubscriber syncSubscriber = mock(SyncSubscriber.class);
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<PeerConnectedSubscriber<Eth2Peer>> onConnectionListener =
@@ -209,9 +213,9 @@ public class SyncManagerTest {
     when(storageClient.getBestSlot()).thenReturn(currentSlot);
 
     SyncStatus syncStatus = syncManager.getSyncStatus().getSyncStatus();
-    assertThat(syncStatus.getCurrent_slot()).isEqualTo(currentSlot);
-    assertThat(syncStatus.getStarting_slot()).isEqualTo(startingSlot);
-    assertThat(syncStatus.getHighest_slot()).isEqualTo(PEER_HEAD_SLOT);
+    assertThat(syncStatus.getCurrentSlot()).isEqualTo(currentSlot);
+    assertThat(syncStatus.getStartingSlot()).isEqualTo(startingSlot);
+    assertThat(syncStatus.getHighestSlot()).isEqualTo(PEER_HEAD_SLOT);
 
     assertThat(syncManager.isSyncQueued()).isFalse();
 
@@ -230,5 +234,61 @@ public class SyncManagerTest {
     // verify that getSyncStatus completes even when no peers
     assertThat(syncManager.getSyncStatus().getSyncStatus()).isNull();
     assertThat(syncManager.isSyncQueued()).isFalse();
+  }
+
+  @Test
+  void subscribeToSyncChanges_notifiedWhenFirstSyncStarts() {
+    syncManager.subscribeToSyncChanges(syncSubscriber);
+
+    when(network.streamPeers()).then(i -> Stream.of(peer));
+
+    when(peerSync.sync(peer)).thenReturn(new SafeFuture<>());
+    assertThat(syncManager.start()).isCompleted();
+
+    verify(syncSubscriber).onSyncingChange(true);
+    verifyNoMoreInteractions(syncSubscriber);
+  }
+
+  @Test
+  void subscribeToSyncChanges_notifiedWhenSyncCompletes() {
+    syncManager.subscribeToSyncChanges(syncSubscriber);
+
+    when(network.streamPeers()).then(i -> Stream.of(peer));
+
+    final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
+    assertThat(syncManager.start()).isCompleted();
+    verify(syncSubscriber).onSyncingChange(true);
+    verifyNoMoreInteractions(syncSubscriber);
+
+    syncFuture.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+    verify(syncSubscriber).onSyncingChange(false);
+    verifyNoMoreInteractions(syncSubscriber);
+  }
+
+  @Test
+  void subscribeToSyncChanges_notNotifiedWhenSyncCompletesAndImmediatelyStartsAgain() {
+    syncManager.subscribeToSyncChanges(syncSubscriber);
+
+    when(network.streamPeers()).then(i -> Stream.of(peer));
+
+    final SafeFuture<PeerSyncResult> sync1Future = new SafeFuture<>();
+    final SafeFuture<PeerSyncResult> sync2Future = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(sync1Future).thenReturn(sync2Future);
+    assertThat(syncManager.start()).isCompleted();
+    verify(syncSubscriber).onSyncingChange(true);
+    verifyNoMoreInteractions(syncSubscriber);
+
+    verify(network).subscribeConnect(onConnectionListener.capture());
+    final PeerConnectedSubscriber<Eth2Peer> peerConnectedSubscriber =
+        onConnectionListener.getValue();
+
+    // Another peer connects while we're syncing to the first queuing up another sync.
+    peerConnectedSubscriber.onConnected(peer);
+
+    // The first sync completes but we should immediately start syncing to the second peer.
+    sync1Future.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+    assertThat(syncManager.isSyncActive()).isTrue();
+    verifyNoMoreInteractions(syncSubscriber);
   }
 }
