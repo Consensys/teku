@@ -69,23 +69,16 @@ class SyncStateTrackerTest {
 
   @Test
   public void shouldStartInSyncWhenTargetPeerCountIsZero() {
-    final SyncStateTracker tracker = new SyncStateTracker(
-        asyncRunner,
-        syncService,
-        network,
-        0,
-        STARTUP_TIMEOUT);
+    final SyncStateTracker tracker =
+        new SyncStateTracker(asyncRunner, syncService, network, 0, STARTUP_TIMEOUT);
     assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
   }
 
   @Test
   public void shouldStartInSyncWhenStartupTimeoutIsZero() {
-    final SyncStateTracker tracker = new SyncStateTracker(
-        asyncRunner,
-        syncService,
-        network,
-        STARTUP_TARGET_PEER_COUNT,
-        Duration.ofSeconds(0));
+    final SyncStateTracker tracker =
+        new SyncStateTracker(
+            asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, Duration.ofSeconds(0));
     assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
   }
 
