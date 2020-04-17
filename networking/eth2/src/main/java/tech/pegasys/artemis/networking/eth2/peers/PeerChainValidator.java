@@ -92,28 +92,29 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> checkRemoteChain() {
-    // Check fork compatibility
-    Bytes4 expectedFork = storageClient.getForkAtSlot(status.getHeadSlot());
-    if (!Objects.equals(expectedFork, status.getHeadForkVersion())) {
-      LOG.trace(
-          "Peer's fork ({}) differs from our fork ({}): {}",
-          status.getHeadForkVersion(),
-          expectedFork,
-          peer);
-      return SafeFuture.completedFuture(false);
-    }
-
-    // Shortcut finalized block checks if our node or our peer has not reached genesis
+    // Shortcut checks if our node or our peer has not reached genesis
     if (storageClient.isPreGenesis()) {
       // If we haven't reached genesis, accept our peer at this point
       LOG.trace("Validating peer pre-genesis, skip finalized block checks for peer {}", peer);
       return SafeFuture.completedFuture(true);
-    } else if (PeerStatus.isPreGenesisStatus(status, expectedFork)) {
+    } else if (PeerStatus.isPreGenesisStatus(status)) {
       // Our peer hasn't reached genesis, accept them for now
       LOG.trace("Peer has not reached genesis, skip finalized block checks for peer {}", peer);
       return SafeFuture.completedFuture(true);
     }
 
+    // Check fork compatibility
+    Bytes4 expectedForkDigest = storageClient.getCurrentForkDigest();
+    if (!Objects.equals(expectedForkDigest, status.getForkDigest())) {
+      LOG.trace(
+          "Peer's fork ({}) differs from our fork ({}): {}",
+          status.getForkDigest(),
+          expectedForkDigest,
+          peer);
+      return SafeFuture.completedFuture(false);
+    }
+
+    // Check finalized checkpoint compatibility
     final Checkpoint finalizedCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
     final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();

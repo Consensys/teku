@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage.client;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.eventbus.EventBus;
@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.ForkChoiceUtil;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -135,12 +136,42 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     bestBlockInitialized.complete(null);
   }
 
-  public Bytes4 getForkAtHead() {
-    return getForkAtSlot(bestSlot);
+  /**
+   * Return the current slot based on our Store's time.
+   *
+   * @return The current slot.
+   */
+  public Optional<UnsignedLong> getCurrentSlot() {
+    if (isPreGenesis()) {
+      return Optional.empty();
+    }
+    return Optional.of(ForkChoiceUtil.get_current_slot(store));
   }
 
-  public Bytes4 getForkAtSlot(UnsignedLong slot) {
-    return getForkAtEpoch(compute_epoch_at_slot(slot));
+  /**
+   * Return the current epoch based on our Store's time.
+   *
+   * @return The current epoch.
+   */
+  public Optional<UnsignedLong> getCurrentEpoch() {
+    return getCurrentSlot().map(BeaconStateUtil::compute_epoch_at_slot);
+  }
+
+  public Bytes4 getForkAtCurrentEpoch() {
+    return getCurrentEpoch().map(this::getForkAtEpoch).orElse(Constants.GENESIS_FORK_VERSION);
+  }
+
+  /**
+   * Return the current fork digest. This represents our fork information for the current epoch by
+   * time - regardless of where our head block is at.
+   *
+   * @return The current fork digest.
+   */
+  public Bytes4 getCurrentForkDigest() {
+    final Bytes4 currentFork = getForkAtCurrentEpoch();
+    final Bytes32 genesisValidatorsRoot =
+        getBestBlockRootState().map(BeaconState::getGenesis_validators_root).orElse(Bytes32.ZERO);
+    return compute_fork_digest(currentFork, genesisValidatorsRoot);
   }
 
   public Bytes4 getForkAtEpoch(UnsignedLong epoch) {
