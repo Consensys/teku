@@ -36,6 +36,7 @@ import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -48,6 +49,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
+  private final ReorgEventChannel reorgEventChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -64,7 +66,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   RecentChainData(
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
+      final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
+    this.reorgEventChannel = reorgEventChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
@@ -130,9 +134,22 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
+    final Optional<Bytes32> originalBestRoot = bestBlockRoot;
+    final UnsignedLong originalBestSlot = bestSlot;
     this.bestBlockRoot = Optional.of(root);
     this.bestSlot = slot;
     bestBlockInitialized.complete(null);
+
+    if (originalBestRoot.map(original -> isReorg(original, originalBestSlot)).orElse(false)) {
+      reorgEventChannel.reorgOccurred();
+    }
+  }
+
+  private boolean isReorg(final Bytes32 originalBestRoot, final UnsignedLong originalBestSlot) {
+    // Get the block root in effect at the old best slot on the new chain
+    return getBlockRootBySlot(originalBestSlot)
+        .map(rootAtOldBestSlot -> !rootAtOldBestSlot.equals(originalBestRoot))
+        .orElse(true);
   }
 
   public Bytes4 getForkAtHead() {

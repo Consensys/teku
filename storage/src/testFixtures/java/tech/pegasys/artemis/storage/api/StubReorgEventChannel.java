@@ -11,13 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.api;
 
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
-
-public class StubFinalizedCheckpointChannel implements FinalizedCheckpointChannel {
+public class StubReorgEventChannel implements ReorgEventChannel {
 
   @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {}
+  public void reorgOccurred() {}
 }
