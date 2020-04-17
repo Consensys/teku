@@ -31,9 +31,11 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.sync.SyncService.SyncSubscriber;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.events.Subscribers;
 
 public class SyncManager extends Service {
   private static final Duration SHORT_DELAY = Duration.ofSeconds(5);
@@ -43,6 +45,7 @@ public class SyncManager extends Service {
   private final P2PNetwork<Eth2Peer> network;
   private final RecentChainData storageClient;
   private final PeerSync peerSync;
+  private final Subscribers<SyncSubscriber> syncSubscribers = Subscribers.create(true);
 
   private boolean syncActive = false;
   private boolean syncQueued = false;
@@ -103,16 +106,23 @@ public class SyncManager extends Service {
         return;
       }
       syncActive = true;
+      syncSubscribers.deliver(SyncSubscriber::onSyncingChange, syncActive);
     }
 
+    startSync();
+  }
+
+  private void startSync() {
     executeSync()
         .finish(
             () -> {
               synchronized (SyncManager.this) {
-                syncActive = false;
                 if (syncQueued) {
                   syncQueued = false;
-                  startOrScheduleSync();
+                  startSync();
+                } else {
+                  syncActive = false;
+                  syncSubscribers.deliver(SyncSubscriber::onSyncingChange, syncActive);
                 }
               }
             });
@@ -126,6 +136,14 @@ public class SyncManager extends Service {
   @VisibleForTesting
   synchronized boolean isSyncQueued() {
     return syncQueued;
+  }
+
+  public long subscribeToSyncChanges(final SyncSubscriber subscriber) {
+    return syncSubscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeFromSyncChanges(final long subscriberId) {
+    syncSubscribers.unsubscribe(subscriberId);
   }
 
   public SyncingStatus getSyncStatus() {

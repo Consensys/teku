@@ -48,6 +48,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
+import tech.pegasys.artemis.util.config.NetworkDefinition;
 
 public class BeaconNodeCommandTest {
 
@@ -215,7 +216,7 @@ public class BeaconNodeCommandTest {
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
     return ArtemisConfiguration.builder()
-        .setConstants("minimal")
+        .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
         .setP2pPort(1234)

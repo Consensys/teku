@@ -25,7 +25,7 @@ public class NetworkDefinition {
 
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
       ImmutableMap.<String, NetworkDefinition>builder()
-          .put("minimal", builder().constants("minimal").build())
+          .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())
           .put("mainnet", builder().constants("mainnet").build())
           .put(
               "topaz",
@@ -36,16 +36,22 @@ public class NetworkDefinition {
           .build();
 
   private final String constants;
+  private final int startupTargetPeerCount;
+  private final int startupTimeoutSeconds;
   private final Optional<List<String>> discoveryBootnodes;
   private final Optional<String> eth1DepositContractAddress;
   private final Optional<String> eth1Endpoint;
 
   private NetworkDefinition(
       final String constants,
+      final int startupTargetPeerCount,
+      final int startupTimeoutSeconds,
       final Optional<List<String>> discoveryBootnodes,
       final Optional<String> eth1DepositContractAddress,
       final Optional<String> eth1Endpoint) {
     this.constants = constants;
+    this.startupTargetPeerCount = startupTargetPeerCount;
+    this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
@@ -63,6 +69,14 @@ public class NetworkDefinition {
     return constants;
   }
 
+  public Integer getStartupTargetPeerCount() {
+    return startupTargetPeerCount;
+  }
+
+  public Integer getStartupTimeoutSeconds() {
+    return startupTimeoutSeconds;
+  }
+
   public Optional<List<String>> getDiscoveryBootnodes() {
     return discoveryBootnodes;
   }
@@ -77,12 +91,24 @@ public class NetworkDefinition {
 
   private static class Builder {
     private String constants;
+    private int startupTargetPeerCount = Constants.DEFAULT_STARTUP_TARGET_PEER_COUNT;
+    private int startupTimeoutSeconds = Constants.DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private Optional<List<String>> discoveryBootnodes = Optional.empty();
     private Optional<String> eth1DepositContractAddress = Optional.empty();
     private Optional<String> eth1Endpoint = Optional.empty();
 
     public Builder constants(final String constants) {
       this.constants = constants;
+      return this;
+    }
+
+    public Builder startupTargetPeerCount(final int startupTargetPeerCount) {
+      this.startupTargetPeerCount = startupTargetPeerCount;
+      return this;
+    }
+
+    public Builder startupTimeoutSeconds(final int startupTimeoutSeconds) {
+      this.startupTimeoutSeconds = startupTimeoutSeconds;
       return this;
     }
 
@@ -104,7 +130,12 @@ public class NetworkDefinition {
     public NetworkDefinition build() {
       checkNotNull(constants, "Missing constants");
       return new NetworkDefinition(
-          constants, discoveryBootnodes, eth1DepositContractAddress, eth1Endpoint);
+          constants,
+          startupTargetPeerCount,
+          startupTimeoutSeconds,
+          discoveryBootnodes,
+          eth1DepositContractAddress,
+          eth1Endpoint);
     }
   }
 }

@@ -16,28 +16,28 @@ package tech.pegasys.artemis.sync;
 import com.google.common.primitives.UnsignedLong;
 
 public class SyncStatus {
-  private final UnsignedLong starting_slot;
-  private final UnsignedLong current_slot;
-  private final UnsignedLong highest_slot;
+  private final UnsignedLong startingSlot;
+  private final UnsignedLong currentSlot;
+  private final UnsignedLong highestSlot;
 
   public SyncStatus(
-      final UnsignedLong starting_slot,
-      final UnsignedLong current_slot,
+      final UnsignedLong startingSlot,
+      final UnsignedLong currentSlot,
       final UnsignedLong highest_slot) {
-    this.starting_slot = starting_slot;
-    this.current_slot = current_slot;
-    this.highest_slot = highest_slot;
+    this.startingSlot = startingSlot;
+    this.currentSlot = currentSlot;
+    this.highestSlot = highest_slot;
   }
 
-  public UnsignedLong getStarting_slot() {
-    return starting_slot;
+  public UnsignedLong getStartingSlot() {
+    return startingSlot;
   }
 
-  public UnsignedLong getCurrent_slot() {
-    return current_slot;
+  public UnsignedLong getCurrentSlot() {
+    return currentSlot;
   }
 
-  public UnsignedLong getHighest_slot() {
-    return highest_slot;
+  public UnsignedLong getHighestSlot() {
+    return highestSlot;
   }
 }
