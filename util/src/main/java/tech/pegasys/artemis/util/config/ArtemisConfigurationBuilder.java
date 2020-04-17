@@ -32,6 +32,7 @@ public class ArtemisConfigurationBuilder {
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
   private List<String> p2pStaticPeers;
+  private boolean p2pSnappyEnabled;
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
@@ -138,6 +139,11 @@ public class ArtemisConfigurationBuilder {
 
   public ArtemisConfigurationBuilder setP2pStaticPeers(final List<String> p2pStaticPeers) {
     this.p2pStaticPeers = p2pStaticPeers;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setP2pSnappyEnabled(final boolean p2pSnappyEnabled) {
+    this.p2pSnappyEnabled = p2pSnappyEnabled;
     return this;
   }
 
@@ -360,6 +366,7 @@ public class ArtemisConfigurationBuilder {
         p2pPeerLowerBound,
         p2pPeerUpperBound,
         p2pStaticPeers,
+        p2pSnappyEnabled,
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,

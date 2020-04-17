@@ -100,6 +100,13 @@ public class P2POptions {
       arity = "0..*")
   private List<String> p2pStaticPeers = new ArrayList<>();
 
+  @Option(
+      names = {"--p2p-snappy-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables snappy compression for P2P traffic",
+      arity = "1")
+  private boolean p2pSnappyEnabled = false;
+
   public boolean isP2pEnabled() {
     return p2pEnabled;
   }
@@ -142,5 +149,9 @@ public class P2POptions {
 
   public List<String> getP2pStaticPeers() {
     return p2pStaticPeers;
+  }
+
+  public boolean isP2pSnappyEnabled() {
+    return p2pSnappyEnabled;
   }
 }
