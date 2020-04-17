@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
@@ -63,6 +63,7 @@ import tech.pegasys.artemis.statetransition.genesis.GenesisHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
@@ -167,6 +168,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             asyncRunner,
             eventChannels.getPublisher(StorageUpdateChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
+            eventChannels.getPublisher(ReorgEventChannel.class),
             eventBus)
         .thenAccept(
             client -> {

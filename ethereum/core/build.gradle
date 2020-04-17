@@ -3,6 +3,7 @@ dependencies {
   implementation project(':data')
   implementation project(':data:metrics')
   implementation project(':ethereum:datastructures')
+  implementation project(':protoarray')
   implementation project(':ssz')
   implementation project(':util')
 

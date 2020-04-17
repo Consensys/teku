@@ -11,19 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.protoarray;
+package tech.pegasys.artemis.storage.api;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
-import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
+public class StubReorgEventChannel implements ReorgEventChannel {
 
-public interface ForkChoiceStrategy {
-
-  Bytes32 findHead(final ReadOnlyStore store);
-
-  void onAttestation(final IndexedAttestation attestation);
-
-  void onBlock(final MutableStore store, final BeaconBlock block);
+  @Override
+  public void reorgOccurred() {}
 }
