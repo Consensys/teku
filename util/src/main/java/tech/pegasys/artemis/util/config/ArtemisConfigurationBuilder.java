@@ -19,6 +19,8 @@ import java.util.function.Supplier;
 
 public class ArtemisConfigurationBuilder {
   private String constants;
+  private Integer startupTargetPeerCount;
+  private Integer startupTimeoutSeconds;
   private boolean p2pEnabled;
   private String p2pInterface;
   private int p2pPort;
@@ -64,6 +66,17 @@ public class ArtemisConfigurationBuilder {
 
   public ArtemisConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setStartupTargetPeerCount(
+      final Integer startupTargetPeerCount) {
+    this.startupTargetPeerCount = startupTargetPeerCount;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setStartupTimeoutSeconds(final Integer startupTimeoutSeconds) {
+    this.startupTimeoutSeconds = startupTimeoutSeconds;
     return this;
   }
 
@@ -291,15 +304,22 @@ public class ArtemisConfigurationBuilder {
 
   public ArtemisConfiguration build() {
     if (network != null) {
-      constants = getEffectiveValue(constants, () -> Optional.of(network.getConstants()));
+      constants = getEffectiveValue(constants, network::getConstants);
+      startupTargetPeerCount =
+          getEffectiveValue(startupTargetPeerCount, network::getStartupTargetPeerCount);
+      startupTimeoutSeconds =
+          getEffectiveValue(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
       eth1DepositContractAddress =
-          getEffectiveValue(eth1DepositContractAddress, network::getEth1DepositContractAddress);
+          getEffectiveValueOptional(
+              eth1DepositContractAddress, network::getEth1DepositContractAddress);
       p2pDiscoveryBootnodes =
-          getEffectiveValue(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
-      eth1Endpoint = getEffectiveValue(eth1Endpoint, network::getEth1Endpoint);
+          getEffectiveValueOptional(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
+      eth1Endpoint = getEffectiveValueOptional(eth1Endpoint, network::getEth1Endpoint);
     }
     return new ArtemisConfiguration(
         constants,
+        startupTargetPeerCount,
+        startupTimeoutSeconds,
         p2pEnabled,
         p2pInterface,
         p2pPort,
@@ -343,7 +363,12 @@ public class ArtemisConfigurationBuilder {
         restApiInterface);
   }
 
-  private <T> T getEffectiveValue(
+  private <T> T getEffectiveValue(final T explicitValue, final Supplier<T> predefinedNetworkValue) {
+    return getEffectiveValueOptional(
+        explicitValue, () -> Optional.of(predefinedNetworkValue.get()));
+  }
+
+  private <T> T getEffectiveValueOptional(
       final T explicitValue, final Supplier<Optional<T>> predefinedNetworkValue) {
     return explicitValue != null ? explicitValue : predefinedNetworkValue.get().orElse(null);
   }

@@ -34,7 +34,7 @@ public class SyncStateTracker extends Service {
   private long peerConnectedSubscriptionId;
   private long syncSubscriptionId;
 
-  private volatile SyncState currentState = SyncState.START_UP;
+  private volatile SyncState currentState;
 
   public SyncStateTracker(
       final AsyncRunner asyncRunner,
@@ -47,6 +47,10 @@ public class SyncStateTracker extends Service {
     this.network = network;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeout = startupTimeout;
+    currentState =
+        startupTargetPeerCount == 0 || startupTimeout.toMillis() == 0
+            ? SyncState.IN_SYNC
+            : SyncState.START_UP;
   }
 
   public SyncState getCurrentSyncState() {

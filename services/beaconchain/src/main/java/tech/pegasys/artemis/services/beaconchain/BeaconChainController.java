@@ -359,9 +359,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initSyncStateTracker() {
     LOG.debug("BeaconChainController.initSyncStateTracker");
-    // TODO: Make startup conditions configurable and set reasonable defaults based on the network
     syncStateTracker =
-        new SyncStateTracker(asyncRunner, syncService, p2pNetwork, 5, Duration.ofSeconds(10));
+        new SyncStateTracker(
+            asyncRunner,
+            syncService,
+            p2pNetwork,
+            config.getStartupTargetPeerCount(),
+            Duration.ofSeconds(config.getStartupTimeoutSeconds()));
   }
 
   public void initValidatorApiHandler() {

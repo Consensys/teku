@@ -32,6 +32,7 @@ import tech.pegasys.artemis.util.async.StubAsyncRunner;
 class SyncStateTrackerTest {
 
   public static final int STARTUP_TARGET_PEER_COUNT = 5;
+  public static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(10);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @SuppressWarnings("unchecked")
@@ -41,7 +42,7 @@ class SyncStateTrackerTest {
 
   private final SyncStateTracker tracker =
       new SyncStateTracker(
-          asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, Duration.ofSeconds(10));
+          asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, STARTUP_TIMEOUT);
   private SyncSubscriber syncSubscriber;
   private PeerConnectedSubscriber<Peer> peerSubscriber;
 
@@ -64,6 +65,28 @@ class SyncStateTrackerTest {
   @Test
   public void shouldStartInStartupState() {
     assertSyncState(SyncState.START_UP);
+  }
+
+  @Test
+  public void shouldStartInSyncWhenTargetPeerCountIsZero() {
+    final SyncStateTracker tracker = new SyncStateTracker(
+        asyncRunner,
+        syncService,
+        network,
+        0,
+        STARTUP_TIMEOUT);
+    assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
+  }
+
+  @Test
+  public void shouldStartInSyncWhenStartupTimeoutIsZero() {
+    final SyncStateTracker tracker = new SyncStateTracker(
+        asyncRunner,
+        syncService,
+        network,
+        STARTUP_TARGET_PEER_COUNT,
+        Duration.ofSeconds(0));
+    assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
   }
 
   @Test

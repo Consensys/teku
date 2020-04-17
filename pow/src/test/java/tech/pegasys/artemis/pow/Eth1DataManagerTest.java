@@ -83,6 +83,7 @@ public class Eth1DataManagerTest {
   @AfterAll
   static void restoreConstants() {
     Constants.setConstants("minimal");
+    ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(10);
   }
 
   private final UnsignedLong testStartTime = UnsignedLong.valueOf(200);

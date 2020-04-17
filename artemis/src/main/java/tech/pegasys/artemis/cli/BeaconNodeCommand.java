@@ -107,6 +107,21 @@ public class BeaconNodeCommand implements Callable<Integer> {
       arity = "1")
   private File configFile;
 
+  @Option(
+      names = {"-Xstartup-target-peer-count"},
+      paramLabel = "<NUMBER>",
+      description = "Number of peers to wait for before considering the node in sync.",
+      hidden = true)
+  private Integer startupTargetPeerCount;
+
+  @Option(
+      names = {"-Xstartup-timeout-seconds"},
+      paramLabel = "<NUMBER>",
+      description =
+          "Timeout in seconds to allow the node to be in sync even if startup target peer count has not yet been reached.",
+      hidden = true)
+  private Integer startupTimeoutSeconds;
+
   @Mixin private NetworkOptions networkOptions;
   @Mixin private P2POptions p2POptions;
   @Mixin private InteropOptions interopOptions;
@@ -238,10 +253,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   private ArtemisConfiguration artemisConfiguration() {
     // TODO: validate option dependencies
-
-    networkOptions.getNetwork();
     return ArtemisConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
+        .setStartupTargetPeerCount(startupTargetPeerCount)
+        .setStartupTimeoutSeconds(startupTimeoutSeconds)
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
