@@ -147,6 +147,9 @@ public class Constants {
   public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
   public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
 
+  // Network
+  public static final UnsignedLong MAXIMUM_GOSSIP_CLOCK_DISPARITY = UnsignedLong.valueOf(500); // in ms
+
   static {
     setConstants("minimal");
   }

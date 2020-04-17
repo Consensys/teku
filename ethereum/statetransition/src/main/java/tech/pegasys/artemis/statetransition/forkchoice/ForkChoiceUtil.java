@@ -48,7 +48,11 @@ public class ForkChoiceUtil {
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
-    return time.minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    return getCurrentSlot(time, store.getGenesisTime());
+  }
+
+  public static UnsignedLong getCurrentSlot(UnsignedLong currentTime, UnsignedLong genesisTime) {
+    return currentTime.minus(genesisTime).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
   public static UnsignedLong get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
