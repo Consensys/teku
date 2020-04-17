@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_SERVICE_UN
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -35,6 +36,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.artemis.api.SyncDataProvider;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.api.schema.ValidatorBlockResult;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PostBlock implements Handler {
@@ -94,20 +96,23 @@ public class PostBlock implements Handler {
           validatorDataProvider
               .submitSignedBlock(signedBeaconBlock)
               .thenApplyChecked(
-                  validatorBlockResult -> {
-                    ctx.status(validatorBlockResult.getResponseCode());
-                    if (validatorBlockResult.getFailureReason().isPresent()) {
-                      return jsonProvider.objectToJSON(
-                          validatorBlockResult.getFailureReason().get().getMessage());
-                    } else {
-                      return jsonProvider.objectToJSON(validatorBlockResult.getHash_tree_root());
-                    }
-                  }));
+                  validatorBlockResult -> handleResponseContext(ctx, validatorBlockResult)));
 
     } catch (final JsonMappingException | JsonParseException ex) {
       ctx.status(SC_BAD_REQUEST);
     } catch (final Exception ex) {
       ctx.status(SC_INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private String handleResponseContext(
+      final Context ctx, final ValidatorBlockResult validatorBlockResult)
+      throws JsonProcessingException {
+    ctx.status(validatorBlockResult.getResponseCode());
+    if (validatorBlockResult.getFailureReason().isPresent()) {
+      return jsonProvider.objectToJSON(validatorBlockResult.getFailureReason().get().getMessage());
+    } else {
+      return jsonProvider.objectToJSON(validatorBlockResult.getHash_tree_root());
     }
   }
 }
