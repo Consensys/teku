@@ -1,27 +1,33 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.networking.eth2.gossip;
+
+import static com.google.common.primitives.UnsignedLong.ONE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.core.ChainBuilder;
 import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidationResult;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-
-import java.util.List;
-
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 public class BlockValidatorTest {
   private final EventBus eventBus = new EventBus();
@@ -40,6 +46,7 @@ public class BlockValidatorTest {
   @Test
   void shouldReturnValidForValidBlock() throws Exception {
     final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
+    beaconChainUtil.setSlot(nextSlot);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
     BlockValidationResult result = blockValidator.validate(block);
@@ -47,7 +54,20 @@ public class BlockValidatorTest {
   }
 
   @Test
-  void shouldReturnSavedForFutureForValidBlock() throws Exception {
+  void shouldReturnInvalidForSecondValidBlockForSlotAndProposer() throws Exception {
+    final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
+    beaconChainUtil.setSlot(nextSlot);
+    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
+
+    BlockValidationResult result1 = blockValidator.validate(block);
+    assertThat(result1).isEqualTo(BlockValidationResult.VALID);
+
+    BlockValidationResult result2 = blockValidator.validate(block);
+    assertThat(result2).isEqualTo(BlockValidationResult.INVALID);
+  }
+
+  @Test
+  void shouldReturnSavedForFutureForBlockFromFuture() throws Exception {
     final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
@@ -62,6 +82,29 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(finalizedSlot.minus(ONE));
     beaconChainUtil.finalizeChainAtEpoch(finalizedEpoch);
     beaconChainUtil.setSlot(recentChainData.getBestSlot());
+
+    BlockValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(BlockValidationResult.INVALID);
+  }
+
+  @Test
+  void shouldReturnInvalidForBlockProposedByUnexpectedProposer() throws Exception {
+    final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
+    beaconChainUtil.setSlot(nextSlot);
+    final SignedBeaconBlock block =
+        beaconChainUtil.createBlockAtSlotFromInvalidProposerIndexWithValidSignature(nextSlot);
+
+    BlockValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(BlockValidationResult.INVALID);
+  }
+
+  @Test
+  void shouldReturnInvalidForBlockProposedByExpectedProposerButWithWrongSignature()
+      throws Exception {
+    final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
+    beaconChainUtil.setSlot(nextSlot);
+    final SignedBeaconBlock block =
+        beaconChainUtil.createBlockAtSlotFromValidProposerIndexWithInvalidSignature(nextSlot);
 
     BlockValidationResult result = blockValidator.validate(block);
     assertThat(result).isEqualTo(BlockValidationResult.INVALID);

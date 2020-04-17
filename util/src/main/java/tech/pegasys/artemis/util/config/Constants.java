@@ -148,7 +148,8 @@ public class Constants {
   public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
 
   // Network
-  public static final UnsignedLong MAXIMUM_GOSSIP_CLOCK_DISPARITY = UnsignedLong.valueOf(500); // in ms
+  public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
+  public static final int VALID_BLOCK_SET_SIZE = 1000;
 
   static {
     setConstants("minimal");

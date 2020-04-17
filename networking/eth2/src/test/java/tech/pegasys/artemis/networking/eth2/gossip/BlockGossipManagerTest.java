@@ -40,7 +40,8 @@ public class BlockGossipManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
-  private final BlockValidator blockValidator = new BlockValidator(storageClient, new StateTransition());
+  private final BlockValidator blockValidator =
+      new BlockValidator(storageClient, new StateTransition());
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 

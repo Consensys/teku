@@ -37,7 +37,8 @@ public class BlockTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
-  private final BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
+  private final BlockValidator blockValidator =
+      new BlockValidator(recentChainData, new StateTransition());
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, recentChainData);
   private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, blockValidator);
 

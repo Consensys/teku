@@ -13,11 +13,6 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.get_current_slot;
-
 import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
@@ -32,8 +27,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   private final EventBus eventBus;
   private final BlockValidator blockValidator;
 
-  public BlockTopicHandler(final EventBus eventBus,
-                           final BlockValidator blockValidator) {
+  public BlockTopicHandler(final EventBus eventBus, final BlockValidator blockValidator) {
     super(eventBus);
     this.eventBus = eventBus;
     this.blockValidator = blockValidator;
