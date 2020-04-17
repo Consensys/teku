@@ -296,7 +296,7 @@ public class ChainBuilder {
     final MessageSignerService signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState =
         blockProposalTestUtil.createBlockWithAttestations(
-            signer, slot, proposerIndex, preState, parentRoot, options.getAttestations());
+            signer, slot, preState, parentRoot, options.getAttestations());
 
     blocks.put(slot, nextBlockAndState);
     return nextBlockAndState;

@@ -51,7 +51,6 @@ public class BlockProposalTestUtil {
   public SignedBlockAndState createNewBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
-      final int proposerIndex,
       final BeaconState state,
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
@@ -67,7 +66,7 @@ public class BlockProposalTestUtil {
     final BeaconBlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
             newSlot,
-            proposerIndex,
+            getProposerIndexForSlot(state, newSlot),
             randaoReveal,
             state,
             parentBlockSigningRoot,
@@ -87,7 +86,6 @@ public class BlockProposalTestUtil {
   public SignedBlockAndState createEmptyBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
-      final int proposerIndex,
       final BeaconState previousState,
       final Bytes32 parentBlockRoot)
       throws StateTransitionException {
@@ -95,7 +93,6 @@ public class BlockProposalTestUtil {
     return createNewBlock(
         signer,
         newSlot,
-        proposerIndex,
         previousState,
         parentBlockRoot,
         get_eth1_data_stub(previousState, newEpoch),
@@ -107,7 +104,6 @@ public class BlockProposalTestUtil {
   public SignedBlockAndState createBlockWithAttestations(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
-      final int proposerIndex,
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
       final SSZList<Attestation> attestations)
@@ -116,7 +112,6 @@ public class BlockProposalTestUtil {
     return createNewBlock(
         signer,
         newSlot,
-        proposerIndex,
         previousState,
         parentBlockSigningRoot,
         get_eth1_data_stub(previousState, newEpoch),

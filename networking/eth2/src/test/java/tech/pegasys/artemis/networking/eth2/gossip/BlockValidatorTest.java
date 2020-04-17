@@ -21,7 +21,10 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.signatures.Signer;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidationResult;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
@@ -33,7 +36,7 @@ public class BlockValidatorTest {
   private final EventBus eventBus = new EventBus();
 
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, recentChainData);
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(10, recentChainData);
 
   private BlockValidator blockValidator;
 
@@ -88,23 +91,42 @@ public class BlockValidatorTest {
   }
 
   @Test
-  void shouldReturnInvalidForBlockProposedByUnexpectedProposer() throws Exception {
+  void shouldReturnInvalidForBlockWithWrongProposerIndex() throws Exception {
     final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);
-    final SignedBeaconBlock block =
-        beaconChainUtil.createBlockAtSlotFromInvalidProposerIndexWithValidSignature(nextSlot);
 
-    BlockValidationResult result = blockValidator.validate(block);
+    final SignedBeaconBlock signedBlock =
+        beaconChainUtil.createBlockAtSlot(nextSlot);
+
+    UnsignedLong invalidProposerIndex =
+            signedBlock.getMessage().getProposer_index().minus(ONE);
+
+    final BeaconBlock block = new BeaconBlock(
+            signedBlock.getSlot(),
+            invalidProposerIndex,
+            signedBlock.getParent_root(),
+            signedBlock.getMessage().getState_root(),
+            signedBlock.getMessage().getBody()
+    );
+
+    BLSSignature blockSignature = new Signer(beaconChainUtil
+            .getSigner(invalidProposerIndex.intValue()))
+            .signBlock(block, recentChainData.getBestBlockRootState().get().getForkInfo()).join();
+    final SignedBeaconBlock invalidProposerSignedBlock = new SignedBeaconBlock(block, blockSignature );
+
+    BlockValidationResult result = blockValidator.validate(invalidProposerSignedBlock);
     assertThat(result).isEqualTo(BlockValidationResult.INVALID);
   }
 
   @Test
-  void shouldReturnInvalidForBlockProposedByExpectedProposerButWithWrongSignature()
-      throws Exception {
+  void shouldReturnInvalidForBlockWithWrongSignature() throws Exception {
     final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);
+
     final SignedBeaconBlock block =
-        beaconChainUtil.createBlockAtSlotFromValidProposerIndexWithInvalidSignature(nextSlot);
+            new SignedBeaconBlock(
+                    beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(),
+                    BLSSignature.random(0));
 
     BlockValidationResult result = blockValidator.validate(block);
     assertThat(result).isEqualTo(BlockValidationResult.INVALID);

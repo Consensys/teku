@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.primitives.UnsignedLong.valueOf;
 import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 import com.google.common.primitives.UnsignedLong;
@@ -102,7 +101,7 @@ public class BeaconChainUtil {
     if (recentChainData.isPreGenesis()) {
       throw new IllegalStateException("Cannot set current slot before genesis");
     }
-    final UnsignedLong secPerSlot = valueOf(Constants.SECONDS_PER_SLOT);
+    final UnsignedLong secPerSlot = UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT);
     final UnsignedLong time = recentChainData.getGenesisTime().plus(currentSlot.times(secPerSlot));
     final Transaction tx = recentChainData.startStoreTransaction();
     tx.setTime(time);
@@ -110,11 +109,11 @@ public class BeaconChainUtil {
   }
 
   public SignedBeaconBlock createBlockAtSlot(final UnsignedLong slot) throws Exception {
-    return createBlockAtSlot(slot, true, true);
+    return createBlockAtSlot(slot, true);
   }
 
   public SignedBeaconBlock createAndImportBlockAtSlot(final long slot) throws Exception {
-    return createAndImportBlockAtSlot(valueOf(slot));
+    return createAndImportBlockAtSlot(UnsignedLong.valueOf(slot));
   }
 
   public SignedBeaconBlock createAndImportBlockAtSlot(
@@ -130,7 +129,7 @@ public class BeaconChainUtil {
 
   public SignedBeaconBlock createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
-    final SignedBeaconBlock block = createBlockAtSlot(slot, true, true, attestations);
+    final SignedBeaconBlock block = createBlockAtSlot(slot, true, attestations);
     setSlot(slot);
     final Transaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult importResult =
@@ -160,29 +159,17 @@ public class BeaconChainUtil {
 
   public SignedBeaconBlock createBlockAtSlotFromInvalidProposer(final UnsignedLong slot)
       throws Exception {
-    return createBlockAtSlot(slot, false, false);
+    return createBlockAtSlot(slot, false);
   }
 
-  public SignedBeaconBlock createBlockAtSlotFromInvalidProposerIndexWithValidSignature(
-      final UnsignedLong slot) throws Exception {
-    return createBlockAtSlot(slot, false, true);
-  }
-
-  public SignedBeaconBlock createBlockAtSlotFromValidProposerIndexWithInvalidSignature(
-      final UnsignedLong slot) throws Exception {
-    return createBlockAtSlot(slot, true, false);
-  }
-
-  private SignedBeaconBlock createBlockAtSlot(
-      final UnsignedLong slot, boolean withValidProposer, boolean withValidSignature)
+  private SignedBeaconBlock createBlockAtSlot(final UnsignedLong slot, boolean withValidProposer)
       throws Exception {
-    return createBlockAtSlot(slot, withValidProposer, withValidSignature, Optional.empty());
+    return createBlockAtSlot(slot, withValidProposer, Optional.empty());
   }
 
   private SignedBeaconBlock createBlockAtSlot(
       final UnsignedLong slot,
       boolean withValidProposer,
-      boolean withValidSignature,
       Optional<SSZList<Attestation>> attestations)
       throws Exception {
     checkState(
@@ -194,21 +181,16 @@ public class BeaconChainUtil {
     checkArgument(bestBlock.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
 
     final int correctProposerIndex = blockCreator.getProposerIndexForSlot(preState, slot);
-    final int wrongProposerIndex = getWrongProposerIndex(correctProposerIndex);
-    final int proposerIndex = withValidProposer ? correctProposerIndex : wrongProposerIndex;
+    final int proposerIndex =
+        withValidProposer ? correctProposerIndex : getWrongProposerIndex(correctProposerIndex);
 
-    final MessageSignerService correctSigner = getSigner(proposerIndex);
-    final MessageSignerService wrongSigner = getSigner(wrongProposerIndex);
-    final MessageSignerService signer = withValidSignature ? correctSigner : wrongSigner;
+    final MessageSignerService signer = getSigner(proposerIndex);
     if (attestations.isPresent()) {
       return blockCreator
-          .createBlockWithAttestations(
-              signer, slot, proposerIndex, preState, bestBlockRoot, attestations.get())
+          .createBlockWithAttestations(signer, slot, preState, bestBlockRoot, attestations.get())
           .getBlock();
     } else {
-      return blockCreator
-          .createEmptyBlock(signer, slot, proposerIndex, preState, bestBlockRoot)
-          .getBlock();
+      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot).getBlock();
     }
   }
 
@@ -219,14 +201,12 @@ public class BeaconChainUtil {
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     createAndImportBlockAtSlot(
-        recentChainData.getBestSlot().plus(valueOf(MIN_ATTESTATION_INCLUSION_DELAY)));
+        recentChainData.getBestSlot().plus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)));
 
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       BeaconState headState =
-          recentChainData
-              .getStore()
-              .getBlockState(recentChainData.getBestBlockRoot().orElseThrow());
+          recentChainData.getStore().getBlockState(recentChainData.getBestBlockRoot().orElseThrow());
       BeaconBlock headBlock =
           recentChainData.getStore().getBlock(recentChainData.getBestBlockRoot().orElseThrow());
       UnsignedLong slot = recentChainData.getBestSlot();
@@ -236,8 +216,7 @@ public class BeaconChainUtil {
               Constants.MAX_ATTESTATIONS,
               Attestation.class);
       createAndImportBlockAtSlot(
-          recentChainData.getBestSlot().plus(UnsignedLong.ONE),
-          Optional.of(currentSlotAssignments));
+          recentChainData.getBestSlot().plus(UnsignedLong.ONE), Optional.of(currentSlotAssignments));
     }
   }
 
@@ -249,7 +228,7 @@ public class BeaconChainUtil {
     return actualProposerIndex == 0 ? 1 : actualProposerIndex - 1;
   }
 
-  private MessageSignerService getSigner(final int proposerIndex) {
+  public MessageSignerService getSigner(final int proposerIndex) {
     return new TestMessageSignerService(validatorKeys.get(proposerIndex));
   }
 }
