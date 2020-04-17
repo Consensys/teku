@@ -287,6 +287,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
   }
 
+  public UnsignedLong getBestJustifiedEpoch() {
+    return store == null ? UnsignedLong.ZERO : store.getBestJustifiedCheckpoint().getEpoch();
+  }
+
   public Bytes32 getFinalizedRoot() {
     return store == null ? null : store.getFinalizedCheckpoint().getRoot();
   }
