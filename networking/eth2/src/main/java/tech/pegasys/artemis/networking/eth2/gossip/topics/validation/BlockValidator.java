@@ -14,10 +14,10 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics.validation;
 
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.getCurrentSlot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.getCurrentSlot;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 import static tech.pegasys.artemis.util.config.Constants.VALID_BLOCK_SET_SIZE;
