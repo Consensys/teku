@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core.encodings;
 
+import static tech.pegasys.artemis.util.config.Constants.MAX_CHUNK_SIZE;
+
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -26,7 +28,6 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 
 public class LengthPrefixedEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MAX_CHUNK_SIZE = 1048576;
   // Any protobuf length requiring more bytes than this will also be bigger.
   private static final int MAXIMUM_VARINT_LENGTH = writeVarInt(MAX_CHUNK_SIZE).size();
 

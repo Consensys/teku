@@ -26,7 +26,6 @@ import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
@@ -62,12 +61,12 @@ public class Eth2NetworkBuilder {
     peerHandlers.add(eth2PeerManager);
 
     // Build core network and inject eth2 handlers
-    final P2PNetwork<?> network = buildNetwork();
+    final DiscoveryNetwork<?> network = buildNetwork();
 
     return new ActiveEth2Network(network, eth2PeerManager, eventBus, recentChainData);
   }
 
-  protected P2PNetwork<?> buildNetwork() {
+  protected DiscoveryNetwork<?> buildNetwork() {
     final ReputationManager reputationManager =
         new ReputationManager(timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
     return DiscoveryNetwork.create(
