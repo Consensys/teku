@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.eth2;
 
 import com.google.common.eventbus.EventBus;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -127,7 +126,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   @Override
-  public void setLongTermAttestationSubnetSubscriptions(final List<Integer> subnetIndices) {
+  public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
     discoveryNetwork.setLongTermAttestationSubnetSubscriptions(subnetIndices);
   }
 }

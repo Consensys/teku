@@ -82,6 +82,7 @@ class AttestationTopicSubscriptionsTest {
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
 
     subscriptions.subscribeToCommittee(committeeIndex, secondSlot);
+    subscriptions.subscribeToCommittee(committeeIndex, firstSlot);
 
     subscriptions.onSlot(firstSlot.plus(ONE));
     verify(eth2Network, never()).unsubscribeFromAttestationCommitteeTopic(committeeIndex);

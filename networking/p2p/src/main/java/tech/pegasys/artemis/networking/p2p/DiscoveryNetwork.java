@@ -16,7 +16,6 @@ package tech.pegasys.artemis.networking.p2p;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -124,7 +123,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     return discoveryService.getEnr();
   }
 
-  public void setLongTermAttestationSubnetSubscriptions(List<Integer> subnetIds) {
+  public void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIds) {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
         new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
