@@ -58,7 +58,6 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
         eventBus.post(createEvent(block));
         return false;
       case VALID:
-        eventBus.post(createEvent(block));
         return true;
       default:
         throw new UnsupportedOperationException();
