@@ -13,23 +13,12 @@
 
 package tech.pegasys.artemis.sync;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+public enum SyncState {
+  START_UP,
+  SYNCING,
+  IN_SYNC;
 
-public interface SyncService {
-
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  SyncingStatus getSyncStatus();
-
-  boolean isSyncActive();
-
-  long subscribeToSyncChanges(SyncSubscriber subscriber);
-
-  void unsubscribeFromSyncChanges(long subscriberId);
-
-  interface SyncSubscriber {
-    void onSyncingChange(boolean isSyncing);
+  public boolean isInSync() {
+    return this == IN_SYNC;
   }
 }

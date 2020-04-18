@@ -33,7 +33,6 @@ import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
@@ -65,7 +64,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public Bytes32 findHead(final Store store) {
+  public Bytes32 findHead(final ReadOnlyStore store) {
     Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
     return findHead(
         justifiedCheckpoint.getEpoch(),

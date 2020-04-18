@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.events;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,7 +42,6 @@ import org.apache.logging.log4j.Logger;
  * @param <T> the type of subscribers
  */
 public class Subscribers<T> {
-  private static Subscribers<?> NONE = new EmptySubscribers<>();
   private static final Logger LOG = LogManager.getLogger();
 
   private final AtomicLong subscriberId = new AtomicLong();
@@ -53,13 +53,8 @@ public class Subscribers<T> {
     this.suppressCallbackExceptions = suppressCallbackExceptions;
   }
 
-  @SuppressWarnings("unchecked")
-  public static <T> Subscribers<T> none() {
-    return (Subscribers<T>) NONE;
-  }
-
   public static <T> Subscribers<T> create(final boolean suppressCallbackExceptions) {
-    return new Subscribers<T>(suppressCallbackExceptions);
+    return new Subscribers<>(suppressCallbackExceptions);
   }
 
   /**
@@ -112,38 +107,22 @@ public class Subscribers<T> {
   }
 
   /**
+   * Deliver an event to each subscriber by calling eventMethod.
+   *
+   * @param eventMethod the method to call
+   * @param event the event object to provide as a parameter
+   * @param <E> the type of the event
+   */
+  public <E> void deliver(final BiConsumer<T, E> eventMethod, final E event) {
+    forEach(subscriber -> eventMethod.accept(subscriber, event));
+  }
+
+  /**
    * Get the current subscriber count.
    *
    * @return the current number of subscribers.
    */
   public int getSubscriberCount() {
     return subscribers.size();
-  }
-
-  private static class EmptySubscribers<T> extends Subscribers<T> {
-
-    private EmptySubscribers() {
-      super(false);
-    }
-
-    @Override
-    public long subscribe(final T subscriber) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean unsubscribe(final long subscriberId) {
-      return false;
-    }
-
-    @Override
-    public void forEach(final Consumer<T> action) {
-      return;
-    }
-
-    @Override
-    public int getSubscriberCount() {
-      return 0;
-    }
   }
 }

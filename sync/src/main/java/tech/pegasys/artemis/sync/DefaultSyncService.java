@@ -59,4 +59,14 @@ public class DefaultSyncService extends Service implements SyncService {
   public boolean isSyncActive() {
     return syncManager.isSyncActive();
   }
+
+  @Override
+  public long subscribeToSyncChanges(final SyncSubscriber subscriber) {
+    return syncManager.subscribeToSyncChanges(subscriber);
+  }
+
+  @Override
+  public void unsubscribeFromSyncChanges(final long subscriberId) {
+    syncManager.unsubscribeFromSyncChanges(subscriberId);
+  }
 }

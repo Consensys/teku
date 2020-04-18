@@ -13,20 +13,19 @@
 
 package tech.pegasys.artemis.cli;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
-import tech.pegasys.artemis.BeaconNode;
 import tech.pegasys.artemis.cli.options.BeaconRestApiOptions;
 import tech.pegasys.artemis.cli.options.DataOptions;
 import tech.pegasys.artemis.cli.options.DepositOptions;
@@ -78,6 +77,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter outputWriter;
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
+  private final Consumer<ArtemisConfiguration> startAction;
 
   // allows two pass approach to obtain optional config file
   private static class ConfigFileCommand {
@@ -107,6 +107,21 @@ public class BeaconNodeCommand implements Callable<Integer> {
       arity = "1")
   private File configFile;
 
+  @Option(
+      names = {"-Xstartup-target-peer-count"},
+      paramLabel = "<NUMBER>",
+      description = "Number of peers to wait for before considering the node in sync.",
+      hidden = true)
+  private Integer startupTargetPeerCount;
+
+  @Option(
+      names = {"-Xstartup-timeout-seconds"},
+      paramLabel = "<NUMBER>",
+      description =
+          "Timeout in seconds to allow the node to be in sync even if startup target peer count has not yet been reached.",
+      hidden = true)
+  private Integer startupTimeoutSeconds;
+
   @Mixin private NetworkOptions networkOptions;
   @Mixin private P2POptions p2POptions;
   @Mixin private InteropOptions interopOptions;
@@ -118,16 +133,15 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin private DataOptions dataOptions;
   @Mixin private BeaconRestApiOptions beaconRestApiOptions;
 
-  private ArtemisConfiguration artemisConfiguration;
-  private BeaconNode node;
-
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
-      final Map<String, String> environment) {
+      final Map<String, String> environment,
+      final Consumer<ArtemisConfiguration> startAction) {
     this.outputWriter = outputWriter;
     this.errorWriter = errorWriter;
     this.environment = environment;
+    this.startAction = startAction;
   }
 
   public int parse(final String[] args) {
@@ -196,17 +210,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   public Integer call() {
     try {
       setLogLevels();
-      artemisConfiguration = artemisConfiguration();
-      node = new BeaconNode(artemisConfiguration);
-      node.start();
-      // Detect SIGTERM
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread(
-                  () -> {
-                    System.out.println("Teku is shutting down");
-                    node.stop();
-                  }));
+      final ArtemisConfiguration artemisConfiguration = artemisConfiguration();
+      startAction.accept(artemisConfiguration);
       return 0;
     } catch (DatabaseStorageException ex) {
       System.err.println(ex.getMessage());
@@ -219,16 +224,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return 1;
   }
 
-  @VisibleForTesting
-  ArtemisConfiguration getArtemisConfiguration() {
-    return artemisConfiguration;
-  }
-
-  @VisibleForTesting
-  public void stop() {
-    node.stop();
-  }
-
   private void setLogLevels() {
     if (logLevel != null) {
       // set log level per CLI flags
@@ -238,10 +233,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   private ArtemisConfiguration artemisConfiguration() {
     // TODO: validate option dependencies
-
-    networkOptions.getNetwork();
     return ArtemisConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
+        .setStartupTargetPeerCount(startupTargetPeerCount)
+        .setStartupTimeoutSeconds(startupTimeoutSeconds)
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
