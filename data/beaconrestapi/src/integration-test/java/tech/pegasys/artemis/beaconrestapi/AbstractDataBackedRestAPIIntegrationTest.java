@@ -31,7 +31,6 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.artemis.storage.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.storage.api.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
