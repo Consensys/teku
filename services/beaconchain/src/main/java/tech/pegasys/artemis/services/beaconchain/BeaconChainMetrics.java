@@ -27,12 +27,60 @@ public class BeaconChainMetrics {
   private final RecentChainData recentChainData;
   private volatile NodeSlot nodeSlot;
 
-  public BeaconChainMetrics(
-      final MetricsSystem metricsSystem, final RecentChainData recentChainData, NodeSlot nodeSlot) {
+  public BeaconChainMetrics(final RecentChainData recentChainData, NodeSlot nodeSlot) {
     this.recentChainData = recentChainData;
     this.nodeSlot = nodeSlot;
+  }
 
-    initialise(metricsSystem);
+  public void initialise(final MetricsSystem metricsSystem) {
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "slot",
+        "Latest slot recorded by the beacon chain",
+        this::getCurrentSlotValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "head_slot",
+        "Slot of the head block of the beacon chain",
+        this::getHeadSlotValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "head_root",
+        "Root of the head block of the beacon chain",
+        this::getHeadRootValue);
+
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "finalized_epoch",
+        "Current finalized epoch",
+        this::getFinalizedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "finalized_root",
+        "Current finalized root",
+        this::getFinalizedRootValue);
+
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "current_justified_epoch",
+        "Current justified epoch",
+        this::getJustifiedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "current_justified_root",
+        "Current justified root",
+        this::getJustifiedRootValue);
+
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "previous_justified_epoch",
+        "Current previously justified epoch",
+        this::getPreviousJustifiedEpochValue);
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "previous_justified_root",
+        "Current previously justified root",
+        this::getPreviousJustifiedRootValue);
   }
 
   static long getLongFromRoot(Bytes32 root) {
@@ -112,56 +160,5 @@ public class BeaconChainMetrics {
                     .getEpoch()
                     .longValue())
         .orElse(0L);
-  }
-
-  private void initialise(final MetricsSystem metricsSystem) {
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "slot",
-        "Latest slot recorded by the beacon chain",
-        this::getCurrentSlotValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "head_slot",
-        "Slot of the head block of the beacon chain",
-        this::getHeadSlotValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "head_root",
-        "Root of the head block of the beacon chain",
-        this::getHeadRootValue);
-
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "finalized_epoch",
-        "Current finalized epoch",
-        this::getFinalizedEpochValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "finalized_root",
-        "Current finalized root",
-        this::getFinalizedRootValue);
-
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "current_justified_epoch",
-        "Current justified epoch",
-        this::getJustifiedEpochValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "current_justified_root",
-        "Current justified root",
-        this::getJustifiedRootValue);
-
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "previous_justified_epoch",
-        "Current previously justified epoch",
-        this::getPreviousJustifiedEpochValue);
-    metricsSystem.createGauge(
-        ArtemisMetricCategory.BEACON,
-        "previous_justified_root",
-        "Current previously justified root",
-        this::getPreviousJustifiedRootValue);
   }
 }

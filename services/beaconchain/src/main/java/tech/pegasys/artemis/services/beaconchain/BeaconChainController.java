@@ -117,8 +117,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile Eth1DataCache eth1DataCache;
   private volatile NodeSlot nodeSlot = new NodeSlot(ZERO);
 
-  @SuppressWarnings("unused")
   private volatile BeaconChainMetrics beaconChainMetrics;
+
   private SyncStateTracker syncStateTracker;
 
   public BeaconChainController(
@@ -222,7 +222,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
-    beaconChainMetrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    beaconChainMetrics = new BeaconChainMetrics(recentChainData, nodeSlot);
+    beaconChainMetrics.initialise(metricsSystem);
   }
 
   public void initDepositProvider() {

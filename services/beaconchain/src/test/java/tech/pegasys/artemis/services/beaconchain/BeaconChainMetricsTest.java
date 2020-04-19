@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.NodeSlot;
@@ -43,7 +42,6 @@ class BeaconChainMetricsTest {
   private static BeaconBlockAndState blockAndState = mock(BeaconBlockAndState.class);
   private BeaconState state = mock(BeaconState.class);
 
-  private MetricsSystem metricsSystem = mock(MetricsSystem.class);
   private final NodeSlot nodeSlot = new NodeSlot(NODE_SLOT_VALUE);
 
   private final RecentChainData recentChainData = mock(RecentChainData.class);
@@ -65,13 +63,13 @@ class BeaconChainMetricsTest {
 
   @Test
   void getCurrentSlotValue_shouldReturnCurrentSlot() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     assertThat(NODE_SLOT_VALUE.longValue()).isEqualTo(metrics.getCurrentSlotValue());
   }
 
   @Test
   void getHeadSlotValue_shouldSupplyValueWhenStoreIsPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.getBestSlot()).thenReturn(ONE);
 
@@ -82,7 +80,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getHeadSlotValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(true);
 
     assertThat(0L).isEqualTo(metrics.getHeadSlotValue());
@@ -91,7 +89,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getFinalizedEpochValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(true);
 
     assertThat(0L).isEqualTo(metrics.getFinalizedEpochValue());
@@ -100,7 +98,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getFinalizedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.getFinalizedEpoch()).thenReturn(ONE);
 
@@ -110,7 +108,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getHeadRootValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(true);
 
     assertThat(0L).isEqualTo(metrics.getHeadRootValue());
@@ -119,7 +117,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getHeadRootValue_shouldReturnValueWhenStoreIsPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(root));
 
@@ -129,7 +127,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getFinalizedRootValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(true);
     when(recentChainData.getBestBlockAndState()).thenCallRealMethod();
 
@@ -139,7 +137,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getFinalizedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.getBestBlockAndState()).thenReturn(Optional.of(blockAndState));
     when(blockAndState.getState()).thenReturn(state);
     when(state.getFinalized_checkpoint()).thenReturn(checkpoint);
@@ -150,7 +148,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedEpochValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(true);
     when(recentChainData.getBestBlockAndState()).thenCallRealMethod();
 
@@ -160,7 +158,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.getBestBlockAndState()).thenReturn(Optional.of(blockAndState));
     when(blockAndState.getState()).thenReturn(state);
@@ -172,7 +170,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedRootValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(true);
     when(recentChainData.getBestBlockAndState()).thenCallRealMethod();
 
@@ -182,7 +180,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.getBestBlockAndState()).thenReturn(Optional.of(blockAndState));
     when(blockAndState.getState()).thenReturn(state);
     when(state.getPrevious_justified_checkpoint()).thenReturn(checkpoint);
@@ -193,7 +191,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedRootValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(true);
     when(recentChainData.getBestBlockAndState()).thenCallRealMethod();
 
@@ -203,7 +201,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.getBestBlockAndState()).thenReturn(Optional.of(blockAndState));
     when(blockAndState.getState()).thenReturn(state);
     when(state.getCurrent_justified_checkpoint()).thenReturn(new Checkpoint(NODE_SLOT_VALUE, root));
@@ -214,7 +212,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedEpochValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(true);
 
     assertThat(0L).isEqualTo(metrics.getJustifiedEpochValue());
@@ -223,7 +221,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(metricsSystem, recentChainData, nodeSlot);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.getBestJustifiedEpoch()).thenReturn(ONE);
 
