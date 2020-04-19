@@ -62,7 +62,7 @@ public class EncryptedKeystoreWriter implements KeysWriter {
 
   private Path createKeystoreDirectory(final BLSKeyPair validatorKey) {
     final Path keystoreDirectory =
-        outputPath.resolve("validator_" + validatorKey.getPublicKey().toString().substring(0, 9));
+        outputPath.resolve("validator_" + validatorKey.getPublicKey().toString().substring(2, 9));
     try {
       return Files.createDirectories(keystoreDirectory);
     } catch (IOException e) {
