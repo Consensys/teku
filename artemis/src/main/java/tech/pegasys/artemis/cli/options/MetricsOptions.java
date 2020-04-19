@@ -13,8 +13,12 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import picocli.CommandLine;
+import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
+
+import static tech.pegasys.artemis.metrics.ArtemisMetricCategory.BEACON;
 
 public class MetricsOptions {
 
@@ -26,7 +30,7 @@ public class MetricsOptions {
   public static final boolean DEFAULT_METRICS_ENABLED = false;
   public static final int DEFAULT_METRICS_PORT = 8008;
   public static final String DEFAULT_METRICS_INTERFACE = "127.0.0.1";
-  public static final ArrayList<String> DEFAULT_METRICS_CATEGORIES = new ArrayList<>();
+  public static final List<ArtemisMetricCategory> DEFAULT_METRICS_CATEGORIES = List.of(BEACON);
 
   @CommandLine.Option(
       names = {METRICS_ENABLED_OPTION_NAME},
@@ -55,7 +59,7 @@ public class MetricsOptions {
       description = "Metric categories to enable",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> metricsCategories = DEFAULT_METRICS_CATEGORIES;
+  private List<ArtemisMetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
 
   public boolean isMetricsEnabled() {
     return metricsEnabled;
@@ -69,7 +73,7 @@ public class MetricsOptions {
     return metricsInterface;
   }
 
-  public ArrayList<String> getMetricsCategories() {
-    return metricsCategories;
+  public List<String> getMetricsCategories() {
+    return metricsCategories.stream().map(Enum::toString).collect(Collectors.toList());
   }
 }
