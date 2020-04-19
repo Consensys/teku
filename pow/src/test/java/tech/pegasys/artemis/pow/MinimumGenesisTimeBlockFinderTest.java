@@ -20,27 +20,24 @@ import static org.mockito.Mockito.when;
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class MinimumGenesisTimeBlockFinderTest {
 
-  private Eth1Provider eth1Provider;
+  private Eth1Provider eth1Provider = mock(Eth1Provider.class);
 
-  private MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
+  private MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder =
+      new MinimumGenesisTimeBlockFinder(eth1Provider);
 
-  @BeforeEach
-  void setUp() {
-    eth1Provider = mock(Eth1Provider.class);
-
-    minimumGenesisTimeBlockFinder = new MinimumGenesisTimeBlockFinder(eth1Provider);
-
+  @BeforeAll
+  static void setUp() {
+    // calculateCandidateGenesisTimestamp will return blockTime + 2
     Constants.MIN_GENESIS_DELAY = 1;
-    // calculateCandidateGenesisTimestamp will return
-    // blockTime + 2
   }
 
   @AfterAll
@@ -49,115 +46,69 @@ public class MinimumGenesisTimeBlockFinderTest {
   }
 
   @Test
-  void minGenesisBlock_belowEstimatedBlock() {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(5);
-
-    EthBlock.Block estimationBlock = mockBlockForEth1Provider("0xbf", 1000, 1000);
-
-    setMinGenesisTime(500);
-
-    // 1002 - 502 = 500, 500 / 5 = 100, the estimated genesis block number should be:
-    // 1000 - 100 = 900
-
-    mockBlockForEth1Provider("0x11", 900, 600);
-
-    // since the estimated block still had higher timestamp than min genesis, we should explore
-    // downwards
-
-    mockBlockForEth1Provider("0x08", 899, 510);
-
-    // since the second requested block still had higher timestamp than min genesis, we should
-    // explore downwards
-
-    mockBlockForEth1Provider("0x00", 898, 490);
-
-    // since the last requested block now had lower timestamp than min genesis, we should publish
-    // the block
-    // right before this as the first valid block
-
-    EthBlock.Block minGenesisTimeBlock =
-        minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(estimationBlock).join();
-
-    assertThatIsBlock(minGenesisTimeBlock, "0x08", 899, 510);
+  public void shouldFindMinGenesisTime() {
+    final long[] timestamps = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000};
+    final Block[] blocks = withBlockTimestamps(timestamps);
+    final int minGenesisTime = 3500;
+    final Block expectedMinGenesisTimeBlock = blocks[4];
+    assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
   }
 
   @Test
-  void minGenesisBlock_AboveEstimatedBlock() {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(5);
-
-    //    mockLatestCanonicalBlock(1000);
-    EthBlock.Block estimationBlock = mockBlockForEth1Provider("0xbf", 1000, 1000);
-
-    setMinGenesisTime(500);
-
-    // 1002 - 502 = 500, 500 / 5 = 100, the estimated genesis block number should be:
-    // 1000 - 100 = 900
-
-    mockBlockForEth1Provider("0x08", 900, 400);
-
-    // since the estimated block still had lower timestamp than min genesis, we should explore
-    // upwards
-
-    mockBlockForEth1Provider("0x08", 901, 450);
-
-    // since the second requested block still had lower timestamp than min genesis, we should
-    // explore upwards
-
-    mockBlockForEth1Provider("0x08", 902, 510);
-
-    // since the last requested block now had higher timestamp than min genesis, we should publish
-    // the block
-
-    EthBlock.Block minGenesisTimeBlock =
-        minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(estimationBlock).join();
-
-    assertThatIsBlock(minGenesisTimeBlock, "0x08", 902, 510);
+  public void shouldAddGenesisDelayToBlockTimestampWhenConsideringIfItIsTheMinGenesisBlock() {
+    final Block[] blocks = withBlockTimestamps(1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000);
+    final int minGenesisTime = 3002;
+    final Block expectedMinGenesisTimeBlock = blocks[2];
+    assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
   }
 
   @Test
-  void minGenesisBlock_EstimatedBlockIsTheValidBlock() {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(5);
-
-    //    mockLatestCanonicalBlock(1000);
-    EthBlock.Block estimationBlock = mockBlockForEth1Provider("0xbf", 1000, 1000);
-
-    setMinGenesisTime(502);
-
-    // 1002 - 502 = 500, 500 / 5 = 100, the estimated genesis block number should be:
-    // 1000 - 100 = 900
-
-    mockBlockForEth1Provider("0x08", 900, 500);
-
-    // since the genesis time calculated from the , we should publish the block
-
-    EthBlock.Block minGenesisTimeBlock =
-        minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(estimationBlock).join();
-
-    assertThatIsBlock(minGenesisTimeBlock, "0x08", 900, 500);
+  public void shouldFindMinGenesisTimeBlockAtVeryStartOfChain() {
+    final Block[] blocks = withBlockTimestamps(4000, 5000, 6000, 7000, 8000);
+    final int minGenesisTime = 3000;
+    final Block expectedMinGenesisTimeBlock = blocks[0];
+    assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
   }
 
-  private EthBlock.Block mockBlockForEth1Provider(
-      String blockHash, long blockNumber, long timestamp) {
-    EthBlock.Block block = mock(EthBlock.Block.class);
+  @Test
+  public void shouldFindMinGenesisTimeBlockAtHeadOfChain() {
+    final Block[] blocks = withBlockTimestamps(4000, 5000, 6000, 7000, 8000);
+    final int minGenesisTime = 8000;
+    final Block expectedMinGenesisTimeBlock = blocks[blocks.length - 1];
+    assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
+  }
+
+  @Test
+  public void shouldFindMinGenesisTimeWithExactMatch() {
+    final Block[] blocks = withBlockTimestamps(1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000);
+    final int minGenesisTime = 3002;
+    final Block expectedMinGenesisTimeBlock = blocks[2];
+    assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
+  }
+
+  private void assertMinGenesisBlock(
+      final Block[] blocks, final long minGenesisTime, final Block expectedMinGenesisTimeBlock) {
+    Constants.MIN_GENESIS_TIME = UnsignedLong.valueOf(minGenesisTime);
+    final SafeFuture<Block> result =
+        minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(blocks[blocks.length - 1]);
+    assertThat(result).isCompletedWithValue(expectedMinGenesisTimeBlock);
+  }
+
+  private Block[] withBlockTimestamps(final long... timestamps) {
+    final EthBlock.Block[] blocks = new EthBlock.Block[timestamps.length];
+    for (int blockNumber = 0; blockNumber < timestamps.length; blockNumber++) {
+      blocks[blockNumber] = block(blockNumber, timestamps[blockNumber]);
+    }
+    return blocks;
+  }
+
+  private EthBlock.Block block(final long blockNumber, final long timestamp) {
+    final Block block = mock(Block.class);
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
-    when(block.getHash()).thenReturn(blockHash);
+    when(block.toString()).thenReturn("Block " + blockNumber + " at timestamp " + timestamp);
     when(eth1Provider.getEth1BlockFuture(UnsignedLong.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(block));
     return block;
-  }
-
-  private void assertThatIsBlock(
-      EthBlock.Block block,
-      final String expectedBlockHash,
-      final long expectedBlockNumber,
-      final long expectedTimestamp) {
-    assertThat(block.getTimestamp().longValue()).isEqualTo(expectedTimestamp);
-    assertThat(block.getNumber().longValue()).isEqualTo(expectedBlockNumber);
-    assertThat(block.getHash()).isEqualTo(expectedBlockHash);
-  }
-
-  private void setMinGenesisTime(long time) {
-    Constants.MIN_GENESIS_TIME = UnsignedLong.valueOf(time);
   }
 }
