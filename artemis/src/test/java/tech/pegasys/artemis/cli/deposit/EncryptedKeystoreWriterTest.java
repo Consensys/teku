@@ -54,19 +54,19 @@ class EncryptedKeystoreWriterTest {
     keysWriter.writeKeys(new BLSKeyPair(validator1SecretKey), new BLSKeyPair(withdrawal1SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve("validator_" + validator1PubKey.substring(0, 6) + "/validator.json"),
+        tempDir.resolve("validator_" + validator1PubKey.substring(0, 9) + "/validator.json"),
         validator1SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve("validator_" + validator1PubKey.substring(0, 6) + "/withdrawal.json"),
+        tempDir.resolve("validator_" + validator1PubKey.substring(0, 9) + "/withdrawal.json"),
         withdrawal1SecretKey);
 
     keysWriter.writeKeys(new BLSKeyPair(validator2SecretKey), new BLSKeyPair(withdrawal2SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve("validator_" + validator2PubKey.substring(0, 6) + "/validator.json"),
+        tempDir.resolve("validator_" + validator2PubKey.substring(0, 9) + "/validator.json"),
         validator2SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve("validator_" + validator2PubKey.substring(0, 6) + "/withdrawal.json"),
+        tempDir.resolve("validator_" + validator2PubKey.substring(0, 9) + "/withdrawal.json"),
         withdrawal2SecretKey);
   }
 
