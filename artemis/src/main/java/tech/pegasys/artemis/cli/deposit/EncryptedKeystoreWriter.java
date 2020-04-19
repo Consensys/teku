@@ -56,18 +56,13 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     final KeyStoreData withdrawalKeyStoreData =
         generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
 
-    saveKeyStore(
-        keystoreDirectory.resolve("validator_" + validatorKey.getPublicKey().toString() + ".json"),
-        validatorKeyStoreData);
-    saveKeyStore(
-        keystoreDirectory.resolve(
-            "withdrawal_" + withdrawalKey.getPublicKey().toString() + ".json"),
-        withdrawalKeyStoreData);
+    saveKeyStore(keystoreDirectory.resolve("validator.json"), validatorKeyStoreData);
+    saveKeyStore(keystoreDirectory.resolve("withdrawal.json"), withdrawalKeyStoreData);
   }
 
   private Path createKeystoreDirectory(final BLSKeyPair validatorKey) {
     final Path keystoreDirectory =
-        outputPath.resolve("validator_" + validatorKey.getPublicKey().toString());
+        outputPath.resolve("validator_" + validatorKey.getPublicKey().toString().substring(0, 6));
     try {
       return Files.createDirectories(keystoreDirectory);
     } catch (IOException e) {
