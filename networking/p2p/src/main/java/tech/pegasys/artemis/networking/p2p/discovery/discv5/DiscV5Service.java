@@ -75,6 +75,11 @@ public class DiscV5Service extends Service implements DiscoveryService {
     return Optional.of(discoverySystem.getLocalNodeRecord().asEnr());
   }
 
+  @Override
+  public void updateCustomENRField(String fieldName, Bytes value) {
+    discoverySystem.updateCustomFieldValue(fieldName, value);
+  }
+
   private Stream<NodeRecord> activeNodes() {
     return discoverySystem
         .streamKnownNodes()
