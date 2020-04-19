@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -31,11 +32,14 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
+  private static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
   private static final Logger LOG = LogManager.getLogger();
+
   private final P2PNetwork<P> p2pNetwork;
   private final DiscoveryService discoveryService;
   private final ConnectionManager connectionManager;
@@ -117,6 +121,12 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   @Override
   public Optional<String> getEnr() {
     return discoveryService.getEnr();
+  }
+
+  public void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIds) {
+    discoveryService.updateCustomENRField(
+        ATTESTATION_SUBNET_ENR_FIELD,
+        new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
   }
 
   @Override

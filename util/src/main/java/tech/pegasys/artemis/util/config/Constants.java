@@ -126,26 +126,37 @@ public class Constants {
   public static UnsignedLong ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(1024);
 
   // Artemis specific
-  public static Bytes32 ZERO_HASH = Bytes32.ZERO;
-  public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
-  public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
-  public static int COMMITTEE_INDEX_SUBSCRIPTION_LENGTH = 2; // in epochs
+  public static final Bytes32 ZERO_HASH = Bytes32.ZERO;
+  public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
+  public static final UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
+  public static final int COMMITTEE_INDEX_SUBSCRIPTION_LENGTH = 2; // in epochs
   public static UnsignedLong ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(10); // in sec
-  public static long ETH1_CACHE_STARTUP_RETRY_TIMEOUT = 10; // in sec
-  public static long ETH1_CACHE_STARTUP_RETRY_GIVEUP = 5; // in #
-  public static long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
-  public static long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
-  public static long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
+  public static final long ETH1_CACHE_STARTUP_RETRY_TIMEOUT = 10; // in sec
+  public static final long ETH1_CACHE_STARTUP_RETRY_GIVEUP = 5; // in #
+  public static final long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
+  public static final long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
+  public static final long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 100;
-  public static long STORAGE_REQUEST_TIMEOUT = 3; // in sec
-  public static int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
-  public static int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
+  public static final long STORAGE_REQUEST_TIMEOUT = 3; // in sec
+  public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
+  public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
+  public static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
+  public static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   // Teku Validator Client Specific
   public static final long VALIDATOR_DUTIES_TIMEOUT = 15; // in sec
   public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
   public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
+
+  // Networking
+  public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
+  public static final int MAX_CHUNK_SIZE = 1048576; // bytes
+  public static final int ATTESTATION_SUBNET_COUNT = 64;
+  public static final int TTFB_TIMEOUT = 5; // in sec
+  public static final int RESP_TIMEOUT = 10; // in sec
+  public static final int ATTESTATION_PROPAGATION_SLOT_RANGE = 32;
+  public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
   static {
     setConstants("minimal");

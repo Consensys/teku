@@ -27,6 +27,7 @@ import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
@@ -73,6 +74,10 @@ public class BlockImporter {
       LOG.error("Internal error while importing block: " + block.getMessage(), e);
       return BlockImportResult.internalError(e);
     }
+  }
+
+  public SafeFuture<BlockImportResult> importBlockAsync(final SignedBeaconBlock block) {
+    return SafeFuture.of(() -> importBlock(block));
   }
 
   @Subscribe

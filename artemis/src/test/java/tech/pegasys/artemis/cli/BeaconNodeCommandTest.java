@@ -15,6 +15,8 @@ package tech.pegasys.artemis.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
@@ -40,35 +42,26 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
+import tech.pegasys.artemis.util.config.NetworkDefinition;
 
 public class BeaconNodeCommandTest {
 
-  private BeaconNodeCommand beaconNodeCommand;
-  private StringWriter commandOutput;
-  private StringWriter commandError;
-  private PrintWriter outputWriter;
-  private PrintWriter errorWriter;
+  private final PrintWriter outputWriter = new PrintWriter(new StringWriter(), true);
+  private final PrintWriter errorWriter = new PrintWriter(new StringWriter(), true);
+
+  @SuppressWarnings("unchecked")
+  private final Consumer<ArtemisConfiguration> startAction = mock(Consumer.class);
+
+  private BeaconNodeCommand beaconNodeCommand =
+      new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
+
   @TempDir Path dataPath;
-
-  @BeforeEach
-  void setUp() {
-    commandOutput = new StringWriter();
-    commandError = new StringWriter();
-    outputWriter = new PrintWriter(commandOutput, true);
-    errorWriter = new PrintWriter(commandError, true);
-    beaconNodeCommand = new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap());
-  }
-
-  @AfterEach
-  void tearDown() {
-    beaconNodeCommand.stop();
-  }
 
   @Test
   public void loadDefaultsWhenNoArgsArePassed() {
@@ -77,9 +70,7 @@ public class BeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
-    assertArtemisConfiguration(artemisConfiguration, expectedDefaultConfigurationBuilder().build());
+    assertArtemisConfiguration(expectedDefaultConfigurationBuilder().build());
   }
 
   @Test
@@ -88,14 +79,14 @@ public class BeaconNodeCommandTest {
     args[5] = "1.2.3.5";
     beaconNodeCommand =
         new BeaconNodeCommand(
-            outputWriter, errorWriter, Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"));
+            outputWriter,
+            errorWriter,
+            Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.4"),
+            startAction);
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
-    assertArtemisConfiguration(
-        artemisConfiguration, expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+    assertArtemisConfiguration(expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
   }
 
   @Test
@@ -104,14 +95,14 @@ public class BeaconNodeCommandTest {
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile.toString()};
     beaconNodeCommand =
         new BeaconNodeCommand(
-            outputWriter, errorWriter, Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"));
+            outputWriter,
+            errorWriter,
+            Collections.singletonMap("TEKU_P2P_INTERFACE", "1.2.3.5"),
+            startAction);
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
     assertArtemisConfiguration(
-        artemisConfiguration,
         expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
   }
 
@@ -124,10 +115,7 @@ public class BeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
     assertArtemisConfiguration(
-        artemisConfiguration,
         expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
   }
 
@@ -137,13 +125,12 @@ public class BeaconNodeCommandTest {
         new BeaconNodeCommand(
             outputWriter,
             errorWriter,
-            Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"));
+            Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"),
+            startAction);
 
     beaconNodeCommand.parse(new String[] {});
 
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
-    assertArtemisConfiguration(artemisConfiguration, expectedDefaultConfigurationBuilder().build());
+    assertArtemisConfiguration(expectedDefaultConfigurationBuilder().build());
   }
 
   @Test
@@ -152,9 +139,7 @@ public class BeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
-    assertArtemisConfiguration(artemisConfiguration, expectedConfigurationBuilder().build());
+    assertArtemisConfiguration(expectedConfigurationBuilder().build());
   }
 
   @Test
@@ -164,9 +149,7 @@ public class BeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
-
-    assertArtemisConfiguration(artemisConfiguration, expectedCompleteConfigInFileBuilder().build());
+    assertArtemisConfiguration(expectedCompleteConfigInFileBuilder().build());
   }
 
   private Path createConfigFile() throws IOException {
@@ -174,7 +157,7 @@ public class BeaconNodeCommandTest {
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
             .replace("data-path: \".\"", "data-path: \"" + dataPath.toString() + "\"");
-    return createTempFile("yaml", updatedConfig.getBytes(UTF_8));
+    return createTempFile(updatedConfig.getBytes(UTF_8));
   }
 
   private String[] createCliArgs() {
@@ -233,7 +216,7 @@ public class BeaconNodeCommandTest {
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
     return ArtemisConfiguration.builder()
-        .setNetwork("minimal")
+        .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
         .setP2pPort(1234)
@@ -273,13 +256,17 @@ public class BeaconNodeCommandTest {
         .setRestApiInterface("127.0.0.1");
   }
 
-  private void assertArtemisConfiguration(
-      final ArtemisConfiguration actual, final ArtemisConfiguration expected) {
+  private void assertArtemisConfiguration(final ArtemisConfiguration expected) {
+    final ArgumentCaptor<ArtemisConfiguration> configCaptor =
+        ArgumentCaptor.forClass(ArtemisConfiguration.class);
+    verify(startAction).accept(configCaptor.capture());
+
+    final ArtemisConfiguration actual = configCaptor.getValue();
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
   }
 
-  private Path createTempFile(final String filename, final byte[] contents) throws IOException {
-    final Path file = java.nio.file.Files.createTempFile(filename, "");
+  private Path createTempFile(final byte[] contents) throws IOException {
+    final Path file = java.nio.file.Files.createTempFile("config", "yaml");
     java.nio.file.Files.write(file, contents);
     file.toFile().deleteOnExit();
     return file;

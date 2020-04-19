@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_fork_digest;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -23,26 +25,42 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
-  private final Bytes4 headForkVersion;
+  private final Bytes4 forkDigest;
   private final Bytes32 finalizedRoot;
   private final UnsignedLong finalizedEpoch;
   private final Bytes32 headRoot;
   private final UnsignedLong headSlot;
 
   public StatusMessage(
-      Bytes4 headForkVersion,
+      Bytes4 forkDigest,
       Bytes32 finalizedRoot,
       UnsignedLong finalizedEpoch,
       Bytes32 headRoot,
       UnsignedLong headSlot) {
-    this.headForkVersion = headForkVersion;
+    this.forkDigest = forkDigest;
     this.finalizedRoot = finalizedRoot;
     this.finalizedEpoch = finalizedEpoch;
     this.headRoot = headRoot;
     this.headSlot = headSlot;
+  }
+
+  public static StatusMessage createPreGenesisStatus() {
+    return new StatusMessage(
+        createPreGenesisForkDigest(),
+        Bytes32.ZERO,
+        UnsignedLong.ZERO,
+        Bytes32.ZERO,
+        UnsignedLong.ZERO);
+  }
+
+  private static Bytes4 createPreGenesisForkDigest() {
+    final Bytes4 genesisFork = Constants.GENESIS_FORK_VERSION;
+    final Bytes32 emptyValidatorsRoot = Bytes32.ZERO;
+    return compute_fork_digest(genesisFork, emptyValidatorsRoot);
   }
 
   @Override
@@ -53,7 +71,7 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(headForkVersion.getWrappedBytes())),
+        SSZ.encode(writer -> writer.writeFixedBytes(forkDigest.getWrappedBytes())),
         SSZ.encode(writer -> writer.writeFixedBytes(finalizedRoot)),
         SSZ.encodeUInt64(finalizedEpoch.longValue()),
         SSZ.encode(writer -> writer.writeFixedBytes(headRoot)),
@@ -62,7 +80,7 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
 
   @Override
   public int hashCode() {
-    return Objects.hash(headForkVersion, finalizedRoot, finalizedEpoch, headRoot, headSlot);
+    return Objects.hash(forkDigest, finalizedRoot, finalizedEpoch, headRoot, headSlot);
   }
 
   @Override
@@ -81,16 +99,15 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
 
     StatusMessage other = (StatusMessage) obj;
     return Objects.equals(
-            this.getHeadForkVersion().getWrappedBytes(),
-            other.getHeadForkVersion().getWrappedBytes())
+            this.getForkDigest().getWrappedBytes(), other.getForkDigest().getWrappedBytes())
         && Objects.equals(this.getFinalizedRoot(), other.getFinalizedRoot())
         && Objects.equals(this.getFinalizedEpoch(), other.getFinalizedEpoch())
         && Objects.equals(this.getHeadRoot(), other.getHeadRoot())
         && Objects.equals(this.getHeadSlot(), other.getHeadSlot());
   }
 
-  public Bytes4 getHeadForkVersion() {
-    return headForkVersion;
+  public Bytes4 getForkDigest() {
+    return forkDigest;
   }
 
   public Bytes32 getFinalizedRoot() {
@@ -112,7 +129,7 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("forkVersion", headForkVersion)
+        .add("forkDigest", forkDigest)
         .add("finalizedRoot", finalizedRoot)
         .add("finalizedEpoch", finalizedEpoch)
         .add("headRoot", headRoot)
