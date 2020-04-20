@@ -62,7 +62,7 @@ public class MinimumGenesisTimeBlockFinder {
                   return binarySearchLoop(searchContext);
                 } else if (cmp > 0) {
                   if (mid.equals(ZERO)) {
-                    // The very first block is after min genesis so just use it
+                    // The very first eth1 block is after eth2 min genesis so just use it
                     return SafeFuture.completedFuture(midBlock);
                   }
                   searchContext.high = mid.minus(ONE);
