@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,13 +53,5 @@ class DutyQueue {
 
   private synchronized void execute(final Consumer<ScheduledDuties> action) {
     this.duties.ifPresentOrElse(action, () -> pendingActions.add(action));
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("pendingActions", pendingActions)
-        .add("duties", duties)
-        .toString();
   }
 }
