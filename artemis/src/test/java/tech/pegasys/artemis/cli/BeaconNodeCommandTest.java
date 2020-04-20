@@ -41,8 +41,10 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
@@ -152,6 +154,18 @@ public class BeaconNodeCommandTest {
     assertArtemisConfiguration(expectedCompleteConfigInFileBuilder().build());
   }
 
+  @Test
+  public void overrideDefaultMetricsCategory() throws IOException {
+    final Path configFile = createConfigFile();
+    final String[] args = {
+      CONFIG_FILE_OPTION_NAME, configFile.toString(), "--metrics-categories", "BEACON"
+    };
+
+    beaconNodeCommand.parse(args);
+    assertArtemisConfiguration(
+        expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -180,7 +194,7 @@ public class BeaconNodeCommandTest {
       "--metrics-enabled", "false",
       "--metrics-port", "8008",
       "--metrics-interface", "127.0.0.1",
-      "--metrics-categories", "BEACON,JVM,PROCESS",
+      "--metrics-categories", "BEACON,LIBP2P,NETWORK,EVENTBUS,JVM,PROCESS",
       "--data-path", dataPath.toString(),
       "--data-storage-mode", "prune",
       "--rest-api-port", "5051",
@@ -194,7 +208,10 @@ public class BeaconNodeCommandTest {
     return expectedConfigurationBuilder()
         .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
         .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
-        .setMetricsCategories(DEFAULT_METRICS_CATEGORIES)
+        .setMetricsCategories(
+            DEFAULT_METRICS_CATEGORIES.stream()
+                .map(value -> value.toString())
+                .collect(Collectors.toList()))
         .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
         .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
         .setP2pInterface(DEFAULT_P2P_INTERFACE)
@@ -239,7 +256,8 @@ public class BeaconNodeCommandTest {
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
-        .setMetricsCategories(Arrays.asList("BEACON", "JVM", "PROCESS"))
+        .setMetricsCategories(
+            Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
         .setLogDestination(DEFAULT_LOG_DESTINATION)
         .setLogFile(DEFAULT_LOG_FILE)

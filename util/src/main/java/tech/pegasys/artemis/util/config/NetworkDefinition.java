@@ -31,6 +31,8 @@ public class NetworkDefinition {
               "topaz",
               builder()
                   .constants("mainnet")
+                  .discoveryBootnodes(
+                      "enr:-Ku4QAGwOT9StqmwI5LHaIymIO4ooFKfNkEjWa0f1P8OsElgBh2Ijb-GrD_-b9W4kcPFcwmHQEy5RncqXNqdpVo1heoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
                   .eth1DepositContractAddress("0x5cA1e00004366Ac85f492887AAab12d0e6418876")
                   .build())
           .build();
