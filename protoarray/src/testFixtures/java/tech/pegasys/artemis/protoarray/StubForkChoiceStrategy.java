@@ -30,5 +30,5 @@ public class StubForkChoiceStrategy implements ForkChoiceStrategy {
   public void onAttestation(final IndexedAttestation attestation) {}
 
   @Override
-  public void onBlock(final MutableStore store, final BeaconBlock block) {}
+  public void onBlock(final ReadOnlyStore store, final BeaconBlock block) {}
 }
