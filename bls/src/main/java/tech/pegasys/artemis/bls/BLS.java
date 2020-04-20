@@ -116,7 +116,7 @@ public class BLS {
   }
 
   public static boolean batchVerify(
-      List<BLSPublicKey> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
+      List<List<BLSPublicKey>> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
     Preconditions.checkArgument(
         publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
         "Different collection sizes");
@@ -128,9 +128,11 @@ public class BLS {
   }
 
   public static BatchSemiAggregate prepareBatchVerify(
-      BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
+      List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
     return BLS12381.prepareBatchVerify(
-        publicKey.getPublicKey(), message, signature.getSignature());
+        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+        message,
+        signature.getSignature());
   }
 
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {

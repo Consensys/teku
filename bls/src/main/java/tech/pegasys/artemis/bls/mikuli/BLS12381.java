@@ -205,7 +205,7 @@ public final class BLS12381 {
   }
 
   public static BatchSemiAggregate prepareBatchVerify(
-      PublicKey publicKey, Bytes message, Signature signature) {
+      List<PublicKey> publicKeys, Bytes message, Signature signature) {
 
     Scalar randomCoef = new Scalar(BIG.randomnum(MAX_BATCH_VERIFY_RANDOM_MULTIPLIER, RANDOM));
 
@@ -215,7 +215,7 @@ public final class BLS12381 {
     G2Point msgG2Point = G2Point.hashToG2(message);
     G2Point msgG2PointM = msgG2Point.mul(randomCoef);
 
-    GTPoint pair = AtePairing.pair(publicKey.g1Point(), msgG2PointM);
+    GTPoint pair = AtePairing.pair(PublicKey.aggregate(publicKeys).g1Point(), msgG2PointM);
 
     return new BatchSemiAggregate(sigG2PointM, pair);
   }
