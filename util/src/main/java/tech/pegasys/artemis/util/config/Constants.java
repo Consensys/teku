@@ -158,6 +158,9 @@ public class Constants {
   public static final int ATTESTATION_PROPAGATION_SLOT_RANGE = 32;
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
+  // Teku Networking Specific
+  public static final int VALID_BLOCK_SET_SIZE = 1000;
+
   static {
     setConstants("minimal");
   }

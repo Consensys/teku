@@ -17,9 +17,11 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -61,7 +63,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   private void startup() {
     state.set(State.RUNNING);
-    blockGossipManager = new BlockGossipManager(discoveryNetwork, eventBus, recentChainData);
+    BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
+    blockGossipManager = new BlockGossipManager(discoveryNetwork, eventBus, blockValidator);
     attestationGossipManager =
         new AttestationGossipManager(discoveryNetwork, eventBus, recentChainData);
     aggregateGossipManager =
