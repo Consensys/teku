@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.discovery;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface DiscoveryService {
@@ -28,4 +29,6 @@ public interface DiscoveryService {
   SafeFuture<Void> searchForPeers();
 
   Optional<String> getEnr();
+
+  void updateCustomENRField(String fieldName, Bytes value);
 }

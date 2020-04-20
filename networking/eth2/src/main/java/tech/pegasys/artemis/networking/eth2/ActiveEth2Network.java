@@ -25,16 +25,16 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValida
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
-  private final P2PNetwork<?> network;
+  private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
   private final RecentChainData recentChainData;
@@ -45,12 +45,12 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private AggregateGossipManager aggregateGossipManager;
 
   public ActiveEth2Network(
-      final P2PNetwork<?> network,
+      final DiscoveryNetwork<?> discoveryNetwork,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
       final RecentChainData recentChainData) {
-    super(network);
-    this.network = network;
+    super(discoveryNetwork);
+    this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
@@ -64,9 +64,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private void startup() {
     state.set(State.RUNNING);
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
-    blockGossipManager = new BlockGossipManager(network, eventBus, blockValidator);
-    attestationGossipManager = new AttestationGossipManager(network, eventBus, recentChainData);
-    aggregateGossipManager = new AggregateGossipManager(network, eventBus, recentChainData);
+    blockGossipManager = new BlockGossipManager(discoveryNetwork, eventBus, blockValidator);
+    attestationGossipManager =
+        new AttestationGossipManager(discoveryNetwork, eventBus, recentChainData);
+    aggregateGossipManager =
+        new AggregateGossipManager(discoveryNetwork, eventBus, recentChainData);
   }
 
   @Override
@@ -82,7 +84,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public NetworkConfig getConfig() {
-    return network.getConfig();
+    return discoveryNetwork.getConfig();
   }
 
   @Override
@@ -124,5 +126,10 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
     attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
+  }
+
+  @Override
+  public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
+    discoveryNetwork.setLongTermAttestationSubnetSubscriptions(subnetIndices);
   }
 }

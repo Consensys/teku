@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.discovery.noop;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -45,4 +46,7 @@ public class NoOpDiscoveryService implements DiscoveryService {
   public Optional<String> getEnr() {
     return Optional.empty();
   }
+
+  @Override
+  public void updateCustomENRField(String fieldName, Bytes value) {}
 }
