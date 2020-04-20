@@ -62,29 +62,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
             new ArrayList<>(),
             new HashMap<>());
 
-    List<BeaconBlock> blocks = new ArrayList<>();
-    for (Bytes32 blockRoots : store.getBlockRoots()) {
-      BeaconBlock block =
-          checkNotNull(
-              store.getBlock(blockRoots),
-              "ProtoArrayForkChoiceStrategy: Store does not contain the block of the block root it stores");
-      blocks.add(block);
-    }
-
-    blocks.sort(Comparator.comparing(BeaconBlock::getSlot));
-
-    for (BeaconBlock block : blocks) {
-      Bytes32 blockRoot = block.hash_tree_root();
-      protoArray.onBlock(
-          block.getSlot(),
-          blockRoot,
-          store.getBlockRoots().contains(block.getParent_root())
-              ? Optional.of(block.getParent_root())
-              : Optional.empty(),
-          block.getState_root(),
-          store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
-          store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
-    }
+    processBlocksInStoreAtStartup(store, protoArray);
 
     return new ProtoArrayForkChoiceStrategy(
         protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
@@ -120,13 +98,14 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   @Override
   public void onBlock(final ReadOnlyStore store, final BeaconBlock block) {
+    Bytes32 blockRoot = block.hash_tree_root();
     processBlock(
         block.getSlot(),
-        block.hash_tree_root(),
+        blockRoot,
         block.getParent_root(),
         block.getState_root(),
-        store.getJustifiedCheckpoint().getEpoch(),
-        store.getFinalizedCheckpoint().getEpoch());
+        store.getBlockState(blockRoot).getCurrent_justified_checkpoint().getEpoch(),
+        store.getBlockState(blockRoot).getFinalized_checkpoint().getEpoch());
   }
 
   public void maybePrune(Bytes32 finalizedRoot) {
@@ -139,6 +118,32 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   // Internal
+
+  private static void processBlocksInStoreAtStartup(ReadOnlyStore store, ProtoArray protoArray) {
+    List<BeaconBlock> blocks = new ArrayList<>();
+    for (Bytes32 blockRoots : store.getBlockRoots()) {
+      BeaconBlock block =
+          checkNotNull(
+              store.getBlock(blockRoots),
+              "ProtoArrayForkChoiceStrategy: Store does not contain the block of the block root it stores");
+      blocks.add(block);
+    }
+
+    blocks.sort(Comparator.comparing(BeaconBlock::getSlot));
+
+    for (BeaconBlock block : blocks) {
+      Bytes32 blockRoot = block.hash_tree_root();
+      protoArray.onBlock(
+          block.getSlot(),
+          blockRoot,
+          store.getBlockRoots().contains(block.getParent_root())
+              ? Optional.of(block.getParent_root())
+              : Optional.empty(),
+          block.getState_root(),
+          store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
+          store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
+    }
+  }
 
   void processAttestation(int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
     VoteTracker vote = votes.get(validatorIndex);
