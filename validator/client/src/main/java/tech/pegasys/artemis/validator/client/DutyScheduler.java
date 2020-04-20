@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 
 public class DutyScheduler implements ValidatorTimingChannel {
@@ -48,25 +49,29 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onBlockProductionDue(final UnsignedLong slot) {
-    getEpochDutiesForSlot(slot).onBlockProductionDue(slot);
+    notifyDutyQueue(DutyQueue::onBlockProductionDue, slot);
   }
 
   @Override
   public void onAttestationCreationDue(final UnsignedLong slot) {
-    getEpochDutiesForSlot(slot).onAttestationCreationDue(slot);
+    notifyDutyQueue(DutyQueue::onAttestationCreationDue, slot);
   }
 
   @Override
   public void onAttestationAggregationDue(final UnsignedLong slot) {
-    getEpochDutiesForSlot(slot).onAttestationAggregationDue(slot);
+    notifyDutyQueue(DutyQueue::onAttestationAggregationDue, slot);
   }
 
   private DutyQueue requestDutiesForEpoch(final UnsignedLong epochNumber) {
     return new DutyQueue(epochDutiesScheduler.fetchDutiesForEpoch(epochNumber));
   }
 
-  private DutyQueue getEpochDutiesForSlot(final UnsignedLong slot) {
-    return dutiesByEpoch.getOrDefault(compute_epoch_at_slot(slot), DutyQueue.NONE);
+  private void notifyDutyQueue(
+      final BiConsumer<DutyQueue, UnsignedLong> action, final UnsignedLong slot) {
+    final DutyQueue dutyQueue = dutiesByEpoch.get(compute_epoch_at_slot(slot));
+    if (dutyQueue != null) {
+      action.accept(dutyQueue, slot);
+    }
   }
 
   private void removePriorEpochs(final UnsignedLong epochNumber) {

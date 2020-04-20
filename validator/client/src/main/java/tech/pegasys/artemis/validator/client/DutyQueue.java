@@ -27,8 +27,6 @@ import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 class DutyQueue {
   private static final Logger LOG = LogManager.getLogger();
 
-  static final DutyQueue NONE = new DutyQueue(new SafeFuture<>());
-
   private List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
   private Optional<ScheduledDuties> duties = Optional.empty();
 
