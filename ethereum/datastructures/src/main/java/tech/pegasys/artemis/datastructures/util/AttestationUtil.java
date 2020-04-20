@@ -32,9 +32,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.bls.BLSSignatureVerifier;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -133,8 +133,15 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
-  public static Boolean is_valid_indexed_attestation(
+  public static boolean is_valid_indexed_attestation(
       BeaconState state, IndexedAttestation indexed_attestation) {
+    return is_valid_indexed_attestation(state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
+  }
+
+  public static boolean is_valid_indexed_attestation(
+      BeaconState state,
+      IndexedAttestation indexed_attestation,
+      BLSSignatureVerifier signatureVerifier) {
     SSZList<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
     if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
@@ -160,7 +167,7 @@ public class AttestationUtil {
             state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     Bytes signing_root = compute_signing_root(indexed_attestation.getData(), domain);
 
-    if (!BLS.fastAggregateVerify(pubkeys, signing_root, signature)) {
+    if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
       LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }

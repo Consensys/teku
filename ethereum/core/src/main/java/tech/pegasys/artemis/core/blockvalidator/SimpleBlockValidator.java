@@ -6,7 +6,8 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domai
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.bls.BLSSignatureVerifier;
+import tech.pegasys.artemis.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.artemis.core.BlockProcessorUtil;
 import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
@@ -21,6 +22,7 @@ public class SimpleBlockValidator implements BlockValidator {
   private final boolean verifyBlockSignature;
   private final boolean verifyBlockBody;
   private final boolean verifyPostStateRoot;
+  private final BLSSignatureVerifier signatureVerifier;
 
   public SimpleBlockValidator() {
     this(true, true, true);
@@ -28,9 +30,18 @@ public class SimpleBlockValidator implements BlockValidator {
 
   public SimpleBlockValidator(
       boolean verifyBlockSignature, boolean verifyBlockBody, boolean verifyPostStateRoot) {
+    this(verifyBlockSignature, verifyBlockBody, verifyPostStateRoot, BLSSignatureVerifier.SIMPLE);
+  }
+
+  public SimpleBlockValidator(
+      boolean verifyBlockSignature,
+      boolean verifyBlockBody,
+      boolean verifyPostStateRoot,
+      BLSSignatureVerifier signatureVerifier) {
     this.verifyBlockSignature = verifyBlockSignature;
     this.verifyBlockBody = verifyBlockBody;
     this.verifyPostStateRoot = verifyPostStateRoot;
+    this.signatureVerifier = signatureVerifier;
   }
 
   @Override
@@ -43,13 +54,16 @@ public class SimpleBlockValidator implements BlockValidator {
 
       if (verifyBlockBody) {
         BeaconBlockBody blockBody = block.getMessage().getBody();
-        BlockProcessorUtil.verify_attestations(preState, blockBody.getAttestations());
-        BlockProcessorUtil.verify_randao(preState, blockBody);
-        BlockProcessorUtil.verify_proposer_slashings(preState, blockBody.getProposer_slashings());
-        BlockProcessorUtil.verify_voluntary_exits(preState, blockBody.getVoluntary_exits());
+        BlockProcessorUtil.verify_attestations(
+            preState, blockBody.getAttestations(), signatureVerifier);
+        BlockProcessorUtil.verify_randao(preState, blockBody, signatureVerifier);
+        BlockProcessorUtil.verify_proposer_slashings(
+            preState, blockBody.getProposer_slashings(), signatureVerifier);
+        BlockProcessorUtil.verify_voluntary_exits(
+            preState, blockBody.getVoluntary_exits(), signatureVerifier);
       }
       return SafeFuture.completedFuture(new BlockValidationResult(true));
-    } catch (BlockProcessingException e) {
+    } catch (BlockProcessingException | InvalidSignatureException e) {
       return SafeFuture.completedFuture(new BlockValidationResult(e));
     } catch (Exception e) {
       return SafeFuture.failedFuture(e);
@@ -57,27 +71,32 @@ public class SimpleBlockValidator implements BlockValidator {
   }
 
   @Override
-  public SafeFuture<BlockValidationResult> validatePostState(BeaconState postState, SignedBeaconBlock block) {
+  public SafeFuture<BlockValidationResult> validatePostState(
+      BeaconState postState, SignedBeaconBlock block) {
     if (verifyPostStateRoot
         && !block.getMessage().getState_root().equals(postState.hashTreeRoot())) {
-      return SafeFuture.completedFuture(new BlockValidationResult(
-          new StateTransitionException(
-              "Block state root does NOT match the calculated state root!\n"
-                  + "Block state root: "
-                  + block.getMessage().getState_root().toHexString()
-                  + "New state root: "
-                  + postState.hashTreeRoot().toHexString())));
+      return SafeFuture.completedFuture(
+          new BlockValidationResult(
+              new StateTransitionException(
+                  "Block state root does NOT match the calculated state root!\n"
+                      + "Block state root: "
+                      + block.getMessage().getState_root().toHexString()
+                      + "New state root: "
+                      + postState.hashTreeRoot().toHexString())));
     } else {
       return SafeFuture.completedFuture(new BlockValidationResult(true));
     }
   }
 
-  private static void verify_block_signature(
-      final BeaconState state, SignedBeaconBlock signed_block) throws BlockProcessingException {
+  private void verify_block_signature(final BeaconState state, SignedBeaconBlock signed_block)
+      throws BlockProcessingException {
     final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
     final Bytes signing_root =
         compute_signing_root(signed_block.getMessage(), get_domain(state, DOMAIN_BEACON_PROPOSER));
-    if (!BLS.verify(proposer.getPubkey(), signing_root, signed_block.getSignature())) {
+    try {
+      signatureVerifier.verifyAndThrow(
+          proposer.getPubkey(), signing_root, signed_block.getSignature());
+    } catch (InvalidSignatureException e) {
       throw new BlockProcessingException("Invalid block signature: " + signed_block);
     }
   }

@@ -57,6 +57,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignatureVerifier;
+import tech.pegasys.artemis.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -147,18 +149,19 @@ public final class BlockProcessorUtil {
     }
   }
 
-  public static void verify_randao(BeaconState state, BeaconBlockBody body)
-      throws BlockProcessingException {
+  public static void verify_randao(BeaconState state, BeaconBlockBody body, BLSSignatureVerifier bls)
+      throws InvalidSignatureException {
     UnsignedLong epoch = get_current_epoch(state);
     // Verify RANDAO reveal
     int proposer_index = get_beacon_proposer_index(state);
     Validator proposer = state.getValidators().get(proposer_index);
     final Bytes signing_root =
         compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
-    if (!BLS.verify(proposer.getPubkey(), signing_root, body.getRandao_reveal())) {
-      throw new BlockProcessingException(
-          "process_randao: Verify that the provided randao value is valid");
-    }
+    bls.verifyAndThrow(
+        proposer.getPubkey(),
+        signing_root,
+        body.getRandao_reveal(),
+        "process_randao: Verify that the provided randao value is valid");
   }
 
   /**
@@ -268,8 +271,11 @@ public final class BlockProcessorUtil {
   }
 
   public static void verify_proposer_slashings(
-      BeaconState state, SSZList<ProposerSlashing> proposerSlashings)
-      throws BlockProcessingException {
+      BeaconState state,
+      SSZList<ProposerSlashing> proposerSlashings,
+      BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException, InvalidSignatureException {
+
     // For each proposer_slashing in block.body.proposer_slashings:
     for (ProposerSlashing proposer_slashing : proposerSlashings) {
       final BeaconBlockHeader header1 = proposer_slashing.getHeader_1().getMessage();
@@ -291,15 +297,13 @@ public final class BlockProcessorUtil {
             "process_proposer_slashings: Verify signatures are valid 1");
       }
 
-      if (!BLS.verify(
+      signatureVerifier.verifyAndThrow(
           publicKey,
           compute_signing_root(
               header2,
               get_domain(state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header2.getSlot()))),
-          proposer_slashing.getHeader_2().getSignature())) {
-        throw new BlockProcessingException(
-            "process_proposer_slashings: Verify signatures are valid 2");
-      }
+          proposer_slashing.getHeader_2().getSignature(),
+          "process_proposer_slashings: Verify signatures are valid 2");
     }
   }
 
@@ -423,13 +427,17 @@ public final class BlockProcessorUtil {
     }
   }
 
-  public static void verify_attestations(BeaconState state, SSZList<Attestation> attestations)
+  public static void verify_attestations(
+      BeaconState state, SSZList<Attestation> attestations, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
 
     Optional<Attestation> invalidAttestation =
         attestations.stream()
             .parallel()
-            .filter(a -> !is_valid_indexed_attestation(state, get_indexed_attestation(state, a)))
+            .filter(
+                a ->
+                    !is_valid_indexed_attestation(
+                        state, get_indexed_attestation(state, a), signatureVerifier))
             .findAny();
     if (invalidAttestation.isPresent()) {
       throw new BlockProcessingException("Invalid attestation: " + invalidAttestation.get());
@@ -511,8 +519,9 @@ public final class BlockProcessorUtil {
     }
   }
 
-  public static void verify_voluntary_exits(BeaconState state, SSZList<SignedVoluntaryExit> exits)
-      throws BlockProcessingException {
+  public static void verify_voluntary_exits(
+      BeaconState state, SSZList<SignedVoluntaryExit> exits, BLSSignatureVerifier signatureVerifier)
+      throws InvalidSignatureException {
     for (SignedVoluntaryExit signedExit : exits) {
       final VoluntaryExit exit = signedExit.getMessage();
 
@@ -525,9 +534,11 @@ public final class BlockProcessorUtil {
 
       final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
       final Bytes signing_root = compute_signing_root(exit, domain);
-      if (!BLS.verify(publicKey, signing_root, signedExit.getSignature())) {
-        throw new BlockProcessingException("process_voluntary_exits: Verify signature");
-      }
+      signatureVerifier.verifyAndThrow(
+          publicKey,
+          signing_root,
+          signedExit.getSignature(),
+          "process_voluntary_exits: Verify signature");
     }
   }
 }
