@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.core.results;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
@@ -22,7 +23,9 @@ public class FailedBlockImportResult implements BlockImportResult {
   private final FailureReason failureReason;
   private final Optional<Throwable> cause;
 
-  FailedBlockImportResult(final FailureReason failureReason, final Optional<Throwable> cause) {
+  @VisibleForTesting
+  public FailedBlockImportResult(
+      final FailureReason failureReason, final Optional<Throwable> cause) {
     this.failureReason = failureReason;
     this.cause = cause;
   }

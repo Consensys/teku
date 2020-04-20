@@ -11,24 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.discovery;
+package tech.pegasys.artemis.datastructures.blocks;
 
-import java.util.Optional;
-import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import com.google.common.primitives.UnsignedLong;
 
-public interface DiscoveryService {
+public class NodeSlot {
+  private UnsignedLong value;
 
-  SafeFuture<?> start();
+  public NodeSlot(UnsignedLong value) {
+    this.value = value;
+  }
 
-  SafeFuture<?> stop();
+  public UnsignedLong getValue() {
+    return value;
+  }
 
-  Stream<DiscoveryPeer> streamKnownPeers();
+  public UnsignedLong inc() {
+    value = value.plus(UnsignedLong.ONE);
+    return value;
+  }
 
-  SafeFuture<Void> searchForPeers();
+  public void setValue(UnsignedLong value) {
+    this.value = value;
+  }
 
-  Optional<String> getEnr();
-
-  void updateCustomENRField(String fieldName, Bytes value);
+  public long longValue() {
+    return this.value.longValue();
+  }
 }
