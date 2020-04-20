@@ -220,7 +220,7 @@ class BeaconChainMetricsTest {
   }
 
   @Test
-  void getJustifiedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
+  void getJustifiedEpochValue_shouldReturnValueWhenStoreIsPresent() {
     BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.getBestJustifiedEpoch()).thenReturn(ONE);

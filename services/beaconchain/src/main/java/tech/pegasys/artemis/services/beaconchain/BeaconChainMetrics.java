@@ -32,7 +32,7 @@ public class BeaconChainMetrics {
     this.nodeSlot = nodeSlot;
   }
 
-  public void initialise(final MetricsSystem metricsSystem) {
+  public void initialize(final MetricsSystem metricsSystem) {
     metricsSystem.createGauge(
         ArtemisMetricCategory.BEACON,
         "slot",
