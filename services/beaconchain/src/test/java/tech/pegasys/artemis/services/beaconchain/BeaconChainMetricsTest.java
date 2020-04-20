@@ -30,7 +30,6 @@ import tech.pegasys.artemis.datastructures.blocks.NodeSlot;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.config.Constants;
 
 class BeaconChainMetricsTest {
   private static final UnsignedLong NODE_SLOT_VALUE = UnsignedLong.valueOf(100L);
