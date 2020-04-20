@@ -16,7 +16,9 @@ package tech.pegasys.artemis.validator.api;
 import com.google.common.primitives.UnsignedLong;
 
 public interface ValidatorTimingChannel {
-  void onSlot(UnsignedLong epochNumber);
+  void onSlot(UnsignedLong slot);
+
+  void onChainReorg(final UnsignedLong newSlot);
 
   void onBlockProductionDue(UnsignedLong slot);
 
