@@ -8,4 +8,5 @@ dependencies {
     testFixturesApi 'org.apache.tuweni:tuweni-bytes'
     testFixturesImplementation project(':ethereum:datastructures')
     testFixturesImplementation project(':storage')
+    testFixturesImplementation project(':ssz')
 }
