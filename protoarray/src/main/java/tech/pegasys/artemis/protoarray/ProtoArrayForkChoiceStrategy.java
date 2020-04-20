@@ -30,7 +30,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.config.Constants;
@@ -40,14 +42,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   private final ProtoArray protoArray;
-  private final ElasticList<VoteTracker> votes;
 
   private List<UnsignedLong> balances;
 
   private ProtoArrayForkChoiceStrategy(
-      ProtoArray protoArray, ElasticList<VoteTracker> votes, List<UnsignedLong> balances) {
+      ProtoArray protoArray, List<UnsignedLong> balances) {
     this.protoArray = protoArray;
-    this.votes = votes;
     this.balances = balances;
   }
 
@@ -64,8 +64,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
     processBlocksInStoreAtStartup(store, protoArray);
 
-    return new ProtoArrayForkChoiceStrategy(
-        protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
+    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>());
   }
 
   @Override
@@ -79,7 +78,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public void onAttestation(final IndexedAttestation attestation) {
+  public void onAttestation(final MutableStore store, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {
       attestation.getAttesting_indices().stream()
@@ -87,6 +86,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
           .forEach(
               validatorIndex -> {
                 processAttestation(
+                    store,
                     Math.toIntExact(validatorIndex.longValue()),
                     attestation.getData().getBeacon_block_root(),
                     attestation.getData().getTarget().getEpoch());
@@ -139,13 +139,15 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
   }
 
-  void processAttestation(int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
-    VoteTracker vote = votes.get(validatorIndex);
+  void processAttestation(MutableStore store, int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
+    VoteTracker vote = store.getVote(validatorIndex).copy();
 
     if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
       vote.setNextRoot(blockRoot);
       vote.setNextEpoch(targetEpoch);
     }
+
+    store.setVote(validatorIndex, vote);
   }
 
   void processBlock(
@@ -278,10 +280,11 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
    */
   static List<Long> computeDeltas(
       Map<Bytes32, Integer> indices,
-      ElasticList<VoteTracker> votes,
+      ReadOnlyStore store,
       List<UnsignedLong> oldBalances,
       List<UnsignedLong> newBalances) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(indices.size(), 0L));
+
 
     for (int validatorIndex = 0; validatorIndex < votes.size(); validatorIndex++) {
       VoteTracker vote = votes.get(validatorIndex);

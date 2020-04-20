@@ -15,8 +15,12 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,6 +31,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +41,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -56,6 +62,7 @@ public class Store implements ReadOnlyStore {
   private Map<Bytes32, SignedBeaconBlock> blocks;
   private Map<Bytes32, BeaconState> block_states;
   private Map<Checkpoint, BeaconState> checkpoint_states;
+  private Map<Integer, VoteTracker> votes;
 
   public Store(
       final UnsignedLong time,
@@ -235,6 +242,26 @@ public class Store implements ReadOnlyStore {
     }
   }
 
+  @Override
+  public Collection<VoteTracker> getVotes() {
+    readLock.lock();
+    try {
+      return votes.values();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public VoteTracker getVote(int validatorIndex) {
+    readLock.lock();
+    try {
+      return votes.get(validatorIndex);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
   public class Transaction implements MutableStore {
 
     private final StorageUpdateChannel storageUpdateChannel;
@@ -246,6 +273,7 @@ public class Store implements ReadOnlyStore {
     private Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     private Map<Bytes32, BeaconState> block_states = new HashMap<>();
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    private Map<Integer, VoteTracker> votes = new HashMap<>();
     private final StoreUpdateHandler updateHandler;
 
     Transaction(
@@ -292,6 +320,11 @@ public class Store implements ReadOnlyStore {
     @Override
     public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
       this.best_justified_checkpoint = Optional.of(best_justified_checkpoint);
+    }
+
+    @Override
+    public void setVote(int validatorIndex, VoteTracker vote) {
+      votes.put(validatorIndex, vote);
     }
 
     @CheckReturnValue
@@ -400,6 +433,19 @@ public class Store implements ReadOnlyStore {
     @Override
     public BeaconState getBlockState(final Bytes32 blockRoot) {
       return either(blockRoot, block_states::get, Store.this::getBlockState);
+    }
+
+    @Override
+    public VoteTracker getVote(final int validatorIndex) {
+      return either(validatorIndex, votes::get, Store.this::getVote);
+    }
+
+    @Override
+    public Collection<VoteTracker> getVotes() {
+      Collection<VoteTracker> voteTrackers = new List<VoteTracker>;
+      voteTrackers.addAll(votes.values());
+      voteTrackers.addAll(Store.this.getVotes());
+      return voteTrackers;
     }
 
     private <I, O> O either(I input, Function<I, O> primary, Function<I, O> secondary) {

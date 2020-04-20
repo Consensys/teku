@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.protoarray;
+package tech.pegasys.artemis.datastructures.forkchoice;
 
 import com.google.common.base.Objects;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
-class VoteTracker {
+public class VoteTracker {
 
   private Bytes32 currentRoot;
   private Bytes32 nextRoot;
@@ -27,6 +27,10 @@ class VoteTracker {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEpoch = nextEpoch;
+  }
+
+  public VoteTracker copy() {
+    return new VoteTracker(currentRoot, nextRoot, nextEpoch);
   }
 
   public static VoteTracker Default() {

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.protoarray;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 
@@ -26,7 +27,7 @@ public class StubForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public void onAttestation(final IndexedAttestation attestation) {}
+  public void onAttestation(MutableStore store, final IndexedAttestation attestation) {}
 
   @Override
   public void onBlock(final ReadOnlyStore store, final BeaconBlock block) {}

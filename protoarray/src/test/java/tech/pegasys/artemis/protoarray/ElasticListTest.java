@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 
 public class ElasticListTest {
 

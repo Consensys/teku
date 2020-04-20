@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 
 public class ProtoArrayForkChoiceStrategyTest {
 
