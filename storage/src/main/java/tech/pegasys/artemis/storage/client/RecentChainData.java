@@ -144,7 +144,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     if (originalBestRoot
         .map(original -> hasReorgedFrom(original, originalBestSlot))
         .orElse(false)) {
-      reorgEventChannel.reorgOccurred();
+      reorgEventChannel.reorgOccurred(root, bestSlot);
     }
   }
 

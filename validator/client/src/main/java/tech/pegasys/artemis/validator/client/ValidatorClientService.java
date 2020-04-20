@@ -30,10 +30,10 @@ import tech.pegasys.artemis.validator.client.loader.ValidatorLoader;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
-  private final DutyScheduler dutyScheduler;
+  private final ValidatorTimingChannel dutyScheduler;
 
   private ValidatorClientService(
-      final EventChannels eventChannels, final DutyScheduler dutyScheduler) {
+      final EventChannels eventChannels, final ValidatorTimingChannel dutyScheduler) {
     this.eventChannels = eventChannels;
     this.dutyScheduler = dutyScheduler;
   }
@@ -48,10 +48,14 @@ public class ValidatorClientService extends Service {
         ValidatorLoader.initializeValidators(config.getConfig());
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);
-    final ScheduledDuties scheduledDuties = new ScheduledDuties(validatorDutyFactory);
-    final DutyScheduler validatorClient =
+    final ValidatorTimingChannel validatorClient =
         new DutyScheduler(
-            asyncRunner, validatorApiChannel, forkProvider, scheduledDuties, validators);
+            new EpochDutiesScheduler(
+                asyncRunner,
+                validatorApiChannel,
+                forkProvider,
+                () -> new ScheduledDuties(validatorDutyFactory),
+                validators));
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 
