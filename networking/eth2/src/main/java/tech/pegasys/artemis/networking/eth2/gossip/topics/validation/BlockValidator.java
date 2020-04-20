@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.topics.validation;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.core.ForkChoiceUtil.getCurrentSlot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
@@ -30,6 +29,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
@@ -37,7 +37,7 @@ import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.artemis.util.collections.LimitStrategy;
@@ -111,15 +111,14 @@ public class BlockValidator {
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(
       SignedBeaconBlock block, BeaconState preState, BeaconState postState) {
-    Validator proposer =
-        postState
-            .getValidators()
-            .get(toIntExact(block.getMessage().getProposer_index().longValue()));
-
     final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
     final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
-    boolean signatureValid = BLS.verify(proposer.getPubkey(), signing_root, signature);
+
+    BLSPublicKey proposerPubkey =
+        ValidatorsUtil.getValidatorPubKey(postState, block.getMessage().getProposer_index());
+
+    boolean signatureValid = BLS.verify(proposerPubkey, signing_root, signature);
 
     return signatureValid && receivedValidBlockInfoSet.add(new SlotAndProposer(block));
   }
@@ -127,7 +126,7 @@ public class BlockValidator {
   private boolean blockIsProposedByTheExpectedProposer(
       SignedBeaconBlock block, BeaconState postState) {
     final int proposerIndex = get_beacon_proposer_index(postState);
-    return proposerIndex == toIntExact(block.getMessage().getProposer_index().longValue());
+    return proposerIndex == block.getMessage().getProposer_index().longValue();
   }
 
   private static class SlotAndProposer {

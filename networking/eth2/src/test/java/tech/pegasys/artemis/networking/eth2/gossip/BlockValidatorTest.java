@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSSignature;
@@ -75,6 +76,31 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
     BlockValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(BlockValidationResult.SAVED_FOR_FUTURE);
+  }
+
+  @Test
+  void shouldReturnSavedForFutureForBlockWithParentUnavailable() throws Exception {
+    final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
+    beaconChainUtil.setSlot(nextSlot);
+
+    final SignedBeaconBlock signedBlock = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final UnsignedLong proposerIndex = signedBlock.getMessage().getProposer_index();
+    final BeaconBlock block =
+        new BeaconBlock(
+            signedBlock.getSlot(),
+            proposerIndex,
+            Bytes32.ZERO,
+            signedBlock.getMessage().getState_root(),
+            signedBlock.getMessage().getBody());
+
+    BLSSignature blockSignature =
+        new Signer(beaconChainUtil.getSigner(proposerIndex.intValue()))
+            .signBlock(block, recentChainData.getBestBlockRootState().get().getForkInfo())
+            .join();
+    final SignedBeaconBlock blockWithNoParent = new SignedBeaconBlock(block, blockSignature);
+
+    BlockValidationResult result = blockValidator.validate(blockWithNoParent);
     assertThat(result).isEqualTo(BlockValidationResult.SAVED_FOR_FUTURE);
   }
 

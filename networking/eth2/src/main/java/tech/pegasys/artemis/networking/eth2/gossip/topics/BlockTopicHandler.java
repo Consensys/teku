@@ -60,7 +60,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
       case VALID:
         return true;
       default:
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException(
+            "BlockTopicHandler: Unexpected block validation result");
     }
   }
 }
