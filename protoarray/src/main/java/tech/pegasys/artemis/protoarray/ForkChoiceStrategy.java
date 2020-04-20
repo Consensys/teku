@@ -25,5 +25,5 @@ public interface ForkChoiceStrategy {
 
   void onAttestation(final IndexedAttestation attestation);
 
-  void onBlock(final MutableStore store, final BeaconBlock block);
+  void onBlock(final ReadOnlyStore store, final BeaconBlock block);
 }
