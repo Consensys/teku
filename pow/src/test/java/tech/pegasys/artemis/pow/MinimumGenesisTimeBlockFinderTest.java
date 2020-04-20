@@ -36,7 +36,7 @@ public class MinimumGenesisTimeBlockFinderTest {
 
   @BeforeAll
   static void setUp() {
-    // calculateCandidateGenesisTimestamp will return blockTime + 2
+    // Setup so genesis time for a block will be blockTime + 2
     Constants.MIN_GENESIS_DELAY = 1;
   }
 
@@ -51,14 +51,6 @@ public class MinimumGenesisTimeBlockFinderTest {
     final Block[] blocks = withBlockTimestamps(timestamps);
     final int minGenesisTime = 3500;
     final Block expectedMinGenesisTimeBlock = blocks[4];
-    assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
-  }
-
-  @Test
-  public void shouldAddGenesisDelayToBlockTimestampWhenConsideringIfItIsTheMinGenesisBlock() {
-    final Block[] blocks = withBlockTimestamps(1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000);
-    final int minGenesisTime = 3002;
-    final Block expectedMinGenesisTimeBlock = blocks[2];
     assertMinGenesisBlock(blocks, minGenesisTime, expectedMinGenesisTimeBlock);
   }
 
