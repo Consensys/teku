@@ -17,7 +17,8 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.protoarray.HashUtil.getHash;
+import static tech.pegasys.artemis.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
+import static tech.pegasys.artemis.protoarray.ProtoArrayTestUtil.getHash;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -29,9 +30,8 @@ public class VotesTest {
 
   @Test
   void votesTest() {
-
     ProtoArrayForkChoiceStrategy forkChoice =
-        ProtoArrayForkChoiceStrategy.create(ZERO, Bytes32.ZERO, ONE, ONE, getHash(0));
+        createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
     List<UnsignedLong> balances = new ArrayList<>(List.of(valueOf(1), valueOf(1)));
 
