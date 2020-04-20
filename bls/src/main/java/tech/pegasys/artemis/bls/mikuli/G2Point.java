@@ -56,7 +56,7 @@ public final class G2Point implements Group<G2Point> {
     return new G2Point(HashToCurve.hashToG2(message));
   }
 
-  public final ECP2 point;
+  private final ECP2 point;
 
   private static final int fpPointSize = BIG.MODBYTES;
 

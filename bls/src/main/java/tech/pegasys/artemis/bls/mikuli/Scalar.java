@@ -17,11 +17,11 @@ import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 
 /** This class represents an ordinary scalar value. */
-final public class Scalar {
+final class Scalar {
 
   private final BIG value;
 
-  public Scalar(BIG value) {
+  Scalar(BIG value) {
     this.value = value;
   }
 

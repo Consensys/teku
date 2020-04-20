@@ -16,7 +16,7 @@ package tech.pegasys.artemis.bls.mikuli;
 import org.apache.milagro.amcl.BLS381.FP12;
 import org.apache.milagro.amcl.BLS381.PAIR;
 
-final public class AtePairing {
+final class AtePairing {
 
   /**
    * Calculate the Ate pairing of points p and q.
@@ -42,8 +42,12 @@ final public class AtePairing {
    * @param s a point in Group2, not null
    * @return The result of the double pairing
    */
-  public static GTPoint pair2(G1Point p, G2Point q, G1Point r, G2Point s) {
+  static GTPoint pair2(G1Point p, G2Point q, G1Point r, G2Point s) {
     FP12 e = PAIR.ate2(q.ecp2Point(), p.ecpPoint(), s.ecp2Point(), r.ecpPoint());
     return new GTPoint(PAIR.fexp(e));
+  }
+
+  static GTPoint fexp(GTPoint point) {
+    return new GTPoint(PAIR.fexp(point.getPoint()));
   }
 }

@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.milagro.amcl.RAND;
 import org.apache.tuweni.bytes.Bytes;
 
 /*
@@ -41,6 +43,27 @@ import org.apache.tuweni.bytes.Bytes;
  * 'org.miracl.milagro.amcl:milagro-crypto-java'.
  */
 public final class BLS12381 {
+
+  private static RAND RANDOM = new RAND();
+  private static BIG MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = new BIG(new long[] {Long.MAX_VALUE});
+
+  public static final class BatchSemiAggregate {
+    private final G2Point sigPoint;
+    private final GTPoint msgPubKeyPairing;
+
+    private BatchSemiAggregate(G2Point sigPoint, GTPoint msgPubKeyPairing) {
+      this.sigPoint = sigPoint;
+      this.msgPubKeyPairing = msgPubKeyPairing;
+    }
+
+    G2Point getSigPoint() {
+      return sigPoint;
+    }
+
+    GTPoint getMsgPubKeyPairing() {
+      return msgPubKeyPairing;
+    }
+  }
 
   /*
    * Methods used directly in the Ethereum 2.0 specifications.
@@ -172,5 +195,39 @@ public final class BLS12381 {
     List<G2Point> hashesInG2 =
         messages.stream().map(m -> new G2Point(hashToG2(m))).collect(Collectors.toList());
     return signature.aggregateVerify(publicKeys, hashesInG2);
+  }
+
+  public static BatchSemiAggregate prepareBatchVerify(
+      PublicKey publicKey, Bytes message, Signature signature) {
+
+    Scalar randomCoef = new Scalar(BIG.randomnum(MAX_BATCH_VERIFY_RANDOM_MULTIPLIER, RANDOM));
+
+    G2Point sigG2Point = signature.g2Point();
+    G2Point sigG2PointM = sigG2Point.mul(randomCoef);
+
+    G2Point msgG2Point = G2Point.hashToG2(message);
+    G2Point msgG2PointM = msgG2Point.mul(randomCoef);
+
+    GTPoint pair = AtePairing.pair(publicKey.g1Point(), msgG2PointM);
+
+    return new BatchSemiAggregate(sigG2PointM, pair);
+  }
+
+  public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedList) {
+    if (preparedList.isEmpty()) {
+      return true;
+    }
+    G2Point sigSum = null;
+    GTPoint pairProd = null;
+    for (BatchSemiAggregate semiSig : preparedList) {
+      // TODO can be optimized here to perform log2(N) mul/add operations
+      sigSum = sigSum == null ? semiSig.getSigPoint() : sigSum.add(semiSig.getSigPoint());
+      pairProd =
+          pairProd == null
+              ? semiSig.getMsgPubKeyPairing()
+              : pairProd.mul(semiSig.getMsgPubKeyPairing());
+    }
+    GTPoint sigPair = AtePairing.pair(KeyPair.g1Generator, sigSum);
+    return AtePairing.fexp(sigPair).equals(AtePairing.fexp(pairProd));
   }
 }

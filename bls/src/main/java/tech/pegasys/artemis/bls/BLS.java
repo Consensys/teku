@@ -13,11 +13,14 @@
 
 package tech.pegasys.artemis.bls;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.mikuli.BLS12381;
+import tech.pegasys.artemis.bls.mikuli.BLS12381.BatchSemiAggregate;
 import tech.pegasys.artemis.bls.mikuli.PublicKey;
 
 /**
@@ -110,5 +113,27 @@ public class BLS {
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
     return BLS12381.fastAggregateVerify(publicKeyObjects, message, signature.getSignature());
+  }
+
+  public static boolean batchVerify(
+      List<BLSPublicKey> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
+    Preconditions.checkArgument(
+        publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
+        "Different collection sizes");
+    return completeBatchVerify(
+        IntStream.range(0, publicKeys.size())
+            .mapToObj(
+                i -> prepareBatchVerify(publicKeys.get(i), messages.get(i), signatures.get(i)))
+            .collect(Collectors.toList()));
+  }
+
+  public static BatchSemiAggregate prepareBatchVerify(
+      BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
+    return BLS12381.prepareBatchVerify(
+        publicKey.getPublicKey(), message, signature.getSignature());
+  }
+
+  public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
+    return BLS12381.completeBatchVerify(preparedSignatures);
   }
 }
