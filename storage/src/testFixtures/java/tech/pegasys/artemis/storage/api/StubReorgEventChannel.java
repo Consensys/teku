@@ -13,8 +13,11 @@
 
 package tech.pegasys.artemis.storage.api;
 
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
+
 public class StubReorgEventChannel implements ReorgEventChannel {
 
   @Override
-  public void reorgOccurred() {}
+  public void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {}
 }
