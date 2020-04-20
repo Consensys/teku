@@ -13,14 +13,17 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import java.nio.ByteOrder;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.NodeSlot;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.storage.client.RecentChainData;
+
+import java.nio.ByteOrder;
+import java.util.Optional;
+
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class BeaconChainMetrics {
   private static final long NOT_SET = 0L;
@@ -33,6 +36,11 @@ public class BeaconChainMetrics {
   }
 
   public void initialize(final MetricsSystem metricsSystem) {
+    metricsSystem.createGauge(
+        ArtemisMetricCategory.BEACON,
+        "epoch",
+        "Latest epoch recorded by the beacon chain",
+        this::getCurrentEpochValue);
     metricsSystem.createGauge(
         ArtemisMetricCategory.BEACON,
         "slot",
@@ -160,5 +168,9 @@ public class BeaconChainMetrics {
                     .getEpoch()
                     .longValue())
         .orElse(0L);
+  }
+
+  long getCurrentEpochValue() {
+    return compute_epoch_at_slot(nodeSlot.getValue()).longValue();
   }
 }

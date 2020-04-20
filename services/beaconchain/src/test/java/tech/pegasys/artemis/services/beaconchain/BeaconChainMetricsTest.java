@@ -14,10 +14,12 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -28,6 +30,7 @@ import tech.pegasys.artemis.datastructures.blocks.NodeSlot;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.config.Constants;
 
 class BeaconChainMetricsTest {
   private static final UnsignedLong NODE_SLOT_VALUE = UnsignedLong.valueOf(100L);
@@ -227,5 +230,19 @@ class BeaconChainMetricsTest {
 
     assertThat(1L).isEqualTo(metrics.getJustifiedEpochValue());
     verify(recentChainData).isPreGenesis();
+  }
+
+  @Test
+  void getCurrentEpochValue_shouldReturnNotSetWhenNodeSlotIsEmpty() {
+    NodeSlot slot = new NodeSlot(ZERO);
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, slot);
+    assertThat(0L).isEqualTo(metrics.getCurrentEpochValue());
+  }
+
+  @Test
+  void getCurrentEpochValue_shouldReturnValueWhenNodeSlotIsSet() {
+    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
+    long epochAtSlot = nodeSlot.longValue() / SLOTS_PER_EPOCH;
+    assertThat(epochAtSlot).isEqualTo(metrics.getCurrentEpochValue());
   }
 }
