@@ -44,8 +44,15 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public final class BLS12381 {
 
-  private static RAND RANDOM = new RAND();
-  private static BIG MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = new BIG(new long[] {Long.MAX_VALUE});
+  private static final RAND RANDOM = new RAND();
+  private static final BIG MAX_BATCH_VERIFY_RANDOM_MULTIPLIER;
+
+  static {
+    BIG b = new BIG(1);
+    b.shl(63);
+    MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = b;
+  }
+
 
   public static final class BatchSemiAggregate {
     private final G2Point sigPoint;
