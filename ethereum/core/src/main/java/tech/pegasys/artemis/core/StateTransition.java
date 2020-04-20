@@ -26,9 +26,9 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.blockvalidator.BatchBlockValidator;
 import tech.pegasys.artemis.core.blockvalidator.BlockValidator;
 import tech.pegasys.artemis.core.blockvalidator.BlockValidator.BlockValidationResult;
-import tech.pegasys.artemis.core.blockvalidator.SimpleBlockValidator;
 import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
@@ -47,11 +47,11 @@ public class StateTransition {
   private final BlockValidator blockValidator;
 
   public StateTransition() {
-    this(Optional.empty(), new SimpleBlockValidator());
+    this(Optional.empty(), new BatchBlockValidator());
   }
 
   public StateTransition(EpochMetrics epochMetrics) {
-    this(Optional.of(epochMetrics), new SimpleBlockValidator());
+    this(Optional.of(epochMetrics), new BatchBlockValidator());
   }
 
   public StateTransition(BlockValidator blockValidator) {
