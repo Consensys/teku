@@ -19,15 +19,19 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.core.results.BlockImportResult.FailureReason;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -37,12 +41,18 @@ import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.api.schema.BeaconState;
+import tech.pegasys.artemis.api.schema.ValidatorBlockResult;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.core.results.BlockImportResult;
+import tech.pegasys.artemis.core.results.FailedBlockImportResult;
+import tech.pegasys.artemis.core.results.SuccessfulBlockImportResult;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -57,8 +67,9 @@ public class ValidatorDataProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final BlockImporter blockImporter = mock(BlockImporter.class);
   private ValidatorDataProvider provider =
-      new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
+      new ValidatorDataProvider(validatorApiChannel, blockImporter, combinedChainDataClient);
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
@@ -299,6 +310,80 @@ public class ValidatorDataProviderTest {
 
     assertThatThrownBy(() -> provider.submitAttestation(attestation))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void submitSignedBlock_shouldReturn200ForSuccess()
+      throws ExecutionException, InterruptedException {
+    final SignedBeaconBlock internalSignedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlock(1);
+    final tech.pegasys.artemis.api.schema.SignedBeaconBlock signedBeaconBlock =
+        new tech.pegasys.artemis.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+
+    final SafeFuture<BlockImportResult> successImportResult =
+        SafeFuture.completedFuture(
+            new SuccessfulBlockImportResult(internalSignedBeaconBlock, Optional.empty()));
+
+    when(blockImporter.importBlockAsync(any())).thenReturn(successImportResult);
+
+    final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
+        provider.submitSignedBlock(signedBeaconBlock);
+
+    assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(200);
+  }
+
+  @Test
+  public void submitSignedBlock_shouldReturn202ForInvalidBlock() {
+    final SignedBeaconBlock internalSignedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlock(1);
+    final tech.pegasys.artemis.api.schema.SignedBeaconBlock signedBeaconBlock =
+        new tech.pegasys.artemis.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+    final AtomicInteger failReasonCount = new AtomicInteger();
+
+    Stream.of(FailureReason.values())
+        .filter(failureReason -> !failureReason.equals(FailureReason.INTERNAL_ERROR))
+        .forEach(
+            failureReason -> {
+              failReasonCount.getAndIncrement();
+
+              final SafeFuture<BlockImportResult> failImportResult =
+                  SafeFuture.completedFuture(
+                      new FailedBlockImportResult(failureReason, Optional.empty()));
+
+              when(blockImporter.importBlockAsync(any())).thenReturn(failImportResult);
+
+              final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
+                  provider.submitSignedBlock(signedBeaconBlock);
+
+              try {
+                assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(202);
+              } catch (final Exception e) {
+                fail("Exception while executing test.");
+              }
+            });
+
+    // Assert that the check has run over each FailureReason except the 500.
+    assertThat(failReasonCount.get()).isEqualTo(FailureReason.values().length - 1);
+  }
+
+  @Test
+  public void submitSignedBlock_shouldReturn500ForInternalError()
+      throws ExecutionException, InterruptedException {
+    final SignedBeaconBlock internalSignedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlock(1);
+    final tech.pegasys.artemis.api.schema.SignedBeaconBlock signedBeaconBlock =
+        new tech.pegasys.artemis.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+
+    final SafeFuture<BlockImportResult> failImportResult =
+        SafeFuture.completedFuture(
+            new FailedBlockImportResult(FailureReason.INTERNAL_ERROR, Optional.empty()));
+
+    when(blockImporter.importBlockAsync(any())).thenReturn(failImportResult);
+
+    final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
+        provider.submitSignedBlock(signedBeaconBlock);
+
+    assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(500);
   }
 
   private List<BLSPubKey> generatePublicKeys(final int count) {
