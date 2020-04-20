@@ -13,12 +13,15 @@
 
 package tech.pegasys.artemis.cli.options;
 
+import com.google.common.collect.ImmutableSet;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.hyperledger.besu.metrics.StandardMetricCategory;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
-
-import static tech.pegasys.artemis.metrics.ArtemisMetricCategory.BEACON;
 
 public class MetricsOptions {
 
@@ -30,7 +33,11 @@ public class MetricsOptions {
   public static final boolean DEFAULT_METRICS_ENABLED = false;
   public static final int DEFAULT_METRICS_PORT = 8008;
   public static final String DEFAULT_METRICS_INTERFACE = "127.0.0.1";
-  public static final List<ArtemisMetricCategory> DEFAULT_METRICS_CATEGORIES = List.of(BEACON);
+  public static final ImmutableSet<MetricCategory> DEFAULT_METRICS_CATEGORIES =
+      ImmutableSet.<MetricCategory>builder()
+          .addAll(EnumSet.allOf(StandardMetricCategory.class))
+          .addAll(EnumSet.allOf(ArtemisMetricCategory.class))
+          .build();
 
   @CommandLine.Option(
       names = {METRICS_ENABLED_OPTION_NAME},
@@ -59,7 +66,7 @@ public class MetricsOptions {
       description = "Metric categories to enable",
       split = ",",
       arity = "0..*")
-  private List<ArtemisMetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
+  private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
 
   public boolean isMetricsEnabled() {
     return metricsEnabled;
@@ -74,6 +81,6 @@ public class MetricsOptions {
   }
 
   public List<String> getMetricsCategories() {
-    return metricsCategories.stream().map(Enum::toString).collect(Collectors.toList());
+    return metricsCategories.stream().map(value -> value.toString()).collect(Collectors.toList());
   }
 }
