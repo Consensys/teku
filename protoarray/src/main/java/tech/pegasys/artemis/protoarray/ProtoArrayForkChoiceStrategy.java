@@ -118,31 +118,25 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   // Internal
-
   private static void processBlocksInStoreAtStartup(ReadOnlyStore store, ProtoArray protoArray) {
-    List<BeaconBlock> blocks = new ArrayList<>();
-    for (Bytes32 blockRoots : store.getBlockRoots()) {
-      BeaconBlock block =
-          checkNotNull(
-              store.getBlock(blockRoots),
-              "ProtoArrayForkChoiceStrategy: Store does not contain the block of the block root it stores");
-      blocks.add(block);
-    }
+    store.getBlockRoots().stream()
+        .map(store::getBlock)
+        .sorted(Comparator.comparing(BeaconBlock::getSlot))
+        .forEach(block -> processBlockAtStartup(store, protoArray, block));
+  }
 
-    blocks.sort(Comparator.comparing(BeaconBlock::getSlot));
-
-    for (BeaconBlock block : blocks) {
-      Bytes32 blockRoot = block.hash_tree_root();
-      protoArray.onBlock(
-          block.getSlot(),
-          blockRoot,
-          store.getBlockRoots().contains(block.getParent_root())
-              ? Optional.of(block.getParent_root())
-              : Optional.empty(),
-          block.getState_root(),
-          store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
-          store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
-    }
+  private static void processBlockAtStartup(
+      final ReadOnlyStore store, final ProtoArray protoArray, final BeaconBlock block) {
+    Bytes32 blockRoot = block.hash_tree_root();
+    protoArray.onBlock(
+        block.getSlot(),
+        blockRoot,
+        store.getBlockRoots().contains(block.getParent_root())
+            ? Optional.of(block.getParent_root())
+            : Optional.empty(),
+        block.getState_root(),
+        store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
+        store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
   }
 
   void processAttestation(int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
