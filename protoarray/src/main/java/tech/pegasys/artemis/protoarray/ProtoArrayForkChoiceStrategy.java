@@ -30,7 +30,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -56,19 +55,19 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   public static ProtoArrayForkChoiceStrategy create(ReadOnlyStore store) {
     ProtoArray protoArray =
-            new ProtoArray(
-                    Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-                    store.getJustifiedCheckpoint().getEpoch(),
-                    store.getFinalizedCheckpoint().getEpoch(),
-                    new ArrayList<>(),
-                    new HashMap<>());
+        new ProtoArray(
+            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+            store.getJustifiedCheckpoint().getEpoch(),
+            store.getFinalizedCheckpoint().getEpoch(),
+            new ArrayList<>(),
+            new HashMap<>());
 
     List<BeaconBlock> blocks = new ArrayList<>();
     for (Bytes32 blockRoots : store.getBlockRoots()) {
-      BeaconBlock block = checkNotNull(
+      BeaconBlock block =
+          checkNotNull(
               store.getBlock(blockRoots),
-              "ProtoArrayForkChoiceStrategy: Store does not contain the block of the block root it stores"
-      );
+              "ProtoArrayForkChoiceStrategy: Store does not contain the block of the block root it stores");
       blocks.add(block);
     }
 
@@ -77,18 +76,18 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     for (BeaconBlock block : blocks) {
       Bytes32 blockRoot = block.hash_tree_root();
       protoArray.onBlock(
-              block.getSlot(),
-              blockRoot,
-              store.getBlockRoots().contains(block.getParent_root())
-                      ? Optional.of(block.getParent_root()) : Optional.empty(),
-              block.getState_root(),
-              store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
-              store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch()
-      );
+          block.getSlot(),
+          blockRoot,
+          store.getBlockRoots().contains(block.getParent_root())
+              ? Optional.of(block.getParent_root())
+              : Optional.empty(),
+          block.getState_root(),
+          store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
+          store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
     }
 
     return new ProtoArrayForkChoiceStrategy(
-            protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
+        protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
   }
 
   @Override
