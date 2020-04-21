@@ -28,22 +28,16 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.bls.mikuli.BLS12381.BatchSemiAggregate;
 
 @Fork(1)
-// @BenchmarkMode(Mode.SingleShotTime)
 @State(Scope.Thread)
 public class BLSBenchmark {
 
-  @Param({
-      /*"4", "8", */
-    "16",
-    "32" /*, "64", "128"*/
-  })
+  @Param({"4", "8", "16", "32", "64", "128"})
   int sigCnt = 128;
 
   List<BLSKeyPair> keyPairs =
@@ -60,7 +54,7 @@ public class BLSBenchmark {
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  public void verifySignatureSimple(Blackhole bh) {
+  public void verifySignatureSimple() {
     for (int i = 0; i < sigCnt; i++) {
       boolean res = BLS.verify(keyPairs.get(i).getPublicKey(), messages.get(i), signatures.get(i));
       if (!res) throw new IllegalStateException();
@@ -70,7 +64,7 @@ public class BLSBenchmark {
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  public void verifySignatureBatched(Blackhole bh) {
+  public void verifySignatureBatched() {
     List<BatchSemiAggregate> batchSemiAggregates =
         IntStream.range(0, sigCnt)
             .mapToObj(
