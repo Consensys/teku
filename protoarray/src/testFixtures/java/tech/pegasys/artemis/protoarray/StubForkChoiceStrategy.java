@@ -22,7 +22,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 public class StubForkChoiceStrategy implements ForkChoiceStrategy {
 
   @Override
-  public Bytes32 findHead(final ReadOnlyStore store) {
+  public Bytes32 findHead(final MutableStore store) {
     return Bytes32.ZERO;
   }
 

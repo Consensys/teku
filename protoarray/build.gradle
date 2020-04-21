@@ -9,4 +9,6 @@ dependencies {
     testFixturesImplementation project(':ethereum:datastructures')
     testFixturesImplementation project(':storage')
     testFixturesImplementation project(':ssz')
+    testFixturesImplementation testFixtures(project(':storage'))
+
 }

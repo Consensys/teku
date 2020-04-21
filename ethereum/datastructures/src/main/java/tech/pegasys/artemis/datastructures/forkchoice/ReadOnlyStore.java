@@ -14,10 +14,6 @@
 package tech.pegasys.artemis.datastructures.forkchoice;
 
 import com.google.common.primitives.UnsignedLong;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -53,7 +49,5 @@ public interface ReadOnlyStore {
 
   boolean containsCheckpointState(Checkpoint checkpoint);
 
-  VoteTracker getVote(int validatorIndex);
-
-  Collection<VoteTracker> getVotes();
+  Set<Integer> getVotedValidatorIndices();
 }

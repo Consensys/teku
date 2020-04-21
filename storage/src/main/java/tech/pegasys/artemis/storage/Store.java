@@ -15,12 +15,8 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
-
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,7 +27,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,6 +76,7 @@ public class Store implements ReadOnlyStore {
     this.blocks = new ConcurrentHashMap<>(blocks);
     this.block_states = new ConcurrentHashMap<>(block_states);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
+    this.votes = new ConcurrentHashMap<>();
   }
 
   public static Store getForkChoiceStore(final BeaconState anchorState) {
@@ -243,20 +239,10 @@ public class Store implements ReadOnlyStore {
   }
 
   @Override
-  public Collection<VoteTracker> getVotes() {
+  public Set<Integer> getVotedValidatorIndices() {
     readLock.lock();
     try {
-      return votes.values();
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
-  public VoteTracker getVote(int validatorIndex) {
-    readLock.lock();
-    try {
-      return votes.get(validatorIndex);
+      return votes.keySet();
     } finally {
       readLock.unlock();
     }
@@ -323,8 +309,15 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
-    public void setVote(int validatorIndex, VoteTracker vote) {
+    public VoteTracker getVote(int validatorIndex) {
+      VoteTracker vote = either(validatorIndex, votes::get, Store.this.votes::get);
+      if (vote == null) {
+        vote = VoteTracker.Default();
+      } else {
+        vote = vote.copy();
+      }
       votes.put(validatorIndex, vote);
+      return vote;
     }
 
     @CheckReturnValue
@@ -358,6 +351,7 @@ public class Store implements ReadOnlyStore {
                   Store.this.blocks.putAll(blocks);
                   Store.this.block_states.putAll(block_states);
                   Store.this.checkpoint_states.putAll(checkpoint_states);
+                  Store.this.votes.putAll(votes);
                   // Prune old data
                   updateResult.getPrunedCheckpoints().forEach(Store.this.checkpoint_states::remove);
                   updateResult
@@ -436,16 +430,8 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
-    public VoteTracker getVote(final int validatorIndex) {
-      return either(validatorIndex, votes::get, Store.this::getVote);
-    }
-
-    @Override
-    public Collection<VoteTracker> getVotes() {
-      Collection<VoteTracker> voteTrackers = new List<VoteTracker>;
-      voteTrackers.addAll(votes.values());
-      voteTrackers.addAll(Store.this.getVotes());
-      return voteTrackers;
+    public Set<Integer> getVotedValidatorIndices() {
+      return Sets.union(votes.keySet(), Store.this.getVotedValidatorIndices());
     }
 
     private <I, O> O either(I input, Function<I, O> primary, Function<I, O> secondary) {

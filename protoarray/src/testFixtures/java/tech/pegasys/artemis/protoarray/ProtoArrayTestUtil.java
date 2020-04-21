@@ -58,4 +58,16 @@ public class ProtoArrayTestUtil {
 
     return forkChoice;
   }
+
+  public static Store createStoreToManipulateVotes() {
+    return new Store(
+        UnsignedLong.ONE,
+        ZERO,
+        new Checkpoint(ZERO, Bytes32.ZERO),
+        new Checkpoint(ZERO, Bytes32.ZERO),
+        new Checkpoint(ONE, Bytes32.ZERO),
+        new HashMap<>(),
+        new HashMap<>(),
+        new HashMap<>());
+  }
 }

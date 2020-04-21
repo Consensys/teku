@@ -45,14 +45,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   private List<UnsignedLong> balances;
 
-  private ProtoArrayForkChoiceStrategy(
-      ProtoArray protoArray, List<UnsignedLong> balances) {
+  private ProtoArrayForkChoiceStrategy(ProtoArray protoArray, List<UnsignedLong> balances) {
     this.protoArray = protoArray;
     this.balances = balances;
   }
 
   // Public
-
   public static ProtoArrayForkChoiceStrategy create(ReadOnlyStore store) {
     ProtoArray protoArray =
         new ProtoArray(
@@ -68,9 +66,10 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public Bytes32 findHead(final ReadOnlyStore store) {
+  public Bytes32 findHead(final MutableStore store) {
     Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
     return findHead(
+        store,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         store.getFinalizedCheckpoint().getEpoch(),
@@ -139,15 +138,14 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
   }
 
-  void processAttestation(MutableStore store, int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
-    VoteTracker vote = store.getVote(validatorIndex).copy();
+  void processAttestation(
+      MutableStore store, int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
+    VoteTracker vote = store.getVote(validatorIndex);
 
     if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
       vote.setNextRoot(blockRoot);
       vote.setNextEpoch(targetEpoch);
     }
-
-    store.setVote(validatorIndex, vote);
   }
 
   void processBlock(
@@ -167,6 +165,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   Bytes32 findHead(
+      MutableStore store,
       UnsignedLong justifiedEpoch,
       Bytes32 justifiedRoot,
       UnsignedLong finalizedEpoch,
@@ -178,7 +177,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       List<UnsignedLong> oldBalances = balances;
       List<UnsignedLong> newBalances = justifiedStateBalances;
 
-      List<Long> deltas = computeDeltas(protoArray.getIndices(), votes, oldBalances, newBalances);
+      List<Long> deltas = computeDeltas(store, protoArray.getIndices(), oldBalances, newBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);
@@ -239,23 +238,23 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
-  public Optional<Checkpoint> latestMessage(int validatorIndex) {
-    votesLock.readLock().lock();
-    try {
-      if (validatorIndex >= votes.size()) {
-        return Optional.empty();
-      } else {
-        VoteTracker vote = votes.get(validatorIndex);
-        if (vote.equals(VoteTracker.Default())) {
-          return Optional.empty();
-        } else {
-          return Optional.of(new Checkpoint(vote.getNextEpoch(), vote.getNextRoot()));
-        }
-      }
-    } finally {
-      votesLock.readLock().unlock();
-    }
-  }
+  //  public Optional<Checkpoint> latestMessage(int validatorIndex) {
+  //    votesLock.readLock().lock();
+  //    try {
+  //      if (validatorIndex >= votes.size()) {
+  //        return Optional.empty();
+  //      } else {
+  //        VoteTracker vote = votes.get(validatorIndex);
+  //        if (vote.equals(VoteTracker.Default())) {
+  //          return Optional.empty();
+  //        } else {
+  //          return Optional.of(new Checkpoint(vote.getNextEpoch(), vote.getNextRoot()));
+  //        }
+  //      }
+  //    } finally {
+  //      votesLock.readLock().unlock();
+  //    }
+  //  }
 
   /**
    * Returns a list of `deltas`, where there is one delta for each of the indices in
@@ -273,27 +272,20 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
    * </ul>
    *
    * @param indices
-   * @param votes
+   * @param store
    * @param oldBalances
    * @param newBalances
    * @return
    */
   static List<Long> computeDeltas(
+      MutableStore store,
       Map<Bytes32, Integer> indices,
-      ReadOnlyStore store,
       List<UnsignedLong> oldBalances,
       List<UnsignedLong> newBalances) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(indices.size(), 0L));
 
-
-    for (int validatorIndex = 0; validatorIndex < votes.size(); validatorIndex++) {
-      VoteTracker vote = votes.get(validatorIndex);
-
-      // There is no need to create a score change if the validator has never voted
-      // or both their votes are for the zero hash (alias to the genesis block).
-      if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
-        continue;
-      }
+    for (int validatorIndex : store.getVotedValidatorIndices()) {
+      VoteTracker vote = store.getVote(validatorIndex);
 
       // If the validator was not included in the oldBalances (i.e. it did not exist yet)
       // then say its balance was zero.
