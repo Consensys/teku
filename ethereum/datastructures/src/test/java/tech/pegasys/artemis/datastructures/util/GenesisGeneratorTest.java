@@ -22,8 +22,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -34,8 +32,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
-import tech.pegasys.artemis.datastructures.state.TransitionCaches;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -79,6 +75,7 @@ class GenesisGeneratorTest {
     assertThat(actualState).isEqualTo(expectedState);
     assertThat(get_active_validator_indices(expectedState, GENESIS_EPOCH))
         .hasSize(VALIDATOR_KEYS.size());
+    assertThat(genesisGenerator.getActiveValidatorCount()).isEqualTo(VALIDATOR_KEYS.size());
   }
 
   @Test
@@ -89,29 +86,8 @@ class GenesisGeneratorTest {
 
       final BeaconState state = genesisGenerator.getGenesisState();
       assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(i + 1);
+      assertThat(genesisGenerator.getActiveValidatorCount()).isEqualTo(i + 1);
     }
-  }
-
-  @Test
-  public void shouldNotCacheActiveValidators() {
-    // get_active_validator_indices caches the results based on the epoch. Since we keep adding
-    // validators to the genesis epoch we must ensure they aren't cached.
-    final Predicate<BeaconState> validityCriteria =
-        candidate -> get_active_validator_indices(candidate, GENESIS_EPOCH).size() == 2;
-
-    genesisGenerator.updateCandidateState(
-        Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(0)));
-    assertThat(genesisGenerator.getGenesisStateIfValid(validityCriteria)).isEmpty();
-
-    // Now we should have two validators, not the 1 that would have been cached before.
-    genesisGenerator.updateCandidateState(
-        Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(1)));
-    final Optional<BeaconState> state = genesisGenerator.getGenesisStateIfValid(validityCriteria);
-    assertThat(state).isNotEmpty();
-
-    // And caching should be enabled on the final generated state.
-    assertThat(BeaconStateCache.getTransitionCaches(state.get()))
-        .isNotSameAs(TransitionCaches.getNoOp());
   }
 
   @Test
@@ -134,20 +110,11 @@ class GenesisGeneratorTest {
     assertThat(state.getEth1_deposit_index()).isEqualTo(UnsignedLong.valueOf(deposits.size()));
     // But one didn't result in a new validator
     assertThat(state.getValidators()).hasSize(deposits.size() - 1);
+    assertThat(genesisGenerator.getActiveValidatorCount()).isEqualTo(deposits.size() - 1);
     // And the validator with an invalid deposit should wind up at index 3, not 0 because their
     // first deposit was completely ignored
     final Validator validator = state.getValidators().get(expectedIndex);
     assertThat(validator.getPubkey()).isEqualTo(validData.getPubkey());
     assertThat(is_active_validator(validator, GENESIS_EPOCH)).isTrue();
-  }
-
-  @Test
-  public void shouldReturnEmptyWhenValidityCriteriaAreNotMet() {
-    assertThat(genesisGenerator.getGenesisStateIfValid(state -> false)).isEmpty();
-  }
-
-  @Test
-  public void shouldReturnStateWhenValidityCriteriaAreMet() {
-    assertThat(genesisGenerator.getGenesisStateIfValid(state -> true)).isNotEmpty();
   }
 }

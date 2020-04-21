@@ -82,4 +82,16 @@ public class StatusLogger {
   public void loadingGenesisFromEth1Chain() {
     log.info("No genesis state available. Loading deposits from ETH1 chain");
   }
+
+  public void genesisValidatorsActivated(int activeValidatorCount, int requiredValidatorCount) {
+    log.info(
+        "Activated {} of {} validators required for genesis ({}%)",
+        activeValidatorCount,
+        requiredValidatorCount,
+        activeValidatorCount * 100 / requiredValidatorCount);
+  }
+
+  public void minGenesisTimeReached() {
+    log.info("Minimum genesis time reached");
+  }
 }

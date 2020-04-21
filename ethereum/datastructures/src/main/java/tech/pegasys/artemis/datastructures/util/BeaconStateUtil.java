@@ -154,12 +154,12 @@ public class BeaconStateUtil {
                 || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
         if (!proof_is_valid) {
           if (deposit instanceof DepositWithIndex) {
-            LOG.warn(
+            LOG.debug(
                 "Skipping invalid deposit with index {} of pubkey {}",
                 ((DepositWithIndex) deposit).getIndex(),
                 pubkey);
           } else {
-            LOG.warn("Skipping invalid deposit with of pubkey {}", pubkey);
+            LOG.debug("Skipping invalid deposit with of pubkey {}", pubkey);
           }
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
@@ -192,17 +192,17 @@ public class BeaconStateUtil {
     }
   }
 
-  public static boolean is_valid_genesis_state(BeaconState state) {
-    return isItMinGenesisTimeYet(state) && isThereEnoughNumberOfValidators(state);
+  public static boolean is_valid_genesis_state(UnsignedLong genesisTime, int activeValidatorCount) {
+    return isItMinGenesisTimeYet(genesisTime)
+        && isThereEnoughNumberOfValidators(activeValidatorCount);
   }
 
-  public static boolean isThereEnoughNumberOfValidators(BeaconState state) {
-    return get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
-        >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+  public static boolean isThereEnoughNumberOfValidators(int activeValidatorCount) {
+    return activeValidatorCount >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   }
 
-  public static boolean isItMinGenesisTimeYet(BeaconState state) {
-    return state.getGenesis_time().compareTo(MIN_GENESIS_TIME) >= 0;
+  public static boolean isItMinGenesisTimeYet(final UnsignedLong genesisTime) {
+    return genesisTime.compareTo(MIN_GENESIS_TIME) >= 0;
   }
 
   /**

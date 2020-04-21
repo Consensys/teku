@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition.genesis;
 
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -28,6 +29,7 @@ import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class GenesisHandler implements Eth1EventsChannel {
 
@@ -54,16 +56,28 @@ public class GenesisHandler implements Eth1EventsChannel {
 
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {
+    STATUS_LOG.minGenesisTimeReached();
     processNewData(event.getBlockHash(), event.getTimestamp(), List.of());
   }
 
   private void processNewData(
       Bytes32 blockHash, UnsignedLong timestamp, List<DepositWithIndex> deposits) {
+    final int previousValidatorRequirementPercent =
+        roundPercent(genesisGenerator.getActiveValidatorCount());
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
-    genesisGenerator
-        .getGenesisStateIfValid(BeaconStateUtil::is_valid_genesis_state)
-        .ifPresent(this::eth2Genesis);
+    final int newActiveValidatorCount = genesisGenerator.getActiveValidatorCount();
+    if (BeaconStateUtil.is_valid_genesis_state(
+        genesisGenerator.getGenesisTime(), newActiveValidatorCount)) {
+      eth2Genesis(genesisGenerator.getGenesisState());
+    } else if (roundPercent(newActiveValidatorCount) > previousValidatorRequirementPercent) {
+      STATUS_LOG.genesisValidatorsActivated(
+          newActiveValidatorCount, Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+    }
+  }
+
+  private int roundPercent(int activeValidatorCount) {
+    return activeValidatorCount * 100 / Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
   }
 
   private void eth2Genesis(BeaconState genesisState) {
