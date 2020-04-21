@@ -44,6 +44,7 @@ public class ProtoArrayTestUtil {
             new Checkpoint(ONE, Bytes32.ZERO),
             new HashMap<>(),
             new HashMap<>(),
+            new HashMap<>(),
             new HashMap<>());
 
     ProtoArrayForkChoiceStrategy forkChoice = ProtoArrayForkChoiceStrategy.create(store);
@@ -66,6 +67,7 @@ public class ProtoArrayTestUtil {
         new Checkpoint(ZERO, Bytes32.ZERO),
         new Checkpoint(ZERO, Bytes32.ZERO),
         new Checkpoint(ONE, Bytes32.ZERO),
+        new HashMap<>(),
         new HashMap<>(),
         new HashMap<>(),
         new HashMap<>());

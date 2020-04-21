@@ -49,5 +49,5 @@ public interface ReadOnlyStore {
 
   boolean containsCheckpointState(Checkpoint checkpoint);
 
-  Set<Integer> getVotedValidatorIndices();
+  Set<UnsignedLong> getVotedValidatorIndices();
 }

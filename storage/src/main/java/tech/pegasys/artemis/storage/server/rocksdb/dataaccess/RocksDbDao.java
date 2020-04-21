@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
@@ -61,6 +62,8 @@ public interface RocksDbDao extends AutoCloseable {
 
   Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates();
 
+  Map<UnsignedLong, VoteTracker> getVotes();
+
   Updater updater();
 
   interface Updater extends AutoCloseable {
@@ -86,6 +89,10 @@ public interface RocksDbDao extends AutoCloseable {
     void addHotState(final Bytes32 blockRoot, final BeaconState state);
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
+
+    void addVote(final UnsignedLong validatorIndex, VoteTracker votes);
+
+    void addVotes(final Map<UnsignedLong, VoteTracker> states);
 
     void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
 

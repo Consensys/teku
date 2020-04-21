@@ -57,7 +57,7 @@ public class Store implements ReadOnlyStore {
   private Map<Bytes32, SignedBeaconBlock> blocks;
   private Map<Bytes32, BeaconState> block_states;
   private Map<Checkpoint, BeaconState> checkpoint_states;
-  private Map<Integer, VoteTracker> votes;
+  private Map<UnsignedLong, VoteTracker> votes;
 
   public Store(
       final UnsignedLong time,
@@ -67,7 +67,8 @@ public class Store implements ReadOnlyStore {
       final Checkpoint best_justified_checkpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
-      final Map<Checkpoint, BeaconState> checkpoint_states) {
+      final Map<Checkpoint, BeaconState> checkpoint_states,
+      final Map<UnsignedLong, VoteTracker> votes) {
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -76,7 +77,7 @@ public class Store implements ReadOnlyStore {
     this.blocks = new ConcurrentHashMap<>(blocks);
     this.block_states = new ConcurrentHashMap<>(block_states);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
-    this.votes = new ConcurrentHashMap<>();
+    this.votes = new ConcurrentHashMap<>(votes);
   }
 
   public static Store getForkChoiceStore(final BeaconState anchorState) {
@@ -87,6 +88,7 @@ public class Store implements ReadOnlyStore {
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
 
     blocks.put(anchorRoot, new SignedBeaconBlock(anchorBlock, BLSSignature.empty()));
     block_states.put(anchorRoot, anchorState);
@@ -100,7 +102,8 @@ public class Store implements ReadOnlyStore {
         anchorCheckpoint,
         blocks,
         block_states,
-        checkpoint_states);
+        checkpoint_states,
+        votes);
   }
 
   public Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
@@ -239,7 +242,7 @@ public class Store implements ReadOnlyStore {
   }
 
   @Override
-  public Set<Integer> getVotedValidatorIndices() {
+  public Set<UnsignedLong> getVotedValidatorIndices() {
     readLock.lock();
     try {
       return votes.keySet();
@@ -259,7 +262,7 @@ public class Store implements ReadOnlyStore {
     private Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     private Map<Bytes32, BeaconState> block_states = new HashMap<>();
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    private Map<Integer, VoteTracker> votes = new HashMap<>();
+    private Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
     private final StoreUpdateHandler updateHandler;
 
     Transaction(
@@ -309,14 +312,17 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
-    public VoteTracker getVote(int validatorIndex) {
-      VoteTracker vote = either(validatorIndex, votes::get, Store.this.votes::get);
+    public VoteTracker getVote(UnsignedLong validatorIndex) {
+      VoteTracker vote = votes.get(validatorIndex);
       if (vote == null) {
-        vote = VoteTracker.Default();
-      } else {
-        vote = vote.copy();
+        vote = Store.this.votes.get(validatorIndex);
+        if (vote == null) {
+          vote = VoteTracker.Default();
+        } else {
+          vote = vote.copy();
+          votes.put(validatorIndex, vote);
+        }
       }
-      votes.put(validatorIndex, vote);
       return vote;
     }
 
@@ -330,7 +336,8 @@ public class Store implements ReadOnlyStore {
               best_justified_checkpoint,
               blocks,
               block_states,
-              checkpoint_states);
+              checkpoint_states,
+              votes);
       return storageUpdateChannel
           .onStorageUpdate(updateEvent)
           .thenAccept(
@@ -430,7 +437,7 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
-    public Set<Integer> getVotedValidatorIndices() {
+    public Set<UnsignedLong> getVotedValidatorIndices() {
       return Sets.union(votes.keySet(), Store.this.getVotedValidatorIndices());
     }
 

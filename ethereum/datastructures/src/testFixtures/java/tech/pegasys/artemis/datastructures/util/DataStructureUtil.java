@@ -40,6 +40,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -182,6 +183,10 @@ public final class DataStructureUtil {
 
   public AggregateAndProof randomAggregateAndProof() {
     return new AggregateAndProof(randomUnsignedLong(), randomSignature(), randomAttestation());
+  }
+
+  public VoteTracker randomVoteTracker() {
+    return new VoteTracker(randomBytes32(), randomBytes32(), randomUnsignedLong());
   }
 
   public PendingAttestation randomPendingAttestation() {

@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
@@ -38,6 +40,8 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
@@ -140,9 +144,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   void processAttestation(
       MutableStore store, int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
-    VoteTracker vote = store.getVote(validatorIndex);
+    VoteTracker vote = store.getVote(UnsignedLong.valueOf(validatorIndex));
 
-    if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
+    if (targetEpoch.compareTo(vote.getNextEpoch()) > 0) {
       vote.setNextRoot(blockRoot);
       vote.setNextEpoch(targetEpoch);
     }
@@ -284,13 +288,22 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       List<UnsignedLong> newBalances) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(indices.size(), 0L));
 
-    for (int validatorIndex : store.getVotedValidatorIndices()) {
+    for (UnsignedLong validatorIndex : store.getVotedValidatorIndices()) {
       VoteTracker vote = store.getVote(validatorIndex);
+
+      // There is no need to create a score change if the validator has never voted
+      // or both their votes are for the zero hash (alias to the genesis block).
+      if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
+        LOG.warn("ProtoArrayForkChoiceStrategy: Unexpected zero hashes in voted validator votes");
+        continue;
+      }
 
       // If the validator was not included in the oldBalances (i.e. it did not exist yet)
       // then say its balance was zero.
       UnsignedLong oldBalance =
-          oldBalances.size() > validatorIndex ? oldBalances.get(validatorIndex) : UnsignedLong.ZERO;
+          oldBalances.size() > validatorIndex.intValue()
+              ? oldBalances.get(validatorIndex.intValue())
+              : UnsignedLong.ZERO;
 
       // If the validator vote is not known in the newBalances, then use a balance of zero.
       //
@@ -298,7 +311,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       // justified state to a new state with a higher epoch that is on a different fork
       // because that may have on-boarded less validators than the prior fork.
       UnsignedLong newBalance =
-          newBalances.size() > validatorIndex ? newBalances.get(validatorIndex) : UnsignedLong.ZERO;
+          newBalances.size() > validatorIndex.intValue()
+              ? newBalances.get(validatorIndex.intValue())
+              : UnsignedLong.ZERO;
 
       if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
         // We ignore the vote if it is not known in `indices`. We assume that it is outside
