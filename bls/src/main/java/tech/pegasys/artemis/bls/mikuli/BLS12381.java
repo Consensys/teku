@@ -276,6 +276,8 @@ public final class BLS12381 {
     return new Scalar(randomBig);
   }
 
+  // TODO find proper way of creating random
+  @SuppressWarnings("DoNotCreateSecureRandomDirectly")
   private static SecureRandom RND = new SecureRandom();
 
   private static BIG longToBIG(long l) {
