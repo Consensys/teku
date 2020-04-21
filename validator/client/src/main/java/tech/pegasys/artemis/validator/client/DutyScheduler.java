@@ -18,15 +18,16 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 
 public class DutyScheduler implements ValidatorTimingChannel {
-  private final EpochDutiesScheduler epochDutiesScheduler;
+  private final DutyLoader epochDutiesScheduler;
   private NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
 
-  public DutyScheduler(final EpochDutiesScheduler epochDutiesScheduler) {
+  public DutyScheduler(final DutyLoader epochDutiesScheduler) {
     this.epochDutiesScheduler = epochDutiesScheduler;
   }
 
@@ -63,7 +64,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   private DutyQueue requestDutiesForEpoch(final UnsignedLong epochNumber) {
-    return new DutyQueue(epochDutiesScheduler.fetchDutiesForEpoch(epochNumber));
+    return new DutyQueue(epochDutiesScheduler.loadDutiesForEpoch(epochNumber));
   }
 
   private void notifyDutyQueue(
@@ -75,6 +76,9 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   private void removePriorEpochs(final UnsignedLong epochNumber) {
-    dutiesByEpoch.headMap(epochNumber.minus(ONE)).clear();
+    final SortedMap<UnsignedLong, DutyQueue> toRemove =
+        dutiesByEpoch.headMap(epochNumber.minus(ONE));
+    toRemove.values().forEach(DutyQueue::cancel);
+    toRemove.clear();
   }
 }

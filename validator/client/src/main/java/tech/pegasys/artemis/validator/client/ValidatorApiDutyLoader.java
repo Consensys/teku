@@ -13,47 +13,41 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
-import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 
-class EpochDutiesScheduler {
+class ValidatorApiDutyLoader implements DutyLoader {
   private static final Logger LOG = LogManager.getLogger();
-  private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
   private final Supplier<ScheduledDuties> scheduledDutiesFactory;
   private final Map<BLSPublicKey, Validator> validators;
 
-  EpochDutiesScheduler(
-      final AsyncRunner asyncRunner,
+  ValidatorApiDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
       final Supplier<ScheduledDuties> scheduledDutiesFactory,
       final Map<BLSPublicKey, Validator> validators) {
-    this.asyncRunner = asyncRunner;
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
     this.scheduledDutiesFactory = scheduledDutiesFactory;
     this.validators = validators;
   }
 
-  public SafeFuture<ScheduledDuties> fetchDutiesForEpoch(final UnsignedLong epoch) {
+  @Override
+  public SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UnsignedLong epoch) {
     return requestAndScheduleDutiesForEpoch(epoch);
   }
 
@@ -66,24 +60,10 @@ class EpochDutiesScheduler {
             maybeDuties ->
                 maybeDuties.orElseThrow(
                     () ->
-                        new IllegalStateException(
+                        new NodeDataUnavailableException(
                             "Duties could not be calculated because chain data was not yet available")))
         .thenCompose(duties -> scheduleAllDuties(scheduledDuties, duties))
-        .thenApply(__ -> scheduledDuties)
-        .exceptionallyCompose(
-            error -> {
-              if (Throwables.getRootCause(error) instanceof NodeSyncingException) {
-                LOG.debug("Unable to schedule duties for epoch {} because node was syncing", epoch);
-                return SafeFuture.completedFuture(scheduledDuties);
-              }
-              LOG.error(
-                  "Failed to request validator duties for epoch "
-                      + epoch
-                      + ". Retrying after delay.",
-                  error);
-              return asyncRunner.runAfterDelay(
-                  () -> requestAndScheduleDutiesForEpoch(epoch), 5, TimeUnit.SECONDS);
-            });
+        .thenApply(__ -> scheduledDuties);
   }
 
   private SafeFuture<Void> scheduleAllDuties(

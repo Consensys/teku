@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,11 +28,19 @@ import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 class DutyQueue {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SafeFuture<ScheduledDuties> futureDuties;
   private List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
   private Optional<ScheduledDuties> duties = Optional.empty();
 
   DutyQueue(final SafeFuture<ScheduledDuties> futureDuties) {
-    futureDuties.finish(this::onDutiesLoaded, error -> LOG.error("Failed to load duties", error));
+    this.futureDuties = futureDuties;
+    futureDuties.finish(
+        this::onDutiesLoaded,
+        error -> {
+          if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
+            LOG.error("Failed to load duties", error);
+          }
+        });
   }
 
   public void onBlockProductionDue(final UnsignedLong slot) {
@@ -43,6 +53,11 @@ class DutyQueue {
 
   public void onAttestationAggregationDue(final UnsignedLong slot) {
     execute(duties -> duties.performAggregation(slot));
+  }
+
+  public synchronized void cancel() {
+    futureDuties.cancel(false);
+    pendingActions.clear();
   }
 
   private synchronized void onDutiesLoaded(final ScheduledDuties scheduledDuties) {

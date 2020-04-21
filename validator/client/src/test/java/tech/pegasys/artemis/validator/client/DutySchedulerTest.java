@@ -74,12 +74,13 @@ class DutySchedulerTest {
 
   private final DutyScheduler dutyScheduler =
       new DutyScheduler(
-          new EpochDutiesScheduler(
+          new RetryingDutyLoader(
               asyncRunner,
-              validatorApiChannel,
-              forkProvider,
-              () -> new ScheduledDuties(dutyFactory),
-              Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)));
+              new ValidatorApiDutyLoader(
+                  validatorApiChannel,
+                  forkProvider,
+                  () -> new ScheduledDuties(dutyFactory),
+                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
 
   @BeforeEach
   public void setUp() {
@@ -197,12 +198,13 @@ class DutySchedulerTest {
     final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
     final ValidatorTimingChannel dutyScheduler =
         new DutyScheduler(
-            new EpochDutiesScheduler(
+            new RetryingDutyLoader(
                 asyncRunner,
-                validatorApiChannel,
-                forkProvider,
-                () -> scheduledDuties,
-                Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)));
+                new ValidatorApiDutyLoader(
+                    validatorApiChannel,
+                    forkProvider,
+                    () -> scheduledDuties,
+                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
     final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);

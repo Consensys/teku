@@ -15,6 +15,7 @@ package tech.pegasys.artemis.validator.client;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -30,6 +31,12 @@ class DutyQueueTest {
   private final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
 
   private final DutyQueue duties = new DutyQueue(scheduledDutiesFuture);
+
+  @Test
+  public void cancel_shouldCancelFuture() {
+    duties.cancel();
+    assertThat(scheduledDutiesFuture).isCancelled();
+  }
 
   @Test
   public void onBlockProductionDue_shouldActImmediatelyIfDutiesLoaded() {
