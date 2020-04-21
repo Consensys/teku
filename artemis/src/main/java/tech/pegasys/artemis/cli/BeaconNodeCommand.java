@@ -113,14 +113,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private File configFile;
 
   @Option(
-      names = {"-Xstartup-target-peer-count"},
+      names = {"--Xstartup-target-peer-count"},
       paramLabel = "<NUMBER>",
       description = "Number of peers to wait for before considering the node in sync.",
       hidden = true)
   private Integer startupTargetPeerCount;
 
   @Option(
-      names = {"-Xstartup-timeout-seconds"},
+      names = {"--Xstartup-timeout-seconds"},
       paramLabel = "<NUMBER>",
       description =
           "Timeout in seconds to allow the node to be in sync even if startup target peer count has not yet been reached.",
