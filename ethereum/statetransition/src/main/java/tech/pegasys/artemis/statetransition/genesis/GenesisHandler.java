@@ -56,6 +56,9 @@ public class GenesisHandler implements Eth1EventsChannel {
 
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {
+    if (!recentChainData.isPreGenesis()) {
+      return;
+    }
     STATUS_LOG.minGenesisTimeReached();
     processNewData(event.getBlockHash(), event.getTimestamp(), List.of());
   }
