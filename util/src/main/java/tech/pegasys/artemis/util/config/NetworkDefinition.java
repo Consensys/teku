@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -40,7 +41,7 @@ public class NetworkDefinition {
   private final String constants;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
-  private final Optional<List<String>> discoveryBootnodes;
+  private final List<String> discoveryBootnodes;
   private final Optional<String> eth1DepositContractAddress;
   private final Optional<String> eth1Endpoint;
 
@@ -48,7 +49,7 @@ public class NetworkDefinition {
       final String constants,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
-      final Optional<List<String>> discoveryBootnodes,
+      final List<String> discoveryBootnodes,
       final Optional<String> eth1DepositContractAddress,
       final Optional<String> eth1Endpoint) {
     this.constants = constants;
@@ -79,7 +80,7 @@ public class NetworkDefinition {
     return startupTimeoutSeconds;
   }
 
-  public Optional<List<String>> getDiscoveryBootnodes() {
+  public List<String> getDiscoveryBootnodes() {
     return discoveryBootnodes;
   }
 
@@ -95,7 +96,7 @@ public class NetworkDefinition {
     private String constants;
     private int startupTargetPeerCount = Constants.DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = Constants.DEFAULT_STARTUP_TIMEOUT_SECONDS;
-    private Optional<List<String>> discoveryBootnodes = Optional.empty();
+    private List<String> discoveryBootnodes = new ArrayList<>();
     private Optional<String> eth1DepositContractAddress = Optional.empty();
     private Optional<String> eth1Endpoint = Optional.empty();
 
@@ -115,7 +116,7 @@ public class NetworkDefinition {
     }
 
     public Builder discoveryBootnodes(final String... discoveryBootnodes) {
-      this.discoveryBootnodes = Optional.of(asList(discoveryBootnodes));
+      this.discoveryBootnodes = asList(discoveryBootnodes);
       return this;
     }
 
