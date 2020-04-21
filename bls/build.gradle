@@ -1,6 +1,5 @@
 dependencies {
   api project(':ssz')
-  api project(':util')
 
   api 'org.bouncycastle:bcprov-jdk15on'
 
