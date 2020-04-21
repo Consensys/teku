@@ -149,18 +149,18 @@ public final class BlockProcessorUtil {
     }
   }
 
-  public static void verify_randao(BeaconState state, BeaconBlockBody body, BLSSignatureVerifier bls)
+  public static void verify_randao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
       throws InvalidSignatureException {
-    UnsignedLong epoch = get_current_epoch(state);
+    UnsignedLong epoch = compute_epoch_at_slot(block.getSlot());
     // Verify RANDAO reveal
-    int proposer_index = get_beacon_proposer_index(state);
-    Validator proposer = state.getValidators().get(proposer_index);
+    Validator proposer =
+        state.getValidators().get(toIntExact(block.getProposer_index().longValue()));
     final Bytes signing_root =
         compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
     bls.verifyAndThrow(
         proposer.getPubkey(),
         signing_root,
-        body.getRandao_reveal(),
+        block.getBody().getRandao_reveal(),
         "process_randao: Verify that the provided randao value is valid");
   }
 

@@ -11,6 +11,7 @@ import tech.pegasys.artemis.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.artemis.core.BlockProcessorUtil;
 import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -53,10 +54,11 @@ public class SimpleBlockValidator implements BlockValidator {
       }
 
       if (verifyBlockBody) {
-        BeaconBlockBody blockBody = block.getMessage().getBody();
+        BeaconBlock blockMessage = block.getMessage();
+        BeaconBlockBody blockBody = blockMessage.getBody();
         BlockProcessorUtil.verify_attestations(
             preState, blockBody.getAttestations(), signatureVerifier);
-        BlockProcessorUtil.verify_randao(preState, blockBody, signatureVerifier);
+        BlockProcessorUtil.verify_randao(preState, blockMessage, signatureVerifier);
         BlockProcessorUtil.verify_proposer_slashings(
             preState, blockBody.getProposer_slashings(), signatureVerifier);
         BlockProcessorUtil.verify_voluntary_exits(
@@ -90,7 +92,8 @@ public class SimpleBlockValidator implements BlockValidator {
 
   private void verify_block_signature(final BeaconState state, SignedBeaconBlock signed_block)
       throws BlockProcessingException {
-    final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+    final Validator proposer =
+        state.getValidators().get(get_beacon_proposer_index(state, signed_block.getSlot()));
     final Bytes signing_root =
         compute_signing_root(signed_block.getMessage(), get_domain(state, DOMAIN_BEACON_PROPOSER));
     try {
