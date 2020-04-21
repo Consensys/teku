@@ -26,7 +26,7 @@ import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.validator.api.NodeSyncingException;
 import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 
-class RetryingDutySchedulerTest {
+class RetryingDutyLoaderTest {
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final DutyLoader delegate = mock(DutyLoader.class);
