@@ -20,9 +20,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 
 public class DutyScheduler implements ValidatorTimingChannel {
+  private static final Logger LOG = LogManager.getLogger();
   private final EpochDutiesScheduler epochDutiesScheduler;
   private NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
 
@@ -40,6 +43,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onChainReorg(final UnsignedLong newSlot) {
+    LOG.debug("Chain reorganisation detected. Recalculating validator duties");
     dutiesByEpoch.clear();
     final UnsignedLong epochNumber = compute_epoch_at_slot(newSlot);
     final UnsignedLong nextEpochNumber = epochNumber.plus(ONE);
@@ -75,6 +79,6 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   private void removePriorEpochs(final UnsignedLong epochNumber) {
-    dutiesByEpoch.headMap(epochNumber.minus(ONE)).clear();
+    dutiesByEpoch.headMap(epochNumber).clear();
   }
 }
