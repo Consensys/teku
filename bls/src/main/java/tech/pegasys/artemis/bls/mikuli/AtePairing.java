@@ -52,6 +52,11 @@ final class AtePairing {
     return new GTPoint(PAIR.fexp(e));
   }
 
+  static GTPoint pair2NoExp(G1Point p, G2Point q, G1Point r, G2Point s) {
+    FP12 e = PAIR.ate2(q.ecp2Point(), p.ecpPoint(), s.ecp2Point(), r.ecpPoint());
+    return new GTPoint(e);
+  }
+
   static GTPoint fexp(GTPoint point) {
     return new GTPoint(PAIR.fexp(point.getPoint()));
   }

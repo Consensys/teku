@@ -15,6 +15,7 @@ package tech.pegasys.artemis.bls.mikuli;
 
 import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
 
+import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,7 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
 
 /*
  * (Heavily) adapted from the ConsenSys/mikuli (Apache 2 License) implementation:
@@ -196,20 +196,59 @@ public final class BLS12381 {
     return signature.aggregateVerify(publicKeys, hashesInG2);
   }
 
-  public static BatchSemiAggregate prepareBatchVerify(
+  public static BatchSemiAggregate prepareBatchVerify(int index,
       List<PublicKey> publicKeys, Bytes message, Signature signature) {
 
-    Scalar randomMult = nextBatchRandomMultiplier();
+    G2Point sigG2Point;
+    G2Point msgG2Point;
+    if (index == 0) {
+      // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
+      // let it be the component with index 0
+      sigG2Point = signature.g2Point();
+      msgG2Point = G2Point.hashToG2(message);
+    } else {
+      Scalar randomMult = nextBatchRandomMultiplier();
+      sigG2Point = signature.g2Point().mul(randomMult);
+      msgG2Point = G2Point.hashToG2(message).mul(randomMult);
+    }
 
-    G2Point sigG2Point = signature.g2Point();
-    G2Point sigG2PointM = sigG2Point.mul(randomMult);
+    GTPoint pair = AtePairing.pairNoExp(PublicKey.aggregate(publicKeys).g1Point(), msgG2Point);
 
-    G2Point msgG2Point = G2Point.hashToG2(message);
-    G2Point msgG2PointM = msgG2Point.mul(randomMult);
+    return new BatchSemiAggregate(sigG2Point, pair);
+  }
 
-    GTPoint pair = AtePairing.pairNoExp(PublicKey.aggregate(publicKeys).g1Point(), msgG2PointM);
+  public static BatchSemiAggregate prepareBatchVerify2(
+      int index,
+      List<PublicKey> publicKeys1,
+      Bytes message1,
+      Signature signature1,
+      List<PublicKey> publicKeys2,
+      Bytes message2,
+      Signature signature2) {
 
-    return new BatchSemiAggregate(sigG2PointM, pair);
+    G2Point sigG2Point1;
+    G2Point msgG2Point1;
+    if (index == 0) {
+      // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
+      // let it be the component with index 0
+      sigG2Point1 = signature1.g2Point();
+      msgG2Point1 = G2Point.hashToG2(message1);
+    } else {
+      Scalar randomMult = nextBatchRandomMultiplier();
+      sigG2Point1 = signature1.g2Point().mul(randomMult);
+      msgG2Point1 = G2Point.hashToG2(message1).mul(randomMult);
+    }
+    PublicKey publicKey1 = PublicKey.aggregate(publicKeys1);
+
+    Scalar randomMult2 = nextBatchRandomMultiplier();
+    G2Point sigG2Point2 = signature2.g2Point().mul(randomMult2);
+    G2Point msgG2Point2 = G2Point.hashToG2(message2).mul(randomMult2);
+    PublicKey publicKey2 = PublicKey.aggregate(publicKeys2);
+
+    GTPoint pair2 =
+        AtePairing.pair2NoExp(publicKey1.g1Point(), msgG2Point1, publicKey2.g1Point(), msgG2Point2);
+
+    return new BatchSemiAggregate(sigG2Point1.add(sigG2Point2), pair2);
   }
 
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedList) {
@@ -232,11 +271,12 @@ public final class BLS12381 {
 
   private static Scalar nextBatchRandomMultiplier() {
     // Milagro RAND has some issues
-    long randomLong =
-        SecureRandomProvider.publicSecureRandom().nextLong() % MAX_BATCH_VERIFY_RANDOM_MULTIPLIER;
+    long randomLong = (RND.nextLong() & 0x7fffffffffffffffL) % MAX_BATCH_VERIFY_RANDOM_MULTIPLIER;
     BIG randomBig = longToBIG(randomLong);
     return new Scalar(randomBig);
   }
+
+  private static SecureRandom RND = new SecureRandom();
 
   private static BIG longToBIG(long l) {
     long[] bigContent = new long[BIG.NLEN];

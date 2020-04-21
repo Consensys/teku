@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.bls;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -116,23 +117,105 @@ public class BLS {
   }
 
   public static boolean batchVerify(
-      List<List<BLSPublicKey>> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
+      List<List<BLSPublicKey>> publicKeys,
+      List<Bytes> messages,
+      List<BLSSignature> signatures) {
     Preconditions.checkArgument(
         publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
         "Different collection sizes");
-    return completeBatchVerify(
-        IntStream.range(0, publicKeys.size())
-            .mapToObj(
-                i -> prepareBatchVerify(publicKeys.get(i), messages.get(i), signatures.get(i)))
-            .collect(Collectors.toList()));
+
+    int count = publicKeys.size();
+    if (count == 0) {
+      return true;
+    } else if (count == 1) {
+      return fastAggregateVerify(publicKeys.get(0), messages.get(0), signatures.get(0));
+    } else {
+      // double pairing variant is normally slightly faster, but when the number of
+      // signatures is relatively small the parallelization of hashToG2 internally
+      // yields more performance gain than double pairing
+      boolean doublePairing = count > Runtime.getRuntime().availableProcessors() * 2;
+      return batchVerify(publicKeys, messages, signatures, doublePairing, true);
+    }
+  }
+
+  public static boolean batchVerify(
+      List<List<BLSPublicKey>> publicKeys,
+      List<Bytes> messages,
+      List<BLSSignature> signatures,
+      boolean doublePairing,
+      boolean parallel) {
+    Preconditions.checkArgument(
+        publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
+        "Different collection sizes");
+    int count = publicKeys.size();
+    if (doublePairing) {
+      Stream<List<Integer>> pairsStream =
+          Lists.partition(IntStream.range(0, count).boxed().collect(Collectors.toList()), 2)
+              .stream();
+
+      if (parallel) {
+        pairsStream = pairsStream.parallel();
+      }
+      return completeBatchVerify(
+          pairsStream
+              .map(
+                  idx ->
+                      idx.size() == 1
+                          ? prepareBatchVerify(
+                              idx.get(0),
+                              publicKeys.get(idx.get(0)),
+                              messages.get(idx.get(0)),
+                              signatures.get(idx.get(0)))
+                          : prepareBatchVerify2(
+                              idx.get(0),
+                              publicKeys.get(idx.get(0)),
+                              messages.get(idx.get(0)),
+                              signatures.get(idx.get(0)),
+                              publicKeys.get(idx.get(1)),
+                              messages.get(idx.get(1)),
+                              signatures.get(idx.get(1))))
+              .collect(Collectors.toList()));
+    } else {
+      Stream<Integer> indexStream = IntStream.range(0, count).boxed();
+
+      if (parallel) {
+        indexStream = indexStream.parallel();
+      }
+      return completeBatchVerify(
+          indexStream
+              .map(
+                  idx ->
+                      prepareBatchVerify(
+                          idx, publicKeys.get(idx), messages.get(idx), signatures.get(idx)))
+              .collect(Collectors.toList()));
+    }
   }
 
   public static BatchSemiAggregate prepareBatchVerify(
-      List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
+      int index, List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
     return BLS12381.prepareBatchVerify(
+        index,
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
         message,
         signature.getSignature());
+  }
+
+  public static BatchSemiAggregate prepareBatchVerify2(
+      int index,
+      List<BLSPublicKey> publicKeys1,
+      Bytes message1,
+      BLSSignature signature1,
+      List<BLSPublicKey> publicKeys2,
+      Bytes message2,
+      BLSSignature signature2) {
+    return BLS12381.prepareBatchVerify2(
+        index,
+        publicKeys1.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+        message1,
+        signature1.getSignature(),
+        publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+        message2,
+        signature2.getSignature());
   }
 
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
