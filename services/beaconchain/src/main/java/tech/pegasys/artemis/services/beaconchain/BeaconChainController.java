@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -117,8 +118,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile Eth1DataCache eth1DataCache;
   private volatile NodeSlot nodeSlot = new NodeSlot(ZERO);
 
-  private volatile BeaconChainMetrics beaconChainMetrics;
-
   private SyncStateTracker syncStateTracker;
 
   public BeaconChainController(
@@ -174,8 +173,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             client -> {
               // Setup chain storage
               this.recentChainData = client;
-              if (setupInitialState && recentChainData.getStore() == null) {
-                setupInitialState();
+              if (recentChainData.isPreGenesis()) {
+                if (setupInitialState) {
+                  setupInitialState();
+                } else {
+                  STATUS_LOG.loadingGenesisFromEth1Chain();
+                }
               }
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               // Init other services
@@ -222,7 +225,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
-    beaconChainMetrics = new BeaconChainMetrics(recentChainData, nodeSlot);
+    final BeaconChainMetrics beaconChainMetrics = new BeaconChainMetrics(recentChainData, nodeSlot);
     beaconChainMetrics.initialize(metricsSystem);
   }
 

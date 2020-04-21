@@ -47,6 +47,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
@@ -166,6 +168,34 @@ public class BeaconNodeCommandTest {
         expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
   }
 
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"mainnet", "minimal", "topaz"})
+  public void useDefaultsFromNetworkDefinition(final String networkName) {
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
+
+    beaconNodeCommand.parse(new String[] {"--network", networkName});
+    final ArtemisConfiguration config = getResultingArtemisConfiguration();
+    assertThat(config.getP2pDiscoveryBootnodes())
+        .isEqualTo(networkDefinition.getDiscoveryBootnodes());
+    assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
+    assertThat(config.getStartupTargetPeerCount())
+        .isEqualTo(networkDefinition.getStartupTargetPeerCount());
+    assertThat(config.getStartupTimeoutSeconds())
+        .isEqualTo(networkDefinition.getStartupTimeoutSeconds());
+    assertThat(config.getEth1DepositContractAddress())
+        .isEqualTo(networkDefinition.getEth1DepositContractAddress().orElse(null));
+    assertThat(config.getEth1Endpoint())
+        .isEqualTo(networkDefinition.getEth1Endpoint().orElse(null));
+  }
+
+  @Test
+  public void overrideDefaultBootnodesWithEmptyList() {
+    beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
+
+    final ArtemisConfiguration config = getResultingArtemisConfiguration();
+    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -209,9 +239,7 @@ public class BeaconNodeCommandTest {
         .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
         .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
         .setMetricsCategories(
-            DEFAULT_METRICS_CATEGORIES.stream()
-                .map(value -> value.toString())
-                .collect(Collectors.toList()))
+            DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
         .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
         .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
         .setP2pInterface(DEFAULT_P2P_INTERFACE)
@@ -275,12 +303,16 @@ public class BeaconNodeCommandTest {
   }
 
   private void assertArtemisConfiguration(final ArtemisConfiguration expected) {
+    final ArtemisConfiguration actual = getResultingArtemisConfiguration();
+    assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+  }
+
+  private ArtemisConfiguration getResultingArtemisConfiguration() {
     final ArgumentCaptor<ArtemisConfiguration> configCaptor =
         ArgumentCaptor.forClass(ArtemisConfiguration.class);
     verify(startAction).accept(configCaptor.capture());
 
-    final ArtemisConfiguration actual = configCaptor.getValue();
-    assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+    return configCaptor.getValue();
   }
 
   private Path createTempFile(final byte[] contents) throws IOException {
