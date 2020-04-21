@@ -34,6 +34,7 @@ public class ClasspathResourceLoader implements ResourceLoader {
     this.availableResourceNames = Set.of(availableResourceNames);
   }
 
+  @Override
   public Optional<InputStream> load(final String source) {
     if (!availableResourceNames.contains(source)) {
       return Optional.empty();
