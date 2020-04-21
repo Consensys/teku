@@ -50,7 +50,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   public Bytes32 processHead() {
     Store.Transaction transaction = recentChainData.startStoreTransaction();
     Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(transaction);
-    transaction.commit(() -> {}, "Failed to persist attestation result");
+    transaction.commit(() -> {}, "Failed to persist validator vote changes.");
     BeaconBlock headBlock = recentChainData.getStore().getBlock(headBlockRoot);
     recentChainData.updateBestBlock(headBlockRoot, headBlock.getSlot());
     return headBlockRoot;
