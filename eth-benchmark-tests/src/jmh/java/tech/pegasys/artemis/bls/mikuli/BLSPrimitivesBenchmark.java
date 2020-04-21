@@ -41,6 +41,8 @@ import tech.pegasys.artemis.bls.BLSSignature;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 public class BLSPrimitivesBenchmark {
 
   private static final RAND RANDOM = new RAND();
@@ -65,64 +67,48 @@ public class BLSPrimitivesBenchmark {
   FP12 gtPoint = PAIR.ate(signature.getSignature().g2Point().getPoint(), g1Generator.getPoint());
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void gtProduct(Blackhole bh) {
     GTPoint r = new GTPoint(gtPoint).mul(new GTPoint(gtPoint));
     bh.consume(r);
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void bigRandomX64(Blackhole bh) {
     BIG randomBig = BIG.randomnum(MAX_BATCH_VERIFY_RANDOM_MULTIPLIER, RANDOM);
     bh.consume(randomBig);
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void g2Mul32(Blackhole bh) {
     G2Point r = signature.getSignature().g2Point().mul(new Scalar(Big32));
     bh.consume(r);
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void g2Mul64(Blackhole bh) {
     G2Point r = signature.getSignature().g2Point().mul(new Scalar(Big64));
     bh.consume(r);
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void hToG2(Blackhole bh) {
     ECP2 r = hashToG2(message);
     bh.consume(r);
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void fexp(Blackhole bh) {
     FP12 r = PAIR.fexp(gtPoint);
     bh.consume(r);
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void ate1(Blackhole bh) {
     FP12 ate = PAIR.ate(signature.getSignature().g2Point().getPoint(), g1Generator.getPoint());
     bh.consume(ate);
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void ate1x2Mul(Blackhole bh) {
     FP12 ate1 = PAIR.ate(signature.getSignature().g2Point().getPoint(), g1Generator.getPoint());
     FP12 ate2 = PAIR.ate(signature.getSignature().g2Point().getPoint(), g1Generator.getPoint());
@@ -131,8 +117,6 @@ public class BLSPrimitivesBenchmark {
   }
 
   @Benchmark
-  @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void ate2(Blackhole bh) {
     FP12 ate =
         PAIR.ate2(
