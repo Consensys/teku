@@ -108,8 +108,8 @@ public class DepositFetcher {
 
     // First process completed requests using iteration.
     // Avoid StackOverflowException when there is a long string of requests already completed.
-    while (!blockRequests.isEmpty() && blockRequests.get(blockRequests.size() - 1).isDone()) {
-      final EthBlock.Block block = blockRequests.remove(blockRequests.size() - 1).join();
+    while (!blockRequests.isEmpty() && blockRequests.get(0).isDone()) {
+      final EthBlock.Block block = blockRequests.remove(0).join();
       postEventsForBlock(block, depositEventsByBlock);
     }
 
@@ -120,7 +120,7 @@ public class DepositFetcher {
 
     // Reached a block request that isn't complete so wait for it and recurse back into this method.
     return blockRequests
-        .get(blockRequests.size() - 1)
+        .get(0)
         .thenCompose(block -> postDepositEvents(blockRequests, depositEventsByBlock));
   }
 
@@ -174,11 +174,9 @@ public class DepositFetcher {
   }
 
   private static class BlockNumberAndHash implements Comparable<BlockNumberAndHash> {
-    // in descending order for efficiency
     private static final Comparator<BlockNumberAndHash> COMPARATOR =
         Comparator.comparing(BlockNumberAndHash::getNumber)
-            .thenComparing(BlockNumberAndHash::getHash)
-            .reversed();
+            .thenComparing(BlockNumberAndHash::getHash);
 
     private final BigInteger number;
     private final String hash;

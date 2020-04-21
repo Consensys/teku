@@ -16,6 +16,7 @@ package tech.pegasys.teku.logging;
 import static tech.pegasys.teku.logging.LoggingConfigurator.STATUS_LOGGER_NAME;
 
 import java.nio.file.Path;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -60,10 +61,37 @@ public class StatusLogger {
   }
 
   public void beginInitializingChainData() {
-    log.info("Begin initializing chain data from storage");
+    log.info("Initializing storage");
   }
 
   public void finishInitializingChainData() {
-    log.info("Finish initializing chain data from storage");
+    log.info("Storage initialization complete");
+  }
+
+  public void generatingMockStartGenesis(final long genesisTime, final int size) {
+    log.info(
+        "Starting with mocked start interoperability mode with genesis time {} and {} validators",
+        () -> DateFormatUtils.format(genesisTime * 1000, "yyyy-MM-dd hh:mm:ss"),
+        () -> size);
+  }
+
+  public void loadingGenesisFile(final String genesisFile) {
+    log.info("Loading genesis from file {}", genesisFile);
+  }
+
+  public void loadingGenesisFromEth1Chain() {
+    log.info("No genesis state available. Loading deposits from ETH1 chain");
+  }
+
+  public void genesisValidatorsActivated(int activeValidatorCount, int requiredValidatorCount) {
+    log.info(
+        "Activated {} of {} validators required for genesis ({}%)",
+        activeValidatorCount,
+        requiredValidatorCount,
+        activeValidatorCount * 100 / requiredValidatorCount);
+  }
+
+  public void minGenesisTimeReached() {
+    log.info("Minimum genesis time reached");
   }
 }
