@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
@@ -31,18 +32,17 @@ import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.bls.mikuli.BLS12381.BatchSemiAggregate;
 
 @Fork(1)
 @State(Scope.Thread)
 public class BLSBenchmark {
 
-  @Param({"4", "8", "16", "32", "64", "128"})
+  @Param({"1", "2", "4", "8", "16", "32", "64", "128"})
   int sigCnt = 128;
 
   List<BLSKeyPair> keyPairs =
       IntStream.range(0, sigCnt).mapToObj(BLSKeyPair::random).collect(Collectors.toList());
-  List<Bytes32> messages =
+  List<Bytes> messages =
       Stream.generate(Bytes32::random).limit(sigCnt).collect(Collectors.toList());
   List<BLSSignature> signatures =
       Streams.zip(
@@ -64,17 +64,64 @@ public class BLSBenchmark {
   @Benchmark
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  public void verifySignatureBatched() {
-    List<BatchSemiAggregate> batchSemiAggregates =
-        IntStream.range(0, sigCnt)
-            .mapToObj(
-                i ->
-                    BLS.prepareBatchVerify(
-                        Collections.singletonList(keyPairs.get(i).getPublicKey()),
-                        messages.get(i),
-                        signatures.get(i)))
-            .collect(Collectors.toList());
-    boolean res = BLS.completeBatchVerify(batchSemiAggregates);
+  public void verifySignatureBatchedNonParallelSinglePairing() {
+    boolean res =
+        BLS.batchVerify(
+            keyPairs.stream()
+                .map(kp -> Collections.singletonList(kp.getPublicKey()))
+                .limit(sigCnt)
+                .collect(Collectors.toList()),
+            messages.subList(0, sigCnt),
+            signatures.subList(0, sigCnt),
+            false, false);
+    if (!res) throw new IllegalStateException();
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void verifySignatureBatchedNonParallelDoublePairing() {
+    boolean res =
+        BLS.batchVerify(
+            keyPairs.stream()
+                .map(kp -> Collections.singletonList(kp.getPublicKey()))
+                .limit(sigCnt)
+                .collect(Collectors.toList()),
+            messages.subList(0, sigCnt),
+            signatures.subList(0, sigCnt),
+            true, false);
+    if (!res) throw new IllegalStateException();
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void verifySignatureBatchedParallelDoublePairing() {
+    boolean res =
+        BLS.batchVerify(
+            keyPairs.stream()
+                .map(kp -> Collections.singletonList(kp.getPublicKey()))
+                .limit(sigCnt)
+                .collect(Collectors.toList()),
+            messages.subList(0, sigCnt),
+            signatures.subList(0, sigCnt),
+            true, true);
+    if (!res) throw new IllegalStateException();
+  }
+
+  @Benchmark
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  public void verifySignatureBatchedParallelSinglePairing() {
+    boolean res =
+        BLS.batchVerify(
+            keyPairs.stream()
+                .map(kp -> Collections.singletonList(kp.getPublicKey()))
+                .limit(sigCnt)
+                .collect(Collectors.toList()),
+            messages.subList(0, sigCnt),
+            signatures.subList(0, sigCnt),
+            false, true);
     if (!res) throw new IllegalStateException();
   }
 }
