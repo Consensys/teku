@@ -21,8 +21,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.RAND;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
 
 /*
  * (Heavily) adapted from the ConsenSys/mikuli (Apache 2 License) implementation:
@@ -44,15 +44,7 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public final class BLS12381 {
 
-  private static final RAND RANDOM = new RAND();
-  private static final BIG MAX_BATCH_VERIFY_RANDOM_MULTIPLIER;
-
-  static {
-    BIG b = new BIG(1);
-    b.shl(63);
-    MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = b;
-  }
-
+  private static final long MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = Long.MAX_VALUE;
 
   public static final class BatchSemiAggregate {
     private final G2Point sigPoint;
@@ -207,13 +199,13 @@ public final class BLS12381 {
   public static BatchSemiAggregate prepareBatchVerify(
       List<PublicKey> publicKeys, Bytes message, Signature signature) {
 
-    Scalar randomCoef = new Scalar(BIG.randomnum(MAX_BATCH_VERIFY_RANDOM_MULTIPLIER, RANDOM));
+    Scalar randomMult = nextBatchRandomMultiplier();
 
     G2Point sigG2Point = signature.g2Point();
-    G2Point sigG2PointM = sigG2Point.mul(randomCoef);
+    G2Point sigG2PointM = sigG2Point.mul(randomMult);
 
     G2Point msgG2Point = G2Point.hashToG2(message);
-    G2Point msgG2PointM = msgG2Point.mul(randomCoef);
+    G2Point msgG2PointM = msgG2Point.mul(randomMult);
 
     GTPoint pair = AtePairing.pairNoExp(PublicKey.aggregate(publicKeys).g1Point(), msgG2PointM);
 
@@ -234,7 +226,21 @@ public final class BLS12381 {
               ? semiSig.getMsgPubKeyPairing()
               : pairProd.mul(semiSig.getMsgPubKeyPairing());
     }
-    GTPoint sigPair = AtePairing.pair(KeyPair.g1Generator, sigSum);
+    GTPoint sigPair = AtePairing.pairNoExp(KeyPair.g1Generator, sigSum);
     return AtePairing.fexp(sigPair).equals(AtePairing.fexp(pairProd));
+  }
+
+  private static Scalar nextBatchRandomMultiplier() {
+    // Milagro RAND has some issues
+    long randomLong =
+        SecureRandomProvider.publicSecureRandom().nextLong() % MAX_BATCH_VERIFY_RANDOM_MULTIPLIER;
+    BIG randomBig = longToBIG(randomLong);
+    return new Scalar(randomBig);
+  }
+
+  private static BIG longToBIG(long l) {
+    long[] bigContent = new long[BIG.NLEN];
+    bigContent[0] = l;
+    return new BIG(bigContent);
   }
 }
