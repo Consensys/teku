@@ -133,6 +133,21 @@ class DutySchedulerTest {
   }
 
   @Test
+  public void shouldNotRefetchDutiesWhichHaveAlreadyBeenRetrievedDuringFirstEpoch() {
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(ZERO);
+
+    verify(validatorApiChannel).getDuties(ZERO, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(ONE, VALIDATOR_KEYS);
+
+    // Second slot in epoch 0
+    dutyScheduler.onSlot(ONE);
+
+    // Shouldn't request any more duties
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
   public void shouldRetryWhenRequestingDutiesFails() {
     final SafeFuture<Optional<List<ValidatorDuties>>> request1 = new SafeFuture<>();
     final SafeFuture<Optional<List<ValidatorDuties>>> request2 = new SafeFuture<>();
