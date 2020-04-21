@@ -311,8 +311,7 @@ public class ArtemisConfigurationBuilder {
           getOrDefault(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
       eth1DepositContractAddress =
           getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
-      p2pDiscoveryBootnodes =
-          getOrOptionalDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
+      p2pDiscoveryBootnodes = getOrDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
       eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
     }
     return new ArtemisConfiguration(
