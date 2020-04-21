@@ -73,7 +73,8 @@ public class BLSBenchmark {
                 .collect(Collectors.toList()),
             messages.subList(0, sigCnt),
             signatures.subList(0, sigCnt),
-            false, false);
+            false,
+            false);
     if (!res) throw new IllegalStateException();
   }
 
@@ -89,7 +90,8 @@ public class BLSBenchmark {
                 .collect(Collectors.toList()),
             messages.subList(0, sigCnt),
             signatures.subList(0, sigCnt),
-            true, false);
+            true,
+            false);
     if (!res) throw new IllegalStateException();
   }
 
@@ -105,7 +107,8 @@ public class BLSBenchmark {
                 .collect(Collectors.toList()),
             messages.subList(0, sigCnt),
             signatures.subList(0, sigCnt),
-            true, true);
+            true,
+            true);
     if (!res) throw new IllegalStateException();
   }
 
@@ -121,7 +124,8 @@ public class BLSBenchmark {
                 .collect(Collectors.toList()),
             messages.subList(0, sigCnt),
             signatures.subList(0, sigCnt),
-            false, true);
+            false,
+            true);
     if (!res) throw new IllegalStateException();
   }
 }

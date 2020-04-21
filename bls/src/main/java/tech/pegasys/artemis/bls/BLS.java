@@ -117,9 +117,7 @@ public class BLS {
   }
 
   public static boolean batchVerify(
-      List<List<BLSPublicKey>> publicKeys,
-      List<Bytes> messages,
-      List<BLSSignature> signatures) {
+      List<List<BLSPublicKey>> publicKeys, List<Bytes> messages, List<BLSSignature> signatures) {
     Preconditions.checkArgument(
         publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
         "Different collection sizes");

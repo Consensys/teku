@@ -63,8 +63,7 @@ public class StateTransition {
     this.blockValidator = blockValidator;
   }
 
-  public BeaconState initiate(
-      BeaconState preState, SignedBeaconBlock signed_block)
+  public BeaconState initiate(BeaconState preState, SignedBeaconBlock signed_block)
       throws StateTransitionException {
     return initiate(preState, signed_block, true);
   }

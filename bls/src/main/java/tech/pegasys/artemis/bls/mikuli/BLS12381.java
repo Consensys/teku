@@ -196,8 +196,8 @@ public final class BLS12381 {
     return signature.aggregateVerify(publicKeys, hashesInG2);
   }
 
-  public static BatchSemiAggregate prepareBatchVerify(int index,
-      List<PublicKey> publicKeys, Bytes message, Signature signature) {
+  public static BatchSemiAggregate prepareBatchVerify(
+      int index, List<PublicKey> publicKeys, Bytes message, Signature signature) {
 
     G2Point sigG2Point;
     G2Point msgG2Point;
