@@ -80,8 +80,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   private void removePriorEpochs(final UnsignedLong epochNumber) {
-    final SortedMap<UnsignedLong, DutyQueue> toRemove =
-        dutiesByEpoch.headMap(epochNumber);
+    final SortedMap<UnsignedLong, DutyQueue> toRemove = dutiesByEpoch.headMap(epochNumber);
     toRemove.values().forEach(DutyQueue::cancel);
     toRemove.clear();
   }
