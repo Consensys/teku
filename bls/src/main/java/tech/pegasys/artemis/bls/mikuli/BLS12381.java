@@ -215,7 +215,7 @@ public final class BLS12381 {
     G2Point msgG2Point = G2Point.hashToG2(message);
     G2Point msgG2PointM = msgG2Point.mul(randomCoef);
 
-    GTPoint pair = AtePairing.pair(PublicKey.aggregate(publicKeys).g1Point(), msgG2PointM);
+    GTPoint pair = AtePairing.pairNoExp(PublicKey.aggregate(publicKeys).g1Point(), msgG2PointM);
 
     return new BatchSemiAggregate(sigG2PointM, pair);
   }

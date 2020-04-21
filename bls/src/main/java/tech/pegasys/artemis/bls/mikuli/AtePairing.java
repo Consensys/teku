@@ -30,6 +30,11 @@ final class AtePairing {
     return new GTPoint(PAIR.fexp(e));
   }
 
+  public static GTPoint pairNoExp(G1Point p, G2Point q) {
+    FP12 e = PAIR.ate(q.ecp2Point(), p.ecpPoint());
+    return new GTPoint(e);
+  }
+
   /**
    * Calculates the product of pairings while performing the final exponentiation only once. This
    * ought to be more efficient.
