@@ -39,27 +39,34 @@ public class ValidatorClientService extends Service {
   }
 
   public static ValidatorClientService create(final ServiceConfig config) {
-    final EventChannels eventChannels = config.getEventChannels();
-    final ValidatorApiChannel validatorApiChannel =
-        eventChannels.getPublisher(ValidatorApiChannel.class);
-    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
-    final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
     final Map<BLSPublicKey, Validator> validators =
         ValidatorLoader.initializeValidators(config.getConfig());
-    final ValidatorDutyFactory validatorDutyFactory =
-        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
-    final DutyScheduler dutyScheduler =
-        new DutyScheduler(
-            new EpochDutiesScheduler(
-                asyncRunner,
-                validatorApiChannel,
-                forkProvider,
-                () -> new ScheduledDuties(validatorDutyFactory),
-                validators));
+    final EventChannels eventChannels = config.getEventChannels();
+    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+    final RetryingDutyLoader dutyLoader = createDutyLoader(config, asyncRunner, validators);
+    final DutyScheduler dutyScheduler = new DutyScheduler(dutyLoader);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 
     return new ValidatorClientService(eventChannels, dutyScheduler);
+  }
+
+  private static RetryingDutyLoader createDutyLoader(
+      final ServiceConfig config,
+      final AsyncRunner asyncRunner,
+      final Map<BLSPublicKey, Validator> validators) {
+    final ValidatorApiChannel validatorApiChannel =
+        config.getEventChannels().getPublisher(ValidatorApiChannel.class);
+    final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
+    final ValidatorDutyFactory validatorDutyFactory =
+        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
+    return new RetryingDutyLoader(
+        asyncRunner,
+        new ValidatorApiDutyLoader(
+            validatorApiChannel,
+            forkProvider,
+            () -> new ScheduledDuties(validatorDutyFactory),
+            validators));
   }
 
   @Override
