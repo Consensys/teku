@@ -146,7 +146,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       MutableStore store, int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
     VoteTracker vote = store.getVote(UnsignedLong.valueOf(validatorIndex));
 
-    if (targetEpoch.compareTo(vote.getNextEpoch()) > 0) {
+    if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
       vote.setNextRoot(blockRoot);
       vote.setNextEpoch(targetEpoch);
     }
