@@ -155,11 +155,11 @@ public class BeaconStateUtil {
         if (!proof_is_valid) {
           if (deposit instanceof DepositWithIndex) {
             LOG.debug(
-                "Skipping invalid deposit with index {} of pubkey {}",
+                "Skipping invalid deposit with index {} and pubkey {}",
                 ((DepositWithIndex) deposit).getIndex(),
                 pubkey);
           } else {
-            LOG.debug("Skipping invalid deposit with of pubkey {}", pubkey);
+            LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
           }
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
