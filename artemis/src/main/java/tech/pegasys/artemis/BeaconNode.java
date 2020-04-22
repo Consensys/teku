@@ -38,7 +38,6 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
 import tech.pegasys.teku.logging.LoggingConfiguration;
 import tech.pegasys.teku.logging.LoggingConfigurator;
-import tech.pegasys.teku.logging.LoggingDestination;
 import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconNode {
@@ -81,7 +80,7 @@ public class BeaconNode {
         new LoggingConfiguration(
             config.isLogColorEnabled(),
             config.isLogIncludeEventsEnabled(),
-            LoggingDestination.get(config.getLogDestination()),
+            config.getLogDestination(),
             config.getLogFile(),
             config.getLogFileNamePattern()));
   }

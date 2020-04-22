@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.cli.options;
 
+import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
+
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.teku.logging.LoggingDestination;
+import tech.pegasys.artemis.util.config.LoggingDestination;
 
 public class LoggingOptions {
 
@@ -29,7 +31,7 @@ public class LoggingOptions {
 
   public static final boolean DEFAULT_LOG_COLOR_ENABLED = true;
   public static final boolean DEFAULT_LOG_INCLUDE_EVENTS_ENABLED = true;
-  public static final String  DEFAULT_LOG_DESTINATION = "DEFAULT_BOTH";
+  public static final LoggingDestination DEFAULT_LOG_DESTINATION = DEFAULT_BOTH;
   private static final String SEP = System.getProperty("file.separator");
   public static final String DEFAULT_LOG_FILE =
       StringUtils.joinWith(SEP, VersionProvider.defaultStoragePath(), "logs", "teku.log");
@@ -58,7 +60,7 @@ public class LoggingOptions {
       description =
           "Whether a logger is added for the console, the log file, or both (Valid values: ${COMPLETION-CANDIDATES})",
       arity = "1")
-  private LoggingDestination logDestination = LoggingDestination.get(DEFAULT_LOG_DESTINATION);
+  private LoggingDestination logDestination = DEFAULT_LOG_DESTINATION;
 
   @CommandLine.Option(
       names = {LOG_FILE_OPTION_NAME},
@@ -82,8 +84,8 @@ public class LoggingOptions {
     return logIncludeEventsEnabled;
   }
 
-  public String getLogDestination() {
-    return logDestination.name();
+  public LoggingDestination getLogDestination() {
+    return logDestination;
   }
 
   public String getLogFile() {

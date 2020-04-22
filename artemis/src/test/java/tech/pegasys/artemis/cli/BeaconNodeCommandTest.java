@@ -15,8 +15,6 @@ package tech.pegasys.artemis.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
@@ -26,7 +24,6 @@ import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
-import static tech.pegasys.artemis.cli.options.LoggingOptions.LOG_DESTINATION_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
@@ -36,38 +33,22 @@ import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KE
 
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
+import tech.pegasys.artemis.util.config.LoggingDestination;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
-import tech.pegasys.teku.logging.LoggingDestination;
 
-public class BeaconNodeCommandTest {
-
-  private final PrintWriter outputWriter = new PrintWriter(new StringWriter(), true);
-  private final PrintWriter errorWriter = new PrintWriter(new StringWriter(), true);
-
-  @SuppressWarnings("unchecked")
-  private final Consumer<ArtemisConfiguration> startAction = mock(Consumer.class);
-
-  private BeaconNodeCommand beaconNodeCommand =
-      new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
-
-  @TempDir Path dataPath;
+public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void loadDefaultsWhenNoArgsArePassed() {
@@ -170,27 +151,6 @@ public class BeaconNodeCommandTest {
         expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
   }
 
-  @Test
-  public void logDestination_ShouldAcceptFileAsDestination() throws IOException {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "file"));
-    assertThat(artemisConfiguration.getLogDestination()).isEqualTo("FILE");
-  }
-
-  @Test
-  public void logDestination_ShouldAcceptConsoleAsDestination() throws IOException {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "console"));
-    assertThat(artemisConfiguration.getLogDestination()).isEqualTo("CONSOLE");
-  }
-
-  @Test
-  public void logDestination_ShouldAcceptBothAsDestination() throws IOException {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "both"));
-    assertThat(artemisConfiguration.getLogDestination()).isEqualTo("BOTH");
-  }
-
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"mainnet", "minimal", "topaz"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
@@ -217,17 +177,6 @@ public class BeaconNodeCommandTest {
 
     final ArtemisConfiguration config = getResultingArtemisConfiguration();
     assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
-  }
-
-  @Test
-  public void shouldUseDefaultOfBothAsLogDestinationDefault() {
-    // This is important!
-    // If it defaults to "both" or some other value custom log4j configs get overwritten
-    beaconNodeCommand.parse(new String[0]);
-
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
-    assertThat(LoggingDestination.get(config.getLogDestination()))
-        .isEqualTo(LoggingDestination.DEFAULT_BOTH);
   }
 
   private Path createConfigFile() throws IOException {
@@ -290,6 +239,7 @@ public class BeaconNodeCommandTest {
   private ArtemisConfigurationBuilder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
         .setLogFile("teku.log")
+        .setLogDestination(LoggingDestination.BOTH)
         .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 
@@ -341,24 +291,10 @@ public class BeaconNodeCommandTest {
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
   }
 
-  private ArtemisConfiguration getResultingArtemisConfiguration() {
-    final ArgumentCaptor<ArtemisConfiguration> configCaptor =
-        ArgumentCaptor.forClass(ArtemisConfiguration.class);
-    verify(startAction).accept(configCaptor.capture());
-
-    return configCaptor.getValue();
-  }
-
   private Path createTempFile(final byte[] contents) throws IOException {
     final Path file = java.nio.file.Files.createTempFile("config", "yaml");
     java.nio.file.Files.write(file, contents);
     file.toFile().deleteOnExit();
     return file;
-  }
-
-  private ArtemisConfiguration getArtemisConfigurationFromArguments(List<String> arguments)
-      throws IOException {
-    beaconNodeCommand.parse(arguments.toArray(String[]::new));
-    return getResultingArtemisConfiguration();
   }
 }
