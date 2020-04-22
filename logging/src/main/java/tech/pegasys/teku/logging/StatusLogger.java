@@ -76,7 +76,7 @@ public class StatusLogger {
   }
 
   public void loadingGenesisFile(final String genesisFile) {
-    log.info("Loading genesis from file {}", genesisFile);
+    log.info("Loading genesis from {}", genesisFile);
   }
 
   public void loadingGenesisFromEth1Chain() {
