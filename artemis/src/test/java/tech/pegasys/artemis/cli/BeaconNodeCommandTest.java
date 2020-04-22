@@ -18,20 +18,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
+import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
+import static tech.pegasys.artemis.cli.options.InteropOptions.INTEROP_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
+import static tech.pegasys.artemis.cli.options.MetricsOptions.METRICS_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_INTERFACE;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
+import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -166,6 +172,48 @@ public class BeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
     assertArtemisConfiguration(
         expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
+  }
+
+  @Test
+  public void p2pEnabled_ShouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(P2P_ENABLED_OPTION_NAME));
+    assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
+  }
+
+  @Test
+  public void p2pDiscoveryEnabled_ShouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(P2P_DISCOVERY_ENABLED_OPTION_NAME));
+    assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
+  }
+
+  @Test
+  public void metricsEnabled_ShouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(METRICS_ENABLED_OPTION_NAME));
+    assertThat(artemisConfiguration.isMetricsEnabled()).isTrue();
+  }
+
+  @Test
+  public void interopEnabled_ShouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(INTEROP_ENABLED_OPTION_NAME));
+    assertThat(artemisConfiguration.isInteropEnabled()).isTrue();
+  }
+
+  @Test
+  public void restApiDocsEnabled_ShouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(REST_API_DOCS_ENABLED_OPTION_NAME));
+    assertThat(artemisConfiguration.isRestApiDocsEnabled()).isTrue();
+  }
+
+  @Test
+  public void restApiEnabled_ShouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(REST_API_ENABLED_OPTION_NAME));
+    assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
   }
 
   @ParameterizedTest(name = "{0}")
@@ -313,6 +361,12 @@ public class BeaconNodeCommandTest {
     verify(startAction).accept(configCaptor.capture());
 
     return configCaptor.getValue();
+  }
+
+  private ArtemisConfiguration getArtemisConfigurationFromArguments(List<String> arguments)
+      throws IOException {
+    beaconNodeCommand.parse(arguments.toArray(String[]::new));
+    return getResultingArtemisConfiguration();
   }
 
   private Path createTempFile(final byte[] contents) throws IOException {
