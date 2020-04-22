@@ -53,7 +53,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    return List.of(SSZ.encode(writer -> writer.writeFixedBytes(publicKey.toBytesCompressed())));
+    return List.of(toBytes());
   }
 
   public static BLSPublicKey fromBytes(Bytes bytes) {

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
@@ -80,12 +81,10 @@ class DepositTest {
 
   @Test
   void roundtripSSZ() {
-    // todo
-    // deposit.setProof(Collections.nCopies(32, Bytes32.random()));
-
-    // Bytes sszDepositBytes = deposit.toBytes();
-    // Deposit sszDeposit = Deposit.fromBytes(sszDepositBytes);
-    // assertEquals(deposit, sszDeposit);
+    Deposit deposit = dataStructureUtil.randomDeposit();
+    Bytes serialized = SimpleOffsetSerializer.serialize(deposit);
+    Deposit newDeposit = SimpleOffsetSerializer.deserialize(serialized, Deposit.class);
+    assertEquals(deposit, newDeposit);
   }
 
   @Test

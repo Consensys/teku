@@ -64,23 +64,6 @@ public final class Eth1DataVote
     return fixedPartsList;
   }
 
-  public static Eth1DataVote fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new Eth1DataVote(
-                Eth1Data.fromBytes(reader.readBytes()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(eth1_data.toBytes());
-          writer.writeUInt64(vote_count.longValue());
-        });
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(eth1_data, vote_count);

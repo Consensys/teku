@@ -21,6 +21,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class Eth1DataVoteTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -67,7 +68,8 @@ class Eth1DataVoteTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszEth1DataVoteBytes = eth1DataVote.toBytes();
-    assertEquals(eth1DataVote, Eth1DataVote.fromBytes(sszEth1DataVoteBytes));
+    Bytes sszEth1DataVoteBytes = SimpleOffsetSerializer.serialize(eth1DataVote);
+    assertEquals(
+        eth1DataVote, SimpleOffsetSerializer.deserialize(sszEth1DataVoteBytes, Eth1DataVote.class));
   }
 }
