@@ -36,4 +36,6 @@ public interface MutableStore extends ReadOnlyStore {
   void setFinalizedCheckpoint(Checkpoint finalized_checkpoint);
 
   void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint);
+
+  VoteTracker getVote(UnsignedLong validatorIndex);
 }

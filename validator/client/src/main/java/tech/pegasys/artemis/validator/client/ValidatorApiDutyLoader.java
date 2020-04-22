@@ -154,6 +154,7 @@ class ValidatorApiDutyLoader implements DutyLoader {
               if (CommitteeUtil.isAggregator(slotSignature, aggregatorModulo)) {
                 scheduledDuties.scheduleAggregationDuties(
                     slot,
+                    validator,
                     validatorIndex,
                     slotSignature,
                     attestationCommitteeIndex,

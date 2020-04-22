@@ -20,6 +20,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 class ForkTest {
@@ -67,5 +68,13 @@ class ForkTest {
             previousVersion, currentVersion, epoch.plus(dataStructureUtil.randomUnsignedLong()));
 
     assertNotEquals(fork, testFork);
+  }
+
+  @Test
+  void roundTripViaSsz() {
+    Fork fork = dataStructureUtil.randomFork();
+    Fork newFork =
+        SimpleOffsetSerializer.deserialize(SimpleOffsetSerializer.serialize(fork), Fork.class);
+    assertEquals(fork, newFork);
   }
 }

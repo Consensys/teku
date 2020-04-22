@@ -21,14 +21,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
-public class AggregateTopicHandler extends Eth2TopicHandler<AggregateAndProof> {
+public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndProof> {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
@@ -45,13 +45,13 @@ public class AggregateTopicHandler extends Eth2TopicHandler<AggregateAndProof> {
   }
 
   @Override
-  protected AggregateAndProof deserialize(final Bytes bytes) throws SSZException {
-    return SimpleOffsetSerializer.deserialize(bytes, AggregateAndProof.class);
+  protected SignedAggregateAndProof deserialize(final Bytes bytes) throws SSZException {
+    return SimpleOffsetSerializer.deserialize(bytes, SignedAggregateAndProof.class);
   }
 
   @Override
-  protected boolean validateData(final AggregateAndProof aggregateAndProof) {
-    final Attestation attestation = aggregateAndProof.getAggregate();
+  protected boolean validateData(final SignedAggregateAndProof aggregateAndProof) {
+    final Attestation attestation = aggregateAndProof.getMessage().getAggregate();
     final BeaconState state =
         recentChainData.getStore().getBlockState(attestation.getData().getBeacon_block_root());
     if (state == null) {

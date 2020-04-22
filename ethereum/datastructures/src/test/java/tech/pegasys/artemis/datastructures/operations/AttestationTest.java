@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 
 class AttestationTest {
@@ -117,5 +118,14 @@ class AttestationTest {
 
     assertNotEquals(aggregateSignature, differentAggregateSignature);
     assertNotEquals(attestation, testAttestation);
+  }
+
+  @Test
+  void roundtripViaSsz() {
+    Attestation attestation = dataStructureUtil.randomAttestation();
+    Attestation newAttestation =
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(attestation), Attestation.class);
+    assertEquals(attestation, newAttestation);
   }
 }

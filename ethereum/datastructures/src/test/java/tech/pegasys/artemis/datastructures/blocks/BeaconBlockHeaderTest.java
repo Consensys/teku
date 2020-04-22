@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class BeaconBlockHeaderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -104,8 +105,11 @@ class BeaconBlockHeaderTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszBeaconBlockHeaderBytes = beaconBlockHeader.toBytes();
-    assertEquals(beaconBlockHeader, BeaconBlockHeader.fromBytes(sszBeaconBlockHeaderBytes));
+    BeaconBlockHeader beaconBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
+    Bytes beaconBlockSerialized = SimpleOffsetSerializer.serialize(beaconBlockHeader);
+    BeaconBlockHeader newBeaconBlockHeader =
+        SimpleOffsetSerializer.deserialize(beaconBlockSerialized, BeaconBlockHeader.class);
+    assertEquals(beaconBlockHeader, newBeaconBlockHeader);
   }
 
   @Test

@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.StateTransitionException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.server.DatabaseStorageException;
@@ -132,6 +133,11 @@ public class V3RocksDbDao implements RocksDbDao {
   @Override
   public Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates() {
     return db.stream(V3Schema.CHECKPOINT_STATES);
+  }
+
+  @Override
+  public Map<UnsignedLong, VoteTracker> getVotes() {
+    return db.getAll(V3Schema.VOTES);
   }
 
   private Optional<BeaconState> getLatestFinalizedState() {
@@ -322,6 +328,12 @@ public class V3RocksDbDao implements RocksDbDao {
     @Override
     public void addHotStates(final Map<Bytes32, BeaconState> states) {
       states.forEach(this::addHotState);
+    }
+
+    @Override
+    public void addVotes(final Map<UnsignedLong, VoteTracker> votes) {
+      votes.forEach(
+          (validatorIndex, vote) -> transaction.put(V3Schema.VOTES, validatorIndex, vote));
     }
 
     @Override

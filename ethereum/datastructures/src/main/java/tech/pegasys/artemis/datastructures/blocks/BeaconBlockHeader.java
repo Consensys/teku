@@ -103,29 +103,6 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
         SSZ.encode(writer -> writer.writeFixedBytes(getBody_root())));
   }
 
-  public static BeaconBlockHeader fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new BeaconBlockHeader(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                Bytes32.wrap(reader.readFixedBytes(32))));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeUInt64(getSlot().longValue());
-          writer.writeUInt64(getProposer_index().longValue());
-          writer.writeFixedBytes(getParent_root());
-          writer.writeFixedBytes(getState_root());
-          writer.writeFixedBytes(getBody_root());
-        });
-  }
-
   @Override
   public int hashCode() {
     return hashTreeRoot().slice(0, 4).toInt();
