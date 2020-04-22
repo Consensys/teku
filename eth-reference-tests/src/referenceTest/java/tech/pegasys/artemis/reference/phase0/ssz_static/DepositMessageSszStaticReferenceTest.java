@@ -25,21 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class checkpoint extends TestSuite {
+public class DepositMessageSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name = "{index}. ssz_static/Checkpoint deserializedCheckpoint={0}, root={1}, signingRoot={2}")
+      name =
+          "{index}. ssz_static/DepositMessage deserializedDepositMessage={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(Checkpoint deserializedCheckpoint, Bytes32 root)
+  void processSSZStaticDepositData(DepositMessage deserializedDepositData, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedCheckpoint.hash_tree_root(), root);
+    assertEquals(deserializedDepositData.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -55,7 +56,7 @@ public class checkpoint extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "Checkpoint");
-    return sszStaticSetup(path, configPath, Checkpoint.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "DepositMessage");
+    return sszStaticSetup(path, configPath, DepositMessage.class);
   }
 }

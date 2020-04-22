@@ -25,22 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class voluntaryExit extends TestSuite {
+public class HistoricalBatchSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
       name =
-          "{index}. ssz_static/VoluntaryExit deserializedVoluntaryExit={0}, root={1}, signingRoot={2}")
+          "{index}. ssz_static/HistoricalBatch deserializedHistoricalBatch={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticVoluntaryExit(VoluntaryExit deserializedVoluntaryExit, Bytes32 root)
+  void processSSZStaticBeaconBlock(HistoricalBatch deserializedHistoricalBatch, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedVoluntaryExit.hash_tree_root(), root);
+    assertEquals(deserializedHistoricalBatch.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -56,7 +56,7 @@ public class voluntaryExit extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "VoluntaryExit");
-    return sszStaticSetup(path, configPath, VoluntaryExit.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "HistoricalBatch");
+    return sszStaticSetup(path, configPath, HistoricalBatch.class);
   }
 }

@@ -25,20 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class validator extends TestSuite {
+public class SignedVoluntaryExitSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name = "{index}. ssz_static/Validator deserializedValidator={0}, root={1}, signingRoot={2}")
+      name =
+          "{index}. ssz_static/SignedVoluntaryExit deserialized={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(Validator deserializedValidator, Bytes32 root) throws Exception {
-    assertEquals(deserializedValidator.hash_tree_root(), root);
+  void processSSZStaticBeaconBlock(SignedVoluntaryExit deserialized, Bytes32 root)
+      throws Exception {
+    assertEquals(deserialized.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -54,7 +56,7 @@ public class validator extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "Validator");
-    return sszStaticSetup(path, configPath, Validator.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "SignedVoluntaryExit");
+    return sszStaticSetup(path, configPath, SignedVoluntaryExit.class);
   }
 }

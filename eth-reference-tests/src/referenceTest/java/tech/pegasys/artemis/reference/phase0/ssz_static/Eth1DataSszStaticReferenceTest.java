@@ -29,7 +29,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class eth1Data extends TestSuite {
+public class Eth1DataSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
       name = "{index}. ssz_static/Eth1Data deserializedEth1Data={0}, root={1}, signingRoot={2}")
