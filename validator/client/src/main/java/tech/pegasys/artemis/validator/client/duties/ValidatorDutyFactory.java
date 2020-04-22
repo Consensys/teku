@@ -38,6 +38,6 @@ public class ValidatorDutyFactory {
   }
 
   public AggregationDuty createAggregationDuty(final UnsignedLong slot) {
-    return new AggregationDuty(slot, validatorApiChannel);
+    return new AggregationDuty(slot, validatorApiChannel, forkProvider);
   }
 }
