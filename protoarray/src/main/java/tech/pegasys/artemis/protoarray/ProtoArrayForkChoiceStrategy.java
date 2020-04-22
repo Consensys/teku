@@ -21,6 +21,7 @@ import static java.lang.Math.subtractExact;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +30,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
@@ -55,17 +54,22 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   // Public
 
   public static ProtoArrayForkChoiceStrategy create(ReadOnlyStore store) {
-    Bytes32 finalizedBlockRoot = store.getFinalizedCheckpoint().getRoot();
-    return create(
-        store.getBlock(finalizedBlockRoot).getSlot(),
-        store.getBlockState(finalizedBlockRoot).hashTreeRoot(),
-        store.getFinalizedCheckpoint().getEpoch(),
-        store.getJustifiedCheckpoint().getEpoch(),
-        finalizedBlockRoot);
+    ProtoArray protoArray =
+        new ProtoArray(
+            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+            store.getJustifiedCheckpoint().getEpoch(),
+            store.getFinalizedCheckpoint().getEpoch(),
+            new ArrayList<>(),
+            new HashMap<>());
+
+    processBlocksInStoreAtStartup(store, protoArray);
+
+    return new ProtoArrayForkChoiceStrategy(
+        protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
   }
 
   @Override
-  public Bytes32 findHead(final Store store) {
+  public Bytes32 findHead(final ReadOnlyStore store) {
     Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
     return findHead(
         justifiedCheckpoint.getEpoch(),
@@ -93,14 +97,15 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public void onBlock(final MutableStore store, final BeaconBlock block) {
+  public void onBlock(final ReadOnlyStore store, final BeaconBlock block) {
+    Bytes32 blockRoot = block.hash_tree_root();
     processBlock(
         block.getSlot(),
-        block.hash_tree_root(),
+        blockRoot,
         block.getParent_root(),
         block.getState_root(),
-        store.getJustifiedCheckpoint().getEpoch(),
-        store.getFinalizedCheckpoint().getEpoch());
+        store.getBlockState(blockRoot).getCurrent_justified_checkpoint().getEpoch(),
+        store.getBlockState(blockRoot).getFinalized_checkpoint().getEpoch());
   }
 
   public void maybePrune(Bytes32 finalizedRoot) {
@@ -113,31 +118,25 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   // Internal
+  private static void processBlocksInStoreAtStartup(ReadOnlyStore store, ProtoArray protoArray) {
+    store.getBlockRoots().stream()
+        .map(store::getBlock)
+        .sorted(Comparator.comparing(BeaconBlock::getSlot))
+        .forEach(block -> processBlockAtStartup(store, protoArray, block));
+  }
 
-  static ProtoArrayForkChoiceStrategy create(
-      UnsignedLong finalizedBlockSlot,
-      Bytes32 finalizedBlockStateRoot,
-      UnsignedLong justifiedEpoch,
-      UnsignedLong finalizedEpoch,
-      Bytes32 finalizedBlockRoot) {
-    ProtoArray protoArray =
-        new ProtoArray(
-            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            justifiedEpoch,
-            finalizedEpoch,
-            new ArrayList<>(),
-            new HashMap<>());
-
+  private static void processBlockAtStartup(
+      final ReadOnlyStore store, final ProtoArray protoArray, final BeaconBlock block) {
+    Bytes32 blockRoot = block.hash_tree_root();
     protoArray.onBlock(
-        finalizedBlockSlot,
-        finalizedBlockRoot,
-        Optional.empty(),
-        finalizedBlockStateRoot,
-        justifiedEpoch,
-        finalizedEpoch);
-
-    return new ProtoArrayForkChoiceStrategy(
-        protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
+        block.getSlot(),
+        blockRoot,
+        store.getBlockRoots().contains(block.getParent_root())
+            ? Optional.of(block.getParent_root())
+            : Optional.empty(),
+        block.getState_root(),
+        store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
+        store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
   }
 
   void processAttestation(int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {

@@ -13,23 +13,32 @@
 
 package tech.pegasys.artemis.storage.client;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.core.ChainBuilder;
+import tech.pegasys.artemis.core.ChainBuilder.BlockOptions;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.util.config.Constants;
 
 class RecentChainDataTest {
@@ -43,10 +52,11 @@ class RecentChainDataTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final Store store = mock(Store.class);
+  private final ReorgEventChannel reorgEventChannel = mock(ReorgEventChannel.class);
   private final RecentChainData storageClient =
-      MemoryOnlyRecentChainData.createWithStore(eventBus, store);
+      MemoryOnlyRecentChainData.createWithStore(eventBus, reorgEventChannel, store);
   private final RecentChainData preGenesisStorageClient =
-      MemoryOnlyRecentChainData.create(eventBus);
+      MemoryOnlyRecentChainData.create(eventBus, reorgEventChannel);
 
   @Test
   public void initialize_setupInitialState() {
@@ -311,5 +321,114 @@ class RecentChainDataTest {
     final Checkpoint currentCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
+  }
+
+  @Test
+  public void updateBestBlock_noReorgEventWhenBestBlockFirstSet() {
+    preGenesisStorageClient.initializeFromGenesis(INITIAL_STATE);
+    verifyNoInteractions(reorgEventChannel);
+  }
+
+  @Test
+  public void updateBestBlock_noReorgEventWhenChainAdvances() throws Exception {
+    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(1));
+    chainBuilder.generateGenesis();
+    preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    verifyNoInteractions(reorgEventChannel);
+
+    chainBuilder.generateBlocksUpToSlot(2);
+    importBlocksAndStates(chainBuilder);
+
+    final SignedBlockAndState latestBlockAndState = chainBuilder.getLatestBlockAndState();
+    preGenesisStorageClient.updateBestBlock(
+        latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
+    verifyNoInteractions(reorgEventChannel);
+  }
+
+  @Test
+  public void updateBestBlock_reorgEventWhenChainSwitchesToNewBlockAtSameSlot() throws Exception {
+    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
+    chainBuilder.generateGenesis();
+    preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    verifyNoInteractions(reorgEventChannel);
+
+    chainBuilder.generateBlockAtSlot(1);
+
+    // Set target slot at which to create duplicate blocks
+    // and generate block options to make each block unique
+    final List<BlockOptions> blockOptions =
+        chainBuilder
+            .streamValidAttestationsForBlockAtSlot(UnsignedLong.ONE)
+            .map(attestation -> BlockOptions.create().addAttestation(attestation))
+            .limit(2)
+            .collect(toList());
+    final ChainBuilder forkBuilder = chainBuilder.fork();
+    final SignedBlockAndState latestBlockAndState =
+        chainBuilder.generateBlockAtSlot(UnsignedLong.valueOf(2), blockOptions.get(0));
+    final SignedBlockAndState latestForkBlockAndState =
+        forkBuilder.generateBlockAtSlot(UnsignedLong.valueOf(2), blockOptions.get(1));
+    importBlocksAndStates(chainBuilder, forkBuilder);
+
+    // Update to head block of original chain.
+    preGenesisStorageClient.updateBestBlock(
+        latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
+    verifyNoInteractions(reorgEventChannel);
+
+    // Switch to fork.
+    preGenesisStorageClient.updateBestBlock(
+        latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
+    verify(reorgEventChannel)
+        .reorgOccurred(latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
+  }
+
+  @Test
+  public void updateBestBlock_reorgEventWhenChainSwitchesToNewBlockAtLaterSlot() throws Exception {
+    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
+    chainBuilder.generateGenesis();
+    preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    verifyNoInteractions(reorgEventChannel);
+
+    chainBuilder.generateBlockAtSlot(1);
+
+    // Set target slot at which to create duplicate blocks
+    // and generate block options to make each block unique
+    final List<BlockOptions> blockOptions =
+        chainBuilder
+            .streamValidAttestationsForBlockAtSlot(UnsignedLong.ONE)
+            .map(attestation -> BlockOptions.create().addAttestation(attestation))
+            .limit(2)
+            .collect(toList());
+    final ChainBuilder forkBuilder = chainBuilder.fork();
+    final SignedBlockAndState latestBlockAndState =
+        chainBuilder.generateBlockAtSlot(UnsignedLong.valueOf(2), blockOptions.get(0));
+
+    forkBuilder.generateBlockAtSlot(UnsignedLong.valueOf(2), blockOptions.get(1));
+
+    // Fork extends a slot further
+    final SignedBlockAndState latestForkBlockAndState = forkBuilder.generateBlockAtSlot(3);
+    importBlocksAndStates(chainBuilder, forkBuilder);
+
+    // Update to head block of original chain.
+    preGenesisStorageClient.updateBestBlock(
+        latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
+    verifyNoInteractions(reorgEventChannel);
+
+    // Switch to fork.
+    preGenesisStorageClient.updateBestBlock(
+        latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
+    verify(reorgEventChannel)
+        .reorgOccurred(latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
+  }
+
+  private void importBlocksAndStates(final ChainBuilder... chainBuilders) {
+    final Transaction transaction = preGenesisStorageClient.startStoreTransaction();
+    Stream.of(chainBuilders)
+        .flatMap(ChainBuilder::streamBlocksAndStates)
+        .forEach(
+            blockAndState -> {
+              transaction.putBlock(blockAndState.getRoot(), blockAndState.getBlock());
+              transaction.putBlockState(blockAndState.getRoot(), blockAndState.getState());
+            });
+    transaction.commit().join();
   }
 }

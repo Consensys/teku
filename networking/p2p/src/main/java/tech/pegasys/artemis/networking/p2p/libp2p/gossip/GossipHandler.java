@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
 
+import static tech.pegasys.artemis.util.config.Constants.GOSSIP_MAX_SIZE;
+
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -33,7 +35,6 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Boo
 
   private static SafeFuture<Boolean> VALIDATION_FAILED = SafeFuture.completedFuture(false);
   private static SafeFuture<Boolean> VALIDATION_SUCCEEDED = SafeFuture.completedFuture(true);
-  static final int GOSSIP_MAX_SIZE = 1048576;
   private static final int MAX_SENT_MESSAGES = 2048;
 
   private final Topic topic;

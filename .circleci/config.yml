@@ -317,16 +317,16 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 0 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - assemble
-      - compatibilityTests:
-          requires:
-            - assemble
+#  nightly:
+#    triggers:
+#      - schedule:
+#          cron: "0 0 * * *"
+#          filters:
+#            branches:
+#              only:
+#                - master
+#    jobs:
+#      - assemble
+#      - compatibilityTests:
+#          requires:
+#            - assemble

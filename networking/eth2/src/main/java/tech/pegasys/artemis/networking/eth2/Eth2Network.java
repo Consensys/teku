@@ -18,7 +18,9 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
 public interface Eth2Network extends P2PNetwork<Eth2Peer> {
 
-  void subscribeToAttestationCommitteeTopic(int committeeIndex);
+  void subscribeToAttestationCommitteeTopic(final int committeeIndex);
 
-  void unsubscribeFromAttestationCommitteeTopic(int committeeIndex);
+  void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex);
+
+  void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices);
 }

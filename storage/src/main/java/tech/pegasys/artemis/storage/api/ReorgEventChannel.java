@@ -11,13 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage;
+package tech.pegasys.artemis.storage.api;
 
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class StubFinalizedCheckpointChannel implements FinalizedCheckpointChannel {
+public interface ReorgEventChannel {
 
-  @Override
-  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {}
+  /**
+   * Called each time the chain switches forks.
+   *
+   * <p>This method is not called when the initial best block is set at startup or when the chain
+   * advances on the same fork.
+   *
+   * @param bestBlockRoot the block root of the new chain head
+   * @param bestSlot the slot of the new chain head
+   */
+  void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot);
 }

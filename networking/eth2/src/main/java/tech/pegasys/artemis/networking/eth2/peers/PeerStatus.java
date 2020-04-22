@@ -24,49 +24,45 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class PeerStatus {
-  private final Bytes4 headForkVersion;
+  private static PeerStatus PREGENESIS_STATUS = createPreGenesisStatus();
+
+  private final Bytes4 forkDigest;
   private final Checkpoint finalizedCheckpoint;
   private final Bytes32 headRoot;
   private final UnsignedLong headSlot;
 
   public static PeerStatus fromStatusMessage(final StatusMessage message) {
     return new PeerStatus(
-        message.getHeadForkVersion().copy(),
+        message.getForkDigest().copy(),
         message.getFinalizedRoot().copy(),
         message.getFinalizedEpoch(),
         message.getHeadRoot().copy(),
         message.getHeadSlot());
   }
 
-  public static PeerStatus createPreGenesisStatus(final Bytes4 genesisFork) {
-    return new PeerStatus(
-        genesisFork, Bytes32.ZERO, UnsignedLong.ZERO, Bytes32.ZERO, UnsignedLong.ZERO);
+  public static PeerStatus createPreGenesisStatus() {
+    return fromStatusMessage(StatusMessage.createPreGenesisStatus());
   }
 
-  public static boolean isPreGenesisStatus(final PeerStatus status, final Bytes4 genesisFork) {
+  public static boolean isPreGenesisStatus(final PeerStatus status) {
     checkNotNull(status);
-    checkNotNull(genesisFork);
-    return Objects.equals(status.headForkVersion, genesisFork)
-        && Objects.equals(status.getFinalizedRoot(), Bytes32.ZERO)
-        && Objects.equals(status.getFinalizedEpoch(), UnsignedLong.ZERO)
-        && Objects.equals(status.headRoot, Bytes32.ZERO)
-        && Objects.equals(status.headSlot, UnsignedLong.ZERO);
+    return Objects.equals(status, PREGENESIS_STATUS);
   }
 
   PeerStatus(
-      final Bytes4 headForkVersion,
+      final Bytes4 forkDigest,
       final Bytes32 finalizedRoot,
       final UnsignedLong finalizedEpoch,
       final Bytes32 headRoot,
       final UnsignedLong headSlot) {
-    this.headForkVersion = headForkVersion;
+    this.forkDigest = forkDigest;
     this.finalizedCheckpoint = new Checkpoint(finalizedEpoch, finalizedRoot);
     this.headRoot = headRoot;
     this.headSlot = headSlot;
   }
 
-  public Bytes4 getHeadForkVersion() {
-    return headForkVersion;
+  public Bytes4 getForkDigest() {
+    return forkDigest;
   }
 
   public Bytes32 getFinalizedRoot() {
@@ -92,7 +88,7 @@ public class PeerStatus {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("currentFork", headForkVersion)
+        .add("forkDigest", forkDigest)
         .add("finalizedRoot", getFinalizedRoot())
         .add("finalizedEpoch", getFinalizedEpoch())
         .add("headRoot", headRoot)
@@ -109,7 +105,7 @@ public class PeerStatus {
       return false;
     }
     final PeerStatus that = (PeerStatus) o;
-    return Objects.equals(headForkVersion, that.headForkVersion)
+    return Objects.equals(forkDigest, that.forkDigest)
         && Objects.equals(finalizedCheckpoint, that.finalizedCheckpoint)
         && Objects.equals(headRoot, that.headRoot)
         && Objects.equals(headSlot, that.headSlot);
@@ -117,6 +113,6 @@ public class PeerStatus {
 
   @Override
   public int hashCode() {
-    return Objects.hash(headForkVersion, finalizedCheckpoint, headRoot, headSlot);
+    return Objects.hash(forkDigest, finalizedCheckpoint, headRoot, headSlot);
   }
 }

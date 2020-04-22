@@ -57,7 +57,7 @@ import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
-import tech.pegasys.artemis.sync.SyncService;
+import tech.pegasys.artemis.sync.SyncStateTracker;
 import tech.pegasys.artemis.util.async.ExceptionThrowingFunction;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -68,7 +68,7 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
-  private final SyncService syncService;
+  private final SyncStateTracker syncStateTracker;
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
@@ -77,14 +77,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
-      final SyncService syncService,
+      final SyncStateTracker syncStateTracker,
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
       final AttestationTopicSubscriber attestationTopicSubscriptions,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
-    this.syncService = syncService;
+    this.syncStateTracker = syncStateTracker;
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
@@ -101,7 +101,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
-    if (syncService.isSyncActive()) {
+    if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     final UnsignedLong slot =
@@ -131,7 +131,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UnsignedLong slot, final BLSSignature randaoReveal) {
-    if (syncService.isSyncActive()) {
+    if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return createFromBlockAndState(
@@ -168,7 +168,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UnsignedLong slot, final int committeeIndex) {
-    if (syncService.isSyncActive()) {
+    if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return createFromBlockAndState(
@@ -199,7 +199,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
-    if (syncService.isSyncActive()) {
+    if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return SafeFuture.completedFuture(attestationPool.createAggregateFor(attestationData));
@@ -226,6 +226,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendSignedBlock(final SignedBeaconBlock block) {
     eventBus.post(new ProposedBlockEvent(block));
+  }
+
+  private boolean isSyncActive() {
+    return !syncStateTracker.getCurrentSyncState().isInSync();
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

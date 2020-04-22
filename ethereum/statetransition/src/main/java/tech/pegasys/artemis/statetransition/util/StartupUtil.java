@@ -13,15 +13,14 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.primitives.UnsignedLong;
-import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -32,6 +31,7 @@ import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.resource.ResourceLoader;
 
 public final class StartupUtil {
 
@@ -51,9 +51,12 @@ public final class StartupUtil {
         .createInitialBeaconState(UnsignedLong.valueOf(genesisTime), initialDepositData);
   }
 
-  public static BeaconState loadBeaconStateFromFile(final String stateFile) throws IOException {
+  private static BeaconState loadBeaconState(final String source) throws IOException {
     return SimpleOffsetSerializer.deserialize(
-        Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconStateImpl.class);
+        ResourceLoader.urlOrFile()
+            .loadBytes(source)
+            .orElseThrow(() -> new FileNotFoundException("Could not find " + source)),
+        BeaconStateImpl.class);
   }
 
   public static void setupInitialState(
@@ -75,19 +78,13 @@ public final class StartupUtil {
     BeaconState initialState;
     if (startState != null) {
       try {
-        LOG.log(Level.INFO, "Loading initial state from " + startState);
-        initialState = StartupUtil.loadBeaconStateFromFile(startState);
+        STATUS_LOG.loadingGenesisFile(startState);
+        initialState = StartupUtil.loadBeaconState(startState);
       } catch (final IOException e) {
         throw new IllegalStateException("Failed to load initial state", e);
       }
     } else {
-      LOG.log(
-          Level.INFO,
-          "Starting with mocked start interoperability mode with genesis time "
-              + genesisTime
-              + " and "
-              + validatorKeyPairs.size()
-              + " validators");
+      STATUS_LOG.generatingMockStartGenesis(genesisTime, validatorKeyPairs.size());
       initialState =
           StartupUtil.createMockedStartInitialBeaconState(
               genesisTime, validatorKeyPairs, signDeposits);

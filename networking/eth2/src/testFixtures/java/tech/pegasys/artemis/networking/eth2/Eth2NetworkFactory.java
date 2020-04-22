@@ -40,8 +40,8 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.storage.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
+import tech.pegasys.artemis.storage.api.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.Waiter;
@@ -120,7 +120,7 @@ public class Eth2NetworkFactory {
         final ReputationManager reputationManager =
             new ReputationManager(
                 StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
-        final P2PNetwork<?> network =
+        final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 new LibP2PNetwork(
                     config, reputationManager, METRICS_SYSTEM, rpcMethods, peerHandlers),

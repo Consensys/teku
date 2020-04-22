@@ -49,6 +49,7 @@ import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
     description =
         "Register validators by generating new keys and sending deposit transactions to an Ethereum 1 node",
     mixinStandardHelpOptions = true,
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     versionProvider = VersionProvider.class,
     synopsisHeading = "%n",

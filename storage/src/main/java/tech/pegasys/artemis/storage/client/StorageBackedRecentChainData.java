@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -32,8 +33,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
+      final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
-    super(storageUpdateChannel, finalizedCheckpointChannel, eventBus);
+    super(storageUpdateChannel, finalizedCheckpointChannel, reorgEventChannel, eventBus);
     this.asyncRunner = asyncRunner;
     eventBus.register(this);
   }
@@ -42,10 +44,15 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
+      final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
-            asyncRunner, storageUpdateChannel, finalizedCheckpointChannel, eventBus);
+            asyncRunner,
+            storageUpdateChannel,
+            finalizedCheckpointChannel,
+            reorgEventChannel,
+            eventBus);
     return client.initializeFromStorage();
   }
 
@@ -54,11 +61,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
     return requestInitialStore()
         .thenApply(
             maybeStore -> {
-              maybeStore.ifPresent(
-                  (store) -> {
-                    this.setStore(store);
-                    STATUS_LOG.finishInitializingChainData();
-                  });
+              maybeStore.ifPresent(this::setStore);
+              STATUS_LOG.finishInitializingChainData();
               return this;
             });
   }

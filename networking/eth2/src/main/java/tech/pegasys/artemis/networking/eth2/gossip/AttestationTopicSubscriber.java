@@ -48,7 +48,8 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
       final Entry<Integer, UnsignedLong> entry = iterator.next();
       if (entry.getValue().compareTo(slot) < 0) {
         iterator.remove();
-        eth2Network.unsubscribeFromAttestationCommitteeTopic(entry.getKey());
+        int committeeIndex = entry.getKey();
+        eth2Network.unsubscribeFromAttestationCommitteeTopic(committeeIndex);
       }
     }
   }

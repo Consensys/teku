@@ -14,9 +14,13 @@
 package tech.pegasys.artemis.util.config;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class ArtemisConfigurationBuilder {
-  private String network;
+  private String constants;
+  private Integer startupTargetPeerCount;
+  private Integer startupTimeoutSeconds;
   private boolean p2pEnabled;
   private String p2pInterface;
   private int p2pPort;
@@ -58,9 +62,21 @@ public class ArtemisConfigurationBuilder {
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
   private String restApiInterface;
+  private NetworkDefinition network;
 
-  public ArtemisConfigurationBuilder setNetwork(final String network) {
-    this.network = network;
+  public ArtemisConfigurationBuilder setConstants(final String constants) {
+    this.constants = constants;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setStartupTargetPeerCount(
+      final Integer startupTargetPeerCount) {
+    this.startupTargetPeerCount = startupTargetPeerCount;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setStartupTimeoutSeconds(final Integer startupTimeoutSeconds) {
+    this.startupTimeoutSeconds = startupTimeoutSeconds;
     return this;
   }
 
@@ -281,9 +297,27 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
+  public ArtemisConfigurationBuilder setNetwork(final NetworkDefinition network) {
+    this.network = network;
+    return this;
+  }
+
   public ArtemisConfiguration build() {
+    if (network != null) {
+      constants = getOrDefault(constants, network::getConstants);
+      startupTargetPeerCount =
+          getOrDefault(startupTargetPeerCount, network::getStartupTargetPeerCount);
+      startupTimeoutSeconds =
+          getOrDefault(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
+      eth1DepositContractAddress =
+          getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
+      p2pDiscoveryBootnodes = getOrDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
+      eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
+    }
     return new ArtemisConfiguration(
-        network,
+        constants,
+        startupTargetPeerCount,
+        startupTimeoutSeconds,
         p2pEnabled,
         p2pInterface,
         p2pPort,
@@ -325,5 +359,14 @@ public class ArtemisConfigurationBuilder {
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface);
+  }
+
+  private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {
+    return getOrOptionalDefault(explicitValue, () -> Optional.of(predefinedNetworkValue.get()));
+  }
+
+  private <T> T getOrOptionalDefault(
+      final T explicitValue, final Supplier<Optional<T>> predefinedNetworkValue) {
+    return explicitValue != null ? explicitValue : predefinedNetworkValue.get().orElse(null);
   }
 }

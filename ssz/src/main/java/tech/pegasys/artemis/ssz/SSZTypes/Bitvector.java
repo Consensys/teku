@@ -40,6 +40,13 @@ public class Bitvector {
     this.size = bitvector.size;
   }
 
+  public Bitvector(Iterable<Integer> indicesToSet, int size) {
+    this(size);
+    for (int i : indicesToSet) {
+      setBit(i);
+    }
+  }
+
   public void setBit(int i) {
     checkElementIndex(i, size);
     data.set(i);

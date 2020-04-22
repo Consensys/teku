@@ -46,6 +46,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
+import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 import tech.pegasys.artemis.validator.client.duties.AggregationDuty;
 import tech.pegasys.artemis.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.artemis.validator.client.duties.BlockProductionDuty;
@@ -73,11 +74,13 @@ class DutySchedulerTest {
 
   private final DutyScheduler dutyScheduler =
       new DutyScheduler(
-          asyncRunner,
-          validatorApiChannel,
-          forkProvider,
-          new ScheduledDuties(dutyFactory),
-          Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
+          new RetryingDutyLoader(
+              asyncRunner,
+              new ValidatorApiDutyLoader(
+                  validatorApiChannel,
+                  forkProvider,
+                  () -> new ScheduledDuties(dutyFactory),
+                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
 
   @BeforeEach
   public void setUp() {
@@ -86,8 +89,10 @@ class DutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(any()))
         .thenReturn(mock(AttestationProductionDuty.class));
     when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
-    when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(new SafeFuture<>());
-    when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(new SafeFuture<>());
+    final SafeFuture<BLSSignature> rejectAggregationSignature =
+        SafeFuture.failedFuture(new UnsupportedOperationException("This test ignores aggregation"));
+    when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
+    when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
   }
 
   @Test
@@ -99,7 +104,7 @@ class DutySchedulerTest {
   }
 
   @Test
-  public void shouldFetchDutiresForSecondEpochWhenFirstEpochReached() {
+  public void shouldFetchDutiesForSecondEpochWhenFirstEpochReached() {
     dutyScheduler.onSlot(ZERO);
 
     verify(validatorApiChannel).getDuties(ZERO, VALIDATOR_KEYS);
@@ -129,6 +134,21 @@ class DutySchedulerTest {
   }
 
   @Test
+  public void shouldNotRefetchDutiesWhichHaveAlreadyBeenRetrievedDuringFirstEpoch() {
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(ZERO);
+
+    verify(validatorApiChannel).getDuties(ZERO, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(ONE, VALIDATOR_KEYS);
+
+    // Second slot in epoch 0
+    dutyScheduler.onSlot(ONE);
+
+    // Shouldn't request any more duties
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
   public void shouldRetryWhenRequestingDutiesFails() {
     final SafeFuture<Optional<List<ValidatorDuties>>> request1 = new SafeFuture<>();
     final SafeFuture<Optional<List<ValidatorDuties>>> request2 = new SafeFuture<>();
@@ -151,12 +171,28 @@ class DutySchedulerTest {
   }
 
   @Test
+  public void shouldRefetchDutiesAfterReorg() {
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
+
+    verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
+
+    dutyScheduler.onChainReorg(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)));
+
+    // Re-requests epoch 2 and also requests epoch 3 as the new chain is far enough along for that
+    verify(validatorApiChannel, times(2)).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(3), VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
   public void shouldScheduleBlockProposalDuty() {
     final UnsignedLong blockProposerSlot = UnsignedLong.valueOf(5);
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
             VALIDATOR1_KEY, 5, 3, 6, 0, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
-    when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
+    when(validatorApiChannel.getDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
@@ -165,7 +201,7 @@ class DutySchedulerTest {
         .thenReturn(blockCreationDuty);
 
     // Load duties
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
 
     // Execute
     dutyScheduler.onBlockProductionDue(blockProposerSlot);
@@ -175,13 +211,15 @@ class DutySchedulerTest {
   @Test
   public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
     final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
-    final DutyScheduler dutyScheduler =
+    final ValidatorTimingChannel dutyScheduler =
         new DutyScheduler(
-            asyncRunner,
-            validatorApiChannel,
-            forkProvider,
-            scheduledDuties,
-            Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2));
+            new RetryingDutyLoader(
+                asyncRunner,
+                new ValidatorApiDutyLoader(
+                    validatorApiChannel,
+                    forkProvider,
+                    () -> scheduledDuties,
+                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
     final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
@@ -209,7 +247,7 @@ class DutySchedulerTest {
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
             VALIDATOR1_KEY, 5, 3, 6, 0, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
-    when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
+    when(validatorApiChannel.getDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
 
     final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
@@ -218,7 +256,7 @@ class DutySchedulerTest {
         .thenReturn(blockCreationDuty);
 
     // Load duties
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
 
     // Execute
     dutyScheduler.onBlockProductionDue(blockProposerSlot);
@@ -257,7 +295,7 @@ class DutySchedulerTest {
             0,
             emptyList(),
             attestationSlot);
-    when(validatorApiChannel.getDuties(eq(UnsignedLong.ONE), any()))
+    when(validatorApiChannel.getDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
@@ -265,7 +303,7 @@ class DutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
 
     // Load duties
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
 
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)

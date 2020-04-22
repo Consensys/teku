@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.validator.anticorruption;
 
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 
@@ -25,6 +26,9 @@ public class ValidatorAnticorruptionLayer {
     final BeaconChainEventAdapter beaconChainEventAdapter =
         new BeaconChainEventAdapter(validatorTimingChannel);
     config.getEventBus().register(beaconChainEventAdapter);
-    config.getEventChannels().subscribe(SlotEventsChannel.class, beaconChainEventAdapter);
+    config
+        .getEventChannels()
+        .subscribe(SlotEventsChannel.class, beaconChainEventAdapter)
+        .subscribe(ReorgEventChannel.class, beaconChainEventAdapter);
   }
 }

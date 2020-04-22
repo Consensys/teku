@@ -13,20 +13,22 @@
 
 package tech.pegasys.artemis.cli;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
+import org.hyperledger.besu.metrics.StandardMetricCategory;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
-import tech.pegasys.artemis.BeaconNode;
+import tech.pegasys.artemis.cli.converter.MetricCategoryConverter;
 import tech.pegasys.artemis.cli.options.BeaconRestApiOptions;
 import tech.pegasys.artemis.cli.options.DataOptions;
 import tech.pegasys.artemis.cli.options.DepositOptions;
@@ -44,10 +46,12 @@ import tech.pegasys.artemis.cli.subcommand.TransitionCommand;
 import tech.pegasys.artemis.cli.util.CascadingDefaultProvider;
 import tech.pegasys.artemis.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.artemis.cli.util.YamlConfigFileDefaultProvider;
+import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.NetworkDefinition;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 
 @SuppressWarnings("unused")
@@ -60,6 +64,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
       DepositCommand.class,
       GenesisCommand.class
     },
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     description = "Run the Teku beacon chain client and validator",
     mixinStandardHelpOptions = true,
@@ -76,6 +81,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter outputWriter;
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
+  private final Consumer<ArtemisConfiguration> startAction;
+  private final MetricCategoryConverter metricCategoryConverter = new MetricCategoryConverter();
 
   // allows two pass approach to obtain optional config file
   private static class ConfigFileCommand {
@@ -105,6 +112,21 @@ public class BeaconNodeCommand implements Callable<Integer> {
       arity = "1")
   private File configFile;
 
+  @Option(
+      names = {"--Xstartup-target-peer-count"},
+      paramLabel = "<NUMBER>",
+      description = "Number of peers to wait for before considering the node in sync.",
+      hidden = true)
+  private Integer startupTargetPeerCount;
+
+  @Option(
+      names = {"--Xstartup-timeout-seconds"},
+      paramLabel = "<NUMBER>",
+      description =
+          "Timeout in seconds to allow the node to be in sync even if startup target peer count has not yet been reached.",
+      hidden = true)
+  private Integer startupTimeoutSeconds;
+
   @Mixin private NetworkOptions networkOptions;
   @Mixin private P2POptions p2POptions;
   @Mixin private InteropOptions interopOptions;
@@ -116,22 +138,33 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin private DataOptions dataOptions;
   @Mixin private BeaconRestApiOptions beaconRestApiOptions;
 
-  private ArtemisConfiguration artemisConfiguration;
-  private BeaconNode node;
-
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
-      final Map<String, String> environment) {
+      final Map<String, String> environment,
+      final Consumer<ArtemisConfiguration> startAction) {
     this.outputWriter = outputWriter;
     this.errorWriter = errorWriter;
     this.environment = environment;
+    this.startAction = startAction;
+
+    metricCategoryConverter.addCategories(ArtemisMetricCategory.class);
+    metricCategoryConverter.addCategories(StandardMetricCategory.class);
+  }
+
+  private CommandLine getConfigFileCommandLine(final ConfigFileCommand configFileCommand) {
+    return new CommandLine(configFileCommand)
+        .registerConverter(MetricCategory.class, metricCategoryConverter);
+  }
+
+  private CommandLine getCommandLine() {
+    return new CommandLine(this).registerConverter(MetricCategory.class, metricCategoryConverter);
   }
 
   public int parse(final String[] args) {
     // first pass to obtain config file if specified and print usage/version help
     final ConfigFileCommand configFileCommand = new ConfigFileCommand();
-    final CommandLine configFileCommandLine = new CommandLine(configFileCommand);
+    final CommandLine configFileCommandLine = getConfigFileCommandLine(configFileCommand);
     configFileCommandLine.parseArgs(args);
     if (configFileCommandLine.isUsageHelpRequested()) {
       return executeCommandUsageHelp();
@@ -142,7 +175,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     final Optional<File> configFile = getConfigFileFromCliOrEnv(configFileCommand);
 
     // final pass
-    final CommandLine commandLine = new CommandLine(this);
+    final CommandLine commandLine = getCommandLine();
     commandLine.setCaseInsensitiveEnumValuesAllowed(true);
     commandLine.setOut(outputWriter);
     commandLine.setErr(errorWriter);
@@ -158,13 +191,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private int executeCommandVersion() {
-    final CommandLine baseCommandLine = new CommandLine(this);
+    final CommandLine baseCommandLine = getCommandLine();
     baseCommandLine.printVersionHelp(outputWriter);
     return baseCommandLine.getCommandSpec().exitCodeOnVersionHelp();
   }
 
   private int executeCommandUsageHelp() {
-    final CommandLine baseCommandLine = new CommandLine(this);
+    final CommandLine baseCommandLine = getCommandLine();
     baseCommandLine.usage(outputWriter);
     return baseCommandLine.getCommandSpec().exitCodeOnUsageHelp();
   }
@@ -194,17 +227,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   public Integer call() {
     try {
       setLogLevels();
-      artemisConfiguration = artemisConfiguration();
-      node = new BeaconNode(artemisConfiguration);
-      node.start();
-      // Detect SIGTERM
-      Runtime.getRuntime()
-          .addShutdownHook(
-              new Thread(
-                  () -> {
-                    System.out.println("Teku is shutting down");
-                    node.stop();
-                  }));
+      final ArtemisConfiguration artemisConfiguration = artemisConfiguration();
+      startAction.accept(artemisConfiguration);
       return 0;
     } catch (DatabaseStorageException ex) {
       System.err.println(ex.getMessage());
@@ -217,16 +241,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return 1;
   }
 
-  @VisibleForTesting
-  ArtemisConfiguration getArtemisConfiguration() {
-    return artemisConfiguration;
-  }
-
-  @VisibleForTesting
-  public void stop() {
-    node.stop();
-  }
-
   private void setLogLevels() {
     if (logLevel != null) {
       // set log level per CLI flags
@@ -237,7 +251,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private ArtemisConfiguration artemisConfiguration() {
     // TODO: validate option dependencies
     return ArtemisConfiguration.builder()
-        .setNetwork(networkOptions.getNetwork())
+        .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
+        .setStartupTargetPeerCount(startupTargetPeerCount)
+        .setStartupTimeoutSeconds(startupTimeoutSeconds)
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
