@@ -27,9 +27,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
     createArtemisDepositSender().sendValidatorDeposits(eth1Node, 64);
 
-    final ArtemisNode firstArtemis =
-        createArtemisNode(
-            config -> config.withDepositsFrom(eth1Node));
+    final ArtemisNode firstArtemis = createArtemisNode(config -> config.withDepositsFrom(eth1Node));
     firstArtemis.start();
     firstArtemis.waitForGenesis();
 
