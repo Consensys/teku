@@ -14,15 +14,14 @@
 package tech.pegasys.artemis.util.config;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.resource.ResourceLoader;
 
 public class Constants {
 
@@ -173,13 +172,9 @@ public class Constants {
   }
 
   private static InputStream createInputStream(final String source) throws IOException {
-    if (source.contains(":")) {
-      return new URL(source).openStream();
-    } else if ("mainnet".equals(source) || "minimal".equals(source)) {
-      return Constants.class.getResourceAsStream(source + ".yaml");
-    } else {
-      // Treat it as a file
-      return Files.newInputStream(Path.of(source));
-    }
+    return ResourceLoader.classpathUrlOrFile(
+            Constants.class, name -> name + ".yaml", "mainnet", "minimal")
+        .load(source)
+        .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }
 }

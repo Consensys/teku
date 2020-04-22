@@ -11,27 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
+package tech.pegasys.artemis.util.resource;
 
-public enum LoggingDestination {
-  BOTH("both"),
-  CONSOLE("console"),
-  DEFAULT_BOTH("default"),
-  FILE("file");
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
 
-  private final String key;
+public class FileResourceLoader implements ResourceLoader {
 
-  LoggingDestination(final String key) {
-    this.key = key;
-  }
-
-  public static LoggingDestination get(final String destination) {
-    for (final LoggingDestination candidate : LoggingDestination.values()) {
-      if (candidate.key.equalsIgnoreCase(destination)) {
-        return candidate;
-      }
+  @Override
+  public Optional<InputStream> load(final String source) throws IOException {
+    final Path path = Path.of(source);
+    if (!path.toFile().exists()) {
+      return Optional.empty();
     }
-
-    return DEFAULT_BOTH;
+    return Optional.of(Files.newInputStream(path));
   }
 }
