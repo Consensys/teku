@@ -15,6 +15,7 @@ package tech.pegasys.artemis.core.signatures;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_SELECTION_PROOF;
@@ -23,6 +24,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -80,6 +82,18 @@ public class Signer {
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(slot.longValue(), domain);
     return signerService.signAggregationSlot(signingRoot);
+  }
+
+  public SafeFuture<BLSSignature> signAggregateAndProof(
+      final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
+    final Bytes domain =
+        get_domain(
+            Constants.DOMAIN_AGGREGATE_AND_PROOF,
+            compute_start_slot_at_epoch(aggregateAndProof.getAggregate().getData().getSlot()),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
+    final Bytes signingRoot = compute_signing_root(aggregateAndProof, domain);
+    return signerService.signAggregateAndProof(signingRoot);
   }
 
   public MessageSignerService getMessageSignerService() {

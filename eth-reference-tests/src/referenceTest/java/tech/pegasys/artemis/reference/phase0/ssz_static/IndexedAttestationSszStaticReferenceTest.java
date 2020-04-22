@@ -25,22 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
+import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class historicalBatch extends TestSuite {
+public class IndexedAttestationSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
       name =
-          "{index}. ssz_static/HistoricalBatch deserializedHistoricalBatch={0}, root={1}, signingRoot={2}")
+          "{index}. ssz_static/IndexedAttestation deserializedIndexedAttestation={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(HistoricalBatch deserializedHistoricalBatch, Bytes32 root)
-      throws Exception {
-    assertEquals(deserializedHistoricalBatch.hash_tree_root(), root);
+  void processSSZStaticIndexedAttestation(
+      IndexedAttestation deserializedIndexedAttestation, Bytes32 root) throws Exception {
+    assertEquals(deserializedIndexedAttestation.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -56,7 +56,7 @@ public class historicalBatch extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "HistoricalBatch");
-    return sszStaticSetup(path, configPath, HistoricalBatch.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "IndexedAttestation");
+    return sszStaticSetup(path, configPath, IndexedAttestation.class);
   }
 }

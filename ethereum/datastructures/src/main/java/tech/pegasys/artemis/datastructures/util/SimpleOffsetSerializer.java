@@ -49,11 +49,13 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkData;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -102,6 +104,7 @@ public class SimpleOffsetSerializer {
         BeaconStateImpl.class, new ReflectionInformation(BeaconStateImpl.class));
     classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));
     classReflectionInfo.put(Fork.class, new ReflectionInformation(Fork.class));
+    classReflectionInfo.put(ForkData.class, new ReflectionInformation(ForkData.class));
     classReflectionInfo.put(
         HistoricalBatch.class, new ReflectionInformation(HistoricalBatch.class));
     classReflectionInfo.put(
@@ -114,6 +117,8 @@ public class SimpleOffsetSerializer {
         new ReflectionInformation(BeaconBlocksByRangeRequestMessage.class));
     classReflectionInfo.put(
         AggregateAndProof.class, new ReflectionInformation(AggregateAndProof.class));
+    classReflectionInfo.put(
+        SignedAggregateAndProof.class, new ReflectionInformation(SignedAggregateAndProof.class));
   }
 
   static {
