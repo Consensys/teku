@@ -25,11 +25,11 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    final String validatorKeys = createArtemisDepositSender().sendValidatorDeposits(eth1Node, 64);
+    createArtemisDepositSender().sendValidatorDeposits(eth1Node, 64);
 
     final ArtemisNode firstArtemis =
         createArtemisNode(
-            config -> config.withDepositsFrom(eth1Node).withValidatorKeys(validatorKeys));
+            config -> config.withDepositsFrom(eth1Node));
     firstArtemis.start();
     firstArtemis.waitForGenesis();
 
