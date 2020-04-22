@@ -32,8 +32,7 @@ import tech.pegasys.artemis.ethtests.TestSuite;
 public class SignedVoluntaryExitSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name =
-          "{index}. ssz_static/SignedVoluntaryExit deserialized={0}, root={1}, signingRoot={2}")
+      name = "{index}. ssz_static/SignedVoluntaryExit deserialized={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",

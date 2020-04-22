@@ -32,14 +32,12 @@ import tech.pegasys.artemis.ethtests.TestSuite;
 public class SignedBeaconBlockSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name =
-          "{index}. ssz_static/SignedBeaconBlock deserialized={0}, root={1}, signingRoot={2}")
+      name = "{index}. ssz_static/SignedBeaconBlock deserialized={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(SignedBeaconBlock deserialized, Bytes32 root)
-      throws Exception {
+  void processSSZStaticBeaconBlock(SignedBeaconBlock deserialized, Bytes32 root) throws Exception {
     assertEquals(deserialized.hash_tree_root(), root);
   }
 
