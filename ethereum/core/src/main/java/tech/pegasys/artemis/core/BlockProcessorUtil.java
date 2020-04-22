@@ -129,12 +129,22 @@ public final class BlockProcessorUtil {
    * Processes randao
    *
    * @param state
-   * @param body
+   * @param block
    * @throws BlockProcessingException
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#randao</a>
    */
-  public static void process_randao(MutableBeaconState state, BeaconBlockBody body)
+  public static void process_randao(MutableBeaconState state, BeaconBlock block)
+      throws BlockProcessingException {
+    try {
+      verify_randao(state, block, BLSSignatureVerifier.SIMPLE);
+      process_randao_no_validation(state, block.getBody());
+    } catch (InvalidSignatureException e) {
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void process_randao_no_validation(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
     try {
       UnsignedLong epoch = get_current_epoch(state);
@@ -192,8 +202,8 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
-  public static void process_operations(MutableBeaconState state, BeaconBlockBody body)
-      throws BlockProcessingException {
+  public static void process_operations_no_validation(
+      MutableBeaconState state, BeaconBlockBody body) throws BlockProcessingException {
     try {
 
       checkArgument(
@@ -208,11 +218,11 @@ public final class BlockProcessorUtil {
                           .longValue())),
           "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
-      process_proposer_slashings(state, body.getProposer_slashings());
+      process_proposer_slashings_no_validation(state, body.getProposer_slashings());
       process_attester_slashings(state, body.getAttester_slashings());
-      process_attestations(state, body.getAttestations());
+      process_attestations_no_validation(state, body.getAttestations());
       process_deposits(state, body.getDeposits());
-      process_voluntary_exits(state, body.getVoluntary_exits());
+      process_voluntary_exits_no_validation(state, body.getVoluntary_exits());
       // @process_shard_receipt_proofs
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -230,6 +240,17 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#proposer-slashings</a>
    */
   public static void process_proposer_slashings(
+      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      throws BlockProcessingException {
+    try {
+      verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
+      process_proposer_slashings_no_validation(state, proposerSlashings);
+    } catch (InvalidSignatureException e) {
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void process_proposer_slashings_no_validation(
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     try {
@@ -371,6 +392,12 @@ public final class BlockProcessorUtil {
    */
   public static void process_attestations(
       MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
+    process_attestations_no_validation(state, attestations);
+    verify_attestations(state, attestations, BLSSignatureVerifier.SIMPLE);
+  }
+
+  public static void process_attestations_no_validation(
+      MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
 
       for (Attestation attestation : attestations) {
@@ -475,6 +502,18 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
   public static void process_voluntary_exits(
+      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+      throws BlockProcessingException {
+
+    try {
+      verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
+      process_voluntary_exits_no_validation(state, exits);
+    } catch (InvalidSignatureException e) {
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void process_voluntary_exits_no_validation(
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     try {

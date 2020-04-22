@@ -125,9 +125,9 @@ public class StateTransition {
     return preState.updated(
         state -> {
           BlockProcessorUtil.process_block_header(state, block);
-          BlockProcessorUtil.process_randao(state, block.getBody());
+          BlockProcessorUtil.process_randao_no_validation(state, block.getBody());
           BlockProcessorUtil.process_eth1_data(state, block.getBody());
-          BlockProcessorUtil.process_operations(state, block.getBody());
+          BlockProcessorUtil.process_operations_no_validation(state, block.getBody());
         });
   }
 
