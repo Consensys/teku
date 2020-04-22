@@ -177,42 +177,42 @@ public class BeaconNodeCommandTest {
   @Test
   public void p2pEnabled_ShouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(P2P_ENABLED_OPTION_NAME));
+        getArtemisConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_ShouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(P2P_DISCOVERY_ENABLED_OPTION_NAME));
+        getArtemisConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void metricsEnabled_ShouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(METRICS_ENABLED_OPTION_NAME));
+        getArtemisConfigurationFromArguments(METRICS_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isMetricsEnabled()).isTrue();
   }
 
   @Test
   public void interopEnabled_ShouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(INTEROP_ENABLED_OPTION_NAME));
+        getArtemisConfigurationFromArguments(INTEROP_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isInteropEnabled()).isTrue();
   }
 
   @Test
   public void restApiDocsEnabled_ShouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(REST_API_DOCS_ENABLED_OPTION_NAME));
+        getArtemisConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
   public void restApiEnabled_ShouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(REST_API_ENABLED_OPTION_NAME));
+        getArtemisConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
   }
 
@@ -363,9 +363,9 @@ public class BeaconNodeCommandTest {
     return configCaptor.getValue();
   }
 
-  private ArtemisConfiguration getArtemisConfigurationFromArguments(List<String> arguments)
+  private ArtemisConfiguration getArtemisConfigurationFromArguments(String... arguments)
       throws IOException {
-    beaconNodeCommand.parse(arguments.toArray(String[]::new));
+    beaconNodeCommand.parse(arguments);
     return getResultingArtemisConfiguration();
   }
 
