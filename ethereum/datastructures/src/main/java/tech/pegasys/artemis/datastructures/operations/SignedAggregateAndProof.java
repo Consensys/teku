@@ -18,12 +18,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class SignedAggregateAndProof implements SimpleOffsetSerializable, SSZContainer {
+public class SignedAggregateAndProof
+    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
   private final AggregateAndProof message;
   private final BLSSignature signature;
 
@@ -81,5 +86,13 @@ public class SignedAggregateAndProof implements SimpleOffsetSerializable, SSZCon
         .add("message", message)
         .add("signature", signature)
         .toString();
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        List.of(
+            message.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }
