@@ -15,7 +15,6 @@ package tech.pegasys.artemis.core.signatures;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_SELECTION_PROOF;
@@ -89,7 +88,7 @@ public class Signer {
     final Bytes domain =
         get_domain(
             Constants.DOMAIN_AGGREGATE_AND_PROOF,
-            compute_start_slot_at_epoch(aggregateAndProof.getAggregate().getData().getSlot()),
+            compute_epoch_at_slot(aggregateAndProof.getAggregate().getData().getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(aggregateAndProof, domain);
