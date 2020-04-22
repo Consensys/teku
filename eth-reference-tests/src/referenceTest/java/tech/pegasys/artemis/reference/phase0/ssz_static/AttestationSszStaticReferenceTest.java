@@ -25,21 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class attestationData extends TestSuite {
+public class AttestationSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name = "{index}. ssz_static/AttestationData deserializedAttestationData={0}, root={1}")
+      name =
+          "{index}. ssz_static/Attestation deserializedAttestation={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticAttestationData(AttestationData deserializedAttestationData, Bytes32 root)
+  void processSSZStaticAttestation(Attestation deserializedAttestation, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedAttestationData.hash_tree_root(), root);
+    assertEquals(deserializedAttestation.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -55,7 +56,7 @@ public class attestationData extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "AttestationData");
-    return sszStaticSetup(path, configPath, AttestationData.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "Attestation");
+    return sszStaticSetup(path, configPath, Attestation.class);
   }
 }

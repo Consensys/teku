@@ -59,6 +59,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
+import tech.pegasys.teku.logging.LoggingDestination;
 
 public class BeaconNodeCommandTest {
 
@@ -244,6 +245,17 @@ public class BeaconNodeCommandTest {
     assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
+  @Test
+  public void shouldUseDefaultOfBothAsLogDestinationDefault() {
+    // This is important!
+    // If it defaults to "both" or some other value custom log4j configs get overwritten
+    beaconNodeCommand.parse(new String[0]);
+
+    final ArtemisConfiguration config = getResultingArtemisConfiguration();
+    assertThat(LoggingDestination.get(config.getLogDestination()))
+        .isEqualTo(LoggingDestination.DEFAULT_BOTH);
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -304,6 +316,7 @@ public class BeaconNodeCommandTest {
   private ArtemisConfigurationBuilder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
         .setLogFile("teku.log")
+        .setLogDestination("both")
         .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 

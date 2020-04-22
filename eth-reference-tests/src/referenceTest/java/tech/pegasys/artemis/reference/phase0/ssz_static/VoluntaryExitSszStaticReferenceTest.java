@@ -25,22 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class beaconBlockHeader extends TestSuite {
+public class VoluntaryExitSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
       name =
-          "{index}. ssz_static/BeaconBlockHeader deserializedBeaconBlockHeader={0}, root={1}, signingRoot={2}")
+          "{index}. ssz_static/VoluntaryExit deserializedVoluntaryExit={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(BeaconBlockHeader deserializedBeaconBlockHeader, Bytes32 root)
+  void processSSZStaticVoluntaryExit(VoluntaryExit deserializedVoluntaryExit, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedBeaconBlockHeader.hash_tree_root(), root);
+    assertEquals(deserializedVoluntaryExit.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -56,7 +56,7 @@ public class beaconBlockHeader extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "BeaconBlockHeader");
-    return sszStaticSetup(path, configPath, BeaconBlockHeader.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "VoluntaryExit");
+    return sszStaticSetup(path, configPath, VoluntaryExit.class);
   }
 }

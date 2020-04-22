@@ -28,7 +28,7 @@ public class LoggingOptions {
 
   public static final boolean DEFAULT_LOG_COLOR_ENABLED = true;
   public static final boolean DEFAULT_LOG_INCLUDE_EVENTS_ENABLED = true;
-  public static final String DEFAULT_LOG_DESTINATION = "both";
+  public static final String DEFAULT_LOG_DESTINATION = "default_of_both";
   private static final String SEP = System.getProperty("file.separator");
   public static final String DEFAULT_LOG_FILE =
       StringUtils.joinWith(SEP, VersionProvider.defaultStoragePath(), "logs", "teku.log");

@@ -21,13 +21,13 @@ public enum LoggingDestination {
 
   private final String key;
 
-  private LoggingDestination(final String key) {
+  LoggingDestination(final String key) {
     this.key = key;
   }
 
   public static LoggingDestination get(final String destination) {
     for (final LoggingDestination candidate : LoggingDestination.values()) {
-      if (candidate.key.equals(destination)) {
+      if (candidate.key.equalsIgnoreCase(destination)) {
         return candidate;
       }
     }
