@@ -19,42 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class ValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-  public static Validator validatorFromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            Validator.create(
-                BLSPublicKey.fromBytes(reader.readFixedBytes(48)),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                reader.readBoolean(),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
-  }
-
-  public static Bytes validatorToBytes(Validator v) {
-    return SSZ.encode(
-        writer -> {
-          writer.writeFixedBytes(v.getPubkey().toBytes());
-          writer.writeFixedBytes(v.getWithdrawal_credentials());
-          writer.writeUInt64(v.getEffective_balance().longValue());
-          writer.writeBoolean(v.isSlashed());
-          writer.writeUInt64(v.getActivation_eligibility_epoch().longValue());
-          writer.writeUInt64(v.getActivation_epoch().longValue());
-          writer.writeUInt64(v.getExit_epoch().longValue());
-          writer.writeUInt64(v.getWithdrawable_epoch().longValue());
-        });
-  }
 
   private int seed = 100;
   private BLSPublicKey pubkey = BLSPublicKey.random(seed);
@@ -200,7 +171,7 @@ class ValidatorTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszValidatorBytes = validatorToBytes(validator);
-    assertEquals(validator, validatorFromBytes(sszValidatorBytes));
+    Bytes sszValidatorBytes = SimpleOffsetSerializer.serialize(validator);
+    assertEquals(validator, SimpleOffsetSerializer.deserialize(sszValidatorBytes, Validator.class));
   }
 }
