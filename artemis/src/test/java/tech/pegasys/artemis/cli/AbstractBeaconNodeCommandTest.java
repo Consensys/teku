@@ -21,7 +21,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.List;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
@@ -47,8 +46,8 @@ public class AbstractBeaconNodeCommandTest {
     return configCaptor.getValue();
   }
 
-  public ArtemisConfiguration getArtemisConfigurationFromArguments(List<String> arguments) {
-    beaconNodeCommand.parse(arguments.toArray(String[]::new));
+  public ArtemisConfiguration getArtemisConfigurationFromArguments(String... arguments) {
+    beaconNodeCommand.parse(arguments);
     return getResultingArtemisConfiguration();
   }
 

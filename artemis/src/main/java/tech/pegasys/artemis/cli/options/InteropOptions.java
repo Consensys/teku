@@ -76,8 +76,9 @@ public class InteropOptions {
       hidden = true,
       names = {INTEROP_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
+      fallbackValue = "true",
       description = "Enables developer options for testing",
-      arity = "1")
+      arity = "0..1")
   private boolean interopEnabled = DEFAULT_X_INTEROP_ENABLED;
 
   public Integer getInteropGenesisTime() {

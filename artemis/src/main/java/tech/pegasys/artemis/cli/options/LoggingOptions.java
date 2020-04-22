@@ -43,7 +43,8 @@ public class LoggingOptions {
       names = {LOG_COLOR_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Whether Status and Event log messages include a console color display code",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean logColorEnabled = DEFAULT_LOG_COLOR_ENABLED;
 
   @CommandLine.Option(

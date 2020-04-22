@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.LOG_DESTINATION_OPTION_NAME;
 import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
 
-import java.io.IOException;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -49,23 +47,23 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void logDestination_ShouldAcceptFileAsDestination() throws IOException {
+  public void logDestination_ShouldAcceptFileAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "file"));
+        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "file");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
   }
 
   @Test
-  public void logDestination_ShouldAcceptConsoleAsDestination() throws IOException {
+  public void logDestination_ShouldAcceptConsoleAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "console"));
+        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "console");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
   @Test
-  public void logDestination_ShouldAcceptBothAsDestination() throws IOException {
+  public void logDestination_ShouldAcceptBothAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "both"));
+        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "both");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
   }
 }
