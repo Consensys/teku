@@ -21,7 +21,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.storage.server.mapdb.MapDbDatabase;
 import tech.pegasys.artemis.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.artemis.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -53,12 +52,6 @@ public class VersionedDatabaseFactory {
 
     Database database = null;
     switch (dbVersion) {
-      case V1:
-        database = createV1Database();
-        break;
-      case V2:
-        database = createV2Database();
-        break;
       case V3:
         database = createV3Database();
         break;
@@ -67,16 +60,6 @@ public class VersionedDatabaseFactory {
     }
     LOG.trace("Created database ({}) at {}", dbVersion.getValue(), dbDirectory.getAbsolutePath());
     return database;
-  }
-
-  private Database createV1Database() {
-    return MapDbDatabase.createOnDisk(dbDirectory, stateStorageMode);
-  }
-
-  private Database createV2Database() {
-    final RocksDbConfiguration rocksDbConfiguration =
-        RocksDbConfiguration.withDataDirectory(dbDirectory.toPath());
-    return RocksDbDatabase.createV2(rocksDbConfiguration, stateStorageMode);
   }
 
   private Database createV3Database() {

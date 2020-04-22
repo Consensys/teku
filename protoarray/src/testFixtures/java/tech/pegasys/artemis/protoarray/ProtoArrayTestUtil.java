@@ -44,6 +44,7 @@ public class ProtoArrayTestUtil {
             new Checkpoint(ONE, Bytes32.ZERO),
             new HashMap<>(),
             new HashMap<>(),
+            new HashMap<>(),
             new HashMap<>());
 
     ProtoArrayForkChoiceStrategy forkChoice = ProtoArrayForkChoiceStrategy.create(store);
@@ -57,5 +58,18 @@ public class ProtoArrayTestUtil {
         finalizedCheckpointEpoch);
 
     return forkChoice;
+  }
+
+  public static Store createStoreToManipulateVotes() {
+    return new Store(
+        UnsignedLong.ONE,
+        ZERO,
+        new Checkpoint(ZERO, Bytes32.ZERO),
+        new Checkpoint(ZERO, Bytes32.ZERO),
+        new Checkpoint(ONE, Bytes32.ZERO),
+        new HashMap<>(),
+        new HashMap<>(),
+        new HashMap<>(),
+        new HashMap<>());
   }
 }
