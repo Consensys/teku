@@ -331,13 +331,9 @@ public class V3RocksDbDao implements RocksDbDao {
     }
 
     @Override
-    public void addVote(final UnsignedLong validatorIndex, final VoteTracker vote) {
-      transaction.put(V3Schema.VOTES, validatorIndex, vote);
-    }
-
-    @Override
     public void addVotes(final Map<UnsignedLong, VoteTracker> votes) {
-      votes.forEach(this::addVote);
+      votes.forEach(
+          (validatorIndex, vote) -> transaction.put(V3Schema.VOTES, validatorIndex, vote));
     }
 
     @Override

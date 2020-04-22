@@ -90,8 +90,6 @@ public interface RocksDbDao extends AutoCloseable {
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
-    void addVote(final UnsignedLong validatorIndex, VoteTracker votes);
-
     void addVotes(final Map<UnsignedLong, VoteTracker> states);
 
     void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
