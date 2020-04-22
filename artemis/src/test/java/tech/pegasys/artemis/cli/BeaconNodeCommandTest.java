@@ -41,14 +41,19 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
+import tech.pegasys.teku.logging.LoggingDestination;
 
 public class BeaconNodeCommandTest {
 
@@ -152,6 +157,57 @@ public class BeaconNodeCommandTest {
     assertArtemisConfiguration(expectedCompleteConfigInFileBuilder().build());
   }
 
+  @Test
+  public void overrideDefaultMetricsCategory() throws IOException {
+    final Path configFile = createConfigFile();
+    final String[] args = {
+      CONFIG_FILE_OPTION_NAME, configFile.toString(), "--metrics-categories", "BEACON"
+    };
+
+    beaconNodeCommand.parse(args);
+    assertArtemisConfiguration(
+        expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"mainnet", "minimal", "topaz"})
+  public void useDefaultsFromNetworkDefinition(final String networkName) {
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
+
+    beaconNodeCommand.parse(new String[] {"--network", networkName});
+    final ArtemisConfiguration config = getResultingArtemisConfiguration();
+    assertThat(config.getP2pDiscoveryBootnodes())
+        .isEqualTo(networkDefinition.getDiscoveryBootnodes());
+    assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
+    assertThat(config.getStartupTargetPeerCount())
+        .isEqualTo(networkDefinition.getStartupTargetPeerCount());
+    assertThat(config.getStartupTimeoutSeconds())
+        .isEqualTo(networkDefinition.getStartupTimeoutSeconds());
+    assertThat(config.getEth1DepositContractAddress())
+        .isEqualTo(networkDefinition.getEth1DepositContractAddress().orElse(null));
+    assertThat(config.getEth1Endpoint())
+        .isEqualTo(networkDefinition.getEth1Endpoint().orElse(null));
+  }
+
+  @Test
+  public void overrideDefaultBootnodesWithEmptyList() {
+    beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
+
+    final ArtemisConfiguration config = getResultingArtemisConfiguration();
+    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
+  }
+
+  @Test
+  public void shouldUseDefaultOfBothAsLogDestinationDefault() {
+    // This is important!
+    // If it defaults to "both" or some other value custom log4j configs get overwritten
+    beaconNodeCommand.parse(new String[0]);
+
+    final ArtemisConfiguration config = getResultingArtemisConfiguration();
+    assertThat(LoggingDestination.get(config.getLogDestination()))
+        .isEqualTo(LoggingDestination.DEFAULT_BOTH);
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -180,7 +236,7 @@ public class BeaconNodeCommandTest {
       "--metrics-enabled", "false",
       "--metrics-port", "8008",
       "--metrics-interface", "127.0.0.1",
-      "--metrics-categories", "BEACON,JVM,PROCESS",
+      "--metrics-categories", "BEACON,LIBP2P,NETWORK,EVENTBUS,JVM,PROCESS",
       "--data-path", dataPath.toString(),
       "--data-storage-mode", "prune",
       "--rest-api-port", "5051",
@@ -194,7 +250,8 @@ public class BeaconNodeCommandTest {
     return expectedConfigurationBuilder()
         .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
         .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
-        .setMetricsCategories(DEFAULT_METRICS_CATEGORIES)
+        .setMetricsCategories(
+            DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
         .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
         .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
         .setP2pInterface(DEFAULT_P2P_INTERFACE)
@@ -211,6 +268,7 @@ public class BeaconNodeCommandTest {
   private ArtemisConfigurationBuilder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
         .setLogFile("teku.log")
+        .setLogDestination("both")
         .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 
@@ -239,7 +297,8 @@ public class BeaconNodeCommandTest {
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
-        .setMetricsCategories(Arrays.asList("BEACON", "JVM", "PROCESS"))
+        .setMetricsCategories(
+            Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
         .setLogDestination(DEFAULT_LOG_DESTINATION)
         .setLogFile(DEFAULT_LOG_FILE)
@@ -257,12 +316,16 @@ public class BeaconNodeCommandTest {
   }
 
   private void assertArtemisConfiguration(final ArtemisConfiguration expected) {
+    final ArtemisConfiguration actual = getResultingArtemisConfiguration();
+    assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+  }
+
+  private ArtemisConfiguration getResultingArtemisConfiguration() {
     final ArgumentCaptor<ArtemisConfiguration> configCaptor =
         ArgumentCaptor.forClass(ArtemisConfiguration.class);
     verify(startAction).accept(configCaptor.capture());
 
-    final ArtemisConfiguration actual = configCaptor.getValue();
-    assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+    return configCaptor.getValue();
   }
 
   private Path createTempFile(final byte[] contents) throws IOException {

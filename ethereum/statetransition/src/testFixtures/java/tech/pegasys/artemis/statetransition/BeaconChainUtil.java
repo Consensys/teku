@@ -46,7 +46,7 @@ public class BeaconChainUtil {
 
   private final StateTransition stateTransition = new StateTransition();
   private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
-  private final RecentChainData storageClient;
+  private final RecentChainData recentChainData;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
 
@@ -55,7 +55,7 @@ public class BeaconChainUtil {
       final RecentChainData recentChainData,
       boolean signDeposits) {
     this.validatorKeys = validatorKeys;
-    this.storageClient = recentChainData;
+    this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
   }
 
@@ -90,7 +90,7 @@ public class BeaconChainUtil {
   }
 
   public void initializeStorage() {
-    initializeStorage(storageClient);
+    initializeStorage(recentChainData);
   }
 
   public void initializeStorage(final RecentChainData recentChainData) {
@@ -98,12 +98,12 @@ public class BeaconChainUtil {
   }
 
   public void setSlot(final UnsignedLong currentSlot) {
-    if (storageClient.isPreGenesis()) {
+    if (recentChainData.isPreGenesis()) {
       throw new IllegalStateException("Cannot set current slot before genesis");
     }
     final UnsignedLong secPerSlot = UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT);
-    final UnsignedLong time = storageClient.getGenesisTime().plus(currentSlot.times(secPerSlot));
-    final Transaction tx = storageClient.startStoreTransaction();
+    final UnsignedLong time = recentChainData.getGenesisTime().plus(currentSlot.times(secPerSlot));
+    final Transaction tx = recentChainData.startStoreTransaction();
     tx.setTime(time);
     tx.commit().join();
   }
@@ -131,7 +131,7 @@ public class BeaconChainUtil {
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
     final SignedBeaconBlock block = createBlockAtSlot(slot, true, attestations);
     setSlot(slot);
-    final Transaction transaction = storageClient.startStoreTransaction();
+    final Transaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult importResult =
         ForkChoiceUtil.on_block(transaction, block, stateTransition, new StubForkChoiceStrategy());
     if (!importResult.isSuccessful()) {
@@ -148,7 +148,7 @@ public class BeaconChainUtil {
       throw new IllegalStateException(
           "Transaction did not commit immediately. Are you using a disk storage backed ChainStorageClient without having storage running?");
     }
-    storageClient.updateBestBlock(
+    recentChainData.updateBestBlock(
         block.getMessage().hash_tree_root(), block.getMessage().getSlot());
     return importResult.getBlock();
   }
@@ -175,9 +175,9 @@ public class BeaconChainUtil {
     checkState(
         withValidProposer || validatorKeys.size() > 1,
         "Must have >1 validator in order to create a block from an invalid proposer.");
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
-    final BeaconBlock bestBlock = storageClient.getStore().getBlock(bestBlockRoot);
-    final BeaconState preState = storageClient.getBestBlockRootState().orElseThrow();
+    final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final BeaconBlock bestBlock = recentChainData.getStore().getBlock(bestBlockRoot);
+    final BeaconState preState = recentChainData.getBestBlockRootState().orElseThrow();
     checkArgument(bestBlock.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
 
     final int correctProposerIndex = blockCreator.getProposerIndexForSlot(preState, slot);
@@ -195,28 +195,31 @@ public class BeaconChainUtil {
   }
 
   public void finalizeChainAtEpoch(final UnsignedLong epoch) throws Exception {
-    if (storageClient.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) >= 0) {
+    if (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) >= 0) {
       throw new Exception("Chain already finalized at this or higher epoch");
     }
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     createAndImportBlockAtSlot(
-        storageClient.getBestSlot().plus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)));
+        recentChainData.getBestSlot().plus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)));
 
-    while (storageClient.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
+    while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       BeaconState headState =
-          storageClient.getStore().getBlockState(storageClient.getBestBlockRoot().orElseThrow());
+          recentChainData
+              .getStore()
+              .getBlockState(recentChainData.getBestBlockRoot().orElseThrow());
       BeaconBlock headBlock =
-          storageClient.getStore().getBlock(storageClient.getBestBlockRoot().orElseThrow());
-      UnsignedLong slot = storageClient.getBestSlot();
+          recentChainData.getStore().getBlock(recentChainData.getBestBlockRoot().orElseThrow());
+      UnsignedLong slot = recentChainData.getBestSlot();
       SSZList<Attestation> currentSlotAssignments =
           SSZList.createMutable(
               attestationGenerator.getAttestationsForSlot(headState, headBlock, slot),
               Constants.MAX_ATTESTATIONS,
               Attestation.class);
       createAndImportBlockAtSlot(
-          storageClient.getBestSlot().plus(UnsignedLong.ONE), Optional.of(currentSlotAssignments));
+          recentChainData.getBestSlot().plus(UnsignedLong.ONE),
+          Optional.of(currentSlotAssignments));
     }
   }
 
@@ -228,7 +231,7 @@ public class BeaconChainUtil {
     return actualProposerIndex == 0 ? 1 : actualProposerIndex - 1;
   }
 
-  private MessageSignerService getSigner(final int proposerIndex) {
+  public MessageSignerService getSigner(final int proposerIndex) {
     return new TestMessageSignerService(validatorKeys.get(proposerIndex));
   }
 }

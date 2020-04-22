@@ -23,10 +23,12 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -34,9 +36,11 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 public class BlockTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, storageClient);
-  private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, storageClient);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+  private final BlockValidator blockValidator =
+      new BlockValidator(recentChainData, new StateTransition());
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, recentChainData);
+  private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, blockValidator);
 
   @BeforeEach
   public void setup() {
@@ -45,7 +49,7 @@ public class BlockTopicHandlerTest {
 
   @Test
   public void handleMessage_validBlock() throws Exception {
-    final UnsignedLong nextSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
+    final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(UnsignedLong.ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
     beaconChainUtil.setSlot(nextSlot);
@@ -57,10 +61,10 @@ public class BlockTopicHandlerTest {
 
   @Test
   public void handleMessage_validFutureBlock() throws Exception {
-    final UnsignedLong nextSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
+    final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(UnsignedLong.ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
-    beaconChainUtil.setSlot(storageClient.getBestSlot());
+    beaconChainUtil.setSlot(recentChainData.getBestSlot());
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
@@ -87,7 +91,7 @@ public class BlockTopicHandlerTest {
 
   @Test
   public void handleMessage_invalidBlock_wrongProposer() throws Exception {
-    final UnsignedLong nextSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
+    final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(UnsignedLong.ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlotFromInvalidProposer(nextSlot);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
     beaconChainUtil.setSlot(nextSlot);

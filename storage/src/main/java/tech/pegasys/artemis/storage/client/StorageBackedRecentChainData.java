@@ -61,11 +61,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
     return requestInitialStore()
         .thenApply(
             maybeStore -> {
-              maybeStore.ifPresent(
-                  (store) -> {
-                    this.setStore(store);
-                    STATUS_LOG.finishInitializingChainData();
-                  });
+              maybeStore.ifPresent(this::setStore);
+              STATUS_LOG.finishInitializingChainData();
               return this;
             });
   }

@@ -21,11 +21,14 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
+import org.hyperledger.besu.metrics.StandardMetricCategory;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
+import tech.pegasys.artemis.cli.converter.MetricCategoryConverter;
 import tech.pegasys.artemis.cli.options.BeaconRestApiOptions;
 import tech.pegasys.artemis.cli.options.DataOptions;
 import tech.pegasys.artemis.cli.options.DepositOptions;
@@ -43,6 +46,7 @@ import tech.pegasys.artemis.cli.subcommand.TransitionCommand;
 import tech.pegasys.artemis.cli.util.CascadingDefaultProvider;
 import tech.pegasys.artemis.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.artemis.cli.util.YamlConfigFileDefaultProvider;
+import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
@@ -78,6 +82,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
   private final Consumer<ArtemisConfiguration> startAction;
+  private final MetricCategoryConverter metricCategoryConverter = new MetricCategoryConverter();
 
   // allows two pass approach to obtain optional config file
   private static class ConfigFileCommand {
@@ -108,14 +113,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private File configFile;
 
   @Option(
-      names = {"-Xstartup-target-peer-count"},
+      names = {"--Xstartup-target-peer-count"},
       paramLabel = "<NUMBER>",
       description = "Number of peers to wait for before considering the node in sync.",
       hidden = true)
   private Integer startupTargetPeerCount;
 
   @Option(
-      names = {"-Xstartup-timeout-seconds"},
+      names = {"--Xstartup-timeout-seconds"},
       paramLabel = "<NUMBER>",
       description =
           "Timeout in seconds to allow the node to be in sync even if startup target peer count has not yet been reached.",
@@ -142,12 +147,24 @@ public class BeaconNodeCommand implements Callable<Integer> {
     this.errorWriter = errorWriter;
     this.environment = environment;
     this.startAction = startAction;
+
+    metricCategoryConverter.addCategories(ArtemisMetricCategory.class);
+    metricCategoryConverter.addCategories(StandardMetricCategory.class);
+  }
+
+  private CommandLine getConfigFileCommandLine(final ConfigFileCommand configFileCommand) {
+    return new CommandLine(configFileCommand)
+        .registerConverter(MetricCategory.class, metricCategoryConverter);
+  }
+
+  private CommandLine getCommandLine() {
+    return new CommandLine(this).registerConverter(MetricCategory.class, metricCategoryConverter);
   }
 
   public int parse(final String[] args) {
     // first pass to obtain config file if specified and print usage/version help
     final ConfigFileCommand configFileCommand = new ConfigFileCommand();
-    final CommandLine configFileCommandLine = new CommandLine(configFileCommand);
+    final CommandLine configFileCommandLine = getConfigFileCommandLine(configFileCommand);
     configFileCommandLine.parseArgs(args);
     if (configFileCommandLine.isUsageHelpRequested()) {
       return executeCommandUsageHelp();
@@ -158,7 +175,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     final Optional<File> configFile = getConfigFileFromCliOrEnv(configFileCommand);
 
     // final pass
-    final CommandLine commandLine = new CommandLine(this);
+    final CommandLine commandLine = getCommandLine();
     commandLine.setCaseInsensitiveEnumValuesAllowed(true);
     commandLine.setOut(outputWriter);
     commandLine.setErr(errorWriter);
@@ -174,13 +191,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private int executeCommandVersion() {
-    final CommandLine baseCommandLine = new CommandLine(this);
+    final CommandLine baseCommandLine = getCommandLine();
     baseCommandLine.printVersionHelp(outputWriter);
     return baseCommandLine.getCommandSpec().exitCodeOnVersionHelp();
   }
 
   private int executeCommandUsageHelp() {
-    final CommandLine baseCommandLine = new CommandLine(this);
+    final CommandLine baseCommandLine = getCommandLine();
     baseCommandLine.usage(outputWriter);
     return baseCommandLine.getCommandSpec().exitCodeOnUsageHelp();
   }

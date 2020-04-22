@@ -144,7 +144,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     if (originalBestRoot
         .map(original -> hasReorgedFrom(original, originalBestSlot))
         .orElse(false)) {
-      reorgEventChannel.reorgOccurred();
+      reorgEventChannel.reorgOccurred(root, bestSlot);
     }
   }
 
@@ -338,6 +338,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   // TODO: These methods should not return zero if null. We should handle this better
   public UnsignedLong getFinalizedEpoch() {
     return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
+  }
+
+  public UnsignedLong getBestJustifiedEpoch() {
+    return store == null ? UnsignedLong.ZERO : store.getBestJustifiedCheckpoint().getEpoch();
   }
 
   public Bytes32 getFinalizedRoot() {

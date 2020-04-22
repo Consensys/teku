@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.storage.api;
 
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
+
 public interface ReorgEventChannel {
 
   /**
@@ -20,6 +23,9 @@ public interface ReorgEventChannel {
    *
    * <p>This method is not called when the initial best block is set at startup or when the chain
    * advances on the same fork.
+   *
+   * @param bestBlockRoot the block root of the new chain head
+   * @param bestSlot the slot of the new chain head
    */
-  void reorgOccurred();
+  void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot);
 }
