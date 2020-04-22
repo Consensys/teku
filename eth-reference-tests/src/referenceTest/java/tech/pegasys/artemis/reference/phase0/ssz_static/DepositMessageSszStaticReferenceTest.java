@@ -25,21 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
+import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class attesterSlashing extends TestSuite {
+public class DepositMessageSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name = "{index}. ssz_static/AttesterSlashing deserializedAttesterSlashing={0}, root={1}")
+      name =
+          "{index}. ssz_static/DepositMessage deserializedDepositMessage={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticAttesterSlashing(AttesterSlashing deserializedAttesterSlashing, Bytes32 root)
+  void processSSZStaticDepositData(DepositMessage deserializedDepositData, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedAttesterSlashing.hash_tree_root(), root);
+    assertEquals(deserializedDepositData.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -55,7 +56,7 @@ public class attesterSlashing extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "AttesterSlashing");
-    return sszStaticSetup(path, configPath, AttesterSlashing.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "DepositMessage");
+    return sszStaticSetup(path, configPath, DepositMessage.class);
   }
 }

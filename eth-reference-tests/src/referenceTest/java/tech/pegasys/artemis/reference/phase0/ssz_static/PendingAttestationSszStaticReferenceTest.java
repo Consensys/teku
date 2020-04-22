@@ -25,22 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class depositData extends TestSuite {
+public class PendingAttestationSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
       name =
-          "{index}. ssz_static/DepositData deserializedDepositData={0}, root={1}, signingRoot={2}")
+          "{index}. ssz_static/PendingAttestation deserializedPendingAttestation={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticDepositData(DepositData deserializedDepositData, Bytes32 root)
+  void processSSZStaticBeaconBlock(PendingAttestation deserializedPendingAttestation, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedDepositData.hash_tree_root(), root);
+    assertEquals(deserializedPendingAttestation.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -56,7 +56,7 @@ public class depositData extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "DepositData");
-    return sszStaticSetup(path, configPath, DepositData.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "PendingAttestation");
+    return sszStaticSetup(path, configPath, PendingAttestation.class);
   }
 }
