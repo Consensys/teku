@@ -43,7 +43,8 @@ public class MetricsOptions {
       names = {METRICS_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables metrics collection via Prometheus",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean metricsEnabled = DEFAULT_METRICS_ENABLED;
 
   @CommandLine.Option(
