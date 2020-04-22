@@ -182,7 +182,7 @@ public final class DataStructureUtil {
   }
 
   public AggregateAndProof randomAggregateAndProof() {
-    return new AggregateAndProof(randomUnsignedLong(), randomSignature(), randomAttestation());
+    return new AggregateAndProof(randomUnsignedLong(), randomAttestation(), randomSignature());
   }
 
   public SignedAggregateAndProof randomSignedAggregateAndProof() {

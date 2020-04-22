@@ -198,7 +198,7 @@ class AttestationManagerTest {
   public void shouldNotPublishProcessedAggregateEventUntilDelayedAggregateIsProcessedSuccessful() {
     final Attestation attestation = attestationFromSlot(100);
     final AggregateAndProof aggregateAndProof =
-        new AggregateAndProof(UnsignedLong.ZERO, BLSSignature.empty(), attestation);
+        new AggregateAndProof(UnsignedLong.ZERO, attestation, BLSSignature.empty());
     when(attestationProcessor.processAttestation(attestation))
         .thenReturn(FAILED_NOT_FROM_PAST)
         .thenReturn(SUCCESSFUL);

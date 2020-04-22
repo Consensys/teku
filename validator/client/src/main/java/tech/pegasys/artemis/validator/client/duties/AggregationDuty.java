@@ -108,7 +108,7 @@ public class AggregationDuty implements Duty {
         maybeAggregate.orElseThrow(
             () -> new IllegalStateException("No aggregation could be created"));
     final AggregateAndProof aggregateAndProof =
-        new AggregateAndProof(aggregator.validatorIndex, aggregator.proof, aggregate);
+        new AggregateAndProof(aggregator.validatorIndex, aggregate, aggregator.proof);
     return forkProvider
         .getForkInfo()
         .thenCompose(

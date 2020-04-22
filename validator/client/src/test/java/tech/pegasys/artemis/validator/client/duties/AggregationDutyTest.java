@@ -103,7 +103,7 @@ class AggregationDutyTest {
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
-        new AggregateAndProof(UnsignedLong.valueOf(validatorIndex), proof, aggregate);
+        new AggregateAndProof(UnsignedLong.valueOf(validatorIndex), aggregate, proof);
     final BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
     when(signer1.signAggregateAndProof(expectedAggregateAndProof, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregateSignature));
@@ -149,10 +149,10 @@ class AggregationDutyTest {
 
     final AggregateAndProof aggregateAndProof1 =
         new AggregateAndProof(
-            UnsignedLong.valueOf(validator1Index), validator1Proof, committee1Aggregate);
+            UnsignedLong.valueOf(validator1Index), committee1Aggregate, validator1Proof);
     final AggregateAndProof aggregateAndProof2 =
         new AggregateAndProof(
-            UnsignedLong.valueOf(validator2Index), validator2Proof, committee2Aggregate);
+            UnsignedLong.valueOf(validator2Index), committee2Aggregate, validator2Proof);
     final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
     final BLSSignature aggregateSignature2 = dataStructureUtil.randomSignature();
     when(signer1.signAggregateAndProof(aggregateAndProof1, forkInfo))
@@ -200,7 +200,7 @@ class AggregationDutyTest {
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof aggregateAndProof =
-        new AggregateAndProof(UnsignedLong.valueOf(validator1Index), validator1Proof, aggregate);
+        new AggregateAndProof(UnsignedLong.valueOf(validator1Index), aggregate, validator1Proof);
     final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
     when(signer1.signAggregateAndProof(aggregateAndProof, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregateSignature1));

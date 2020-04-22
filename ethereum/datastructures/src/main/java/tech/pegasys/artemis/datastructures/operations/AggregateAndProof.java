@@ -36,11 +36,11 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
   public static final int SSZ_FIELD_COUNT = 1;
 
   private final UnsignedLong index;
-  private final BLSSignature selection_proof;
   private final Attestation aggregate;
+  private final BLSSignature selection_proof;
 
   public AggregateAndProof(
-      UnsignedLong index, BLSSignature selection_proof, Attestation aggregate) {
+      UnsignedLong index, Attestation aggregate, BLSSignature selection_proof) {
     this.index = index;
     this.selection_proof = selection_proof;
     this.aggregate = aggregate;
@@ -127,7 +127,7 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
     return HashTreeUtil.merkleize(
         List.of(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, selection_proof.toBytes()),
-            aggregate.hash_tree_root()));
+            aggregate.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, selection_proof.toBytes())));
   }
 }
