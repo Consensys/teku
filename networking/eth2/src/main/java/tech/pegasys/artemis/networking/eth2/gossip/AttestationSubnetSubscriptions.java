@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static java.lang.StrictMath.toIntExact;
+import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -29,8 +30,6 @@ import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 class AttestationSubnetSubscriptions implements AutoCloseable {
-  public static final int ATTESTATION_SUBNET_COUNT = 64;
-
   private final GossipNetwork gossipNetwork;
   private final RecentChainData recentChainData;
   private final EventBus eventBus;
