@@ -360,7 +360,7 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
     verify(attestationPool).add(aggregateAndProof.getMessage().getAggregate());
-    verify(eventBus).post(aggregateAndProof.getMessage());
+    verify(eventBus).post(aggregateAndProof);
   }
 
   private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(

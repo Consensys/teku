@@ -220,7 +220,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     attestationPool.add(aggregateAndProof.getMessage().getAggregate());
-    eventBus.post(aggregateAndProof.getMessage());
+    eventBus.post(aggregateAndProof);
   }
 
   @Override

@@ -21,8 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.results.AttestationProcessingResult;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
@@ -71,8 +71,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onAggregateAndProof(final AggregateAndProof aggregateAndProof) {
-    final Attestation aggregate = aggregateAndProof.getAggregate();
+  private void onAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
+    final Attestation aggregate = aggregateAndProof.getMessage().getAggregate();
     processAttestation(
         new DelayableAttestation(
             aggregate, () -> eventBus.post(new ProcessedAggregateEvent(aggregate))));
