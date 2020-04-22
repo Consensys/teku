@@ -25,22 +25,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class beaconBlock extends TestSuite {
+public class AttesterSlashingSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name =
-          "{index}. ssz_static/BeaconBlock deserializedBeaconBlock={0}, root={1}, signingRoot={2}")
+      name = "{index}. ssz_static/AttesterSlashing deserializedAttesterSlashing={0}, root={1}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(BeaconBlock deserializedBeaconBlock, Bytes32 root)
+  void processSSZStaticAttesterSlashing(AttesterSlashing deserializedAttesterSlashing, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedBeaconBlock.hash_tree_root(), root);
+    assertEquals(deserializedAttesterSlashing.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -56,7 +55,7 @@ public class beaconBlock extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "BeaconBlock");
-    return sszStaticSetup(path, configPath, BeaconBlock.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "AttesterSlashing");
+    return sszStaticSetup(path, configPath, AttesterSlashing.class);
   }
 }

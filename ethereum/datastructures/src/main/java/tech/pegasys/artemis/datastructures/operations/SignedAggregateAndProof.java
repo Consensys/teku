@@ -11,10 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.blocks;
+package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,22 +27,14 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
-
-  private final BeaconBlock message;
+public class SignedAggregateAndProof
+    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+  private final AggregateAndProof message;
   private final BLSSignature signature;
 
-  public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
+  public SignedAggregateAndProof(final AggregateAndProof message, final BLSSignature signature) {
     this.message = message;
     this.signature = signature;
-  }
-
-  public BeaconBlock getMessage() {
-    return message;
-  }
-
-  public BLSSignature getSignature() {
-    return signature;
   }
 
   @Override
@@ -64,21 +55,12 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
     return List.of(SimpleOffsetSerializer.serialize(message), Bytes.EMPTY);
   }
 
-  public UnsignedLong getSlot() {
-    return message.getSlot();
+  public AggregateAndProof getMessage() {
+    return message;
   }
 
-  public Bytes32 getParent_root() {
-    return message.getParent_root();
-  }
-
-  /**
-   * Get the root of the BeaconBlock that is being signed.
-   *
-   * @return The hashed tree root of the {@code BeaconBlock} being signed.
-   */
-  public Bytes32 getRoot() {
-    return message.hash_tree_root();
+  public BLSSignature getSignature() {
+    return signature;
   }
 
   @Override
@@ -89,7 +71,7 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final SignedBeaconBlock that = (SignedBeaconBlock) o;
+    final SignedAggregateAndProof that = (SignedAggregateAndProof) o;
     return Objects.equals(message, that.message) && Objects.equals(signature, that.signature);
   }
 
