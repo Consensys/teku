@@ -26,6 +26,7 @@ import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
+import static tech.pegasys.artemis.cli.options.LoggingOptions.LOG_DESTINATION_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
@@ -166,6 +167,27 @@ public class BeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
     assertArtemisConfiguration(
         expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
+  }
+
+  @Test
+  public void logDestination_ShouldAcceptFileAsDestination() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "file"));
+    assertThat(artemisConfiguration.getLogDestination()).isEqualTo("FILE");
+  }
+
+  @Test
+  public void logDestination_ShouldAcceptConsoleAsDestination() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "console"));
+    assertThat(artemisConfiguration.getLogDestination()).isEqualTo("CONSOLE");
+  }
+
+  @Test
+  public void logDestination_ShouldAcceptBothAsDestination() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(List.of(LOG_DESTINATION_OPTION_NAME, "both"));
+    assertThat(artemisConfiguration.getLogDestination()).isEqualTo("BOTH");
   }
 
   @ParameterizedTest(name = "{0}")
@@ -320,5 +342,11 @@ public class BeaconNodeCommandTest {
     java.nio.file.Files.write(file, contents);
     file.toFile().deleteOnExit();
     return file;
+  }
+
+  private ArtemisConfiguration getArtemisConfigurationFromArguments(List<String> arguments)
+      throws IOException {
+    beaconNodeCommand.parse(arguments.toArray(String[]::new));
+    return getResultingArtemisConfiguration();
   }
 }
