@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
+import static java.lang.Math.toIntExact;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -283,11 +284,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         continue;
       }
 
+      int validatorIndexInt = toIntExact(validatorIndex.longValue());
       // If the validator was not included in the oldBalances (i.e. it did not exist yet)
       // then say its balance was zero.
       UnsignedLong oldBalance =
-          oldBalances.size() > validatorIndex.intValue()
-              ? oldBalances.get(validatorIndex.intValue())
+          oldBalances.size() > validatorIndexInt
+              ? oldBalances.get(validatorIndexInt)
               : UnsignedLong.ZERO;
 
       // If the validator vote is not known in the newBalances, then use a balance of zero.
@@ -296,8 +298,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       // justified state to a new state with a higher epoch that is on a different fork
       // because that may have on-boarded less validators than the prior fork.
       UnsignedLong newBalance =
-          newBalances.size() > validatorIndex.intValue()
-              ? newBalances.get(validatorIndex.intValue())
+          newBalances.size() > validatorIndexInt
+              ? newBalances.get(validatorIndexInt)
               : UnsignedLong.ZERO;
 
       if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
