@@ -29,7 +29,7 @@ import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
-class AttestationSubnetSubscriptions implements AutoCloseable {
+public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipNetwork gossipNetwork;
   private final RecentChainData recentChainData;
   private final EventBus eventBus;
@@ -37,7 +37,7 @@ class AttestationSubnetSubscriptions implements AutoCloseable {
   private final Map<Integer, Set<UnsignedLong>> subnetIdToCommittees = new ConcurrentHashMap<>();
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new ConcurrentHashMap<>();
 
-  AttestationSubnetSubscriptions(
+  public AttestationSubnetSubscriptions(
       final GossipNetwork gossipNetwork,
       final RecentChainData recentChainData,
       final EventBus eventBus) {

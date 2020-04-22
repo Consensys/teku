@@ -23,9 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
@@ -35,11 +33,9 @@ public class AttestationGossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttestationGossipManager(
-      final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final RecentChainData recentChainData) {
-    subnetSubscriptions =
-        new AttestationSubnetSubscriptions(gossipNetwork, recentChainData, eventBus);
+      final AttestationSubnetSubscriptions attestationSubnetSubscriptions) {
+    subnetSubscriptions = attestationSubnetSubscriptions;
     this.eventBus = eventBus;
     eventBus.register(this);
   }
