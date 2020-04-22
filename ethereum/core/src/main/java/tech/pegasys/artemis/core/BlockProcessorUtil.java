@@ -243,8 +243,8 @@ public final class BlockProcessorUtil {
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     try {
-      verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
       process_proposer_slashings_no_validation(state, proposerSlashings);
+      verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
     } catch (InvalidSignatureException e) {
       throw new BlockProcessingException(e);
     }
@@ -506,8 +506,8 @@ public final class BlockProcessorUtil {
       throws BlockProcessingException {
 
     try {
-      verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
       process_voluntary_exits_no_validation(state, exits);
+      verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
     } catch (InvalidSignatureException e) {
       throw new BlockProcessingException(e);
     }
