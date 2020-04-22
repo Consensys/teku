@@ -17,7 +17,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
@@ -41,7 +41,7 @@ public class AggregateGossipManager {
   }
 
   @Subscribe
-  public void onNewAggregate(final AggregateAndProof aggregateAndProof) {
+  public void onNewAggregate(final SignedAggregateAndProof aggregateAndProof) {
     final Bytes data = SimpleOffsetSerializer.serialize(aggregateAndProof);
     channel.gossip(data);
   }

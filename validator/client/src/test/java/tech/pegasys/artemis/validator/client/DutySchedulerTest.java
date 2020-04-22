@@ -370,7 +370,11 @@ class DutySchedulerTest {
     // And should have added validator1 to each duty
     verify(aggregationDuty)
         .addValidator(
-            validator1Index, validator1Signature, validator1Committee, unsignedAttestationFuture);
+            validator1,
+            validator1Index,
+            validator1Signature,
+            validator1Committee,
+            unsignedAttestationFuture);
     verifyNoMoreInteractions(aggregationDuty);
 
     // Perform the duties
