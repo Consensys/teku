@@ -38,14 +38,16 @@ public class BeaconRestApiOptions {
       names = {REST_API_DOCS_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enable swagger-docs and swagger-ui endpoints",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean restApiDocsEnabled = DEFAULT_REST_API_DOCS_ENABLED;
 
   @CommandLine.Option(
       names = {REST_API_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables Beacon Rest API",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean restApiEnabled = DEFAULT_REST_API_ENABLED;
 
   @CommandLine.Option(
