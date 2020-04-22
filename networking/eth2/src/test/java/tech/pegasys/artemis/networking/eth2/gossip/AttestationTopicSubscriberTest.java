@@ -22,7 +22,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 
-class AttestationTopicSubscriptionsTest {
+class AttestationTopicSubscriberTest {
 
   private final Eth2Network eth2Network = mock(Eth2Network.class);
 
