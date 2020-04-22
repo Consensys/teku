@@ -363,8 +363,7 @@ public class BeaconNodeCommandTest {
     return configCaptor.getValue();
   }
 
-  private ArtemisConfiguration getArtemisConfigurationFromArguments(String... arguments)
-      throws IOException {
+  private ArtemisConfiguration getArtemisConfigurationFromArguments(String... arguments) {
     beaconNodeCommand.parse(arguments);
     return getResultingArtemisConfiguration();
   }
