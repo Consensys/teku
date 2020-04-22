@@ -25,20 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class deposit extends TestSuite {
+public class ProposerSlashingSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name = "{index}. ssz_static/Deposit deserializedDeposit={0}, root={1}, signingRoot={2}")
+      name =
+          "{index}. ssz_static/ProposerSlashing deserializedProposerSlashing={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(Deposit deserializedDeposit, Bytes32 root) throws Exception {
-    assertEquals(deserializedDeposit.hash_tree_root(), root);
+  void processSSZStaticBeaconBlock(ProposerSlashing deserializedProposerSlashing, Bytes32 root)
+      throws Exception {
+    assertEquals(deserializedProposerSlashing.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -54,7 +56,7 @@ public class deposit extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "Deposit");
-    return sszStaticSetup(path, configPath, Deposit.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "ProposerSlashing");
+    return sszStaticSetup(path, configPath, ProposerSlashing.class);
   }
 }
