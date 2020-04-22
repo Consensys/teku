@@ -25,22 +25,21 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class proposerSlashing extends TestSuite {
+public class SignedVoluntaryExitSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name =
-          "{index}. ssz_static/ProposerSlashing deserializedProposerSlashing={0}, root={1}, signingRoot={2}")
+      name = "{index}. ssz_static/SignedVoluntaryExit deserialized={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(ProposerSlashing deserializedProposerSlashing, Bytes32 root)
+  void processSSZStaticBeaconBlock(SignedVoluntaryExit deserialized, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedProposerSlashing.hash_tree_root(), root);
+    assertEquals(deserialized.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -56,7 +55,7 @@ public class proposerSlashing extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "ProposerSlashing");
-    return sszStaticSetup(path, configPath, ProposerSlashing.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "SignedVoluntaryExit");
+    return sszStaticSetup(path, configPath, SignedVoluntaryExit.class);
   }
 }

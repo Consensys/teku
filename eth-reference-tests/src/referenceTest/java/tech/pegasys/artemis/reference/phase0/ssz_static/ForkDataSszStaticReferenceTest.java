@@ -25,22 +25,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.PendingAttestation;
+import tech.pegasys.artemis.datastructures.state.ForkData;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class pendingAttestation extends TestSuite {
+public class ForkDataSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
-      name =
-          "{index}. ssz_static/PendingAttestation deserializedPendingAttestation={0}, root={1}, signingRoot={2}")
+      name = "{index}. ssz_static/ForkData deserializedForkData={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(PendingAttestation deserializedPendingAttestation, Bytes32 root)
-      throws Exception {
-    assertEquals(deserializedPendingAttestation.hash_tree_root(), root);
+  void processSSZStaticBeaconBlock(ForkData deserializedForkData, Bytes32 root) throws Exception {
+    assertEquals(deserializedForkData.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -56,7 +54,7 @@ public class pendingAttestation extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "PendingAttestation");
-    return sszStaticSetup(path, configPath, PendingAttestation.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "ForkData");
+    return sszStaticSetup(path, configPath, ForkData.class);
   }
 }
