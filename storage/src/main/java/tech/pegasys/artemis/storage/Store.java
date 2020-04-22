@@ -320,8 +320,8 @@ public class Store implements ReadOnlyStore {
           vote = VoteTracker.Default();
         } else {
           vote = vote.copy();
-          votes.put(validatorIndex, vote);
         }
+        votes.put(validatorIndex, vote);
       }
       return vote;
     }

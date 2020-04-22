@@ -90,7 +90,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
               validatorIndex -> {
                 processAttestation(
                     store,
-                    Math.toIntExact(validatorIndex.longValue()),
+                    validatorIndex,
                     attestation.getData().getBeacon_block_root(),
                     attestation.getData().getTarget().getEpoch());
               });
@@ -143,8 +143,11 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   void processAttestation(
-      MutableStore store, int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
-    VoteTracker vote = store.getVote(UnsignedLong.valueOf(validatorIndex));
+      MutableStore store,
+      UnsignedLong validatorIndex,
+      Bytes32 blockRoot,
+      UnsignedLong targetEpoch) {
+    VoteTracker vote = store.getVote(validatorIndex);
 
     if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
       vote.setNextRoot(blockRoot);
@@ -241,24 +244,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       protoArrayLock.readLock().unlock();
     }
   }
-
-  //  public Optional<Checkpoint> latestMessage(int validatorIndex) {
-  //    votesLock.readLock().lock();
-  //    try {
-  //      if (validatorIndex >= votes.size()) {
-  //        return Optional.empty();
-  //      } else {
-  //        VoteTracker vote = votes.get(validatorIndex);
-  //        if (vote.equals(VoteTracker.Default())) {
-  //          return Optional.empty();
-  //        } else {
-  //          return Optional.of(new Checkpoint(vote.getNextEpoch(), vote.getNextRoot()));
-  //        }
-  //      }
-  //    } finally {
-  //      votesLock.readLock().unlock();
-  //    }
-  //  }
 
   /**
    * Returns a list of `deltas`, where there is one delta for each of the indices in

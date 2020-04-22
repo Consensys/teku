@@ -55,7 +55,7 @@ public class ProtoArrayForkChoiceStrategyTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      store.getVote(i);
+      store.getVote(valueOf(i));
       oldBalances.add(ZERO);
       newBalances.add(ZERO);
     }
@@ -74,7 +74,7 @@ public class ProtoArrayForkChoiceStrategyTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      store.getVote(i).setNextRoot(getHash(0));
+      store.getVote(valueOf(i)).setNextRoot(getHash(0));
       oldBalances.add(BALANCE);
       newBalances.add(BALANCE);
     }
@@ -103,7 +103,7 @@ public class ProtoArrayForkChoiceStrategyTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      store.getVote(i).setNextRoot(getHash(i));
+      store.getVote(valueOf(i)).setNextRoot(getHash(i));
       oldBalances.add(BALANCE);
       newBalances.add(BALANCE);
     }
@@ -124,7 +124,7 @@ public class ProtoArrayForkChoiceStrategyTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      VoteTracker vote = store.getVote(i);
+      VoteTracker vote = store.getVote(valueOf(i));
       vote.setCurrentRoot(getHash(0));
       vote.setNextRoot(getHash(1));
       oldBalances.add(BALANCE);
@@ -165,12 +165,12 @@ public class ProtoArrayForkChoiceStrategyTest {
     newBalances = Collections.nCopies(2, BALANCE);
 
     // One validator moves their vote from the block to the zero hash.
-    VoteTracker validator1vote = store.getVote(0);
+    VoteTracker validator1vote = store.getVote(valueOf(0));
     validator1vote.setCurrentRoot(getHash(1));
     validator1vote.setNextRoot(Bytes32.ZERO);
 
     // One validator moves their vote from the block to something outside the tree.
-    VoteTracker validator2vote = store.getVote(1);
+    VoteTracker validator2vote = store.getVote(valueOf(1));
     validator2vote.setCurrentRoot(getHash(1));
     validator2vote.setNextRoot(getHash(1337));
 
@@ -193,7 +193,7 @@ public class ProtoArrayForkChoiceStrategyTest {
 
     for (int i = 0; i < validatorCount; i++) {
       indices.put(getHash(i), i);
-      VoteTracker vote = store.getVote(i);
+      VoteTracker vote = store.getVote(valueOf(i));
       vote.setCurrentRoot(getHash(0));
       vote.setNextRoot(getHash(1));
       oldBalances.add(OLD_BALANCE);
@@ -236,7 +236,7 @@ public class ProtoArrayForkChoiceStrategyTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
-      VoteTracker vote = store.getVote(i);
+      VoteTracker vote = store.getVote(valueOf(i));
       vote.setCurrentRoot(getHash(1));
       vote.setNextRoot(getHash(2));
     }
@@ -269,7 +269,7 @@ public class ProtoArrayForkChoiceStrategyTest {
 
     // Both validators move votes from block 1 to block 2.
     for (int i = 0; i < 2; i++) {
-      VoteTracker vote = store.getVote(i);
+      VoteTracker vote = store.getVote(valueOf(i));
       vote.setCurrentRoot(getHash(1));
       vote.setNextRoot(getHash(2));
     }
@@ -287,7 +287,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   private void votesShouldBeUpdated(MutableStore store) {
-    for (int i : store.getVotedValidatorIndices()) {
+    for (UnsignedLong i : store.getVotedValidatorIndices()) {
       VoteTracker vote = store.getVote(i);
       assertThat(vote.getCurrentRoot()).isEqualTo(vote.getNextRoot());
     }
