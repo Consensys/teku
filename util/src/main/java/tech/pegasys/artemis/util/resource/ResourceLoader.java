@@ -25,7 +25,7 @@ public interface ResourceLoader {
     return new FallbackResourceLoader(new URLResourceLoader(), new FileResourceLoader());
   }
 
-  static ResourceLoader urlClasspathOrFile(
+  static ResourceLoader classpathUrlOrFile(
       final Class<?> referenceClass,
       final Function<String, String> nameToFilenameMapper,
       final String... availableResourceNames) {
