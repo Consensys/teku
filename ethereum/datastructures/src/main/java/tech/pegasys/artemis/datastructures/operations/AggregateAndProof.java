@@ -13,19 +13,24 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer {
+public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
@@ -95,6 +100,15 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
         && Objects.equals(this.aggregate, other.aggregate);
   }
 
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("index", index)
+        .add("selection_proof", selection_proof)
+        .add("aggregate", aggregate)
+        .toString();
+  }
+
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public UnsignedLong getIndex() {
     return index;
@@ -106,5 +120,14 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
 
   public Attestation getAggregate() {
     return aggregate;
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        List.of(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, selection_proof.toBytes()),
+            aggregate.hash_tree_root()));
   }
 }

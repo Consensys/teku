@@ -28,21 +28,38 @@ import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.artemis.validator.client.ForkProvider;
+import tech.pegasys.artemis.validator.client.Validator;
 
 class AggregationDutyTest {
 
   public static final UnsignedLong SLOT = UnsignedLong.valueOf(2832);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final ForkProvider forkProvider = mock(ForkProvider.class);
+  private final Signer signer1 = mock(Signer.class);
+  private final Signer signer2 = mock(Signer.class);
+  private final Validator validator1 = new Validator(dataStructureUtil.randomPublicKey(), signer1);
+  private final Validator validator2 = new Validator(dataStructureUtil.randomPublicKey(), signer2);
 
-  private final AggregationDuty duty = new AggregationDuty(SLOT, validatorApiChannel);
+  private final AggregationDuty duty = new AggregationDuty(SLOT, validatorApiChannel, forkProvider);
+
+  @BeforeEach
+  public void setUp() {
+    when(forkProvider.getForkInfo()).thenReturn(SafeFuture.completedFuture(forkInfo));
+  }
 
   @Test
   public void shouldBeCompleteWhenNoValidatorsAdded() {
@@ -52,15 +69,18 @@ class AggregationDutyTest {
   @Test
   public void shouldSubscribeToCommitteeTopicWhenNewCommitteeAdded() {
     final int committeeIndex = 2;
-    duty.addValidator(1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
+    duty.addValidator(
+        validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
     verify(validatorApiChannel).subscribeToBeaconCommittee(committeeIndex, SLOT);
   }
 
   @Test
   public void shouldNotSubscribeToCommitteeTopicWhenAdditionalValidatorAdded() {
     final int committeeIndex = 2;
-    duty.addValidator(1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-    duty.addValidator(2, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
+    duty.addValidator(
+        validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
+    duty.addValidator(
+        validator2, 2, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
 
     verify(validatorApiChannel, times(1)).subscribeToBeaconCommittee(committeeIndex, SLOT);
   }
@@ -73,6 +93,7 @@ class AggregationDutyTest {
     final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
     final Attestation aggregate = dataStructureUtil.randomAttestation();
     duty.addValidator(
+        validator1,
         validatorIndex,
         proof,
         attestationCommitteeIndex,
@@ -81,11 +102,17 @@ class AggregationDutyTest {
     when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
+    final AggregateAndProof expectedAggregateAndProof =
+        new AggregateAndProof(UnsignedLong.valueOf(validatorIndex), proof, aggregate);
+    final BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
+    when(signer1.signAggregateAndProof(expectedAggregateAndProof, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(aggregateSignature));
+
     assertThat(duty.performDuty()).isCompleted();
 
     verify(validatorApiChannel)
         .sendAggregateAndProof(
-            new AggregateAndProof(UnsignedLong.valueOf(validatorIndex), proof, aggregate));
+            new SignedAggregateAndProof(expectedAggregateAndProof, aggregateSignature));
   }
 
   @Test
@@ -103,11 +130,13 @@ class AggregationDutyTest {
     final Attestation committee1Aggregate = dataStructureUtil.randomAttestation();
     final Attestation committee2Aggregate = dataStructureUtil.randomAttestation();
     duty.addValidator(
+        validator1,
         validator1Index,
         validator1Proof,
         validator1CommitteeIndex,
         completedFuture(Optional.of(committee1UnsignedAttestation)));
     duty.addValidator(
+        validator2,
         validator2Index,
         validator2Proof,
         validator2CommitteeIndex,
@@ -118,17 +147,28 @@ class AggregationDutyTest {
     when(validatorApiChannel.createAggregate(committee2UnsignedAttestation.getData()))
         .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
+    final AggregateAndProof aggregateAndProof1 =
+        new AggregateAndProof(
+            UnsignedLong.valueOf(validator1Index), validator1Proof, committee1Aggregate);
+    final AggregateAndProof aggregateAndProof2 =
+        new AggregateAndProof(
+            UnsignedLong.valueOf(validator2Index), validator2Proof, committee2Aggregate);
+    final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
+    final BLSSignature aggregateSignature2 = dataStructureUtil.randomSignature();
+    when(signer1.signAggregateAndProof(aggregateAndProof1, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(aggregateSignature1));
+    when(signer2.signAggregateAndProof(aggregateAndProof2, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(aggregateSignature2));
+
     assertThat(duty.performDuty()).isCompleted();
 
     verify(validatorApiChannel)
         .sendAggregateAndProof(
-            new AggregateAndProof(
-                UnsignedLong.valueOf(validator1Index), validator1Proof, committee1Aggregate));
+            new SignedAggregateAndProof(aggregateAndProof1, aggregateSignature1));
 
     verify(validatorApiChannel)
         .sendAggregateAndProof(
-            new AggregateAndProof(
-                UnsignedLong.valueOf(validator2Index), validator2Proof, committee2Aggregate));
+            new SignedAggregateAndProof(aggregateAndProof2, aggregateSignature2));
   }
 
   @Test
@@ -144,11 +184,13 @@ class AggregationDutyTest {
     final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
     final Attestation aggregate = dataStructureUtil.randomAttestation();
     duty.addValidator(
+        validator1,
         validator1Index,
         validator1Proof,
         committeeIndex,
         completedFuture(Optional.of(unsignedAttestation)));
     duty.addValidator(
+        validator2,
         validator2Index,
         validator2Proof,
         committeeIndex,
@@ -157,19 +199,24 @@ class AggregationDutyTest {
     when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
+    final AggregateAndProof aggregateAndProof =
+        new AggregateAndProof(UnsignedLong.valueOf(validator1Index), validator1Proof, aggregate);
+    final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
+    when(signer1.signAggregateAndProof(aggregateAndProof, forkInfo))
+        .thenReturn(SafeFuture.completedFuture(aggregateSignature1));
+
     assertThat(duty.performDuty()).isCompleted();
 
     verify(validatorApiChannel)
-        .sendAggregateAndProof(
-            new AggregateAndProof(
-                UnsignedLong.valueOf(validator1Index), validator1Proof, aggregate));
+        .sendAggregateAndProof(new SignedAggregateAndProof(aggregateAndProof, aggregateSignature1));
     // Only one proof should be sent.
     verify(validatorApiChannel, times(1)).sendAggregateAndProof(any());
   }
 
   @Test
   public void shouldFailWhenUnsignedAttestationNotCreated() {
-    duty.addValidator(1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
+    duty.addValidator(
+        validator1, 1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
     verify(validatorApiChannel).subscribeToBeaconCommittee(anyInt(), any());
 
     assertThat(duty.performDuty()).isCompletedExceptionally();
@@ -179,7 +226,8 @@ class AggregationDutyTest {
   @Test
   public void shouldFailWhenUnsignedAttestationCompletesExceptionally() {
     final RuntimeException exception = new RuntimeException("Doh!");
-    duty.addValidator(1, dataStructureUtil.randomSignature(), 2, failedFuture(exception));
+    duty.addValidator(
+        validator1, 1, dataStructureUtil.randomSignature(), 2, failedFuture(exception));
 
     final SafeFuture<?> result = duty.performDuty();
     assertThat(result).isCompletedExceptionally();
@@ -190,6 +238,7 @@ class AggregationDutyTest {
   public void shouldFailWhenAggregateNotCreated() {
     final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
     duty.addValidator(
+        validator1,
         1,
         dataStructureUtil.randomSignature(),
         2,
@@ -206,6 +255,7 @@ class AggregationDutyTest {
     final Exception exception = new RuntimeException("Whoops");
     final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
     duty.addValidator(
+        validator1,
         1,
         dataStructureUtil.randomSignature(),
         2,

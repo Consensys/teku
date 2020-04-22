@@ -37,9 +37,9 @@ import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
@@ -355,10 +355,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void sendAggregateAndProof_shouldPostAggregateAndProof() {
-    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
+    final SignedAggregateAndProof aggregateAndProof =
+        dataStructureUtil.randomSignedAggregateAndProof();
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
-    verify(eventBus).post(aggregateAndProof);
+    verify(attestationPool).add(aggregateAndProof.getMessage().getAggregate());
+    verify(eventBus).post(aggregateAndProof.getMessage());
   }
 
   private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(

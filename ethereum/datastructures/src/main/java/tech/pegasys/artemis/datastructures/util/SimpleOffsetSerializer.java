@@ -49,6 +49,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
@@ -114,6 +115,8 @@ public class SimpleOffsetSerializer {
         new ReflectionInformation(BeaconBlocksByRangeRequestMessage.class));
     classReflectionInfo.put(
         AggregateAndProof.class, new ReflectionInformation(AggregateAndProof.class));
+    classReflectionInfo.put(
+        SignedAggregateAndProof.class, new ReflectionInformation(SignedAggregateAndProof.class));
   }
 
   static {

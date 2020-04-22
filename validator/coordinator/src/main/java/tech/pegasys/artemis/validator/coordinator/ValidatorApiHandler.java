@@ -43,9 +43,9 @@ import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
@@ -218,9 +218,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendAggregateAndProof(final AggregateAndProof aggregateAndProof) {
-    attestationPool.add(aggregateAndProof.getAggregate());
-    eventBus.post(aggregateAndProof);
+  public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
+    attestationPool.add(aggregateAndProof.getMessage().getAggregate());
+    eventBus.post(aggregateAndProof.getMessage());
   }
 
   @Override
