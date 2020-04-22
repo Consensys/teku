@@ -27,8 +27,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.ForkChoiceUtil;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
@@ -266,8 +266,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   @Subscribe
-  public void onNewAggregateAndProof(AggregateAndProof attestation) {
-    EVENT_LOG.aggregateAndProof(attestation.getAggregate().getData().getBeacon_block_root());
+  public void onNewAggregateAndProof(SignedAggregateAndProof attestation) {
+    EVENT_LOG.aggregateAndProof(
+        attestation.getMessage().getAggregate().getData().getBeacon_block_root());
   }
 
   public boolean containsBlock(final Bytes32 root) {

@@ -16,12 +16,19 @@ package tech.pegasys.artemis.datastructures.state;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class ForkData {
+public class ForkData implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
+
+  public static final int SSZ_FIELD_COUNT = 2;
   private final Bytes4 currentVersion;
   private final Bytes32 genesisValidatorsRoot;
 
@@ -38,6 +45,7 @@ public class ForkData {
     return genesisValidatorsRoot;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         List.of(
@@ -69,5 +77,17 @@ public class ForkData {
         .add("currentVersion", currentVersion)
         .add("genesisValidatorsRoot", genesisValidatorsRoot)
         .toString();
+  }
+
+  @Override
+  public int getSSZFieldCount() {
+    return SSZ_FIELD_COUNT;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    return List.of(
+        SSZ.encode(writer -> writer.writeFixedBytes(currentVersion.getWrappedBytes())),
+        SSZ.encode(writer -> writer.writeFixedBytes(genesisValidatorsRoot)));
   }
 }

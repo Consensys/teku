@@ -23,7 +23,7 @@ import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
@@ -48,7 +48,7 @@ public class AggregateGossipManagerTest {
 
   @Test
   public void onNewAggregate() {
-    final AggregateAndProof aggregate = dataStructureUtil.randomAggregateAndProof();
+    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
 
     eventBus.post(aggregate);

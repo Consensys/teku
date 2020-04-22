@@ -51,6 +51,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -187,7 +188,11 @@ public final class DataStructureUtil {
   }
 
   public AggregateAndProof randomAggregateAndProof() {
-    return new AggregateAndProof(randomUnsignedLong(), randomSignature(), randomAttestation());
+    return new AggregateAndProof(randomUnsignedLong(), randomAttestation(), randomSignature());
+  }
+
+  public SignedAggregateAndProof randomSignedAggregateAndProof() {
+    return new SignedAggregateAndProof(randomAggregateAndProof(), randomSignature());
   }
 
   public VoteTracker randomVoteTracker() {

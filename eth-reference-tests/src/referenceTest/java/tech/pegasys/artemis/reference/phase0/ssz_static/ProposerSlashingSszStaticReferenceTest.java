@@ -25,22 +25,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class attestation extends TestSuite {
+public class ProposerSlashingSszStaticReferenceTest extends TestSuite {
 
   @ParameterizedTest(
       name =
-          "{index}. ssz_static/Attestation deserializedAttestation={0}, root={1}, signingRoot={2}")
+          "{index}. ssz_static/ProposerSlashing deserializedProposerSlashing={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticAttestation(Attestation deserializedAttestation, Bytes32 root)
+  void processSSZStaticBeaconBlock(ProposerSlashing deserializedProposerSlashing, Bytes32 root)
       throws Exception {
-    assertEquals(deserializedAttestation.hash_tree_root(), root);
+    assertEquals(deserializedProposerSlashing.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -56,7 +56,7 @@ public class attestation extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "Attestation");
-    return sszStaticSetup(path, configPath, Attestation.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "ProposerSlashing");
+    return sszStaticSetup(path, configPath, ProposerSlashing.class);
   }
 }

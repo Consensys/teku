@@ -107,7 +107,8 @@ public abstract class TestSuite {
   }
 
   @SuppressWarnings({"rawtypes"})
-  public static Object getObjectFromYAMLInputStream(InputStream in, List<TestObject> testObjects) {
+  public static Object getObjectFromYAMLInputStream(Path path, List<TestObject> testObjects) {
+    final InputStream in = getInputStreamFromPath(path);
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Object object = null;
     try {
@@ -121,7 +122,7 @@ public abstract class TestSuite {
       }
 
     } catch (IOException e) {
-      LOG.warn("Failed to parse YAML", e);
+      LOG.warn("Failed to parse YAML from file " + path.toAbsolutePath(), e);
     }
     return object;
   }
@@ -140,7 +141,7 @@ public abstract class TestSuite {
   }
 
   public static Object pathToObject(Path path, List<TestObject> testObjects) {
-    return getObjectFromYAMLInputStream(getInputStreamFromPath(path), testObjects);
+    return getObjectFromYAMLInputStream(path, testObjects);
   }
 
   @SuppressWarnings("unchecked")
@@ -159,28 +160,26 @@ public abstract class TestSuite {
                   Streams.concat(
                           testSet.getFileNames().stream()
                               .flatMap(
-                                  fileName -> {
-                                    Object object =
-                                        pathToObject(
-                                            Path.of(walkPath, fileName),
-                                            testSet.getTestObjectByFileName(fileName));
-                                    return testSet.getTestObjectByFileName(fileName).stream()
-                                        .map(
-                                            testObject -> {
-                                              if (fileName.contains(".ssz")) {
-                                                Bytes objectBytes =
-                                                    getSSZBytesFromPath(
-                                                        Path.of(walkPath, fileName));
-                                                return SimpleOffsetSerializer.deserialize(
-                                                    objectBytes, testObject.getClassName());
-                                              } else {
-                                                return parseObjectFromFile(
-                                                    testObject.getClassName(),
-                                                    testObject.getPath(),
-                                                    object);
-                                              }
-                                            });
-                                  }),
+                                  fileName ->
+                                      testSet.getTestObjectByFileName(fileName).stream()
+                                          .map(
+                                              testObject -> {
+                                                if (fileName.contains(".ssz")) {
+                                                  Bytes objectBytes =
+                                                      getSSZBytesFromPath(
+                                                          Path.of(walkPath, fileName));
+                                                  return SimpleOffsetSerializer.deserialize(
+                                                      objectBytes, testObject.getClassName());
+                                                } else {
+                                                  return parseObjectFromFile(
+                                                      testObject.getClassName(),
+                                                      testObject.getPath(),
+                                                      pathToObject(
+                                                          Path.of(walkPath, fileName),
+                                                          testSet.getTestObjectByFileName(
+                                                              fileName)));
+                                                }
+                                              })),
                           Stream.of(Path.of(walkPath).getFileName().toString()))
                       .collect(Collectors.toList()))
           .map(objects -> Arguments.of(objects.toArray()));

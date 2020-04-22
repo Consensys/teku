@@ -25,21 +25,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
-public class beaconState extends TestSuite {
+public class Eth1DataSszStaticReferenceTest extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. ssz_static/BeaconState root={1}, signingRoot={2}")
+  @ParameterizedTest(
+      name = "{index}. ssz_static/Eth1Data deserializedEth1Data={0}, root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(BeaconState deserializedBeaconState, Bytes32 root)
-      throws Exception {
-    assertEquals(deserializedBeaconState.hash_tree_root(), root);
+  void processSSZStaticBeaconBlock(Eth1Data deserializedEth1Data, Bytes32 root) throws Exception {
+    assertEquals(deserializedEth1Data.hash_tree_root(), root);
   }
 
   @MustBeClosed
@@ -55,7 +54,7 @@ public class beaconState extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
-    Path path = Paths.get(config, "phase0", "ssz_static", "BeaconState");
-    return sszStaticSetup(path, configPath, BeaconStateImpl.class);
+    Path path = Paths.get(config, "phase0", "ssz_static", "Eth1Data");
+    return sszStaticSetup(path, configPath, Eth1Data.class);
   }
 }
