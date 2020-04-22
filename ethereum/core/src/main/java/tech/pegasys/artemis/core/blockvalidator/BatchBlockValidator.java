@@ -27,7 +27,10 @@ public class BatchBlockValidator implements BlockValidator {
         new SimpleBlockValidator(true, true, true, signatureVerifier);
     SafeFuture<BlockValidationResult> noBLSValidationResultFut =
         blockValidator.validatePreState(preState, block);
+    // during the above validatePreState() call BatchSignatureVerifier just collected
+    // a bunch of signatures to be verified in optimized batched way on the following step
     if (!noBLSValidationResultFut.join().isValid()) {
+      // something went wrong aside of signatures verification
       return noBLSValidationResultFut;
     } else {
       boolean batchBLSResult = signatureVerifier.batchVerify();
