@@ -25,6 +25,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -227,5 +228,13 @@ public class DeserializationTest {
         aggregateAndProof,
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(aggregateAndProof), AggregateAndProof.class));
+  }
+
+  @Test
+  void VoteTrackerTest() {
+    VoteTracker voteTracker = dataStructureUtil.randomVoteTracker();
+    Bytes ser = SimpleOffsetSerializer.serialize(voteTracker);
+    VoteTracker deser = SimpleOffsetSerializer.deserialize(ser, VoteTracker.class);
+    assertEquals(voteTracker, deser);
   }
 }

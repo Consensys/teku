@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
+import static java.lang.Math.toIntExact;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -28,31 +29,33 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   private final ProtoArray protoArray;
-  private final ElasticList<VoteTracker> votes;
 
   private List<UnsignedLong> balances;
 
-  private ProtoArrayForkChoiceStrategy(
-      ProtoArray protoArray, ElasticList<VoteTracker> votes, List<UnsignedLong> balances) {
+  private ProtoArrayForkChoiceStrategy(ProtoArray protoArray, List<UnsignedLong> balances) {
     this.protoArray = protoArray;
-    this.votes = votes;
     this.balances = balances;
   }
 
   // Public
-
   public static ProtoArrayForkChoiceStrategy create(ReadOnlyStore store) {
     ProtoArray protoArray =
         new ProtoArray(
@@ -64,14 +67,14 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
     processBlocksInStoreAtStartup(store, protoArray);
 
-    return new ProtoArrayForkChoiceStrategy(
-        protoArray, new ElasticList<>(VoteTracker::Default), new ArrayList<>());
+    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>());
   }
 
   @Override
-  public Bytes32 findHead(final ReadOnlyStore store) {
+  public Bytes32 findHead(final MutableStore store) {
     Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
     return findHead(
+        store,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         store.getFinalizedCheckpoint().getEpoch(),
@@ -79,7 +82,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public void onAttestation(final IndexedAttestation attestation) {
+  public void onAttestation(final MutableStore store, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {
       attestation.getAttesting_indices().stream()
@@ -87,7 +90,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
           .forEach(
               validatorIndex -> {
                 processAttestation(
-                    Math.toIntExact(validatorIndex.longValue()),
+                    store,
+                    validatorIndex,
                     attestation.getData().getBeacon_block_root(),
                     attestation.getData().getTarget().getEpoch());
               });
@@ -139,8 +143,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
   }
 
-  void processAttestation(int validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
-    VoteTracker vote = votes.get(validatorIndex);
+  void processAttestation(
+      MutableStore store,
+      UnsignedLong validatorIndex,
+      Bytes32 blockRoot,
+      UnsignedLong targetEpoch) {
+    VoteTracker vote = store.getVote(validatorIndex);
 
     if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
       vote.setNextRoot(blockRoot);
@@ -165,6 +173,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   Bytes32 findHead(
+      MutableStore store,
       UnsignedLong justifiedEpoch,
       Bytes32 justifiedRoot,
       UnsignedLong finalizedEpoch,
@@ -176,7 +185,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       List<UnsignedLong> oldBalances = balances;
       List<UnsignedLong> newBalances = justifiedStateBalances;
 
-      List<Long> deltas = computeDeltas(protoArray.getIndices(), votes, oldBalances, newBalances);
+      List<Long> deltas = computeDeltas(store, protoArray.getIndices(), oldBalances, newBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);
@@ -237,24 +246,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
-  public Optional<Checkpoint> latestMessage(int validatorIndex) {
-    votesLock.readLock().lock();
-    try {
-      if (validatorIndex >= votes.size()) {
-        return Optional.empty();
-      } else {
-        VoteTracker vote = votes.get(validatorIndex);
-        if (vote.equals(VoteTracker.Default())) {
-          return Optional.empty();
-        } else {
-          return Optional.of(new Checkpoint(vote.getNextEpoch(), vote.getNextRoot()));
-        }
-      }
-    } finally {
-      votesLock.readLock().unlock();
-    }
-  }
-
   /**
    * Returns a list of `deltas`, where there is one delta for each of the indices in
    * `0..indices.size()`.
@@ -271,31 +262,35 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
    * </ul>
    *
    * @param indices
-   * @param votes
+   * @param store
    * @param oldBalances
    * @param newBalances
    * @return
    */
   static List<Long> computeDeltas(
+      MutableStore store,
       Map<Bytes32, Integer> indices,
-      ElasticList<VoteTracker> votes,
       List<UnsignedLong> oldBalances,
       List<UnsignedLong> newBalances) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(indices.size(), 0L));
 
-    for (int validatorIndex = 0; validatorIndex < votes.size(); validatorIndex++) {
-      VoteTracker vote = votes.get(validatorIndex);
+    for (UnsignedLong validatorIndex : store.getVotedValidatorIndices()) {
+      VoteTracker vote = store.getVote(validatorIndex);
 
       // There is no need to create a score change if the validator has never voted
       // or both their votes are for the zero hash (alias to the genesis block).
       if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
+        LOG.warn("ProtoArrayForkChoiceStrategy: Unexpected zero hashes in voted validator votes");
         continue;
       }
 
+      int validatorIndexInt = toIntExact(validatorIndex.longValue());
       // If the validator was not included in the oldBalances (i.e. it did not exist yet)
       // then say its balance was zero.
       UnsignedLong oldBalance =
-          oldBalances.size() > validatorIndex ? oldBalances.get(validatorIndex) : UnsignedLong.ZERO;
+          oldBalances.size() > validatorIndexInt
+              ? oldBalances.get(validatorIndexInt)
+              : UnsignedLong.ZERO;
 
       // If the validator vote is not known in the newBalances, then use a balance of zero.
       //
@@ -303,7 +298,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       // justified state to a new state with a higher epoch that is on a different fork
       // because that may have on-boarded less validators than the prior fork.
       UnsignedLong newBalance =
-          newBalances.size() > validatorIndex ? newBalances.get(validatorIndex) : UnsignedLong.ZERO;
+          newBalances.size() > validatorIndexInt
+              ? newBalances.get(validatorIndexInt)
+              : UnsignedLong.ZERO;
 
       if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
         // We ignore the vote if it is not known in `indices`. We assume that it is outside

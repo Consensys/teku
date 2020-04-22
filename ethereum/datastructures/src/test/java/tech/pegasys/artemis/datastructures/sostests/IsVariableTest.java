@@ -20,6 +20,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -151,5 +152,11 @@ public class IsVariableTest {
   void isAggregateAndProofVariableTest() {
     assertEquals(
         true, SimpleOffsetSerializer.classReflectionInfo.get(AggregateAndProof.class).isVariable());
+  }
+
+  @Test
+  void isVoteTrackerVariableTest() {
+    assertEquals(
+        false, SimpleOffsetSerializer.classReflectionInfo.get(VoteTracker.class).isVariable());
   }
 }
