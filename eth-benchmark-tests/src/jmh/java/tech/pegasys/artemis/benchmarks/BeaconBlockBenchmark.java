@@ -19,6 +19,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.artemis.bls.BLSPublicKey;
@@ -26,6 +27,10 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.config.Constants;
 
+@BenchmarkMode(Mode.AverageTime)
+@Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class BeaconBlockBenchmark {
 
   private static final BLSPublicKey pubkey = BLSPublicKey.random(0);
@@ -41,17 +46,11 @@ public class BeaconBlockBenchmark {
   }
 
   @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void hashFullBlocks(Blackhole bh) {
     bh.consume(fullBeaconBlock.hash_tree_root());
   }
 
   @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void hashSparseBlocks(Blackhole bh) {
     bh.consume(sparseBeaconBlock.hash_tree_root());
   }
