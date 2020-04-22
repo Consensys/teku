@@ -61,17 +61,17 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
     fixedPartsList.add(SSZ.encodeUInt64(index.longValue()));
+    fixedPartsList.add(Bytes.EMPTY);
     fixedPartsList.addAll(selection_proof.get_fixed_parts());
-    fixedPartsList.addAll(List.of(Bytes.EMPTY));
     return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.addAll(List.of(Bytes.EMPTY));
+    variablePartsList.add(Bytes.EMPTY);
+    variablePartsList.add(SimpleOffsetSerializer.serialize(aggregate));
     variablePartsList.addAll(Collections.nCopies(selection_proof.getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(List.of(SimpleOffsetSerializer.serialize(aggregate)));
     return variablePartsList;
   }
 
