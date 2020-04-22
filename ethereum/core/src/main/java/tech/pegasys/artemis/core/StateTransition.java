@@ -43,15 +43,19 @@ public class StateTransition {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private static BlockValidator createDefaultBlockValidator() {
+    return new BatchBlockValidator();
+  }
+
   private final Optional<EpochMetrics> epochMetrics;
   private final BlockValidator blockValidator;
 
   public StateTransition() {
-    this(Optional.empty(), new BatchBlockValidator());
+    this(Optional.empty(), createDefaultBlockValidator());
   }
 
   public StateTransition(EpochMetrics epochMetrics) {
-    this(Optional.of(epochMetrics), new BatchBlockValidator());
+    this(Optional.of(epochMetrics), createDefaultBlockValidator());
   }
 
   public StateTransition(BlockValidator blockValidator) {
@@ -82,6 +86,8 @@ public class StateTransition {
       BeaconState preState, SignedBeaconBlock signed_block, boolean validateStateRootAndSignatures)
       throws StateTransitionException {
     try {
+      BlockValidator blockValidator =
+          validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOP;
       final BeaconBlock block = signed_block.getMessage();
 
       // Process slots (including those with no blocks) since block
@@ -90,13 +96,11 @@ public class StateTransition {
       // Process_block
       BeaconState postState = process_block(postSlotState, block);
 
-      if (validateStateRootAndSignatures) {
-        BlockValidationResult blockValidationResult =
-            blockValidator.validate(preState, signed_block, postState).join();
+      BlockValidationResult blockValidationResult =
+          blockValidator.validate(preState, signed_block, postState).join();
 
-        if (!blockValidationResult.isValid()) {
-          throw new BlockProcessingException(blockValidationResult.getReason());
-        }
+      if (!blockValidationResult.isValid()) {
+        throw new BlockProcessingException(blockValidationResult.getReason());
       }
 
       return postState;

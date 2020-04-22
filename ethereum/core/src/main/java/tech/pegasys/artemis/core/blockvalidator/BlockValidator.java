@@ -42,6 +42,8 @@ public interface BlockValidator {
     }
   }
 
+  BlockValidator NOP = new NopBlockValidator();
+
   SafeFuture<BlockValidationResult> validatePreState(BeaconState preState, SignedBeaconBlock block);
 
   SafeFuture<BlockValidationResult> validatePostState(
