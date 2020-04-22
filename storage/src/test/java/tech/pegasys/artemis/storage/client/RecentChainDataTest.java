@@ -377,7 +377,8 @@ class RecentChainDataTest {
     // Switch to fork.
     preGenesisStorageClient.updateBestBlock(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
-    verify(reorgEventChannel).reorgOccurred();
+    verify(reorgEventChannel)
+        .reorgOccurred(latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
   }
 
   @Test
@@ -415,7 +416,8 @@ class RecentChainDataTest {
     // Switch to fork.
     preGenesisStorageClient.updateBestBlock(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
-    verify(reorgEventChannel).reorgOccurred();
+    verify(reorgEventChannel)
+        .reorgOccurred(latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
   }
 
   private void importBlocksAndStates(final ChainBuilder... chainBuilders) {

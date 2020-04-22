@@ -11,27 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
+package tech.pegasys.artemis.validator.client;
 
-public enum LoggingDestination {
-  BOTH("both"),
-  CONSOLE("console"),
-  DEFAULT_BOTH("default"),
-  FILE("file");
+public class NodeDataUnavailableException extends RuntimeException {
 
-  private final String key;
-
-  LoggingDestination(final String key) {
-    this.key = key;
-  }
-
-  public static LoggingDestination get(final String destination) {
-    for (final LoggingDestination candidate : LoggingDestination.values()) {
-      if (candidate.key.equalsIgnoreCase(destination)) {
-        return candidate;
-      }
-    }
-
-    return DEFAULT_BOTH;
+  public NodeDataUnavailableException(final String message) {
+    super(message);
   }
 }

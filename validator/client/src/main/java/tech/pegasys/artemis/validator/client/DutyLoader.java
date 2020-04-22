@@ -11,27 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
+package tech.pegasys.artemis.validator.client;
 
-public enum LoggingDestination {
-  BOTH("both"),
-  CONSOLE("console"),
-  DEFAULT_BOTH("default"),
-  FILE("file");
+import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
 
-  private final String key;
-
-  LoggingDestination(final String key) {
-    this.key = key;
-  }
-
-  public static LoggingDestination get(final String destination) {
-    for (final LoggingDestination candidate : LoggingDestination.values()) {
-      if (candidate.key.equalsIgnoreCase(destination)) {
-        return candidate;
-      }
-    }
-
-    return DEFAULT_BOTH;
-  }
+public interface DutyLoader {
+  SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UnsignedLong epoch);
 }

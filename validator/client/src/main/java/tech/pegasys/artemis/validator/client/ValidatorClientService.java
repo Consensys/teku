@@ -30,37 +30,48 @@ import tech.pegasys.artemis.validator.client.loader.ValidatorLoader;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
-  private final DutyScheduler dutyScheduler;
+  private final ValidatorTimingChannel validatorTimingChannel;
 
   private ValidatorClientService(
-      final EventChannels eventChannels, final DutyScheduler dutyScheduler) {
+      final EventChannels eventChannels, final ValidatorTimingChannel validatorTimingChannel) {
     this.eventChannels = eventChannels;
-    this.dutyScheduler = dutyScheduler;
+    this.validatorTimingChannel = validatorTimingChannel;
   }
 
   public static ValidatorClientService create(final ServiceConfig config) {
-    final EventChannels eventChannels = config.getEventChannels();
-    final ValidatorApiChannel validatorApiChannel =
-        eventChannels.getPublisher(ValidatorApiChannel.class);
-    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
-    final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
     final Map<BLSPublicKey, Validator> validators =
         ValidatorLoader.initializeValidators(config.getConfig());
-    final ValidatorDutyFactory validatorDutyFactory =
-        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
-    final ScheduledDuties scheduledDuties = new ScheduledDuties(validatorDutyFactory);
-    final DutyScheduler validatorClient =
-        new DutyScheduler(
-            asyncRunner, validatorApiChannel, forkProvider, scheduledDuties, validators);
+    final EventChannels eventChannels = config.getEventChannels();
+    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+    final RetryingDutyLoader dutyLoader = createDutyLoader(config, asyncRunner, validators);
+    final DutyScheduler dutyScheduler = new DutyScheduler(dutyLoader);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 
-    return new ValidatorClientService(eventChannels, validatorClient);
+    return new ValidatorClientService(eventChannels, dutyScheduler);
+  }
+
+  private static RetryingDutyLoader createDutyLoader(
+      final ServiceConfig config,
+      final AsyncRunner asyncRunner,
+      final Map<BLSPublicKey, Validator> validators) {
+    final ValidatorApiChannel validatorApiChannel =
+        config.getEventChannels().getPublisher(ValidatorApiChannel.class);
+    final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
+    final ValidatorDutyFactory validatorDutyFactory =
+        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
+    return new RetryingDutyLoader(
+        asyncRunner,
+        new ValidatorApiDutyLoader(
+            validatorApiChannel,
+            forkProvider,
+            () -> new ScheduledDuties(validatorDutyFactory),
+            validators));
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    eventChannels.subscribe(ValidatorTimingChannel.class, dutyScheduler);
+    eventChannels.subscribe(ValidatorTimingChannel.class, validatorTimingChannel);
     return SafeFuture.COMPLETE;
   }
 
