@@ -26,7 +26,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-public class AbstractBeaconNodeCommandTest {
+public abstract class AbstractBeaconNodeCommandTest {
   protected final PrintWriter outputWriter = new PrintWriter(new StringWriter(), true);
   protected final PrintWriter errorWriter = new PrintWriter(new StringWriter(), true);
 

@@ -47,21 +47,21 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void logDestination_ShouldAcceptFileAsDestination() {
+  public void logDestination_shouldAcceptFileAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "file");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
   }
 
   @Test
-  public void logDestination_ShouldAcceptConsoleAsDestination() {
+  public void logDestination_shouldAcceptConsoleAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "console");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
   @Test
-  public void logDestination_ShouldAcceptBothAsDestination() {
+  public void logDestination_shouldAcceptBothAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "both");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
