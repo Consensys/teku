@@ -312,7 +312,7 @@ public class ForkChoiceUtil {
                     "on_attestation: Attestation is not valid");
               }
 
-              forkChoiceStrategy.onAttestation(indexed_attestation);
+              forkChoiceStrategy.onAttestation(store, indexed_attestation);
 
               return AttestationProcessingResult.SUCCESSFUL;
             });

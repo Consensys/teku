@@ -11,13 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.protoarray;
+package tech.pegasys.artemis.datastructures.forkchoice;
 
 import com.google.common.base.Objects;
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 
-class VoteTracker {
+public class VoteTracker implements SimpleOffsetSerializable {
 
   private Bytes32 currentRoot;
   private Bytes32 nextRoot;
@@ -29,10 +33,55 @@ class VoteTracker {
     this.nextEpoch = nextEpoch;
   }
 
+  public VoteTracker copy() {
+    return new VoteTracker(currentRoot, nextRoot, nextEpoch);
+  }
+
   public static VoteTracker Default() {
     return new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UnsignedLong.ZERO);
   }
 
+  @Override
+  public int getSSZFieldCount() {
+    return 3;
+  }
+
+  @Override
+  public List<Bytes> get_fixed_parts() {
+    return List.of(
+        SSZ.encode(writer -> writer.writeFixedBytes(getCurrentRoot())),
+        SSZ.encode(writer -> writer.writeFixedBytes(getNextRoot())),
+        SSZ.encodeUInt64(getNextEpoch().longValue()));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof VoteTracker)) return false;
+    VoteTracker that = (VoteTracker) o;
+    return Objects.equal(getCurrentRoot(), that.getCurrentRoot())
+        && Objects.equal(getNextRoot(), that.getNextRoot())
+        && Objects.equal(getNextEpoch(), that.getNextEpoch());
+  }
+
+  @Override
+  public String toString() {
+    return "VoteTracker{"
+        + "currentRoot="
+        + currentRoot
+        + ", nextRoot="
+        + nextRoot
+        + ", nextEpoch="
+        + nextEpoch
+        + '}';
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(getCurrentRoot(), getNextRoot(), getNextEpoch());
+  }
+
+  /** ****************** * GETTERS & SETTERS * * ******************* */
   public void setCurrentRoot(Bytes32 currentRoot) {
     this.currentRoot = currentRoot;
   }
@@ -55,20 +104,5 @@ class VoteTracker {
 
   public UnsignedLong getNextEpoch() {
     return nextEpoch;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof VoteTracker)) return false;
-    VoteTracker that = (VoteTracker) o;
-    return Objects.equal(getCurrentRoot(), that.getCurrentRoot())
-        && Objects.equal(getNextRoot(), that.getNextRoot())
-        && Objects.equal(getNextEpoch(), that.getNextEpoch());
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(getCurrentRoot(), getNextRoot(), getNextEpoch());
   }
 }

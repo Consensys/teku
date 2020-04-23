@@ -49,7 +49,7 @@ public class VersionedDatabaseFactoryTest {
   @Test
   public void createDatabase_fromExistingDataDir() throws Exception {
     createDbDirectory(dataDir);
-    createVersionFile(dataDir, DatabaseVersion.V1);
+    createVersionFile(dataDir, DatabaseVersion.V3);
 
     final VersionedDatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
     try (final Database db = dbFactory.createDatabase()) {

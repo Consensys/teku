@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class AttesterSlashingTest {
 
@@ -72,5 +73,14 @@ class AttesterSlashingTest {
         new AttesterSlashing(indexedAttestation1, otherIndexedAttestation2);
 
     assertNotEquals(attesterSlashing, testAttesterSlashing);
+  }
+
+  @Test
+  void roundtripSsz() {
+    AttesterSlashing attesterSlashing = dataStructureUtil.randomAttesterSlashing();
+    AttesterSlashing newAttesterSlashing =
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(attesterSlashing), AttesterSlashing.class);
+    assertEquals(attesterSlashing, newAttesterSlashing);
   }
 }
