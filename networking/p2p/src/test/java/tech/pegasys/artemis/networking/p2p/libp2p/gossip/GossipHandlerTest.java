@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -64,7 +65,7 @@ public class GossipHandlerTest {
 
   @Test
   public void apply_exceedsMaxSize() {
-    final Bytes data = Bytes.wrap(new byte[GossipHandler.GOSSIP_MAX_SIZE + 1]);
+    final Bytes data = Bytes.wrap(new byte[GOSSIP_MAX_SIZE + 1]);
     final MockMessageApi message = new MockMessageApi(data, topic);
     final SafeFuture<Boolean> result = gossipHandler.apply(message);
 

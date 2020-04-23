@@ -319,6 +319,7 @@ public class ArtemisNode extends Node {
       configMap.put("data-path", DATA_PATH);
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");
+      configMap.put("log-destination", "console");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {

@@ -15,8 +15,10 @@ package tech.pegasys.artemis.validator.anticorruption;
 
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 
@@ -24,7 +26,7 @@ import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
  * Converts events from the {@link com.google.common.eventbus.EventBus} to the new validator client
  * {@link tech.pegasys.artemis.events.EventChannels}.
  */
-class BeaconChainEventAdapter implements SlotEventsChannel {
+class BeaconChainEventAdapter implements SlotEventsChannel, ReorgEventChannel {
 
   private final ValidatorTimingChannel validatorTimingChannel;
 
@@ -46,5 +48,10 @@ class BeaconChainEventAdapter implements SlotEventsChannel {
   public void onSlot(final UnsignedLong slot) {
     validatorTimingChannel.onSlot(slot);
     validatorTimingChannel.onBlockProductionDue(slot);
+  }
+
+  @Override
+  public void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {
+    validatorTimingChannel.onChainReorg(bestSlot);
   }
 }

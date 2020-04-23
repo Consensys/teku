@@ -28,7 +28,7 @@ public class LoggingOptions {
 
   public static final boolean DEFAULT_LOG_COLOR_ENABLED = true;
   public static final boolean DEFAULT_LOG_INCLUDE_EVENTS_ENABLED = true;
-  public static final String DEFAULT_LOG_DESTINATION = "both";
+  public static final String DEFAULT_LOG_DESTINATION = "default_of_both";
   private static final String SEP = System.getProperty("file.separator");
   public static final String DEFAULT_LOG_FILE =
       StringUtils.joinWith(SEP, VersionProvider.defaultStoragePath(), "logs", "teku.log");
@@ -40,14 +40,15 @@ public class LoggingOptions {
       names = {LOG_COLOR_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Whether Status and Event log messages include a console color display code",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean logColorEnabled = DEFAULT_LOG_COLOR_ENABLED;
 
   @CommandLine.Option(
       names = {LOG_INCLUDE_EVENTS_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description =
-          "Whether the frequent update events are logged (e.g. every slot event, with validators and attestations))",
+          "Whether frequent update events are logged (e.g. every slot event, with validators and attestations)",
       arity = "1")
   private boolean logIncludeEventsEnabled = DEFAULT_LOG_INCLUDE_EVENTS_ENABLED;
 
@@ -68,7 +69,7 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {LOG_FILE_NAME_PATTERN_OPTION_NAME},
       paramLabel = "<REGEX>",
-      description = "Pattern for the filename to apply to rolled over logs files.",
+      description = "Pattern for the filename to apply to rolled over log files.",
       arity = "1")
   private String logFileNamePattern = DEFAULT_LOG_FILE_NAME_PATTERN;
 

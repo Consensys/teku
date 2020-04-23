@@ -23,10 +23,12 @@ import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
@@ -38,13 +40,15 @@ public class BlockGossipManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final BlockValidator blockValidator =
+      new BlockValidator(storageClient, new StateTransition());
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @BeforeEach
   public void setup() {
     doReturn(topicChannel).when(gossipNetwork).subscribe(eq(BlockTopicHandler.BLOCKS_TOPIC), any());
-    new BlockGossipManager(gossipNetwork, eventBus, storageClient);
+    new BlockGossipManager(gossipNetwork, eventBus, blockValidator);
   }
 
   @Test

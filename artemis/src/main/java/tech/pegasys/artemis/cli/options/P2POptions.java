@@ -36,7 +36,7 @@ public class P2POptions {
   public static final int DEFAULT_P2P_PORT = 30303;
   public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
   public static final List<String> DEFAULT_P2P_DISCOVERY_BOOTNODES =
-      new ArrayList<>(); // depends on network option
+      null; // depends on network option
   public static final String DEFAULT_P2P_ADVERTISED_IP = "127.0.0.1";
   public static final int DEFAULT_P2P_ADVERTISED_PORT = DEFAULT_P2P_PORT;
   public static final String DEFAULT_P2P_PRIVATE_KEY_FILE = null;
@@ -48,7 +48,8 @@ public class P2POptions {
       names = {P2P_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables peer to peer",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean p2pEnabled = DEFAULT_P2P_ENABLED;
 
   @CommandLine.Option(
@@ -69,7 +70,8 @@ public class P2POptions {
       names = {P2P_DISCOVERY_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables discv5 discovery",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean p2pDiscoveryEnabled = DEFAULT_P2P_DISCOVERY_ENABLED;
 
   @CommandLine.Option(

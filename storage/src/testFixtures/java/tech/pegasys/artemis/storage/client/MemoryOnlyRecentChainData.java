@@ -15,22 +15,35 @@ package tech.pegasys.artemis.storage.client;
 
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.StubFinalizedCheckpointChannel;
-import tech.pegasys.artemis.storage.StubStorageUpdateChannel;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
+import tech.pegasys.artemis.storage.api.StubFinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.api.StubReorgEventChannel;
+import tech.pegasys.artemis.storage.api.StubStorageUpdateChannel;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
-  public MemoryOnlyRecentChainData(final EventBus eventBus) {
-    super(new StubStorageUpdateChannel(), new StubFinalizedCheckpointChannel(), eventBus);
+  public MemoryOnlyRecentChainData(
+      final EventBus eventBus, final ReorgEventChannel reorgEventChannel) {
+    super(
+        new StubStorageUpdateChannel(),
+        new StubFinalizedCheckpointChannel(),
+        reorgEventChannel,
+        eventBus);
     eventBus.register(this);
   }
 
   public static RecentChainData create(final EventBus eventBus) {
-    return new MemoryOnlyRecentChainData(eventBus);
+    return create(eventBus, new StubReorgEventChannel());
   }
 
-  public static RecentChainData createWithStore(final EventBus eventBus, final Store store) {
-    MemoryOnlyRecentChainData client = new MemoryOnlyRecentChainData(eventBus);
+  public static RecentChainData create(
+      final EventBus eventBus, final ReorgEventChannel reorgEventChannel) {
+    return new MemoryOnlyRecentChainData(eventBus, reorgEventChannel);
+  }
+
+  public static RecentChainData createWithStore(
+      final EventBus eventBus, final ReorgEventChannel reorgEventChannel, final Store store) {
+    MemoryOnlyRecentChainData client = new MemoryOnlyRecentChainData(eventBus, reorgEventChannel);
     client.setStore(store);
     return client;
   }

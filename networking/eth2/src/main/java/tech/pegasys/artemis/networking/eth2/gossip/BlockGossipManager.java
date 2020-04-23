@@ -19,10 +19,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class BlockGossipManager {
   private final EventBus eventBus;
@@ -32,8 +32,8 @@ public class BlockGossipManager {
   public BlockGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final RecentChainData recentChainData) {
-    final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, recentChainData);
+      final BlockValidator blockValidator) {
+    final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, blockValidator);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     eventBus.register(this);

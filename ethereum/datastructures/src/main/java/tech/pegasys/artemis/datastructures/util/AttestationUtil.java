@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.getValidatorPubKey;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
@@ -40,7 +41,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
@@ -172,12 +172,6 @@ public class AttestationUtil {
       return false;
     }
     return true;
-  }
-
-  private static BLSPublicKey getValidatorPubKey(BeaconState state, UnsignedLong validatorIndex) {
-    return BeaconStateCache.getTransitionCaches(state)
-        .getValidatorsPubKeys()
-        .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey());
   }
 
   // Set bits of the newAttestation on the oldBitlist

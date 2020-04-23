@@ -43,7 +43,9 @@ import tech.pegasys.artemis.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -57,6 +59,7 @@ class BeaconRestApiTest {
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
   private final SyncService syncService = mock(SyncService.class);
+  private final BlockImporter blockImporter = mock(BlockImporter.class);
   private static final Integer THE_PORT = 12345;
 
   @BeforeEach
@@ -68,7 +71,8 @@ class BeaconRestApiTest {
             .build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
-        new DataProvider(storageClient, combinedChainDataClient, null, syncService, null),
+        new DataProvider(
+            storageClient, combinedChainDataClient, null, syncService, null, blockImporter),
         config,
         app);
   }
@@ -156,6 +160,11 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveBeaconValidatorsPostEndpoint() {
     verify(app).post(eq(PostValidators.ROUTE), any(PostValidators.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveValidatorBlockEndpoint() {
+    verify(app).post(eq(PostBlock.ROUTE), any(PostBlock.class));
   }
 
   @Test

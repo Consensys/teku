@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
@@ -30,6 +31,7 @@ public class StorageUpdate {
   private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final Map<Bytes32, BeaconState> blockStates;
   private final Map<Checkpoint, BeaconState> checkpointStates;
+  private final Map<UnsignedLong, VoteTracker> votes;
 
   public StorageUpdate(
       final Optional<UnsignedLong> genesisTime,
@@ -38,7 +40,8 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> blockStates,
-      final Map<Checkpoint, BeaconState> checkpointStates) {
+      final Map<Checkpoint, BeaconState> checkpointStates,
+      final Map<UnsignedLong, VoteTracker> votes) {
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.finalizedCheckpoint = finalizedCheckpoint;
@@ -46,6 +49,7 @@ public class StorageUpdate {
     this.blocks = blocks;
     this.blockStates = blockStates;
     this.checkpointStates = checkpointStates;
+    this.votes = votes;
   }
 
   public boolean isEmpty() {
@@ -55,7 +59,8 @@ public class StorageUpdate {
         && bestJustifiedCheckpoint.isEmpty()
         && blocks.isEmpty()
         && blockStates.isEmpty()
-        && checkpointStates.isEmpty();
+        && checkpointStates.isEmpty()
+        && votes.isEmpty();
   }
 
   public Optional<UnsignedLong> getGenesisTime() {
@@ -84,5 +89,9 @@ public class StorageUpdate {
 
   public Map<Checkpoint, BeaconState> getCheckpointStates() {
     return checkpointStates;
+  }
+
+  public Map<UnsignedLong, VoteTracker> getVotes() {
+    return votes;
   }
 }

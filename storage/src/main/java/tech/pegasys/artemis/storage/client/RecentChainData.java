@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage.client;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.eventbus.EventBus;
@@ -24,10 +24,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.core.ForkChoiceUtil;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
@@ -36,6 +37,7 @@ import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -48,6 +50,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
+  private final ReorgEventChannel reorgEventChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -64,7 +67,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   RecentChainData(
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
+      final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
+    this.reorgEventChannel = reorgEventChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
@@ -130,17 +135,65 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
+    final Optional<Bytes32> originalBestRoot = bestBlockRoot;
+    final UnsignedLong originalBestSlot = bestSlot;
     this.bestBlockRoot = Optional.of(root);
     this.bestSlot = slot;
     bestBlockInitialized.complete(null);
+
+    if (originalBestRoot
+        .map(original -> hasReorgedFrom(original, originalBestSlot))
+        .orElse(false)) {
+      reorgEventChannel.reorgOccurred(root, bestSlot);
+    }
   }
 
-  public Bytes4 getForkAtHead() {
-    return getForkAtSlot(bestSlot);
+  private boolean hasReorgedFrom(
+      final Bytes32 originalBestRoot, final UnsignedLong originalBestSlot) {
+    // Get the block root in effect at the old best slot on the current best chain. If this is a
+    // different fork to the previous chain the root at originalBestSlot will be different from
+    // originalBestRoot. If it's an extension of the same chain it will match.
+    return getBlockRootBySlot(originalBestSlot)
+        .map(rootAtOldBestSlot -> !rootAtOldBestSlot.equals(originalBestRoot))
+        .orElse(true);
   }
 
-  public Bytes4 getForkAtSlot(UnsignedLong slot) {
-    return getForkAtEpoch(compute_epoch_at_slot(slot));
+  /**
+   * Return the current slot based on our Store's time.
+   *
+   * @return The current slot.
+   */
+  public Optional<UnsignedLong> getCurrentSlot() {
+    if (isPreGenesis()) {
+      return Optional.empty();
+    }
+    return Optional.of(ForkChoiceUtil.get_current_slot(store));
+  }
+
+  /**
+   * Return the current epoch based on our Store's time.
+   *
+   * @return The current epoch.
+   */
+  public Optional<UnsignedLong> getCurrentEpoch() {
+    return getCurrentSlot().map(BeaconStateUtil::compute_epoch_at_slot);
+  }
+
+  public Bytes4 getForkAtCurrentEpoch() {
+    return getCurrentEpoch().map(this::getForkAtEpoch).orElse(Constants.GENESIS_FORK_VERSION);
+  }
+
+  /**
+   * Return the current fork digest. This represents our fork information for the current epoch by
+   * time - regardless of where our head block is at.
+   *
+   * @return The current fork digest.
+   */
+  public Bytes4 getCurrentForkDigest() {
+    final Bytes4 currentFork = getForkAtCurrentEpoch();
+    final Bytes32 genesisValidatorsRoot =
+        getBestBlockRootState().map(BeaconState::getGenesis_validators_root).orElse(Bytes32.ZERO);
+    return compute_fork_digest(currentFork, genesisValidatorsRoot);
   }
 
   public Bytes4 getForkAtEpoch(UnsignedLong epoch) {
@@ -213,8 +266,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   @Subscribe
-  public void onNewAggregateAndProof(AggregateAndProof attestation) {
-    EVENT_LOG.aggregateAndProof(attestation.getAggregate().getData().getBeacon_block_root());
+  public void onNewAggregateAndProof(SignedAggregateAndProof attestation) {
+    EVENT_LOG.aggregateAndProof(
+        attestation.getMessage().getAggregate().getData().getBeacon_block_root());
   }
 
   public boolean containsBlock(final Bytes32 root) {
@@ -285,6 +339,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   // TODO: These methods should not return zero if null. We should handle this better
   public UnsignedLong getFinalizedEpoch() {
     return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
+  }
+
+  public UnsignedLong getBestJustifiedEpoch() {
+    return store == null ? UnsignedLong.ZERO : store.getBestJustifiedCheckpoint().getEpoch();
   }
 
   public Bytes32 getFinalizedRoot() {

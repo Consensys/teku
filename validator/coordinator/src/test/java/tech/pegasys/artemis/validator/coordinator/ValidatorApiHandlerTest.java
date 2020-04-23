@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
@@ -36,9 +37,9 @@ import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
@@ -50,7 +51,8 @@ import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
-import tech.pegasys.artemis.sync.SyncService;
+import tech.pegasys.artemis.sync.SyncState;
+import tech.pegasys.artemis.sync.SyncStateTracker;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.api.NodeSyncingException;
@@ -63,7 +65,7 @@ class ValidatorApiHandlerTest {
       BeaconStateUtil.compute_start_slot_at_epoch(EPOCH.minus(UnsignedLong.ONE));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
-  private final SyncService syncService = mock(SyncService.class);
+  private final SyncStateTracker syncStateTracker = mock(SyncStateTracker.class);
   private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -74,16 +76,21 @@ class ValidatorApiHandlerTest {
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
           chainDataClient,
-          syncService,
+          syncStateTracker,
           stateTransition,
           blockFactory,
           attestationPool,
           attestationTopicSubscriptions,
           eventBus);
 
+  @BeforeEach
+  public void setUp() {
+    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+  }
+
   @Test
   public void getDuties_shouldFailWhenNodeIsSyncing() {
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     final SafeFuture<Optional<List<ValidatorDuties>>> duties =
         validatorApiHandler.getDuties(EPOCH, List.of(dataStructureUtil.randomPublicKey()));
     assertThat(duties).isCompletedExceptionally();
@@ -188,7 +195,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedBlock_shouldFailWhenNodeIsSyncing() {
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
             UnsignedLong.ONE, dataStructureUtil.randomSignature());
@@ -234,7 +241,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedAttestation_shouldFailWhenNodeIsSyncing() {
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createUnsignedAttestation(UnsignedLong.ONE, 1);
 
@@ -286,7 +293,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createAggregate_shouldFailWhenNodeIsSyncing() {
-    when(syncService.isSyncActive()).thenReturn(true);
+    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createAggregate(dataStructureUtil.randomAttestationData());
 
@@ -348,9 +355,11 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void sendAggregateAndProof_shouldPostAggregateAndProof() {
-    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
+    final SignedAggregateAndProof aggregateAndProof =
+        dataStructureUtil.randomSignedAggregateAndProof();
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
+    verify(attestationPool).add(aggregateAndProof.getMessage().getAggregate());
     verify(eventBus).post(aggregateAndProof);
   }
 

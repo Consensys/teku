@@ -75,7 +75,7 @@ class MockStartDepositGeneratorTest {
     final List<DepositData> expectedDeposits =
         Arrays.stream(EXPECTED_DEPOSITS)
             .map(Bytes::fromHexString)
-            .map(DepositData::fromBytes)
+            .map(bytes -> SimpleOffsetSerializer.deserialize(bytes, DepositData.class))
             .collect(toList());
 
     final List<DepositData> actualDeposits = generator.createDeposits(keyPairs);

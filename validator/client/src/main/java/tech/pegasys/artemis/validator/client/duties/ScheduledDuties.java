@@ -58,6 +58,7 @@ public class ScheduledDuties {
 
   public synchronized void scheduleAggregationDuties(
       final UnsignedLong slot,
+      final Validator validator,
       final int validatorIndex,
       final BLSSignature slotSignature,
       final int attestationCommitteeIndex,
@@ -65,7 +66,11 @@ public class ScheduledDuties {
     aggregationDuties
         .computeIfAbsent(slot, dutyFactory::createAggregationDuty)
         .addValidator(
-            validatorIndex, slotSignature, attestationCommitteeIndex, unsignedAttestationFuture);
+            validator,
+            validatorIndex,
+            slotSignature,
+            attestationCommitteeIndex,
+            unsignedAttestationFuture);
   }
 
   public synchronized void produceBlock(final UnsignedLong slot) {

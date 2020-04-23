@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -25,27 +26,35 @@ public class NetworkDefinition {
 
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
       ImmutableMap.<String, NetworkDefinition>builder()
-          .put("minimal", builder().constants("minimal").build())
+          .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())
           .put("mainnet", builder().constants("mainnet").build())
           .put(
               "topaz",
               builder()
                   .constants("mainnet")
+                  .discoveryBootnodes(
+                      "enr:-Ku4QAGwOT9StqmwI5LHaIymIO4ooFKfNkEjWa0f1P8OsElgBh2Ijb-GrD_-b9W4kcPFcwmHQEy5RncqXNqdpVo1heoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
                   .eth1DepositContractAddress("0x5cA1e00004366Ac85f492887AAab12d0e6418876")
                   .build())
           .build();
 
   private final String constants;
-  private final Optional<List<String>> discoveryBootnodes;
+  private final int startupTargetPeerCount;
+  private final int startupTimeoutSeconds;
+  private final List<String> discoveryBootnodes;
   private final Optional<String> eth1DepositContractAddress;
   private final Optional<String> eth1Endpoint;
 
   private NetworkDefinition(
       final String constants,
-      final Optional<List<String>> discoveryBootnodes,
+      final int startupTargetPeerCount,
+      final int startupTimeoutSeconds,
+      final List<String> discoveryBootnodes,
       final Optional<String> eth1DepositContractAddress,
       final Optional<String> eth1Endpoint) {
     this.constants = constants;
+    this.startupTargetPeerCount = startupTargetPeerCount;
+    this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
@@ -63,7 +72,15 @@ public class NetworkDefinition {
     return constants;
   }
 
-  public Optional<List<String>> getDiscoveryBootnodes() {
+  public Integer getStartupTargetPeerCount() {
+    return startupTargetPeerCount;
+  }
+
+  public Integer getStartupTimeoutSeconds() {
+    return startupTimeoutSeconds;
+  }
+
+  public List<String> getDiscoveryBootnodes() {
     return discoveryBootnodes;
   }
 
@@ -77,7 +94,9 @@ public class NetworkDefinition {
 
   private static class Builder {
     private String constants;
-    private Optional<List<String>> discoveryBootnodes = Optional.empty();
+    private int startupTargetPeerCount = Constants.DEFAULT_STARTUP_TARGET_PEER_COUNT;
+    private int startupTimeoutSeconds = Constants.DEFAULT_STARTUP_TIMEOUT_SECONDS;
+    private List<String> discoveryBootnodes = new ArrayList<>();
     private Optional<String> eth1DepositContractAddress = Optional.empty();
     private Optional<String> eth1Endpoint = Optional.empty();
 
@@ -86,8 +105,18 @@ public class NetworkDefinition {
       return this;
     }
 
+    public Builder startupTargetPeerCount(final int startupTargetPeerCount) {
+      this.startupTargetPeerCount = startupTargetPeerCount;
+      return this;
+    }
+
+    public Builder startupTimeoutSeconds(final int startupTimeoutSeconds) {
+      this.startupTimeoutSeconds = startupTimeoutSeconds;
+      return this;
+    }
+
     public Builder discoveryBootnodes(final String... discoveryBootnodes) {
-      this.discoveryBootnodes = Optional.of(asList(discoveryBootnodes));
+      this.discoveryBootnodes = asList(discoveryBootnodes);
       return this;
     }
 
@@ -104,7 +133,12 @@ public class NetworkDefinition {
     public NetworkDefinition build() {
       checkNotNull(constants, "Missing constants");
       return new NetworkDefinition(
-          constants, discoveryBootnodes, eth1DepositContractAddress, eth1Endpoint);
+          constants,
+          startupTargetPeerCount,
+          startupTimeoutSeconds,
+          discoveryBootnodes,
+          eth1DepositContractAddress,
+          eth1Endpoint);
     }
   }
 }
