@@ -35,7 +35,6 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 import tech.pegasys.artemis.storage.server.Database;
-import tech.pegasys.artemis.storage.server.StateStorageMode;
 import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstanceFactory;
@@ -43,6 +42,7 @@ import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDao;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDao.Updater;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.artemis.storage.server.rocksdb.schema.V3Schema;
+import tech.pegasys.artemis.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
 

@@ -13,9 +13,12 @@
 
 package tech.pegasys.artemis.cli.options;
 
+import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
+
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.config.LoggingDestination;
 
 public class LoggingOptions {
 
@@ -28,7 +31,7 @@ public class LoggingOptions {
 
   public static final boolean DEFAULT_LOG_COLOR_ENABLED = true;
   public static final boolean DEFAULT_LOG_INCLUDE_EVENTS_ENABLED = true;
-  public static final String DEFAULT_LOG_DESTINATION = "default_of_both";
+  public static final LoggingDestination DEFAULT_LOG_DESTINATION = DEFAULT_BOTH;
   private static final String SEP = System.getProperty("file.separator");
   public static final String DEFAULT_LOG_FILE =
       StringUtils.joinWith(SEP, VersionProvider.defaultStoragePath(), "logs", "teku.log");
@@ -48,16 +51,17 @@ public class LoggingOptions {
       names = {LOG_INCLUDE_EVENTS_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description =
-          "Whether the frequent update events are logged (e.g. every slot event, with validators and attestations))",
+          "Whether frequent update events are logged (e.g. every slot event, with validators and attestations)",
       arity = "1")
   private boolean logIncludeEventsEnabled = DEFAULT_LOG_INCLUDE_EVENTS_ENABLED;
 
   @CommandLine.Option(
       names = {LOG_DESTINATION_OPTION_NAME},
       paramLabel = "<LOG_DESTINATION>",
-      description = "Whether a logger is added for the console, the log file, or both",
+      description =
+          "Whether a logger is added for the console, the log file, or both (Valid values: ${COMPLETION-CANDIDATES})",
       arity = "1")
-  private String logDestination = DEFAULT_LOG_DESTINATION;
+  private LoggingDestination logDestination = DEFAULT_LOG_DESTINATION;
 
   @CommandLine.Option(
       names = {LOG_FILE_OPTION_NAME},
@@ -69,7 +73,7 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {LOG_FILE_NAME_PATTERN_OPTION_NAME},
       paramLabel = "<REGEX>",
-      description = "Pattern for the filename to apply to rolled over logs files.",
+      description = "Pattern for the filename to apply to rolled over log files.",
       arity = "1")
   private String logFileNamePattern = DEFAULT_LOG_FILE_NAME_PATTERN;
 
@@ -81,7 +85,7 @@ public class LoggingOptions {
     return logIncludeEventsEnabled;
   }
 
-  public String getLogDestination() {
+  public LoggingDestination getLogDestination() {
     return logDestination;
   }
 
