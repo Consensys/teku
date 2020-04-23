@@ -94,4 +94,8 @@ public class StatusLogger {
   public void minGenesisTimeReached() {
     log.info("Minimum genesis time reached");
   }
+
+  public void dataPathSet(final String dataPath) {
+    log.info("Using data path: {}", dataPath);
+  }
 }
