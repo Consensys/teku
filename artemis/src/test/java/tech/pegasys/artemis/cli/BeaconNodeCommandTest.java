@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.cli.options.DataOptions.DATA_STORAGE_MODE_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
@@ -38,6 +39,8 @@ import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
 import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.util.config.StateStorageMode.ARCHIVE;
+import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -217,6 +220,20 @@ public class BeaconNodeCommandTest {
     assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
   }
 
+  @Test
+  public void dataStorageMode_shouldAcceptPrune() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "prune");
+    assertThat(artemisConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
+  }
+
+  @Test
+  public void dataStorageMode_shouldAcceptArchive() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "archive");
+    assertThat(artemisConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
+  }
+
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"mainnet", "minimal", "topaz"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
@@ -356,7 +373,7 @@ public class BeaconNodeCommandTest {
         .setValidatorKeystorePasswordFiles(Collections.emptyList())
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
-        .setDataStorageMode("prune")
+        .setDataStorageMode(PRUNE)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)

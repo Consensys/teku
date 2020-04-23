@@ -83,7 +83,7 @@ public class ArtemisConfiguration {
 
   // Database
   private final String dataPath;
-  private final String dataStorageMode;
+  private final StateStorageMode dataStorageMode;
 
   // Beacon REST API
   private final int restApiPort;
@@ -135,7 +135,7 @@ public class ArtemisConfiguration {
       final String metricsInterface,
       final List<String> metricsCategories,
       final String dataPath,
-      final String dataStorageMode,
+      final StateStorageMode dataStorageMode,
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
@@ -359,7 +359,7 @@ public class ArtemisConfiguration {
     return dataPath;
   }
 
-  public String getDataStorageMode() {
+  public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
   }
 
