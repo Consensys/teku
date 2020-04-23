@@ -71,8 +71,7 @@ public class Eth2IncomingRequestHandlerTest {
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final BeaconState state = mock(BeaconState.class);
   private final BeaconBlocksByRangeRequestMessage request =
-      new BeaconBlocksByRangeRequestMessage(
-          UnsignedLong.ONE, UnsignedLong.ONE, UnsignedLong.valueOf(2));
+      new BeaconBlocksByRangeRequestMessage(UnsignedLong.ONE, UnsignedLong.ONE, UnsignedLong.ONE);
   private final Bytes requestData = blocksByRangeMethod.encodeRequest(request);
 
   @BeforeEach
@@ -114,15 +113,10 @@ public class Eth2IncomingRequestHandlerTest {
     reqHandler.onActivation(rpcStream);
     verify(rpcStream, never()).close();
     verify(rpcStream, never()).closeWriteStream();
-
     reqHandler.onData(nodeId, rpcStream, Unpooled.wrappedBuffer(requestData.toArrayUnsafe()));
-
     // When timeout completes, we should not close stream
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
-    asyncRunner.executeQueuedActions();
-
     verify(rpcStream, never()).close();
-    verify(rpcStream, never()).closeWriteStream();
   }
 }
