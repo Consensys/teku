@@ -118,7 +118,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getIdentity().setFactory(() -> privKey);
               b.getTransports().add(TcpTransport::new);
               b.getSecureChannels().add(NoiseXXSecureChannel::new);
-              b.getSecureChannels().add(SecIoSecureChannel::new);
+              b.getSecureChannels().add(SecIoSecureChannel::new); // to be removed later
               b.getMuxers().add(MplexStreamMuxer::new);
               b.getNetwork()
                   .listen(
