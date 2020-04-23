@@ -435,7 +435,7 @@ public class SimpleOffsetSerializer {
     return SSZVector.createMutable(newList, classInfo);
   }
 
-  public static Object deserializePrimitive(
+  private static Object deserializePrimitive(
       Class classInfo, SSZReader reader, MutableInt bytePointer) {
     switch (classInfo.getSimpleName()) {
       case "UnsignedLong":
