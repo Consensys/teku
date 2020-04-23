@@ -13,17 +13,16 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip;
 
-import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import io.vertx.core.impl.ConcurrentHashSet;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
@@ -34,8 +33,8 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final RecentChainData recentChainData;
   private final EventBus eventBus;
 
-  private final Map<Integer, Set<UnsignedLong>> subnetIdToCommittees = new ConcurrentHashMap<>();
-  private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new ConcurrentHashMap<>();
+  private final Map<UnsignedLong, Set<UnsignedLong>> subnetIdToCommittees = new HashMap<>();
+  private final Map<UnsignedLong, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
   public AttestationSubnetSubscriptions(
       final GossipNetwork gossipNetwork,
@@ -46,68 +45,47 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     this.eventBus = eventBus;
   }
 
-  public Optional<TopicChannel> getChannel(final UnsignedLong committeeIndex) {
-    final int subnetId = committeeIndexToSubnetId(committeeIndex);
-    if (!subnetIdToCommittees
-        .computeIfAbsent(subnetId, __ -> Collections.emptySet())
-        .contains(committeeIndex)) {
-      // We're not subscribed to this committee subnet
-      return Optional.empty();
-    }
+  public synchronized Optional<TopicChannel> getChannel(final UnsignedLong committeeIndex) {
+    final UnsignedLong subnetId = committeeIndexToSubnetId(committeeIndex);
     return Optional.ofNullable(subnetIdToTopicChannel.get(subnetId));
   }
 
   public synchronized void subscribeToCommitteeTopic(final UnsignedLong committeeIndex) {
-    final int subnetId = committeeIndexToSubnetId(committeeIndex);
+    final UnsignedLong subnetId = committeeIndexToSubnetId(committeeIndex);
     final Set<UnsignedLong> subscribedCommittees =
-        subnetIdToCommittees.computeIfAbsent(subnetId, __ -> new ConcurrentHashSet<>());
+        subnetIdToCommittees.computeIfAbsent(subnetId, __ -> new HashSet<>());
     subscribedCommittees.add(committeeIndex);
     subnetIdToTopicChannel.computeIfAbsent(subnetId, this::createChannelForSubnetId);
   }
 
   public synchronized void unsubscribeFromCommitteeTopic(final UnsignedLong committeeIndex) {
-    final int subnetId = committeeIndexToSubnetId(committeeIndex);
-    final Set<UnsignedLong> subscribedCommittees =
-        subnetIdToCommittees.compute(
-            subnetId,
-            (subnet, committees) -> {
-              if (committees == null) {
-                return null;
-              }
-              committees.remove(committeeIndex);
-              if (committees.isEmpty()) {
-                return null;
-              }
-              return committees;
-            });
-
-    if (subscribedCommittees != null) {
+    final UnsignedLong subnetId = committeeIndexToSubnetId(committeeIndex);
+    final Set<UnsignedLong> committees =
+        subnetIdToCommittees.getOrDefault(subnetId, Collections.emptySet());
+    committees.remove(committeeIndex);
+    if (!committees.isEmpty()) {
       // We still have some subscribers, don't actually unsubscribe
       return;
     }
-
-    subnetIdToTopicChannel.computeIfPresent(
-        subnetId,
-        (index, channel) -> {
-          channel.close();
-          return null;
-        });
+    subnetIdToCommittees.remove(subnetId);
+    final TopicChannel topicChannel = subnetIdToTopicChannel.remove(subnetId);
+    topicChannel.close();
   }
 
-  private int committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
+  private UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
     final UnsignedLong subnetId =
         committeeIndex.mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT));
-    return toIntExact(subnetId.longValue());
+    return subnetId;
   }
 
-  private TopicChannel createChannelForSubnetId(final int subnetId) {
+  private TopicChannel createChannelForSubnetId(final UnsignedLong subnetId) {
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(eventBus, recentChainData, subnetId);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
     // Close gossip channels
     subnetIdToTopicChannel.values().forEach(TopicChannel::close);
     subnetIdToCommittees.clear();

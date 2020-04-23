@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
+import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,14 +37,14 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   private final RecentChainData recentChainData;
 
   public AttestationTopicHandler(
-      final EventBus eventBus, final RecentChainData recentChainData, final int subnetId) {
+      final EventBus eventBus, final RecentChainData recentChainData, final UnsignedLong subnetId) {
     super(eventBus);
     this.attestationsTopic = getTopic(subnetId);
     this.recentChainData = recentChainData;
   }
 
-  private static String getTopic(final int subnetId) {
-    return "/eth2/committee_index" + subnetId + "_beacon_attestation/ssz";
+  private static String getTopic(final UnsignedLong subnetId) {
+    return "/eth2/committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation/ssz";
   }
 
   @Override

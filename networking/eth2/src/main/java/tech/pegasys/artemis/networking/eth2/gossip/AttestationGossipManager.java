@@ -16,14 +16,11 @@ package tech.pegasys.artemis.networking.eth2.gossip;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
@@ -43,16 +40,14 @@ public class AttestationGossipManager {
   @Subscribe
   public void onNewAttestation(final Attestation attestation) {
     final UnsignedLong committeeIndex = attestation.getData().getIndex();
-    final Optional<TopicChannel> channel = subnetSubscriptions.getChannel(committeeIndex);
-    if (channel.isEmpty()) {
-      // We're not managing attestations for this committee right now
-      LOG.trace(
-          "Ignoring attestation for committee {}, which does not correspond to any currently assigned committee.",
-          committeeIndex);
-      return;
-    }
-    final Bytes data = SimpleOffsetSerializer.serialize(attestation);
-    channel.get().gossip(data);
+    subnetSubscriptions
+        .getChannel(committeeIndex)
+        .ifPresentOrElse(
+            channel -> channel.gossip(SimpleOffsetSerializer.serialize(attestation)),
+            () ->
+                LOG.trace(
+                    "Ignoring attestation for committee {}, which does not correspond to any currently assigned committee.",
+                    committeeIndex));
   }
 
   public void subscribeToCommitteeTopic(final int committeeIndex) {
