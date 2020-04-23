@@ -146,7 +146,7 @@ class BLS12381Test {
             .collect(Collectors.toList());
     List<Bytes> messages =
         IntStream.range(0, 8)
-            .mapToObj(i -> Bytes.wrap(("Hey " + i).getBytes()))
+            .mapToObj(i -> Bytes.wrap(("Hey " + i).getBytes(UTF_8)))
             .collect(Collectors.toList());
     List<Signature> signatures =
         Streams.zip(keys.stream(), messages.stream(), (k, m) -> BLS12381.sign(k.secretKey(), m))
