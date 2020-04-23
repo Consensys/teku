@@ -48,7 +48,7 @@ public class ArtemisConfigurationBuilder {
   private String eth1Endpoint;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
-  private String logDestination;
+  private LoggingDestination logDestination;
   private String logFile;
   private String logFileNamePattern;
   private String transitionRecordDirectory;
@@ -226,7 +226,7 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setLogDestination(final String logDestination) {
+  public ArtemisConfigurationBuilder setLogDestination(final LoggingDestination logDestination) {
     this.logDestination = logDestination;
     return this;
   }
