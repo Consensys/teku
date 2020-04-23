@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
@@ -30,9 +29,7 @@ public final class BeaconBlocksByRangeRequestMessage
   private final UnsignedLong step;
 
   public BeaconBlocksByRangeRequestMessage(
-      final UnsignedLong startSlot,
-      final UnsignedLong count,
-      final UnsignedLong step) {
+      final UnsignedLong startSlot, final UnsignedLong count, final UnsignedLong step) {
     this.startSlot = startSlot;
     this.count = count;
     this.step = step;

@@ -74,8 +74,15 @@ public class BeaconBlocksByRangeMessageHandler
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
     return combinedChainDataClient
-        .getHeadStateFromStore()
-        .map(headState -> sendNextBlock(new RequestState(message, headState.getSlot(), callback)))
+        .getHeadStateAndBlockRootFromStore()
+        .map(
+            (headStateAndBlockRoot) ->
+                sendNextBlock(
+                    new RequestState(
+                        message,
+                        headStateAndBlockRoot.getState().getSlot(),
+                        headStateAndBlockRoot.getBlockRoot(),
+                        callback)))
         .orElseGet(() -> completedFuture(null));
   }
 
@@ -104,8 +111,10 @@ public class BeaconBlocksByRangeMessageHandler
     public RequestState(
         final BeaconBlocksByRangeRequestMessage message,
         final UnsignedLong headSlot,
+        final Bytes32 headBlockRoot,
         final ResponseCallback<SignedBeaconBlock> callback) {
       this.currentSlot = message.getStartSlot();
+      this.headBlockRoot = headBlockRoot;
       // Minus 1 to account for sending the block at startSlot.
       // We only decrement this when moving to the next slot but we're already at the first slot
       this.remainingBlocks = message.getCount().minus(ONE);

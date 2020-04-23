@@ -233,6 +233,16 @@ public class CombinedChainDataClient {
     return getBestBlockRoot().map(store::getBlockState);
   }
 
+  public Optional<StateAndBlockRoot> getHeadStateAndBlockRootFromStore() {
+    final Store store = getStore();
+    if (store == null) {
+      LOG.trace("No state at head because the store is not set");
+      return Optional.empty();
+    }
+    return getBestBlockRoot()
+        .map(blockRoot -> new StateAndBlockRoot(store.getBlockState(blockRoot), blockRoot));
+  }
+
   public Optional<Bytes32> getBestBlockRoot() {
     return recentChainData.getBestBlockRoot();
   }
@@ -293,5 +303,23 @@ public class CombinedChainDataClient {
     return getBlockFromStore(blockRoot)
         .map(value -> SafeFuture.completedFuture(Optional.of(value)))
         .orElseGet(() -> historicalChainData.getBlockByBlockRoot(blockRoot));
+  }
+
+  public static class StateAndBlockRoot {
+    private final BeaconState state;
+    private final Bytes32 blockRoot;
+
+    public StateAndBlockRoot(BeaconState state, Bytes32 blockRoot) {
+      this.state = state;
+      this.blockRoot = blockRoot;
+    }
+
+    public BeaconState getState() {
+      return state;
+    }
+
+    public Bytes32 getBlockRoot() {
+      return blockRoot;
+    }
   }
 }

@@ -72,7 +72,7 @@ public class Eth2IncomingRequestHandlerTest {
   private final BeaconState state = mock(BeaconState.class);
   private final BeaconBlocksByRangeRequestMessage request =
       new BeaconBlocksByRangeRequestMessage(
-          dataStructureUtil.randomBytes32(), UnsignedLong.ONE, UnsignedLong.ONE, UnsignedLong.ONE);
+          UnsignedLong.ONE, UnsignedLong.ONE, UnsignedLong.valueOf(2));
   private final Bytes requestData = blocksByRangeMethod.encodeRequest(request);
 
   @BeforeEach

@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -58,20 +57,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
       new BeaconBlocksByRangeMessageHandler(storageClient);
 
   @Test
-  public void shouldReturnNoBlocksWhenHeadBlockIsNotInStore() {
-    final Bytes32 headBlockRoot = Bytes32.fromHexStringLenient("0x123456");
-    when(storageClient.getNonfinalizedBlockState(headBlockRoot)).thenReturn(Optional.empty());
-
-    handler.onIncomingMessage(
-        peer,
-        new BeaconBlocksByRangeRequestMessage(headBlockRoot, UnsignedLong.ZERO, ONE, ONE),
-        listener);
-
-    verify(storageClient, never()).getBlockAtSlotExact(any(), any());
-    verifyNoBlocksReturned();
-  }
-
-  @Test
   public void shouldReturnNoBlocksWhenThereAreNoBlocksAtOrAfterStartSlot() {
     final int startBlock = 10;
     final int count = 1;
@@ -86,7 +71,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlock.getMessage().hash_tree_root(),
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -113,7 +97,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -140,7 +123,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -167,7 +149,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -197,7 +178,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -229,7 +209,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -257,7 +236,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot, UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
+            UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
         listener);
 
     verifyNoBlocksReturned();
@@ -280,10 +259,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlock.getMessage().hash_tree_root(),
-            UnsignedLong.valueOf(startBlock),
-            count,
-            UnsignedLong.valueOf(skip)),
+            UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
         listener);
 
     verify(listener).completeWithError(RpcException.INVALID_STEP);
