@@ -76,7 +76,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
     footer = "Teku is licensed under the Apache License 2.0")
 public class BeaconNodeCommand implements Callable<Integer> {
 
-  static final String CONFIG_FILE_OPTION_NAME = "--config-file";
+  public static final String CONFIG_FILE_OPTION_NAME = "--config-file";
   static final String TEKU_CONFIG_FILE_ENV = "TEKU_CONFIG_FILE";
   private final PrintWriter outputWriter;
   private final PrintWriter errorWriter;

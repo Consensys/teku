@@ -15,8 +15,6 @@ package tech.pegasys.artemis.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
@@ -41,38 +39,22 @@ import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAM
 
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
+import tech.pegasys.artemis.util.config.LoggingDestination;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
-import tech.pegasys.teku.logging.LoggingDestination;
 
-public class BeaconNodeCommandTest {
-
-  private final PrintWriter outputWriter = new PrintWriter(new StringWriter(), true);
-  private final PrintWriter errorWriter = new PrintWriter(new StringWriter(), true);
-
-  @SuppressWarnings("unchecked")
-  private final Consumer<ArtemisConfiguration> startAction = mock(Consumer.class);
-
-  private BeaconNodeCommand beaconNodeCommand =
-      new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
-
-  @TempDir Path dataPath;
+public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void loadDefaultsWhenNoArgsArePassed() {
@@ -245,17 +227,6 @@ public class BeaconNodeCommandTest {
     assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
-  @Test
-  public void shouldUseDefaultOfBothAsLogDestinationDefault() {
-    // This is important!
-    // If it defaults to "both" or some other value custom log4j configs get overwritten
-    beaconNodeCommand.parse(new String[0]);
-
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
-    assertThat(LoggingDestination.get(config.getLogDestination()))
-        .isEqualTo(LoggingDestination.DEFAULT_BOTH);
-  }
-
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -316,7 +287,7 @@ public class BeaconNodeCommandTest {
   private ArtemisConfigurationBuilder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
         .setLogFile("teku.log")
-        .setLogDestination("both")
+        .setLogDestination(LoggingDestination.BOTH)
         .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 
@@ -366,19 +337,6 @@ public class BeaconNodeCommandTest {
   private void assertArtemisConfiguration(final ArtemisConfiguration expected) {
     final ArtemisConfiguration actual = getResultingArtemisConfiguration();
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
-  }
-
-  private ArtemisConfiguration getResultingArtemisConfiguration() {
-    final ArgumentCaptor<ArtemisConfiguration> configCaptor =
-        ArgumentCaptor.forClass(ArtemisConfiguration.class);
-    verify(startAction).accept(configCaptor.capture());
-
-    return configCaptor.getValue();
-  }
-
-  private ArtemisConfiguration getArtemisConfigurationFromArguments(String... arguments) {
-    beaconNodeCommand.parse(arguments);
-    return getResultingArtemisConfiguration();
   }
 
   private Path createTempFile(final byte[] contents) throws IOException {

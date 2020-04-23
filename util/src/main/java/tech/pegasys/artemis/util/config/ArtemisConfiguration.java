@@ -68,7 +68,7 @@ public class ArtemisConfiguration {
   // Logging
   private final boolean logColorEnabled;
   private final boolean logIncludeEventsEnabled;
-  private final String logDestination;
+  private final LoggingDestination logDestination;
   private final String logFile;
   private final String logFileNamePattern;
 
@@ -126,7 +126,7 @@ public class ArtemisConfiguration {
       final String eth1Endpoint,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
-      final String logDestination,
+      final LoggingDestination logDestination,
       final String logFile,
       final String logFileNamePattern,
       final String transitionRecordDirectory,
@@ -323,7 +323,7 @@ public class ArtemisConfiguration {
     return logIncludeEventsEnabled;
   }
 
-  public String getLogDestination() {
+  public LoggingDestination getLogDestination() {
     return logDestination;
   }
 
