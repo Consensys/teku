@@ -15,6 +15,7 @@ package tech.pegasys.artemis.bls.mikuli;
 
 import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
 
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +46,20 @@ import org.apache.tuweni.bytes.Bytes;
 public final class BLS12381 {
 
   private static final long MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = Long.MAX_VALUE;
+  private static SecureRandom RND;
+
+  private static SecureRandom getRND() {
+    // Milagro RAND has some issues with generating 'small' random numbers
+    // and is not thread safe
+    if (RND == null) {
+      try {
+        RND = SecureRandom.getInstanceStrong();
+      } catch (NoSuchAlgorithmException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return RND;
+  }
 
   /**
    * Opaque data class which contains intermediate calculation results for batch BLS verification
@@ -307,15 +322,11 @@ public final class BLS12381 {
   }
 
   private static Scalar nextBatchRandomMultiplier() {
-    // Milagro RAND has some issues
-    long randomLong = (RND.nextLong() & 0x7fffffffffffffffL) % MAX_BATCH_VERIFY_RANDOM_MULTIPLIER;
+    long randomLong =
+        (getRND().nextLong() & 0x7fffffffffffffffL) % MAX_BATCH_VERIFY_RANDOM_MULTIPLIER;
     BIG randomBig = longToBIG(randomLong);
     return new Scalar(randomBig);
   }
-
-  // TODO find proper way of creating random
-  @SuppressWarnings("DoNotCreateSecureRandomDirectly")
-  private static SecureRandom RND = new SecureRandom();
 
   private static BIG longToBIG(long l) {
     long[] bigContent = new long[BIG.NLEN];
