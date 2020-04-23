@@ -75,9 +75,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   }
 
   private UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
-    final UnsignedLong subnetId =
-        committeeIndex.mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT));
-    return subnetId;
+    return committeeIndex.mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT));
   }
 
   private TopicChannel createChannelForSubnetId(final UnsignedLong subnetId) {
