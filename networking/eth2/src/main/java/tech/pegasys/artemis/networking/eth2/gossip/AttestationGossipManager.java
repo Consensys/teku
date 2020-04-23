@@ -13,82 +13,55 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip;
 
-import static java.lang.StrictMath.toIntExact;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
-import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final GossipNetwork gossipNetwork;
   private final EventBus eventBus;
-  private final RecentChainData recentChainData;
-
-  private final Map<Integer, TopicChannel> attestationChannels = new ConcurrentHashMap<>();
+  private final AttestationSubnetSubscriptions subnetSubscriptions;
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttestationGossipManager(
-      final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final RecentChainData recentChainData) {
-    this.gossipNetwork = gossipNetwork;
+      final AttestationSubnetSubscriptions attestationSubnetSubscriptions) {
+    subnetSubscriptions = attestationSubnetSubscriptions;
     this.eventBus = eventBus;
-    this.recentChainData = recentChainData;
     eventBus.register(this);
   }
 
   @Subscribe
   public void onNewAttestation(final Attestation attestation) {
-    final int committeeIndex = toIntExact(attestation.getData().getIndex().longValue());
-    final TopicChannel channel = attestationChannels.get(committeeIndex);
-    if (channel == null) {
-      // We're not managing attestations for this committee right now
-      LOG.trace(
-          "Ignoring attestation for committee {}, which does not correspond to any currently assigned committee.",
-          committeeIndex);
-      return;
-    }
-    final Bytes data = SimpleOffsetSerializer.serialize(attestation);
-    channel.gossip(data);
+    final UnsignedLong committeeIndex = attestation.getData().getIndex();
+    subnetSubscriptions
+        .getChannel(committeeIndex)
+        .ifPresentOrElse(
+            channel -> channel.gossip(SimpleOffsetSerializer.serialize(attestation)),
+            () ->
+                LOG.trace(
+                    "Ignoring attestation for committee {}, which does not correspond to any currently assigned committee.",
+                    committeeIndex));
   }
 
   public void subscribeToCommitteeTopic(final int committeeIndex) {
-    attestationChannels.computeIfAbsent(committeeIndex, this::createChannelForCommitteeIndex);
+    subnetSubscriptions.subscribeToCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
   }
 
   public void unsubscribeFromCommitteeTopic(final int committeeIndex) {
-    attestationChannels.computeIfPresent(
-        committeeIndex,
-        (index, channel) -> {
-          channel.close();
-          return null;
-        });
-  }
-
-  private TopicChannel createChannelForCommitteeIndex(final int committeeIndex) {
-    final AttestationTopicHandler topicHandler =
-        new AttestationTopicHandler(eventBus, recentChainData, committeeIndex);
-    return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+    subnetSubscriptions.unsubscribeFromCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
   }
 
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
       eventBus.unregister(this);
-      // Close gossip channels
-      attestationChannels.values().forEach(TopicChannel::close);
+      subnetSubscriptions.close();
     }
   }
 }
