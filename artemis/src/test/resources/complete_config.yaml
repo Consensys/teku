@@ -32,7 +32,7 @@ eth1-endpoint: "http://localhost:8545"
 # logging
 log-color-enabled: True
 log-include-events-enabled: True
-log-destination: "BOTH"
+log-destination: "both"
 log-file: "teku.log"
 log-file-name-pattern: "teku_%d{yyyy-MM-dd}.log"
 
