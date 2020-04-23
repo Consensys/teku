@@ -15,8 +15,6 @@ package tech.pegasys.artemis.cli;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -218,32 +216,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private int handleParseException(final CommandLine.ParameterException ex, final String[] args) {
     errorWriter.println(ex.getMessage());
 
-    if (!CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter)) {
-      appendErrorMessageToHelp(ex.getCommandLine(), ex.getMessage());
-      ex.getCommandLine().usage(outputWriter, CommandLine.Help.Ansi.AUTO);
-    }
+    CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter);
+    outputWriter.println();
+    outputWriter.println("To display full help:");
+    outputWriter.println("teku --help");
 
     return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
-  }
-
-  private void appendErrorMessageToHelp(CommandLine cmd, String message) {
-    final String SECTION_KEY_NEW_HEADING = "errorHeading";
-    final String SECTION_KEY_NEW_DETAILS = "errorContent";
-
-    Map<String, String> env = new LinkedHashMap<>();
-    env.put("ERROR:", message);
-    cmd.getHelpSectionMap()
-        .put(
-            SECTION_KEY_NEW_HEADING,
-            help -> help.createHeading("%n%nProblem parsing CLI options:%n"));
-    cmd.getHelpSectionMap()
-        .put(SECTION_KEY_NEW_DETAILS, help -> help.createTextTable(env).toString());
-
-    List<String> keys = new ArrayList<>(cmd.getHelpSectionKeys());
-    int index = keys.indexOf(CommandLine.Model.UsageMessageSpec.SECTION_KEY_FOOTER_HEADING);
-    keys.add(index, SECTION_KEY_NEW_HEADING);
-    keys.add(index + 1, SECTION_KEY_NEW_DETAILS);
-    cmd.setHelpSectionKeys(keys);
   }
 
   @Override
