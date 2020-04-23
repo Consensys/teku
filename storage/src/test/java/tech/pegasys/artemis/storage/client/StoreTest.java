@@ -54,6 +54,7 @@ class StoreTest {
           initialBestJustifiedCheckpoint,
           new HashMap<>(),
           new HashMap<>(),
+          new HashMap<>(),
           new HashMap<>());
 
   @Test

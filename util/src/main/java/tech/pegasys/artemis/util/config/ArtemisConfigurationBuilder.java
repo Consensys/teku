@@ -48,7 +48,7 @@ public class ArtemisConfigurationBuilder {
   private String eth1Endpoint;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
-  private String logDestination;
+  private LoggingDestination logDestination;
   private String logFile;
   private String logFileNamePattern;
   private String transitionRecordDirectory;
@@ -57,7 +57,7 @@ public class ArtemisConfigurationBuilder {
   private String metricsInterface;
   private List<String> metricsCategories;
   private String dataPath;
-  private String dataStorageMode;
+  private StateStorageMode dataStorageMode;
   private int restApiPort;
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
@@ -226,7 +226,7 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setLogDestination(final String logDestination) {
+  public ArtemisConfigurationBuilder setLogDestination(final LoggingDestination logDestination) {
     this.logDestination = logDestination;
     return this;
   }
@@ -272,7 +272,7 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setDataStorageMode(final String dataStorageMode) {
+  public ArtemisConfigurationBuilder setDataStorageMode(final StateStorageMode dataStorageMode) {
     this.dataStorageMode = dataStorageMode;
     return this;
   }

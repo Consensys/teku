@@ -29,7 +29,7 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.server.Database;
-import tech.pegasys.artemis.storage.server.StateStorageMode;
+import tech.pegasys.artemis.util.config.StateStorageMode;
 
 public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 

@@ -17,12 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class DepositDataTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -79,7 +79,9 @@ class DepositDataTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszDepositInputBytes = depositData.toBytes();
-    assertEquals(depositData, DepositData.fromBytes(sszDepositInputBytes));
+    assertEquals(
+        depositData,
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(depositData), DepositData.class));
   }
 }

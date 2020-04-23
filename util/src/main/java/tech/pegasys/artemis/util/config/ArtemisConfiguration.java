@@ -68,7 +68,7 @@ public class ArtemisConfiguration {
   // Logging
   private final boolean logColorEnabled;
   private final boolean logIncludeEventsEnabled;
-  private final String logDestination;
+  private final LoggingDestination logDestination;
   private final String logFile;
   private final String logFileNamePattern;
 
@@ -83,7 +83,7 @@ public class ArtemisConfiguration {
 
   // Database
   private final String dataPath;
-  private final String dataStorageMode;
+  private final StateStorageMode dataStorageMode;
 
   // Beacon REST API
   private final int restApiPort;
@@ -126,7 +126,7 @@ public class ArtemisConfiguration {
       final String eth1Endpoint,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
-      final String logDestination,
+      final LoggingDestination logDestination,
       final String logFile,
       final String logFileNamePattern,
       final String transitionRecordDirectory,
@@ -135,7 +135,7 @@ public class ArtemisConfiguration {
       final String metricsInterface,
       final List<String> metricsCategories,
       final String dataPath,
-      final String dataStorageMode,
+      final StateStorageMode dataStorageMode,
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
@@ -323,7 +323,7 @@ public class ArtemisConfiguration {
     return logIncludeEventsEnabled;
   }
 
-  public String getLogDestination() {
+  public LoggingDestination getLogDestination() {
     return logDestination;
   }
 
@@ -359,7 +359,7 @@ public class ArtemisConfiguration {
     return dataPath;
   }
 
-  public String getDataStorageMode() {
+  public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
   }
 
