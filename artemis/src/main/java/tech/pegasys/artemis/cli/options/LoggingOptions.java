@@ -48,7 +48,7 @@ public class LoggingOptions {
       names = {LOG_INCLUDE_EVENTS_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description =
-          "Whether the frequent update events are logged (e.g. every slot event, with validators and attestations))",
+          "Whether frequent update events are logged (e.g. every slot event, with validators and attestations)",
       arity = "1")
   private boolean logIncludeEventsEnabled = DEFAULT_LOG_INCLUDE_EVENTS_ENABLED;
 
@@ -69,7 +69,7 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {LOG_FILE_NAME_PATTERN_OPTION_NAME},
       paramLabel = "<REGEX>",
-      description = "Pattern for the filename to apply to rolled over logs files.",
+      description = "Pattern for the filename to apply to rolled over log files.",
       arity = "1")
   private String logFileNamePattern = DEFAULT_LOG_FILE_NAME_PATTERN;
 
