@@ -18,8 +18,8 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 /**
- * Advanced block validator which uses {@link BatchSignatureVerifier} to verify
- * all the BLS signatures inside a block in an optimized batched way.
+ * Advanced block validator which uses {@link BatchSignatureVerifier} to verify all the BLS
+ * signatures inside a block in an optimized batched way.
  */
 public class BatchBlockValidator implements BlockValidator {
 

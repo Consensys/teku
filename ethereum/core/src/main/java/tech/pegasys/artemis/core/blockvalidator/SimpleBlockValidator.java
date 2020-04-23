@@ -34,8 +34,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 /**
  * Base logic of a block validation
  *
- * Delegates bls signature verifications to BLSSignatureVerifier instance
- * Optionally may skip some validations.
+ * <p>Delegates bls signature verifications to BLSSignatureVerifier instance Optionally may skip
+ * some validations.
  */
 public class SimpleBlockValidator implements BlockValidator {
 

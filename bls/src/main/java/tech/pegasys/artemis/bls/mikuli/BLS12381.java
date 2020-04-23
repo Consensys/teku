@@ -46,6 +46,13 @@ public final class BLS12381 {
 
   private static final long MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = Long.MAX_VALUE;
 
+  /**
+   * Opaque data class which contains intermediate calculation results for batch BLS verification
+   *
+   * @see #prepareBatchVerify(int, List, Bytes, Signature)
+   * @see #prepareBatchVerify2(int, List, Bytes, Signature, List, Bytes, Signature)
+   * @see #completeBatchVerify(List)
+   */
   public static final class BatchSemiAggregate {
     private final G2Point sigPoint;
     private final GTPoint msgPubKeyPairing;
@@ -55,11 +62,11 @@ public final class BLS12381 {
       this.msgPubKeyPairing = msgPubKeyPairing;
     }
 
-    G2Point getSigPoint() {
+    private G2Point getSigPoint() {
       return sigPoint;
     }
 
-    GTPoint getMsgPubKeyPairing() {
+    private GTPoint getMsgPubKeyPairing() {
       return msgPubKeyPairing;
     }
   }
@@ -196,6 +203,14 @@ public final class BLS12381 {
     return signature.aggregateVerify(publicKeys, hashesInG2);
   }
 
+  /**
+   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
+   *
+   * <p>For above batch verification method pre-calculates and returns two values: <code>S * r
+   * </code> and <code>e(M * r, P)</code>
+   *
+   * @return the pair of values above in an opaque instance
+   */
   public static BatchSemiAggregate prepareBatchVerify(
       int index, List<PublicKey> publicKeys, Bytes message, Signature signature) {
 
@@ -217,6 +232,17 @@ public final class BLS12381 {
     return new BatchSemiAggregate(sigG2Point, pair);
   }
 
+  /**
+   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
+   *
+   * <p>Slightly more efficient variant of {@link #prepareBatchVerify(int, List, Bytes, Signature)}
+   * when 2 signatures are aggregated with a faster ate2 pairing
+   *
+   * <p>For above batch verification method pre-calculates and returns two values: <code>
+   * S1 * r1 + S2 * r2</code> and <code>e(M1 * r1, P1) * e(M2 * r2, P2)</code>
+   *
+   * @return the pair of values above in an opaque instance
+   */
   public static BatchSemiAggregate prepareBatchVerify2(
       int index,
       List<PublicKey> publicKeys1,
@@ -251,6 +277,17 @@ public final class BLS12381 {
     return new BatchSemiAggregate(sigG2Point1.add(sigG2Point2), pair2);
   }
 
+  /**
+   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
+   *
+   * <p>Does the final job of batch verification: calculates the final product and sum, does final
+   * pairing and exponentiation
+   *
+   * @param preparedList the list of instances returned by {@link #prepareBatchVerify(int, List,
+   *     Bytes, Signature)} or {@link #prepareBatchVerify2(int, List, Bytes, Signature, List, Bytes,
+   *     Signature)} or mixed from both
+   * @return True if the verification is successful, false otherwise
+   */
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedList) {
     if (preparedList.isEmpty()) {
       return true;

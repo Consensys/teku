@@ -60,8 +60,8 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
    * Performs verification of all the signatures collected with one or more calls to {@link
    * #verify(List, Bytes, BLSSignature)}
    *
-   * After this method completes the instance should be disposed
-   * and any subsequent calls to this instance methods would fail with exception
+   * <p>After this method completes the instance should be disposed and any subsequent calls to this
+   * instance methods would fail with exception
    */
   public boolean batchVerify() {
     if (complete) throw new IllegalStateException("Reuse of disposable instance");

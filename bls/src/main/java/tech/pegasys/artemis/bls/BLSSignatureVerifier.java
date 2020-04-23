@@ -18,6 +18,10 @@ import java.util.List;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 
+/**
+ * Simple interface to enable pluggable variants of BLS verifier. In a {@link #SIMPLE} case it's
+ * just static {@link BLS} methods
+ */
 public interface BLSSignatureVerifier {
 
   class InvalidSignatureException extends Exception {
@@ -27,14 +31,31 @@ public interface BLSSignatureVerifier {
     }
   }
 
+  /** Just delegates verify to {@link BLS#fastAggregateVerify(List, Bytes, BLSSignature)} */
   BLSSignatureVerifier SIMPLE = BLS::fastAggregateVerify;
 
-  boolean verify(List<BLSPublicKey> publicKey, Bytes message, BLSSignature signature);
+  /**
+   * Verifies an aggregate BLS signature against a message using the list of public keys. In case of
+   * non-aggregate signature [publicKeys] list should contain just a single entry
+   *
+   * @param publicKeys The list of public keys, not null
+   * @param message The message data to verify, not null
+   * @param signature The aggregate signature, not null
+   * @return True if the verification is successful, false otherwise
+   * @see BLS#fastAggregateVerify(List, Bytes, BLSSignature)
+   */
+  boolean verify(List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature);
 
+  /** Shortcut to {@link #verify(List, Bytes, BLSSignature)} for non-aggregate case */
   default boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
     return verify(Collections.singletonList(publicKey), message, signature);
   }
 
+  /**
+   * Convenient shortcut to throw exception when signature verification fails
+   *
+   * @throws InvalidSignatureException when signature is invalid
+   */
   default void verifyAndThrow(
       BLSPublicKey publicKey, Bytes message, BLSSignature signature, Supplier<String> errMessage)
       throws InvalidSignatureException {
@@ -43,12 +64,22 @@ public interface BLSSignatureVerifier {
     }
   }
 
+  /**
+   * Convenient shortcut to throw exception when signature verification fails
+   *
+   * @throws InvalidSignatureException when signature is invalid
+   */
   default void verifyAndThrow(
       BLSPublicKey publicKey, Bytes message, BLSSignature signature, String errMessage)
       throws InvalidSignatureException {
     verifyAndThrow(publicKey, message, signature, () -> errMessage);
   }
 
+  /**
+   * Convenient shortcut to throw exception when signature verification fails
+   *
+   * @throws InvalidSignatureException when signature is invalid
+   */
   default void verifyAndThrow(BLSPublicKey publicKey, Bytes message, BLSSignature signature)
       throws InvalidSignatureException {
     verifyAndThrow(publicKey, message, signature, () -> "Invalid signature");
