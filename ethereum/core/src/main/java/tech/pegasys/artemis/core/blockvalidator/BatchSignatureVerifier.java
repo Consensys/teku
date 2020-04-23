@@ -23,6 +23,14 @@ import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.bls.BLSSignatureVerifier;
 import tech.pegasys.artemis.bls.mikuli.BLS12381.BatchSemiAggregate;
 
+/**
+ * Implementation which doesn't perform any actual validations on {@link #verify(List, Bytes,
+ * BLSSignature)} call but just collects signatures which are then validated in a batched optimized
+ * way with {@link #batchVerify()} call.
+ *
+ * <p>Every instance of this class is disposable, i.e. it is intended for just a single batch and a
+ * single {@link #batchVerify()} call.
+ */
 public class BatchSignatureVerifier implements BLSSignatureVerifier {
   private static class Job {
     final int idx;
@@ -48,6 +56,13 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
     return true;
   }
 
+  /**
+   * Performs verification of all the signatures collected with one or more calls to {@link
+   * #verify(List, Bytes, BLSSignature)}
+   *
+   * After this method completes the instance should be disposed
+   * and any subsequent calls to this instance methods would fail with exception
+   */
   public boolean batchVerify() {
     if (complete) throw new IllegalStateException("Reuse of disposable instance");
     List<BatchSemiAggregate> batchSemiAggregates =

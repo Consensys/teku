@@ -31,6 +31,12 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
+/**
+ * Base logic of a block validation
+ *
+ * Delegates bls signature verifications to BLSSignatureVerifier instance
+ * Optionally may skip some validations.
+ */
 public class SimpleBlockValidator implements BlockValidator {
 
   private final boolean verifyBlockSignature;
