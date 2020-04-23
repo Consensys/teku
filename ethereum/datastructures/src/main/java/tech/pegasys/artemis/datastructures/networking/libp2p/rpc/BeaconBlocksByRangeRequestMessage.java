@@ -25,17 +25,14 @@ import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
 public final class BeaconBlocksByRangeRequestMessage
     implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
-  private final Bytes32 headBlockRoot;
   private final UnsignedLong startSlot;
   private final UnsignedLong count;
   private final UnsignedLong step;
 
   public BeaconBlocksByRangeRequestMessage(
-      final Bytes32 headBlockRoot,
       final UnsignedLong startSlot,
       final UnsignedLong count,
       final UnsignedLong step) {
-    this.headBlockRoot = headBlockRoot;
     this.startSlot = startSlot;
     this.count = count;
     this.step = step;
@@ -43,20 +40,15 @@ public final class BeaconBlocksByRangeRequestMessage
 
   @Override
   public int getSSZFieldCount() {
-    return 4;
+    return 3;
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(headBlockRoot)),
         SSZ.encodeUInt64(startSlot.longValue()),
         SSZ.encodeUInt64(count.longValue()),
         SSZ.encodeUInt64(step.longValue()));
-  }
-
-  public Bytes32 getHeadBlockRoot() {
-    return headBlockRoot;
   }
 
   public UnsignedLong getStartSlot() {
@@ -85,14 +77,13 @@ public final class BeaconBlocksByRangeRequestMessage
       return false;
     }
     final BeaconBlocksByRangeRequestMessage that = (BeaconBlocksByRangeRequestMessage) o;
-    return Objects.equals(headBlockRoot, that.headBlockRoot)
-        && Objects.equals(startSlot, that.startSlot)
+    return Objects.equals(startSlot, that.startSlot)
         && Objects.equals(count, that.count)
         && Objects.equals(step, that.step);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headBlockRoot, startSlot, count, step);
+    return Objects.hash(startSlot, count, step);
   }
 }
