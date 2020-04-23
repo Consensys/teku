@@ -83,6 +83,8 @@ public class BeaconNode {
             config.getLogDestination(),
             config.getLogFile(),
             config.getLogFileNamePattern()));
+
+    STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
   }
 
   public void start() {
