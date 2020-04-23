@@ -13,39 +13,14 @@
 
 package tech.pegasys.artemis.metrics;
 
-import com.google.common.primitives.UnsignedLong;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 
 public class EpochMetrics {
-
-  private final SettableGauge currentJustifiedEpoch;
-  private final SettableGauge currentFinalizedEpoch;
-  private final SettableGauge previousJustifiedEpoch;
   private final SettableGauge currentEpochLiveValidators;
   private final SettableGauge previousEpochLiveValidators;
   private final SettableGauge pendingExits;
 
   public EpochMetrics(final MetricsSystem metricsSystem) {
-
-    currentJustifiedEpoch =
-        SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.BEACON,
-            "current_justified_epoch",
-            "Current justified epoch");
-    currentFinalizedEpoch =
-        SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.BEACON,
-            "current_finalized_epoch",
-            "Current finalized epoch");
-    previousJustifiedEpoch =
-        SettableGauge.create(
-            metricsSystem,
-            ArtemisMetricCategory.BEACON,
-            "current_prev_justified_epoch",
-            "Current previously justified epoch");
-
     currentEpochLiveValidators =
         SettableGauge.create(
             metricsSystem,
@@ -68,15 +43,7 @@ public class EpochMetrics {
   }
 
   public void onEpoch(
-      UnsignedLong prevJustifiedEpoch,
-      UnsignedLong currJustifiedEpoch,
-      UnsignedLong currFinalizedEpoch,
-      int prevEpochLiveValidators,
-      int currEpochLiveValidators,
-      long currPendingExits) {
-    previousJustifiedEpoch.set(prevJustifiedEpoch.doubleValue());
-    currentJustifiedEpoch.set(currJustifiedEpoch.longValue());
-    currentFinalizedEpoch.set(currFinalizedEpoch.longValue());
+      int prevEpochLiveValidators, int currEpochLiveValidators, long currPendingExits) {
     currentEpochLiveValidators.set(prevEpochLiveValidators);
     previousEpochLiveValidators.set(currEpochLiveValidators);
     pendingExits.set(currPendingExits);

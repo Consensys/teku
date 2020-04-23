@@ -33,7 +33,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -69,7 +68,6 @@ public class GetNewBlock implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            type = BigDecimal.class,
             description = "`UnsignedLong` Slot in which to create the beacon block.",
             required = true),
         @OpenApiParam(

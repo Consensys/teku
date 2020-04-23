@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -53,6 +54,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected RecentChainData recentChainData = mock(RecentChainData.class);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final BlockImporter blockImporter = mock(BlockImporter.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
       new CombinedChainDataClient(recentChainData, historicalChainData);
@@ -64,7 +66,12 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   public void setup() {
     dataProvider =
         new DataProvider(
-            recentChainData, combinedChainDataClient, p2PNetwork, syncService, validatorApiChannel);
+            recentChainData,
+            combinedChainDataClient,
+            p2PNetwork,
+            syncService,
+            validatorApiChannel,
+            blockImporter);
 
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();

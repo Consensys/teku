@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.cli.options;
 
 import java.util.ArrayList;
+import java.util.List;
 import picocli.CommandLine;
 
 public class P2POptions {
@@ -34,20 +35,21 @@ public class P2POptions {
   public static final String DEFAULT_P2P_INTERFACE = "0.0.0.0";
   public static final int DEFAULT_P2P_PORT = 30303;
   public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
-  public static final ArrayList<String> DEFAULT_P2P_DISCOVERY_BOOTNODES =
-      new ArrayList<>(); // depends on network option
+  public static final List<String> DEFAULT_P2P_DISCOVERY_BOOTNODES =
+      null; // depends on network option
   public static final String DEFAULT_P2P_ADVERTISED_IP = "127.0.0.1";
   public static final int DEFAULT_P2P_ADVERTISED_PORT = DEFAULT_P2P_PORT;
   public static final String DEFAULT_P2P_PRIVATE_KEY_FILE = null;
   public static final int DEFAULT_P2P_PEER_LOWER_BOUND = 20;
   public static final int DEFAULT_P2P_PEER_UPPER_BOUND = 30;
-  public static final ArrayList<String> DEFAULT_P2P_STATIC_PEERS = new ArrayList<>();
+  public static final List<String> DEFAULT_P2P_STATIC_PEERS = new ArrayList<>();
 
   @CommandLine.Option(
       names = {P2P_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables peer to peer",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean p2pEnabled = DEFAULT_P2P_ENABLED;
 
   @CommandLine.Option(
@@ -68,7 +70,8 @@ public class P2POptions {
       names = {P2P_DISCOVERY_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables discv5 discovery",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean p2pDiscoveryEnabled = DEFAULT_P2P_DISCOVERY_ENABLED;
 
   @CommandLine.Option(
@@ -77,7 +80,7 @@ public class P2POptions {
       description = "ENR of the bootnode",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> p2pDiscoveryBootnodes = DEFAULT_P2P_DISCOVERY_BOOTNODES;
+  private List<String> p2pDiscoveryBootnodes = DEFAULT_P2P_DISCOVERY_BOOTNODES;
 
   @CommandLine.Option(
       names = {P2P_ADVERTISED_IP_OPTION_NAME},
@@ -120,7 +123,7 @@ public class P2POptions {
       description = "Static peers",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> p2pStaticPeers = DEFAULT_P2P_STATIC_PEERS;
+  private List<String> p2pStaticPeers = DEFAULT_P2P_STATIC_PEERS;
 
   public boolean isP2pEnabled() {
     return p2pEnabled;
@@ -138,7 +141,7 @@ public class P2POptions {
     return p2pDiscoveryEnabled;
   }
 
-  public ArrayList<String> getP2pDiscoveryBootnodes() {
+  public List<String> getP2pDiscoveryBootnodes() {
     return p2pDiscoveryBootnodes;
   }
 
@@ -162,7 +165,7 @@ public class P2POptions {
     return p2pUpperBound;
   }
 
-  public ArrayList<String> getP2pStaticPeers() {
+  public List<String> getP2pStaticPeers() {
     return p2pStaticPeers;
   }
 }

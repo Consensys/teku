@@ -66,7 +66,7 @@ public class BeaconNode {
     this.serviceConfig =
         new ServiceConfig(new SystemTimeProvider(), eventBus, eventChannels, metricsSystem, config);
     this.serviceConfig.getConfig().validateConfig();
-    Constants.setConstants(config.getNetwork());
+    Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDirectory();
     if (transitionRecordDir != null) {
@@ -84,6 +84,8 @@ public class BeaconNode {
             LoggingDestination.get(config.getLogDestination()),
             config.getLogFile(),
             config.getLogFileNamePattern()));
+
+    STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
   }
 
   public void start() {

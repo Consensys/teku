@@ -18,23 +18,33 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.artemis.validator.client.ForkProvider;
 import tech.pegasys.artemis.validator.client.Validator;
 
 public class AggregationDuty implements Duty {
+  private static final Logger LOG = LogManager.getLogger();
   private final ConcurrentMap<Integer, CommitteeAggregator> aggregatorsByCommitteeIndex =
       new ConcurrentHashMap<>();
   private final UnsignedLong slot;
   private final ValidatorApiChannel validatorApiChannel;
+  private final ForkProvider forkProvider;
 
-  public AggregationDuty(final UnsignedLong slot, final ValidatorApiChannel validatorApiChannel) {
+  public AggregationDuty(
+      final UnsignedLong slot,
+      final ValidatorApiChannel validatorApiChannel,
+      final ForkProvider forkProvider) {
     this.slot = slot;
     this.validatorApiChannel = validatorApiChannel;
+    this.forkProvider = forkProvider;
   }
 
   /**
@@ -50,6 +60,7 @@ public class AggregationDuty implements Duty {
    *     unsigned attestation for this committee and slot.
    */
   public void addValidator(
+      final Validator validator,
       final int validatorIndex,
       final BLSSignature proof,
       final int attestationCommitteeIndex,
@@ -59,12 +70,13 @@ public class AggregationDuty implements Duty {
         committeeIndex -> {
           validatorApiChannel.subscribeToBeaconCommittee(committeeIndex, slot);
           return new CommitteeAggregator(
-              UnsignedLong.valueOf(validatorIndex), proof, unsignedAttestationFuture);
+              validator, UnsignedLong.valueOf(validatorIndex), proof, unsignedAttestationFuture);
         });
   }
 
   @Override
   public SafeFuture<?> performDuty() {
+    LOG.trace("Aggregating attestations at slot {}", slot);
     return SafeFuture.allOf(
         aggregatorsByCommitteeIndex.values().stream()
             .map(this::aggregateCommittee)
@@ -75,7 +87,7 @@ public class AggregationDuty implements Duty {
     return aggregator
         .unsignedAttestationFuture
         .thenCompose(this::createAggregate)
-        .thenAccept(maybeAggregate -> sendAggregate(aggregator, maybeAggregate));
+        .thenCompose(maybeAggregate -> sendAggregate(aggregator, maybeAggregate));
   }
 
   public CompletionStage<Optional<Attestation>> createAggregate(
@@ -90,14 +102,22 @@ public class AggregationDuty implements Duty {
     return validatorApiChannel.createAggregate(attestationData);
   }
 
-  private void sendAggregate(
+  private SafeFuture<Void> sendAggregate(
       final CommitteeAggregator aggregator, final Optional<Attestation> maybeAggregate) {
     final Attestation aggregate =
         maybeAggregate.orElseThrow(
             () -> new IllegalStateException("No aggregation could be created"));
-
-    validatorApiChannel.sendAggregateAndProof(
-        new AggregateAndProof(aggregator.validatorIndex, aggregator.proof, aggregate));
+    final AggregateAndProof aggregateAndProof =
+        new AggregateAndProof(aggregator.validatorIndex, aggregate, aggregator.proof);
+    return forkProvider
+        .getForkInfo()
+        .thenCompose(
+            forkInfo ->
+                aggregator.validator.getSigner().signAggregateAndProof(aggregateAndProof, forkInfo))
+        .thenAccept(
+            signature ->
+                validatorApiChannel.sendAggregateAndProof(
+                    new SignedAggregateAndProof(aggregateAndProof, signature)));
   }
 
   @Override
@@ -106,14 +126,18 @@ public class AggregationDuty implements Duty {
   }
 
   private static class CommitteeAggregator {
+
+    private final Validator validator;
     private final UnsignedLong validatorIndex;
     private final BLSSignature proof;
     private final SafeFuture<Optional<Attestation>> unsignedAttestationFuture;
 
     private CommitteeAggregator(
+        final Validator validator,
         final UnsignedLong validatorIndex,
         final BLSSignature proof,
         final SafeFuture<Optional<Attestation>> unsignedAttestationFuture) {
+      this.validator = validator;
       this.validatorIndex = validatorIndex;
       this.proof = proof;
       this.unsignedAttestationFuture = unsignedAttestationFuture;

@@ -36,7 +36,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -62,9 +61,7 @@ public class GetStateRoot implements Handler {
       method = HttpMethod.GET,
       summary = "Get the beacon chain state root for the specified slot.",
       tags = {TAG_BEACON},
-      queryParams = {
-        @OpenApiParam(name = SLOT, type = BigDecimal.class, description = SLOT_QUERY_DESCRIPTION)
-      },
+      queryParams = {@OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION)},
       description = "Returns the beacon chain state root for the specified slot.",
       responses = {
         @OpenApiResponse(

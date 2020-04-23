@@ -21,16 +21,18 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class BeaconBlockHeaderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
+  private UnsignedLong proposer_index = dataStructureUtil.randomUnsignedLong();
   private Bytes32 previous_block_root = dataStructureUtil.randomBytes32();
   private Bytes32 state_root = dataStructureUtil.randomBytes32();
   private Bytes32 block_body_root = dataStructureUtil.randomBytes32();
 
   private BeaconBlockHeader beaconBlockHeader =
-      new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root);
+      new BeaconBlockHeader(slot, proposer_index, previous_block_root, state_root, block_body_root);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -42,7 +44,8 @@ class BeaconBlockHeaderTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     BeaconBlockHeader testBeaconBlockHeader =
-        new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root);
+        new BeaconBlockHeader(
+            slot, proposer_index, previous_block_root, state_root, block_body_root);
 
     assertEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
@@ -52,6 +55,20 @@ class BeaconBlockHeaderTest {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
             slot.plus(dataStructureUtil.randomUnsignedLong()),
+            proposer_index,
+            previous_block_root,
+            state_root,
+            block_body_root);
+
+    assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
+  }
+
+  @Test
+  void equalsReturnsFalseWhenProposerIndexIsDifferent() {
+    BeaconBlockHeader testBeaconBlockHeader =
+        new BeaconBlockHeader(
+            slot,
+            proposer_index.plus(dataStructureUtil.randomUnsignedLong()),
             previous_block_root,
             state_root,
             block_body_root);
@@ -62,7 +79,8 @@ class BeaconBlockHeaderTest {
   @Test
   void equalsReturnsFalseWhenPreviousBlockRootsAreDifferent() {
     BeaconBlockHeader testBeaconBlockHeader =
-        new BeaconBlockHeader(slot, previous_block_root.not(), state_root, block_body_root);
+        new BeaconBlockHeader(
+            slot, proposer_index, previous_block_root.not(), state_root, block_body_root);
 
     assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
@@ -70,7 +88,8 @@ class BeaconBlockHeaderTest {
   @Test
   void equalsReturnsFalseWhenStateRootsAreDifferent() {
     BeaconBlockHeader testBeaconBlockHeader =
-        new BeaconBlockHeader(slot, previous_block_root, state_root.not(), block_body_root);
+        new BeaconBlockHeader(
+            slot, proposer_index, previous_block_root, state_root.not(), block_body_root);
 
     assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
@@ -78,15 +97,19 @@ class BeaconBlockHeaderTest {
   @Test
   void equalsReturnsFalseWhenBlockBodyRootsAreDifferent() {
     BeaconBlockHeader testBeaconBlockHeader =
-        new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root.not());
+        new BeaconBlockHeader(
+            slot, proposer_index, previous_block_root, state_root, block_body_root.not());
 
     assertNotEquals(beaconBlockHeader, testBeaconBlockHeader);
   }
 
   @Test
   void roundtripSSZ() {
-    Bytes sszBeaconBlockHeaderBytes = beaconBlockHeader.toBytes();
-    assertEquals(beaconBlockHeader, BeaconBlockHeader.fromBytes(sszBeaconBlockHeaderBytes));
+    BeaconBlockHeader beaconBlockHeader = dataStructureUtil.randomBeaconBlockHeader();
+    Bytes beaconBlockSerialized = SimpleOffsetSerializer.serialize(beaconBlockHeader);
+    BeaconBlockHeader newBeaconBlockHeader =
+        SimpleOffsetSerializer.deserialize(beaconBlockSerialized, BeaconBlockHeader.class);
+    assertEquals(beaconBlockHeader, newBeaconBlockHeader);
   }
 
   @Test
@@ -95,6 +118,7 @@ class BeaconBlockHeaderTest {
     BeaconBlockHeader blockHeader =
         new BeaconBlockHeader(
             block.getSlot(),
+            block.getProposer_index(),
             block.getParent_root(),
             block.getState_root(),
             block.getBody().hash_tree_root());

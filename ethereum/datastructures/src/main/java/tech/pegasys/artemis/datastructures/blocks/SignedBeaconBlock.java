@@ -24,8 +24,11 @@ import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
-public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer {
+public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   private final BeaconBlock message;
   private final BLSSignature signature;
@@ -69,6 +72,15 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
     return message.getParent_root();
   }
 
+  /**
+   * Get the root of the BeaconBlock that is being signed.
+   *
+   * @return The hashed tree root of the {@code BeaconBlock} being signed.
+   */
+  public Bytes32 getRoot() {
+    return message.hash_tree_root();
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -92,5 +104,13 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
         .add("message", message)
         .add("signature", signature)
         .toString();
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    return HashTreeUtil.merkleize(
+        List.of(
+            message.hash_tree_root(),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
   }
 }

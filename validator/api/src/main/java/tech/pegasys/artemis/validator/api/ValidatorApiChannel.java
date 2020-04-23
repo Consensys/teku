@@ -21,14 +21,14 @@ import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface ValidatorApiChannel {
-  SafeFuture<Optional<Fork>> getFork();
+  SafeFuture<Optional<ForkInfo>> getForkInfo();
 
   SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       UnsignedLong epoch, Collection<BLSPublicKey> publicKeys);
@@ -45,7 +45,7 @@ public interface ValidatorApiChannel {
 
   void sendSignedAttestation(Attestation attestation);
 
-  void sendAggregateAndProof(AggregateAndProof aggregateAndProof);
+  void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof);
 
   void sendSignedBlock(SignedBeaconBlock block);
 }

@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.cli.BeaconNodeCommand;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public final class Artemis {
   public static void main(final String... args) {
@@ -26,9 +27,23 @@ public final class Artemis {
     final PrintWriter outputWriter = new PrintWriter(System.out, true, UTF_8);
     final PrintWriter errorWriter = new PrintWriter(System.err, true, UTF_8);
     final int result =
-        new BeaconNodeCommand(outputWriter, errorWriter, System.getenv()).parse(args);
+        new BeaconNodeCommand(outputWriter, errorWriter, System.getenv(), Artemis::start)
+            .parse(args);
     if (result != 0) {
       System.exit(result);
     }
+  }
+
+  private static void start(final ArtemisConfiguration config) {
+    final BeaconNode node = new BeaconNode(config);
+    node.start();
+    // Detect SIGTERM
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  System.out.println("Teku is shutting down");
+                  node.stop();
+                }));
   }
 }

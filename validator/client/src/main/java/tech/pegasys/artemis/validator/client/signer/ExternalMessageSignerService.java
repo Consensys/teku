@@ -26,7 +26,7 @@ import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.core.signatures.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ExternalMessageSignerService implements MessageSignerService {
@@ -55,6 +55,11 @@ public class ExternalMessageSignerService implements MessageSignerService {
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
     return sign(signingRoot, "/signer/aggregation_slot");
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signAggregateAndProof(final Bytes signingRoot) {
+    return sign(signingRoot, "/signer/aggregate_and_proof");
   }
 
   @Override

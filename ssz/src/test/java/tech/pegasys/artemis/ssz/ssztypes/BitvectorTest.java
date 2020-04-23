@@ -37,8 +37,8 @@ class BitvectorTest {
   @Test
   void initTest() {
     Bitvector bitvector = new Bitvector(10);
-    Assertions.assertEquals(bitvector.getBit(0), 0);
-    Assertions.assertEquals(bitvector.getBit(9), 0);
+    Assertions.assertEquals(bitvector.getBit(0), false);
+    Assertions.assertEquals(bitvector.getBit(9), false);
   }
 
   @Test
@@ -48,11 +48,11 @@ class BitvectorTest {
     bitvector.setBit(3);
     bitvector.setBit(8);
 
-    Assertions.assertEquals(bitvector.getBit(0), 0);
-    Assertions.assertEquals(bitvector.getBit(1), 1);
-    Assertions.assertEquals(bitvector.getBit(3), 1);
-    Assertions.assertEquals(bitvector.getBit(4), 0);
-    Assertions.assertEquals(bitvector.getBit(8), 1);
+    Assertions.assertEquals(bitvector.getBit(0), false);
+    Assertions.assertEquals(bitvector.getBit(1), true);
+    Assertions.assertEquals(bitvector.getBit(3), true);
+    Assertions.assertEquals(bitvector.getBit(4), false);
+    Assertions.assertEquals(bitvector.getBit(8), true);
   }
 
   @Test

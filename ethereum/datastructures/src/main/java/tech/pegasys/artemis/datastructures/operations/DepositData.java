@@ -82,27 +82,6 @@ public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZC
     return fixedPartsList;
   }
 
-  public static DepositData fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new DepositData(
-                BLSPublicKey.fromBytes(reader.readBytes()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                BLSSignature.fromBytes(reader.readBytes())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(pubkey.toBytes());
-          writer.writeFixedBytes(withdrawal_credentials);
-          writer.writeUInt64(amount.longValue());
-          writer.writeBytes(signature.toBytes());
-        });
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(pubkey, withdrawal_credentials, amount, signature);

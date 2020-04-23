@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -26,12 +25,10 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class ProposerSlashingTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private UnsignedLong proposerIndex = dataStructureUtil.randomUnsignedLong();
   private SignedBeaconBlockHeader proposal1 = dataStructureUtil.randomSignedBeaconBlockHeader();
   private SignedBeaconBlockHeader proposal2 = dataStructureUtil.randomSignedBeaconBlockHeader();
 
-  private ProposerSlashing proposerSlashing =
-      new ProposerSlashing(proposerIndex, proposal1, proposal2);
+  private ProposerSlashing proposerSlashing = new ProposerSlashing(proposal1, proposal2);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -42,19 +39,9 @@ class ProposerSlashingTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(proposerIndex, proposal1, proposal2);
+    ProposerSlashing testProposerSlashing = new ProposerSlashing(proposal1, proposal2);
 
     assertEquals(proposerSlashing, testProposerSlashing);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenProposerIndicesAreDifferent() {
-    ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(
-            proposerIndex.plus(dataStructureUtil.randomUnsignedLong()), proposal1, proposal2);
-
-    assertNotEquals(proposerSlashing, testProposerSlashing);
   }
 
   @Test
@@ -66,8 +53,7 @@ class ProposerSlashingTest {
       otherProposal1 = dataStructureUtil.randomSignedBeaconBlockHeader();
     }
 
-    ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(proposerIndex, otherProposal1, proposal2);
+    ProposerSlashing testProposerSlashing = new ProposerSlashing(otherProposal1, proposal2);
 
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }
@@ -81,8 +67,7 @@ class ProposerSlashingTest {
       otherProposal2 = dataStructureUtil.randomSignedBeaconBlockHeader();
     }
 
-    ProposerSlashing testProposerSlashing =
-        new ProposerSlashing(proposerIndex, proposal1, otherProposal2);
+    ProposerSlashing testProposerSlashing = new ProposerSlashing(proposal1, otherProposal2);
 
     assertNotEquals(proposerSlashing, testProposerSlashing);
   }

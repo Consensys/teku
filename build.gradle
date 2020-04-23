@@ -10,6 +10,7 @@ plugins {
   id 'net.researchgate.release' version '2.8.1'
   id 'me.champeau.gradle.jmh' version '0.5.0' apply false
   id 'de.undercouch.download' version '4.0.1'
+  id 'org.ajoberstar.grgit' version '4.0.2'
 }
 
 apply plugin: 'application'
@@ -209,7 +210,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v0.10.1'
+def refTestVersion = 'v0.11.1'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -580,25 +581,8 @@ def calculateVersion() {
 }
 
 def getCheckedOutGitCommitHash() {
-  def gitFolder = "$projectDir/.git/"
-  if (!file(gitFolder).isDirectory()) {
-    // We are in a submodule.  The file's contents are `gitdir: <gitFolder>\n`.
-    // Read the file, cut off the front, and trim the whitespace.
-    gitFolder = file(gitFolder).text.substring(8).trim() + "/"
-  }
   def takeFromHash = 8
-  /*
-   * '.git/HEAD' contains either
-   *      in case of detached head: the currently checked out commit hash
-   *      otherwise: a reference to a file containing the current commit hash
-   */
-  def head = new File(gitFolder + "HEAD").text.split(":") // .git/HEAD
-  def isCommit = head.length == 1 // e5a7c79edabbf7dd39888442df081b1c9d8e88fd
-
-  if (isCommit) return head[0].trim().take(takeFromHash) // e5a7c79edabb
-
-  def refHead = new File(gitFolder + head[1].trim()) // .git/refs/heads/master
-  refHead.text.trim().take takeFromHash
+  grgit.head().id.take(takeFromHash)
 }
 
 task jacocoRootReport(type: JacocoReport) {

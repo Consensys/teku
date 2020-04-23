@@ -16,14 +16,21 @@ package tech.pegasys.artemis.datastructures.state;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class HistoricalBatchTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @Test
   void vectorLengthsTest() {
@@ -32,5 +39,23 @@ public class HistoricalBatchTest {
     assertEquals(
         vectorLengths,
         SimpleOffsetSerializer.classReflectionInfo.get(HistoricalBatch.class).getVectorLengths());
+  }
+
+  @Test
+  void roundTripViaSsz() {
+    SSZMutableVector<Bytes32> block_roots =
+        SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SSZMutableVector<Bytes32> state_roots =
+        SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
+        .forEach(
+            i -> {
+              block_roots.set(i, dataStructureUtil.randomBytes32());
+              state_roots.set(i, dataStructureUtil.randomBytes32());
+            });
+    HistoricalBatch batch = new HistoricalBatch(block_roots, state_roots);
+    Bytes serialized = SimpleOffsetSerializer.serialize(batch);
+    HistoricalBatch result = SimpleOffsetSerializer.deserialize(serialized, HistoricalBatch.class);
+    assertEquals(batch, result);
   }
 }

@@ -21,7 +21,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.storage.server.mapdb.MapDbDatabase;
 import tech.pegasys.artemis.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.artemis.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -53,11 +52,8 @@ public class VersionedDatabaseFactory {
 
     Database database = null;
     switch (dbVersion) {
-      case V1:
-        database = createV1Database();
-        break;
-      case V2:
-        database = createV2Database();
+      case V3:
+        database = createV3Database();
         break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
@@ -66,14 +62,10 @@ public class VersionedDatabaseFactory {
     return database;
   }
 
-  private Database createV1Database() {
-    return MapDbDatabase.createOnDisk(dbDirectory, stateStorageMode);
-  }
-
-  private Database createV2Database() {
+  private Database createV3Database() {
     final RocksDbConfiguration rocksDbConfiguration =
         RocksDbConfiguration.withDataDirectory(dbDirectory.toPath());
-    return RocksDbDatabase.createOnDisk(rocksDbConfiguration, stateStorageMode);
+    return RocksDbDatabase.createV3(rocksDbConfiguration, stateStorageMode);
   }
 
   private void validateDataPaths() {

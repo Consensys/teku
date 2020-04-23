@@ -13,8 +13,15 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import java.util.ArrayList;
+import com.google.common.collect.ImmutableSet;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.hyperledger.besu.metrics.StandardMetricCategory;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
+import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 
 public class MetricsOptions {
 
@@ -26,13 +33,18 @@ public class MetricsOptions {
   public static final boolean DEFAULT_METRICS_ENABLED = false;
   public static final int DEFAULT_METRICS_PORT = 8008;
   public static final String DEFAULT_METRICS_INTERFACE = "127.0.0.1";
-  public static final ArrayList<String> DEFAULT_METRICS_CATEGORIES = new ArrayList<>();
+  public static final ImmutableSet<MetricCategory> DEFAULT_METRICS_CATEGORIES =
+      ImmutableSet.<MetricCategory>builder()
+          .addAll(EnumSet.allOf(StandardMetricCategory.class))
+          .addAll(EnumSet.allOf(ArtemisMetricCategory.class))
+          .build();
 
   @CommandLine.Option(
       names = {METRICS_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables metrics collection via Prometheus",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean metricsEnabled = DEFAULT_METRICS_ENABLED;
 
   @CommandLine.Option(
@@ -55,7 +67,7 @@ public class MetricsOptions {
       description = "Metric categories to enable",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> metricsCategories = DEFAULT_METRICS_CATEGORIES;
+  private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
 
   public boolean isMetricsEnabled() {
     return metricsEnabled;
@@ -69,7 +81,7 @@ public class MetricsOptions {
     return metricsInterface;
   }
 
-  public ArrayList<String> getMetricsCategories() {
-    return metricsCategories;
+  public List<String> getMetricsCategories() {
+    return metricsCategories.stream().map(value -> value.toString()).collect(Collectors.toList());
   }
 }

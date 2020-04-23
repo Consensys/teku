@@ -29,9 +29,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.StubFinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.api.ReorgEventChannel;
 import tech.pegasys.artemis.storage.api.StorageUpdateChannel;
+import tech.pegasys.artemis.storage.api.StubFinalizedCheckpointChannel;
+import tech.pegasys.artemis.storage.api.StubReorgEventChannel;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
@@ -43,6 +45,7 @@ public class StorageBackedRecentChainDataTest {
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final FinalizedCheckpointChannel finalizedCheckpointChannel =
       new StubFinalizedCheckpointChannel();
+  private final ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @Test
@@ -54,7 +57,11 @@ public class StorageBackedRecentChainDataTest {
     final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
-            asyncRunner, storageUpdateChannel, finalizedCheckpointChannel, eventBus);
+            asyncRunner,
+            storageUpdateChannel,
+            finalizedCheckpointChannel,
+            reorgEventChannel,
+            eventBus);
 
     // We should have posted a request to get the store from storage
     verify(storageUpdateChannel).onStoreRequest();
@@ -63,7 +70,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
     storeRequestFuture.complete(Optional.of(genesisStore));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -80,7 +87,11 @@ public class StorageBackedRecentChainDataTest {
     final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
-            asyncRunner, storageUpdateChannel, finalizedCheckpointChannel, eventBus);
+            asyncRunner,
+            storageUpdateChannel,
+            finalizedCheckpointChannel,
+            reorgEventChannel,
+            eventBus);
 
     // We should have posted a request to get the store from storage
     verify(storageUpdateChannel).onStoreRequest();
@@ -94,7 +105,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.get().getStore()).isNull();
 
     // Now set the genesis state
-    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
     client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -112,7 +123,11 @@ public class StorageBackedRecentChainDataTest {
     final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
-            asyncRunner, storageUpdateChannel, finalizedCheckpointChannel, eventBus);
+            asyncRunner,
+            storageUpdateChannel,
+            finalizedCheckpointChannel,
+            reorgEventChannel,
+            eventBus);
 
     // We should have posted a request to get the store from storage
     verify(storageUpdateChannel).onStoreRequest();
@@ -123,7 +138,7 @@ public class StorageBackedRecentChainDataTest {
     asyncRunner.executeQueuedActions();
 
     // Now set the genesis state
-    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
     storeRequestFuture.complete(Optional.of(genesisStore));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());

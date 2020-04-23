@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.forkchoice;
 
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_block;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_attestation;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_block;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.StateTransition;
@@ -48,9 +48,10 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   public Bytes32 processHead() {
-    Store store = recentChainData.getStore();
-    Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(store);
-    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    Store.Transaction transaction = recentChainData.startStoreTransaction();
+    Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(transaction);
+    transaction.commit(() -> {}, "Failed to persist validator vote changes.");
+    BeaconBlock headBlock = recentChainData.getStore().getBlock(headBlockRoot);
     recentChainData.updateBestBlock(headBlockRoot, headBlock.getSlot());
     return headBlockRoot;
   }

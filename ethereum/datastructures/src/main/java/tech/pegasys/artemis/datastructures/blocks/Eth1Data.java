@@ -84,25 +84,6 @@ public class Eth1Data extends AbstractImmutableContainer
         SSZ.encode(writer -> writer.writeFixedBytes(getBlock_hash())));
   }
 
-  public static Eth1Data fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new Eth1Data(
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32))));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeFixedBytes(getDeposit_root());
-          writer.writeUInt64(getDeposit_count().longValue());
-          writer.writeFixedBytes(getBlock_hash());
-        });
-  }
-
   @Override
   public int hashCode() {
     return hashTreeRoot().slice(0, 4).toInt();

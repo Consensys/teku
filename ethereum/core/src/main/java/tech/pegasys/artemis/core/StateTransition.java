@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -109,7 +110,9 @@ public class StateTransition {
   private static boolean verify_block_signature(
       final BeaconState state, SignedBeaconBlock signed_block) {
     final Validator proposer =
-        state.getValidators().get(BeaconStateUtil.get_beacon_proposer_index(state));
+        state
+            .getValidators()
+            .get(toIntExact(signed_block.getMessage().getProposer_index().longValue()));
     final Bytes signing_root =
         BeaconStateUtil.compute_signing_root(
             signed_block.getMessage(), BeaconStateUtil.get_domain(state, DOMAIN_BEACON_PROPOSER));
@@ -183,6 +186,7 @@ public class StateTransition {
             BeaconBlockHeader latest_block_header_new =
                 new BeaconBlockHeader(
                     latest_block_header.getSlot(),
+                    latest_block_header.getProposer_index(),
                     latest_block_header.getParent_root(),
                     previous_state_root,
                     latest_block_header.getBody_root());
@@ -208,7 +212,9 @@ public class StateTransition {
     try {
       checkArgument(
           preState.getSlot().compareTo(slot) <= 0,
-          "process_slots: State slot higher than given slot");
+          "process_slots: State slot %s higher than given slot %s",
+          preState.getSlot(),
+          slot);
       BeaconState state = preState;
       while (state.getSlot().compareTo(slot) < 0) {
         state = process_slot(state);
@@ -244,9 +250,6 @@ public class StateTransition {
                   .count();
 
           metrics.onEpoch(
-              state.getPrevious_justified_checkpoint().getEpoch(),
-              state.getCurrent_justified_checkpoint().getEpoch(),
-              state.getFinalized_checkpoint().getEpoch(),
               state.getPrevious_epoch_attestations().size(),
               state.getCurrent_epoch_attestations().size(),
               pendingExits);

@@ -131,7 +131,8 @@ public class ArtemisNode extends Node {
   }
 
   private UnsignedLong fetchGenesisTime() throws IOException {
-    return UnsignedLong.valueOf(httpClient.get(getRestApiUrl(), "/node/genesis_time"));
+    String genesisTime = httpClient.get(getRestApiUrl(), "/node/genesis_time");
+    return jsonProvider.jsonToObject(genesisTime, UnsignedLong.class);
   }
 
   public UnsignedLong getGenesisTime() throws IOException {
@@ -318,6 +319,7 @@ public class ArtemisNode extends Node {
       configMap.put("data-path", DATA_PATH);
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");
+      configMap.put("log-destination", "console");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
