@@ -310,7 +310,6 @@ public final class BLS12381 {
     G2Point sigSum = null;
     GTPoint pairProd = null;
     for (BatchSemiAggregate semiSig : preparedList) {
-      // TODO can be optimized here to perform log2(N) mul/add operations
       sigSum = sigSum == null ? semiSig.getSigPoint() : sigSum.add(semiSig.getSigPoint());
       pairProd =
           pairProd == null
