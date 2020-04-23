@@ -36,6 +36,7 @@ import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
 import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -158,42 +159,42 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void p2pEnabled_ShouldNotRequireAValue() throws IOException {
+  public void p2pEnabled_shouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
-  public void p2pDiscoveryEnabled_ShouldNotRequireAValue() throws IOException {
+  public void p2pDiscoveryEnabled_shouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
-  public void metricsEnabled_ShouldNotRequireAValue() throws IOException {
+  public void metricsEnabled_shouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(METRICS_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isMetricsEnabled()).isTrue();
   }
 
   @Test
-  public void interopEnabled_ShouldNotRequireAValue() throws IOException {
+  public void interopEnabled_shouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(INTEROP_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isInteropEnabled()).isTrue();
   }
 
   @Test
-  public void restApiDocsEnabled_ShouldNotRequireAValue() throws IOException {
+  public void restApiDocsEnabled_shouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
-  public void restApiEnabled_ShouldNotRequireAValue() throws IOException {
+  public void restApiEnabled_shouldNotRequireAValue() throws IOException {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
@@ -327,7 +328,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setValidatorKeystorePasswordFiles(Collections.emptyList())
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
-        .setDataStorageMode("prune")
+        .setDataStorageMode(PRUNE)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)

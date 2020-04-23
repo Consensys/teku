@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.artemis.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.StateStorageMode;
 
 public class VersionedDatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -40,7 +41,7 @@ public class VersionedDatabaseFactory {
     this.dataDirectory = Paths.get(config.getDataPath()).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
-    this.stateStorageMode = StateStorageMode.fromString(config.getDataStorageMode());
+    this.stateStorageMode = config.getDataStorageMode();
   }
 
   public Database createDatabase() {

@@ -1,0 +1,3 @@
+# database
+data-path: "/tmp/teku"
+data-storage-mode: "archive"
