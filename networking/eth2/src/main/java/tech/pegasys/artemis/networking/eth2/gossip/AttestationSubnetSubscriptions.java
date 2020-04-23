@@ -69,7 +69,9 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     }
     subnetIdToCommittees.remove(subnetId);
     final TopicChannel topicChannel = subnetIdToTopicChannel.remove(subnetId);
-    topicChannel.close();
+    if (topicChannel != null) {
+      topicChannel.close();
+    }
   }
 
   private UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {

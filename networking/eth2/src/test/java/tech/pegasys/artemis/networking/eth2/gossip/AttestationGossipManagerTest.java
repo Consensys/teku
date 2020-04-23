@@ -75,13 +75,13 @@ public class AttestationGossipManagerTest {
 
     verify(topicChannel).gossip(serialized);
 
-    // We shouldn't process attestations for different committees on the same subnet
+    // We should process attestations for different committees on the same subnet
     final Attestation attestation2 = dataStructureUtil.randomAttestation();
     setCommitteeIndex(attestation2, committeeIndex + ATTESTATION_SUBNET_COUNT);
     final Bytes serialized2 = SimpleOffsetSerializer.serialize(attestation2);
     eventBus.post(attestation2);
 
-    verify(topicChannel, never()).gossip(serialized2);
+    verify(topicChannel).gossip(serialized2);
   }
 
   @Test
