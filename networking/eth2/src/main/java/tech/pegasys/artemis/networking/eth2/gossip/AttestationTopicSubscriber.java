@@ -24,11 +24,11 @@ import java.util.Map.Entry;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
-public class AttestationTopicSubscriptions implements SlotEventsChannel {
+public class AttestationTopicSubscriber implements SlotEventsChannel {
   private final Map<Integer, UnsignedLong> unsubscriptionSlotByCommittee = new HashMap<>();
   private final Eth2Network eth2Network;
 
-  public AttestationTopicSubscriptions(final Eth2Network eth2Network) {
+  public AttestationTopicSubscriber(final Eth2Network eth2Network) {
     this.eth2Network = eth2Network;
   }
 
