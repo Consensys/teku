@@ -17,7 +17,6 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.core.StateTransition;
@@ -134,7 +133,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {
     if (state.get() != State.RUNNING) {
-      LOG.warn("Attestation committee can not be subscribed due to Gossip Managers not being initialized");
+      LOG.warn(
+          "Attestation committee can not be subscribed due to Gossip Managers not being initialized");
       return;
     }
     attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
@@ -143,7 +143,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
     if (state.get() != State.RUNNING) {
-      LOG.warn("Attestation committee can not be unsubscribed due to Gossip Managers not being initialized");
+      LOG.warn(
+          "Attestation committee can not be unsubscribed due to Gossip Managers not being initialized");
       return;
     }
     attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
