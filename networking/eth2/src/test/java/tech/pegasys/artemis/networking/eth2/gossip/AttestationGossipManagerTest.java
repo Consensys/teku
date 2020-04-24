@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -40,11 +41,12 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 public class AttestationGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final String topicRegex = "/eth2/index\\d+_beacon_attestation/ssz";
+  private final String topicRegex = "/eth2/committee_index\\d+_beacon_attestation/ssz";
   private final EventBus eventBus = new EventBus();
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
+  private AttestationSubnetSubscriptions attestationSubnetSubscriptions;
   private AttestationGossipManager attestationGossipManager;
 
   @BeforeEach
@@ -53,7 +55,10 @@ public class AttestationGossipManagerTest {
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(argThat((val) -> val.matches(topicRegex)), any());
-    attestationGossipManager = new AttestationGossipManager(gossipNetwork, eventBus, storageClient);
+    attestationSubnetSubscriptions =
+        new AttestationSubnetSubscriptions(gossipNetwork, storageClient, eventBus);
+    attestationGossipManager =
+        new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
   }
 
   @Test
@@ -69,6 +74,14 @@ public class AttestationGossipManagerTest {
     eventBus.post(attestation);
 
     verify(topicChannel).gossip(serialized);
+
+    // We should process attestations for different committees on the same subnet
+    final Attestation attestation2 = dataStructureUtil.randomAttestation();
+    setCommitteeIndex(attestation2, committeeIndex + ATTESTATION_SUBNET_COUNT);
+    final Bytes serialized2 = SimpleOffsetSerializer.serialize(attestation2);
+    eventBus.post(attestation2);
+
+    verify(topicChannel).gossip(serialized2);
   }
 
   @Test
