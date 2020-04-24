@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.eth2;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;

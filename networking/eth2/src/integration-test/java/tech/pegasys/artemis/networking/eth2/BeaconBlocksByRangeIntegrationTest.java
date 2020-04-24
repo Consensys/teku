@@ -50,7 +50,8 @@ public class BeaconBlocksByRangeIntegrationTest {
     final Eth2Network network1 =
         networkFactory.builder().eventBus(eventBus1).recentChainData(storageClient1).startNetwork();
 
-    final Eth2Network network2 = networkFactory.builder().peer(network1).recentChainData(storageClient1).startNetwork();
+    final Eth2Network network2 =
+        networkFactory.builder().peer(network1).recentChainData(storageClient1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
   }
 
