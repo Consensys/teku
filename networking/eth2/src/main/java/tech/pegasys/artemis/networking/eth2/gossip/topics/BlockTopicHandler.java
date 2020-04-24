@@ -19,8 +19,8 @@ import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidationResult;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
@@ -50,8 +50,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
 
   @Override
   protected boolean validateData(final SignedBeaconBlock block) {
-    BlockValidationResult blockValidationResult = blockValidator.validate(block);
-    switch (blockValidationResult) {
+    ValidationResult validationResult = blockValidator.validate(block);
+    switch (validationResult) {
       case INVALID:
         return false;
       case SAVED_FOR_FUTURE:

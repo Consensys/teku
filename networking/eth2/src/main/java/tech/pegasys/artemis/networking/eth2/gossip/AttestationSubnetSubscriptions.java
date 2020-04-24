@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip;
 
-import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -72,10 +72,6 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     if (topicChannel != null) {
       topicChannel.close();
     }
-  }
-
-  private UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
-    return committeeIndex.mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT));
   }
 
   private TopicChannel createChannelForSubnetId(final UnsignedLong subnetId) {

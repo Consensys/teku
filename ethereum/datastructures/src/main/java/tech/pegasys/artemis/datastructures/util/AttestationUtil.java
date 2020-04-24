@@ -138,14 +138,14 @@ public class AttestationUtil {
     SSZList<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
     if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
-      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
+      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
       return false;
     }
 
     List<UnsignedLong> bit_0_indices_sorted =
         attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
     if (!attesting_indices.equals(bit_0_indices_sorted)) {
-      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
+      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
@@ -161,7 +161,7 @@ public class AttestationUtil {
     Bytes signing_root = compute_signing_root(indexed_attestation.getData(), domain);
 
     if (!BLS.fastAggregateVerify(pubkeys, signing_root, signature)) {
-      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;
