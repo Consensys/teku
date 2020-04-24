@@ -15,6 +15,7 @@ package tech.pegasys.artemis.cli;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 
 import java.io.PrintWriter;
@@ -27,8 +28,9 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public abstract class AbstractBeaconNodeCommandTest {
-  protected final PrintWriter outputWriter = new PrintWriter(new StringWriter(), true);
-  protected final PrintWriter errorWriter = new PrintWriter(new StringWriter(), true);
+  final StringWriter stringWriter = new StringWriter();
+  protected final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
+  protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
 
   @SuppressWarnings("unchecked")
   final Consumer<ArtemisConfiguration> startAction = mock(Consumer.class);
@@ -56,5 +58,10 @@ public abstract class AbstractBeaconNodeCommandTest {
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile};
     beaconNodeCommand.parse(args);
     return getResultingArtemisConfiguration();
+  }
+
+  public String getCommandLineOutput() {
+    verifyNoInteractions(startAction);
+    return new String(stringWriter.getBuffer());
   }
 }
