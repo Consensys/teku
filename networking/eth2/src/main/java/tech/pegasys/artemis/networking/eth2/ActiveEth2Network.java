@@ -45,11 +45,10 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final EventBus eventBus;
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
-  private final AtomicBoolean gossipManagersInitialized = new AtomicBoolean(false);
 
-  private BlockGossipManager blockGossipManager;
-  private AttestationGossipManager attestationGossipManager;
-  private AggregateGossipManager aggregateGossipManager;
+  private volatile BlockGossipManager blockGossipManager;
+  private volatile AttestationGossipManager attestationGossipManager;
+  private volatile AggregateGossipManager aggregateGossipManager;
 
   public ActiveEth2Network(
       final DiscoveryNetwork<?> discoveryNetwork,
@@ -83,7 +82,6 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
     aggregateGossipManager =
         new AggregateGossipManager(discoveryNetwork, eventBus, recentChainData);
-    gossipManagersInitialized.set(true);
   }
 
   @Override
@@ -91,9 +89,15 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return;
     }
-    blockGossipManager.shutdown();
-    attestationGossipManager.shutdown();
-    aggregateGossipManager.shutdown();
+    if (blockGossipManager != null) {
+      blockGossipManager.shutdown();
+    }
+    if (attestationGossipManager != null) {
+      attestationGossipManager.shutdown();
+    }
+    if (aggregateGossipManager != null) {
+      aggregateGossipManager.shutdown();
+    }
     super.stop();
   }
 
@@ -135,9 +139,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {
-    if (!gossipManagersInitialized.get()) {
+    if (aggregateGossipManager == null) {
       LOG.warn(
-          "Attestation committee can not be subscribed due to Gossip Managers not being initialized");
+          "Attestation committee can not be subscribed due to gossip manager not being initialized");
       return;
     }
     attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
@@ -145,9 +149,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
-    if (!gossipManagersInitialized.get()) {
+    if (aggregateGossipManager == null) {
       LOG.warn(
-          "Attestation committee can not be unsubscribed due to Gossip Managers not being initialized");
+          "Attestation committee can not be unsubscribed due to gossip manager not being initialized");
       return;
     }
     attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
