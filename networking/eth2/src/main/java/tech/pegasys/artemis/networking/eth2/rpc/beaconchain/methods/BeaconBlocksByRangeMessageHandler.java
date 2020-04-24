@@ -19,10 +19,13 @@ import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
@@ -73,16 +76,12 @@ public class BeaconBlocksByRangeMessageHandler
   private SafeFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
-    return combinedChainDataClient
-        .getHeadStateAndBlockRootFromStore()
-        .map(
-            (headStateAndBlockRoot) ->
-                sendNextBlock(
-                    new RequestState(
-                        message,
-                        headStateAndBlockRoot.getState().getSlot(),
-                        headStateAndBlockRoot.getBlockRoot(),
-                        callback)))
+    Optional<Bytes32> maybeBestRoot = combinedChainDataClient.getBestBlockRoot();
+    return maybeBestRoot
+        .map(combinedChainDataClient::getStateByBlockRoot)
+        .flatMap(CompletableFuture::join)
+        .map(BeaconState::getSlot)
+        .map(slot -> sendNextBlock(new RequestState(message, slot, maybeBestRoot.get(), callback)))
         .orElseGet(() -> completedFuture(null));
   }
 
