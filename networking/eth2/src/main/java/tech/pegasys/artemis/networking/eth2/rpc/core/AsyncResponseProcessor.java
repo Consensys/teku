@@ -17,7 +17,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.async.AsyncRunner;
@@ -36,12 +35,12 @@ class AsyncResponseProcessor<TResponse> {
 
   private final AsyncRunner asyncRunner;
   private final ResponseStreamImpl<TResponse> responseStream;
-  private final Consumer<Throwable> onError;
+  private final AsyncProcessingErrorHandler onError;
 
   public AsyncResponseProcessor(
       final AsyncRunner asyncRunner,
       final ResponseStreamImpl<TResponse> responseStream,
-      final Consumer<Throwable> onError) {
+      final AsyncProcessingErrorHandler onError) {
     this.asyncRunner = asyncRunner;
     this.responseStream = responseStream;
     this.onError = onError;
@@ -112,7 +111,7 @@ class AsyncResponseProcessor<TResponse> {
             (err) -> {
               LOG.trace("Failed to process response: " + response, err);
               cancel(err);
-              onError.accept(err);
+              onError.handleError(err);
               return null;
             })
         .always(
@@ -121,5 +120,9 @@ class AsyncResponseProcessor<TResponse> {
               isProcessing.set(false);
               checkQueue();
             });
+  }
+
+  public interface AsyncProcessingErrorHandler {
+    void handleError(final Throwable error);
   }
 }

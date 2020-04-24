@@ -17,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.primitives.UnsignedLong;
-import io.netty.buffer.Unpooled;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -26,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RequestRpcDecoder;
+import tech.pegasys.artemis.networking.eth2.rpc.core.RpcRequestDecoder;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -73,23 +74,23 @@ public class BeaconChainMethodsTest {
             UnsignedLong.ZERO);
 
     final Bytes encoded = beaconChainMethods.status().encodeRequest(expected);
-    final RequestRpcDecoder<StatusMessage> decoder =
+    final RpcRequestDecoder<StatusMessage> decoder =
         beaconChainMethods.status().createRequestDecoder();
-    StatusMessage decodedRequest =
-        decoder.onDataReceived(Unpooled.wrappedBuffer(encoded.toArrayUnsafe())).orElseThrow();
-    decoder.close();
+    StatusMessage decodedRequest = decoder.decodeRequest(inputStream(encoded));
 
     assertThat(decodedRequest).isEqualTo(expected);
   }
 
   @Test
   public void shouldDecodeStatusMessageRequest() throws Exception {
-    final RequestRpcDecoder<StatusMessage> decoder =
+    final RpcRequestDecoder<StatusMessage> decoder =
         beaconChainMethods.status().createRequestDecoder();
     final StatusMessage decodedRequest =
-        decoder
-            .onDataReceived(Unpooled.wrappedBuffer(RECORDED_STATUS_REQUEST_BYTES.toArrayUnsafe()))
-            .orElseThrow();
+        decoder.decodeRequest(inputStream(RECORDED_STATUS_REQUEST_BYTES));
     assertThat(decodedRequest).isEqualTo(RECORDED_STATUS_MESSAGE_DATA);
+  }
+
+  private InputStream inputStream(final Bytes bytes) {
+    return new ByteArrayInputStream(bytes.toArrayUnsafe());
   }
 }

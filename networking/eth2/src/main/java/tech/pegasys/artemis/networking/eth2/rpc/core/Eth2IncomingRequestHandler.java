@@ -13,7 +13,8 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
-import io.netty.buffer.ByteBuf;
+import com.google.common.annotations.VisibleForTesting;
+import java.io.InputStream;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,8 +37,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final RpcEncoder rpcEncoder;
 
-  private final RequestRpcDecoder<TRequest> requestReader;
-  private ResponseCallback<TResponse> callback;
+  private final RpcRequestDecoder<TRequest> requestDecoder;
 
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean requestReceived = new AtomicBoolean(false);
@@ -53,32 +53,23 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
     this.localMessageHandler = localMessageHandler;
     this.rpcEncoder = new RpcEncoder(method.getEncoding());
 
-    requestReader = method.createRequestDecoder();
+    requestDecoder = method.createRequestDecoder();
   }
 
   @Override
-  public void onActivation(final RpcStream rpcStream) {
+  public void processInput(
+      final NodeId nodeId, final RpcStream rpcStream, final InputStream input) {
+
     ensureRequestReceivedWithinTimeLimit(rpcStream);
-  }
 
-  @Override
-  public void onData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf bytes) {
-    final Eth2Peer peer = peerLookup.getConnectedPeer(nodeId);
-    if (callback == null) {
-      callback = new RpcResponseCallback<>(rpcStream, rpcEncoder);
-    }
+    final ResponseCallback<TResponse> callback = new RpcResponseCallback<>(rpcStream, rpcEncoder);
     try {
-      requestReader
-          .onDataReceived(bytes)
-          .ifPresent(request -> handleRequest(peer, request, callback));
+      final TRequest request = requestDecoder.decodeRequest(input);
+      final Eth2Peer peer = peerLookup.getConnectedPeer(nodeId);
+      handleRequest(peer, request, callback);
     } catch (final RpcException e) {
       callback.completeWithError(e);
     }
-  }
-
-  @Override
-  public void onRequestComplete() {
-    // Nothing to do
   }
 
   private void handleRequest(
@@ -106,5 +97,10 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
               }
             })
         .reportExceptions();
+  }
+
+  @VisibleForTesting
+  boolean hasRequestBeenReceived() {
+    return requestReceived.get();
   }
 }

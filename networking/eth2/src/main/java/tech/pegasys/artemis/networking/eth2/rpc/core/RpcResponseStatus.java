@@ -11,11 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.rpc;
+package tech.pegasys.artemis.networking.eth2.rpc.core;
 
-import java.io.InputStream;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+public abstract class RpcResponseStatus {
+  public static final byte SUCCESS_RESPONSE_CODE = 0;
 
-public interface RpcRequestHandler {
-  void processInput(final NodeId nodeId, final RpcStream rpcStream, final InputStream input);
+  // Standard errors
+  public static final byte INVALID_REQUEST_CODE = 1;
+  public static final byte SERVER_ERROR_CODE = 2;
 }

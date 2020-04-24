@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.rpc;
+package tech.pegasys.artemis.networking.eth2.compression;
 
-import java.io.InputStream;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+public class CompressionException extends Exception {
 
-public interface RpcRequestHandler {
-  void processInput(final NodeId nodeId, final RpcStream rpcStream, final InputStream input);
+  public CompressionException(final String message, final Throwable cause) {
+    super(message, cause);
+  }
 }

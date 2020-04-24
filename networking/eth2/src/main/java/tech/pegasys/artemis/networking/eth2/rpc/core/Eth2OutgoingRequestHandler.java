@@ -13,8 +13,9 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
-import io.netty.buffer.ByteBuf;
+import java.io.InputStream;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,7 +42,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
-  private final ResponseRpcDecoder<TResponse> responseHandler;
+  private final RpcResponseDecoder<TResponse> responseDecoder;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
 
   private volatile RpcStream rpcStream;
@@ -57,47 +58,12 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
 
     responseProcessor =
         new AsyncResponseProcessor<>(asyncRunner, responseStream, this::onAsyncProcessorError);
-    responseHandler = new ResponseRpcDecoder<>(responseProcessor::processResponse, this.method);
-  }
-
-  @Override
-  public void onActivation(final RpcStream rpcStream) {
-    this.rpcStream = rpcStream;
-  }
-
-  @Override
-  public void onData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf bytes) {
-    try {
-      if (hasReceivedInitialBytes.compareAndSet(false, true)) {
-        // Setup initial chunk timeout
-        ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
-      }
-      LOG.trace("Requester received {} bytes.", bytes.capacity());
-      responseHandler.onDataReceived(bytes);
-
-      final int previousResponseCount = currentChunkCount.get();
-      currentChunkCount.set(responseProcessor.getResponseCount());
-      if (currentChunkCount.get() >= maximumResponseChunks) {
-        completeRequest(rpcStream);
-      } else if (currentChunkCount.get() > previousResponseCount) {
-        ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
-      }
-    } catch (final Throwable t) {
-      LOG.error("Encountered error while processing response", t);
-      cancelRequest(rpcStream, t);
-    }
-  }
-
-  @Override
-  public void onRequestComplete() {
-    completeRequest(this.rpcStream);
-  }
-
-  private void onAsyncProcessorError(final Throwable throwable) {
-    cancelRequest(this.rpcStream, throwable);
+    responseDecoder = method.createResponseDecoder();
   }
 
   public void handleInitialPayloadSent(final RpcStream stream) {
+    this.rpcStream = stream;
+
     if (method.shouldReceiveResponse()) {
       // Close the write side of the stream
       stream.closeWriteStream().reportExceptions();
@@ -107,6 +73,55 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       // If we're not expecting any response, complete the request
       completeRequest(stream);
     }
+  }
+
+  @Override
+  public void processInput(
+      final NodeId nodeId, final RpcStream rpcStream, final InputStream input) {
+    try {
+      this.rpcStream = rpcStream;
+
+      Optional<TResponse> maybeResponse =
+          responseDecoder.decodeNextResponse(input, this::onFirstByteReceived);
+      while (!isClosed.get() && maybeResponse.isPresent()) {
+        final TResponse response = maybeResponse.get();
+        responseProcessor.processResponse(response);
+
+        final int chunksReceived = currentChunkCount.incrementAndGet();
+        if (chunksReceived >= maximumResponseChunks) {
+          // Make sure there aren't any trailing unconsumed bytes
+          if (input.available() > 0) {
+            LOG.debug(
+                "Encountered unconsumed data after last expected response chunk was processed.");
+            cancelRequest(rpcStream, RpcException.EXTRA_DATA_APPENDED);
+          } else {
+            completeRequest(rpcStream);
+          }
+          break;
+        } else {
+          ensureNextResponseArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
+        }
+
+        // Get next response
+        maybeResponse = responseDecoder.decodeNextResponse(input);
+      }
+
+      completeRequest(rpcStream);
+    } catch (final Throwable t) {
+      LOG.error("Encountered error while processing response", t);
+      cancelRequest(rpcStream, t);
+    }
+  }
+
+  private void onFirstByteReceived() {
+    if (hasReceivedInitialBytes.compareAndSet(false, true)) {
+      // Setup initial chunk timeout
+      ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
+    }
+  }
+
+  private void onAsyncProcessorError(final Throwable throwable) {
+    cancelRequest(rpcStream, throwable);
   }
 
   private void completeRequest(final RpcStream rpcStream) {
@@ -121,14 +136,8 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
         .thenAccept(
             (__) -> {
               try {
-                responseHandler.close();
                 responseStream.completeSuccessfully();
                 LOG.trace("Complete request");
-              } catch (final RpcException e) {
-                LOG.debug(
-                    "Encountered unconsumed data when completing outgoing request: {}",
-                    e.getErrorMessage());
-                responseStream.completeWithError(e);
               } catch (final Throwable t) {
                 LOG.error("Encountered error while completing outgoing request", t);
                 responseStream.completeWithError(t);
@@ -154,7 +163,6 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
 
     LOG.debug("Cancel request: {}", error.getMessage());
     rpcStream.close().reportExceptions();
-    responseHandler.closeSilently();
     responseProcessor.finishProcessing().always(() -> responseStream.completeWithError(error));
   }
 
