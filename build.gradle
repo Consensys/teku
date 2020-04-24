@@ -548,7 +548,7 @@ startScripts {
 }
 
 dependencies {
-  compile project(':artemis')
+  compile project(':teku')
   errorprone 'com.google.errorprone:error_prone_core'
 }
 
