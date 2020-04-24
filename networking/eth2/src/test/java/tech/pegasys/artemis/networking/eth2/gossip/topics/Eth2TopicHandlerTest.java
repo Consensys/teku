@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.base.Suppliers;
 import com.google.common.eventbus.EventBus;
@@ -108,15 +109,18 @@ public class Eth2TopicHandlerTest {
     verify(eventBus, never()).post(deserialized);
   }
 
+  @Test
+  public void returnProperTopicName() {
+    when(recentChainData.getCurrentForkDigest()).thenReturn(Bytes4.fromHexString("0x00000000"));
+    MockTopicHandler topicHandler =
+        spy(new MockTopicHandler(eventBus, recentChainData.getCurrentForkDigest()));
+    assertThat(topicHandler.getTopic()).isEqualTo("/eth2/00000000/testing/ssz");
+  }
+
   private class MockTopicHandler extends Eth2TopicHandler<Attestation> {
 
     protected MockTopicHandler(final EventBus eventBus, final Bytes4 forkDigest) {
       super(eventBus, forkDigest);
-    }
-
-    @Override
-    public String getTopic() {
-      return TOPIC;
     }
 
     @Override
