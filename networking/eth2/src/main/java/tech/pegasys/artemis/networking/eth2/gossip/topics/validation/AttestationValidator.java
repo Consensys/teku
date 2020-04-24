@@ -96,7 +96,7 @@ public class AttestationValidator {
     return VALID;
   }
 
-  private ValidationResult singleOrAggregateAttestationChecks(final Attestation attestation) {
+  ValidationResult singleOrAggregateAttestationChecks(final Attestation attestation) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
