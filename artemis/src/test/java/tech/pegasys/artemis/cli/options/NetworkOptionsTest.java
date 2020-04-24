@@ -14,14 +14,15 @@
 package tech.pegasys.artemis.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.util.config.NetworkConfigurations.MAINNET;
+import static tech.pegasys.artemis.util.config.NetworkDefinition.MAINNET;
+import static tech.pegasys.artemis.util.config.NetworkDefinition.MINIMAL;
+import static tech.pegasys.artemis.util.config.NetworkDefinition.TOPAZ;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.config.NetworkConfigurations;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
 
 public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -35,10 +36,9 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "topaz"})
+  @ValueSource(strings = {MAINNET, MINIMAL, TOPAZ})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
-    final NetworkDefinition networkDefinition =
-        NetworkDefinition.fromCliArg(NetworkConfigurations.fromString(networkName));
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
 
     beaconNodeCommand.parse(new String[] {"--network", networkName});
     final ArtemisConfiguration config = getResultingArtemisConfiguration();
@@ -59,7 +59,18 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void overrideDefaultBootnodesWithEmptyList() {
     beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
 
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
+    final ArtemisConfiguration artemisConfiguration = getResultingArtemisConfiguration();
+    assertThat(artemisConfiguration.getP2pDiscoveryBootnodes()).isEmpty();
+  }
+
+  @Test
+  public void usingNetworkFromUrl() {
+    String url =
+        "https://github.com/eth2-clients/eth2-testnets/raw/master/prysm/Sapphire(v0.9.4)/config.yaml";
+    beaconNodeCommand.parse(new String[] {"--network", url});
+
+    final ArtemisConfiguration artemisConfiguration = getResultingArtemisConfiguration();
+    assertThat(artemisConfiguration.getP2pDiscoveryBootnodes()).isEmpty();
+    assertThat(artemisConfiguration.getConstants()).isEqualTo(url);
   }
 }

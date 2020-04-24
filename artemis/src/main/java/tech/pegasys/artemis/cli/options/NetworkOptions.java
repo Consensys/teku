@@ -14,18 +14,17 @@
 package tech.pegasys.artemis.cli.options;
 
 import picocli.CommandLine.Option;
-import tech.pegasys.artemis.util.config.NetworkConfigurations;
 
 public class NetworkOptions {
 
   @Option(
       names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
-      description = "Represents which network to use. (Valid values: ${COMPLETION-CANDIDATES})",
+      description = "Represents which network to use.",
       arity = "1")
-  private NetworkConfigurations network = NetworkConfigurations.MINIMAL;
+  private String network = "minimal";
 
-  public NetworkConfigurations getNetwork() {
+  public String getNetwork() {
     return network;
   }
 }

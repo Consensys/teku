@@ -15,9 +15,6 @@ package tech.pegasys.artemis.util.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
-import static tech.pegasys.artemis.util.config.NetworkConfigurations.MAINNET;
-import static tech.pegasys.artemis.util.config.NetworkConfigurations.MINIMAL;
-import static tech.pegasys.artemis.util.config.NetworkConfigurations.TOPAZ;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -27,14 +24,18 @@ import java.util.Optional;
 
 public class NetworkDefinition {
 
-  private static final ImmutableMap<NetworkConfigurations, NetworkDefinition> NETWORKS =
-      ImmutableMap.<NetworkConfigurations, NetworkDefinition>builder()
-          .put(MINIMAL, builder().constants("minimal").startupTargetPeerCount(0).build())
-          .put(MAINNET, builder().constants("mainnet").build())
+  public static final String MINIMAL = "minimal";
+  public static final String MAINNET = "mainnet";
+  public static final String TOPAZ = "topaz";
+
+  private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
+      ImmutableMap.<String, NetworkDefinition>builder()
+          .put(MINIMAL, builder().constants(MINIMAL).startupTargetPeerCount(0).build())
+          .put(MAINNET, builder().constants(MAINNET).build())
           .put(
               TOPAZ,
               builder()
-                  .constants("mainnet")
+                  .constants(MAINNET)
                   .discoveryBootnodes(
                       "enr:-Ku4QAGwOT9StqmwI5LHaIymIO4ooFKfNkEjWa0f1P8OsElgBh2Ijb-GrD_-b9W4kcPFcwmHQEy5RncqXNqdpVo1heoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
                   .eth1DepositContractAddress("0x5cA1e00004366Ac85f492887AAab12d0e6418876")
@@ -63,9 +64,8 @@ public class NetworkDefinition {
     this.eth1Endpoint = eth1Endpoint;
   }
 
-  public static NetworkDefinition fromCliArg(final NetworkConfigurations arg) {
-    return NETWORKS.getOrDefault(
-        arg, builder().constants(arg.name().toLowerCase(Locale.US)).build());
+  public static NetworkDefinition fromCliArg(final String arg) {
+    return NETWORKS.getOrDefault(arg.toLowerCase(Locale.US), builder().constants(arg).build());
   }
 
   private static Builder builder() {

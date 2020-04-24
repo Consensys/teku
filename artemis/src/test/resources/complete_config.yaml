@@ -51,3 +51,10 @@ rest-api-port: 5051
 rest-api-docs-enabled: False
 rest-api-enabled: False
 rest-api-interface: "127.0.0.1"
+
+
+  ```
+metrics-port: 8008
+metrics-interface: "127.0.0.1"
+  ```
+  we should probably change metrics-interface to be not 127.0.0.1 by default if we want to comply fully with 4
