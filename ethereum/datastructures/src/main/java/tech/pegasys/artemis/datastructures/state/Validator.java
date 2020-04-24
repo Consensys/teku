@@ -26,8 +26,10 @@ import tech.pegasys.artemis.ssz.backing.ContainerViewRead;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
+import tech.pegasys.artemis.ssz.backing.type.VectorViewType;
 import tech.pegasys.artemis.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
@@ -42,7 +44,7 @@ public class Validator extends AbstractImmutableContainer
   public static final ContainerViewType<Validator> TYPE =
       new ContainerViewType<>(
           List.of(
-              BasicViewTypes.BLS_PUBLICK_KEY,
+              new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
               BasicViewTypes.BYTES32_TYPE,
               BasicViewTypes.UINT64_TYPE,
               BasicViewTypes.BIT_TYPE,
