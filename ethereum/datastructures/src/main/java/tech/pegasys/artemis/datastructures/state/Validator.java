@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -27,10 +26,8 @@ import tech.pegasys.artemis.ssz.backing.ContainerViewRead;
 import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
 import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
-import tech.pegasys.artemis.ssz.backing.type.VectorViewType;
 import tech.pegasys.artemis.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
@@ -45,7 +42,7 @@ public class Validator extends AbstractImmutableContainer
   public static final ContainerViewType<Validator> TYPE =
       new ContainerViewType<>(
           List.of(
-              new VectorViewType<ByteView>(BasicViewTypes.BYTE_TYPE, 48),
+              BasicViewTypes.BLS_PUBLICK_KEY,
               BasicViewTypes.BYTES32_TYPE,
               BasicViewTypes.UINT64_TYPE,
               BasicViewTypes.BIT_TYPE,
@@ -139,29 +136,6 @@ public class Validator extends AbstractImmutableContainer
             SSZ.encodeUInt64(getExit_epoch().longValue()),
             SSZ.encodeUInt64(getWithdrawable_epoch().longValue())));
     return fixedPartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof Validator)) {
-      return false;
-    }
-
-    Validator other = (Validator) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override

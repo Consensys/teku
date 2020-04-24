@@ -110,23 +110,6 @@ public class AttestationData extends AbstractImmutableContainer
   }
 
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final AttestationData that = (AttestationData) o;
-    return hashTreeRoot().equals(that.hashTreeRoot());
-  }
-
-  @Override
-  public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
-  }
-
-  @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("slot", getSlot())

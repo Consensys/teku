@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -82,29 +81,6 @@ public class Eth1Data extends AbstractImmutableContainer
         SSZ.encode(writer -> writer.writeFixedBytes(getDeposit_root())),
         SSZ.encodeUInt64(getDeposit_count().longValue()),
         SSZ.encode(writer -> writer.writeFixedBytes(getBlock_hash())));
-  }
-
-  @Override
-  public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof Eth1Data)) {
-      return false;
-    }
-
-    Eth1Data other = (Eth1Data) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   /** @return the deposit_root */
