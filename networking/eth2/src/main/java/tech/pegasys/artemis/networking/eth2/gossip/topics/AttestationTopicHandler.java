@@ -33,23 +33,17 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final String attestationsTopic;
-  private final RecentChainData recentChainData;
+  private final UnsignedLong subnetId;
 
   public AttestationTopicHandler(
       final EventBus eventBus, final RecentChainData recentChainData, final UnsignedLong subnetId) {
-    super(eventBus);
-    this.attestationsTopic = getTopic(subnetId);
-    this.recentChainData = recentChainData;
-  }
-
-  private static String getTopic(final UnsignedLong subnetId) {
-    return "/eth2/committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation/ssz";
+    super(eventBus, recentChainData);
+    this.subnetId = subnetId;
   }
 
   @Override
-  public String getTopic() {
-    return attestationsTopic;
+  public String getTopicName() {
+    return "committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation";
   }
 
   @Override

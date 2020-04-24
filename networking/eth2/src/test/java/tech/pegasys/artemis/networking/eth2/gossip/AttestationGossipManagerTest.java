@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -41,7 +41,6 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 public class AttestationGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final String topicRegex = "/eth2/committee_index\\d+_beacon_attestation/ssz";
   private final EventBus eventBus = new EventBus();
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -52,9 +51,7 @@ public class AttestationGossipManagerTest {
   @BeforeEach
   public void setup() {
     BeaconChainUtil.initializeStorage(storageClient, Collections.emptyList());
-    doReturn(topicChannel)
-        .when(gossipNetwork)
-        .subscribe(argThat((val) -> val.matches(topicRegex)), any());
+    doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
     attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(gossipNetwork, storageClient, eventBus);
     attestationGossipManager =

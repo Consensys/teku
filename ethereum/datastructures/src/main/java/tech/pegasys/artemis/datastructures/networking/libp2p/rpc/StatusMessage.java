@@ -57,7 +57,7 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
         UnsignedLong.ZERO);
   }
 
-  private static Bytes4 createPreGenesisForkDigest() {
+  public static Bytes4 createPreGenesisForkDigest() {
     final Bytes4 genesisFork = Constants.GENESIS_FORK_VERSION;
     final Bytes32 emptyValidatorsRoot = Bytes32.ZERO;
     return compute_fork_digest(genesisFork, emptyValidatorsRoot);

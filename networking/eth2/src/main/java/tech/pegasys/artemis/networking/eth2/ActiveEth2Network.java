@@ -67,7 +67,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(discoveryNetwork, recentChainData, eventBus);
-    blockGossipManager = new BlockGossipManager(discoveryNetwork, eventBus, blockValidator);
+    blockGossipManager =
+        new BlockGossipManager(discoveryNetwork, eventBus, blockValidator, recentChainData);
     attestationGossipManager =
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
     aggregateGossipManager =

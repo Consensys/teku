@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage.createPreGenesisForkDigest;
 import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.eventbus.EventBus;
@@ -37,11 +38,14 @@ public class AttestationSubnetSubscriptionsTest {
   private AttestationSubnetSubscriptions subnetSubscriptions;
   private GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private EventBus eventBus = mock(EventBus.class);
+  private RecentChainData recentChainData;
 
   @BeforeEach
   void setUp() {
+    recentChainData = mock(RecentChainData.class);
+    when(recentChainData.getCurrentForkDigest()).thenReturn(createPreGenesisForkDigest());
     subnetSubscriptions =
-        new AttestationSubnetSubscriptions(gossipNetwork, mock(RecentChainData.class), eventBus);
+        new AttestationSubnetSubscriptions(gossipNetwork, recentChainData, eventBus);
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }

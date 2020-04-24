@@ -28,13 +28,16 @@ import org.apache.tuweni.ssz.SSZException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class Eth2TopicHandlerTest {
   private static final String TOPIC = "testing";
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final MockTopicHandler topicHandler = spy(new MockTopicHandler(eventBus));
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final MockTopicHandler topicHandler =
+      spy(new MockTopicHandler(eventBus, recentChainData));
   private final Bytes message = Bytes.fromHexString("0x01");
 
   private final Attestation deserialized = dataStructureUtil.randomAttestation();
@@ -106,8 +109,8 @@ public class Eth2TopicHandlerTest {
 
   private class MockTopicHandler extends Eth2TopicHandler<Attestation> {
 
-    protected MockTopicHandler(final EventBus eventBus) {
-      super(eventBus);
+    protected MockTopicHandler(final EventBus eventBus, final RecentChainData recentChainData) {
+      super(eventBus, recentChainData);
     }
 
     @Override
@@ -123,6 +126,11 @@ public class Eth2TopicHandlerTest {
     @Override
     protected boolean validateData(final Attestation attestation) {
       return validator.get();
+    }
+
+    @Override
+    public String getTopicName() {
+      return TOPIC;
     }
   }
 }
