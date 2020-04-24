@@ -64,7 +64,7 @@ public class PostBlock implements Handler {
           @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBeaconBlock.class)}),
       description =
           "Submit a signed beacon block to the beacon node to be imported."
-              + " Validation is expected to be performed by the beacon node.",
+              + " Validation must be performed by the beacon node.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
