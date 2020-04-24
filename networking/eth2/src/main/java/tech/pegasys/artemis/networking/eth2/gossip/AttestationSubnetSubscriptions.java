@@ -24,13 +24,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipNetwork gossipNetwork;
-  private final RecentChainData recentChainData;
+  private final AttestationValidator attestationValidator;
   private final EventBus eventBus;
 
   private final Map<UnsignedLong, Set<UnsignedLong>> subnetIdToCommittees = new HashMap<>();
@@ -38,10 +38,10 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
 
   public AttestationSubnetSubscriptions(
       final GossipNetwork gossipNetwork,
-      final RecentChainData recentChainData,
+      final AttestationValidator attestationValidator,
       final EventBus eventBus) {
     this.gossipNetwork = gossipNetwork;
-    this.recentChainData = recentChainData;
+    this.attestationValidator = attestationValidator;
     this.eventBus = eventBus;
   }
 
@@ -76,7 +76,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
 
   private TopicChannel createChannelForSubnetId(final UnsignedLong subnetId) {
     final AttestationTopicHandler topicHandler =
-        new AttestationTopicHandler(eventBus, recentChainData, subnetId);
+        new AttestationTopicHandler(eventBus, attestationValidator, subnetId);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
