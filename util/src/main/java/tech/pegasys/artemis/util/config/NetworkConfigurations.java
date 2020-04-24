@@ -11,21 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.artemis.util.config;
 
-import picocli.CommandLine.Option;
-import tech.pegasys.artemis.util.config.NetworkConfigurations;
+import java.util.Objects;
 
-public class NetworkOptions {
+public enum NetworkConfigurations {
+  MINIMAL,
+  MAINNET,
+  TOPAZ;
 
-  @Option(
-      names = {"-n", "--network"},
-      paramLabel = "<NETWORK>",
-      description = "Represents which network to use. (Valid values: ${COMPLETION-CANDIDATES})",
-      arity = "1")
-  private NetworkConfigurations network = NetworkConfigurations.MINIMAL;
-
-  public NetworkConfigurations getNetwork() {
-    return network;
+  public static NetworkConfigurations fromString(final String value) {
+    final String normalizedValue = value.trim().toUpperCase();
+    for (NetworkConfigurations net : NetworkConfigurations.values()) {
+      if (Objects.equals(net.name(), normalizedValue)) {
+        return net;
+      }
+    }
+    throw new IllegalArgumentException("Unknown value supplied: " + value);
   }
 }

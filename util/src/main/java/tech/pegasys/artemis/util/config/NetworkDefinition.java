@@ -15,6 +15,9 @@ package tech.pegasys.artemis.util.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static tech.pegasys.artemis.util.config.NetworkConfigurations.MAINNET;
+import static tech.pegasys.artemis.util.config.NetworkConfigurations.MINIMAL;
+import static tech.pegasys.artemis.util.config.NetworkConfigurations.TOPAZ;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -24,12 +27,12 @@ import java.util.Optional;
 
 public class NetworkDefinition {
 
-  private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
-      ImmutableMap.<String, NetworkDefinition>builder()
-          .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())
-          .put("mainnet", builder().constants("mainnet").build())
+  private static final ImmutableMap<NetworkConfigurations, NetworkDefinition> NETWORKS =
+      ImmutableMap.<NetworkConfigurations, NetworkDefinition>builder()
+          .put(MINIMAL, builder().constants("minimal").startupTargetPeerCount(0).build())
+          .put(MAINNET, builder().constants("mainnet").build())
           .put(
-              "topaz",
+              TOPAZ,
               builder()
                   .constants("mainnet")
                   .discoveryBootnodes(
@@ -60,8 +63,9 @@ public class NetworkDefinition {
     this.eth1Endpoint = eth1Endpoint;
   }
 
-  public static NetworkDefinition fromCliArg(final String arg) {
-    return NETWORKS.getOrDefault(arg.toLowerCase(Locale.US), builder().constants(arg).build());
+  public static NetworkDefinition fromCliArg(final NetworkConfigurations arg) {
+    return NETWORKS.getOrDefault(
+        arg, builder().constants(arg.name().toLowerCase(Locale.US)).build());
   }
 
   private static Builder builder() {

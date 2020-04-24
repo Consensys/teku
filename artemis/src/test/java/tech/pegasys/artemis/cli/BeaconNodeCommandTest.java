@@ -36,6 +36,7 @@ import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
 import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.util.config.NetworkConfigurations.MINIMAL;
 import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -48,8 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 import tech.pegasys.artemis.util.config.LoggingDestination;
@@ -187,45 +186,17 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void restApiDocsEnabled_shouldNotRequireAValue() throws IOException {
+  public void restApiDocsEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
-  public void restApiEnabled_shouldNotRequireAValue() throws IOException {
+  public void restApiEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
     assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "topaz"})
-  public void useDefaultsFromNetworkDefinition(final String networkName) {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
-
-    beaconNodeCommand.parse(new String[] {"--network", networkName});
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes())
-        .isEqualTo(networkDefinition.getDiscoveryBootnodes());
-    assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
-    assertThat(config.getStartupTargetPeerCount())
-        .isEqualTo(networkDefinition.getStartupTargetPeerCount());
-    assertThat(config.getStartupTimeoutSeconds())
-        .isEqualTo(networkDefinition.getStartupTimeoutSeconds());
-    assertThat(config.getEth1DepositContractAddress())
-        .isEqualTo(networkDefinition.getEth1DepositContractAddress().orElse(null));
-    assertThat(config.getEth1Endpoint())
-        .isEqualTo(networkDefinition.getEth1Endpoint().orElse(null));
-  }
-
-  @Test
-  public void overrideDefaultBootnodesWithEmptyList() {
-    beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
-
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
   private Path createConfigFile() throws IOException {
@@ -294,7 +265,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
     return ArtemisConfiguration.builder()
-        .setNetwork(NetworkDefinition.fromCliArg("minimal"))
+        .setNetwork(NetworkDefinition.fromCliArg(MINIMAL))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
         .setP2pPort(1234)
