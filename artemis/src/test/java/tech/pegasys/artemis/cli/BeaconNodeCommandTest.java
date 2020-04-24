@@ -36,6 +36,7 @@ import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
 import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.util.config.NetworkDefinition.MINIMAL;
 import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -208,7 +209,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private String[] createCliArgs() {
     return new String[] {
-      "--network", "minimal",
+      "--network", MINIMAL,
       "--p2p-enabled", "false",
       "--p2p-interface", "1.2.3.4",
       "--p2p-port", "1234",
@@ -264,7 +265,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
     return ArtemisConfiguration.builder()
-        .setNetwork(NetworkDefinition.fromCliArg("minimal"))
+        .setNetwork(NetworkDefinition.fromCliArg(MINIMAL))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
         .setP2pPort(1234)

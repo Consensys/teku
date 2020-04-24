@@ -65,12 +65,10 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void usingNetworkFromUrl() {
-    String url =
-        "https://github.com/eth2-clients/eth2-testnets/raw/master/prysm/Sapphire(v0.9.4)/config.yaml";
+    String url = "https://some.site/with/config.yaml";
     beaconNodeCommand.parse(new String[] {"--network", url});
 
     final ArtemisConfiguration artemisConfiguration = getResultingArtemisConfiguration();
-    assertThat(artemisConfiguration.getP2pDiscoveryBootnodes()).isEmpty();
     assertThat(artemisConfiguration.getConstants()).isEqualTo(url);
   }
 }
