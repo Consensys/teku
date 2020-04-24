@@ -21,7 +21,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidationResult;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static String TOPIC_NAME = "beacon_block";
@@ -29,10 +29,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   private final BlockValidator blockValidator;
 
   public BlockTopicHandler(
-      final EventBus eventBus,
-      final BlockValidator blockValidator,
-      final RecentChainData recentChainData) {
-    super(eventBus, recentChainData);
+      final EventBus eventBus, final BlockValidator blockValidator, final Bytes4 forkDigest) {
+    super(eventBus, forkDigest);
     this.eventBus = eventBus;
     this.blockValidator = blockValidator;
   }

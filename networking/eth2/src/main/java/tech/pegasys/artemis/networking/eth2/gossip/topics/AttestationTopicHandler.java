@@ -27,17 +27,23 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final RecentChainData recentChainData;
   private final UnsignedLong subnetId;
 
   public AttestationTopicHandler(
-      final EventBus eventBus, final RecentChainData recentChainData, final UnsignedLong subnetId) {
-    super(eventBus, recentChainData);
+      final EventBus eventBus,
+      final RecentChainData recentChainData,
+      final UnsignedLong subnetId,
+      final Bytes4 forkDigest) {
+    super(eventBus, forkDigest);
+    this.recentChainData = recentChainData;
     this.subnetId = subnetId;
   }
 

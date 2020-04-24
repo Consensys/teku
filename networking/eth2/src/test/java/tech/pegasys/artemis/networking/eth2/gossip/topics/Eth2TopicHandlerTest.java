@@ -28,6 +28,7 @@ import org.apache.tuweni.ssz.SSZException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class Eth2TopicHandlerTest {
@@ -37,7 +38,7 @@ public class Eth2TopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final MockTopicHandler topicHandler =
-      spy(new MockTopicHandler(eventBus, recentChainData));
+      spy(new MockTopicHandler(eventBus, recentChainData.getCurrentForkDigest()));
   private final Bytes message = Bytes.fromHexString("0x01");
 
   private final Attestation deserialized = dataStructureUtil.randomAttestation();
@@ -109,8 +110,8 @@ public class Eth2TopicHandlerTest {
 
   private class MockTopicHandler extends Eth2TopicHandler<Attestation> {
 
-    protected MockTopicHandler(final EventBus eventBus, final RecentChainData recentChainData) {
-      super(eventBus, recentChainData);
+    protected MockTopicHandler(final EventBus eventBus, final Bytes4 forkDigest) {
+      super(eventBus, forkDigest);
     }
 
     @Override

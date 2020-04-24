@@ -36,7 +36,7 @@ public class BlockGossipManager {
       final BlockValidator blockValidator,
       final RecentChainData recentChainData) {
     final BlockTopicHandler topicHandler =
-        new BlockTopicHandler(eventBus, blockValidator, recentChainData);
+        new BlockTopicHandler(eventBus, blockValidator, recentChainData.getCurrentForkDigest());
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     eventBus.register(this);

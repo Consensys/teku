@@ -39,19 +39,23 @@ public class AttestationTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(eventBus, storageClient, UnsignedLong.valueOf(1));
+      new AttestationTopicHandler(
+          eventBus,
+          recentChainData,
+          UnsignedLong.valueOf(1),
+          recentChainData.getCurrentForkDigest());
 
   @BeforeEach
   public void setup() {
-    BeaconChainUtil.initializeStorage(storageClient, validatorKeys);
+    BeaconChainUtil.initializeStorage(recentChainData, validatorKeys);
   }
 
   @Test
   public void handleMessage_validAttestation() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
@@ -63,7 +67,7 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_invalidAttestationSignature() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation =
         attestationGenerator.attestationWithInvalidSignature(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
@@ -84,15 +88,19 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_invalidAttestation_missingState() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     // Set up state to be missing
-    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
-    storageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
+    final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+    recentChainData.initializeFromGenesis(dataStructureUtil.randomBeaconState());
     final AttestationTopicHandler topicHandler =
-        new AttestationTopicHandler(eventBus, storageClient, UnsignedLong.valueOf(1));
+        new AttestationTopicHandler(
+            eventBus,
+            recentChainData,
+            UnsignedLong.valueOf(1),
+            recentChainData.getCurrentForkDigest());
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);

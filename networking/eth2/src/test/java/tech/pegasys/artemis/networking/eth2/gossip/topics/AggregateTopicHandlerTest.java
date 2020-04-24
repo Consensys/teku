@@ -32,10 +32,10 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final AggregateTopicHandler topicHandler =
-      new AggregateTopicHandler(eventBus, storageClient);
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(12, storageClient);
+      new AggregateTopicHandler(eventBus, recentChainData.getCurrentForkDigest(), recentChainData);
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(12, recentChainData);
 
   @BeforeEach
   public void setup() {

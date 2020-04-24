@@ -19,18 +19,18 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Bytes4 forkDigest;
   private final EventBus eventBus;
-  protected final RecentChainData recentChainData;
 
-  protected Eth2TopicHandler(final EventBus eventBus, final RecentChainData recentChainData) {
+  protected Eth2TopicHandler(final EventBus eventBus, final Bytes4 forkDigest) {
     this.eventBus = eventBus;
-    this.recentChainData = recentChainData;
+    this.forkDigest = forkDigest;
   }
 
   @Override
@@ -59,11 +59,11 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
   }
 
   public String getTopic() {
-    return "/eth2/" + getForkDigestValue() + "/" + getTopicName() + "/ssz";
+    return "/eth2/" + this.getForkDigestString() + "/" + getTopicName() + "/ssz";
   }
 
-  private String getForkDigestValue() {
-    return recentChainData.getCurrentForkDigest().toHexString().substring(2);
+  private String getForkDigestString() {
+    return forkDigest.toHexString().substring(2);
   }
 
   protected abstract T deserialize(Bytes bytes) throws SSZException;

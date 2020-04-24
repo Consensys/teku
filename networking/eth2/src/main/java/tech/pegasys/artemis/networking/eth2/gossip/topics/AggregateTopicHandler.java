@@ -26,14 +26,19 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndProof> {
   public static String TOPIC_NAME = "beacon_aggregate_and_proof";
   private static final Logger LOG = LogManager.getLogger();
 
-  public AggregateTopicHandler(final EventBus eventBus, final RecentChainData recentChainData) {
-    super(eventBus, recentChainData);
+  private final RecentChainData recentChainData;
+
+  public AggregateTopicHandler(
+      final EventBus eventBus, final Bytes4 forkDigest, final RecentChainData recentChainData) {
+    super(eventBus, forkDigest);
+    this.recentChainData = recentChainData;
   }
 
   @Override

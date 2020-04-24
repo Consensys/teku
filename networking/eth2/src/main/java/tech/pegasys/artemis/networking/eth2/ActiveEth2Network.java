@@ -63,6 +63,10 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   private void startup() {
+    recentChainData.subscribeStoreInitialized(this::initGossipManagers);
+  }
+
+  public void initGossipManagers() {
     state.set(State.RUNNING);
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
