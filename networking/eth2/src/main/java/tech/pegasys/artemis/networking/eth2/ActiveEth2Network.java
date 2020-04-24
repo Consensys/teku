@@ -17,6 +17,9 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
@@ -35,6 +38,8 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
@@ -63,11 +68,10 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   private void startup() {
-    recentChainData.subscribeStoreInitialized(this::initGossipManagers);
+    recentChainData.subscribeBestBlockInitialized(this::initGossipManagers);
   }
 
   public void initGossipManagers() {
-    state.set(State.RUNNING);
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(discoveryNetwork, recentChainData, eventBus);
@@ -77,6 +81,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
     aggregateGossipManager =
         new AggregateGossipManager(discoveryNetwork, eventBus, recentChainData);
+    state.set(State.RUNNING);
   }
 
   @Override
@@ -128,11 +133,19 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {
+    if (state.get() != State.RUNNING) {
+      LOG.warn("Attestation committee can not be subscribed due to Gossip Managers not being initialized");
+      return;
+    }
     attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
   }
 
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
+    if (state.get() != State.RUNNING) {
+      LOG.warn("Attestation committee can not be unsubscribed due to Gossip Managers not being initialized");
+      return;
+    }
     attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
   }
 
