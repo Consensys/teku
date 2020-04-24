@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -44,6 +45,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final EventBus eventBus;
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
+  private final AtomicBoolean gossipManagersInitialized = new AtomicBoolean(false);
 
   private BlockGossipManager blockGossipManager;
   private AttestationGossipManager attestationGossipManager;
@@ -67,6 +69,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   private void startup() {
+    state.set(State.RUNNING);
     recentChainData.subscribeBestBlockInitialized(this::initGossipManagers);
   }
 
@@ -80,7 +83,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
     aggregateGossipManager =
         new AggregateGossipManager(discoveryNetwork, eventBus, recentChainData);
-    state.set(State.RUNNING);
+    gossipManagersInitialized.set(true);
   }
 
   @Override
@@ -132,7 +135,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {
-    if (state.get() != State.RUNNING) {
+    if (!gossipManagersInitialized.get()) {
       LOG.warn(
           "Attestation committee can not be subscribed due to Gossip Managers not being initialized");
       return;
@@ -142,7 +145,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
-    if (state.get() != State.RUNNING) {
+    if (!gossipManagersInitialized.get()) {
       LOG.warn(
           "Attestation committee can not be unsubscribed due to Gossip Managers not being initialized");
       return;
