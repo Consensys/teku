@@ -53,8 +53,30 @@ public class AttestationValidator {
 
   public ValidationResult validate(
       final Attestation attestation, final UnsignedLong receivedOnSubnetId) {
-    // Single attestation specific
+    ValidationResult validationResult = singleAttestationChecks(attestation, receivedOnSubnetId);
+    if (validationResult != VALID) {
+      return validationResult;
+    }
 
+    validationResult = singleOrAggregateAttestationChecks(attestation);
+    if (validationResult != VALID) {
+      return validationResult;
+    }
+
+    return firstValidAttestationCheck(attestation);
+  }
+
+  private ValidationResult firstValidAttestationCheck(final Attestation attestation) {
+    // The attestation is the first valid attestation received for the participating validator for
+    // the slot, attestation.data.slot.
+    if (!receivedValidAttestations.add(getValidatorAndSlot(attestation))) {
+      return INVALID;
+    }
+    return VALID;
+  }
+
+  private ValidationResult singleAttestationChecks(
+      final Attestation attestation, final UnsignedLong receivedOnSubnetId) {
     // The attestation's committee index (attestation.data.index) is for the correct subnet.
     if (!CommitteeUtil.getSubnetId(attestation).equals(receivedOnSubnetId)) {
       return INVALID;
@@ -66,20 +88,15 @@ public class AttestationValidator {
       return INVALID;
     }
 
-    final ValidatorAndSlot validatorAndSlot =
-        new ValidatorAndSlot(
-            attestation.getData().getSlot(),
-            attestation.getData().getIndex(),
-            attestation.getAggregation_bits().streamAllSetBits().findFirst().orElseThrow());
-
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.
-    if (receivedValidAttestations.contains(validatorAndSlot)) {
+    if (receivedValidAttestations.contains(getValidatorAndSlot(attestation))) {
       return INVALID;
     }
+    return VALID;
+  }
 
-    // Applies to aggregates
-
+  private ValidationResult singleOrAggregateAttestationChecks(final Attestation attestation) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
@@ -93,6 +110,9 @@ public class AttestationValidator {
       return SAVED_FOR_FUTURE;
     }
 
+    // The block being voted for (attestation.data.beacon_block_root) passes validation.
+    // It must pass validation to be in the store.
+    // If it's not in the store, it may not have been processed yet so save for future.
     final Optional<BeaconState> maybeState =
         recentChainData.getBlockState(attestation.getData().getBeacon_block_root());
     if (maybeState.isEmpty()) {
@@ -101,18 +121,19 @@ public class AttestationValidator {
 
     final BeaconState state = maybeState.get();
 
-    // TODO: Do we need to process slots if this state is actually from before the target epoch?
+    // The signature of attestation is valid.
     final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
     if (!is_valid_indexed_attestation(state, indexedAttestation)) {
       return INVALID;
     }
-
-    // Single attestations only
-
-    if (!receivedValidAttestations.add(validatorAndSlot)) {
-      return INVALID;
-    }
     return VALID;
+  }
+
+  private ValidatorAndSlot getValidatorAndSlot(final Attestation attestation) {
+    return new ValidatorAndSlot(
+        attestation.getData().getSlot(),
+        attestation.getData().getIndex(),
+        attestation.getAggregation_bits().streamAllSetBits().findFirst().orElseThrow());
   }
 
   private int isBeforeMinimumBroadcastTime(
