@@ -15,11 +15,11 @@ package tech.pegasys.artemis.bls.mikuli;
 
 import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.milagro.amcl.BLS381.BIG;
@@ -46,19 +46,15 @@ import org.apache.tuweni.bytes.Bytes;
 public final class BLS12381 {
 
   private static final long MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = Long.MAX_VALUE;
-  private static SecureRandom RND;
 
-  private static SecureRandom getRND() {
+  private static Random getRND() {
     // Milagro RAND has some issues with generating 'small' random numbers
     // and is not thread safe
-    if (RND == null) {
-      try {
-        RND = SecureRandom.getInstanceStrong();
-      } catch (NoSuchAlgorithmException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    return RND;
+    // Using non-secure random due to the JDK Linux secure random issue:
+    // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6521844
+    // A potential attack here has a very limited application and is not feasible
+    // Thus using non-secure random doesn't significantly mitigate the security
+    return ThreadLocalRandom.current();
   }
 
   /**
