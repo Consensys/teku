@@ -32,6 +32,40 @@ import tech.pegasys.artemis.bls.mikuli.BLS12381.BatchSemiAggregate;
 
 class BLS12381Test {
 
+  private final List<KeyPair> keys =
+      IntStream.range(0, 8).mapToObj(KeyPair::random).collect(Collectors.toList());
+  private final List<List<PublicKey>> pubKeys =
+      keys.stream()
+          .map(k -> Collections.singletonList(k.publicKey()))
+          .collect(Collectors.toList());
+  private final List<Bytes> messages =
+      IntStream.range(0, 8)
+          .mapToObj(i -> Bytes.wrap(("Hey " + i).getBytes(UTF_8)))
+          .collect(Collectors.toList());
+  private final List<Signature> signatures =
+      Streams.zip(keys.stream(), messages.stream(), (k, m) -> BLS12381.sign(k.secretKey(), m))
+          .collect(Collectors.toList());
+  private final Bytes aggrSigMsg = messages.get(0);
+  private final Signature aggrSig =
+      BLS12381.aggregate(
+          keys.stream().limit(3).map(k -> BLS12381.sign(k.secretKey(), aggrSigMsg)));
+  private final List<PublicKey> aggrSigPubkeys =
+      keys.stream().limit(3).map(KeyPair::publicKey).collect(Collectors.toList());
+  private final int aggrIndex;
+  private final int invalidIndex;
+
+  public BLS12381Test() {
+    aggrIndex = pubKeys.size();
+    pubKeys.add(aggrSigPubkeys);
+    messages.add(aggrSigMsg);
+    signatures.add(aggrSig);
+
+    invalidIndex = pubKeys.size();
+    pubKeys.add(pubKeys.get(0));
+    messages.add(messages.get(0));
+    signatures.add(Signature.random(0));
+  }
+
   @Test
   void signAndVerify() {
     KeyPair keyPair = KeyPair.random(42);
@@ -137,38 +171,7 @@ class BLS12381Test {
   }
 
   @Test
-  void batchVerifyTest() {
-    List<KeyPair> keys =
-        IntStream.range(0, 8).mapToObj(KeyPair::random).collect(Collectors.toList());
-    List<List<PublicKey>> pubKeys =
-        keys.stream()
-            .map(k -> Collections.singletonList(k.publicKey()))
-            .collect(Collectors.toList());
-    List<Bytes> messages =
-        IntStream.range(0, 8)
-            .mapToObj(i -> Bytes.wrap(("Hey " + i).getBytes(UTF_8)))
-            .collect(Collectors.toList());
-    List<Signature> signatures =
-        Streams.zip(keys.stream(), messages.stream(), (k, m) -> BLS12381.sign(k.secretKey(), m))
-            .collect(Collectors.toList());
-
-    Bytes aggrSigMsg = messages.get(0);
-    Signature aggrSig =
-        BLS12381.aggregate(
-            keys.stream().limit(3).map(k -> BLS12381.sign(k.secretKey(), aggrSigMsg)));
-    List<PublicKey> aggrSigPubkeys =
-        keys.stream().limit(3).map(KeyPair::publicKey).collect(Collectors.toList());
-
-    int aggrIndex = pubKeys.size();
-    pubKeys.add(aggrSigPubkeys);
-    messages.add(aggrSigMsg);
-    signatures.add(aggrSig);
-
-    int invalidIndex = pubKeys.size();
-    pubKeys.add(pubKeys.get(0));
-    messages.add(messages.get(0));
-    signatures.add(Signature.random(0));
-
+  void batchVerifyPositiveSimpleTest() {
     // positive simple case
     for (int sigCnt = 0; sigCnt < 6; sigCnt++) {
       List<BatchSemiAggregate> semiAggr =
@@ -181,6 +184,10 @@ class BLS12381Test {
       assertTrue(BLS12381.completeBatchVerify(semiAggr));
     }
 
+  }
+
+  @Test
+  void batchVerifyPositiveSimpleWithAggrSigTest() {
     // positive simple case with aggr sig
     for (int aggrPos = 0; aggrPos < 4; aggrPos++) {
       int finalAggrPos = aggrPos;
@@ -195,6 +202,10 @@ class BLS12381Test {
       assertTrue(BLS12381.completeBatchVerify(semiAggr));
     }
 
+  }
+
+  @Test
+  void batchVerify2PositiveTest() {
     // positive prepareBatchVerify2 test
     for (int sigCnt = 0; sigCnt < 8; sigCnt++) {
       Stream<List<Integer>> pairsStream =
@@ -226,6 +237,10 @@ class BLS12381Test {
       assertTrue(BLS12381.completeBatchVerify(semiAggr));
     }
 
+  }
+
+  @Test
+  void batchVerify2NegativeTest() {
     // negative prepareBatchVerify2 test
     for (int sigCnt = 0; sigCnt < 5; sigCnt++) {
       int finalSigCnt = sigCnt;
