@@ -76,7 +76,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
     footer = "Teku is licensed under the Apache License 2.0")
 public class BeaconNodeCommand implements Callable<Integer> {
 
-  static final String CONFIG_FILE_OPTION_NAME = "--config-file";
+  public static final String CONFIG_FILE_OPTION_NAME = "--config-file";
   static final String TEKU_CONFIG_FILE_ENV = "TEKU_CONFIG_FILE";
   private final PrintWriter outputWriter;
   private final PrintWriter errorWriter;
@@ -216,9 +216,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private int handleParseException(final CommandLine.ParameterException ex, final String[] args) {
     errorWriter.println(ex.getMessage());
 
-    if (!CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter)) {
-      ex.getCommandLine().usage(outputWriter, CommandLine.Help.Ansi.AUTO);
-    }
+    CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter);
+    outputWriter.println();
+    outputWriter.println("To display full help:");
+    outputWriter.println("teku --help");
 
     return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }

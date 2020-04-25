@@ -105,8 +105,7 @@ public class PeerSync {
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(
                       NEXT_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-              return peer.requestBlocksByRange(
-                      status.getHeadRoot(), startSlot, count, STEP, this::blockResponseListener)
+              return peer.requestBlocksByRange(startSlot, count, STEP, this::blockResponseListener)
                   .thenApply((res) -> readyForNextRequest);
             })
         .thenCompose(

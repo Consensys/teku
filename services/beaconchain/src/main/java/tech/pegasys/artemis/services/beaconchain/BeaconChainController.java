@@ -47,7 +47,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
-import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.networking.eth2.mock.NoOpEth2Network;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
@@ -268,8 +268,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             depositProvider,
             eth1DataCache);
-    final AttestationTopicSubscriptions attestationTopicSubscriptions =
-        new AttestationTopicSubscriptions(p2pNetwork);
+    final AttestationTopicSubscriber attestationTopicSubscriptions =
+        new AttestationTopicSubscriber(p2pNetwork);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
