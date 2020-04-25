@@ -93,7 +93,7 @@ public class PeerSyncTest {
   @Test
   void sync_failedImport_stateTransitionError() {
     final BlockImportResult importResult =
-        BlockImportResult.failedStateTransition(new StateTransitionException(null));
+        BlockImportResult.failedStateTransition(new StateTransitionException());
     testFailedBlockImport(() -> importResult, true);
   }
 
