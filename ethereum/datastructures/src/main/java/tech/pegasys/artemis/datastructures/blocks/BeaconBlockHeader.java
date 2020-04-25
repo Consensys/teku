@@ -102,7 +102,6 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
         SSZ.encode(writer -> writer.writeFixedBytes(getBody_root())));
   }
 
-
   /** *************** * GETTERS & SETTERS * * ******************* */
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();
