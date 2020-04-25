@@ -35,9 +35,7 @@ class BLS12381Test {
   private final List<KeyPair> keys =
       IntStream.range(0, 8).mapToObj(KeyPair::random).collect(Collectors.toList());
   private final List<List<PublicKey>> pubKeys =
-      keys.stream()
-          .map(k -> Collections.singletonList(k.publicKey()))
-          .collect(Collectors.toList());
+      keys.stream().map(k -> Collections.singletonList(k.publicKey())).collect(Collectors.toList());
   private final List<Bytes> messages =
       IntStream.range(0, 8)
           .mapToObj(i -> Bytes.wrap(("Hey " + i).getBytes(UTF_8)))
@@ -47,8 +45,7 @@ class BLS12381Test {
           .collect(Collectors.toList());
   private final Bytes aggrSigMsg = messages.get(0);
   private final Signature aggrSig =
-      BLS12381.aggregate(
-          keys.stream().limit(3).map(k -> BLS12381.sign(k.secretKey(), aggrSigMsg)));
+      BLS12381.aggregate(keys.stream().limit(3).map(k -> BLS12381.sign(k.secretKey(), aggrSigMsg)));
   private final List<PublicKey> aggrSigPubkeys =
       keys.stream().limit(3).map(KeyPair::publicKey).collect(Collectors.toList());
   private final int aggrIndex;
@@ -183,7 +180,6 @@ class BLS12381Test {
               .collect(Collectors.toList());
       assertTrue(BLS12381.completeBatchVerify(semiAggr));
     }
-
   }
 
   @Test
@@ -201,7 +197,6 @@ class BLS12381Test {
               .collect(Collectors.toList());
       assertTrue(BLS12381.completeBatchVerify(semiAggr));
     }
-
   }
 
   @Test
@@ -236,7 +231,6 @@ class BLS12381Test {
 
       assertTrue(BLS12381.completeBatchVerify(semiAggr));
     }
-
   }
 
   @Test
