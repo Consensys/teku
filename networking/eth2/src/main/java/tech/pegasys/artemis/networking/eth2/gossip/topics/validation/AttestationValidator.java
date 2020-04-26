@@ -166,7 +166,7 @@ public class AttestationValidator {
 
   private UnsignedLong maximumBroadcastTimeMillis(final UnsignedLong attestationSlot) {
     final UnsignedLong lastAllowedSlot = attestationSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
-    // The last allowed time is the end of the lastAllowedSlot.
+    // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
     final UnsignedLong lastAllowedTime =
         recentChainData
             .getGenesisTime()
