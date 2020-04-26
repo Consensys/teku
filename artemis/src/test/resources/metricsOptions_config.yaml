@@ -1,0 +1,5 @@
+# metrics
+metrics-enabled: True
+metrics-port: 8888
+metrics-interface: "127.100.0.1"
+metrics-categories: ["JVM", "PROCESS"]
