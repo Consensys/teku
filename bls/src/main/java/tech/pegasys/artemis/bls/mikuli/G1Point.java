@@ -182,6 +182,10 @@ public final class G1Point implements Group<G1Point> {
     return new G1Point(newPoint);
   }
 
+  ECP getPoint() {
+    return point;
+  }
+
   public Bytes toBytes() {
     // Size of the byte array representing compressed ECP point for BLS12-381 is
     // 49 bytes in milagro

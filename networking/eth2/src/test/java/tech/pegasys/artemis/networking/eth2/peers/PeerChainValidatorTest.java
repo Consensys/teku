@@ -217,7 +217,7 @@ public class PeerChainValidatorTest {
     final SafeFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
     // Verify remaining checks were skipped
-    verify(peer, never()).requestBlockBySlot(any(), any());
+    verify(peer, never()).requestBlockBySlot(any());
     verify(historicalChainData, never()).getLatestFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
@@ -235,7 +235,7 @@ public class PeerChainValidatorTest {
     final SafeFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
     // Verify remaining checks were skipped
-    verify(peer, never()).requestBlockBySlot(any(), any());
+    verify(peer, never()).requestBlockBySlot(any());
     verify(historicalChainData, never()).getLatestFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
@@ -248,7 +248,7 @@ public class PeerChainValidatorTest {
     final SafeFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
     // Verify other checks were skipped when fork mismatch was detected
-    verify(peer, never()).requestBlockBySlot(any(), any());
+    verify(peer, never()).requestBlockBySlot(any());
     verify(historicalChainData, never()).getLatestFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
@@ -313,8 +313,7 @@ public class PeerChainValidatorTest {
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
     when(historicalChainData.getLatestFinalizedBlockAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
-    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
-        .thenReturn(blockFuture);
+    when(peer.requestBlockBySlot(earlierBlockSlot)).thenReturn(blockFuture);
   }
 
   private void remoteOnSameChainButWillNotReturnGenesis() {
@@ -325,8 +324,7 @@ public class PeerChainValidatorTest {
     when(store.getFinalizedCheckpoint()).thenReturn(genesisCheckpoint);
     when(historicalChainData.getLatestFinalizedBlockAtSlot(genesisSlot))
         .thenReturn(optionalBlockFuture);
-    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), genesisSlot))
-        .thenReturn(postGenesisBlock);
+    when(peer.requestBlockBySlot(genesisSlot)).thenReturn(postGenesisBlock);
   }
 
   private void remoteChainIsAheadOnDifferentChain() {
@@ -338,8 +336,7 @@ public class PeerChainValidatorTest {
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
     when(historicalChainData.getLatestFinalizedBlockAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
-    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
-        .thenReturn(blockFuture);
+    when(peer.requestBlockBySlot(earlierBlockSlot)).thenReturn(blockFuture);
   }
 
   private void remoteChainIsAheadAndUnresponsive() {
@@ -351,8 +348,7 @@ public class PeerChainValidatorTest {
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
     when(historicalChainData.getLatestFinalizedBlockAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
-    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
-        .thenReturn(blockFuture);
+    when(peer.requestBlockBySlot(earlierBlockSlot)).thenReturn(blockFuture);
   }
 
   private void remoteChainIsBehindOnSameChain() {

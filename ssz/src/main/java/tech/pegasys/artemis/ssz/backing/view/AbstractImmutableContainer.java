@@ -15,6 +15,7 @@ package tech.pegasys.artemis.ssz.backing.view;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Objects;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.ssz.backing.ContainerViewWrite;
 import tech.pegasys.artemis.ssz.backing.ViewRead;
@@ -75,5 +76,28 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
   @Override
   public ContainerViewWrite createWritableCopy() {
     throw new UnsupportedOperationException("This container doesn't support mutable View");
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (Objects.isNull(obj)) {
+      return false;
+    }
+
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof AbstractImmutableContainer)) {
+      return false;
+    }
+
+    AbstractImmutableContainer other = (AbstractImmutableContainer) obj;
+    return hashTreeRoot().equals(other.hashTreeRoot());
+  }
+
+  @Override
+  public int hashCode() {
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 }

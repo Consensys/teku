@@ -31,4 +31,16 @@ class AtePairingTest {
 
     assertEquals(expected, actual);
   }
+
+  @Test
+  void pairNoExpPlusFexpAndPairAreSame() {
+    G1Point p1 = G1Point.random(1L);
+    G2Point q2 = G2Point.random(2L);
+    G1Point r1 = G1Point.random(3L);
+    G2Point s2 = G2Point.random(4L);
+
+    assertEquals(AtePairing.pair(p1, q2), AtePairing.fexp(AtePairing.pairNoExp(p1, q2)));
+    assertEquals(
+        AtePairing.pair2(p1, q2, r1, s2), AtePairing.fexp(AtePairing.pair2NoExp(p1, q2, r1, s2)));
+  }
 }
