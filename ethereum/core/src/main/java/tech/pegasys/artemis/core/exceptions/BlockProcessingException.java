@@ -18,7 +18,7 @@ public final class BlockProcessingException extends Exception {
     super(err);
   }
 
-  public BlockProcessingException(RuntimeException e) {
+  public BlockProcessingException(Exception e) {
     super(e);
   }
 }
