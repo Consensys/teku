@@ -44,14 +44,14 @@ import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.artemis.util.collections.LimitStrategy;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class AggregateAndProofValidator {
+public class SignedAggregateAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndSlot> receivedValidAggregations =
       ConcurrentLimitedSet.create(VALID_BLOCK_SET_SIZE, LimitStrategy.DROP_OLDEST_ELEMENT);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
 
-  public AggregateAndProofValidator(
+  public SignedAggregateAndProofValidator(
       final AttestationValidator attestationValidator, final RecentChainData recentChainData) {
     this.attestationValidator = attestationValidator;
     this.recentChainData = recentChainData;

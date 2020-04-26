@@ -13,30 +13,28 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-
 import com.google.common.eventbus.EventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndProof> {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
-  private final RecentChainData recentChainData;
+  private final EventBus eventBus;
+  private final SignedAggregateAndProofValidator validator;
 
-  public AggregateTopicHandler(final EventBus eventBus, final RecentChainData recentChainData) {
+  public AggregateTopicHandler(
+      final EventBus eventBus, final SignedAggregateAndProofValidator validator) {
     super(eventBus);
-    this.recentChainData = recentChainData;
+    this.eventBus = eventBus;
+    this.validator = validator;
   }
 
   @Override
@@ -51,24 +49,18 @@ public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndPr
 
   @Override
   protected boolean validateData(final SignedAggregateAndProof aggregateAndProof) {
-    final Attestation attestation = aggregateAndProof.getMessage().getAggregate();
-    final BeaconState state =
-        recentChainData.getStore().getBlockState(attestation.getData().getBeacon_block_root());
-    if (state == null) {
-      LOG.trace(
-          "Aggregate attestation BeaconState was not found in Store. Attestation: ({}), block_root: ({}) on {}",
-          attestation.hash_tree_root(),
-          attestation.getData().getBeacon_block_root(),
-          getTopic());
-      return false;
+    final ValidationResult validationResult = validator.validate(aggregateAndProof);
+    switch (validationResult) {
+      case VALID:
+        return true;
+      case INVALID:
+        return false;
+      case SAVED_FOR_FUTURE:
+        eventBus.post(createEvent(aggregateAndProof));
+        return false;
+      default:
+        throw new UnsupportedOperationException(
+            "Unexpected validation result: " + validationResult);
     }
-    final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
-    final boolean validAttestation = is_valid_indexed_attestation(state, indexedAttestation);
-    if (!validAttestation) {
-      LOG.trace("Received invalid aggregate ({}) on {}", attestation.hash_tree_root(), getTopic());
-      return false;
-    }
-
-    return true;
   }
 }

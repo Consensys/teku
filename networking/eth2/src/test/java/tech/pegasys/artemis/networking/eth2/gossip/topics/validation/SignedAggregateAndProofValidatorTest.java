@@ -82,7 +82,7 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
  *
  * <p>The signature of aggregate is valid.
  */
-class AggregateAndProofValidatorTest {
+class SignedAggregateAndProofValidatorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 1024);
@@ -94,8 +94,8 @@ class AggregateAndProofValidatorTest {
       new AggregateGenerator(beaconChainUtil.getValidatorKeys());
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
 
-  private final AggregateAndProofValidator validator =
-      new AggregateAndProofValidator(attestationValidator, recentChainData);
+  private final SignedAggregateAndProofValidator validator =
+      new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
 
   @BeforeAll
   public static void init() {

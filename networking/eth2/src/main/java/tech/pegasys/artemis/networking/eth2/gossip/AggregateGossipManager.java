@@ -20,9 +20,9 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AggregateGossipManager {
   private final EventBus eventBus;
@@ -32,9 +32,9 @@ public class AggregateGossipManager {
   public AggregateGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final RecentChainData recentChainData) {
+      final SignedAggregateAndProofValidator validator) {
     final AggregateTopicHandler aggregateTopicHandler =
-        new AggregateTopicHandler(eventBus, recentChainData);
+        new AggregateTopicHandler(eventBus, validator);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(aggregateTopicHandler.getTopic(), aggregateTopicHandler);
     eventBus.register(this);
