@@ -39,7 +39,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class AttestationValidator {
 
-  private static final UnsignedLong MILLIS_PER_SECOND = UnsignedLong.valueOf(10000);
+  private static final UnsignedLong MILLIS_PER_SECOND = UnsignedLong.valueOf(1000);
   private static final UnsignedLong MAXIMUM_GOSSIP_CLOCK_DISPARITY =
       UnsignedLong.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
@@ -63,10 +63,10 @@ public class AttestationValidator {
       return validationResult;
     }
 
-    return firstValidAttestationCheck(attestation);
+    return addAndCheckFirstValidAttestation(attestation);
   }
 
-  private ValidationResult firstValidAttestationCheck(final Attestation attestation) {
+  private ValidationResult addAndCheckFirstValidAttestation(final Attestation attestation) {
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.
     if (!receivedValidAttestations.add(getValidatorAndSlot(attestation))) {
@@ -106,7 +106,7 @@ public class AttestationValidator {
     if (isAfterPropagationSlotRange(currentTimeMillis, attestation)) {
       return INVALID;
     }
-    if (isBeforeMinimumBroadcastTime(attestation, currentTimeMillis) < 0) {
+    if (isBeforeMinimumBroadcastTime(attestation, currentTimeMillis)) {
       return SAVED_FOR_FUTURE;
     }
 
@@ -136,11 +136,11 @@ public class AttestationValidator {
         attestation.getAggregation_bits().streamAllSetBits().findFirst().orElseThrow());
   }
 
-  private int isBeforeMinimumBroadcastTime(
+  private boolean isBeforeMinimumBroadcastTime(
       final Attestation attestation, final UnsignedLong currentTimeMillis) {
     final UnsignedLong minimumBroadcastTimeMillis =
         minimumBroadcastTimeMillis(attestation.getData().getSlot());
-    return currentTimeMillis.compareTo(minimumBroadcastTimeMillis);
+    return currentTimeMillis.compareTo(minimumBroadcastTimeMillis) < 0;
   }
 
   private boolean isAfterPropagationSlotRange(
