@@ -59,7 +59,7 @@ class EncryptedKeystoreWriterTest {
         tempDir.resolve(
             "validator_"
                 + trimPublicKey(validator1PubKey)
-                + "/val_"
+                + "/validator_"
                 + trimPublicKey(validator1PubKey)
                 + ".json"),
         validator1SecretKey);
@@ -67,7 +67,7 @@ class EncryptedKeystoreWriterTest {
         tempDir.resolve(
             "validator_"
                 + trimPublicKey(validator1PubKey)
-                + "/wdr_"
+                + "/withdrawal_"
                 + trimPublicKey(withdrawal1PubKey)
                 + ".json"),
         withdrawal1SecretKey);
@@ -78,7 +78,7 @@ class EncryptedKeystoreWriterTest {
         tempDir.resolve(
             "validator_"
                 + trimPublicKey(validator2PubKey)
-                + "/val_"
+                + "/validator_"
                 + trimPublicKey(validator2PubKey)
                 + ".json"),
         validator2SecretKey);
@@ -86,8 +86,8 @@ class EncryptedKeystoreWriterTest {
         tempDir.resolve(
             "validator_"
                 + trimPublicKey(validator2PubKey)
-                + "/wdr_"
-                + trimPublicKey(withdrawal1PubKey)
+                + "/withdrawal_"
+                + trimPublicKey(withdrawal2PubKey)
                 + ".json"),
         withdrawal2SecretKey);
   }
