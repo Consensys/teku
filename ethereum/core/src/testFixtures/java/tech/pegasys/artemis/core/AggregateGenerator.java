@@ -43,8 +43,8 @@ public class AggregateGenerator {
     return attestationGenerator;
   }
 
-  public Builder generator() {
-    return new Builder();
+  public Generator generator() {
+    return new Generator();
   }
 
   public SignedAggregateAndProof validAggregateAndProof(final BeaconBlockAndState blockAndState) {
@@ -60,7 +60,7 @@ public class AggregateGenerator {
     return new Signer(new LocalMessageSignerService(validatorKeys.get(validatorIndex)));
   }
 
-  public class Builder {
+  public class Generator {
     private BeaconBlockAndState blockAndState;
     private Optional<UnsignedLong> aggregatorIndex = Optional.empty();
     private Optional<UnsignedLong> slot = Optional.empty();
@@ -68,32 +68,32 @@ public class AggregateGenerator {
     private Optional<BLSSignature> selectionProof = Optional.empty();
     private Optional<UnsignedLong> committeeIndex = Optional.empty();
 
-    public Builder blockAndState(final BeaconBlockAndState blockAndState) {
+    public Generator blockAndState(final BeaconBlockAndState blockAndState) {
       this.blockAndState = blockAndState;
       return this;
     }
 
-    public Builder slot(final UnsignedLong slot) {
+    public Generator slot(final UnsignedLong slot) {
       this.slot = Optional.of(slot);
       return this;
     }
 
-    public Builder aggregatorIndex(final UnsignedLong aggregatorIndex) {
+    public Generator aggregatorIndex(final UnsignedLong aggregatorIndex) {
       this.aggregatorIndex = Optional.of(aggregatorIndex);
       return this;
     }
 
-    public Builder aggregate(final Attestation aggregate) {
+    public Generator aggregate(final Attestation aggregate) {
       this.aggregate = Optional.of(aggregate);
       return this;
     }
 
-    public Builder committeeIndex(final UnsignedLong committeeIndex) {
+    public Generator committeeIndex(final UnsignedLong committeeIndex) {
       this.committeeIndex = Optional.of(committeeIndex);
       return this;
     }
 
-    public Builder selectionProof(final BLSSignature selectionProof) {
+    public Generator selectionProof(final BLSSignature selectionProof) {
       this.selectionProof = Optional.of(selectionProof);
       return this;
     }
@@ -101,56 +101,66 @@ public class AggregateGenerator {
     public SignedAggregateAndProof generate() {
       checkNotNull(blockAndState, "Missing block and state");
       final UnsignedLong slot = this.slot.orElseGet(blockAndState::getSlot);
-      final Attestation aggregate = getAggregate(slot);
+      final Attestation aggregate = this.aggregate.orElseGet(() -> createAttestation(slot));
+
+      return this.aggregatorIndex
+          .map(unsignedLong -> generateWithFixedAggregatorIndex(slot, aggregate, unsignedLong))
+          .orElseGet(() -> generateWithAnyValidAggregatorIndex(aggregate));
+    }
+
+    private SignedAggregateAndProof generateWithAnyValidAggregatorIndex(
+        final Attestation aggregate) {
       final BeaconState state = blockAndState.getState();
-
-      UnsignedLong aggregatorIndex = null;
-      BLSSignature validSelectionProof = null;
-      if (this.aggregatorIndex.isPresent()) {
-        aggregatorIndex = this.aggregatorIndex.get();
-        validSelectionProof =
-            createSelectionProof(this.aggregatorIndex.get().intValue(), state, slot);
-      } else {
-        final List<Integer> beaconCommittee =
-            CommitteeUtil.get_beacon_committee(
-                state, aggregate.getData().getSlot(), aggregate.getData().getIndex());
-        for (int validatorIndex : beaconCommittee) {
-          final Optional<BLSSignature> maybeSelectionProof =
-              validSelectionProof(validatorIndex, state, aggregate);
-          if (maybeSelectionProof.isPresent()) {
-            aggregatorIndex = UnsignedLong.valueOf(validatorIndex);
-            validSelectionProof = maybeSelectionProof.get();
-            break;
-          }
-        }
-
-        if (aggregatorIndex == null) {
-          throw new NoSuchElementException("No valid aggregate possible");
+      final List<Integer> beaconCommittee =
+          CommitteeUtil.get_beacon_committee(
+              state, aggregate.getData().getSlot(), aggregate.getData().getIndex());
+      for (int validatorIndex : beaconCommittee) {
+        final Optional<BLSSignature> maybeSelectionProof =
+            createValidSelectionProof(validatorIndex, state, aggregate);
+        if (maybeSelectionProof.isPresent()) {
+          return generate(
+              aggregate, UnsignedLong.valueOf(validatorIndex), maybeSelectionProof.get());
         }
       }
 
+      throw new NoSuchElementException("No valid aggregate possible");
+    }
+
+    private SignedAggregateAndProof generateWithFixedAggregatorIndex(
+        final UnsignedLong slot, final Attestation aggregate, final UnsignedLong aggregatorIndex) {
+      final BeaconState state = blockAndState.getState();
+      final BLSSignature validSelectionProof =
+          createSelectionProof(aggregatorIndex.intValue(), state, slot);
+      return generate(aggregate, aggregatorIndex, validSelectionProof);
+    }
+
+    private SignedAggregateAndProof generate(
+        final Attestation aggregate,
+        final UnsignedLong aggregatorIndex,
+        final BLSSignature validSelectionProof) {
       final BLSSignature selectionProof = this.selectionProof.orElse(validSelectionProof);
       final AggregateAndProof aggregateAndProof =
           new AggregateAndProof(aggregatorIndex, aggregate, selectionProof);
-      return createSignedAggregateAndProof(aggregatorIndex, aggregateAndProof, state);
+      return createSignedAggregateAndProof(
+          aggregatorIndex, aggregateAndProof, blockAndState.getState());
     }
 
-    private Attestation getAggregate(final UnsignedLong slot) {
-      return this.aggregate.orElseGet(
-          () -> {
-            if (committeeIndex.isPresent()) {
-              return attestationGenerator
-                  .streamAttestations(blockAndState, slot)
-                  .filter(
-                      attestation -> attestation.getData().getIndex().equals(committeeIndex.get()))
-                  .findFirst()
-                  .orElseThrow();
-            }
-            return attestationGenerator.validAttestation(blockAndState, slot);
-          });
+    private Attestation createAttestation(final UnsignedLong slot) {
+      return committeeIndex
+          .map(committeeIndex -> createAttestationForCommittee(slot, committeeIndex))
+          .orElseGet(() -> attestationGenerator.validAttestation(blockAndState, slot));
     }
 
-    private Optional<BLSSignature> validSelectionProof(
+    private Attestation createAttestationForCommittee(
+        final UnsignedLong slot, final UnsignedLong committeeIndex) {
+      return attestationGenerator
+          .streamAttestations(blockAndState, slot)
+          .filter(attestation -> attestation.getData().getIndex().equals(committeeIndex))
+          .findFirst()
+          .orElseThrow();
+    }
+
+    private Optional<BLSSignature> createValidSelectionProof(
         final int validatorIndex, final BeaconState state, final Attestation attestation) {
       final UnsignedLong slot = attestation.getData().getSlot();
       final UnsignedLong committeeIndex = attestation.getData().getIndex();

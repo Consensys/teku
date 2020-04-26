@@ -320,9 +320,6 @@ class AggregateAndProofValidatorTest {
     assertThat(validator.validate(validAggregate)).isEqualTo(VALID);
   }
 
-  @Test
-  public void shouldNotGossipAggregateThatWeCreatedLocally() {}
-
   private boolean hasSameCommitteeIndex(
       final SignedAggregateAndProof aggregateAndProof, final Attestation attestation) {
     return attestation
