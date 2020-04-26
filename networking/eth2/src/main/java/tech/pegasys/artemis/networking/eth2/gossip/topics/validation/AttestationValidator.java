@@ -144,28 +144,28 @@ public class AttestationValidator {
   }
 
   private boolean isAfterPropagationSlotRange(
-      final UnsignedLong currentTimeMillis, final Attestation aggregate) {
-    final UnsignedLong aggregateSlot = aggregate.getData().getSlot();
-    return maximumBroadcastTimeMillis(aggregateSlot).compareTo(currentTimeMillis) < 0;
+      final UnsignedLong currentTimeMillis, final Attestation attestation) {
+    final UnsignedLong attestationSlot = attestation.getData().getSlot();
+    return maximumBroadcastTimeMillis(attestationSlot).compareTo(currentTimeMillis) < 0;
   }
 
   private UnsignedLong secondsToMillis(final UnsignedLong seconds) {
     return seconds.times(MILLIS_PER_SECOND);
   }
 
-  private UnsignedLong minimumBroadcastTimeMillis(final UnsignedLong aggregateSlot) {
+  private UnsignedLong minimumBroadcastTimeMillis(final UnsignedLong attestationSlot) {
     final UnsignedLong lastAllowedTime =
         recentChainData
             .getGenesisTime()
-            .plus(aggregateSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+            .plus(attestationSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
     final UnsignedLong lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
     return lastAllowedTimeMillis.compareTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY) >= 0
         ? lastAllowedTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
         : ZERO;
   }
 
-  private UnsignedLong maximumBroadcastTimeMillis(final UnsignedLong aggregateSlot) {
-    final UnsignedLong lastAllowedSlot = aggregateSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
+  private UnsignedLong maximumBroadcastTimeMillis(final UnsignedLong attestationSlot) {
+    final UnsignedLong lastAllowedSlot = attestationSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
     // The last allowed time is the end of the lastAllowedSlot.
     final UnsignedLong lastAllowedTime =
         recentChainData
