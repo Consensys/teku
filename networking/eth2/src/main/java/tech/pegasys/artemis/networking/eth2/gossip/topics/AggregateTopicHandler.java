@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
@@ -24,8 +22,6 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggre
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndProof> {
-  private static final Logger LOG = LogManager.getLogger();
-
   public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
   private final EventBus eventBus;
   private final SignedAggregateAndProofValidator validator;
