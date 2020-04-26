@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.blocks;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -101,52 +100,6 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
         SSZ.encode(writer -> writer.writeFixedBytes(getParent_root())),
         SSZ.encode(writer -> writer.writeFixedBytes(getState_root())),
         SSZ.encode(writer -> writer.writeFixedBytes(getBody_root())));
-  }
-
-  public static BeaconBlockHeader fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new BeaconBlockHeader(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                Bytes32.wrap(reader.readFixedBytes(32))));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeUInt64(getSlot().longValue());
-          writer.writeUInt64(getProposer_index().longValue());
-          writer.writeFixedBytes(getParent_root());
-          writer.writeFixedBytes(getState_root());
-          writer.writeFixedBytes(getBody_root());
-        });
-  }
-
-  @Override
-  public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof BeaconBlockHeader)) {
-      return false;
-    }
-
-    BeaconBlockHeader other = (BeaconBlockHeader) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   /** *************** * GETTERS & SETTERS * * ******************* */

@@ -21,6 +21,7 @@ import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class Eth1DataTest {
 
@@ -61,7 +62,8 @@ class Eth1DataTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszEth1DataBytes = eth1Data.toBytes();
-    assertEquals(eth1Data, Eth1Data.fromBytes(sszEth1DataBytes));
+    Bytes eth1DataSerialized = SimpleOffsetSerializer.serialize(eth1Data);
+    Eth1Data newEth1Data = SimpleOffsetSerializer.deserialize(eth1DataSerialized, Eth1Data.class);
+    assertEquals(eth1Data, newEth1Data);
   }
 }

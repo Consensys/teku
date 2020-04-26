@@ -15,58 +15,82 @@ package tech.pegasys.artemis.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
+import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
 import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
+import static tech.pegasys.artemis.cli.options.InteropOptions.INTEROP_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
+import static tech.pegasys.artemis.cli.options.MetricsOptions.METRICS_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_INTERFACE;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
 import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
+import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
+import tech.pegasys.artemis.util.config.LoggingDestination;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
-import tech.pegasys.teku.logging.LoggingDestination;
 
-public class BeaconNodeCommandTest {
+public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
-  private final PrintWriter outputWriter = new PrintWriter(new StringWriter(), true);
-  private final PrintWriter errorWriter = new PrintWriter(new StringWriter(), true);
+  @Test
+  public void unknownOptionShouldDisplayShortHelpMessage() {
+    final String[] args = {"--hlp"};
 
-  @SuppressWarnings("unchecked")
-  private final Consumer<ArtemisConfiguration> startAction = mock(Consumer.class);
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("Unknown option");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(str).doesNotContain("Default");
+  }
 
-  private BeaconNodeCommand beaconNodeCommand =
-      new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
+  @Test
+  public void invalidValueShouldDisplayShortHelpMessage() {
+    final String[] args = {"--metrics-enabled=bob"};
 
-  @TempDir Path dataPath;
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("Invalid value");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(str).doesNotContain("Default");
+  }
+
+  @Test
+  public void helpOptionShouldDisplayFullHelp() {
+    final String[] args = {"--help"};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("Description:");
+    assertThat(str).contains("Default");
+    assertThat(str).doesNotContain("To display full help:");
+  }
 
   @Test
   public void loadDefaultsWhenNoArgsArePassed() {
@@ -169,6 +193,48 @@ public class BeaconNodeCommandTest {
         expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
   }
 
+  @Test
+  public void p2pEnabled_shouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
+    assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
+  }
+
+  @Test
+  public void p2pDiscoveryEnabled_shouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
+    assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
+  }
+
+  @Test
+  public void metricsEnabled_shouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(METRICS_ENABLED_OPTION_NAME);
+    assertThat(artemisConfiguration.isMetricsEnabled()).isTrue();
+  }
+
+  @Test
+  public void interopEnabled_shouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(INTEROP_ENABLED_OPTION_NAME);
+    assertThat(artemisConfiguration.isInteropEnabled()).isTrue();
+  }
+
+  @Test
+  public void restApiDocsEnabled_shouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
+    assertThat(artemisConfiguration.isRestApiDocsEnabled()).isTrue();
+  }
+
+  @Test
+  public void restApiEnabled_shouldNotRequireAValue() throws IOException {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
+    assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
+  }
+
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"mainnet", "minimal", "topaz"})
   public void useDefaultsFromNetworkDefinition(final String networkName) {
@@ -195,17 +261,6 @@ public class BeaconNodeCommandTest {
 
     final ArtemisConfiguration config = getResultingArtemisConfiguration();
     assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
-  }
-
-  @Test
-  public void shouldUseDefaultOfBothAsLogDestinationDefault() {
-    // This is important!
-    // If it defaults to "both" or some other value custom log4j configs get overwritten
-    beaconNodeCommand.parse(new String[0]);
-
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
-    assertThat(LoggingDestination.get(config.getLogDestination()))
-        .isEqualTo(LoggingDestination.DEFAULT_BOTH);
   }
 
   private Path createConfigFile() throws IOException {
@@ -268,7 +323,7 @@ public class BeaconNodeCommandTest {
   private ArtemisConfigurationBuilder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
         .setLogFile("teku.log")
-        .setLogDestination("both")
+        .setLogDestination(LoggingDestination.BOTH)
         .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 
@@ -308,7 +363,7 @@ public class BeaconNodeCommandTest {
         .setValidatorKeystorePasswordFiles(Collections.emptyList())
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
-        .setDataStorageMode("prune")
+        .setDataStorageMode(PRUNE)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
@@ -318,14 +373,6 @@ public class BeaconNodeCommandTest {
   private void assertArtemisConfiguration(final ArtemisConfiguration expected) {
     final ArtemisConfiguration actual = getResultingArtemisConfiguration();
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
-  }
-
-  private ArtemisConfiguration getResultingArtemisConfiguration() {
-    final ArgumentCaptor<ArtemisConfiguration> configCaptor =
-        ArgumentCaptor.forClass(ArtemisConfiguration.class);
-    verify(startAction).accept(configCaptor.capture());
-
-    return configCaptor.getValue();
   }
 
   private Path createTempFile(final byte[] contents) throws IOException {

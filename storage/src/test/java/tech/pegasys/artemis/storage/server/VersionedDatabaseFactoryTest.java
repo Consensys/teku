@@ -15,6 +15,7 @@ package tech.pegasys.artemis.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +50,7 @@ public class VersionedDatabaseFactoryTest {
   @Test
   public void createDatabase_fromExistingDataDir() throws Exception {
     createDbDirectory(dataDir);
-    createVersionFile(dataDir, DatabaseVersion.V1);
+    createVersionFile(dataDir, DatabaseVersion.V3);
 
     final VersionedDatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
     try (final Database db = dbFactory.createDatabase()) {
@@ -107,7 +108,7 @@ public class VersionedDatabaseFactoryTest {
 
     return ArtemisConfiguration.builder()
         .setDataPath(dataPath.toAbsolutePath().toString())
-        .setDataStorageMode("prune")
+        .setDataStorageMode(PRUNE)
         .build();
   }
 }

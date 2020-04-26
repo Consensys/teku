@@ -30,6 +30,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.status.StatusLogger;
+import tech.pegasys.artemis.util.config.LoggingDestination;
 
 public class LoggingConfigurator {
 

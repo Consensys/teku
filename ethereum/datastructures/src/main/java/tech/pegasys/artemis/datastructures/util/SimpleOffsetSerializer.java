@@ -37,6 +37,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -49,11 +50,13 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkData;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -73,47 +76,41 @@ public class SimpleOffsetSerializer {
   public static HashMap<Class, ReflectionInformation> classReflectionInfo = new HashMap<>();
 
   public static void setConstants() {
-    classReflectionInfo.put(
-        SignedBeaconBlock.class, new ReflectionInformation(SignedBeaconBlock.class));
-    classReflectionInfo.put(BeaconBlock.class, new ReflectionInformation(BeaconBlock.class));
-    classReflectionInfo.put(
-        BeaconBlockBody.class, new ReflectionInformation(BeaconBlockBody.class));
-    classReflectionInfo.put(
-        BeaconBlockHeader.class, new ReflectionInformation(BeaconBlockHeader.class));
-    classReflectionInfo.put(
-        SignedBeaconBlockHeader.class, new ReflectionInformation(SignedBeaconBlockHeader.class));
-    classReflectionInfo.put(Eth1Data.class, new ReflectionInformation(Eth1Data.class));
-    classReflectionInfo.put(Attestation.class, new ReflectionInformation(Attestation.class));
-    classReflectionInfo.put(
-        AttestationData.class, new ReflectionInformation(AttestationData.class));
-    classReflectionInfo.put(
-        AttesterSlashing.class, new ReflectionInformation(AttesterSlashing.class));
-    classReflectionInfo.put(Deposit.class, new ReflectionInformation(Deposit.class));
-    classReflectionInfo.put(DepositData.class, new ReflectionInformation(DepositData.class));
-    classReflectionInfo.put(DepositMessage.class, new ReflectionInformation(DepositMessage.class));
-    classReflectionInfo.put(
-        IndexedAttestation.class, new ReflectionInformation(IndexedAttestation.class));
-    classReflectionInfo.put(
-        ProposerSlashing.class, new ReflectionInformation(ProposerSlashing.class));
-    classReflectionInfo.put(
-        SignedVoluntaryExit.class, new ReflectionInformation(SignedVoluntaryExit.class));
-    classReflectionInfo.put(VoluntaryExit.class, new ReflectionInformation(VoluntaryExit.class));
-    classReflectionInfo.put(
-        BeaconStateImpl.class, new ReflectionInformation(BeaconStateImpl.class));
-    classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));
-    classReflectionInfo.put(Fork.class, new ReflectionInformation(Fork.class));
-    classReflectionInfo.put(
-        HistoricalBatch.class, new ReflectionInformation(HistoricalBatch.class));
-    classReflectionInfo.put(
-        PendingAttestation.class, new ReflectionInformation(PendingAttestation.class));
-    classReflectionInfo.put(Validator.class, new ReflectionInformation(Validator.class));
-    classReflectionInfo.put(StatusMessage.class, new ReflectionInformation(StatusMessage.class));
-    classReflectionInfo.put(GoodbyeMessage.class, new ReflectionInformation(GoodbyeMessage.class));
-    classReflectionInfo.put(
-        BeaconBlocksByRangeRequestMessage.class,
-        new ReflectionInformation(BeaconBlocksByRangeRequestMessage.class));
-    classReflectionInfo.put(
-        AggregateAndProof.class, new ReflectionInformation(AggregateAndProof.class));
+    List<Class> classes =
+        List.of(
+            SignedBeaconBlock.class,
+            BeaconBlock.class,
+            BeaconBlockBody.class,
+            BeaconBlockHeader.class,
+            SignedBeaconBlockHeader.class,
+            Eth1Data.class,
+            Attestation.class,
+            AttestationData.class,
+            AttesterSlashing.class,
+            Deposit.class,
+            DepositData.class,
+            DepositMessage.class,
+            IndexedAttestation.class,
+            ProposerSlashing.class,
+            SignedVoluntaryExit.class,
+            VoluntaryExit.class,
+            BeaconStateImpl.class,
+            Checkpoint.class,
+            Fork.class,
+            HistoricalBatch.class,
+            PendingAttestation.class,
+            Validator.class,
+            StatusMessage.class,
+            GoodbyeMessage.class,
+            BeaconBlocksByRangeRequestMessage.class,
+            AggregateAndProof.class,
+            SignedAggregateAndProof.class,
+            ForkData.class,
+            VoteTracker.class);
+
+    for (Class classItem : classes) {
+      classReflectionInfo.put(classItem, new ReflectionInformation(classItem));
+    }
   }
 
   static {
@@ -438,7 +435,7 @@ public class SimpleOffsetSerializer {
     return SSZVector.createMutable(newList, classInfo);
   }
 
-  public static Object deserializePrimitive(
+  private static Object deserializePrimitive(
       Class classInfo, SSZReader reader, MutableInt bytePointer) {
     switch (classInfo.getSimpleName()) {
       case "UnsignedLong":
@@ -483,7 +480,8 @@ public class SimpleOffsetSerializer {
   private static boolean isPrimitive(Class classInfo) {
     return !(SSZContainer.class.isAssignableFrom(classInfo)
         || classInfo == SSZVector.class
-        || classInfo == Bitvector.class);
+        || classInfo == Bitvector.class
+        || classInfo == VoteTracker.class);
   }
 
   private static boolean isVector(Class classInfo) {

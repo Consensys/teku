@@ -19,6 +19,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +41,7 @@ public class AttestationTopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
   private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(eventBus, storageClient, 1);
+      new AttestationTopicHandler(eventBus, storageClient, UnsignedLong.valueOf(1));
 
   @BeforeEach
   public void setup() {
@@ -91,7 +92,7 @@ public class AttestationTopicHandlerTest {
     final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
     storageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
     final AttestationTopicHandler topicHandler =
-        new AttestationTopicHandler(eventBus, storageClient, 1);
+        new AttestationTopicHandler(eventBus, storageClient, UnsignedLong.valueOf(1));
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);

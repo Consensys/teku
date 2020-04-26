@@ -19,6 +19,7 @@ import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.artemis.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
+import static tech.pegasys.artemis.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
 import static tech.pegasys.artemis.protoarray.ProtoArrayTestUtil.getHash;
 
 import com.google.common.primitives.UnsignedLong;
@@ -26,11 +27,15 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.api.StubStorageUpdateChannel;
 
 public class FFGUpdatesTest {
 
   @Test
   void case1() {
+    Store.Transaction store =
+        createStoreToManipulateVotes().startTransaction(new StubStorageUpdateChannel());
 
     ProtoArrayForkChoiceStrategy forkChoice =
         createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
@@ -38,7 +43,7 @@ public class FFGUpdatesTest {
     List<UnsignedLong> balances = new ArrayList<>(List.of(valueOf(1), valueOf(1)));
 
     // Ensure that the head starts at the finalized block.
-    assertThat(forkChoice.findHead(valueOf(0), getHash(0), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(0), getHash(0), valueOf(0), balances))
         .isEqualTo(getHash(0));
 
     // Build the following tree
@@ -65,7 +70,7 @@ public class FFGUpdatesTest {
     //            2
     //            |
     //            3 <- head
-    assertThat(forkChoice.findHead(valueOf(0), getHash(0), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(0), getHash(0), valueOf(0), balances))
         .isEqualTo(getHash(3));
 
     // Ensure that with justified epoch 1 we find 2
@@ -77,7 +82,7 @@ public class FFGUpdatesTest {
     //            2 <- start
     //            |
     //            3 <- head
-    assertThat(forkChoice.findHead(valueOf(1), getHash(2), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(1), getHash(2), valueOf(0), balances))
         .isEqualTo(getHash(2));
 
     // Ensure that with justified epoch 2 we find 3
@@ -89,12 +94,14 @@ public class FFGUpdatesTest {
     //            2
     //            |
     //            3 <- start + head
-    assertThat(forkChoice.findHead(valueOf(2), getHash(3), valueOf(1), balances))
+    assertThat(forkChoice.findHead(store, valueOf(2), getHash(3), valueOf(1), balances))
         .isEqualTo(getHash(3));
   }
 
   @Test
   void case2() {
+    Store.Transaction store =
+        createStoreToManipulateVotes().startTransaction(new StubStorageUpdateChannel());
 
     ProtoArrayForkChoiceStrategy forkChoice =
         createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
@@ -102,7 +109,7 @@ public class FFGUpdatesTest {
     List<UnsignedLong> balances = new ArrayList<>(List.of(valueOf(1), valueOf(1)));
 
     // Ensure that the head starts at the finalized block.
-    assertThat(forkChoice.findHead(valueOf(1), getHash(0), valueOf(1), balances))
+    assertThat(forkChoice.findHead(store, valueOf(1), getHash(0), valueOf(1), balances))
         .isEqualTo(getHash(0));
 
     // Build the following tree.
@@ -156,15 +163,16 @@ public class FFGUpdatesTest {
     //         7   8
     //         |   |
     //         9  10 <-- head
-    assertThat(forkChoice.findHead(valueOf(0), getHash(0), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(0), getHash(0), valueOf(0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above, but with justified epoch 2.
-    assertThat(forkChoice.findHead(valueOf(2), getHash(0), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(2), getHash(0), valueOf(0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above, but with justified epoch 3 (should be invalid).
-    assertThatThrownBy(() -> forkChoice.findHead(valueOf(3), getHash(0), valueOf(0), balances))
+    assertThatThrownBy(
+            () -> forkChoice.findHead(store, valueOf(3), getHash(0), valueOf(0), balances))
         .hasMessage("ProtoArray: Best node is not viable for head");
 
     // Add a vote to 1.
@@ -180,7 +188,7 @@ public class FFGUpdatesTest {
     //               7   8
     //               |   |
     //               9  10
-    forkChoice.processAttestation(0, getHash(1), valueOf(0));
+    forkChoice.processAttestation(store, valueOf(0), getHash(1), valueOf(0));
 
     // Ensure that if we start at 0 we find 9 (just: 0, fin: 0).
     //
@@ -195,15 +203,16 @@ public class FFGUpdatesTest {
     //         7   8
     //         |   |
     // head -> 9  10
-    assertThat(forkChoice.findHead(valueOf(0), getHash(0), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(0), getHash(0), valueOf(0), balances))
         .isEqualTo(getHash(9));
 
     // Same as above but justified epoch 2.
-    assertThat(forkChoice.findHead(valueOf(2), getHash(0), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(2), getHash(0), valueOf(0), balances))
         .isEqualTo(getHash(9));
 
     // Same as above but justified epoch 3 (should fail).
-    assertThatThrownBy(() -> forkChoice.findHead(valueOf(3), getHash(0), valueOf(0), balances))
+    assertThatThrownBy(
+            () -> forkChoice.findHead(store, valueOf(3), getHash(0), valueOf(0), balances))
         .hasMessage("ProtoArray: Best node is not viable for head");
 
     // Add a vote to 2.
@@ -219,7 +228,7 @@ public class FFGUpdatesTest {
     //               7   8
     //               |   |
     //               9  10
-    forkChoice.processAttestation(1, getHash(2), valueOf(0));
+    forkChoice.processAttestation(store, valueOf(1), getHash(2), valueOf(0));
 
     // Ensure that if we start at 0 we find 10 (just: 0, fin: 0).
     //
@@ -234,15 +243,16 @@ public class FFGUpdatesTest {
     //         7   8
     //         |   |
     //         9  10 <-- head
-    assertThat(forkChoice.findHead(valueOf(0), getHash(0), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(0), getHash(0), valueOf(0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above but justified epoch 2.
-    assertThat(forkChoice.findHead(valueOf(2), getHash(0), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(2), getHash(0), valueOf(0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above but justified epoch 3 (should fail).
-    assertThatThrownBy(() -> forkChoice.findHead(valueOf(3), getHash(0), valueOf(0), balances))
+    assertThatThrownBy(
+            () -> forkChoice.findHead(store, valueOf(3), getHash(0), valueOf(0), balances))
         .hasMessage("ProtoArray: Best node is not viable for head");
 
     // Ensure that if we start at 1 we find 9 (just: 0, fin: 0).
@@ -258,15 +268,16 @@ public class FFGUpdatesTest {
     //          7   8
     //          |   |
     //  head -> 9  10
-    assertThat(forkChoice.findHead(valueOf(0), getHash(1), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(0), getHash(1), valueOf(0), balances))
         .isEqualTo(getHash(9));
 
     // Same as above but justified epoch 2.
-    assertThat(forkChoice.findHead(valueOf(2), getHash(1), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(2), getHash(1), valueOf(0), balances))
         .isEqualTo(getHash(9));
 
     // Same as above but justified epoch 3 (should fail).
-    assertThatThrownBy(() -> forkChoice.findHead(valueOf(3), getHash(1), valueOf(0), balances))
+    assertThatThrownBy(
+            () -> forkChoice.findHead(store, valueOf(3), getHash(1), valueOf(0), balances))
         .hasMessage("ProtoArray: Best node is not viable for head");
 
     // Ensure that if we start at 2 we find 10 (just: 0, fin: 0).
@@ -282,15 +293,16 @@ public class FFGUpdatesTest {
     //          7   8
     //          |   |
     //          9  10 <- head
-    assertThat(forkChoice.findHead(valueOf(0), getHash(2), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(0), getHash(2), valueOf(0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above but justified epoch 2.
-    assertThat(forkChoice.findHead(valueOf(2), getHash(2), valueOf(0), balances))
+    assertThat(forkChoice.findHead(store, valueOf(2), getHash(2), valueOf(0), balances))
         .isEqualTo(getHash(10));
 
     // Same as above but justified epoch 3 (should fail).
-    assertThatThrownBy(() -> forkChoice.findHead(valueOf(3), getHash(2), valueOf(0), balances))
+    assertThatThrownBy(
+            () -> forkChoice.findHead(store, valueOf(3), getHash(2), valueOf(0), balances))
         .hasMessage("ProtoArray: Best node is not viable for head");
   }
 }

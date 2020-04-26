@@ -43,16 +43,16 @@ import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
-import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
@@ -72,7 +72,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
-  private final AttestationTopicSubscriptions attestationTopicSubscriptions;
+  private final AttestationTopicSubscriber attestationTopicSubscriptions;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
@@ -81,7 +81,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
-      final AttestationTopicSubscriptions attestationTopicSubscriptions,
+      final AttestationTopicSubscriber attestationTopicSubscriptions,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateTracker = syncStateTracker;
@@ -218,8 +218,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendAggregateAndProof(final AggregateAndProof aggregateAndProof) {
-    attestationPool.add(aggregateAndProof.getAggregate());
+  public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
+    attestationPool.add(aggregateAndProof.getMessage().getAggregate());
     eventBus.post(aggregateAndProof);
   }
 

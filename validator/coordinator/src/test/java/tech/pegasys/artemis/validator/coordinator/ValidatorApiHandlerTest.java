@@ -37,15 +37,15 @@ import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
@@ -69,8 +69,8 @@ class ValidatorApiHandlerTest {
   private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
-  private final AttestationTopicSubscriptions attestationTopicSubscriptions =
-      mock(AttestationTopicSubscriptions.class);
+  private final AttestationTopicSubscriber attestationTopicSubscriptions =
+      mock(AttestationTopicSubscriber.class);
   private final EventBus eventBus = mock(EventBus.class);
 
   private final ValidatorApiHandler validatorApiHandler =
@@ -355,9 +355,11 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void sendAggregateAndProof_shouldPostAggregateAndProof() {
-    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
+    final SignedAggregateAndProof aggregateAndProof =
+        dataStructureUtil.randomSignedAggregateAndProof();
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
+    verify(attestationPool).add(aggregateAndProof.getMessage().getAggregate());
     verify(eventBus).post(aggregateAndProof);
   }
 

@@ -28,22 +28,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.StorageUpdate;
 import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 import tech.pegasys.artemis.storage.server.Database;
-import tech.pegasys.artemis.storage.server.StateStorageMode;
 import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance;
 import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstanceFactory;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDao;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDao.Updater;
-import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.V2RocksDbDao;
 import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.V3RocksDbDao;
-import tech.pegasys.artemis.storage.server.rocksdb.schema.V2Schema;
 import tech.pegasys.artemis.storage.server.rocksdb.schema.V3Schema;
+import tech.pegasys.artemis.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
 
@@ -51,13 +50,6 @@ public class RocksDbDatabase implements Database {
   private final StateStorageMode stateStorageMode;
 
   private final RocksDbDao dao;
-
-  public static Database createV2(
-      final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
-    final RocksDbInstance db = RocksDbInstanceFactory.create(configuration, V2Schema.class);
-    final RocksDbDao dao = new V2RocksDbDao(db);
-    return new RocksDbDatabase(dao, stateStorageMode);
-  }
 
   public static Database createV3(
       final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
@@ -127,6 +119,7 @@ public class RocksDbDatabase implements Database {
     final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot = dao.getHotBlocks();
     final Map<Bytes32, BeaconState> hotStatesByRoot = dao.getHotStates();
     final Map<Checkpoint, BeaconState> checkpointStates = dao.getCheckpointStates();
+    final Map<UnsignedLong, VoteTracker> votes = dao.getVotes();
 
     return Optional.of(
         new Store(
@@ -137,7 +130,8 @@ public class RocksDbDatabase implements Database {
             bestJustifiedCheckpoint,
             hotBlocksByRoot,
             hotStatesByRoot,
-            checkpointStates));
+            checkpointStates,
+            votes));
   }
 
   @Override
@@ -183,6 +177,7 @@ public class RocksDbDatabase implements Database {
       updater.addCheckpointStates(update.getCheckpointStates());
       updater.addHotBlocks(update.getBlocks());
       updater.addHotStates(update.getBlockStates());
+      updater.addVotes(update.getVotes());
 
       final StorageUpdateResult result;
       if (previousFinalizedCheckpoint == null
