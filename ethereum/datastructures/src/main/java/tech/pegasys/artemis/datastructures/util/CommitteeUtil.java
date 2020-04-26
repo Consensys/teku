@@ -281,6 +281,7 @@ public class CommitteeUtil {
   }
 
   public static UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
+  public static UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
     return committeeIndex.mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT));
   }
 }

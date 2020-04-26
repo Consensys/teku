@@ -113,13 +113,11 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
   }
 
-  public SafeFuture<SignedBeaconBlock> requestBlockBySlot(
-      final Bytes32 headBlockRoot, final UnsignedLong slot) {
+  public SafeFuture<SignedBeaconBlock> requestBlockBySlot(final UnsignedLong slot) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     final BeaconBlocksByRangeRequestMessage request =
-        new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot, slot, UnsignedLong.ONE, UnsignedLong.ONE);
+        new BeaconBlocksByRangeRequestMessage(slot, UnsignedLong.ONE, UnsignedLong.ONE);
     return requestSingleItem(blocksByRange, request);
   }
 
@@ -130,7 +128,6 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<Void> requestBlocksByRange(
-      final Bytes32 headBlockRoot,
       final UnsignedLong startSlot,
       final UnsignedLong count,
       final UnsignedLong step,
@@ -138,9 +135,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     return requestStream(
-        blocksByRange,
-        new BeaconBlocksByRangeRequestMessage(headBlockRoot, startSlot, count, step),
-        listener);
+        blocksByRange, new BeaconBlocksByRangeRequestMessage(startSlot, count, step), listener);
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> sendMessage(
