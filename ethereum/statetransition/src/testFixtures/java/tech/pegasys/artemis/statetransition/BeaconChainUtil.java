@@ -32,6 +32,7 @@ import tech.pegasys.artemis.core.signatures.MessageSignerService;
 import tech.pegasys.artemis.core.signatures.TestMessageSignerService;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.protoarray.StubForkChoiceStrategy;
@@ -98,11 +99,14 @@ public class BeaconChainUtil {
   }
 
   public void setSlot(final UnsignedLong currentSlot) {
-    if (recentChainData.isPreGenesis()) {
-      throw new IllegalStateException("Cannot set current slot before genesis");
-    }
+    checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
     final UnsignedLong secPerSlot = UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT);
     final UnsignedLong time = recentChainData.getGenesisTime().plus(currentSlot.times(secPerSlot));
+    setTime(time);
+  }
+
+  public void setTime(final UnsignedLong time) {
+    checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
     final Transaction tx = recentChainData.startStoreTransaction();
     tx.setTime(time);
     tx.commit().join();
@@ -129,7 +133,7 @@ public class BeaconChainUtil {
 
   public SignedBeaconBlock createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
-    final SignedBeaconBlock block = createBlockAtSlot(slot, true, attestations);
+    final SignedBeaconBlock block = createBlockAndStateAtSlot(slot, true, attestations).getBlock();
     setSlot(slot);
     final Transaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult importResult =
@@ -162,12 +166,17 @@ public class BeaconChainUtil {
     return createBlockAtSlot(slot, false);
   }
 
-  private SignedBeaconBlock createBlockAtSlot(final UnsignedLong slot, boolean withValidProposer)
+  public SignedBeaconBlock createBlockAtSlot(final UnsignedLong slot, boolean withValidProposer)
       throws Exception {
-    return createBlockAtSlot(slot, withValidProposer, Optional.empty());
+    return createBlockAndStateAtSlot(slot, withValidProposer).getBlock();
   }
 
-  private SignedBeaconBlock createBlockAtSlot(
+  public SignedBlockAndState createBlockAndStateAtSlot(
+      final UnsignedLong slot, boolean withValidProposer) throws Exception {
+    return createBlockAndStateAtSlot(slot, withValidProposer, Optional.empty());
+  }
+
+  private SignedBlockAndState createBlockAndStateAtSlot(
       final UnsignedLong slot,
       boolean withValidProposer,
       Optional<SSZList<Attestation>> attestations)
@@ -186,11 +195,10 @@ public class BeaconChainUtil {
 
     final MessageSignerService signer = getSigner(proposerIndex);
     if (attestations.isPresent()) {
-      return blockCreator
-          .createBlockWithAttestations(signer, slot, preState, bestBlockRoot, attestations.get())
-          .getBlock();
+      return blockCreator.createBlockWithAttestations(
+          signer, slot, preState, bestBlockRoot, attestations.get());
     } else {
-      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot).getBlock();
+      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot);
     }
   }
 

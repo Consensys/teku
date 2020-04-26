@@ -33,8 +33,6 @@ import java.util.stream.StreamSupport;
 import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
-import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
 import tech.pegasys.artemis.core.signatures.LocalMessageSignerService;
 import tech.pegasys.artemis.core.signatures.Signer;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -125,21 +123,26 @@ public class AttestationGenerator {
     return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
   }
 
-  public Attestation validAttestation(final BeaconBlockAndState blockAndState)
-      throws EpochProcessingException, SlotProcessingException {
-    return createAttestation(blockAndState, true);
+  public Attestation validAttestation(final BeaconBlockAndState blockAndState) {
+    return validAttestation(blockAndState, blockAndState.getSlot());
   }
 
-  public Attestation attestationWithInvalidSignature(final BeaconBlockAndState blockAndState)
-      throws EpochProcessingException, SlotProcessingException {
-    return createAttestation(blockAndState, false);
+  public Attestation validAttestation(
+      final BeaconBlockAndState blockAndState, final UnsignedLong slot) {
+    return createAttestation(blockAndState, true, slot);
+  }
+
+  public Attestation attestationWithInvalidSignature(final BeaconBlockAndState blockAndState) {
+    return createAttestation(blockAndState, false, blockAndState.getSlot());
   }
 
   private Attestation createAttestation(
-      final BeaconBlockAndState blockAndState, final boolean withValidSignature) {
+      final BeaconBlockAndState blockAndState,
+      final boolean withValidSignature,
+      final UnsignedLong slot) {
+    UnsignedLong assignedSlot = slot;
 
     Optional<Attestation> attestation = Optional.empty();
-    UnsignedLong assignedSlot = blockAndState.getBlock().getSlot();
     while (attestation.isEmpty()) {
       Stream<Attestation> attestations =
           withValidSignature
@@ -150,6 +153,11 @@ public class AttestationGenerator {
     }
 
     return attestation.orElseThrow();
+  }
+
+  public List<Attestation> getAttestationsForSlot(final BeaconBlockAndState blockAndState) {
+    return getAttestationsForSlot(
+        blockAndState.getState(), blockAndState.getBlock(), blockAndState.getSlot());
   }
 
   public List<Attestation> getAttestationsForSlot(
@@ -170,7 +178,7 @@ public class AttestationGenerator {
   public Stream<Attestation> streamAttestations(
       final BeaconBlockAndState headBlockAndState, final UnsignedLong assignedSlot) {
     return AttestationIterator.create(headBlockAndState, assignedSlot, validatorKeys).toStream();
-  };
+  }
 
   /**
    * Streams invalid attestations for validators assigned to attest at {@code assignedSlot}, using
@@ -185,7 +193,7 @@ public class AttestationGenerator {
     return AttestationIterator.createWithInvalidSignatures(
             headBlockAndState, assignedSlot, validatorKeys, randomKeyPair)
         .toStream();
-  };
+  }
 
   /**
    * Iterates through valid attestations with the supplied head block, produced at the given
