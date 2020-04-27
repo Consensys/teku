@@ -133,7 +133,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
-    this.setupInitialState = config.isInteropEnabled() || config.getGenesisState() != null;
+    this.setupInitialState = config.isInteropEnabled() || config.getInitialState() != null;
   }
 
   @Override
@@ -181,7 +181,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   STATUS_LOG.loadingGenesisFromEth1Chain();
                 } else {
                   throw new InvalidConfigurationException(
-                      "ETH1 is disabled but genesis state is unknown. Enable ETH1 or specify a genesis state.");
+                      "ETH1 is disabled but genesis state is unknown. Enable ETH1 or specify an initial state.");
                 }
               }
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
@@ -416,7 +416,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     StartupUtil.setupInitialState(
         recentChainData,
         config.getInteropGenesisTime(),
-        config.getGenesisState(),
+        config.getInitialState(),
         config.getInteropNumberOfValidators());
   }
 

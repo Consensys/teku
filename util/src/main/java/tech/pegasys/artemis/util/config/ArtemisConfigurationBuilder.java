@@ -35,7 +35,7 @@ public class ArtemisConfigurationBuilder {
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
-  private String genesisState;
+  private String initialState;
   private int interopNumberOfValidators;
   private boolean interopEnabled;
   private String validatorsKeyFile;
@@ -154,8 +154,8 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setGenesisState(final String genesisState) {
-    this.genesisState = genesisState;
+  public ArtemisConfigurationBuilder setInitialState(final String initialState) {
+    this.initialState = initialState;
     return this;
   }
 
@@ -338,7 +338,7 @@ public class ArtemisConfigurationBuilder {
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,
-        genesisState,
+        initialState,
         interopNumberOfValidators,
         interopEnabled,
         validatorsKeyFile,

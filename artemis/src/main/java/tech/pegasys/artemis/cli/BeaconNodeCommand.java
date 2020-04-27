@@ -287,7 +287,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setGenesisState(networkOptions.getGenesisState())
+        .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
         .setValidatorKeyFile(validatorOptions.getValidatorKeyFile())
