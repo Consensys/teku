@@ -42,11 +42,11 @@ public abstract class AbstractBeaconNodeCommandTest {
 
   public ArtemisConfiguration getResultingArtemisConfiguration() {
     try {
-    final ArgumentCaptor<ArtemisConfiguration> configCaptor =
-        ArgumentCaptor.forClass(ArtemisConfiguration.class);
-    verify(startAction).accept(configCaptor.capture());
+      final ArgumentCaptor<ArtemisConfiguration> configCaptor =
+          ArgumentCaptor.forClass(ArtemisConfiguration.class);
+      verify(startAction).accept(configCaptor.capture());
 
-    return configCaptor.getValue();
+      return configCaptor.getValue();
     } catch (Throwable t) {
       System.out.println(stringWriter);
       throw t;
