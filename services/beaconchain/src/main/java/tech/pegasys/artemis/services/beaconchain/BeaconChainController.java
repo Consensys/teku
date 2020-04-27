@@ -132,7 +132,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
-    this.setupInitialState = config.isInteropEnabled() || config.getInteropStartState() != null;
+    this.setupInitialState = config.isInteropEnabled() || config.getGenesisState() != null;
   }
 
   @Override
@@ -412,7 +412,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     StartupUtil.setupInitialState(
         recentChainData,
         config.getInteropGenesisTime(),
-        config.getInteropStartState(),
+        config.getGenesisState(),
         config.getInteropNumberOfValidators());
   }
 

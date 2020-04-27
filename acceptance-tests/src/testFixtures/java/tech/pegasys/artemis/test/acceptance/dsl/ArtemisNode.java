@@ -347,7 +347,7 @@ public class ArtemisNode extends Node {
 
     public Config withGenesisState(String pathToGenesisState) {
       checkNotNull(pathToGenesisState);
-      configMap.put("Xinterop-start-state", pathToGenesisState);
+      configMap.put("genesis-state", pathToGenesisState);
       return this;
     }
 

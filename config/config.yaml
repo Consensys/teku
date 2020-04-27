@@ -1,5 +1,6 @@
 # network
 network: "minimal"
+#genesis-state: ""
 
 # p2p
 # p2p-enabled options:
@@ -18,7 +19,6 @@ p2p-private-key-file: "path/to/file"
 Xinterop-genesis-time: 0
 Xinterop-owned-validator-start-index: 0
 Xinterop-owned-validator-count: 64
-Xinterop-start-state: ""
 Xinterop-number-of-validators: 64
 Xinterop-enabled: True
 

@@ -15,7 +15,7 @@ p2p-private-key-file: "path/to/file"
 Xinterop-genesis-time: 1
 Xinterop-owned-validator-start-index: 0
 Xinterop-owned-validator-count: 64
-Xinterop-start-state: ""
+genesis-state: ""
 Xinterop-number-of-validators: 64
 Xinterop-enabled: True
 

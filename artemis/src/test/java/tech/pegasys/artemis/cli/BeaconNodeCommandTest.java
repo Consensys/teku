@@ -16,8 +16,6 @@ package tech.pegasys.artemis.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
-import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
 import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
@@ -200,7 +198,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--Xinterop-genesis-time", "1",
       "--Xinterop-owned-validator-start-index", "0",
       "--Xinterop-owned-validator-count", "64",
-      "--Xinterop-start-state", "",
+      "--genesis-state", "",
       "--Xinterop-number-of-validators", "64",
       "--Xinterop-enabled", "true",
       "--eth1-deposit-contract-address", "0x77f7bED277449F51505a4C54550B074030d989bC",
@@ -220,8 +218,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private ArtemisConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
-        .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
+        .setEth1DepositContractAddress(null)
+        .setEth1Endpoint(null)
         .setMetricsCategories(
             DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
         .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
@@ -259,7 +257,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPeerUpperBound(30)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
-        .setInteropStartState("")
+        .setGenesisState("")
         .setInteropOwnedValidatorStartIndex(0)
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)

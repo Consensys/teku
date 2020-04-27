@@ -17,28 +17,19 @@ import picocli.CommandLine;
 
 public class DepositOptions {
 
-  public static final String ETH1_DEPOSIT_CONTRACT_ADDRESS_OPTION_NAME =
-      "--eth1-deposit-contract-address";
-  public static final String ETH1_ENDPOINT_OPTION_NAME = "--eth1-endpoint";
-
-  public static final String DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS =
-      null; // depends on network option
-  public static final String DEFAULT_ETH1_ENDPOINT =
-      null; // required but could change as technically not needed if no validators are running
-
   @CommandLine.Option(
-      names = {ETH1_DEPOSIT_CONTRACT_ADDRESS_OPTION_NAME},
+      names = {"--eth1-deposit-contract-address"},
       paramLabel = "<ADDRESS>",
       description = "Contract address for the deposit contract",
       arity = "1")
-  private String eth1DepositContractAddress = DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
+  private String eth1DepositContractAddress = null; // Depends on network configuration
 
   @CommandLine.Option(
-      names = {ETH1_ENDPOINT_OPTION_NAME},
+      names = {"--eth1-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Eth 1.0 node",
       arity = "1")
-  private String eth1Endpoint = DEFAULT_ETH1_ENDPOINT;
+  private String eth1Endpoint = null;
 
   public String getEth1DepositContractAddress() {
     return eth1DepositContractAddress;

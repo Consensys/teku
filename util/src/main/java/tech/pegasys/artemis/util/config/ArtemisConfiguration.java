@@ -28,6 +28,7 @@ import tech.pegasys.artemis.bls.BLSPublicKey;
 public class ArtemisConfiguration {
   // Network
   private final String constants;
+  private final String genesisState;
   private final Integer startupTargetPeerCount;
   private final Integer startupTimeoutSeconds;
 
@@ -48,7 +49,6 @@ public class ArtemisConfiguration {
   private final Integer interopGenesisTime;
   private final int interopOwnedValidatorStartIndex;
   private final int interopOwnedValidatorCount;
-  private final String interopStartState;
   private final int interopNumberOfValidators;
   private final boolean interopEnabled;
 
@@ -113,7 +113,7 @@ public class ArtemisConfiguration {
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
-      final String interopStartState,
+      final String genesisState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
       final String validatorsKeyFile,
@@ -157,7 +157,7 @@ public class ArtemisConfiguration {
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    this.interopStartState = interopStartState;
+    this.genesisState = genesisState;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
     this.validatorsKeyFile = validatorsKeyFile;
@@ -258,8 +258,8 @@ public class ArtemisConfiguration {
     return interopOwnedValidatorCount;
   }
 
-  public String getInteropStartState() {
-    return interopStartState == null || interopStartState.isEmpty() ? null : interopStartState;
+  public String getGenesisState() {
+    return genesisState == null || genesisState.isEmpty() ? null : genesisState;
   }
 
   public int getInteropNumberOfValidators() {

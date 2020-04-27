@@ -24,7 +24,18 @@ public class NetworkOptions {
       arity = "1")
   private String network = "minimal";
 
+  @Option(
+      names = {"--genesis-state"},
+      paramLabel = "<STRING>",
+      description = "Initial BeaconState to load",
+      arity = "1")
+  private String genesisState = null;
+
   public String getNetwork() {
     return network;
+  }
+
+  public String getGenesisState() {
+    return genesisState;
   }
 }
