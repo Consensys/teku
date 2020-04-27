@@ -28,6 +28,10 @@ public class LoggingOptions {
   public static final String LOG_DESTINATION_OPTION_NAME = "--log-destination";
   public static final String LOG_FILE_OPTION_NAME = "--log-file";
   public static final String LOG_FILE_NAME_PATTERN_OPTION_NAME = "--log-file-name-pattern";
+  public static final String LOG_WIRE_CIPHER_ENABLED_OPTION_NAME = "--log-wire-cipher-enabled";
+  public static final String LOG_WIRE_PLAIN_ENABLED_OPTION_NAME = "--log-wire-plain-enabled";
+  public static final String LOG_WIRE_MUX_ENABLED_OPTION_NAME = "--log-wire-mux-enabled";
+  public static final String LOG_WIRE_GOSSIP_ENABLED_OPTION_NAME = "--log-wire-gossip-enabled";
 
   public static final boolean DEFAULT_LOG_COLOR_ENABLED = true;
   public static final boolean DEFAULT_LOG_INCLUDE_EVENTS_ENABLED = true;
@@ -38,6 +42,10 @@ public class LoggingOptions {
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN =
       StringUtils.joinWith(
           SEP, VersionProvider.defaultStoragePath(), "logs", "teku_%d{yyyy-MM-dd}.log");
+  public static final boolean DEFAULT_LOG_WIRE_CIPHER_ENABLED = false;
+  public static final boolean DEFAULT_LOG_WIRE_PLAIN_ENABLED = false;
+  public static final boolean DEFAULT_LOG_WIRE_MUX_ENABLED = false;
+  public static final boolean DEFAULT_LOG_WIRE_GOSSIP_ENABLED = false;
 
   @CommandLine.Option(
       names = {LOG_COLOR_ENABLED_OPTION_NAME},
@@ -77,6 +85,38 @@ public class LoggingOptions {
       arity = "1")
   private String logFileNamePattern = DEFAULT_LOG_FILE_NAME_PATTERN;
 
+  @CommandLine.Option(
+      names = {LOG_WIRE_CIPHER_ENABLED_OPTION_NAME},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether raw encrypted wire packets are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireCipherEnabled = DEFAULT_LOG_WIRE_CIPHER_ENABLED;
+
+  @CommandLine.Option(
+      names = {LOG_WIRE_PLAIN_ENABLED_OPTION_NAME},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether raw decrypted wire packets are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWirePlainEnabled = DEFAULT_LOG_WIRE_PLAIN_ENABLED;
+
+  @CommandLine.Option(
+      names = {LOG_WIRE_MUX_ENABLED_OPTION_NAME},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether multiplexer wire packets (aka Libp2p stream frames) are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireMuxEnabled = DEFAULT_LOG_WIRE_MUX_ENABLED;
+
+  @CommandLine.Option(
+      names = {LOG_WIRE_GOSSIP_ENABLED_OPTION_NAME},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether gossip messages are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireGossipEnabled = DEFAULT_LOG_WIRE_GOSSIP_ENABLED;
+
   public boolean isLogColorEnabled() {
     return logColorEnabled;
   }
@@ -95,5 +135,21 @@ public class LoggingOptions {
 
   public String getLogFileNamePattern() {
     return logFileNamePattern;
+  }
+
+  public boolean isLogWireCipherEnabled() {
+    return logWireCipherEnabled;
+  }
+
+  public boolean isLogWirePlainEnabled() {
+    return logWirePlainEnabled;
+  }
+
+  public boolean isLogWireMuxEnabled() {
+    return logWireMuxEnabled;
+  }
+
+  public boolean isLogWireGossipEnabled() {
+    return logWireGossipEnabled;
   }
 }

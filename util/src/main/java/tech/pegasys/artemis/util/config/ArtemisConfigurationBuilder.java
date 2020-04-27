@@ -51,6 +51,10 @@ public class ArtemisConfigurationBuilder {
   private LoggingDestination logDestination;
   private String logFile;
   private String logFileNamePattern;
+  private boolean logWireCipher;
+  private boolean logWirePlain;
+  private boolean logWireMuxFrames;
+  private boolean logWireGossip;
   private String transitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
@@ -241,6 +245,26 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
+  public ArtemisConfigurationBuilder setLogWireCipher(boolean logWireCipher) {
+    this.logWireCipher = logWireCipher;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setLogWirePlain(boolean logWirePlain) {
+    this.logWirePlain = logWirePlain;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setLogWireMuxFrames(boolean logWireMuxFrames) {
+    this.logWireMuxFrames = logWireMuxFrames;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setLogWireGossip(boolean logWireGossip) {
+    this.logWireGossip = logWireGossip;
+    return this;
+  }
+
   public ArtemisConfigurationBuilder setTransitionRecordDirectory(
       final String transitionRecordDirectory) {
     this.transitionRecordDirectory = transitionRecordDirectory;
@@ -348,6 +372,10 @@ public class ArtemisConfigurationBuilder {
         logDestination,
         logFile,
         logFileNamePattern,
+        logWireCipher,
+        logWirePlain,
+        logWireMuxFrames,
+        logWireGossip,
         transitionRecordDirectory,
         metricsEnabled,
         metricsPort,

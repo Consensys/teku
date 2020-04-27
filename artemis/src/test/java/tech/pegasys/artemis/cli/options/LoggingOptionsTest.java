@@ -34,6 +34,10 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.isLogIncludeEventsEnabled()).isFalse();
     assertThat(config.getLogFile()).isEqualTo("a.log");
     assertThat(config.getLogFileNamePattern()).isEqualTo("a%d.log");
+    assertThat(config.isLogWireCipher()).isTrue();
+    assertThat(config.isLogWirePlain()).isTrue();
+    assertThat(config.isLogWireMuxFrames()).isTrue();
+    assertThat(config.isLogWireGossip()).isTrue();
   }
 
   @Test

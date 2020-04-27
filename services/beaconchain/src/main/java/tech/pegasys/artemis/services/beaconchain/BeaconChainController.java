@@ -319,18 +319,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               : KeyKt.unmarshalPrivateKey(bytes.get().toArrayUnsafe());
       NetworkConfig p2pConfig =
           new NetworkConfig(
-              pk,
-              config.getP2pInterface(),
-              config.getP2pAdvertisedIp(),
-              config.getP2pPort(),
-              config.getP2pAdvertisedPort(),
-              config.getP2pStaticPeers(),
-              config.isP2pDiscoveryEnabled(),
-              config.getP2pDiscoveryBootnodes(),
-              new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
-              true,
-              true,
-              true);
+                  pk,
+                  config.getP2pInterface(),
+                  config.getP2pAdvertisedIp(),
+                  config.getP2pPort(),
+                  config.getP2pAdvertisedPort(),
+                  config.getP2pStaticPeers(),
+                  config.isP2pDiscoveryEnabled(),
+                  config.getP2pDiscoveryBootnodes(),
+                  new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()))
+              .setLogWireCipher(config.isLogWireCipher())
+              .setLogWirePlain(config.isLogWirePlain())
+              .setLogWireMuxFrames(config.isLogWireMuxFrames())
+              .setLogWireGossip(config.isLogWireGossip());
+
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
               .config(p2pConfig)
