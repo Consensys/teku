@@ -181,7 +181,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   STATUS_LOG.loadingGenesisFromEth1Chain();
                 } else {
                   throw new InvalidConfigurationException(
-                      "ETH1 is disabled but genesis state is unknown. Enable ETH1 or specify an initial state.");
+                      "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
                 }
               }
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
