@@ -19,8 +19,8 @@ import tech.pegasys.teku.util.async.SafeFuture;
 
 /**
  * Dedicated class which performs block validation (apart from {@link
- * tech.pegasys.teku.core.BlockProcessorUtil} The validation may be performed either
- * synchronously (then the methods return completed futures) or asynchronously.
+ * tech.pegasys.teku.core.BlockProcessorUtil} The validation may be performed either synchronously
+ * (then the methods return completed futures) or asynchronously.
  */
 public interface BlockValidator {
 

@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.NetworkDefinition;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 

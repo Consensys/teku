@@ -27,8 +27,7 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadFromConfigurationFile() {
-    final TekuConfiguration config =
-        getTekuConfigurationFromFile("metricsOptions_config.yaml");
+    final TekuConfiguration config = getTekuConfigurationFromFile("metricsOptions_config.yaml");
 
     assertThat(config.getMetricsInterface()).isEqualTo("127.100.0.1");
     assertThat(config.getMetricsPort()).isEqualTo(8888);
