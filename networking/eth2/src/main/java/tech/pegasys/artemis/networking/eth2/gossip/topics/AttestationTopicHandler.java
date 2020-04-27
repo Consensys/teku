@@ -28,7 +28,6 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
   private final String attestationsTopic;
   private final UnsignedLong subnetId;
-  private final EventBus eventBus;
   private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
@@ -36,7 +35,6 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
       final AttestationValidator attestationValidator,
       final UnsignedLong subnetId) {
     super(eventBus);
-    this.eventBus = eventBus;
     this.attestationValidator = attestationValidator;
     this.attestationsTopic = getTopic(subnetId);
     this.subnetId = subnetId;
@@ -57,19 +55,7 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   }
 
   @Override
-  protected boolean validateData(final Attestation attestation) {
-    final ValidationResult validationResult = attestationValidator.validate(attestation, subnetId);
-    switch (validationResult) {
-      case INVALID:
-        return false;
-      case SAVED_FOR_FUTURE:
-        eventBus.post(createEvent(attestation));
-        return false;
-      case VALID:
-        return true;
-      default:
-        throw new UnsupportedOperationException(
-            "Unexpected attestation validation result: " + validationResult);
-    }
+  protected ValidationResult validateData(final Attestation attestation) {
+    return attestationValidator.validate(attestation, subnetId);
   }
 }

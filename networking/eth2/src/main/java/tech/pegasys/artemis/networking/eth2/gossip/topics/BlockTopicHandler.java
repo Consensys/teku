@@ -24,12 +24,10 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationR
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
-  private final EventBus eventBus;
   private final BlockValidator blockValidator;
 
   public BlockTopicHandler(final EventBus eventBus, final BlockValidator blockValidator) {
     super(eventBus);
-    this.eventBus = eventBus;
     this.blockValidator = blockValidator;
   }
 
@@ -49,19 +47,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   }
 
   @Override
-  protected boolean validateData(final SignedBeaconBlock block) {
-    ValidationResult validationResult = blockValidator.validate(block);
-    switch (validationResult) {
-      case INVALID:
-        return false;
-      case SAVED_FOR_FUTURE:
-        eventBus.post(createEvent(block));
-        return false;
-      case VALID:
-        return true;
-      default:
-        throw new UnsupportedOperationException(
-            "BlockTopicHandler: Unexpected block validation result: " + validationResult);
-    }
+  protected ValidationResult validateData(final SignedBeaconBlock block) {
+    return blockValidator.validate(block);
   }
 }

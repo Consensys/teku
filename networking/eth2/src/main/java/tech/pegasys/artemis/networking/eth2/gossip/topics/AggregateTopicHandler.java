@@ -23,13 +23,11 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationR
 
 public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndProof> {
   public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
-  private final EventBus eventBus;
   private final SignedAggregateAndProofValidator validator;
 
   public AggregateTopicHandler(
       final EventBus eventBus, final SignedAggregateAndProofValidator validator) {
     super(eventBus);
-    this.eventBus = eventBus;
     this.validator = validator;
   }
 
@@ -44,19 +42,7 @@ public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndPr
   }
 
   @Override
-  protected boolean validateData(final SignedAggregateAndProof aggregateAndProof) {
-    final ValidationResult validationResult = validator.validate(aggregateAndProof);
-    switch (validationResult) {
-      case VALID:
-        return true;
-      case INVALID:
-        return false;
-      case SAVED_FOR_FUTURE:
-        eventBus.post(createEvent(aggregateAndProof));
-        return false;
-      default:
-        throw new UnsupportedOperationException(
-            "Unexpected validation result: " + validationResult);
-    }
+  protected ValidationResult validateData(final SignedAggregateAndProof aggregateAndProof) {
+    return validator.validate(aggregateAndProof);
   }
 }
