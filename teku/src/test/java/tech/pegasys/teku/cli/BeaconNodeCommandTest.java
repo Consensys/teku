@@ -16,8 +16,6 @@ package tech.pegasys.teku.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
 import static tech.pegasys.teku.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
 import static tech.pegasys.teku.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
 import static tech.pegasys.teku.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
@@ -28,14 +26,11 @@ import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATI
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
-import static tech.pegasys.teku.cli.options.MetricsOptions.METRICS_ENABLED_OPTION_NAME;
 import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
 import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
 import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_INTERFACE;
 import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_PORT;
 import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
-import static tech.pegasys.teku.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -44,12 +39,9 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.util.config.LoggingDestination;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -182,85 +174,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void overrideDefaultMetricsCategory() throws IOException {
-    final Path configFile = createConfigFile();
-    final String[] args = {
-      CONFIG_FILE_OPTION_NAME, configFile.toString(), "--metrics-categories", "BEACON"
-    };
-
-    beaconNodeCommand.parse(args);
-    assertTekuConfiguration(
-        expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
-  }
-
-  @Test
-  public void p2pEnabled_shouldNotRequireAValue() throws IOException {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
-    assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
-  }
-
-  @Test
-  public void p2pDiscoveryEnabled_shouldNotRequireAValue() throws IOException {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
-    assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
-  }
-
-  @Test
-  public void metricsEnabled_shouldNotRequireAValue() throws IOException {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(METRICS_ENABLED_OPTION_NAME);
-    assertThat(tekuConfiguration.isMetricsEnabled()).isTrue();
-  }
-
-  @Test
-  public void interopEnabled_shouldNotRequireAValue() throws IOException {
+  public void interopEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(INTEROP_ENABLED_OPTION_NAME);
     assertThat(tekuConfiguration.isInteropEnabled()).isTrue();
-  }
-
-  @Test
-  public void restApiDocsEnabled_shouldNotRequireAValue() throws IOException {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
-    assertThat(tekuConfiguration.isRestApiDocsEnabled()).isTrue();
-  }
-
-  @Test
-  public void restApiEnabled_shouldNotRequireAValue() throws IOException {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
-    assertThat(tekuConfiguration.isRestApiEnabled()).isTrue();
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "topaz"})
-  public void useDefaultsFromNetworkDefinition(final String networkName) {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
-
-    beaconNodeCommand.parse(new String[] {"--network", networkName});
-    final TekuConfiguration config = getResultingTekuConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes())
-        .isEqualTo(networkDefinition.getDiscoveryBootnodes());
-    assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
-    assertThat(config.getStartupTargetPeerCount())
-        .isEqualTo(networkDefinition.getStartupTargetPeerCount());
-    assertThat(config.getStartupTimeoutSeconds())
-        .isEqualTo(networkDefinition.getStartupTimeoutSeconds());
-    assertThat(config.getEth1DepositContractAddress())
-        .isEqualTo(networkDefinition.getEth1DepositContractAddress().orElse(null));
-    assertThat(config.getEth1Endpoint())
-        .isEqualTo(networkDefinition.getEth1Endpoint().orElse(null));
-  }
-
-  @Test
-  public void overrideDefaultBootnodesWithEmptyList() {
-    beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
-
-    final TekuConfiguration config = getResultingTekuConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
   private Path createConfigFile() throws IOException {

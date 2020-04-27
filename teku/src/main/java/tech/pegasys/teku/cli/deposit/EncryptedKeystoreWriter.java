@@ -56,18 +56,18 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     final KeyStoreData withdrawalKeyStoreData =
         generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
 
-    saveKeyStore(
-        keystoreDirectory.resolve("validator_" + validatorKey.getPublicKey().toString() + ".json"),
-        validatorKeyStoreData);
-    saveKeyStore(
-        keystoreDirectory.resolve(
-            "withdrawal_" + withdrawalKey.getPublicKey().toString() + ".json"),
-        withdrawalKeyStoreData);
+    final String validatorFileName =
+        "validator_" + trimPublicKey(validatorKey.getPublicKey().toString()) + ".json";
+    final String withdrawalFileName =
+        "withdrawal_" + trimPublicKey(withdrawalKey.getPublicKey().toString()) + ".json";
+
+    saveKeyStore(keystoreDirectory.resolve(validatorFileName), validatorKeyStoreData);
+    saveKeyStore(keystoreDirectory.resolve(withdrawalFileName), withdrawalKeyStoreData);
   }
 
   private Path createKeystoreDirectory(final BLSKeyPair validatorKey) {
     final Path keystoreDirectory =
-        outputPath.resolve("validator_" + validatorKey.getPublicKey().toString());
+        outputPath.resolve("validator_" + trimPublicKey(validatorKey.getPublicKey().toString()));
     try {
       return Files.createDirectories(keystoreDirectory);
     } catch (IOException e) {
@@ -98,5 +98,12 @@ public class EncryptedKeystoreWriter implements KeysWriter {
           "Error: Unable to save keystore file [{}] : {}", outputPath, e.getMessage());
       throw new UncheckedIOException(e);
     }
+  }
+
+  private String trimPublicKey(final String publicKey) {
+    if (publicKey.toLowerCase().startsWith("0x")) {
+      return publicKey.substring(2, 9);
+    }
+    return publicKey.substring(0, 7);
   }
 }

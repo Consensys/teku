@@ -193,7 +193,7 @@ public class PeerChainValidator {
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(
             blockSlot -> {
-              return peer.requestBlockBySlot(status.getHeadRoot(), blockSlot)
+              return peer.requestBlockBySlot(blockSlot)
                   .thenApply(
                       block ->
                           validateRemoteBlockMatchesOurFinalizedBlock(

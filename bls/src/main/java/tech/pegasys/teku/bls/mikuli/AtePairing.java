@@ -31,6 +31,21 @@ final class AtePairing {
   }
 
   /**
+   * Calculate the Ate pairing of points p and q but omits the final exponentiation ({@link
+   * #fexp(GTPoint)}) <code>
+   *   pair() = fexp(pairNoExp())
+   * </code>
+   *
+   * @param p the point in Group1, not null
+   * @param q the point in Group2, not null
+   * @return GTPoint
+   */
+  public static GTPoint pairNoExp(G1Point p, G2Point q) {
+    FP12 e = PAIR.ate(q.ecp2Point(), p.ecpPoint());
+    return new GTPoint(e);
+  }
+
+  /**
    * Calculates the product of pairings while performing the final exponentiation only once. This
    * ought to be more efficient.
    *
@@ -45,5 +60,21 @@ final class AtePairing {
   static GTPoint pair2(G1Point p, G2Point q, G1Point r, G2Point s) {
     FP12 e = PAIR.ate2(q.ecp2Point(), p.ecpPoint(), s.ecp2Point(), r.ecpPoint());
     return new GTPoint(PAIR.fexp(e));
+  }
+
+  /**
+   * The same as {@link #pair2(G1Point, G2Point, G1Point, G2Point)} but omits the final
+   * exponentiation ({@link #fexp(GTPoint)}) <code>
+   *   pair2() = fexp(pair2NoExp())
+   * </code>
+   */
+  static GTPoint pair2NoExp(G1Point p, G2Point q, G1Point r, G2Point s) {
+    FP12 e = PAIR.ate2(q.ecp2Point(), p.ecpPoint(), s.ecp2Point(), r.ecpPoint());
+    return new GTPoint(e);
+  }
+
+  /** Calculates Final exponent */
+  static GTPoint fexp(GTPoint point) {
+    return new GTPoint(PAIR.fexp(point.getPoint()));
   }
 }

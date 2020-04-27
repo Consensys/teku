@@ -60,34 +60,15 @@ public class BeaconBlocksByRangeIntegrationTest {
 
   @Test
   public void shouldSendEmptyResponsePreGenesisEvent() throws Exception {
-    final List<SignedBeaconBlock> response = requestBlocks(Bytes32.ZERO);
+    final List<SignedBeaconBlock> response = requestBlocks();
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
     beaconChainUtil.initializeStorage();
-    final List<SignedBeaconBlock> response =
-        requestBlocks(storageClient1.getBestBlockRoot().orElseThrow());
+    final List<SignedBeaconBlock> response = requestBlocks();
     assertThat(response).isEmpty();
-  }
-
-  @Test
-  public void shouldSendEmptyResponseWhenHeadBlockRootDoesNotMatchAnyBlock() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(1);
-    final List<SignedBeaconBlock> response = requestBlocks(Bytes32.ZERO);
-    assertThat(response).isEmpty();
-  }
-
-  @Test
-  public void shouldRespondWithBlocksWhenHeadBlockRootIsNotOnCanonicalChain() throws Exception {
-    beaconChainUtil.initializeStorage();
-    final SignedBeaconBlock nonCanonicalBlock = beaconChainUtil.createAndImportBlockAtSlot(1);
-    storageClient1.updateBestBlock(nonCanonicalBlock.getParent_root(), UnsignedLong.ZERO);
-    final List<SignedBeaconBlock> response =
-        requestBlocks(nonCanonicalBlock.getMessage().hash_tree_root());
-    assertThat(response).containsExactly(nonCanonicalBlock);
   }
 
   @Test
@@ -102,7 +83,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     storageClient1.updateBestBlock(block2Root, block2.getSlot());
 
-    final List<SignedBeaconBlock> response = requestBlocks(block2Root);
+    final List<SignedBeaconBlock> response = requestBlocks();
     assertThat(response).containsExactly(block1, block2);
   }
 
@@ -119,7 +100,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
-            block2Root, UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -140,7 +121,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
-            block2Root, UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -158,8 +139,7 @@ public class BeaconBlocksByRangeIntegrationTest {
     storageClient1.updateBestBlock(block2Root, block2.getSlot());
 
     peer1.disconnectImmediately();
-    final SafeFuture<SignedBeaconBlock> res =
-        peer1.requestBlockBySlot(block2Root, UnsignedLong.ONE);
+    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UnsignedLong.ONE);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -176,25 +156,20 @@ public class BeaconBlocksByRangeIntegrationTest {
     storageClient1.updateBestBlock(block2Root, block2.getSlot());
 
     peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
-    final SafeFuture<SignedBeaconBlock> res =
-        peer1.requestBlockBySlot(block2Root, UnsignedLong.ONE);
+    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UnsignedLong.ONE);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
     assertThatThrownBy(res::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
   }
 
-  private List<SignedBeaconBlock> requestBlocks(final Bytes32 headBlockRoot)
+  private List<SignedBeaconBlock> requestBlocks()
       throws InterruptedException, java.util.concurrent.ExecutionException,
           java.util.concurrent.TimeoutException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(
         peer1.requestBlocksByRange(
-            headBlockRoot,
-            UnsignedLong.ONE,
-            UnsignedLong.valueOf(10),
-            UnsignedLong.ONE,
-            blocks::add));
+            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add));
     return blocks;
   }
 }

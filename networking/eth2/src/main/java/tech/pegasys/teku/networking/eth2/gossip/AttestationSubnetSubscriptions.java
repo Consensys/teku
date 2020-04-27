@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.artemis.networking.eth2.gossip;
 
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -23,14 +23,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import tech.pegasys.teku.networking.eth2.gossip.topics.AttestationTopicHandler;
-import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
+import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 
 public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipNetwork gossipNetwork;
-  private final RecentChainData recentChainData;
+  private final AttestationValidator attestationValidator;
   private final EventBus eventBus;
 
   private final Map<UnsignedLong, Set<UnsignedLong>> subnetIdToCommittees = new HashMap<>();
@@ -38,10 +38,10 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
 
   public AttestationSubnetSubscriptions(
       final GossipNetwork gossipNetwork,
-      final RecentChainData recentChainData,
+      final AttestationValidator attestationValidator,
       final EventBus eventBus) {
     this.gossipNetwork = gossipNetwork;
-    this.recentChainData = recentChainData;
+    this.attestationValidator = attestationValidator;
     this.eventBus = eventBus;
   }
 
@@ -74,13 +74,9 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     }
   }
 
-  private UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
-    return committeeIndex.mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT));
-  }
-
   private TopicChannel createChannelForSubnetId(final UnsignedLong subnetId) {
     final AttestationTopicHandler topicHandler =
-        new AttestationTopicHandler(eventBus, recentChainData, subnetId);
+        new AttestationTopicHandler(eventBus, attestationValidator, subnetId);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

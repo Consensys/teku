@@ -11,36 +11,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition;
+package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
+import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.AttestationGenerator;
-import tech.pegasys.teku.core.BlockProposalTestUtil;
-import tech.pegasys.teku.core.ForkChoiceUtil;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.core.signatures.MessageSignerService;
-import tech.pegasys.teku.core.signatures.TestMessageSignerService;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.protoarray.StubForkChoiceStrategy;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.statetransition.util.StartupUtil;
-import tech.pegasys.teku.storage.Store.Transaction;
-import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.artemis.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.artemis.core.AttestationGenerator;
+import tech.pegasys.artemis.core.BlockProposalTestUtil;
+import tech.pegasys.artemis.core.ForkChoiceUtil;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.results.BlockImportResult;
+import tech.pegasys.artemis.core.signatures.MessageSignerService;
+import tech.pegasys.artemis.core.signatures.TestMessageSignerService;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.protoarray.StubForkChoiceStrategy;
+import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.statetransition.util.StartupUtil;
+import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconChainUtil {
 
@@ -98,11 +99,14 @@ public class BeaconChainUtil {
   }
 
   public void setSlot(final UnsignedLong currentSlot) {
-    if (recentChainData.isPreGenesis()) {
-      throw new IllegalStateException("Cannot set current slot before genesis");
-    }
+    checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
     final UnsignedLong secPerSlot = UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT);
     final UnsignedLong time = recentChainData.getGenesisTime().plus(currentSlot.times(secPerSlot));
+    setTime(time);
+  }
+
+  public void setTime(final UnsignedLong time) {
+    checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
     final Transaction tx = recentChainData.startStoreTransaction();
     tx.setTime(time);
     tx.commit().join();
@@ -129,7 +133,7 @@ public class BeaconChainUtil {
 
   public SignedBeaconBlock createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
-    final SignedBeaconBlock block = createBlockAtSlot(slot, true, attestations);
+    final SignedBeaconBlock block = createBlockAndStateAtSlot(slot, true, attestations).getBlock();
     setSlot(slot);
     final Transaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult importResult =
@@ -162,12 +166,17 @@ public class BeaconChainUtil {
     return createBlockAtSlot(slot, false);
   }
 
-  private SignedBeaconBlock createBlockAtSlot(final UnsignedLong slot, boolean withValidProposer)
+  public SignedBeaconBlock createBlockAtSlot(final UnsignedLong slot, boolean withValidProposer)
       throws Exception {
-    return createBlockAtSlot(slot, withValidProposer, Optional.empty());
+    return createBlockAndStateAtSlot(slot, withValidProposer).getBlock();
   }
 
-  private SignedBeaconBlock createBlockAtSlot(
+  public SignedBlockAndState createBlockAndStateAtSlot(
+      final UnsignedLong slot, boolean withValidProposer) throws Exception {
+    return createBlockAndStateAtSlot(slot, withValidProposer, Optional.empty());
+  }
+
+  private SignedBlockAndState createBlockAndStateAtSlot(
       final UnsignedLong slot,
       boolean withValidProposer,
       Optional<SSZList<Attestation>> attestations)
@@ -186,11 +195,10 @@ public class BeaconChainUtil {
 
     final MessageSignerService signer = getSigner(proposerIndex);
     if (attestations.isPresent()) {
-      return blockCreator
-          .createBlockWithAttestations(signer, slot, preState, bestBlockRoot, attestations.get())
-          .getBlock();
+      return blockCreator.createBlockWithAttestations(
+          signer, slot, preState, bestBlockRoot, attestations.get());
     } else {
-      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot).getBlock();
+      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot);
     }
   }
 

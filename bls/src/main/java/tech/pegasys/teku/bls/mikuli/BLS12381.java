@@ -17,9 +17,12 @@ import static tech.pegasys.teku.bls.hashToG2.HashToCurve.hashToG2;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 
 /*
@@ -41,6 +44,43 @@ import org.apache.tuweni.bytes.Bytes;
  * 'org.miracl.milagro.amcl:milagro-crypto-java'.
  */
 public final class BLS12381 {
+
+  private static final long MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = Long.MAX_VALUE;
+
+  private static Random getRND() {
+    // Milagro RAND has some issues with generating 'small' random numbers
+    // and is not thread safe
+    // Using non-secure random due to the JDK Linux secure random issue:
+    // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6521844
+    // A potential attack here has a very limited application and is not feasible
+    // Thus using non-secure random doesn't significantly mitigate the security
+    return ThreadLocalRandom.current();
+  }
+
+  /**
+   * Opaque data class which contains intermediate calculation results for batch BLS verification
+   *
+   * @see #prepareBatchVerify(int, List, Bytes, Signature)
+   * @see #prepareBatchVerify2(int, List, Bytes, Signature, List, Bytes, Signature)
+   * @see #completeBatchVerify(List)
+   */
+  public static final class BatchSemiAggregate {
+    private final G2Point sigPoint;
+    private final GTPoint msgPubKeyPairing;
+
+    private BatchSemiAggregate(G2Point sigPoint, GTPoint msgPubKeyPairing) {
+      this.sigPoint = sigPoint;
+      this.msgPubKeyPairing = msgPubKeyPairing;
+    }
+
+    private G2Point getSigPoint() {
+      return sigPoint;
+    }
+
+    private GTPoint getMsgPubKeyPairing() {
+      return msgPubKeyPairing;
+    }
+  }
 
   /*
    * Methods used directly in the Ethereum 2.0 specifications.
@@ -172,5 +212,120 @@ public final class BLS12381 {
     List<G2Point> hashesInG2 =
         messages.stream().map(m -> new G2Point(hashToG2(m))).collect(Collectors.toList());
     return signature.aggregateVerify(publicKeys, hashesInG2);
+  }
+
+  /**
+   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
+   *
+   * <p>For above batch verification method pre-calculates and returns two values: <code>S * r
+   * </code> and <code>e(M * r, P)</code>
+   *
+   * @return the pair of values above in an opaque instance
+   */
+  public static BatchSemiAggregate prepareBatchVerify(
+      int index, List<PublicKey> publicKeys, Bytes message, Signature signature) {
+
+    G2Point sigG2Point;
+    G2Point msgG2Point;
+    if (index == 0) {
+      // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
+      // let it be the component with index 0
+      sigG2Point = signature.g2Point();
+      msgG2Point = G2Point.hashToG2(message);
+    } else {
+      Scalar randomMult = nextBatchRandomMultiplier();
+      sigG2Point = signature.g2Point().mul(randomMult);
+      msgG2Point = G2Point.hashToG2(message).mul(randomMult);
+    }
+
+    GTPoint pair = AtePairing.pairNoExp(PublicKey.aggregate(publicKeys).g1Point(), msgG2Point);
+
+    return new BatchSemiAggregate(sigG2Point, pair);
+  }
+
+  /**
+   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
+   *
+   * <p>Slightly more efficient variant of {@link #prepareBatchVerify(int, List, Bytes, Signature)}
+   * when 2 signatures are aggregated with a faster ate2 pairing
+   *
+   * <p>For above batch verification method pre-calculates and returns two values: <code>
+   * S1 * r1 + S2 * r2</code> and <code>e(M1 * r1, P1) * e(M2 * r2, P2)</code>
+   *
+   * @return the pair of values above in an opaque instance
+   */
+  public static BatchSemiAggregate prepareBatchVerify2(
+      int index,
+      List<PublicKey> publicKeys1,
+      Bytes message1,
+      Signature signature1,
+      List<PublicKey> publicKeys2,
+      Bytes message2,
+      Signature signature2) {
+
+    G2Point sigG2Point1;
+    G2Point msgG2Point1;
+    if (index == 0) {
+      // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
+      // let it be the component with index 0
+      sigG2Point1 = signature1.g2Point();
+      msgG2Point1 = G2Point.hashToG2(message1);
+    } else {
+      Scalar randomMult = nextBatchRandomMultiplier();
+      sigG2Point1 = signature1.g2Point().mul(randomMult);
+      msgG2Point1 = G2Point.hashToG2(message1).mul(randomMult);
+    }
+    PublicKey publicKey1 = PublicKey.aggregate(publicKeys1);
+
+    Scalar randomMult2 = nextBatchRandomMultiplier();
+    G2Point sigG2Point2 = signature2.g2Point().mul(randomMult2);
+    G2Point msgG2Point2 = G2Point.hashToG2(message2).mul(randomMult2);
+    PublicKey publicKey2 = PublicKey.aggregate(publicKeys2);
+
+    GTPoint pair2 =
+        AtePairing.pair2NoExp(publicKey1.g1Point(), msgG2Point1, publicKey2.g1Point(), msgG2Point2);
+
+    return new BatchSemiAggregate(sigG2Point1.add(sigG2Point2), pair2);
+  }
+
+  /**
+   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
+   *
+   * <p>Does the final job of batch verification: calculates the final product and sum, does final
+   * pairing and exponentiation
+   *
+   * @param preparedList the list of instances returned by {@link #prepareBatchVerify(int, List,
+   *     Bytes, Signature)} or {@link #prepareBatchVerify2(int, List, Bytes, Signature, List, Bytes,
+   *     Signature)} or mixed from both
+   * @return True if the verification is successful, false otherwise
+   */
+  public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedList) {
+    if (preparedList.isEmpty()) {
+      return true;
+    }
+    G2Point sigSum = null;
+    GTPoint pairProd = null;
+    for (BatchSemiAggregate semiSig : preparedList) {
+      sigSum = sigSum == null ? semiSig.getSigPoint() : sigSum.add(semiSig.getSigPoint());
+      pairProd =
+          pairProd == null
+              ? semiSig.getMsgPubKeyPairing()
+              : pairProd.mul(semiSig.getMsgPubKeyPairing());
+    }
+    GTPoint sigPair = AtePairing.pairNoExp(KeyPair.g1Generator, sigSum);
+    return AtePairing.fexp(sigPair).equals(AtePairing.fexp(pairProd));
+  }
+
+  private static Scalar nextBatchRandomMultiplier() {
+    long randomLong =
+        (getRND().nextLong() & 0x7fffffffffffffffL) % MAX_BATCH_VERIFY_RANDOM_MULTIPLIER;
+    BIG randomBig = longToBIG(randomLong);
+    return new Scalar(randomBig);
+  }
+
+  private static BIG longToBIG(long l) {
+    long[] bigContent = new long[BIG.NLEN];
+    bigContent[0] = l;
+    return new BIG(bigContent);
   }
 }

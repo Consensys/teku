@@ -20,7 +20,7 @@ public class NetworkOptions {
   @Option(
       names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
-      description = "Represents which network to use",
+      description = "Represents which network to use.",
       arity = "1")
   private String network = "minimal";
 

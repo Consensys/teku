@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -139,29 +138,6 @@ public class Validator extends AbstractImmutableContainer
             SSZ.encodeUInt64(getExit_epoch().longValue()),
             SSZ.encodeUInt64(getWithdrawable_epoch().longValue())));
     return fixedPartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof Validator)) {
-      return false;
-    }
-
-    Validator other = (Validator) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override

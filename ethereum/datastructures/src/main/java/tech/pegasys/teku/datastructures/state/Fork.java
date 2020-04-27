@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.state;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -79,29 +78,6 @@ public class Fork extends AbstractImmutableContainer
         SSZ.encode(writer -> writer.writeFixedBytes(getPrevious_version().getWrappedBytes())),
         SSZ.encode(writer -> writer.writeFixedBytes(getCurrent_version().getWrappedBytes())),
         SSZ.encodeUInt64(getEpoch().longValue()));
-  }
-
-  @Override
-  public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof Fork)) {
-      return false;
-    }
-
-    Fork other = (Fork) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

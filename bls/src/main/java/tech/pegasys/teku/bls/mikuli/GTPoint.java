@@ -38,6 +38,10 @@ final class GTPoint {
     return point.isunity();
   }
 
+  FP12 getPoint() {
+    return point;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(point.toString());

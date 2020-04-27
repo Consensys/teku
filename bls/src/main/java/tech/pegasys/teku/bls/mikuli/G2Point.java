@@ -86,6 +86,10 @@ public final class G2Point implements Group<G2Point> {
     return new G2Point(point.mul(scalar.value()));
   }
 
+  ECP2 getPoint() {
+    return point;
+  }
+
   Bytes toBytes() {
     byte[] bytes = new byte[4 * fpPointSize];
     point.toBytes(bytes);

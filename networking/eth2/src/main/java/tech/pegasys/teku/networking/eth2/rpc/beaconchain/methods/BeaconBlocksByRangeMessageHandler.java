@@ -11,33 +11,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
+package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
+import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeMessageHandler
     implements LocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
 
-  private final CombinedChainDataClient storageClient;
+  private final CombinedChainDataClient combinedChainDataClient;
 
-  public BeaconBlocksByRangeMessageHandler(final CombinedChainDataClient storageClient) {
-    this.storageClient = storageClient;
+  public BeaconBlocksByRangeMessageHandler(final CombinedChainDataClient combinedChainDataClient) {
+    this.combinedChainDataClient = combinedChainDataClient;
   }
 
   @Override
@@ -46,9 +49,8 @@ public class BeaconBlocksByRangeMessageHandler
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
     LOG.trace(
-        "Peer {} requested {} BeaconBlocks from chain {} starting at slot {} with step {}",
+        "Peer {} requested {} BeaconBlocks starting at slot {} with step {}",
         peer.getId(),
-        message.getHeadBlockRoot(),
         message.getStartSlot(),
         message.getCount(),
         message.getStep());
@@ -74,14 +76,17 @@ public class BeaconBlocksByRangeMessageHandler
   private SafeFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
-    return storageClient
-        .getNonfinalizedBlockState(message.getHeadBlockRoot())
-        .map(headState -> sendNextBlock(new RequestState(message, headState.getSlot(), callback)))
+    Optional<Bytes32> maybeBestRoot = combinedChainDataClient.getBestBlockRoot();
+    return maybeBestRoot
+        .map(combinedChainDataClient::getStateByBlockRoot)
+        .flatMap(CompletableFuture::join)
+        .map(BeaconState::getSlot)
+        .map(slot -> sendNextBlock(new RequestState(message, slot, maybeBestRoot.get(), callback)))
         .orElseGet(() -> completedFuture(null));
   }
 
   private SafeFuture<RequestState> sendNextBlock(final RequestState requestState) {
-    return storageClient
+    return combinedChainDataClient
         .getBlockAtSlotExact(requestState.currentSlot, requestState.headBlockRoot)
         .thenCompose(
             maybeBlock -> {
@@ -105,9 +110,10 @@ public class BeaconBlocksByRangeMessageHandler
     public RequestState(
         final BeaconBlocksByRangeRequestMessage message,
         final UnsignedLong headSlot,
+        final Bytes32 headBlockRoot,
         final ResponseCallback<SignedBeaconBlock> callback) {
-      this.headBlockRoot = message.getHeadBlockRoot();
       this.currentSlot = message.getStartSlot();
+      this.headBlockRoot = headBlockRoot;
       // Minus 1 to account for sending the block at startSlot.
       // We only decrement this when moving to the next slot but we're already at the first slot
       this.remainingBlocks = message.getCount().minus(ONE);

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,16 +22,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
+import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 
 public class AttestationSubnetSubscriptionsTest {
   private AttestationSubnetSubscriptions subnetSubscriptions;
@@ -41,7 +41,8 @@ public class AttestationSubnetSubscriptionsTest {
   @BeforeEach
   void setUp() {
     subnetSubscriptions =
-        new AttestationSubnetSubscriptions(gossipNetwork, mock(RecentChainData.class), eventBus);
+        new AttestationSubnetSubscriptions(
+            gossipNetwork, mock(AttestationValidator.class), eventBus);
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }

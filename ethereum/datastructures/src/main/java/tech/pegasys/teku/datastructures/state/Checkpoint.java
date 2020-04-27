@@ -18,7 +18,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -78,29 +77,6 @@ public class Checkpoint extends AbstractImmutableContainer
           writer.writeUInt64(getEpoch().longValue());
           writer.writeFixedBytes(getRoot());
         });
-  }
-
-  @Override
-  public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof Checkpoint)) {
-      return false;
-    }
-
-    Checkpoint other = (Checkpoint) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override

@@ -23,7 +23,6 @@ import java.util.Locale;
 import java.util.Optional;
 
 public class NetworkDefinition {
-
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
       ImmutableMap.<String, NetworkDefinition>builder()
           .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())

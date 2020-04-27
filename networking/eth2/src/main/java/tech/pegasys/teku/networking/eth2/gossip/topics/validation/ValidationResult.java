@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.artemis.networking.eth2.gossip.topics.validation;
 
-public enum BlockValidationResult {
+public enum ValidationResult {
   VALID,
   SAVED_FOR_FUTURE,
   INVALID

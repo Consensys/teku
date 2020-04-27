@@ -11,27 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidationResult;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.core.signatures.Signer;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.artemis.statetransition.BeaconChainUtil;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class BlockValidatorTest {
   private final EventBus eventBus = new EventBus();
@@ -53,8 +53,8 @@ public class BlockValidatorTest {
     beaconChainUtil.setSlot(nextSlot);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
-    BlockValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(BlockValidationResult.VALID);
+    ValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(ValidationResult.VALID);
   }
 
   @Test
@@ -63,11 +63,11 @@ public class BlockValidatorTest {
     beaconChainUtil.setSlot(nextSlot);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
-    BlockValidationResult result1 = blockValidator.validate(block);
-    assertThat(result1).isEqualTo(BlockValidationResult.VALID);
+    ValidationResult result1 = blockValidator.validate(block);
+    assertThat(result1).isEqualTo(ValidationResult.VALID);
 
-    BlockValidationResult result2 = blockValidator.validate(block);
-    assertThat(result2).isEqualTo(BlockValidationResult.INVALID);
+    ValidationResult result2 = blockValidator.validate(block);
+    assertThat(result2).isEqualTo(ValidationResult.INVALID);
   }
 
   @Test
@@ -75,8 +75,8 @@ public class BlockValidatorTest {
     final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
-    BlockValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(BlockValidationResult.SAVED_FOR_FUTURE);
+    ValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(ValidationResult.SAVED_FOR_FUTURE);
   }
 
   @Test
@@ -100,8 +100,8 @@ public class BlockValidatorTest {
             .join();
     final SignedBeaconBlock blockWithNoParent = new SignedBeaconBlock(block, blockSignature);
 
-    BlockValidationResult result = blockValidator.validate(blockWithNoParent);
-    assertThat(result).isEqualTo(BlockValidationResult.SAVED_FOR_FUTURE);
+    ValidationResult result = blockValidator.validate(blockWithNoParent);
+    assertThat(result).isEqualTo(ValidationResult.SAVED_FOR_FUTURE);
   }
 
   @Test
@@ -112,8 +112,8 @@ public class BlockValidatorTest {
     beaconChainUtil.finalizeChainAtEpoch(finalizedEpoch);
     beaconChainUtil.setSlot(recentChainData.getBestSlot());
 
-    BlockValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(BlockValidationResult.INVALID);
+    ValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(ValidationResult.INVALID);
   }
 
   @Test
@@ -140,8 +140,8 @@ public class BlockValidatorTest {
     final SignedBeaconBlock invalidProposerSignedBlock =
         new SignedBeaconBlock(block, blockSignature);
 
-    BlockValidationResult result = blockValidator.validate(invalidProposerSignedBlock);
-    assertThat(result).isEqualTo(BlockValidationResult.INVALID);
+    ValidationResult result = blockValidator.validate(invalidProposerSignedBlock);
+    assertThat(result).isEqualTo(ValidationResult.INVALID);
   }
 
   @Test
@@ -153,7 +153,7 @@ public class BlockValidatorTest {
         new SignedBeaconBlock(
             beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(), BLSSignature.random(0));
 
-    BlockValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(BlockValidationResult.INVALID);
+    ValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(ValidationResult.INVALID);
   }
 }
