@@ -1,6 +1,6 @@
 # network
 network: "minimal"
-#genesis-state: ""
+#initial-state: ""
 
 # p2p
 # p2p-enabled options:

@@ -50,7 +50,7 @@ sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" active $INTEROP_MODE
 sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" Xinterop-genesis-time $GENESIS_TIME
 sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" Xinterop-owned-validator-start-index $OWNED_VALIDATOR_START_INDEX
 sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" Xinterop-owned-validator-count $OWNED_VALIDATOR_COUNT
-sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" genesis-state "\"$GENESIS_FILE"\"
+sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" initial-state "\"$GENESIS_FILE"\"
 
 
 if [ "$PEERS" != "" ]
