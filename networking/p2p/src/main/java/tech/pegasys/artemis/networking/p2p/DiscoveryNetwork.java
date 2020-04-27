@@ -14,13 +14,18 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
@@ -38,6 +43,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
+  private static final String ETH2_ENR_FIELD = "eth2";
   private static final Logger LOG = LogManager.getLogger();
 
   private final P2PNetwork<P> p2pNetwork;
@@ -127,6 +133,17 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
         new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
+  }
+
+  public void setForkInfo(final ForkInfo forkInfo) {
+    final EnrForkId enrForkId =
+        new EnrForkId(
+            compute_fork_digest(
+                forkInfo.getFork().getCurrent_version(), forkInfo.getGenesisValidatorsRoot()),
+            forkInfo.getFork().getCurrent_version(),
+            FAR_FUTURE_EPOCH);
+    discoveryService.updateCustomENRField(
+        ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
   }
 
   @Override
