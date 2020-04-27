@@ -13,32 +13,31 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 public class DepositOptions {
 
-  public static final String ETH1_DEPOSIT_CONTRACT_ADDRESS_OPTION_NAME =
-      "--eth1-deposit-contract-address";
-  public static final String ETH1_ENDPOINT_OPTION_NAME = "--eth1-endpoint";
-
-  public static final String DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS =
-      null; // depends on network option
-  public static final String DEFAULT_ETH1_ENDPOINT =
-      null; // required but could change as technically not needed if no validators are running
-
-  @CommandLine.Option(
-      names = {ETH1_DEPOSIT_CONTRACT_ADDRESS_OPTION_NAME},
+  @Option(
+      names = {"--eth1-deposit-contract-address"},
       paramLabel = "<ADDRESS>",
       description = "Contract address for the deposit contract",
       arity = "1")
-  private String eth1DepositContractAddress = DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
+  private String eth1DepositContractAddress = null; // Depends on network configuration
 
-  @CommandLine.Option(
-      names = {ETH1_ENDPOINT_OPTION_NAME},
+  @Option(
+      names = {"--eth1-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for Eth 1.0 node",
       arity = "1")
-  private String eth1Endpoint = DEFAULT_ETH1_ENDPOINT;
+  private String eth1Endpoint = null;
+
+  @Option(
+      names = {"--eth1-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether to connect to the ETH1 chain",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean eth1Enabled = true;
 
   public String getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
@@ -46,5 +45,9 @@ public class DepositOptions {
 
   public String getEth1Endpoint() {
     return eth1Endpoint;
+  }
+
+  public boolean isEth1Enabled() {
+    return eth1Enabled;
   }
 }

@@ -16,26 +16,10 @@ package tech.pegasys.artemis.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
-import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
-import static tech.pegasys.artemis.cli.options.InteropOptions.INTEROP_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
-import static tech.pegasys.artemis.cli.options.MetricsOptions.METRICS_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_INTERFACE;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
-import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
+import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
 import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -44,12 +28,9 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 import tech.pegasys.artemis.util.config.LoggingDestination;
@@ -182,85 +163,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void overrideDefaultMetricsCategory() throws IOException {
-    final Path configFile = createConfigFile();
-    final String[] args = {
-      CONFIG_FILE_OPTION_NAME, configFile.toString(), "--metrics-categories", "BEACON"
-    };
-
-    beaconNodeCommand.parse(args);
-    assertArtemisConfiguration(
-        expectedCompleteConfigInFileBuilder().setMetricsCategories(List.of("BEACON")).build());
-  }
-
-  @Test
-  public void p2pEnabled_shouldNotRequireAValue() throws IOException {
+  public void interopEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
-  }
-
-  @Test
-  public void p2pDiscoveryEnabled_shouldNotRequireAValue() throws IOException {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
-  }
-
-  @Test
-  public void metricsEnabled_shouldNotRequireAValue() throws IOException {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(METRICS_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isMetricsEnabled()).isTrue();
-  }
-
-  @Test
-  public void interopEnabled_shouldNotRequireAValue() throws IOException {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(INTEROP_ENABLED_OPTION_NAME);
+        getArtemisConfigurationFromArguments("--Xinterop-enabled");
     assertThat(artemisConfiguration.isInteropEnabled()).isTrue();
-  }
-
-  @Test
-  public void restApiDocsEnabled_shouldNotRequireAValue() throws IOException {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isRestApiDocsEnabled()).isTrue();
-  }
-
-  @Test
-  public void restApiEnabled_shouldNotRequireAValue() throws IOException {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "minimal", "topaz"})
-  public void useDefaultsFromNetworkDefinition(final String networkName) {
-    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
-
-    beaconNodeCommand.parse(new String[] {"--network", networkName});
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes())
-        .isEqualTo(networkDefinition.getDiscoveryBootnodes());
-    assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
-    assertThat(config.getStartupTargetPeerCount())
-        .isEqualTo(networkDefinition.getStartupTargetPeerCount());
-    assertThat(config.getStartupTimeoutSeconds())
-        .isEqualTo(networkDefinition.getStartupTimeoutSeconds());
-    assertThat(config.getEth1DepositContractAddress())
-        .isEqualTo(networkDefinition.getEth1DepositContractAddress().orElse(null));
-    assertThat(config.getEth1Endpoint())
-        .isEqualTo(networkDefinition.getEth1Endpoint().orElse(null));
-  }
-
-  @Test
-  public void overrideDefaultBootnodesWithEmptyList() {
-    beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
-
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
-    assertThat(config.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
   private Path createConfigFile() throws IOException {
@@ -283,7 +189,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--Xinterop-genesis-time", "1",
       "--Xinterop-owned-validator-start-index", "0",
       "--Xinterop-owned-validator-count", "64",
-      "--Xinterop-start-state", "",
+      "--initial-state", "",
       "--Xinterop-number-of-validators", "64",
       "--Xinterop-enabled", "true",
       "--eth1-deposit-contract-address", "0x77f7bED277449F51505a4C54550B074030d989bC",
@@ -303,19 +209,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private ArtemisConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
-        .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
+        .setEth1DepositContractAddress(null)
+        .setEth1Endpoint(null)
         .setMetricsCategories(
             DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
-        .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
-        .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
-        .setP2pInterface(DEFAULT_P2P_INTERFACE)
-        .setP2pPort(DEFAULT_P2P_PORT)
-        .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
-        .setInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
-        .setInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
-        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT)
-        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setP2pAdvertisedPort(30303)
+        .setP2pDiscoveryEnabled(true)
+        .setP2pInterface("0.0.0.0")
+        .setP2pPort(30303)
+        .setP2pPrivateKeyFile(null)
+        .setInteropEnabled(false)
+        .setInteropGenesisTime(null)
+        .setInteropOwnedValidatorCount(0)
+        .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
   }
@@ -342,20 +248,21 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPeerUpperBound(30)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
-        .setInteropStartState("")
+        .setInitialState("")
         .setInteropOwnedValidatorStartIndex(0)
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)
         .setInteropEnabled(true)
         .setEth1DepositContractAddress("0x77f7bED277449F51505a4C54550B074030d989bC")
         .setEth1Endpoint("http://localhost:8545")
+        .setEth1Enabled(true)
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
         .setMetricsCategories(
             Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
-        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
