@@ -139,7 +139,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStart() {
     this.eventBus.register(this);
     LOG.debug("Starting {}", this.getClass().getSimpleName());
-    return initialize().thenCompose((__) ->SafeFuture.fromRunnable(beaconRestAPI::start));
+    return initialize().thenCompose((__) -> SafeFuture.fromRunnable(beaconRestAPI::start));
   }
 
   private SafeFuture<?> startServices() {
