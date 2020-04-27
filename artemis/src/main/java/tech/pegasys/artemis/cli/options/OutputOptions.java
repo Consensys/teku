@@ -13,22 +13,17 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 public class OutputOptions {
 
-  public static final String TRANSITION_RECORD_DIRECTORY_OPTION_NAME =
-      "--Xtransition-record-directory";
-
-  public static final String DEFAULT_X_TRANSITION_RECORD_DIRECTORY = null;
-
-  @CommandLine.Option(
+  @Option(
       hidden = true,
-      names = {TRANSITION_RECORD_DIRECTORY_OPTION_NAME},
+      names = {"--Xtransition-record-directory"},
       paramLabel = "<FILENAME>",
       description = "Directory to record transition pre and post states",
       arity = "1")
-  private String transitionRecordDirectory = DEFAULT_X_TRANSITION_RECORD_DIRECTORY;
+  private String transitionRecordDirectory = null;
 
   public String getTransitionRecordDirectory() {
     return transitionRecordDirectory;

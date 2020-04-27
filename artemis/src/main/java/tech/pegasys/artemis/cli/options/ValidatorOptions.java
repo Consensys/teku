@@ -13,91 +13,71 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import java.util.ArrayList;
-import picocli.CommandLine;
+import static java.util.Collections.emptyList;
+
+import java.util.List;
+import picocli.CommandLine.Option;
 
 public class ValidatorOptions {
 
-  public static final String VALIDATORS_KEY_FILE_OPTION_NAME = "--validators-key-file";
-  public static final String VALIDATORS_KEYSTORE_FILES_OPTION_NAME = "--validators-key-files";
-  public static final String VALIDATORS_KEYSTORE_PASSWORD_FILES_OPTION_NAME =
-      "--validators-key-password-files";
-  public static final String VALIDATORS_EXTERNAL_SIGNER_PUBLIC_KEYS_OPTION_NAME =
-      "--validators-external-signer-public-keys";
-  public static final String VALIDATORS_EXTERNAL_SIGNER_URL_OPTION_NAME =
-      "--validators-external-signer-url";
-  public static final String VALIDATORS_EXTERNAL_SIGNER_TIMEOUT_OPTION_NAME =
-      "--validators-external-signer-timeout";
-
-  public static final String DEFAULT_VALIDATORS_KEY_FILE = null;
-  public static final ArrayList<String> DEFAULT_VALIDATORS_KEYSTORE_FILES = new ArrayList<>();
-  public static final ArrayList<String> DEFAULT_VALIDATORS_KEYSTORE_PASSWORD_FILES =
-      new ArrayList<>();
-  public static final ArrayList<String> DEFAULT_VALIDATORS_EXTERNAL_SIGNER_PUBLIC_KEYS =
-      new ArrayList<>();
-  public static final String DEFAULT_VALIDATORS_EXTERNAL_SIGNER_URL = null;
-  public static final int DEFAULT_VALIDATORS_EXTERNAL_SIGNER_TIMEOUT = 1000;
-
-  @CommandLine.Option(
-      names = {VALIDATORS_KEY_FILE_OPTION_NAME},
+  @Option(
+      names = {"--validators-key-file"},
       paramLabel = "<FILENAME>",
       description = "The file to load validator keys from",
       arity = "1")
-  private String validatorKeyFile = DEFAULT_VALIDATORS_KEY_FILE;
+  private String validatorKeyFile = null;
 
-  @CommandLine.Option(
-      names = {VALIDATORS_KEYSTORE_FILES_OPTION_NAME},
+  @Option(
+      names = {"--validators-key-files"},
       paramLabel = "<FILENAMES>",
       description = "The list of encrypted keystore files to load the validator keys from",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> validatorKeystoreFiles = DEFAULT_VALIDATORS_KEYSTORE_FILES;
+  private List<String> validatorKeystoreFiles = emptyList();
 
-  @CommandLine.Option(
-      names = {VALIDATORS_KEYSTORE_PASSWORD_FILES_OPTION_NAME},
+  @Option(
+      names = {"--validators-key-password-files"},
       paramLabel = "<FILENAMES>",
       description = "The list of password files to decrypt the validator keystore files",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> validatorKeystorePasswordFiles =
-      DEFAULT_VALIDATORS_KEYSTORE_PASSWORD_FILES;
+  private List<String> validatorKeystorePasswordFiles = emptyList();
 
-  @CommandLine.Option(
-      names = {VALIDATORS_EXTERNAL_SIGNER_PUBLIC_KEYS_OPTION_NAME},
+  @Option(
+      names = {"--validators-external-signer-public-keys"},
       paramLabel = "<STRINGS>",
       description = "The list of external signer public keys",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> validatorExternalSignerPublicKeys =
-      DEFAULT_VALIDATORS_EXTERNAL_SIGNER_PUBLIC_KEYS;
+  private List<String> validatorExternalSignerPublicKeys = emptyList();
 
-  @CommandLine.Option(
-      names = {VALIDATORS_EXTERNAL_SIGNER_URL_OPTION_NAME},
+  @Option(
+      names = {"--validators-external-signer-url"},
       paramLabel = "<NETWORK>",
       description = "URL for the external signing service",
       arity = "1")
-  private String validatorExternalSignerUrl = DEFAULT_VALIDATORS_EXTERNAL_SIGNER_URL;
+  private String validatorExternalSignerUrl = null;
 
-  @CommandLine.Option(
-      names = {VALIDATORS_EXTERNAL_SIGNER_TIMEOUT_OPTION_NAME},
+  @Option(
+      names = {"--validators-external-signer-timeout"},
       paramLabel = "<INTEGER>",
       description = "Timeout for the external signing service",
       arity = "1")
-  private int validatorExternalSignerTimeout = DEFAULT_VALIDATORS_EXTERNAL_SIGNER_TIMEOUT;
+  private int validatorExternalSignerTimeout = 1000;
 
   public String getValidatorKeyFile() {
     return validatorKeyFile;
   }
 
-  public ArrayList<String> getValidatorKeystoreFiles() {
+  public List<String> getValidatorKeystoreFiles() {
     return validatorKeystoreFiles;
   }
 
-  public ArrayList<String> getValidatorKeystorePasswordFiles() {
+  public List<String> getValidatorKeystorePasswordFiles() {
     return validatorKeystorePasswordFiles;
   }
 
-  public ArrayList<String> getValidatorExternalSignerPublicKeys() {
+  public List<String> getValidatorExternalSignerPublicKeys() {
     return validatorExternalSignerPublicKeys;
   }
 

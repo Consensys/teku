@@ -16,19 +16,10 @@ package tech.pegasys.artemis.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
-import static tech.pegasys.artemis.cli.options.InteropOptions.INTEROP_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_INTERFACE;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
+import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
 import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -174,7 +165,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void interopEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(INTEROP_ENABLED_OPTION_NAME);
+        getArtemisConfigurationFromArguments("--Xinterop-enabled");
     assertThat(artemisConfiguration.isInteropEnabled()).isTrue();
   }
 
@@ -222,15 +213,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setEth1Endpoint(null)
         .setMetricsCategories(
             DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
-        .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
-        .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
-        .setP2pInterface(DEFAULT_P2P_INTERFACE)
-        .setP2pPort(DEFAULT_P2P_PORT)
-        .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
-        .setInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
-        .setInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
-        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT)
-        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setP2pAdvertisedPort(30303)
+        .setP2pDiscoveryEnabled(true)
+        .setP2pInterface("0.0.0.0")
+        .setP2pPort(30303)
+        .setP2pPrivateKeyFile(null)
+        .setInteropEnabled(false)
+        .setInteropGenesisTime(null)
+        .setInteropOwnedValidatorCount(0)
+        .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
   }
@@ -271,7 +262,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setMetricsCategories(
             Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
-        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
