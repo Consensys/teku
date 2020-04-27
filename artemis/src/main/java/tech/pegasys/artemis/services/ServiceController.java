@@ -33,7 +33,7 @@ public class ServiceController extends Service {
     services.add(new BeaconChainService(config));
     services.add(new ChainStorageService(config));
     services.add(ValidatorClientService.create(config));
-    if (!config.getConfig().isInteropEnabled()) {
+    if (!config.getConfig().isInteropEnabled() && config.getConfig().isEth1Enabled()) {
       services.add(new PowchainService(config));
     }
   }
