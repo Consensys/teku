@@ -11,31 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
-import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
-import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
-import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.artemis.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.artemis.util.collections.LimitStrategy;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
+import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationValidator {
 

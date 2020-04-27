@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core.blockvalidator;
+package tech.pegasys.teku.core.blockvalidator;
 
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 /**
  * Dedicated class which performs block validation (apart from {@link
- * tech.pegasys.artemis.core.BlockProcessorUtil} The validation may be performed either
+ * tech.pegasys.teku.core.BlockProcessorUtil} The validation may be performed either
  * synchronously (then the methods return completed futures) or asynchronously.
  */
 public interface BlockValidator {

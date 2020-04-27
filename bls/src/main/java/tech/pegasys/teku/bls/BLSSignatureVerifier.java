@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls;
+package tech.pegasys.teku.bls;
 
 import java.util.Collections;
 import java.util.List;

@@ -11,25 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core.blockvalidator;
+package tech.pegasys.teku.core.blockvalidator;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.BLSSignatureVerifier;
-import tech.pegasys.artemis.bls.BLSSignatureVerifier.InvalidSignatureException;
-import tech.pegasys.artemis.core.BlockProcessorUtil;
-import tech.pegasys.artemis.core.StateTransitionException;
-import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
+import tech.pegasys.teku.core.BlockProcessorUtil;
+import tech.pegasys.teku.core.StateTransitionException;
+import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 /**
  * Base logic of a block validation

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.benchmarks;
+package tech.pegasys.teku.benchmarks;
 
 import com.google.common.collect.Streams;
 import java.util.Collections;
@@ -29,9 +29,9 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import tech.pegasys.artemis.bls.BLS;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignature;
 
 @Fork(1)
 @State(Scope.Thread)

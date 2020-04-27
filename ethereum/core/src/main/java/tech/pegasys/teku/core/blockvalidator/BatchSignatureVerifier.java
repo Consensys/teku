@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core.blockvalidator;
+package tech.pegasys.teku.core.blockvalidator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.BLS;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.bls.BLSSignatureVerifier;
-import tech.pegasys.artemis.bls.mikuli.BLS12381.BatchSemiAggregate;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.bls.mikuli.BLS12381.BatchSemiAggregate;
 
 /**
  * Implementation which doesn't perform any actual validations on {@link #verify(List, Bytes,

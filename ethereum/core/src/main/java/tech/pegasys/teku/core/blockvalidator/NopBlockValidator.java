@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core.blockvalidator;
+package tech.pegasys.teku.core.blockvalidator;
 
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class NopBlockValidator implements BlockValidator {
 
