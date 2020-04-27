@@ -13,12 +13,14 @@
 
 package tech.pegasys.artemis.cli;
 
+import com.google.common.base.Throwables;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
@@ -51,6 +53,7 @@ import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.InvalidConfigurationException;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 
@@ -231,15 +234,30 @@ public class BeaconNodeCommand implements Callable<Integer> {
       final ArtemisConfiguration artemisConfiguration = artemisConfiguration();
       startAction.accept(artemisConfiguration);
       return 0;
-    } catch (DatabaseStorageException ex) {
-      System.err.println(ex.getMessage());
-      System.exit(1);
+    } catch (InvalidConfigurationException | DatabaseStorageException ex) {
+      reportUserError(ex);
+    } catch (CompletionException e) {
+      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException) {
+        reportUserError(Throwables.getRootCause(e));
+      } else {
+        reportUnexpectedError(e);
+      }
+
     } catch (Throwable t) {
-      System.err.println("Teku failed to start.");
-      t.printStackTrace();
-      System.exit(1);
+      reportUnexpectedError(t);
     }
     return 1;
+  }
+
+  private void reportUnexpectedError(final Throwable t) {
+    System.err.println("Teku failed to start.");
+    t.printStackTrace();
+    System.exit(1);
+  }
+
+  private void reportUserError(final Throwable ex) {
+    System.err.println(ex.getMessage());
+    System.exit(1);
   }
 
   private void setLogLevels() {
@@ -269,7 +287,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
-        .setInteropStartState(interopOptions.getInteropStartState())
+        .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
         .setValidatorKeyFile(validatorOptions.getValidatorKeyFile())
@@ -279,6 +297,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
             validatorOptions.getValidatorExternalSignerPublicKeys())
         .setValidatorExternalSignerUrl(validatorOptions.getValidatorExternalSignerUrl())
         .setValidatorExternalSignerTimeout(validatorOptions.getValidatorExternalSignerTimeout())
+        .setEth1Enabled(depositOptions.isEth1Enabled())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
         .setEth1Endpoint(depositOptions.getEth1Endpoint())
         .setLogColorEnabled(loggingOptions.isLogColorEnabled())
