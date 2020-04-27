@@ -63,6 +63,7 @@ public class ArtemisConfigurationBuilder {
   private boolean restApiEnabled;
   private String restApiInterface;
   private NetworkDefinition network;
+  private boolean eth1Enabled;
 
   public ArtemisConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -204,6 +205,11 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
+  public ArtemisConfigurationBuilder setEth1Enabled(final boolean eth1Enabled) {
+    this.eth1Enabled = eth1Enabled;
+    return this;
+  }
+
   public ArtemisConfigurationBuilder setEth1DepositContractAddress(
       final String eth1DepositContractAddress) {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
@@ -341,6 +347,7 @@ public class ArtemisConfigurationBuilder {
         validatorExternalSignerPublicKeys,
         validatorExternalSignerUrl,
         validatorExternalSignerTimeout,
+        eth1Enabled,
         eth1DepositContractAddress,
         eth1Endpoint,
         logColorEnabled,

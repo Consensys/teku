@@ -83,6 +83,7 @@ import tech.pegasys.artemis.sync.util.NoopSyncService;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.InvalidConfigurationException;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
@@ -176,8 +177,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               if (recentChainData.isPreGenesis()) {
                 if (setupInitialState) {
                   setupInitialState();
-                } else {
+                } else if (config.isEth1Enabled()) {
                   STATUS_LOG.loadingGenesisFromEth1Chain();
+                } else {
+                  throw new InvalidConfigurationException(
+                      "ETH1 is disabled but genesis state is unknown. Enable ETH1 or specify a genesis state.");
                 }
               }
               recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
