@@ -34,7 +34,7 @@ public class DepositOptions {
   @Option(
       names = {"--eth1-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Whether to load deposits from the ETH1 chain",
+      description = "Whether to connect to the ETH1 chain",
       fallbackValue = "true",
       arity = "0..1")
   private boolean eth1Enabled = true;
