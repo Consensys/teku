@@ -13,8 +13,7 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import static java.util.Collections.emptyList;
-
+import java.util.ArrayList;
 import java.util.List;
 import picocli.CommandLine.Option;
 
@@ -33,7 +32,7 @@ public class ValidatorOptions {
       description = "The list of encrypted keystore files to load the validator keys from",
       split = ",",
       arity = "0..*")
-  private List<String> validatorKeystoreFiles = emptyList();
+  private List<String> validatorKeystoreFiles = new ArrayList<>();
 
   @Option(
       names = {"--validators-key-password-files"},
@@ -41,7 +40,7 @@ public class ValidatorOptions {
       description = "The list of password files to decrypt the validator keystore files",
       split = ",",
       arity = "0..*")
-  private List<String> validatorKeystorePasswordFiles = emptyList();
+  private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
 
   @Option(
       names = {"--validators-external-signer-public-keys"},
@@ -49,7 +48,7 @@ public class ValidatorOptions {
       description = "The list of external signer public keys",
       split = ",",
       arity = "0..*")
-  private List<String> validatorExternalSignerPublicKeys = emptyList();
+  private List<String> validatorExternalSignerPublicKeys = new ArrayList<>();
 
   @Option(
       names = {"--validators-external-signer-url"},

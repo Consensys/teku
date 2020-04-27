@@ -13,8 +13,7 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import static java.util.Collections.emptyList;
-
+import java.util.ArrayList;
 import java.util.List;
 import picocli.CommandLine.Option;
 
@@ -99,7 +98,7 @@ public class P2POptions {
       description = "Static peers",
       split = ",",
       arity = "0..*")
-  private List<String> p2pStaticPeers = emptyList();
+  private List<String> p2pStaticPeers = new ArrayList<>();
 
   public boolean isP2pEnabled() {
     return p2pEnabled;

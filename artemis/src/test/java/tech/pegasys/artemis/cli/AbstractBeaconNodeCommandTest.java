@@ -41,11 +41,16 @@ public abstract class AbstractBeaconNodeCommandTest {
   @TempDir Path dataPath;
 
   public ArtemisConfiguration getResultingArtemisConfiguration() {
+    try {
     final ArgumentCaptor<ArtemisConfiguration> configCaptor =
         ArgumentCaptor.forClass(ArtemisConfiguration.class);
     verify(startAction).accept(configCaptor.capture());
 
     return configCaptor.getValue();
+    } catch (Throwable t) {
+      System.out.println(stringWriter);
+      throw t;
+    }
   }
 
   public ArtemisConfiguration getArtemisConfigurationFromArguments(String... arguments) {
