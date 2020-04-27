@@ -28,6 +28,7 @@ import org.apache.tuweni.ssz.SSZException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class Eth2TopicHandlerTest {
   private static final String TOPIC = "testing";
@@ -39,7 +40,7 @@ public class Eth2TopicHandlerTest {
 
   private final Attestation deserialized = dataStructureUtil.randomAttestation();
   private Supplier<Attestation> deserializer = Suppliers.ofInstance(deserialized);
-  private Supplier<Boolean> validator = Suppliers.ofInstance(true);
+  private Supplier<ValidationResult> validator = Suppliers.ofInstance(ValidationResult.VALID);
 
   @Test
   public void handleMessage_valid() {
@@ -50,8 +51,17 @@ public class Eth2TopicHandlerTest {
   }
 
   @Test
+  public void handleMessage_savedForFuture() {
+    validator = Suppliers.ofInstance(ValidationResult.SAVED_FOR_FUTURE);
+    final boolean result = topicHandler.handleMessage(message);
+
+    assertThat(result).isEqualTo(false);
+    verify(eventBus).post(deserialized);
+  }
+
+  @Test
   public void handleMessage_invalid() {
-    validator = Suppliers.ofInstance(false);
+    validator = Suppliers.ofInstance(ValidationResult.INVALID);
     final boolean result = topicHandler.handleMessage(message);
 
     assertThat(result).isEqualTo(false);
@@ -121,7 +131,7 @@ public class Eth2TopicHandlerTest {
     }
 
     @Override
-    protected boolean validateData(final Attestation attestation) {
+    protected ValidationResult validateData(final Attestation attestation) {
       return validator.get();
     }
   }
