@@ -45,9 +45,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
-  private volatile BlockGossipManager blockGossipManager;
-  private volatile AttestationGossipManager attestationGossipManager;
-  private volatile AggregateGossipManager aggregateGossipManager;
+  private BlockGossipManager blockGossipManager;
+  private AttestationGossipManager attestationGossipManager;
+  private AggregateGossipManager aggregateGossipManager;
 
   public ActiveEth2Network(
       final DiscoveryNetwork<?> discoveryNetwork,
@@ -68,10 +68,6 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   private void startup() {
     state.set(State.RUNNING);
-    recentChainData.subscribeBestBlockInitialized(this::initGossipManagers);
-  }
-
-  public void initGossipManagers() {
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(discoveryNetwork, recentChainData, eventBus);
@@ -88,15 +84,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return;
     }
-    if (blockGossipManager != null) {
-      blockGossipManager.shutdown();
-    }
-    if (attestationGossipManager != null) {
-      attestationGossipManager.shutdown();
-    }
-    if (aggregateGossipManager != null) {
-      aggregateGossipManager.shutdown();
-    }
+    blockGossipManager.shutdown();
+    attestationGossipManager.shutdown();
+    aggregateGossipManager.shutdown();
     super.stop();
   }
 
