@@ -17,8 +17,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 

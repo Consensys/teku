@@ -46,13 +46,13 @@ import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
+import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.cli.LogTypeConverter;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-import tech.pegasys.teku.logging.LoggingConfigurator;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @SuppressWarnings("unused")
 @Command(

@@ -47,8 +47,7 @@ public class AttestationData {
     this.target = new Checkpoint(data.getTarget());
   }
 
-  public tech.pegasys.teku.datastructures.operations.AttestationData
-      asInternalAttestationData() {
+  public tech.pegasys.teku.datastructures.operations.AttestationData asInternalAttestationData() {
     tech.pegasys.teku.datastructures.state.Checkpoint src = source.asInternalCheckpoint();
     tech.pegasys.teku.datastructures.state.Checkpoint tgt = target.asInternalCheckpoint();
 

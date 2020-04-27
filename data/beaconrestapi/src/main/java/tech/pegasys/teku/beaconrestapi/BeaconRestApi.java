@@ -70,8 +70,7 @@ public class BeaconRestApi {
   private static final Logger LOG = LogManager.getLogger();
   public static final String FILE_NOT_FOUND_HTML = "404.html";
 
-  private void initialize(
-      final DataProvider dataProvider, final TekuConfiguration configuration) {
+  private void initialize(final DataProvider dataProvider, final TekuConfiguration configuration) {
     app.server().setServerPort(configuration.getRestApiPort());
 
     addExceptionHandlers();
@@ -129,9 +128,7 @@ public class BeaconRestApi {
   }
 
   BeaconRestApi(
-      final DataProvider dataProvider,
-      final TekuConfiguration configuration,
-      final Javalin app) {
+      final DataProvider dataProvider, final TekuConfiguration configuration, final Javalin app) {
     this.app = app;
     initialize(dataProvider, configuration);
   }

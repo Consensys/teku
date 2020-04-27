@@ -30,15 +30,15 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.teku.events.ChannelExceptionHandler;
 import tech.pegasys.teku.events.EventChannels;
-import tech.pegasys.teku.metrics.MetricsEndpoint;
-import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.services.ServiceController;
-import tech.pegasys.teku.util.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.time.SystemTimeProvider;
 import tech.pegasys.teku.logging.LoggingConfiguration;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.metrics.MetricsEndpoint;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.ServiceController;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.time.SystemTimeProvider;
 
 public class BeaconNode {
 

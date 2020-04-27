@@ -23,8 +23,7 @@ public class Committee {
   public final UnsignedLong index;
   public final List<Integer> committee;
 
-  public Committee(
-      tech.pegasys.teku.datastructures.state.CommitteeAssignment committeeAssignment) {
+  public Committee(tech.pegasys.teku.datastructures.state.CommitteeAssignment committeeAssignment) {
     this.slot = committeeAssignment.getSlot();
     this.index = committeeAssignment.getCommitteeIndex();
     this.committee = committeeAssignment.getCommittee();

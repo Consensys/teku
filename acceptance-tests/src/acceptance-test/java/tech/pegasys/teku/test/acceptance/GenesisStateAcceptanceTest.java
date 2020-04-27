@@ -15,8 +15,8 @@ package tech.pegasys.teku.test.acceptance;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
@@ -31,8 +31,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     firstTeku.start();
     firstTeku.waitForGenesis();
 
-    final TekuNode lateJoinTeku =
-        createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuNode lateJoinTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     lateJoinTeku.start();
     lateJoinTeku.waitForGenesis();
 

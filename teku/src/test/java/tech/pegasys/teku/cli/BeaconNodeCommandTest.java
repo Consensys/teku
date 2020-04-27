@@ -50,10 +50,10 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.util.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.TekuConfigurationBuilder;
 import tech.pegasys.teku.util.config.LoggingDestination;
 import tech.pegasys.teku.util.config.NetworkDefinition;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.TekuConfigurationBuilder;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 

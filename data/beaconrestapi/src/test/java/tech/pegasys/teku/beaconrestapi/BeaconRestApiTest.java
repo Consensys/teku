@@ -65,10 +65,7 @@ class BeaconRestApiTest {
   @BeforeEach
   public void setup() {
     TekuConfiguration config =
-        TekuConfiguration.builder()
-            .setRestApiPort(THE_PORT)
-            .setRestApiDocsEnabled(false)
-            .build();
+        TekuConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(false).build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
