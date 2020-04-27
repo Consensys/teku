@@ -15,6 +15,7 @@ package tech.pegasys.artemis.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.LOG_DESTINATION_OPTION_NAME;
+import static tech.pegasys.artemis.cli.options.LoggingOptions.LOG_INCLUDE_EVENTS_ENABLED_OPTION_NAME;
 import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
 
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,13 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "file");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
+  }
+
+  @Test
+  public void includeEvents_shouldNotRequireAValue() {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments(LOG_INCLUDE_EVENTS_ENABLED_OPTION_NAME);
+    assertThat(artemisConfiguration.isLogIncludeEventsEnabled()).isTrue();
   }
 
   @Test
