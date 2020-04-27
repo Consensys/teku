@@ -23,19 +23,14 @@ import java.util.Locale;
 import java.util.Optional;
 
 public class NetworkDefinition {
-
-  public static final String MINIMAL = "minimal";
-  public static final String MAINNET = "mainnet";
-  public static final String TOPAZ = "topaz";
-
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
       ImmutableMap.<String, NetworkDefinition>builder()
-          .put(MINIMAL, builder().constants(MINIMAL).startupTargetPeerCount(0).build())
-          .put(MAINNET, builder().constants(MAINNET).build())
+          .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())
+          .put("mainnet", builder().constants("mainnet").build())
           .put(
-              TOPAZ,
+              "topaz",
               builder()
-                  .constants(MAINNET)
+                  .constants("mainnet")
                   .discoveryBootnodes(
                       "enr:-Ku4QAGwOT9StqmwI5LHaIymIO4ooFKfNkEjWa0f1P8OsElgBh2Ijb-GrD_-b9W4kcPFcwmHQEy5RncqXNqdpVo1heoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
                   .eth1DepositContractAddress("0x5cA1e00004366Ac85f492887AAab12d0e6418876")
