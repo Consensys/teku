@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.gossip.topics;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
-import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
-import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -29,16 +29,16 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import tech.pegasys.artemis.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.core.AttestationGenerator;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
-import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
+import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationTopicHandlerTest {
 

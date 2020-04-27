@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.gossip.topics;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static java.lang.StrictMath.toIntExact;
 
@@ -19,10 +19,10 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 

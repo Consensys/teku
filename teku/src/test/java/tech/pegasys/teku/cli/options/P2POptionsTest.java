@@ -11,22 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
+import static tech.pegasys.teku.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
+import static tech.pegasys.teku.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() {
-    final ArtemisConfiguration config = getArtemisConfigurationFromFile("P2POptions_config.yaml");
+    final TekuConfiguration config = getTekuConfigurationFromFile("P2POptions_config.yaml");
 
     assertThat(config.getP2pAdvertisedIp()).isEqualTo("127.200.0.1");
     assertThat(config.getP2pInterface()).isEqualTo("127.100.0.1");
@@ -41,15 +41,15 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
+    assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
+    assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
   }
 }

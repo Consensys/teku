@@ -11,24 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.MetricsOptions.METRICS_CATEGORIES_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.MetricsOptions.METRICS_ENABLED_OPTION_NAME;
+import static tech.pegasys.teku.cli.options.MetricsOptions.METRICS_CATEGORIES_OPTION_NAME;
+import static tech.pegasys.teku.cli.options.MetricsOptions.METRICS_ENABLED_OPTION_NAME;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadFromConfigurationFile() {
-    final ArtemisConfiguration config =
-        getArtemisConfigurationFromFile("metricsOptions_config.yaml");
+    final TekuConfiguration config = getTekuConfigurationFromFile("metricsOptions_config.yaml");
 
     assertThat(config.getMetricsInterface()).isEqualTo("127.100.0.1");
     assertThat(config.getMetricsPort()).isEqualTo(8888);
@@ -39,24 +38,24 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"})
   public void metricsCategories_shouldAcceptValues(String category) {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(METRICS_CATEGORIES_OPTION_NAME, category);
-    assertThat(artemisConfiguration.getMetricsCategories()).isEqualTo(List.of(category));
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(METRICS_CATEGORIES_OPTION_NAME, category);
+    assertThat(tekuConfiguration.getMetricsCategories()).isEqualTo(List.of(category));
   }
 
   @Test
   public void metricsCategories_shouldAcceptMultipleValues() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
             METRICS_CATEGORIES_OPTION_NAME, "LIBP2P,NETWORK,EVENTBUS,PROCESS");
-    assertThat(artemisConfiguration.getMetricsCategories())
+    assertThat(tekuConfiguration.getMetricsCategories())
         .isEqualTo(List.of("LIBP2P", "NETWORK", "EVENTBUS", "PROCESS"));
   }
 
   @Test
   public void metricsEnabled_shouldNotRequireAValue() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(METRICS_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isMetricsEnabled()).isTrue();
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(METRICS_ENABLED_OPTION_NAME);
+    assertThat(tekuConfiguration.isMetricsEnabled()).isTrue();
   }
 }

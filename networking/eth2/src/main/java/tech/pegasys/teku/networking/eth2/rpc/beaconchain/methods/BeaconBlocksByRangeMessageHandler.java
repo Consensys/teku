@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
+package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
@@ -23,15 +23,15 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
-import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeMessageHandler
     implements LocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {

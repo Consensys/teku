@@ -11,27 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.signatures.Signer;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
-import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockValidatorTest {
   private final EventBus eventBus = new EventBus();

@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.mikuli;
+package tech.pegasys.teku.bls.mikuli;
 
-import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
+import static tech.pegasys.teku.bls.hashToG2.HashToCurve.hashToG2;
 
 import java.util.concurrent.TimeUnit;
 import org.apache.milagro.amcl.BLS381.BIG;
@@ -33,9 +33,9 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.artemis.bls.BLS;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignature;
 
 @Fork(1)
 @BenchmarkMode(Mode.AverageTime)

@@ -11,21 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
+import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
+import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadFromConfigurationFile() {
-    final ArtemisConfiguration config =
-        getArtemisConfigurationFromFile("beaconRestApiOptions_config.yaml");
+    final TekuConfiguration config =
+        getTekuConfigurationFromFile("beaconRestApiOptions_config.yaml");
 
     assertThat(config.getRestApiInterface()).isEqualTo("127.100.0.1");
     assertThat(config.getRestApiPort()).isEqualTo(5055);
@@ -35,15 +35,15 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void restApiDocsEnabled_shouldNotRequireAValue() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isRestApiDocsEnabled()).isTrue();
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
+    assertThat(tekuConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
   public void restApiEnabled_shouldNotRequireAValue() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
-    assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
+    assertThat(tekuConfiguration.isRestApiEnabled()).isTrue();
   }
 }

@@ -11,25 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.config.NetworkDefinition;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.util.config.NetworkDefinition;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("mainnet");
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromFile("networkOptions_config.yaml");
-    assertThat(artemisConfiguration.getConstants()).isEqualTo(networkDefinition.getConstants());
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromFile("networkOptions_config.yaml");
+    assertThat(tekuConfiguration.getConstants()).isEqualTo(networkDefinition.getConstants());
   }
 
   @ParameterizedTest(name = "{0}")
@@ -38,7 +38,7 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
 
     beaconNodeCommand.parse(new String[] {"--network", networkName});
-    final ArtemisConfiguration config = getResultingArtemisConfiguration();
+    final TekuConfiguration config = getResultingTekuConfiguration();
     assertThat(config.getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
     assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
@@ -56,8 +56,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void overrideDefaultBootnodesWithEmptyList() {
     beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
 
-    final ArtemisConfiguration artemisConfiguration = getResultingArtemisConfiguration();
-    assertThat(artemisConfiguration.getP2pDiscoveryBootnodes()).isEmpty();
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
   @Test
@@ -65,7 +65,7 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     String url = "https://some.site/with/config.yaml";
     beaconNodeCommand.parse(new String[] {"--network", url});
 
-    final ArtemisConfiguration artemisConfiguration = getResultingArtemisConfiguration();
-    assertThat(artemisConfiguration.getConstants()).isEqualTo(url);
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.getConstants()).isEqualTo(url);
   }
 }

@@ -11,37 +11,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.teku.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
+import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.core.AttestationGenerator;
-import tech.pegasys.artemis.core.BlockProposalTestUtil;
-import tech.pegasys.artemis.core.ForkChoiceUtil;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.results.BlockImportResult;
-import tech.pegasys.artemis.core.signatures.MessageSignerService;
-import tech.pegasys.artemis.core.signatures.TestMessageSignerService;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.protoarray.StubForkChoiceStrategy;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.storage.Store.Transaction;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.core.BlockProposalTestUtil;
+import tech.pegasys.teku.core.ForkChoiceUtil;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.core.signatures.MessageSignerService;
+import tech.pegasys.teku.core.signatures.TestMessageSignerService;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.protoarray.StubForkChoiceStrategy;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.statetransition.util.StartupUtil;
+import tech.pegasys.teku.storage.Store.Transaction;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconChainUtil {
 

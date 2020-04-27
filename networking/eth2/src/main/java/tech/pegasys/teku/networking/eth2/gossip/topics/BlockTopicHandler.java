@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.gossip.topics;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";

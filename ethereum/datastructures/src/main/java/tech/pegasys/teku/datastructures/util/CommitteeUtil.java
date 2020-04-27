@@ -11,22 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package tech.pegasys.teku.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
-import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.teku.util.config.Constants.SHUFFLE_ROUND_COUNT;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedLong;
@@ -37,10 +37,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 
 public class CommitteeUtil {
 

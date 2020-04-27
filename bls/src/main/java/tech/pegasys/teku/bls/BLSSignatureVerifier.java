@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls;
+package tech.pegasys.teku.bls;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 
 /**
  * Simple interface to enable pluggable variants of BLS verifier. In a {@link #SIMPLE} case it's
- * just static {@link BLS} methods
+ * just static {@link tech.pegasys.teku.bls.BLS} methods
  */
 public interface BLSSignatureVerifier {
 
@@ -31,7 +31,10 @@ public interface BLSSignatureVerifier {
     }
   }
 
-  /** Just delegates verify to {@link BLS#fastAggregateVerify(List, Bytes, BLSSignature)} */
+  /**
+   * Just delegates verify to {@link tech.pegasys.teku.bls.BLS#fastAggregateVerify(List, Bytes,
+   * BLSSignature)}
+   */
   BLSSignatureVerifier SIMPLE = BLS::fastAggregateVerify;
 
   /**
@@ -42,7 +45,7 @@ public interface BLSSignatureVerifier {
    * @param message The message data to verify, not null
    * @param signature The aggregate signature, not null
    * @return True if the verification is successful, false otherwise
-   * @see BLS#fastAggregateVerify(List, Bytes, BLSSignature)
+   * @see tech.pegasys.teku.bls.BLS#fastAggregateVerify(List, Bytes, BLSSignature)
    */
   boolean verify(List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature);
 

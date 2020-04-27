@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip;
 
-import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -23,10 +23,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
-import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.eth2.gossip.topics.AttestationTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
+import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipNetwork gossipNetwork;
