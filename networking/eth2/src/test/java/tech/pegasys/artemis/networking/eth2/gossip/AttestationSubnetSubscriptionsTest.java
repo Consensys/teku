@@ -47,7 +47,7 @@ public class AttestationSubnetSubscriptionsTest {
     when(recentChainData.getCurrentForkDigest()).thenReturn(createPreGenesisForkDigest());
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            gossipNetwork, mock(AttestationValidator.class), eventBus);
+            gossipNetwork, recentChainData, mock(AttestationValidator.class), eventBus);
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }

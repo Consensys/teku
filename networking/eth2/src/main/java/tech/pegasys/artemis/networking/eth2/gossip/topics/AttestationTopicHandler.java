@@ -21,23 +21,22 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
-  private final RecentChainData recentChainData;
+  private final AttestationValidator attestationValidator;
   private final UnsignedLong subnetId;
 
   public AttestationTopicHandler(
       final EventBus eventBus,
-      final RecentChainData recentChainData,
+      final AttestationValidator attestationValidator,
       final UnsignedLong subnetId,
       final Bytes4 forkDigest) {
     super(eventBus, forkDigest);
-    this.recentChainData = recentChainData;
+    this.attestationValidator = attestationValidator;
     this.subnetId = subnetId;
   }
 

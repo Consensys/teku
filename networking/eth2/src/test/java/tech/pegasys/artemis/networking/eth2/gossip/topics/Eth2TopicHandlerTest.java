@@ -26,6 +26,7 @@ import com.google.common.eventbus.EventBus;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -38,13 +39,19 @@ public class Eth2TopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final MockTopicHandler topicHandler =
-      spy(new MockTopicHandler(eventBus, recentChainData.getCurrentForkDigest()));
   private final Bytes message = Bytes.fromHexString("0x01");
 
   private final Attestation deserialized = dataStructureUtil.randomAttestation();
   private Supplier<Attestation> deserializer = Suppliers.ofInstance(deserialized);
   private Supplier<Boolean> validator = Suppliers.ofInstance(true);
+
+  private MockTopicHandler topicHandler;
+
+  @BeforeEach
+  void setUp() {
+    when(recentChainData.getCurrentForkDigest()).thenReturn(Bytes4.fromHexString("0x00000000"));
+    topicHandler = spy(new MockTopicHandler(eventBus, recentChainData.getCurrentForkDigest()));
+  }
 
   @Test
   public void handleMessage_valid() {
@@ -111,7 +118,6 @@ public class Eth2TopicHandlerTest {
 
   @Test
   public void returnProperTopicName() {
-    when(recentChainData.getCurrentForkDigest()).thenReturn(Bytes4.fromHexString("0x00000000"));
     MockTopicHandler topicHandler =
         spy(new MockTopicHandler(eventBus, recentChainData.getCurrentForkDigest()));
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/00000000/testing/ssz");

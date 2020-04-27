@@ -34,12 +34,15 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
   private AttestationSubnetSubscriptions attestationSubnetSubscriptions;
@@ -49,7 +52,8 @@ public class AttestationGossipManagerTest {
   public void setup() {
     doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
     attestationSubnetSubscriptions =
-        new AttestationSubnetSubscriptions(gossipNetwork, attestationValidator, eventBus);
+        new AttestationSubnetSubscriptions(
+            gossipNetwork, recentChainData, attestationValidator, eventBus);
     attestationGossipManager =
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
   }

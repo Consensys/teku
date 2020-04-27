@@ -45,26 +45,22 @@ public class AttestationTopicHandlerTest {
   public static final UnsignedLong SUBNET_ID = UnsignedLong.valueOf(1);
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final AttestationValidator attestationValidator =
       Mockito.mock(AttestationValidator.class);
   private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(eventBus, attestationValidator, SUBNET_ID);
       new AttestationTopicHandler(
-          eventBus,
-          recentChainData,
-          UnsignedLong.valueOf(1),
-          recentChainData.getCurrentForkDigest());
+          eventBus, attestationValidator, SUBNET_ID, recentChainData.getCurrentForkDigest());
 
   @BeforeEach
   public void setup() {
-    BeaconChainUtil.initializeStorage(storageClient, validatorKeys);
+    BeaconChainUtil.initializeStorage(recentChainData, validatorKeys);
   }
 
   @Test
   public void handleMessage_validAttestation() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(VALID);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
@@ -77,7 +73,7 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_failsValidation() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(INVALID);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);

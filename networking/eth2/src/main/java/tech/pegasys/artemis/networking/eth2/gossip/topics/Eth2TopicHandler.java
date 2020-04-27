@@ -26,7 +26,7 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
   private static final Logger LOG = LogManager.getLogger();
 
   private final Bytes4 forkDigest;
-  private final EventBus eventBus;
+  protected final EventBus eventBus;
 
   protected Eth2TopicHandler(final EventBus eventBus, final Bytes4 forkDigest) {
     this.eventBus = eventBus;
