@@ -354,7 +354,7 @@ workflows:
       #            - acceptanceTests
       #            - referenceTests
       #            - docker
-#      - publishAPIDoc:
+      - publishAPIDoc:
 #          filters:
 #            branches:
 #              only: pull/1585
