@@ -59,12 +59,10 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
   }
 
   public String getTopic() {
-    return "/eth2/" + this.getForkDigestString() + "/" + getTopicName() + "/ssz";
+    return "/eth2/" + forkDigest.toUnprefixedHexString() + "/" + getTopicName() + "/ssz";
   }
 
-  private String getForkDigestString() {
-    return forkDigest.toHexString().substring(2);
-  }
+  protected abstract String getTopicName();
 
   protected abstract T deserialize(Bytes bytes) throws SSZException;
 

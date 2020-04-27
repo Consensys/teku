@@ -98,6 +98,10 @@ public class Bytes4 {
     return Objects.hash(bytes);
   }
 
+  public String toUnprefixedHexString() {
+    return toHexString().substring(2);
+  }
+
   @Override
   public String toString() {
     return bytes.toString();

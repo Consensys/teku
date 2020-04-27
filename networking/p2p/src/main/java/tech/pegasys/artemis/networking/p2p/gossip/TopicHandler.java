@@ -17,8 +17,6 @@ import org.apache.tuweni.bytes.Bytes;
 
 public interface TopicHandler {
 
-  String getTopicName();
-
   /**
    * Validate and process gossip message
    *
