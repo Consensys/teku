@@ -24,6 +24,7 @@ import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationSubnetSubscriptions;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
@@ -69,8 +70,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private void startup() {
     state.set(State.RUNNING);
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
+    AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
-        new AttestationSubnetSubscriptions(discoveryNetwork, recentChainData, eventBus);
+        new AttestationSubnetSubscriptions(discoveryNetwork, attestationValidator, eventBus);
     blockGossipManager =
         new BlockGossipManager(discoveryNetwork, eventBus, blockValidator, recentChainData);
     attestationGossipManager =

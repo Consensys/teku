@@ -19,9 +19,9 @@ import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidationResult;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static String TOPIC_NAME = "beacon_block";
@@ -52,8 +52,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
 
   @Override
   protected boolean validateData(final SignedBeaconBlock block) {
-    BlockValidationResult blockValidationResult = blockValidator.validate(block);
-    switch (blockValidationResult) {
+    ValidationResult validationResult = blockValidator.validate(block);
+    switch (validationResult) {
       case INVALID:
         return false;
       case SAVED_FOR_FUTURE:
@@ -63,7 +63,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
         return true;
       default:
         throw new UnsupportedOperationException(
-            "BlockTopicHandler: Unexpected block validation result");
+            "BlockTopicHandler: Unexpected block validation result: " + validationResult);
     }
   }
 }

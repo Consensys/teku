@@ -57,22 +57,38 @@ class EncryptedKeystoreWriterTest {
 
     assertKeyStoreCreatedAndCanBeDecrypted(
         tempDir.resolve(
-            "validator_" + validator1PubKey + "/validator_" + validator1PubKey + ".json"),
+            "validator_"
+                + trimPublicKey(validator1PubKey)
+                + "/validator_"
+                + trimPublicKey(validator1PubKey)
+                + ".json"),
         validator1SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
         tempDir.resolve(
-            "validator_" + validator1PubKey + "/withdrawal_" + withdrawal1PubKey + ".json"),
+            "validator_"
+                + trimPublicKey(validator1PubKey)
+                + "/withdrawal_"
+                + trimPublicKey(withdrawal1PubKey)
+                + ".json"),
         withdrawal1SecretKey);
 
     keysWriter.writeKeys(new BLSKeyPair(validator2SecretKey), new BLSKeyPair(withdrawal2SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
         tempDir.resolve(
-            "validator_" + validator2PubKey + "/validator_" + validator2PubKey + ".json"),
+            "validator_"
+                + trimPublicKey(validator2PubKey)
+                + "/validator_"
+                + trimPublicKey(validator2PubKey)
+                + ".json"),
         validator2SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
         tempDir.resolve(
-            "validator_" + validator2PubKey + "/withdrawal_" + withdrawal2PubKey + ".json"),
+            "validator_"
+                + trimPublicKey(validator2PubKey)
+                + "/withdrawal_"
+                + trimPublicKey(withdrawal2PubKey)
+                + ".json"),
         withdrawal2SecretKey);
   }
 
@@ -82,5 +98,12 @@ class EncryptedKeystoreWriterTest {
     assertThat(KeyStore.validatePassword(PASSWORD, keyStoreData)).isTrue();
     assertThat(KeyStore.decrypt(PASSWORD, keyStoreData))
         .isEqualTo(blsSecretKey.getSecretKey().toBytes());
+  }
+
+  private String trimPublicKey(final String publicKey) {
+    if (publicKey.toLowerCase().startsWith("0x")) {
+      return publicKey.substring(2, 9);
+    }
+    return publicKey.substring(0, 7);
   }
 }

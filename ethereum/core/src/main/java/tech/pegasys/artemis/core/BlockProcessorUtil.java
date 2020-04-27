@@ -47,6 +47,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.logging.log4j.LogManager;
@@ -55,6 +56,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.artemis.bls.BLSSignatureVerifier;
+import tech.pegasys.artemis.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -67,6 +71,8 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -123,26 +129,26 @@ public final class BlockProcessorUtil {
    * Processes randao
    *
    * @param state
-   * @param body
+   * @param block
    * @throws BlockProcessingException
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#randao</a>
    */
-  public static void process_randao(
-      MutableBeaconState state, BeaconBlockBody body, boolean validateRandao)
+  public static void process_randao(MutableBeaconState state, BeaconBlock block)
+      throws BlockProcessingException {
+    try {
+      verify_randao(state, block, BLSSignatureVerifier.SIMPLE);
+      process_randao_no_validation(state, block.getBody());
+    } catch (InvalidSignatureException e) {
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void process_randao_no_validation(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
     try {
       UnsignedLong epoch = get_current_epoch(state);
-      // Verify RANDAO reveal
-      int proposer_index = get_beacon_proposer_index(state);
-      Validator proposer = state.getValidators().get(proposer_index);
-      final Bytes signing_root =
-          compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
-      checkArgument(
-          !validateRandao
-              || BLS.verify(proposer.getPubkey(), signing_root, body.getRandao_reveal()),
-          "process_randao: Verify that the provided randao value is valid");
-      // Mix in RANDAO reveal
+
       Bytes32 mix =
           get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toBytes()));
       int index = epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
@@ -151,6 +157,21 @@ public final class BlockProcessorUtil {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
+  }
+
+  public static void verify_randao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
+      throws InvalidSignatureException {
+    UnsignedLong epoch = compute_epoch_at_slot(block.getSlot());
+    // Verify RANDAO reveal
+    Validator proposer =
+        state.getValidators().get(toIntExact(block.getProposer_index().longValue()));
+    final Bytes signing_root =
+        compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
+    bls.verifyAndThrow(
+        proposer.getPubkey(),
+        signing_root,
+        block.getBody().getRandao_reveal(),
+        "process_randao: Verify that the provided randao value is valid");
   }
 
   /**
@@ -181,8 +202,8 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
-  public static void process_operations(MutableBeaconState state, BeaconBlockBody body)
-      throws BlockProcessingException {
+  public static void process_operations_no_validation(
+      MutableBeaconState state, BeaconBlockBody body) throws BlockProcessingException {
     try {
 
       checkArgument(
@@ -197,11 +218,11 @@ public final class BlockProcessorUtil {
                           .longValue())),
           "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
-      process_proposer_slashings(state, body.getProposer_slashings());
+      process_proposer_slashings_no_validation(state, body.getProposer_slashings());
       process_attester_slashings(state, body.getAttester_slashings());
-      process_attestations(state, body.getAttestations());
+      process_attestations_no_validation(state, body.getAttestations());
       process_deposits(state, body.getDeposits());
-      process_voluntary_exits(state, body.getVoluntary_exits());
+      process_voluntary_exits_no_validation(state, body.getVoluntary_exits());
       // @process_shard_receipt_proofs
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -219,6 +240,17 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#proposer-slashings</a>
    */
   public static void process_proposer_slashings(
+      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      throws BlockProcessingException {
+    try {
+      process_proposer_slashings_no_validation(state, proposerSlashings);
+      verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
+    } catch (InvalidSignatureException e) {
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void process_proposer_slashings_no_validation(
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     try {
@@ -251,31 +283,48 @@ public final class BlockProcessorUtil {
             is_slashable_validator(proposer, get_current_epoch(state)),
             "process_proposer_slashings: Verify the proposer is slashable");
 
-        checkArgument(
-            BLS.verify(
-                proposer.getPubkey(),
-                compute_signing_root(
-                    header1,
-                    get_domain(
-                        state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header1.getSlot()))),
-                proposer_slashing.getHeader_1().getSignature()),
-            "process_proposer_slashings: Verify signatures are valid 1");
-
-        checkArgument(
-            BLS.verify(
-                proposer.getPubkey(),
-                compute_signing_root(
-                    header2,
-                    get_domain(
-                        state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header2.getSlot()))),
-                proposer_slashing.getHeader_2().getSignature()),
-            "process_proposer_slashings: Verify signatures are valid 2");
-
         slash_validator(state, toIntExact(header1.getProposer_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void verify_proposer_slashings(
+      BeaconState state,
+      SSZList<ProposerSlashing> proposerSlashings,
+      BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException, InvalidSignatureException {
+
+    // For each proposer_slashing in block.body.proposer_slashings:
+    for (ProposerSlashing proposer_slashing : proposerSlashings) {
+      final BeaconBlockHeader header1 = proposer_slashing.getHeader_1().getMessage();
+      final BeaconBlockHeader header2 = proposer_slashing.getHeader_2().getMessage();
+      BLSPublicKey publicKey =
+          BeaconStateCache.getTransitionCaches(state)
+              .getValidatorsPubKeys()
+              .get(
+                  header1.getProposer_index(),
+                  idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
+
+      if (!BLS.verify(
+          publicKey,
+          compute_signing_root(
+              header1,
+              get_domain(state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header1.getSlot()))),
+          proposer_slashing.getHeader_1().getSignature())) {
+        throw new BlockProcessingException(
+            "process_proposer_slashings: Verify signatures are valid 1");
+      }
+
+      signatureVerifier.verifyAndThrow(
+          publicKey,
+          compute_signing_root(
+              header2,
+              get_domain(state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header2.getSlot()))),
+          proposer_slashing.getHeader_2().getSignature(),
+          "process_proposer_slashings: Verify signatures are valid 2");
     }
   }
 
@@ -343,6 +392,12 @@ public final class BlockProcessorUtil {
    */
   public static void process_attestations(
       MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
+    process_attestations_no_validation(state, attestations);
+    verify_attestations(state, attestations, BLSSignatureVerifier.SIMPLE);
+  }
+
+  public static void process_attestations_no_validation(
+      MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
 
       for (Attestation attestation : attestations) {
@@ -393,19 +448,26 @@ public final class BlockProcessorUtil {
           state.getPrevious_epoch_attestations().add(pendingAttestation);
         }
       }
-
-      attestations.stream()
-          .parallel()
-          .filter(a -> !is_valid_indexed_attestation(state, get_indexed_attestation(state, a)))
-          .findAny()
-          .ifPresent(
-              invalidAttestation -> {
-                throw new IllegalArgumentException(
-                    "Invalid attestation signature: " + invalidAttestation);
-              });
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void verify_attestations(
+      BeaconState state, SSZList<Attestation> attestations, BLSSignatureVerifier signatureVerifier)
+      throws BlockProcessingException {
+
+    Optional<Attestation> invalidAttestation =
+        attestations.stream()
+            .parallel()
+            .filter(
+                a ->
+                    !is_valid_indexed_attestation(
+                        state, get_indexed_attestation(state, a), signatureVerifier))
+            .findAny();
+    if (invalidAttestation.isPresent()) {
+      throw new BlockProcessingException("Invalid attestation: " + invalidAttestation.get());
     }
   }
 
@@ -442,6 +504,18 @@ public final class BlockProcessorUtil {
   public static void process_voluntary_exits(
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
+
+    try {
+      process_voluntary_exits_no_validation(state, exits);
+      verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
+    } catch (InvalidSignatureException e) {
+      throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void process_voluntary_exits_no_validation(
+      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+      throws BlockProcessingException {
     try {
 
       // For each exit in block.body.voluntaryExits:
@@ -475,18 +549,35 @@ public final class BlockProcessorUtil {
                 >= 0,
             "process_voluntary_exits: Verify the validator has been active long enough");
 
-        final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
-        final Bytes signing_root = compute_signing_root(exit, domain);
-        checkArgument(
-            BLS.verify(validator.getPubkey(), signing_root, signedExit.getSignature()),
-            "process_voluntary_exits: Verify signature");
-
         // - Run initiate_validator_exit(state, exit.validator_index)
         initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
+    }
+  }
+
+  public static void verify_voluntary_exits(
+      BeaconState state, SSZList<SignedVoluntaryExit> exits, BLSSignatureVerifier signatureVerifier)
+      throws InvalidSignatureException {
+    for (SignedVoluntaryExit signedExit : exits) {
+      final VoluntaryExit exit = signedExit.getMessage();
+
+      BLSPublicKey publicKey =
+          BeaconStateCache.getTransitionCaches(state)
+              .getValidatorsPubKeys()
+              .get(
+                  exit.getValidator_index(),
+                  idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
+
+      final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
+      final Bytes signing_root = compute_signing_root(exit, domain);
+      signatureVerifier.verifyAndThrow(
+          publicKey,
+          signing_root,
+          signedExit.getSignature(),
+          "process_voluntary_exits: Verify signature");
     }
   }
 }

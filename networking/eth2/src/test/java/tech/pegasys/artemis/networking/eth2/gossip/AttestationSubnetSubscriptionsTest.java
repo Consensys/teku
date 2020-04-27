@@ -30,6 +30,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -45,7 +46,8 @@ public class AttestationSubnetSubscriptionsTest {
     recentChainData = mock(RecentChainData.class);
     when(recentChainData.getCurrentForkDigest()).thenReturn(createPreGenesisForkDigest());
     subnetSubscriptions =
-        new AttestationSubnetSubscriptions(gossipNetwork, recentChainData, eventBus);
+        new AttestationSubnetSubscriptions(
+            gossipNetwork, mock(AttestationValidator.class), eventBus);
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }
