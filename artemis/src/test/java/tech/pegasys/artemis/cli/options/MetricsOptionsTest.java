@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.MetricsOptions.METRICS_CATEGORIES_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.MetricsOptions.METRICS_ENABLED_OPTION_NAME;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -40,7 +38,7 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @ValueSource(strings = {"BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"})
   public void metricsCategories_shouldAcceptValues(String category) {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(METRICS_CATEGORIES_OPTION_NAME, category);
+        getArtemisConfigurationFromArguments("--metrics-categories", category);
     assertThat(artemisConfiguration.getMetricsCategories()).isEqualTo(List.of(category));
   }
 
@@ -48,7 +46,7 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   public void metricsCategories_shouldAcceptMultipleValues() {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments(
-            METRICS_CATEGORIES_OPTION_NAME, "LIBP2P,NETWORK,EVENTBUS,PROCESS");
+            "--metrics-categories", "LIBP2P,NETWORK,EVENTBUS,PROCESS");
     assertThat(artemisConfiguration.getMetricsCategories())
         .isEqualTo(List.of("LIBP2P", "NETWORK", "EVENTBUS", "PROCESS"));
   }
@@ -56,7 +54,7 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void metricsEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(METRICS_ENABLED_OPTION_NAME);
+        getArtemisConfigurationFromArguments("--metrics-enabled");
     assertThat(artemisConfiguration.isMetricsEnabled()).isTrue();
   }
 }
