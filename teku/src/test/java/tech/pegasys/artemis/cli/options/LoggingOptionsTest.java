@@ -11,23 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.LoggingOptions.LOG_DESTINATION_OPTION_NAME;
-import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.cli.options.LoggingOptions.LOG_DESTINATION_OPTION_NAME;
+import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.config.LoggingDestination;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.LoggingDestination;
 
 public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void loggingOptions_shouldReadFromConfigurationFile() {
-    final ArtemisConfiguration config =
-        getArtemisConfigurationFromFile("loggingOptions_config.yaml");
+    final TekuConfiguration config =
+        getTekuConfigurationFromFile("loggingOptions_config.yaml");
 
     assertThat(config.getLogDestination()).isEqualTo(LoggingDestination.FILE);
     assertThat(config.isLogColorEnabled()).isFalse();
@@ -42,28 +42,28 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     // If it defaults to "both" or some other value custom log4j configs get overwritten
     beaconNodeCommand.parse(new String[0]);
 
-    final ArtemisConfiguration artemisConfiguration = getResultingArtemisConfiguration();
-    assertThat(artemisConfiguration.getLogDestination()).isEqualTo(DEFAULT_BOTH);
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.getLogDestination()).isEqualTo(DEFAULT_BOTH);
   }
 
   @Test
   public void logDestination_shouldAcceptFileAsDestination() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "file");
-    assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "file");
+    assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
   }
 
   @Test
   public void logDestination_shouldAcceptConsoleAsDestination() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "console");
-    assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "console");
+    assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
   @Test
   public void logDestination_shouldAcceptBothAsDestination() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "both");
-    assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "both");
+    assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
   }
 }

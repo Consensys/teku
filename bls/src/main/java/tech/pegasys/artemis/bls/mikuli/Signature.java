@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.mikuli;
+package tech.pegasys.teku.bls.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.artemis.bls.mikuli.KeyPair.g1Generator;
+import static tech.pegasys.teku.bls.mikuli.KeyPair.g1Generator;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;

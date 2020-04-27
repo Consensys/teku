@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.state;
+package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
@@ -21,21 +21,21 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.ssz.backing.ContainerViewRead;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
-import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
-import tech.pegasys.artemis.ssz.backing.type.VectorViewType;
-import tech.pegasys.artemis.ssz.backing.view.AbstractImmutableContainer;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.ByteView;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.backing.ContainerViewRead;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class Validator extends AbstractImmutableContainer
     implements ContainerViewRead, SimpleOffsetSerializable, Merkleizable, SSZContainer {

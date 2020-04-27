@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,7 +21,7 @@ public class ProposerSlashing {
   public final SignedBeaconBlockHeader header_2;
 
   public ProposerSlashing(
-      tech.pegasys.artemis.datastructures.operations.ProposerSlashing proposerSlashing) {
+      tech.pegasys.teku.datastructures.operations.ProposerSlashing proposerSlashing) {
     header_1 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_1());
     header_2 = new SignedBeaconBlockHeader(proposerSlashing.getHeader_2());
   }
@@ -34,9 +34,9 @@ public class ProposerSlashing {
     this.header_2 = header_2;
   }
 
-  public tech.pegasys.artemis.datastructures.operations.ProposerSlashing
+  public tech.pegasys.teku.datastructures.operations.ProposerSlashing
       asInternalProposerSlashing() {
-    return new tech.pegasys.artemis.datastructures.operations.ProposerSlashing(
+    return new tech.pegasys.teku.datastructures.operations.ProposerSlashing(
         header_1.asInternalSignedBeaconBlockHeader(), header_2.asInternalSignedBeaconBlockHeader());
   }
 }

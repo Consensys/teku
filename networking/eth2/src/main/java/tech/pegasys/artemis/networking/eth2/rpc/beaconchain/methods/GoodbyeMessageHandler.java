@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
+package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
@@ -19,11 +19,11 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
-import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
-import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 
 public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> {
 
@@ -33,7 +33,7 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
   public GoodbyeMessageHandler(final MetricsSystem metricsSystem) {
     goodbyeCounter =
         metricsSystem.createLabelledCounter(
-            ArtemisMetricCategory.NETWORK,
+            TekuMetricCategory.NETWORK,
             "peer_goodbye_total",
             "Total number of goodbye messages received from peers",
             "reason");

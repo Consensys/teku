@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi;
+package tech.pegasys.teku.beaconrestapi;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BLSSignature;
 
 public class SingleQueryParameterUtils {
 

@@ -11,35 +11,35 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api;
+package tech.pegasys.teku.api;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.api.schema.Attestation;
-import tech.pegasys.artemis.api.schema.AttestationData;
-import tech.pegasys.artemis.api.schema.BLSPubKey;
-import tech.pegasys.artemis.api.schema.BLSSignature;
-import tech.pegasys.artemis.api.schema.BeaconBlock;
-import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
-import tech.pegasys.artemis.api.schema.ValidatorBlockResult;
-import tech.pegasys.artemis.api.schema.ValidatorDuties;
-import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.core.results.BlockImportResult;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
-import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.api.ValidatorDuties.Duties;
+import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttestationData;
+import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.ValidatorDuties;
+import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
 
 public class ValidatorDataProvider {
   public static final String CANNOT_PRODUCE_FAR_FUTURE_BLOCK =
@@ -87,7 +87,7 @@ public class ValidatorDataProvider {
 
     return validatorApiChannel
         .createUnsignedBlock(
-            slot, tech.pegasys.artemis.bls.BLSSignature.fromBytes(randao.getBytes()))
+            slot, tech.pegasys.teku.bls.BLSSignature.fromBytes(randao.getBytes()))
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 
@@ -133,7 +133,7 @@ public class ValidatorDataProvider {
   }
 
   private ValidatorDuties mapToSchemaDuties(
-      final tech.pegasys.artemis.validator.api.ValidatorDuties duty) {
+      final tech.pegasys.teku.validator.api.ValidatorDuties duty) {
     final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
     if (duty.getDuties().isEmpty()) {
       return new ValidatorDuties(pubKey, null, null, null, null, emptyList(), null);

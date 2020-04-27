@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2;
+package tech.pegasys.teku.networking.eth2;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 
 public class GossipedBlockCollector {
   private final Collection<SignedBeaconBlock> blocks = new ConcurrentLinkedQueue<>();

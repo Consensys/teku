@@ -11,19 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.artemis.util.config.Constants.FORK_REFRESH_TIME_SECONDS;
-import static tech.pegasys.artemis.util.config.Constants.FORK_RETRY_DELAY_SECONDS;
+import static tech.pegasys.teku.util.config.Constants.FORK_REFRESH_TIME_SECONDS;
+import static tech.pegasys.teku.util.config.Constants.FORK_RETRY_DELAY_SECONDS;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.state.ForkInfo;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ForkProvider {
   private static final Logger LOG = LogManager.getLogger();

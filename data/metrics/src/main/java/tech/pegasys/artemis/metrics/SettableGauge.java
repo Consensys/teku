@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.metrics;
+package tech.pegasys.teku.metrics;
 
 import com.google.common.util.concurrent.AtomicDouble;
 import org.hyperledger.besu.plugin.services.MetricsSystem;

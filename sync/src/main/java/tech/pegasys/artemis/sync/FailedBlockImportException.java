@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.teku.sync;
 
-import tech.pegasys.artemis.core.results.BlockImportResult;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 
 public class FailedBlockImportException extends InvalidResponseException {
   private final SignedBeaconBlock block;

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.time.channels;
+package tech.pegasys.teku.util.time.channels;
 
 import java.util.Date;
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.genesis;
+package tech.pegasys.teku.statetransition.genesis;
 
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
@@ -20,16 +20,16 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.datastructures.util.GenesisGenerator;
-import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.DepositUtil;
+import tech.pegasys.teku.datastructures.util.GenesisGenerator;
+import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisHandler implements Eth1EventsChannel {
 

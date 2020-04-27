@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow;
+package tech.pegasys.teku.pow;
 
-import static tech.pegasys.artemis.pow.MinimumGenesisTimeBlockFinder.isBlockAfterMinGenesis;
-import static tech.pegasys.artemis.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
+import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.isBlockAfterMinGenesis;
+import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
@@ -22,10 +22,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 
 public class Eth1DepositManager {
 

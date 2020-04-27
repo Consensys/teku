@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,7 +48,7 @@ public class Validator {
     this.withdrawable_epoch = withdrawable_epoch;
   }
 
-  public Validator(final tech.pegasys.artemis.datastructures.state.Validator validator) {
+  public Validator(final tech.pegasys.teku.datastructures.state.Validator validator) {
     this.pubkey = new BLSPubKey(validator.getPubkey().toBytes());
     this.withdrawal_credentials = validator.getWithdrawal_credentials();
     this.effective_balance = validator.getEffective_balance();

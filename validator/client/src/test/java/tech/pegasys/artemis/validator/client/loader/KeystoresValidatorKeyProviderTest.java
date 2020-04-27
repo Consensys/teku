@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.loader;
+package tech.pegasys.teku.validator.client.loader;
 
 import static java.nio.file.Files.createTempFile;
 import static java.nio.file.Files.writeString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.validator.client.loader.KeystoresValidatorKeyProvider.KEY_LENGTH;
+import static tech.pegasys.teku.validator.client.loader.KeystoresValidatorKeyProvider.KEY_LENGTH;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -28,13 +28,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSSecretKey;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 class KeystoresValidatorKeyProviderTest {
   private static final String EXPECTED_PASSWORD = "testpassword";
-  private final ArtemisConfiguration config = mock(ArtemisConfiguration.class);
+  private final TekuConfiguration config = mock(TekuConfiguration.class);
   private final KeystoresValidatorKeyProvider keystoresValidatorKeyProvider =
       new KeystoresValidatorKeyProvider();
   private static final Bytes BLS_PRIVATE_KEY =

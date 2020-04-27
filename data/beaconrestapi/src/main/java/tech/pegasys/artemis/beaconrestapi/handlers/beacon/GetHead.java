@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.beacon;
 
 import static io.javalin.core.util.Header.CACHE_CONTROL;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -27,9 +27,9 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.BeaconHead;
-import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.schema.BeaconHead;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetHead implements Handler {
   public static final String ROUTE = "/beacon/head";

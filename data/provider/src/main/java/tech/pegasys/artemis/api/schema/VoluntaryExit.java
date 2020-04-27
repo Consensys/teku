@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,7 +21,7 @@ public class VoluntaryExit {
   public final UnsignedLong epoch;
   public final UnsignedLong validator_index;
 
-  public VoluntaryExit(tech.pegasys.artemis.datastructures.operations.VoluntaryExit voluntaryExit) {
+  public VoluntaryExit(tech.pegasys.teku.datastructures.operations.VoluntaryExit voluntaryExit) {
     this.epoch = voluntaryExit.getEpoch();
     this.validator_index = voluntaryExit.getValidator_index();
   }
@@ -34,7 +34,7 @@ public class VoluntaryExit {
     this.validator_index = validator_index;
   }
 
-  public tech.pegasys.artemis.datastructures.operations.VoluntaryExit asInternalVoluntaryExit() {
-    return new tech.pegasys.artemis.datastructures.operations.VoluntaryExit(epoch, validator_index);
+  public tech.pegasys.teku.datastructures.operations.VoluntaryExit asInternalVoluntaryExit() {
+    return new tech.pegasys.teku.datastructures.operations.VoluntaryExit(epoch, validator_index);
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
@@ -23,8 +23,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class DutyQueueTest {
   private final SafeFuture<ScheduledDuties> scheduledDutiesFuture = new SafeFuture<>();

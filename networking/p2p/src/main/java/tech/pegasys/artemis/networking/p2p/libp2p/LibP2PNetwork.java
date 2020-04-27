@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p;
+package tech.pegasys.teku.networking.p2p.libp2p;
 
-import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
-import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
+import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import identify.pb.IdentifyOuterClass;
@@ -47,26 +47,26 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
-import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
-import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.artemis.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
-import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
-import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
-import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.network.NetworkUtility;
+import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.network.NetworkUtility;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
+package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.util.config.Constants.GOSSIP_MAX_SIZE;
+import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -28,9 +28,9 @@ import io.netty.buffer.Unpooled;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.network.p2p.jvmlibp2p.MockMessageApi;
+import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GossipHandlerTest {
   private final Topic topic = new Topic("Testing");

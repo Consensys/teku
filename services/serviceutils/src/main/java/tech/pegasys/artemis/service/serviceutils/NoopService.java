@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.service.serviceutils;
+package tech.pegasys.teku.service.serviceutils;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class NoopService extends Service {
 

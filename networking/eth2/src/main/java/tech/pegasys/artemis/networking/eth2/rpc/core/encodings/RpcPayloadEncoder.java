@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core.encodings;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 
 public interface RpcPayloadEncoder<T> {
   Bytes encode(T message);

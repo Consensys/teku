@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.peers;
+package tech.pegasys.teku.networking.eth2.peers;
 
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public interface PeerLookup {
   Eth2Peer getConnectedPeer(NodeId nodeId);

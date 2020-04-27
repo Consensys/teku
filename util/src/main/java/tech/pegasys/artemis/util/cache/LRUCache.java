@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.cache;
+package tech.pegasys.teku.util.cache;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import tech.pegasys.artemis.util.collections.ConcurrentLimitedMap;
-import tech.pegasys.artemis.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
+import tech.pegasys.teku.util.collections.LimitStrategy;
 
 /**
  * Cache made around LRU-map with fixed size, removing eldest entries (by added) when the space is

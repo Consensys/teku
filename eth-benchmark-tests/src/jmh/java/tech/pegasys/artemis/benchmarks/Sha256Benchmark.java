@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.benchmarks;
+package tech.pegasys.teku.benchmarks;
 
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;

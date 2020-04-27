@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p;
+package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -31,10 +31,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
-import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
-import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
+import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class PeerManagerTest {
 

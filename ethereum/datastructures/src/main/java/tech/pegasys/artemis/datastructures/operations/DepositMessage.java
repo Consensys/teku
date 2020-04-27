@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.operations;
+package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -21,12 +21,12 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.util.hashtree.HashTreeUtil;
+import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class DepositMessage implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 

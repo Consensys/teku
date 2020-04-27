@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core;
+package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Preconditions;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ResponseStreamImpl<O> implements ResponseStream<O> {
 

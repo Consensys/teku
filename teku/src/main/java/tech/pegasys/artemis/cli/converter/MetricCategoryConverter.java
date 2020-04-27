@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.converter;
+package tech.pegasys.teku.cli.converter;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.EnumSet;

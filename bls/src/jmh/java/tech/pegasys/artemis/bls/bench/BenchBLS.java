@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bench;
+package tech.pegasys.teku.util.bench;
 
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
@@ -26,8 +26,8 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.artemis.util.hashToG2.HashToCurve;
-import tech.pegasys.artemis.util.mikuli.G2Point;
+import tech.pegasys.teku.util.hashToG2.HashToCurve;
+import tech.pegasys.teku.util.mikuli.G2Point;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)

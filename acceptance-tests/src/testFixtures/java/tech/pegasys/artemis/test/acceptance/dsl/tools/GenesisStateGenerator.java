@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.test.acceptance.dsl.tools;
+package tech.pegasys.teku.test.acceptance.dsl.tools;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,7 +44,7 @@ public class GenesisStateGenerator {
     String containerDir = "/";
     final String containerOutputPath = Paths.get(containerDir, genesisStateFilename).toString();
 
-    final ArtemisCLI container =
+    final TekuCLI container =
         createContainer()
             .withCommand(
                 "genesis",
@@ -78,7 +78,7 @@ public class GenesisStateGenerator {
     return mountDirectory;
   }
 
-  private ArtemisCLI createContainer() {
-    return new ArtemisCLI();
+  private TekuCLI createContainer() {
+    return new TekuCLI();
   }
 }

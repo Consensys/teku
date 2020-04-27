@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,12 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
-import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN;
+import static tech.pegasys.teku.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
+import static tech.pegasys.teku.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.ACTIVE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PAGE_SIZE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PAGE_TOKEN;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
@@ -34,16 +34,16 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.BeaconState;
-import tech.pegasys.artemis.api.schema.BeaconValidators;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.BeaconValidators;
+import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 
 public class GetValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -51,7 +51,7 @@ public class GetValidatorsTest {
   private final UnsignedLong epoch = dataStructureUtil.randomUnsignedLong();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-  private final tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
+  private final tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal =
       dataStructureUtil.randomBeaconState();
   private final BeaconState beaconState = new BeaconState(beaconStateInternal);
 
@@ -85,7 +85,7 @@ public class GetValidatorsTest {
   @Test
   public void shouldReturnEmptyListWhenNoValidators() throws Exception {
     GetValidators handler = new GetValidators(provider, jsonProvider);
-    tech.pegasys.artemis.datastructures.state.BeaconState beaconStateW =
+    tech.pegasys.teku.datastructures.state.BeaconState beaconStateW =
         this.beaconStateInternal.updated(state -> state.getValidators().clear());
 
     when(provider.isStoreAvailable()).thenReturn(true);
@@ -134,7 +134,7 @@ public class GetValidatorsTest {
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
 
-    final tech.pegasys.artemis.datastructures.state.BeaconState
+    final tech.pegasys.teku.datastructures.state.BeaconState
         beaconStateWithAddedActiveValidator = addActiveValidator(beaconStateInternal);
 
     BeaconValidators beaconActiveValidators =
@@ -167,7 +167,7 @@ public class GetValidatorsTest {
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
 
-    final tech.pegasys.artemis.datastructures.state.BeaconState beaconStateWithAddedValidator =
+    final tech.pegasys.teku.datastructures.state.BeaconState beaconStateWithAddedValidator =
         addActiveValidator(beaconStateInternal);
     BeaconValidators beaconActiveValidators =
         new BeaconValidators(
@@ -299,8 +299,8 @@ public class GetValidatorsTest {
     assertEquals(data.get(), jsonProvider.objectToJSON(new BeaconValidators()));
   }
 
-  private tech.pegasys.artemis.datastructures.state.BeaconState addActiveValidator(
-      final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
+  private tech.pegasys.teku.datastructures.state.BeaconState addActiveValidator(
+      final tech.pegasys.teku.datastructures.state.BeaconState beaconState) {
     // create an ACTIVE validator and add it to the list
     Validator v =
         dataStructureUtil

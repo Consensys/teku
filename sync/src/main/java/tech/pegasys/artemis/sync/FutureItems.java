@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.teku.sync;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -23,8 +23,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.artemis.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
+import tech.pegasys.teku.util.collections.LimitStrategy;
 
 /** Holds items with slots that are in the future relative to our node's current slot */
 public class FutureItems<T> {

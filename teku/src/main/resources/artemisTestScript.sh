@@ -1,11 +1,11 @@
 #!/bin/bash
 
-./gradlew run > artemisTestOutput.txt &
-artemisPid=$!
+./gradlew run > tekuTestOutput.txt &
+tekuPid=$!
 
 slotCounter=0
 
-tail -fn0 ./artemisTestOutput.txt | \
+tail -fn0 ./tekuTestOutput.txt | \
 while read line ; do
     echo "$line"
 
@@ -51,8 +51,8 @@ while read line ; do
         exit 4
     fi
 done
-kill $artemisPid
-rm ./artemisTestOutput.txt
+kill $tekuPid
+rm ./tekuTestOutput.txt
 echo $'\nSUCCESS\n'
 exit 0
 

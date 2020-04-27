@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow;
+package tech.pegasys.teku.pow;
 
-import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
-import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.util.async.AsyncRunner;
+import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.pow.contract.DepositContract;
+import tech.pegasys.teku.util.async.AsyncRunner;
 
 public class DepositObjectsFactory {
 

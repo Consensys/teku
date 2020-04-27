@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.peers;
+package tech.pegasys.teku.networking.eth2.peers;
 
-import static tech.pegasys.artemis.core.ForkChoiceUtil.get_current_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.core.ForkChoiceUtil.get_current_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
@@ -23,14 +23,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
-import tech.pegasys.artemis.storage.api.StorageQueryChannel;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();

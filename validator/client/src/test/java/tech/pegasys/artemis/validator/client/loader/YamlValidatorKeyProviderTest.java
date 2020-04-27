@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.loader;
+package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 class YamlValidatorKeyProviderTest {
   private static final String TEST_FILE =
@@ -42,7 +42,7 @@ class YamlValidatorKeyProviderTest {
           "0x0000000000000000000000000000000051d0b65185db6989ab0b560d6deed19c7ead0e24b9b6372cbecb1f26bdfad000",
           "0x00000000000000000000000000000000315ed405fafe339603932eebe8dbfd650ce5dafa561f6928664c75db85f97857");
   private final YamlValidatorKeyProvider provider = new YamlValidatorKeyProvider();
-  private final ArtemisConfiguration config = mock(ArtemisConfiguration.class);
+  private final TekuConfiguration config = mock(TekuConfiguration.class);
 
   @Test
   public void shouldLoadExampleFile(@TempDir Path tempDirectory) throws Exception {

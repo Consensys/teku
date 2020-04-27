@@ -11,47 +11,47 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.DataOptions.DATA_PATH_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.DataOptions.DATA_STORAGE_MODE_OPTION_NAME;
-import static tech.pegasys.artemis.util.config.StateStorageMode.ARCHIVE;
-import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.cli.options.DataOptions.DATA_PATH_OPTION_NAME;
+import static tech.pegasys.teku.cli.options.DataOptions.DATA_STORAGE_MODE_OPTION_NAME;
+import static tech.pegasys.teku.util.config.StateStorageMode.ARCHIVE;
+import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   private static final String TEST_PATH = "/tmp/teku";
 
   @Test
   public void dataPath_shouldReadFromConfigurationFile() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromFile("dataOptions_config.yaml");
-    assertThat(artemisConfiguration.getDataPath()).isEqualTo(TEST_PATH);
-    assertThat(artemisConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromFile("dataOptions_config.yaml");
+    assertThat(tekuConfiguration.getDataPath()).isEqualTo(TEST_PATH);
+    assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptPrune() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "prune");
-    assertThat(artemisConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "prune");
+    assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptArchive() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "archive");
-    assertThat(artemisConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "archive");
+    assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
 
   @Test
   public void dataPath_shouldAcceptNonDefaultValues() {
-    final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(DATA_PATH_OPTION_NAME, TEST_PATH);
-    assertThat(artemisConfiguration.getDataPath()).isEqualTo(TEST_PATH);
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(DATA_PATH_OPTION_NAME, TEST_PATH);
+    assertThat(tekuConfiguration.getDataPath()).isEqualTo(TEST_PATH);
   }
 }

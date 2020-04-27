@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.events;
+package tech.pegasys.teku.events;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.joining;
-import static tech.pegasys.artemis.events.LoggingChannelExceptionHandler.LOGGING_EXCEPTION_HANDLER;
+import static tech.pegasys.teku.events.LoggingChannelExceptionHandler.LOGGING_EXCEPTION_HANDLER;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.lang.reflect.Method;
@@ -26,7 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class EventChannel<T> {
 

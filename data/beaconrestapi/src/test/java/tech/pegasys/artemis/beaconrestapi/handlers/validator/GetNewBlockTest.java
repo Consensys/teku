@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.validator;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 
 import io.javalin.http.Context;
 import java.util.List;
@@ -31,18 +31,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
-import tech.pegasys.artemis.api.ValidatorDataProvider;
-import tech.pegasys.artemis.api.schema.BLSSignature;
-import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
-import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.beaconrestapi.RestApiConstants;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetNewBlockTest {
 
-  private final tech.pegasys.artemis.bls.BLSSignature signatureInternal =
-      tech.pegasys.artemis.bls.BLSSignature.random(1234);
+  private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
+      tech.pegasys.teku.bls.BLSSignature.random(1234);
   private BLSSignature signature = new BLSSignature(signatureInternal);
   private Context context = mock(Context.class);
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);

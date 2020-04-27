@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package tech.pegasys.teku.datastructures.util;
 
 import java.util.ArrayList;
 import java.util.List;

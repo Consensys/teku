@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow;
+package tech.pegasys.teku.pow;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doReturn;
@@ -30,12 +30,12 @@ import org.mockito.ArgumentMatcher;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.utils.Numeric;
-import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
-import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.async.StubAsyncRunner;
+import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.pow.contract.DepositContract;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class DepositsFetcherTest {
 

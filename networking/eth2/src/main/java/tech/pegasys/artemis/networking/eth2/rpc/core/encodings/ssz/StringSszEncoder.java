@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 
 public class StringSszEncoder implements RpcPayloadEncoder<String> {
 

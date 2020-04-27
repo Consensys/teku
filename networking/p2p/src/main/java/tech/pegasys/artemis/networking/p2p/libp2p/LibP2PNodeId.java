@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p;
+package tech.pegasys.teku.networking.p2p.libp2p;
 
 import io.libp2p.core.PeerId;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class LibP2PNodeId extends NodeId {
   private final PeerId peerId;

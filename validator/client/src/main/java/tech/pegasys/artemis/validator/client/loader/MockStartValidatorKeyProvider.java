@@ -11,22 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.loader;
+package tech.pegasys.teku.validator.client.loader;
 
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
 
   private static final Logger LOG = LogManager.getLogger();
 
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
     LOG.log(Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);

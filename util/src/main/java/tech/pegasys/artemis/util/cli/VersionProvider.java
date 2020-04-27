@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.cli;
+package tech.pegasys.teku.util.cli;
 
 import java.util.Locale;
 import java.util.Map;

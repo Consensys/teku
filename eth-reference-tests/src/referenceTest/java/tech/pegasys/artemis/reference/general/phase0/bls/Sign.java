@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.general.phase0.bls;
+package tech.pegasys.teku.reference.general.phase0.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,10 +23,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.bls.BLS;
-import tech.pegasys.artemis.bls.BLSSecretKey;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.ethtests.TestSuite;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethtests.TestSuite;
 
 class Sign extends TestSuite {
 

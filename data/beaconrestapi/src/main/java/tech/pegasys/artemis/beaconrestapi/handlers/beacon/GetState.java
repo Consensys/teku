@@ -11,23 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForBeaconState;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT_QUERY_DESCRIPTION;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForBeaconState;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.ROOT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.ROOT_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
@@ -42,12 +42,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.BeaconState;
-import tech.pegasys.artemis.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetState extends AbstractHandler implements Handler {
   public static final String ROUTE = "/beacon/state";

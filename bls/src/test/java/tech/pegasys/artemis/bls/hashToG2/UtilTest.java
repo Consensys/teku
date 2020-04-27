@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.hashToG2;
+package tech.pegasys.teku.bls.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tech.pegasys.artemis.bls.hashToG2.Util.os2ip_modP;
+import static tech.pegasys.teku.bls.hashToG2.Util.os2ip_modP;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;

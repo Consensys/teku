@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.service.serviceutils;
+package tech.pegasys.teku.service.serviceutils;
 
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.artemis.events.EventChannels;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ServiceConfig {
 
@@ -25,14 +25,14 @@ public class ServiceConfig {
   private final EventBus eventBus;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
-  private final ArtemisConfiguration config;
+  private final TekuConfiguration config;
 
   public ServiceConfig(
       final TimeProvider timeProvider,
       final EventBus eventBus,
       final EventChannels eventChannels,
       final MetricsSystem metricsSystem,
-      final ArtemisConfiguration config) {
+      final TekuConfiguration config) {
     this.timeProvider = timeProvider;
     this.eventBus = eventBus;
     this.eventChannels = eventChannels;
@@ -52,7 +52,7 @@ public class ServiceConfig {
     return eventChannels;
   }
 
-  public ArtemisConfiguration getConfig() {
+  public TekuConfiguration getConfig() {
     return this.config;
   }
 

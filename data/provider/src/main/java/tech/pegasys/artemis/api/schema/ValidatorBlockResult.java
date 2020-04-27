@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;

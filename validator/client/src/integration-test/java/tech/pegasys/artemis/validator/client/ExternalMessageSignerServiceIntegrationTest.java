@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,14 +31,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.Delay;
-import tech.pegasys.artemis.bls.BLS;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.BLSSecretKey;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
-import tech.pegasys.artemis.validator.client.signer.ExternalSignerException;
-import tech.pegasys.artemis.validator.client.signer.SigningRequestBody;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.teku.validator.client.signer.ExternalSignerException;
+import tech.pegasys.teku.validator.client.signer.SigningRequestBody;
 
 @ExtendWith(MockServerExtension.class)
 public class ExternalMessageSignerServiceIntegrationTest {

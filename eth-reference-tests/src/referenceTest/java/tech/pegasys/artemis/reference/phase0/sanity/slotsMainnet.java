@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.phase0.sanity;
+package tech.pegasys.teku.reference.phase0.sanity;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,9 +26,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.ethtests.TestSuite;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class slotsMainnet extends TestSuite {

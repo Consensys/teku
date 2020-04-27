@@ -11,18 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.state;
+package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.artemis.ssz.backing.ViewRead;
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
-import tech.pegasys.artemis.ssz.backing.view.ContainerViewWriteImpl;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.view.ContainerViewWriteImpl;
 
 class MutableBeaconStateImpl extends ContainerViewWriteImpl
     implements MutableBeaconState, BeaconStateCache {

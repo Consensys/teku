@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing;
+package tech.pegasys.teku.ssz.backing;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
-import tech.pegasys.artemis.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 /**
  * Base class of immutable views over Binary Backing Tree ({@link TreeNode}) Overlay views concept

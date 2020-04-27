@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb;
+package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 
@@ -27,22 +27,22 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StorageUpdate;
-import tech.pegasys.artemis.storage.events.StorageUpdateResult;
-import tech.pegasys.artemis.storage.server.Database;
-import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance;
-import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstanceFactory;
-import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDao;
-import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.RocksDbDao.Updater;
-import tech.pegasys.artemis.storage.server.rocksdb.dataaccess.V3RocksDbDao;
-import tech.pegasys.artemis.storage.server.rocksdb.schema.V3Schema;
-import tech.pegasys.artemis.util.config.StateStorageMode;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.StorageUpdateResult;
+import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstanceFactory;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbDao;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbDao.Updater;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V3RocksDbDao;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
 

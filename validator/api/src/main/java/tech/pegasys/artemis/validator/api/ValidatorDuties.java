@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.api;
+package tech.pegasys.teku.validator.api;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class ValidatorDuties {
   private final BLSPublicKey publicKey;

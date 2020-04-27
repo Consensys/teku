@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis;
+package tech.pegasys.teku;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,8 +31,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.util.Waiter;
+import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.logging.StatusLogger;
 
 class EventBusExceptionHandlerTest {

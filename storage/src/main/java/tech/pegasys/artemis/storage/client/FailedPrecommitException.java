@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.client;
+package tech.pegasys.teku.storage.client;
 
-import tech.pegasys.artemis.storage.events.StorageUpdateResult;
+import tech.pegasys.teku.storage.events.StorageUpdateResult;
 
 public class FailedPrecommitException extends RuntimeException {
 

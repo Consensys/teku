@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core;
+package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import java.time.Duration;
-import tech.pegasys.artemis.networking.p2p.rpc.StreamTimeoutException;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
+import tech.pegasys.teku.util.config.Constants;
 
 /**
  * This class holds constants related to handling rpc request timeouts. See:

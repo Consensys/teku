@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.events;
+package tech.pegasys.teku.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,8 +34,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
-import tech.pegasys.artemis.events.AsyncEventDeliverer.QueueReader;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.events.AsyncEventDeliverer.QueueReader;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 class EventChannelTest {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();

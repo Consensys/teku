@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core.results;
+package tech.pegasys.teku.core.results;
 
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.data.BlockProcessingRecord;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 
 public class SuccessfulBlockImportResult implements BlockImportResult {
 

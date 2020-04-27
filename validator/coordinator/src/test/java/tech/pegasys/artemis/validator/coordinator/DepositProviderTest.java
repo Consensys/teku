@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -27,25 +27,25 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.datastructures.util.MerkleTree;
-import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.DepositData;
+import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.datastructures.util.DepositUtil;
+import tech.pegasys.teku.datastructures.util.MerkleTree;
+import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.config.Constants;
 
 public class DepositProviderTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private List<tech.pegasys.artemis.pow.event.Deposit> allSeenDepositsList;
+  private List<tech.pegasys.teku.pow.event.Deposit> allSeenDepositsList;
   private DepositProvider depositProvider;
   private RecentChainData recentChainData;
   private BeaconState beaconState;

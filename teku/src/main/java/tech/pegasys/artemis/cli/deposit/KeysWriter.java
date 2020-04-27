@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.deposit;
+package tech.pegasys.teku.cli.deposit;
 
 import java.io.UncheckedIOException;
-import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSKeyPair;
 
 /** To write the keys that are generated during Deposit Command */
 public interface KeysWriter {

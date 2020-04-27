@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.subcommand;
+package tech.pegasys.teku.cli.subcommand;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.teku.util.cli.VersionProvider;
 
 @Command(
     name = "peer",

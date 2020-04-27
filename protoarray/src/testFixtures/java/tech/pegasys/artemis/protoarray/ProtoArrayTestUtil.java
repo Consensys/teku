@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.protoarray;
+package tech.pegasys.teku.protoarray;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes32;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.Store;
 
 public class ProtoArrayTestUtil {
 

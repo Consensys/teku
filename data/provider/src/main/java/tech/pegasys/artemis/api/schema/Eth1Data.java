@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,7 +23,7 @@ public class Eth1Data {
   public final UnsignedLong deposit_count;
   public final Bytes32 block_hash;
 
-  public Eth1Data(final tech.pegasys.artemis.datastructures.blocks.Eth1Data eth1Data) {
+  public Eth1Data(final tech.pegasys.teku.datastructures.blocks.Eth1Data eth1Data) {
     deposit_count = eth1Data.getDeposit_count();
     deposit_root = eth1Data.getDeposit_root();
     block_hash = eth1Data.getBlock_hash();

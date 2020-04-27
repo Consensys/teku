@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core.encodings;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 

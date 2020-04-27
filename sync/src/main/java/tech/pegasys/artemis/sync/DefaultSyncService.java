@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.teku.sync;
 
-import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DefaultSyncService extends Service implements SyncService {
 

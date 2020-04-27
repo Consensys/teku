@@ -1,10 +1,10 @@
 <!-- Have you done the following? -->
 <!--   * read the Code of Conduct? By filing an Issue, you are expected to -->  
 <!--     comply with it, including treating everyone with respect: -->
-<!--     https://github.com/PegasysEng/artemis/blob/master/CODE-OF-CONDUCT.md -->
+<!--     https://github.com/PegasysEng/teku/blob/master/CODE-OF-CONDUCT.md -->
 <!--   * Reproduced the issue in the latest version of the software -->
-<!--   * Read the debugging wiki: https://github.com/PegasysEng/artemis/wiki/debugging -->
-<!--   * Duplicate Issue check:  https://github.com/search?q=+is%3Aissue+repo%3APegasysEng/Artemis -->
+<!--   * Read the debugging wiki: https://github.com/PegasysEng/teku/wiki/debugging -->
+<!--   * Duplicate Issue check:  https://github.com/search?q=+is%3Aissue+repo%3APegasysEng/Teku -->
 <!-- Note:  Not all sections will apply to all issue types. -->
 
 ### Description
@@ -25,7 +25,7 @@ As an [Actor], I want [feature] so that [why].
 **Frequency:** [What percentage of the time does it occur?]
 
 ### Versions (Add all that apply)
-* Software version: [`artemis --version`]
+* Software version: [`teku --version`]
 * Java version: [`java -version`]
 * OS Name & Version: [`cat /etc/*release`]
 * Kernel Version: [`uname -a`]

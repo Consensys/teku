@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.signer;
+package tech.pegasys.teku.validator.client.signer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -21,14 +21,14 @@ import static org.mockito.Mockito.when;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.core.signatures.MessageSignerService;
-import tech.pegasys.artemis.core.signatures.Signer;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.state.ForkInfo;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.signatures.MessageSignerService;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 class SignerTest {
 

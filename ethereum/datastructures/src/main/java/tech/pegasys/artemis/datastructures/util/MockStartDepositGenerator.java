@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package tech.pegasys.teku.datastructures.util;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.datastructures.operations.DepositData;
 
 public class MockStartDepositGenerator {
   private final DepositGenerator depositGenerator;

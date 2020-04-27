@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.metrics;
+package tech.pegasys.teku.metrics;
 
 import static java.util.stream.Collectors.toSet;
-import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
+import static tech.pegasys.teku.util.async.SafeFuture.reportExceptions;
 
 import com.google.common.collect.ImmutableMap;
 import io.vertx.core.Vertx;
@@ -29,7 +29,7 @@ import org.hyperledger.besu.metrics.prometheus.MetricsService;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class MetricsEndpoint {
 
@@ -40,12 +40,12 @@ public class MetricsEndpoint {
   static {
     final ImmutableMap.Builder<String, MetricCategory> builder = ImmutableMap.builder();
     addCategories(builder, StandardMetricCategory.class);
-    addCategories(builder, ArtemisMetricCategory.class);
+    addCategories(builder, TekuMetricCategory.class);
     SUPPORTED_CATEGORIES = builder.build();
   }
 
-  public MetricsEndpoint(final ArtemisConfiguration artemisConfig, final Vertx vertx) {
-    final MetricsConfiguration metricsConfig = createMetricsConfiguration(artemisConfig);
+  public MetricsEndpoint(final TekuConfiguration tekuConfig, final Vertx vertx) {
+    final MetricsConfiguration metricsConfig = createMetricsConfiguration(tekuConfig);
     metricsSystem = PrometheusMetricsSystem.init(metricsConfig);
     if (metricsConfig.isEnabled()) {
       metricsService = Optional.of(MetricsService.create(vertx, metricsConfig, metricsSystem));
@@ -67,17 +67,17 @@ public class MetricsEndpoint {
   }
 
   private MetricsConfiguration createMetricsConfiguration(
-      final ArtemisConfiguration artemisConfig) {
+      final TekuConfiguration tekuConfig) {
     return MetricsConfiguration.builder()
-        .enabled(artemisConfig.isMetricsEnabled())
-        .port(artemisConfig.getMetricsPort())
-        .host(artemisConfig.getMetricsInterface())
-        .metricCategories(getEnabledMetricCategories(artemisConfig))
+        .enabled(tekuConfig.isMetricsEnabled())
+        .port(tekuConfig.getMetricsPort())
+        .host(tekuConfig.getMetricsInterface())
+        .metricCategories(getEnabledMetricCategories(tekuConfig))
         .build();
   }
 
-  private Set<MetricCategory> getEnabledMetricCategories(final ArtemisConfiguration artemisConfig) {
-    return artemisConfig.getMetricsCategories().stream()
+  private Set<MetricCategory> getEnabledMetricCategories(final TekuConfiguration tekuConfig) {
+    return tekuConfig.getMetricsCategories().stream()
         .map(SUPPORTED_CATEGORIES::get)
         .filter(Objects::nonNull)
         .collect(toSet());

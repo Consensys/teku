@@ -11,25 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package tech.pegasys.teku.datastructures.util;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.artemis.util.config.Constants.BLS_WITHDRAWAL_PREFIX;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.util.config.Constants.BLS_WITHDRAWAL_PREFIX;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLS;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.DepositMessage;
-import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.operations.DepositData;
+import tech.pegasys.teku.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.util.message.BouncyCastleMessageDigestFactory;
 
 public class DepositGenerator {
 

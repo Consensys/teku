@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.subcommand;
+package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
+import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
 import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.FileOutputStream;
@@ -23,11 +23,11 @@ import java.util.List;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.statetransition.util.StartupUtil;
+import tech.pegasys.teku.util.cli.VersionProvider;
 
 @Command(
     name = "genesis",

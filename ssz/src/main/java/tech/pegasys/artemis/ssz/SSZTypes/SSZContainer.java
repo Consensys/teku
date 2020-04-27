@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.SSZTypes;
+package tech.pegasys.teku.ssz.SSZTypes;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -19,7 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import tech.pegasys.artemis.ssz.backing.type.ViewType;
+import tech.pegasys.teku.ssz.backing.type.ViewType;
 
 public interface SSZContainer {
 

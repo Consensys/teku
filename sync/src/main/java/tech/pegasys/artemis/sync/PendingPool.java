@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.teku.sync;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -30,14 +30,14 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.events.Subscribers;
-import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.events.Subscribers;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class PendingPool<T> extends Service
     implements SlotEventsChannel, FinalizedCheckpointChannel {

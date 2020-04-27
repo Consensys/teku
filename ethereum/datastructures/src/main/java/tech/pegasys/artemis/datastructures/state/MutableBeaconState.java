@@ -11,23 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.state;
+package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZBackingList;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZBackingVector;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZMutableVector;
-import tech.pegasys.artemis.ssz.backing.ContainerViewWriteRef;
-import tech.pegasys.artemis.ssz.backing.view.AbstractBasicView;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.ssz.backing.view.ViewUtils;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
+import tech.pegasys.teku.ssz.backing.ContainerViewWriteRef;
+import tech.pegasys.teku.ssz.backing.view.AbstractBasicView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 
 public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
 

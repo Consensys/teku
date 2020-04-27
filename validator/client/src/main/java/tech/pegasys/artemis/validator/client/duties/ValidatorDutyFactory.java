@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.duties;
+package tech.pegasys.teku.validator.client.duties;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.client.ForkProvider;
-import tech.pegasys.artemis.validator.client.Validator;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.ForkProvider;
+import tech.pegasys.teku.validator.client.Validator;
 
 public class ValidatorDutyFactory {
   private final ForkProvider forkProvider;

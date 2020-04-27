@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server;
+package tech.pegasys.teku.storage.server;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -21,10 +21,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.storage.server.rocksdb.RocksDbConfiguration;
-import tech.pegasys.artemis.storage.server.rocksdb.RocksDbDatabase;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.config.StateStorageMode;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class VersionedDatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -37,7 +37,7 @@ public class VersionedDatabaseFactory {
   private final File dbVersionFile;
   private final StateStorageMode stateStorageMode;
 
-  public VersionedDatabaseFactory(final ArtemisConfiguration config) {
+  public VersionedDatabaseFactory(final TekuConfiguration config) {
     this.dataDirectory = Paths.get(config.getDataPath()).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();

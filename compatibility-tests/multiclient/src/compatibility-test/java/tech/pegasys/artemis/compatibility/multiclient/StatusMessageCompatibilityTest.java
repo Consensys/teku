@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.compatibility.multiclient;
+package tech.pegasys.teku.compatibility.multiclient;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.util.Waiter.waitFor;
+import static tech.pegasys.teku.util.Waiter.waitFor;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,12 +23,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import tech.pegasys.artemis.compatibility.multiclient.clients.Prysm;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
-import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.compatibility.multiclient.clients.Prysm;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.util.config.Constants;
 
 @Testcontainers
 class StatusMessageCompatibilityTest {
@@ -36,12 +36,12 @@ class StatusMessageCompatibilityTest {
   @Container private static final Prysm PRYSM_NODE = new Prysm();
 
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
-  private Eth2Network artemis;
+  private Eth2Network teku;
 
   @BeforeEach
   public void setUp() throws Exception {
     Constants.setConstants("mainnet");
-    artemis = networkFactory.builder().startNetwork();
+    teku = networkFactory.builder().startNetwork();
   }
 
   @AfterEach
@@ -51,10 +51,10 @@ class StatusMessageCompatibilityTest {
   }
 
   @Test
-  public void shouldExchangeStatusWhenArtemisConnectsToPrysm() throws Exception {
-    waitFor(artemis.connect(artemis.createPeerAddress(PRYSM_NODE.getMultiAddr())));
-    waitFor(() -> assertThat(artemis.getPeerCount()).isEqualTo(1));
-    final Eth2Peer prysm = artemis.getPeer(PRYSM_NODE.getId()).orElseThrow();
+  public void shouldExchangeStatusWhenTekuConnectsToPrysm() throws Exception {
+    waitFor(teku.connect(teku.createPeerAddress(PRYSM_NODE.getMultiAddr())));
+    waitFor(() -> assertThat(teku.getPeerCount()).isEqualTo(1));
+    final Eth2Peer prysm = teku.getPeer(PRYSM_NODE.getId()).orElseThrow();
     final PeerStatus status = prysm.getStatus();
     assertThat(status).isNotNull();
 

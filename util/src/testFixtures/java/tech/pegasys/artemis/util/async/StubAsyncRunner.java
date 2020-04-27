@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.async;
+package tech.pegasys.teku.util.async;
 
-import static tech.pegasys.artemis.util.async.SafeFuture.propagateResult;
+import static tech.pegasys.teku.util.async.SafeFuture.propagateResult;
 
 import java.util.ArrayList;
 import java.util.List;

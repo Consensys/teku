@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow;
+package tech.pegasys.teku.pow;
 
 import com.google.common.primitives.UnsignedLong;
 import io.reactivex.Flowable;
@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ThrottlingEth1Provider implements Eth1Provider {
   private final Eth1Provider delegate;

@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.api;
+package tech.pegasys.teku.validator.api;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 /** Indicates that the request couldn't be completed because the node is currently syncing. */
 public class NodeSyncingException extends RuntimeException {

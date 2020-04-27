@@ -11,18 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services;
+package tech.pegasys.teku.services;
 
 import java.util.ArrayList;
 import java.util.List;
-import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
-import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
-import tech.pegasys.artemis.services.powchain.PowchainService;
-import tech.pegasys.artemis.services.timer.TimerService;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.client.ValidatorClientService;
+import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.beaconchain.BeaconChainService;
+import tech.pegasys.teku.services.chainstorage.ChainStorageService;
+import tech.pegasys.teku.services.powchain.PowchainService;
+import tech.pegasys.teku.services.timer.TimerService;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 public class ServiceController extends Service {
 

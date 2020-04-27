@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.loader;
+package tech.pegasys.teku.validator.client.loader;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -27,9 +27,9 @@ import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSSecretKey;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
@@ -40,7 +40,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
   public static final int KEY_LENGTH = 48;
 
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         config.getValidatorKeystorePasswordFilePairs();
     checkNotNull(keystorePasswordFilePairs, "validator keystore and password pairs cannot be null");

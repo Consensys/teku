@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.hashtree;
+package tech.pegasys.teku.util.hashtree;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

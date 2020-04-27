@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.mock;
+package tech.pegasys.teku.networking.p2p.mock;
 
 import com.google.common.base.Strings;
 import io.libp2p.etc.encode.Base58;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class MockNodeId extends NodeId {
   private final Bytes bytes;

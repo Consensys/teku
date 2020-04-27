@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.cli;
+package tech.pegasys.teku.util.cli;
 
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.ITypeConverter;

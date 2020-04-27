@@ -11,24 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.protoarray;
+package tech.pegasys.teku.protoarray;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.artemis.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
-import static tech.pegasys.artemis.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
-import static tech.pegasys.artemis.protoarray.ProtoArrayTestUtil.getHash;
+import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
+import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
+import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.getHash;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 
 public class FFGUpdatesTest {
 

@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.ssztypes;
+package tech.pegasys.teku.ssz.ssztypes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 
 class SSZVectorTest {
   @Test

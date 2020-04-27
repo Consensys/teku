@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.rpc;
+package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
@@ -30,17 +30,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
-import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler.Controller;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
-import tech.pegasys.artemis.networking.p2p.rpc.StreamClosedException;
-import tech.pegasys.artemis.networking.p2p.rpc.StreamTimeoutException;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
+import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class RpcHandler implements ProtocolBinding<Controller> {
   private static final Duration TIMEOUT = Duration.ofSeconds(5);

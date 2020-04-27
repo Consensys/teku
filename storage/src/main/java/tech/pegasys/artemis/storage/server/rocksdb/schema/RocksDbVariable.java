@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb.schema;
+package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.storage.server.rocksdb.serialization.RocksDbSerializer;
+import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
 
 public class RocksDbVariable<TValue> {
   private final Bytes id;

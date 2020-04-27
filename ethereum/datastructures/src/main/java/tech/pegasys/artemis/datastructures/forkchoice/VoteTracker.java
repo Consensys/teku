@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.forkchoice;
+package tech.pegasys.teku.datastructures.forkchoice;
 
 import com.google.common.base.Objects;
 import com.google.common.primitives.UnsignedLong;
@@ -19,7 +19,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class VoteTracker implements SimpleOffsetSerializable {
 

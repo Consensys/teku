@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
+package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 public interface RpcRequest {
   int getMaximumRequestChunks();

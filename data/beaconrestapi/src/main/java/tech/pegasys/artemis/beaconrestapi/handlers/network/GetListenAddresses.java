@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.network;
+package tech.pegasys.teku.beaconrestapi.handlers.network;
 
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NETWORK;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -26,8 +26,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetListenAddresses implements Handler {
   public static final String ROUTE = "/network/listen_addresses";

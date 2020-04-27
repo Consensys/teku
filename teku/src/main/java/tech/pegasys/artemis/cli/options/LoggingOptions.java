@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
 
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
-import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.config.LoggingDestination;
+import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.config.LoggingDestination;
 
 public class LoggingOptions {
 

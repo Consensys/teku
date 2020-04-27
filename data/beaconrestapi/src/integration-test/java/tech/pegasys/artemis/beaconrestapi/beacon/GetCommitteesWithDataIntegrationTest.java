@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beacon;
+package tech.pegasys.teku.beaconrestapi.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -24,11 +24,11 @@ import java.util.List;
 import java.util.Map;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.schema.Committee;
-import tech.pegasys.artemis.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
-import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.api.schema.Committee;
+import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.RestApiConstants;
+import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetCommittees;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 
 public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   public static final UnsignedLong TWENTY = UnsignedLong.valueOf(20L);

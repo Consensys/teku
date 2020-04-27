@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine;
-import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.config.StateStorageMode;
+import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class DataOptions {
   public static final String DATA_PATH_OPTION_NAME = "--data-path";

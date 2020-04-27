@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util;
+package tech.pegasys.teku.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.async;
+package tech.pegasys.teku.util.async;
 
 public interface ExceptionThrowingSupplier<O> {
   O get() throws Throwable;

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb.schema;
+package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;

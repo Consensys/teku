@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package tech.pegasys.teku.datastructures.util;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,7 +22,7 @@ import java.util.Base64;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSKeyPair;
 
 class MockStartValidatorKeyPairFactoryTest {
   private static final String[] EXPECTED_PRIVATE_KEYS = {

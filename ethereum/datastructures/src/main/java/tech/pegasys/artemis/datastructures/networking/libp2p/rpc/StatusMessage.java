@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
+package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_fork_digest;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
@@ -22,10 +22,10 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.util.config.Constants;
 
 public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 

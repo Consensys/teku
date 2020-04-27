@@ -11,23 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.node;
+package tech.pegasys.teku.beaconrestapi.handlers.node;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.SyncDataProvider;
-import tech.pegasys.artemis.beaconrestapi.schema.SyncingResponse;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.sync.SyncService;
-import tech.pegasys.artemis.sync.SyncStatus;
-import tech.pegasys.artemis.sync.SyncingStatus;
+import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.beaconrestapi.schema.SyncingResponse;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.SyncStatus;
+import tech.pegasys.teku.sync.SyncingStatus;
 
 public class GetSyncingTest {
   private Context context = mock(Context.class);

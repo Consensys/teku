@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz;
+package tech.pegasys.teku.ssz;
 
 import java.util.List;
 import java.util.concurrent.Callable;

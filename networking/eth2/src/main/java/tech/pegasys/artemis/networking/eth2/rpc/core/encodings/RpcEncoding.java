@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core.encodings;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
-import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.SimpleOffsetSszEncoder;
-import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.StringSszEncoder;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.SimpleOffsetSszEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.StringSszEncoder;
 
 public interface RpcEncoding {
   RpcEncoding SSZ =

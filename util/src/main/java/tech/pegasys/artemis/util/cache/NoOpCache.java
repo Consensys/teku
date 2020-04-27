@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.cache;
+package tech.pegasys.teku.util.cache;
 
 import java.util.Optional;
 import java.util.function.Function;

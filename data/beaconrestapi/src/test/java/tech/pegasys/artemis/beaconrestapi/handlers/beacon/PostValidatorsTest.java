@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
@@ -21,8 +21,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
@@ -32,13 +32,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.BLSPubKey;
-import tech.pegasys.artemis.api.schema.BeaconValidators;
-import tech.pegasys.artemis.api.schema.ValidatorsRequest;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.api.schema.BeaconValidators;
+import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class PostValidatorsTest {
   private static final String EMPTY_LIST = "[]";

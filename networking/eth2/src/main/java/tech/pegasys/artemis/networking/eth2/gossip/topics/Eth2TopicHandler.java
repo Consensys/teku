@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.gossip.topics;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import com.google.common.eventbus.EventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();

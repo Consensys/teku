@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
@@ -29,11 +29,11 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import tech.pegasys.artemis.api.DataProvider;
-import tech.pegasys.artemis.api.ValidatorDataProvider;
-import tech.pegasys.artemis.api.schema.Attestation;
-import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostAttestation implements Handler {
   public static final String ROUTE = "/validator/attestation";

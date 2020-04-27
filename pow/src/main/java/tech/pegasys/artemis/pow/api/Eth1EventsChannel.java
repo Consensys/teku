@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.api;
+package tech.pegasys.teku.pow.api;
 
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
 public interface Eth1EventsChannel {
   void onDepositsFromBlock(DepositsFromBlockEvent event);

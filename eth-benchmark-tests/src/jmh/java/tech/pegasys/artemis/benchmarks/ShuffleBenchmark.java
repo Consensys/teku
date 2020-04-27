@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.benchmarks;
+package tech.pegasys.teku.benchmarks;
 
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,8 +25,8 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.util.config.Constants;
 
 @Fork(0)
 @BenchmarkMode(Mode.SingleShotTime)

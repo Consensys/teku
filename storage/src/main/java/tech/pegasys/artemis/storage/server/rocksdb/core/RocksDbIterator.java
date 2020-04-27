@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb.core;
+package tech.pegasys.teku.storage.server.rocksdb.core;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
-import tech.pegasys.artemis.storage.server.rocksdb.schema.RocksDbColumn;
+import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 
 class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue>>, AutoCloseable {
   private static final Logger LOG = LogManager.getLogger();

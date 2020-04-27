@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -20,13 +20,13 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.api.ValidatorDuties;
-import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class ValidatorApiDutyLoader implements DutyLoader {
   private static final Logger LOG = LogManager.getLogger();

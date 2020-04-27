@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.tree;
+package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
+import static tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;

@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.connection;
+package tech.pegasys.teku.networking.p2p.connection;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
-import tech.pegasys.artemis.util.cache.Cache;
-import tech.pegasys.artemis.util.cache.LRUCache;
-import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.util.cache.Cache;
+import tech.pegasys.teku.util.cache.LRUCache;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ReputationManager {
   private final TimeProvider timeProvider;

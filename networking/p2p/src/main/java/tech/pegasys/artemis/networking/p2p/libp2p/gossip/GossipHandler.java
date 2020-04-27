@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
+package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
-import static tech.pegasys.artemis.util.config.Constants.GOSSIP_MAX_SIZE;
+import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
@@ -25,10 +25,10 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.artemis.util.collections.LimitStrategy;
+import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
+import tech.pegasys.teku.util.collections.LimitStrategy;
 
 public class GossipHandler implements Function<MessageApi, CompletableFuture<Boolean>> {
   private static final Logger LOG = LogManager.getLogger();

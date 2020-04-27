@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.connection;
+package tech.pegasys.teku.networking.p2p.connection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
-import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
-import tech.pegasys.artemis.util.time.StubTimeProvider;
+import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.util.time.StubTimeProvider;
 
 class ReputationManagerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);

@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p;
+package tech.pegasys.teku.networking.p2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.network.p2p.DiscoveryNetworkFactory;
-import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.util.Waiter;
+import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.util.Waiter;
 
 public class DiscoveryNetworkIntegrationTest {
   private final DiscoveryNetworkFactory discoveryNetworkFactory = new DiscoveryNetworkFactory();

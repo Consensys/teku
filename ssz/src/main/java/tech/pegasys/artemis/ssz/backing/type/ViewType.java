@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.type;
+package tech.pegasys.teku.ssz.backing.type;
 
-import tech.pegasys.artemis.ssz.backing.ViewRead;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
 /**
  * Base class for any SSZ type like Vector, List, Container, basic types

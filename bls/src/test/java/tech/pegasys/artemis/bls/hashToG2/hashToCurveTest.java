@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.hashToG2;
+package tech.pegasys.teku.bls.hashToG2;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.bls.hashToG2.HashToCurve.hashToG2;
-import static tech.pegasys.artemis.bls.hashToG2.Helper.isInG2;
+import static tech.pegasys.teku.bls.hashToG2.HashToCurve.hashToG2;
+import static tech.pegasys.teku.bls.hashToG2.Helper.isInG2;
 
 import java.util.ArrayList;
 import java.util.stream.Stream;

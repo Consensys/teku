@@ -11,21 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.view;
+package tech.pegasys.teku.ssz.backing.view;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
-import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
-import tech.pegasys.artemis.ssz.backing.ListViewRead;
-import tech.pegasys.artemis.ssz.backing.ListViewWrite;
-import tech.pegasys.artemis.ssz.backing.VectorViewRead;
-import tech.pegasys.artemis.ssz.backing.VectorViewWrite;
-import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.ssz.backing.type.ListViewType;
-import tech.pegasys.artemis.ssz.backing.type.VectorViewType;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.BitView;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.ByteView;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewWrite;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 
 /** Handy view tool methods */
 public class ViewUtils {

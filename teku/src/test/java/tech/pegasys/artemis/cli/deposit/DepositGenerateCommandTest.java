@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.deposit;
+package tech.pegasys.teku.cli.deposit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,9 +33,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
-import tech.pegasys.artemis.cli.deposit.DepositGenerateCommand.ValidatorPasswordOptions;
-import tech.pegasys.artemis.cli.deposit.DepositGenerateCommand.WithdrawalPasswordOptions;
-import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
+import tech.pegasys.teku.cli.deposit.DepositGenerateCommand.ValidatorPasswordOptions;
+import tech.pegasys.teku.cli.deposit.DepositGenerateCommand.WithdrawalPasswordOptions;
+import tech.pegasys.teku.services.powchain.DepositTransactionSender;
 import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 

@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events.attestation;
+package tech.pegasys.teku.statetransition.events.attestation;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 
 public class ProcessedAggregateEvent {
 

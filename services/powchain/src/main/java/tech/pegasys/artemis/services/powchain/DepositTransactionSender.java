@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.powchain;
+package tech.pegasys.teku.services.powchain;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
@@ -21,12 +21,12 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.FastRawTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.response.PollingTransactionReceiptProcessor;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.util.DepositGenerator;
-import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.operations.DepositData;
+import tech.pegasys.teku.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.pow.contract.DepositContract;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DepositTransactionSender {
   // Increase the poll rate for tx receipts but keep the default 10 min timeout.

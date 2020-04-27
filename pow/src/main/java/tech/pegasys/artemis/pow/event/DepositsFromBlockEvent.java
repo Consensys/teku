@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.teku.pow.event;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;

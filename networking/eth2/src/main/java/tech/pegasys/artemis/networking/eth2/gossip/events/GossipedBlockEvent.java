@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.gossip.events;
+package tech.pegasys.teku.networking.eth2.gossip.events;
 
 import java.util.Objects;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 
 public class GossipedBlockEvent {
   private final SignedBeaconBlock block;

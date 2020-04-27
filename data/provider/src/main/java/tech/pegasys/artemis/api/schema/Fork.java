@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Fork {
   public Bytes4 previous_version;
@@ -33,7 +33,7 @@ public class Fork {
     this.epoch = epoch;
   }
 
-  public Fork(final tech.pegasys.artemis.datastructures.state.Fork fork) {
+  public Fork(final tech.pegasys.teku.datastructures.state.Fork fork) {
     this.previous_version = fork.getPrevious_version();
     this.current_version = fork.getCurrent_version();
     this.epoch = fork.getEpoch();

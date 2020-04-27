@@ -11,18 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.merkletree;
+package tech.pegasys.teku.datastructures.merkletree;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.util.MerkleTree;
-import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
+import tech.pegasys.teku.datastructures.util.MerkleTree;
+import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 
 public class MerkleTreeTest {
 

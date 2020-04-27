@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.peer;
+package tech.pegasys.teku.networking.p2p.peer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.libp2p.core.PeerId;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
-import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 
 class NodeIdTest {
 

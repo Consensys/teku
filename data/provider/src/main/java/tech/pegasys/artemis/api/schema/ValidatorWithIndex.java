@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 
 public class ValidatorWithIndex {
   public final BLSPubKey pubkey;
@@ -33,8 +33,8 @@ public class ValidatorWithIndex {
   }
 
   public ValidatorWithIndex(
-      final tech.pegasys.artemis.datastructures.state.Validator validator,
-      tech.pegasys.artemis.datastructures.state.BeaconState state) {
+      final tech.pegasys.teku.datastructures.state.Validator validator,
+      tech.pegasys.teku.datastructures.state.BeaconState state) {
     BLSPublicKey blsPublicKey = validator.getPubkey();
     Optional<Integer> optionalInteger = ValidatorsUtil.getValidatorIndex(state, blsPublicKey);
     if (optionalInteger.isPresent()) {

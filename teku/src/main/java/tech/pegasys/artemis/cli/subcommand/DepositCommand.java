@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.subcommand;
+package tech.pegasys.teku.cli.subcommand;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import tech.pegasys.artemis.cli.deposit.DepositGenerateCommand;
-import tech.pegasys.artemis.cli.deposit.DepositRegisterCommand;
-import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.teku.cli.deposit.DepositGenerateCommand;
+import tech.pegasys.teku.cli.deposit.DepositRegisterCommand;
+import tech.pegasys.teku.util.cli.VersionProvider;
 
 @Command(
     name = "validator",

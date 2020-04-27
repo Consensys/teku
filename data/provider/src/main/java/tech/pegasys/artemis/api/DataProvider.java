@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api;
+package tech.pegasys.teku.api;
 
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.sync.SyncService;
-import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class DataProvider {
   private final NetworkDataProvider networkDataProvider;

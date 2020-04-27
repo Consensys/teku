@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.hashToG2;
+package tech.pegasys.teku.bls.hashToG2;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

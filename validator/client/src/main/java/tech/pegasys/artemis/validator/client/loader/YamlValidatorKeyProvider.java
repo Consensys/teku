@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.loader;
+package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.stream.Collectors.toList;
 
@@ -27,9 +27,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSSecretKey;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
@@ -38,7 +38,7 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
   @SuppressWarnings("unchecked")
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Path keyFile = Path.of(config.getValidatorsKeyFile());
     LOG.log(Level.DEBUG, "Loading validator keys from " + keyFile.toAbsolutePath().toString());

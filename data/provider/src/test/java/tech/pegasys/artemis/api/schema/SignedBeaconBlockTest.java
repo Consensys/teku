@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
 class SignedBeaconBlockTest {
 
@@ -24,7 +24,7 @@ class SignedBeaconBlockTest {
 
   @Test
   public void shouldConvertSchemaToInternalCorrectly() {
-    final tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock internalBlock =
+    final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock internalBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock apiBlock = new SignedBeaconBlock(internalBlock);
     assertThat(apiBlock.asInternalSignedBeaconBlock())

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
@@ -31,13 +31,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.artemis.api.ValidatorDataProvider;
-import tech.pegasys.artemis.api.schema.Attestation;
-import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

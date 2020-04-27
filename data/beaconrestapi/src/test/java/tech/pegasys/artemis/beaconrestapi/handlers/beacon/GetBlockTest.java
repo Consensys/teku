@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.beacon;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -20,14 +20,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock.NO_PARAMETERS;
-import static tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock.NO_VALID_PARAMETER;
-import static tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock.TOO_MANY_PARAMETERS;
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.ROOT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.NO_PARAMETERS;
+import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.NO_VALID_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.TOO_MANY_PARAMETERS;
+import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
@@ -40,12 +40,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
-import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetBlockTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -59,7 +59,7 @@ public class GetBlockTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private GetBlock handler;
   private Bytes32 blockRoot = Bytes32.random();
-  private tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
+  private tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
       dataStructureUtil.randomSignedBeaconBlock(1);
 
   @BeforeEach

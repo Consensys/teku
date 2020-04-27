@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api;
+package tech.pegasys.teku.api;
 
-import tech.pegasys.artemis.sync.SyncService;
-import tech.pegasys.artemis.sync.SyncingStatus;
+import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.SyncingStatus;
 
 public class SyncDataProvider {
   private final SyncService syncService;

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb;
+package tech.pegasys.teku.storage.server.rocksdb;
 
 import static java.util.stream.Collectors.toList;
 
@@ -24,12 +24,12 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.core.ChainBuilder;
-import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.server.Database;
-import tech.pegasys.artemis.util.config.StateStorageMode;
+import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 

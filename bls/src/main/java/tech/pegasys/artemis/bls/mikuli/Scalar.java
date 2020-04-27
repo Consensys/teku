@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.mikuli;
+package tech.pegasys.teku.bls.mikuli;
 
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;

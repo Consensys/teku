@@ -11,24 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.network;
+package tech.pegasys.teku.beaconrestapi.handlers.network;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.libp2p.core.PeerId;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetPeersTest {
   private final JsonProvider jsonProvider = new JsonProvider();

@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
+package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.pubsub.gossip.Gossip;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 
 public class LibP2PGossipNetwork
-    implements tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork {
+    implements tech.pegasys.teku.networking.p2p.gossip.GossipNetwork {
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
 

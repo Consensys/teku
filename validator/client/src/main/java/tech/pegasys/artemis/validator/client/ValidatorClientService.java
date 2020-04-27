@@ -11,22 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
 import java.util.Map;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.events.EventChannels;
-import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.anticorruption.ValidatorAnticorruptionLayer;
-import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
-import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
-import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
-import tech.pegasys.artemis.validator.client.duties.ValidatorDutyFactory;
-import tech.pegasys.artemis.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.validator.anticorruption.ValidatorAnticorruptionLayer;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
+import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;

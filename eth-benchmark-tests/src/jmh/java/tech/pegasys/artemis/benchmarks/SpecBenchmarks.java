@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.benchmarks;
+package tech.pegasys.teku.benchmarks;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +21,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 
 @State(Scope.Thread)
 public class SpecBenchmarks {

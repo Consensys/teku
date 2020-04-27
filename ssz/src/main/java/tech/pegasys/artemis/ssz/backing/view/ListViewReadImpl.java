@@ -11,20 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.view;
+package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.Arrays;
-import tech.pegasys.artemis.ssz.backing.ListViewRead;
-import tech.pegasys.artemis.ssz.backing.ListViewWrite;
-import tech.pegasys.artemis.ssz.backing.VectorViewRead;
-import tech.pegasys.artemis.ssz.backing.ViewRead;
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
-import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.ssz.backing.type.ContainerViewType;
-import tech.pegasys.artemis.ssz.backing.type.ListViewType;
-import tech.pegasys.artemis.ssz.backing.type.VectorViewType;
-import tech.pegasys.artemis.ssz.backing.view.ListViewWriteImpl.ListContainerWrite;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.VectorViewType;
+import tech.pegasys.teku.ssz.backing.view.ListViewWriteImpl.ListContainerWrite;
 
 /**
  * View of SSZ List type. This view is compatible with and implemented as a <code>

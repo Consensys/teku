@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
+package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public final class GoodbyeMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 

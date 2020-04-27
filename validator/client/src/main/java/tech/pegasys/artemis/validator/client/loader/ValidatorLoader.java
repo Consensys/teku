@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.loader;
+package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -26,19 +26,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.core.signatures.LocalMessageSignerService;
-import tech.pegasys.artemis.core.signatures.Signer;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.validator.client.Validator;
-import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
 
 public class ValidatorLoader {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  public static Map<BLSPublicKey, Validator> initializeValidators(ArtemisConfiguration config) {
+  public static Map<BLSPublicKey, Validator> initializeValidators(TekuConfiguration config) {
     // Get validator connection info and create a new Validator object and put it into the
     // Validators map
 
@@ -57,7 +57,7 @@ public class ValidatorLoader {
   }
 
   private static Map<BLSPublicKey, Validator> createLocalSignerValidator(
-      final ArtemisConfiguration config) {
+      final TekuConfiguration config) {
     return loadValidatorKeys(config).stream()
         .map(
             blsKeyPair ->
@@ -68,7 +68,7 @@ public class ValidatorLoader {
   }
 
   private static Map<BLSPublicKey, Validator> createExternalSignerValidator(
-      final ArtemisConfiguration config) {
+      final TekuConfiguration config) {
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
@@ -81,7 +81,7 @@ public class ValidatorLoader {
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
-  private static Collection<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
+  private static Collection<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
     final Set<ValidatorKeyProvider> keyProviders = new LinkedHashSet<>();
     if (config.getValidatorsKeyFile() == null
         && config.getValidatorKeystorePasswordFilePairs() == null) {

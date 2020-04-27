@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.protoarray;
+package tech.pegasys.teku.protoarray;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;

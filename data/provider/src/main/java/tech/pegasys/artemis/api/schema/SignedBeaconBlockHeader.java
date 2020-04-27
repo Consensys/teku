@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,7 +21,7 @@ public class SignedBeaconBlockHeader {
   public final BLSSignature signature;
 
   public SignedBeaconBlockHeader(
-      tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader signedHeader) {
+      tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader signedHeader) {
     this.message = new BeaconBlockHeader(signedHeader.getMessage());
     this.signature = new BLSSignature(signedHeader.getSignature());
   }
@@ -34,9 +34,9 @@ public class SignedBeaconBlockHeader {
     this.signature = signature;
   }
 
-  public tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader
+  public tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader
       asInternalSignedBeaconBlockHeader() {
-    return new tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader(
+    return new tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader(
         message.asInternalBeaconBlockHeader(), signature.asInternalBLSSignature());
   }
 }

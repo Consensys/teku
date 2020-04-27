@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.timer;
+package tech.pegasys.teku.services.timer;
 
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
-import static tech.pegasys.artemis.util.config.Constants.TIME_TICKER_REFRESH_RATE;
+import static tech.pegasys.teku.util.config.Constants.TIME_TICKER_REFRESH_RATE;
 
 import org.quartz.DateBuilder;
 import org.quartz.JobDetail;
@@ -25,10 +25,10 @@ import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.quartz.SimpleTrigger;
 import org.quartz.impl.StdSchedulerFactory;
-import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
+import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 
 public class TimerService extends Service {
 

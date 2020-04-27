@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb.core;
+package tech.pegasys.teku.storage.server.rocksdb.core;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
@@ -28,9 +28,9 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.WriteOptions;
-import tech.pegasys.artemis.storage.server.DatabaseStorageException;
-import tech.pegasys.artemis.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.artemis.storage.server.rocksdb.schema.RocksDbVariable;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
+import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
 public class RocksDbInstance implements AutoCloseable {
 

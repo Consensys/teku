@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.timer;
+package tech.pegasys.teku.services.timer;
 
 import java.util.Date;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
+import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 
 public class ScheduledTimeEvent implements Job {
 

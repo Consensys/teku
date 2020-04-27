@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing;
+package tech.pegasys.teku.ssz.backing;
 
-import tech.pegasys.artemis.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
 
 /**
  * Immutable List view

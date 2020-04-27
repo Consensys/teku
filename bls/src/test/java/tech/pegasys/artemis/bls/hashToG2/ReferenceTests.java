@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.hashToG2;
+package tech.pegasys.teku.bls.hashToG2;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -35,7 +35,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.bls.mikuli.G2Point;
+import tech.pegasys.teku.bls.mikuli.G2Point;
 
 /**
  * Test files are from https://github.com/algorand/bls_sigs_ref/tree/master/test-vectors/hash_g2

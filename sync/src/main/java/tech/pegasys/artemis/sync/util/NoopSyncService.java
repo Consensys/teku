@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync.util;
+package tech.pegasys.teku.sync.util;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 
-import tech.pegasys.artemis.sync.SyncService;
-import tech.pegasys.artemis.sync.SyncStatus;
-import tech.pegasys.artemis.sync.SyncingStatus;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.SyncStatus;
+import tech.pegasys.teku.sync.SyncingStatus;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class NoopSyncService implements SyncService {
 

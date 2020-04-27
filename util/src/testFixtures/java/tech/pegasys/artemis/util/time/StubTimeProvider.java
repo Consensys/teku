@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.time;
+package tech.pegasys.teku.util.time;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;

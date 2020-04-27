@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.tree;
+package tech.pegasys.teku.ssz.backing.tree;
 
 import java.util.Collections;
 import java.util.List;

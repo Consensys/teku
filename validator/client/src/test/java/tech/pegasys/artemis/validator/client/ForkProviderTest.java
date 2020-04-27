@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -19,16 +19,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
-import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.state.ForkInfo;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.async.StubAsyncRunner;
-import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.StubAsyncRunner;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 class ForkProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

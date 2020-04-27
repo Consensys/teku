@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow;
+package tech.pegasys.teku.pow;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -21,9 +21,9 @@ import org.web3j.abi.datatypes.Type;
 import org.web3j.protocol.Web3j;
 import org.web3j.tx.ClientTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
-import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.pow.exception.Eth1RequestException;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.pow.contract.DepositContract;
+import tech.pegasys.teku.pow.exception.Eth1RequestException;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DepositContractAccessor {
   private final Eth1Provider eth1Provider;

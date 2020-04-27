@@ -11,24 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.forkchoice;
+package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.artemis.core.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.artemis.core.ForkChoiceUtil.on_block;
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.results.AttestationProcessingResult;
-import tech.pegasys.artemis.core.results.BlockImportResult;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.protoarray.ProtoArrayForkChoiceStrategy;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.results.AttestationProcessingResult;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoice implements FinalizedCheckpointChannel {
 

@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.events;
+package tech.pegasys.teku.events;
 
-import static tech.pegasys.artemis.metrics.ArtemisMetricCategory.EVENTBUS;
+import static tech.pegasys.teku.metrics.TekuMetricCategory.EVENTBUS;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 class DirectEventDeliverer<T> extends EventDeliverer<T> {
   private final ChannelExceptionHandler exceptionHandler;

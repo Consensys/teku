@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.collections;
+package tech.pegasys.teku.util.collections;
 
 public enum LimitStrategy {
   DROP_LEAST_RECENTLY_ACCESSED,

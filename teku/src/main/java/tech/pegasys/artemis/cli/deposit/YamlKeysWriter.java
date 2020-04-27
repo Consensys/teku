@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.deposit;
+package tech.pegasys.teku.cli.deposit;
 
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
@@ -22,7 +22,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSKeyPair;
 
 public class YamlKeysWriter implements KeysWriter {
   private final Path outputPath;

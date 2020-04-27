@@ -11,18 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.tree;
+package tech.pegasys.teku.ssz.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.ssz.backing.Utils;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode.BranchNode;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode.LeafNode;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
+import tech.pegasys.teku.ssz.backing.Utils;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
+import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /** Misc Backing binary tree utils */
 public class TreeUtil {

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.rpc;
+package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import io.libp2p.core.P2PChannel;
 import io.netty.buffer.ByteBuf;
@@ -19,8 +19,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class LibP2PRpcStream implements RpcStream {
 

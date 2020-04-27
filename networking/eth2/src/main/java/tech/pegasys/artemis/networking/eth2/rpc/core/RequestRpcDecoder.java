@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core;
+package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
 public class RequestRpcDecoder<T extends RpcRequest> {
 

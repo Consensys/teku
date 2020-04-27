@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.deposit;
+package tech.pegasys.teku.cli.deposit;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static tech.pegasys.artemis.cli.deposit.KeystorePasswordOptions.readFromEnvironmentVariable;
-import static tech.pegasys.artemis.cli.deposit.KeystorePasswordOptions.readFromFile;
+import static tech.pegasys.teku.cli.deposit.KeystorePasswordOptions.readFromEnvironmentVariable;
+import static tech.pegasys.teku.cli.deposit.KeystorePasswordOptions.readFromFile;
 import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -38,11 +38,11 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.services.powchain.DepositTransactionSender;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.crypto.SecureRandomProvider;
 
 @Command(
     name = "generate",

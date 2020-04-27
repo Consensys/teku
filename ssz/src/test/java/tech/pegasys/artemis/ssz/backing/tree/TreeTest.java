@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.tree;
+package tech.pegasys.teku.ssz.backing.tree;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,9 +23,9 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.ssz.TestUtil;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode.BranchNode;
-import tech.pegasys.artemis.ssz.backing.tree.TreeUpdates.Update;
+import tech.pegasys.teku.ssz.TestUtil;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUpdates.Update;
 
 public class TreeTest {
 

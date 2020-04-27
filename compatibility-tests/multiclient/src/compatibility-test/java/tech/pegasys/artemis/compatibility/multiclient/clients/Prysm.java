@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.compatibility.multiclient.clients;
+package tech.pegasys.teku.compatibility.multiclient.clients;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
 
@@ -30,8 +30,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.MountableFile;
-import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class Prysm extends GenericContainer<Prysm> implements BeaconChainNode {
 

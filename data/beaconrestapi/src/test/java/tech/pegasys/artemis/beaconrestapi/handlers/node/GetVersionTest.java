@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.node;
+package tech.pegasys.teku.beaconrestapi.handlers.node;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.cli.VersionProvider;
 
 public class GetVersionTest {
   private Context context = mock(Context.class);

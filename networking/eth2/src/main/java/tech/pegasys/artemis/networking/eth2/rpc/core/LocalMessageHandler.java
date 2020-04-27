@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core;
+package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public interface LocalMessageHandler<I, O> {
   void onIncomingMessage(Eth2Peer peer, I message, ResponseCallback<O> callback);

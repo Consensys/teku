@@ -11,20 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 
 public class Deposit {
   public final List<Bytes32> proof;
   public final DepositData data;
 
-  public Deposit(tech.pegasys.artemis.datastructures.operations.Deposit deposit) {
+  public Deposit(tech.pegasys.teku.datastructures.operations.Deposit deposit) {
     this.proof = deposit.getProof().stream().collect(Collectors.toList());
     this.data = new DepositData(deposit.getData());
   }
@@ -37,8 +37,8 @@ public class Deposit {
     this.data = data;
   }
 
-  public tech.pegasys.artemis.datastructures.operations.Deposit asInternalDeposit() {
-    return new tech.pegasys.artemis.datastructures.operations.Deposit(
+  public tech.pegasys.teku.datastructures.operations.Deposit asInternalDeposit() {
+    return new tech.pegasys.teku.datastructures.operations.Deposit(
         SSZVector.createMutable(proof, Bytes32.class), data.asInternalDepositData());
   }
 }

@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.reference.phase0.operations;
+package tech.pegasys.teku.reference.phase0.operations;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.core.BlockProcessorUtil.process_deposits;
+import static tech.pegasys.teku.core.BlockProcessorUtil.process_deposits;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
@@ -27,11 +27,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.ethtests.TestSuite;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class deposit extends TestSuite {

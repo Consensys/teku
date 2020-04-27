@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.teku.validator.coordinator;
 
-import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -27,10 +27,10 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.teku.util.config.Constants;
 
 public class Eth1DataCache {
 

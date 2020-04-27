@@ -11,27 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.powchain;
+package tech.pegasys.teku.services.powchain;
 
-import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
+import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
-import tech.pegasys.artemis.pow.DepositContractAccessor;
-import tech.pegasys.artemis.pow.DepositObjectsFactory;
-import tech.pegasys.artemis.pow.Eth1DataManager;
-import tech.pegasys.artemis.pow.Eth1DepositManager;
-import tech.pegasys.artemis.pow.Eth1Provider;
-import tech.pegasys.artemis.pow.ThrottlingEth1Provider;
-import tech.pegasys.artemis.pow.Web3jEth1Provider;
-import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
-import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
+import tech.pegasys.teku.pow.DepositContractAccessor;
+import tech.pegasys.teku.pow.DepositObjectsFactory;
+import tech.pegasys.teku.pow.Eth1DataManager;
+import tech.pegasys.teku.pow.Eth1DepositManager;
+import tech.pegasys.teku.pow.Eth1Provider;
+import tech.pegasys.teku.pow.ThrottlingEth1Provider;
+import tech.pegasys.teku.pow.Web3jEth1Provider;
+import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 
 public class PowchainService extends Service {
 
@@ -39,11 +39,11 @@ public class PowchainService extends Service {
   private final Eth1DataManager eth1DataManager;
 
   public PowchainService(final ServiceConfig config) {
-    ArtemisConfiguration artemisConfig = config.getConfig();
+    TekuConfiguration tekuConfig = config.getConfig();
 
     AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
-    Web3j web3j = Web3j.build(new HttpService(artemisConfig.getEth1Endpoint()));
+    Web3j web3j = Web3j.build(new HttpService(tekuConfig.getEth1Endpoint()));
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(

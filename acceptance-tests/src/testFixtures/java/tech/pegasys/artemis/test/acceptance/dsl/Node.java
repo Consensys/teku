@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.test.acceptance.dsl;
+package tech.pegasys.teku.test.acceptance.dsl;
 
 import static com.google.common.io.Files.createTempDir;
 import static org.assertj.core.api.Assertions.fail;
@@ -29,8 +29,8 @@ import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.file.FileUtil;
+import tech.pegasys.teku.util.Waiter;
+import tech.pegasys.teku.util.file.FileUtil;
 
 public abstract class Node {
   private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();

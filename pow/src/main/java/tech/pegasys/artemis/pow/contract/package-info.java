@@ -6,7 +6,7 @@
  * the eth2-specs repo</a> to generate these. Then run:
  *
  * <pre>
- * web3j solidity generate -b DepositContract.bin -a DepositContract.abi -o [PATH_TO_ARTEMIS_ROOT]/pow/src/main/java -p tech.pegasys.artemis.pow.contract
+ * web3j solidity generate -b DepositContract.bin -a DepositContract.abi -o [PATH_TO_TEKU_ROOT]/pow/src/main/java -p tech.pegasys.teku.pow.contract
  * </pre>
  */
-package tech.pegasys.artemis.pow.contract;
+package tech.pegasys.teku.pow.contract;

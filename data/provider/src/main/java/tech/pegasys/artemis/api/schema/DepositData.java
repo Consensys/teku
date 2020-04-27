@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class DepositData {
   public final BLSPubKey pubkey;
@@ -24,7 +24,7 @@ public class DepositData {
   public final UnsignedLong amount;
   public final BLSSignature signature;
 
-  public DepositData(tech.pegasys.artemis.datastructures.operations.DepositData depositData) {
+  public DepositData(tech.pegasys.teku.datastructures.operations.DepositData depositData) {
     this.pubkey = new BLSPubKey(depositData.getPubkey().toBytes());
     this.withdrawal_credentials = depositData.getWithdrawal_credentials();
     this.amount = depositData.getAmount();
@@ -42,8 +42,8 @@ public class DepositData {
     this.signature = signature;
   }
 
-  public tech.pegasys.artemis.datastructures.operations.DepositData asInternalDepositData() {
-    return new tech.pegasys.artemis.datastructures.operations.DepositData(
+  public tech.pegasys.teku.datastructures.operations.DepositData asInternalDepositData() {
+    return new tech.pegasys.teku.datastructures.operations.DepositData(
         BLSPublicKey.fromBytes(pubkey.toBytes()),
         withdrawal_credentials,
         amount,

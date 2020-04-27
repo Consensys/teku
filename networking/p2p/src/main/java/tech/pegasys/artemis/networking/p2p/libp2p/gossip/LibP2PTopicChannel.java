@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
+package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
 import io.libp2p.core.pubsub.PubsubSubscription;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class LibP2PTopicChannel implements TopicChannel {
   private final GossipHandler topicHandler;

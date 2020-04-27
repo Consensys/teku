@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.anticorruption;
+package tech.pegasys.teku.validator.anticorruption;
 
-import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.storage.api.ReorgEventChannel;
-import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
-import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.storage.api.ReorgEventChannel;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class ValidatorAnticorruptionLayer {
 

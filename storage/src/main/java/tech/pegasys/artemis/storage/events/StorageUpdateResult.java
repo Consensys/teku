@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.events;
+package tech.pegasys.teku.storage.events;
 
 import java.util.Collections;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public interface StorageUpdateResult {
 

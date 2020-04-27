@@ -11,6 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.SSZTypes;
+package tech.pegasys.teku.ssz.SSZTypes;
 
 public interface SSZMutableVector<R> extends SSZVector<R>, SSZMutableCollection<R> {}

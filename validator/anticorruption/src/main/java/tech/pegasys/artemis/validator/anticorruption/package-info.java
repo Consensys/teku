@@ -7,4 +7,4 @@
  * specifically for the new-world so the old approach can be completely removed and the validator
  * run standalone.
  */
-package tech.pegasys.artemis.validator.anticorruption;
+package tech.pegasys.teku.validator.anticorruption;

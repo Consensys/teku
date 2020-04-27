@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server;
+package tech.pegasys.teku.storage.server;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StorageUpdate;
-import tech.pegasys.artemis.storage.events.StorageUpdateResult;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.StorageUpdateResult;
 
 public interface Database extends AutoCloseable {
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.hashtree;
+package tech.pegasys.teku.util.hashtree;
 
 import static java.lang.Long.max;
 import static java.lang.Math.toIntExact;
@@ -27,12 +27,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZImmutableCollection;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.SSZTypes.SSZImmutableCollection;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 
 /** This class is a collection of tree hash root convenience methods */
 public final class HashTreeUtil {

@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.view;
+package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.List;
 import java.util.Map.Entry;
-import tech.pegasys.artemis.ssz.backing.ContainerViewRead;
-import tech.pegasys.artemis.ssz.backing.ContainerViewWriteRef;
-import tech.pegasys.artemis.ssz.backing.ViewRead;
-import tech.pegasys.artemis.ssz.backing.ViewWrite;
-import tech.pegasys.artemis.ssz.backing.cache.IntCache;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
-import tech.pegasys.artemis.ssz.backing.tree.TreeUpdates;
+import tech.pegasys.teku.ssz.backing.ContainerViewRead;
+import tech.pegasys.teku.ssz.backing.ContainerViewWriteRef;
+import tech.pegasys.teku.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.ViewWrite;
+import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUpdates;
 
 public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<ViewRead, ViewWrite>
     implements ContainerViewWriteRef {

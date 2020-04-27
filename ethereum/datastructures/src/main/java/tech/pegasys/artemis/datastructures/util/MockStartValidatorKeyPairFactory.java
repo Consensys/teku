@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package tech.pegasys.teku.datastructures.util;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes32;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes32;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.bls.BLSSecretKey;
-import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.util.message.BouncyCastleMessageDigestFactory;
 
 public class MockStartValidatorKeyPairFactory {
   private static final int KEY_LENGTH = 48;

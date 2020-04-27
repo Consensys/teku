@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.network;
+package tech.pegasys.teku.util.network;
 
 public class NetworkUtility {
   public static final String INADDR_ANY = "0.0.0.0";

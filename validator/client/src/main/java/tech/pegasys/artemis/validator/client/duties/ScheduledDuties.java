@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.duties;
+package tech.pegasys.teku.validator.client.duties;
 
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
@@ -20,11 +20,11 @@ import java.util.Optional;
 import java.util.TreeMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.api.NodeSyncingException;
-import tech.pegasys.artemis.validator.client.Validator;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.client.Validator;
 
 public class ScheduledDuties {
   private static final Logger LOG = LogManager.getLogger();

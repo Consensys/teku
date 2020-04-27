@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beacon;
+package tech.pegasys.teku.beaconrestapi.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,10 +22,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
-import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
-import tech.pegasys.artemis.bls.BLSKeyPair;
+import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.RestApiConstants;
+import tech.pegasys.teku.beaconrestapi.handlers.beacon.PostValidators;
+import tech.pegasys.teku.bls.BLSKeyPair;
 
 public class PostValidatorsWithDataIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {

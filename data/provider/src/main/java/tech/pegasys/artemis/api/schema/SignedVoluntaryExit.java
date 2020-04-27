@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -20,7 +20,7 @@ public class SignedVoluntaryExit {
   public final BLSSignature signature;
 
   public SignedVoluntaryExit(
-      tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit) {
+      tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit) {
     this.signature = new BLSSignature(signedVoluntaryExit.getSignature());
     this.message = new VoluntaryExit(signedVoluntaryExit.getMessage());
   }
@@ -32,9 +32,9 @@ public class SignedVoluntaryExit {
     this.signature = signature;
   }
 
-  public tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit
+  public tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit
       asInternalSignedVoluntaryExit() {
-    return new tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit(
+    return new tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit(
         message.asInternalVoluntaryExit(), signature.asInternalBLSSignature());
   }
 }

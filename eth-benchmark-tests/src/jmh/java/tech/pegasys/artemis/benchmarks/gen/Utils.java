@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.benchmarks.gen;
+package tech.pegasys.teku.benchmarks.gen;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;

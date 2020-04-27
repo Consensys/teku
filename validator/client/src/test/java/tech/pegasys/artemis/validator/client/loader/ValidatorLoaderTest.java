@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.loader;
+package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,11 +23,11 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.core.signatures.LocalMessageSignerService;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.validator.client.Validator;
-import tech.pegasys.artemis.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
 
 class ValidatorLoaderTest {
 
@@ -41,15 +41,15 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalMessageSignerWhenConfigHasExternalSigningPublicKeys() {
-    final ArtemisConfiguration artemisConfiguration =
-        ArtemisConfiguration.builder()
+    final TekuConfiguration tekuConfiguration =
+        TekuConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .setValidatorKeystoreFiles(Collections.emptyList())
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(artemisConfiguration);
+        ValidatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(1);
     final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
@@ -66,14 +66,14 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final ArtemisConfiguration artemisConfiguration =
-        ArtemisConfiguration.builder()
+    final TekuConfiguration tekuConfiguration =
+        TekuConfiguration.builder()
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
             .setValidatorKeystoreFiles(Collections.emptyList())
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(artemisConfiguration);
+        ValidatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(1);
     final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
@@ -90,8 +90,8 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final ArtemisConfiguration artemisConfiguration =
-        ArtemisConfiguration.builder()
+    final TekuConfiguration tekuConfiguration =
+        TekuConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY2))
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
@@ -99,7 +99,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(artemisConfiguration);
+        ValidatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(2);
 
@@ -124,8 +124,8 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final ArtemisConfiguration artemisConfiguration =
-        ArtemisConfiguration.builder()
+    final TekuConfiguration tekuConfiguration =
+        TekuConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
@@ -133,7 +133,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(Collections.emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(artemisConfiguration);
+        ValidatorLoader.initializeValidators(tekuConfiguration);
 
     // Both local and external validators get loaded.
     assertThat(validators).hasSize(1);

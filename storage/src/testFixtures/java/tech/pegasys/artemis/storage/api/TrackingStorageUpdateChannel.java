@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.api;
+package tech.pegasys.teku.storage.api;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StorageUpdate;
-import tech.pegasys.artemis.storage.events.StorageUpdateResult;
-import tech.pegasys.artemis.storage.server.Database;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.StorageUpdateResult;
+import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class TrackingStorageUpdateChannel implements StorageUpdateChannel {
   private final Database database;

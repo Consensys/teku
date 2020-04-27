@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core.signatures;
+package tech.pegasys.teku.core.signatures;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.BLSSignature;
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface MessageSignerService {
 

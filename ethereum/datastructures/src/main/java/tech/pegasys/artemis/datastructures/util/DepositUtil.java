@@ -11,23 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util;
+package tech.pegasys.teku.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.util.config.Constants.MIN_DEPOSIT_AMOUNT;
+import static tech.pegasys.teku.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.teku.datastructures.operations.DepositData;
+import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.pow.contract.DepositContract;
 
 public class DepositUtil {
 
   public static DepositWithIndex convertDepositEventToOperationDeposit(
-      tech.pegasys.artemis.pow.event.Deposit event) {
+      tech.pegasys.teku.pow.event.Deposit event) {
     checkArgument(
         event.getAmount().compareTo(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT)) >= 0,
         "Deposit amount too low");
@@ -41,7 +41,7 @@ public class DepositUtil {
   }
 
   // deprecated, being used until a new validators_test_data.json can be generated
-  public static tech.pegasys.artemis.pow.event.Deposit convertJsonDataToEventDeposit(
+  public static tech.pegasys.teku.pow.event.Deposit convertJsonDataToEventDeposit(
       JsonElement event) {
     byte[] data = Bytes.fromHexString(event.getAsJsonObject().get("data").getAsString()).toArray();
     byte[] index =
@@ -54,6 +54,6 @@ public class DepositUtil {
     response.amount = Arrays.copyOfRange(data, 80, 88);
     response.signature = Arrays.copyOfRange(data, 88, 184);
     response.index = index;
-    return new tech.pegasys.artemis.pow.event.Deposit(response);
+    return new tech.pegasys.teku.pow.event.Deposit(response);
   }
 }

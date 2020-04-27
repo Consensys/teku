@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p;
+package tech.pegasys.teku.networking.p2p.libp2p;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -28,16 +28,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
-import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
-import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
-import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.events.Subscribers;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
+import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
 
@@ -61,7 +61,7 @@ public class PeerManager implements ConnectionHandler {
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
     metricsSystem.createGauge(
-        ArtemisMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
+        TekuMetricCategory.LIBP2P, "peers", "Tracks number of libp2p peers", this::getPeerCount);
   }
 
   @Override

@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.core.signatures.Signer;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.Signer;
 
 public class Validator {
   private final BLSPublicKey publicKey;

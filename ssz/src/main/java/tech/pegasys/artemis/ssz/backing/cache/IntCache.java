@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.cache;
+package tech.pegasys.teku.ssz.backing.cache;
 
 import java.util.function.Function;
 import java.util.function.IntFunction;

@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.hashToG2;
+package tech.pegasys.teku.bls.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.bls.hashToG2.Helper.isOnCurve;
-import static tech.pegasys.artemis.bls.hashToG2.JacobianPoint.INFINITY;
-import static tech.pegasys.artemis.bls.hashToG2.Util.bigFromHex;
+import static tech.pegasys.teku.bls.hashToG2.Helper.isOnCurve;
+import static tech.pegasys.teku.bls.hashToG2.JacobianPoint.INFINITY;
+import static tech.pegasys.teku.bls.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP2;

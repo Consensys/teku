@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.network;
+package tech.pegasys.teku.beaconrestapi.handlers.network;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -19,8 +19,8 @@ import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetPeerCountTest {
   private final Context context = mock(Context.class);

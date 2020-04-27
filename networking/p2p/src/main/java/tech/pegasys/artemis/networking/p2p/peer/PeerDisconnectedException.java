@@ -11,6 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.peer;
+package tech.pegasys.teku.networking.p2p.peer;
 
 public class PeerDisconnectedException extends RuntimeException {}

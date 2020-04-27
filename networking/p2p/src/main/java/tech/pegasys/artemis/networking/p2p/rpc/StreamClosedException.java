@@ -11,6 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.rpc;
+package tech.pegasys.teku.networking.p2p.rpc;
 
 public class StreamClosedException extends RuntimeException {}

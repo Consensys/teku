@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.metrics;
+package tech.pegasys.teku.metrics;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 
@@ -24,20 +24,20 @@ public class EpochMetrics {
     currentEpochLiveValidators =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACON,
+            TekuMetricCategory.BEACON,
             "current_epoch_live_validators",
             "Number of active validators who reported for the current epoch");
     previousEpochLiveValidators =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACON,
+            TekuMetricCategory.BEACON,
             "previous_epoch_live_validators",
             "Number of active validators who reported for the previous epoch");
 
     pendingExits =
         SettableGauge.create(
             metricsSystem,
-            ArtemisMetricCategory.BEACON,
+            TekuMetricCategory.BEACON,
             "pending_exits",
             "Number of pending exits");
   }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.teku.statetransition.util;
 
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
@@ -21,17 +21,17 @@ import java.io.IOException;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
-import tech.pegasys.artemis.datastructures.util.DepositGenerator;
-import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
-import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
-import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.resource.ResourceLoader;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.datastructures.operations.DepositData;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
+import tech.pegasys.teku.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.datastructures.util.MockStartBeaconStateGenerator;
+import tech.pegasys.teku.datastructures.util.MockStartDepositGenerator;
+import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.resource.ResourceLoader;
 
 public final class StartupUtil {
 

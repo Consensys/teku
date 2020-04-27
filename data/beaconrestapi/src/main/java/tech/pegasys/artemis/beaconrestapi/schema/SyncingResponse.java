@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.teku.beaconrestapi.schema;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import tech.pegasys.artemis.sync.SyncStatus;
-import tech.pegasys.artemis.sync.SyncingStatus;
+import tech.pegasys.teku.sync.SyncStatus;
+import tech.pegasys.teku.sync.SyncingStatus;
 
 @JsonInclude(NON_NULL)
 public class SyncingResponse {

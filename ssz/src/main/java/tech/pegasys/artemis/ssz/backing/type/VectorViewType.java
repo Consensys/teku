@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.backing.type;
+package tech.pegasys.teku.ssz.backing.type;
 
-import tech.pegasys.artemis.ssz.backing.VectorViewRead;
-import tech.pegasys.artemis.ssz.backing.tree.TreeNode;
-import tech.pegasys.artemis.ssz.backing.tree.TreeUtil;
-import tech.pegasys.artemis.ssz.backing.view.VectorViewReadImpl;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
+import tech.pegasys.teku.ssz.backing.view.VectorViewReadImpl;
 
 public class VectorViewType<C> extends CollectionViewType {
   private final boolean isListBacking;

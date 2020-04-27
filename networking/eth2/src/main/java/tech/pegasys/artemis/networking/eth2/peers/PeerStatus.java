@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.peers;
+package tech.pegasys.teku.networking.eth2.peers;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -19,9 +19,9 @@ import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class PeerStatus {
   private static PeerStatus PREGENESIS_STATUS = createPreGenesisStatus();

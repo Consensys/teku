@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.teku.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,14 +27,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
-import tech.pegasys.artemis.sync.FetchBlockTask.FetchBlockResult;
-import tech.pegasys.artemis.sync.FetchBlockTask.FetchBlockResult.Status;
-import tech.pegasys.artemis.sync.FetchRecentBlocksService.FetchBlockTaskFactory;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.async.StubAsyncRunner;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult;
+import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult.Status;
+import tech.pegasys.teku.sync.FetchRecentBlocksService.FetchBlockTaskFactory;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class FetchRecentBlocksServiceTest {
 

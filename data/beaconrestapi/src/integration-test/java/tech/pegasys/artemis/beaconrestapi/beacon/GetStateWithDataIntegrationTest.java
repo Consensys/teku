@@ -11,20 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beacon;
+package tech.pegasys.teku.beaconrestapi.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetState.ROUTE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetState.ROUTE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Map;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.schema.BeaconState;
-import tech.pegasys.artemis.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
+import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 
 public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 

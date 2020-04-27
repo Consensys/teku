@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.api;
+package tech.pegasys.teku.pow.api;
 
-import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
 public interface MinGenesisTimeBlockEventChannel {
   void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);

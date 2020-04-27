@@ -11,36 +11,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core;
+package tech.pegasys.teku.core;
 
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
-import static tech.pegasys.artemis.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
+import static tech.pegasys.teku.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
-import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
-import tech.pegasys.artemis.core.results.AttestationProcessingResult;
-import tech.pegasys.artemis.core.results.BlockImportResult;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
-import tech.pegasys.artemis.datastructures.forkchoice.ReadOnlyStore;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.core.results.AttestationProcessingResult;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.data.BlockProcessingRecord;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtil {
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {

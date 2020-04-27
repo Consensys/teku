@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 public interface DutyLoader {
   SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UnsignedLong epoch);

@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events.block;
+package tech.pegasys.teku.statetransition.events.block;
 
 import java.util.Objects;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 
 /** This event is emitted when a new block has been imported locally. */
 public class ImportedBlockEvent {

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures;
+package tech.pegasys.teku.datastructures;
 
 public interface Copyable<T> {
 

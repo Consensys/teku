@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.teku.sync;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 
 public class DelayableAttestation {
   private final Attestation attestation;

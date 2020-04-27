@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
+import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
-import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class IndexedAttestation {
   public final List<UnsignedLong> attesting_indices;
@@ -26,16 +26,16 @@ public class IndexedAttestation {
   public final BLSSignature signature;
 
   public IndexedAttestation(
-      tech.pegasys.artemis.datastructures.operations.IndexedAttestation indexedAttestation) {
+      tech.pegasys.teku.datastructures.operations.IndexedAttestation indexedAttestation) {
     this.attesting_indices =
         indexedAttestation.getAttesting_indices().stream().collect(Collectors.toList());
     this.data = new AttestationData(indexedAttestation.getData());
     this.signature = new BLSSignature(indexedAttestation.getSignature());
   }
 
-  public tech.pegasys.artemis.datastructures.operations.IndexedAttestation
+  public tech.pegasys.teku.datastructures.operations.IndexedAttestation
       asInternalIndexedAttestation() {
-    return new tech.pegasys.artemis.datastructures.operations.IndexedAttestation(
+    return new tech.pegasys.teku.datastructures.operations.IndexedAttestation(
         SSZList.createMutable(attesting_indices, MAX_VALIDATORS_PER_COMMITTEE, UnsignedLong.class),
         data.asInternalAttestationData(),
         signature.asInternalBLSSignature());

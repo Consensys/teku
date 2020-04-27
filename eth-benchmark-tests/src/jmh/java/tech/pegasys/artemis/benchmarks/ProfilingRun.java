@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.benchmarks;
+package tech.pegasys.teku.benchmarks;
 
 import static org.mockito.Mockito.mock;
 
@@ -23,24 +23,24 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.benchmarks.gen.BlockIO;
-import tech.pegasys.artemis.benchmarks.gen.BlockIO.Reader;
-import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.results.BlockImportResult;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.client.RecentChainData;
-import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.teku.benchmarks.gen.BlockIO;
+import tech.pegasys.teku.benchmarks.gen.BlockIO.Reader;
+import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.util.StartupUtil;
+import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.hashtree.HashTreeUtil;
+import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
 
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {

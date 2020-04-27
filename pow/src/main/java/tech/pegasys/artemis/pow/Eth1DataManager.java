@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow;
+package tech.pegasys.teku.pow;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
-import static tech.pegasys.artemis.util.config.Constants.ETH1_REQUEST_BUFFER;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
+import static tech.pegasys.teku.util.config.Constants.ETH1_REQUEST_BUFFER;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.math.LongMath;
@@ -34,12 +34,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.TimeProvider;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
+import tech.pegasys.teku.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 
 /*
 

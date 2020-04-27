@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.state;
+package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.cache.Cache;
-import tech.pegasys.artemis.util.cache.LRUCache;
-import tech.pegasys.artemis.util.cache.NoOpCache;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.util.cache.Cache;
+import tech.pegasys.teku.util.cache.LRUCache;
+import tech.pegasys.teku.util.cache.NoOpCache;
 
 /** The container class for all transition caches. */
 public class TransitionCaches {

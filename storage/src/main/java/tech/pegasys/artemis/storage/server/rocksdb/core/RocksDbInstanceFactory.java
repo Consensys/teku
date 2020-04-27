@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb.core;
+package tech.pegasys.teku.storage.server.rocksdb.core;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -30,10 +30,10 @@ import org.rocksdb.LRUCache;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
-import tech.pegasys.artemis.storage.server.DatabaseStorageException;
-import tech.pegasys.artemis.storage.server.rocksdb.RocksDbConfiguration;
-import tech.pegasys.artemis.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.artemis.storage.server.rocksdb.schema.Schema;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
+import tech.pegasys.teku.storage.server.rocksdb.schema.Schema;
 
 public class RocksDbInstanceFactory {
   static {

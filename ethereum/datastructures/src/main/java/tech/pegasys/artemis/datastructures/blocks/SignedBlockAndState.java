@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.blocks;
+package tech.pegasys.teku.datastructures.blocks;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 
 /** Helper datastructure that holds a signed block with its corresponding state */
 public class SignedBlockAndState {

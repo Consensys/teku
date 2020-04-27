@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.node;
+package tech.pegasys.teku.beaconrestapi.node;
 
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
-import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
+import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 
 public class GetGenesisTimeIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 

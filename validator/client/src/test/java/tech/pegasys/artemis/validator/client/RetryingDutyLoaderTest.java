@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.teku.validator.client;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,10 +21,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.async.StubAsyncRunner;
-import tech.pegasys.artemis.validator.api.NodeSyncingException;
-import tech.pegasys.artemis.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.StubAsyncRunner;
+import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class RetryingDutyLoaderTest {
 

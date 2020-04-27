@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.api;
+package tech.pegasys.teku.storage.api;
 
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public class StubFinalizedCheckpointChannel implements FinalizedCheckpointChannel {
 

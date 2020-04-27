@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.benchmarks.util.backing;
+package tech.pegasys.teku.benchmarks.util.backing;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;
@@ -24,11 +24,11 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.artemis.ssz.backing.ListViewRead;
-import tech.pegasys.artemis.ssz.backing.ListViewWrite;
-import tech.pegasys.artemis.ssz.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.ssz.backing.type.ListViewType;
-import tech.pegasys.artemis.ssz.backing.view.BasicViews.UInt64View;
+import tech.pegasys.teku.ssz.backing.ListViewRead;
+import tech.pegasys.teku.ssz.backing.ListViewWrite;
+import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
+import tech.pegasys.teku.ssz.backing.type.ListViewType;
+import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 
 @State(Scope.Thread)
 public class ListBenchmark {

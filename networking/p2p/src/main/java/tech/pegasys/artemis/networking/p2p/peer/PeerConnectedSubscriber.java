@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.peer;
+package tech.pegasys.teku.networking.p2p.peer;
 
 @FunctionalInterface
 public interface PeerConnectedSubscriber<T extends Peer> {

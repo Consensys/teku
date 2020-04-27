@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.mikuli;
+package tech.pegasys.teku.bls.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.bls.mikuli.Util.calculateYFlag;
+import static tech.pegasys.teku.bls.mikuli.Util.calculateYFlag;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Objects;
@@ -24,7 +24,7 @@ import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.hashToG2.HashToCurve;
+import tech.pegasys.teku.bls.hashToG2.HashToCurve;
 
 /**
  * G2 is a subgroup of an elliptic curve whose points are elements of the finite field Fp^2. The

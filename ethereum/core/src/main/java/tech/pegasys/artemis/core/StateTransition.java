@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core;
+package tech.pegasys.teku.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
-import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
-import static tech.pegasys.artemis.util.config.Constants.ZERO_HASH;
+import static tech.pegasys.teku.util.async.SafeFuture.reportExceptions;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
+import static tech.pegasys.teku.util.config.Constants.ZERO_HASH;
 
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
@@ -30,17 +30,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLS;
-import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
-import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
-import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.metrics.EpochMetrics;
+import tech.pegasys.teku.bls.BLS;
+import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.metrics.EpochMetrics;
 
 public class StateTransition {
 

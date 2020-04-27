@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server.rocksdb.dataaccess;
+package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayDeque;
@@ -33,17 +33,17 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.core.StateTransition;
-import tech.pegasys.artemis.core.StateTransitionException;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.server.DatabaseStorageException;
-import tech.pegasys.artemis.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance;
-import tech.pegasys.artemis.storage.server.rocksdb.core.RocksDbInstance.Transaction;
-import tech.pegasys.artemis.storage.server.rocksdb.schema.V3Schema;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.StateTransitionException;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance.Transaction;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 
 public class V3RocksDbDao implements RocksDbDao {
   private static final Logger LOG = LogManager.getLogger();

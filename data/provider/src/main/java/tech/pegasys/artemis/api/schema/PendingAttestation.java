@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 public class PendingAttestation {
   public final Bitlist aggregation_bits;
@@ -37,7 +37,7 @@ public class PendingAttestation {
   }
 
   public PendingAttestation(
-      final tech.pegasys.artemis.datastructures.state.PendingAttestation pendingAttestation) {
+      final tech.pegasys.teku.datastructures.state.PendingAttestation pendingAttestation) {
     this.aggregation_bits = pendingAttestation.getAggregation_bits();
     this.data = new AttestationData(pendingAttestation.getData());
     this.inclusion_delay = pendingAttestation.getInclusion_delay();

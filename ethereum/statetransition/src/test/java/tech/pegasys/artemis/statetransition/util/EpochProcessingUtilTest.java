@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.util;
+package tech.pegasys.teku.statetransition.util;
 
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 
 @ExtendWith(BouncyCastleExtension.class)
 @Disabled

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.events;
+package tech.pegasys.teku.events;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -19,9 +19,9 @@ import java.lang.reflect.Method;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.events.Subscribers;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.events.Subscribers;
 
 abstract class EventDeliverer<T> implements InvocationHandler {
   private final Subscribers<T> subscribers = Subscribers.create(true);
@@ -30,7 +30,7 @@ abstract class EventDeliverer<T> implements InvocationHandler {
   protected EventDeliverer(final MetricsSystem metricsSystem) {
     publishedEventCounter =
         metricsSystem.createLabelledCounter(
-            ArtemisMetricCategory.EVENTBUS,
+            TekuMetricCategory.EVENTBUS,
             "event_published_count",
             "Total number of events published",
             "channel");

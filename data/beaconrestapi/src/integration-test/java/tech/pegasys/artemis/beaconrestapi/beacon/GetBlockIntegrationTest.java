@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beacon;
+package tech.pegasys.teku.beaconrestapi.beacon;
 
 import static org.mockito.Mockito.when;
 
@@ -20,9 +20,9 @@ import java.util.Map;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
-import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
-import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
+import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.RestApiConstants;
+import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock;
 
 public class GetBlockIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 

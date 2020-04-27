@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.mikuli;
+package tech.pegasys.teku.bls.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.collections;
+package tech.pegasys.teku.util.collections;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

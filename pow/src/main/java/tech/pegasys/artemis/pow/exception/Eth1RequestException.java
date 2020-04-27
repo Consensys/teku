@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.exception;
+package tech.pegasys.teku.pow.exception;
 
 public class Eth1RequestException extends RuntimeException {
   public Eth1RequestException(String err) {

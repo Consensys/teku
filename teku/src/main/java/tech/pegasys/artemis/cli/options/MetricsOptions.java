@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.cli.options;
+package tech.pegasys.teku.cli.options;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.EnumSet;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine;
-import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class MetricsOptions {
 
@@ -36,7 +36,7 @@ public class MetricsOptions {
   public static final ImmutableSet<MetricCategory> DEFAULT_METRICS_CATEGORIES =
       ImmutableSet.<MetricCategory>builder()
           .addAll(EnumSet.allOf(StandardMetricCategory.class))
-          .addAll(EnumSet.allOf(ArtemisMetricCategory.class))
+          .addAll(EnumSet.allOf(TekuMetricCategory.class))
           .build();
 
   @CommandLine.Option(

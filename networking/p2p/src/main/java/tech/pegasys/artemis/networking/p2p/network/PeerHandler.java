@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.network;
+package tech.pegasys.teku.networking.p2p.network;
 
-import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public interface PeerHandler {
   void onConnect(final Peer peer);

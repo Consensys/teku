@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api;
+package tech.pegasys.teku.api;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
@@ -24,8 +24,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.core.results.BlockImportResult.FailureReason;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -36,33 +36,33 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.artemis.api.schema.Attestation;
-import tech.pegasys.artemis.api.schema.BLSPubKey;
-import tech.pegasys.artemis.api.schema.BLSSignature;
-import tech.pegasys.artemis.api.schema.BeaconBlock;
-import tech.pegasys.artemis.api.schema.BeaconState;
-import tech.pegasys.artemis.api.schema.ValidatorBlockResult;
-import tech.pegasys.artemis.api.schema.ValidatorDuties;
-import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
-import tech.pegasys.artemis.bls.BLSPublicKey;
-import tech.pegasys.artemis.core.results.BlockImportResult;
-import tech.pegasys.artemis.core.results.FailedBlockImportResult;
-import tech.pegasys.artemis.core.results.SuccessfulBlockImportResult;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.storage.client.ChainDataUnavailableException;
-import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
-import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.api.schema.ValidatorDuties;
+import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.core.results.FailedBlockImportResult;
+import tech.pegasys.teku.core.results.SuccessfulBlockImportResult;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProviderTest {
 
-  private final ArgumentCaptor<tech.pegasys.artemis.datastructures.operations.Attestation> args =
-      ArgumentCaptor.forClass(tech.pegasys.artemis.datastructures.operations.Attestation.class);
+  private final ArgumentCaptor<tech.pegasys.teku.datastructures.operations.Attestation> args =
+      ArgumentCaptor.forClass(tech.pegasys.teku.datastructures.operations.Attestation.class);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
@@ -70,13 +70,13 @@ public class ValidatorDataProviderTest {
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private ValidatorDataProvider provider =
       new ValidatorDataProvider(validatorApiChannel, blockImporter, combinedChainDataClient);
-  private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
+  private final tech.pegasys.teku.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
-  private final tech.pegasys.artemis.bls.BLSSignature signatureInternal =
-      tech.pegasys.artemis.bls.BLSSignature.random(1234);
+  private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
+      tech.pegasys.teku.bls.BLSSignature.random(1234);
   private final BLSSignature signature = new BLSSignature(signatureInternal);
-  private final tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
+  private final tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal =
       dataStructureUtil.randomBeaconState();
   private final BeaconState beaconState = new BeaconState(beaconStateInternal);
 
@@ -146,7 +146,7 @@ public class ValidatorDataProviderTest {
   @Test
   void getUnsignedAttestationAtSlot_shouldReturnAttestation() throws Exception {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    final tech.pegasys.artemis.datastructures.operations.Attestation internalAttestation =
+    final tech.pegasys.teku.datastructures.operations.Attestation internalAttestation =
         dataStructureUtil.randomAttestation();
     when(validatorApiChannel.createUnsignedAttestation(ONE, 0))
         .thenReturn(SafeFuture.completedFuture(Optional.of(internalAttestation)));
@@ -179,7 +179,7 @@ public class ValidatorDataProviderTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey)))));
+                        tech.pegasys.teku.validator.api.ValidatorDuties.noDuties(publicKey)))));
 
     SafeFuture<Optional<List<ValidatorDuties>>> future =
         provider.getValidatorDutiesByRequest(smallRequest);
@@ -215,7 +215,7 @@ public class ValidatorDataProviderTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey)))));
+                        tech.pegasys.teku.validator.api.ValidatorDuties.noDuties(publicKey)))));
 
     SafeFuture<Optional<List<ValidatorDuties>>> future =
         provider.getValidatorDutiesByRequest(smallRequest);
@@ -246,7 +246,7 @@ public class ValidatorDataProviderTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        tech.pegasys.artemis.validator.api.ValidatorDuties.withDuties(
+                        tech.pegasys.teku.validator.api.ValidatorDuties.withDuties(
                             publicKey,
                             validatorIndex,
                             attestationCommitteeIndex,
@@ -287,7 +287,7 @@ public class ValidatorDataProviderTest {
 
   @Test
   void submitAttestation_shouldSubmitAnInternalAttestationStructure() {
-    tech.pegasys.artemis.datastructures.operations.Attestation internalAttestation =
+    tech.pegasys.teku.datastructures.operations.Attestation internalAttestation =
         dataStructureUtil.randomAttestation();
     Attestation attestation = new Attestation(internalAttestation);
 
@@ -300,11 +300,11 @@ public class ValidatorDataProviderTest {
   @Test
   public void submitAttestation_shouldThrowIllegalArgumentExceptionWhenSignatureIsEmpty() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    final tech.pegasys.artemis.datastructures.operations.Attestation internalAttestation =
-        new tech.pegasys.artemis.datastructures.operations.Attestation(
+    final tech.pegasys.teku.datastructures.operations.Attestation internalAttestation =
+        new tech.pegasys.teku.datastructures.operations.Attestation(
             new Bitlist(4, Constants.MAX_VALIDATORS_PER_COMMITTEE),
             attestationData,
-            tech.pegasys.artemis.bls.BLSSignature.empty());
+            tech.pegasys.teku.bls.BLSSignature.empty());
 
     final Attestation attestation = new Attestation(internalAttestation);
 
@@ -317,8 +317,8 @@ public class ValidatorDataProviderTest {
       throws ExecutionException, InterruptedException {
     final SignedBeaconBlock internalSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.artemis.api.schema.SignedBeaconBlock signedBeaconBlock =
-        new tech.pegasys.artemis.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
+        new tech.pegasys.teku.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
 
     final SafeFuture<BlockImportResult> successImportResult =
         SafeFuture.completedFuture(
@@ -336,8 +336,8 @@ public class ValidatorDataProviderTest {
   public void submitSignedBlock_shouldReturn202ForInvalidBlock() {
     final SignedBeaconBlock internalSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.artemis.api.schema.SignedBeaconBlock signedBeaconBlock =
-        new tech.pegasys.artemis.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
+        new tech.pegasys.teku.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
     final AtomicInteger failReasonCount = new AtomicInteger();
 
     Stream.of(FailureReason.values())
@@ -371,8 +371,8 @@ public class ValidatorDataProviderTest {
       throws ExecutionException, InterruptedException {
     final SignedBeaconBlock internalSignedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
-    final tech.pegasys.artemis.api.schema.SignedBeaconBlock signedBeaconBlock =
-        new tech.pegasys.artemis.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
+    final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
+        new tech.pegasys.teku.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
 
     final SafeFuture<BlockImportResult> failImportResult =
         SafeFuture.completedFuture(

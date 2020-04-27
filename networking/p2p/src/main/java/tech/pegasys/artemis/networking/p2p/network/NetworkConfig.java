@@ -11,14 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.network;
+package tech.pegasys.teku.networking.p2p.network;
 
 import static com.google.common.net.InetAddresses.isInetAddress;
 
 import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 
 public class NetworkConfig {
 

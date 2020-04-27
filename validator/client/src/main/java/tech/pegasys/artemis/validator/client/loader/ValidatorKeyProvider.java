@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.loader;
+package tech.pegasys.teku.validator.client.loader;
 
 import java.util.List;
-import tech.pegasys.artemis.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public interface ValidatorKeyProvider {
-  List<BLSKeyPair> loadValidatorKeys(ArtemisConfiguration config);
+  List<BLSKeyPair> loadValidatorKeys(TekuConfiguration config);
 }

@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.storage.server;
+package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,12 +25,12 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class VersionedDatabaseFactoryTest {
 
   @TempDir Path dataDir;
-  ArtemisConfiguration config;
+  TekuConfiguration config;
 
   @BeforeEach
   public void setup() {
@@ -104,9 +104,9 @@ public class VersionedDatabaseFactoryTest {
     assertThat(versionValue).isEqualTo(defaultVersion.getValue());
   }
 
-  private ArtemisConfiguration createConfig(final Path dataPath) {
+  private TekuConfiguration createConfig(final Path dataPath) {
 
-    return ArtemisConfiguration.builder()
+    return TekuConfiguration.builder()
         .setDataPath(dataPath.toAbsolutePath().toString())
         .setDataStorageMode(PRUNE)
         .build();

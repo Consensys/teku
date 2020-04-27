@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.data.recorder;
+package tech.pegasys.teku.data.recorder;
 
-import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
+import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
 
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -23,12 +23,12 @@ import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.data.BlockProcessingRecord;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.util.config.Constants;
 
 public class SSZTransitionRecorder {
 

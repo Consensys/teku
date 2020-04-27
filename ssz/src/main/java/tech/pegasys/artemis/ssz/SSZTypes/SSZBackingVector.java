@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.ssz.SSZTypes;
+package tech.pegasys.teku.ssz.SSZTypes;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.ssz.backing.VectorViewRead;
-import tech.pegasys.artemis.ssz.backing.VectorViewWrite;
-import tech.pegasys.artemis.ssz.backing.ViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewRead;
+import tech.pegasys.teku.ssz.backing.VectorViewWrite;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 
 public class SSZBackingVector<C, R extends ViewRead> extends SSZAbstractCollection<C>
     implements SSZMutableVector<C> {

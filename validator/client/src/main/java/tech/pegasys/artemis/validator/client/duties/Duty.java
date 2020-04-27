@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client.duties;
+package tech.pegasys.teku.validator.client.duties;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface Duty {
   SafeFuture<?> performDuty();

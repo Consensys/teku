@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.core.exceptions;
+package tech.pegasys.teku.core.exceptions;
 
 public final class EpochProcessingException extends Exception {
   public EpochProcessingException(String err) {

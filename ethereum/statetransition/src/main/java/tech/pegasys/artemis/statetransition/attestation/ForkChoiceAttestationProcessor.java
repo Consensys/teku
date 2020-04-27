@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.attestation;
+package tech.pegasys.teku.statetransition.attestation;
 
-import tech.pegasys.artemis.core.results.AttestationProcessingResult;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.teku.core.results.AttestationProcessingResult;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceAttestationProcessor {
 
