@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.DataOptions.DATA_PATH_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.DataOptions.DATA_STORAGE_MODE_OPTION_NAME;
 import static tech.pegasys.artemis.util.config.StateStorageMode.ARCHIVE;
 import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
@@ -37,21 +35,21 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataStorageMode_shouldAcceptPrune() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "prune");
+        getArtemisConfigurationFromArguments("--data-storage-mode", "prune");
     assertThat(artemisConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptArchive() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "archive");
+        getArtemisConfigurationFromArguments("--data-storage-mode", "archive");
     assertThat(artemisConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
 
   @Test
   public void dataPath_shouldAcceptNonDefaultValues() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(DATA_PATH_OPTION_NAME, TEST_PATH);
+        getArtemisConfigurationFromArguments("--data-path", TEST_PATH);
     assertThat(artemisConfiguration.getDataPath()).isEqualTo(TEST_PATH);
   }
 }
