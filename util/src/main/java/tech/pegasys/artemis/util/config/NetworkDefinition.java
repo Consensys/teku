@@ -31,6 +31,8 @@ public class NetworkDefinition {
               "topaz",
               builder()
                   .constants("mainnet")
+                  .initialState(
+                      "https://github.com/eth2-clients/eth2-testnets/raw/master/prysm/Topaz(v0.11.1)/genesis.ssz")
                   .discoveryBootnodes(
                       "enr:-Ku4QAGwOT9StqmwI5LHaIymIO4ooFKfNkEjWa0f1P8OsElgBh2Ijb-GrD_-b9W4kcPFcwmHQEy5RncqXNqdpVo1heoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
                   .eth1DepositContractAddress("0x5cA1e00004366Ac85f492887AAab12d0e6418876")
@@ -38,6 +40,7 @@ public class NetworkDefinition {
           .build();
 
   private final String constants;
+  private final Optional<String> initialState;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
@@ -46,12 +49,14 @@ public class NetworkDefinition {
 
   private NetworkDefinition(
       final String constants,
+      final Optional<String> initialState,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
       final Optional<String> eth1DepositContractAddress,
       final Optional<String> eth1Endpoint) {
     this.constants = constants;
+    this.initialState = initialState;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
@@ -69,6 +74,10 @@ public class NetworkDefinition {
 
   public String getConstants() {
     return constants;
+  }
+
+  public Optional<String> getInitialState() {
+    return initialState;
   }
 
   public Integer getStartupTargetPeerCount() {
@@ -93,6 +102,7 @@ public class NetworkDefinition {
 
   private static class Builder {
     private String constants;
+    private Optional<String> initialState = Optional.empty();
     private int startupTargetPeerCount = Constants.DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = Constants.DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private List<String> discoveryBootnodes = new ArrayList<>();
@@ -101,6 +111,11 @@ public class NetworkDefinition {
 
     public Builder constants(final String constants) {
       this.constants = constants;
+      return this;
+    }
+
+    public Builder initialState(final String initialState) {
+      this.initialState = Optional.of(initialState);
       return this;
     }
 
@@ -133,6 +148,7 @@ public class NetworkDefinition {
       checkNotNull(constants, "Missing constants");
       return new NetworkDefinition(
           constants,
+          initialState,
           startupTargetPeerCount,
           startupTimeoutSeconds,
           discoveryBootnodes,

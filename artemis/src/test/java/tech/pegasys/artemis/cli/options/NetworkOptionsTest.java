@@ -42,6 +42,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
     assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
+    assertThat(config.getInitialState())
+        .isEqualTo(networkDefinition.getInitialState().orElse(null));
     assertThat(config.getStartupTargetPeerCount())
         .isEqualTo(networkDefinition.getStartupTargetPeerCount());
     assertThat(config.getStartupTimeoutSeconds())

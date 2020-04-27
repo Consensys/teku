@@ -311,6 +311,7 @@ public class ArtemisConfigurationBuilder {
   public ArtemisConfiguration build() {
     if (network != null) {
       constants = getOrDefault(constants, network::getConstants);
+      initialState = getOrOptionalDefault(initialState, network::getInitialState);
       startupTargetPeerCount =
           getOrDefault(startupTargetPeerCount, network::getStartupTargetPeerCount);
       startupTimeoutSeconds =
