@@ -52,7 +52,7 @@ import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
-import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriptions;
+import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
@@ -72,7 +72,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
-  private final AttestationTopicSubscriptions attestationTopicSubscriptions;
+  private final AttestationTopicSubscriber attestationTopicSubscriptions;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
@@ -81,7 +81,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
-      final AttestationTopicSubscriptions attestationTopicSubscriptions,
+      final AttestationTopicSubscriber attestationTopicSubscriptions,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateTracker = syncStateTracker;

@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -128,29 +127,6 @@ public class PendingAttestation extends AbstractImmutableContainer
     variablePartsList.addAll(Collections.nCopies(getData().getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
     return variablePartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof PendingAttestation)) {
-      return false;
-    }
-
-    PendingAttestation other = (PendingAttestation) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override

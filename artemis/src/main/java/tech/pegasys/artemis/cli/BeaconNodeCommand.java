@@ -216,9 +216,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private int handleParseException(final CommandLine.ParameterException ex, final String[] args) {
     errorWriter.println(ex.getMessage());
 
-    if (!CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter)) {
-      ex.getCommandLine().usage(outputWriter, CommandLine.Help.Ansi.AUTO);
-    }
+    CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter);
+    outputWriter.println();
+    outputWriter.println("To display full help:");
+    outputWriter.println("teku --help");
 
     return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }

@@ -49,6 +49,7 @@ import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.api.TrackingStorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.config.StateStorageMode;
 
 public abstract class AbstractDatabaseTest {
 

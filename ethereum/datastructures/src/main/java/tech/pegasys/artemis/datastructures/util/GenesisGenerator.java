@@ -79,7 +79,7 @@ public class GenesisGenerator {
     // Process deposits
     deposits.forEach(
         deposit -> {
-          LOG.debug("About to process deposit: " + depositDataList.size());
+          LOG.trace("About to process deposit: {}", depositDataList::size);
           depositDataList.add(deposit.getData());
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
