@@ -140,15 +140,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStart() {
     this.eventBus.register(this);
     LOG.debug("Starting {}", this.getClass().getSimpleName());
-    return initialize()
-        .thenCompose(
-            __ ->
-                SafeFuture.allOfFailFast(
-                    attestationManager.start(),
-                    p2pNetwork.start(),
-                    syncService.start(),
-                    SafeFuture.fromRunnable(beaconRestAPI::start),
-                    syncStateTracker.start()));
+    return initialize().thenCompose((__) -> SafeFuture.fromRunnable(beaconRestAPI::start));
+  }
+
+  private SafeFuture<?> startServices() {
+    return SafeFuture.allOfFailFast(
+        attestationManager.start(),
+        p2pNetwork.start(),
+        syncService.start(),
+        syncStateTracker.start());
   }
 
   @Override
@@ -184,10 +184,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                       "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
                 }
               }
-              recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               // Init other services
               this.initAll();
               eventChannels.subscribe(TimeTickChannel.class, this);
+
+              recentChainData.subscribeStoreInitialized(
+                  () -> {
+                    this.onStoreInitialized();
+                    this.startServices().reportExceptions();
+                  });
             });
   }
 

@@ -222,7 +222,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter);
     outputWriter.println();
     outputWriter.println("To display full help:");
-    outputWriter.println("teku --help");
+    outputWriter.println("teku [COMMAND] --help");
 
     return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }
