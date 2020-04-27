@@ -282,6 +282,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
+  /** Shortcut to process the value when complete and return the same future */
+  public SafeFuture<T> thenPeek(Consumer<T> fn) {
+    return thenApply(
+        v -> {
+          fn.accept(v);
+          return v;
+        });
+  }
+
   @Override
   public SafeFuture<Void> thenRun(final Runnable action) {
     return (SafeFuture<Void>) super.thenRun(action);
