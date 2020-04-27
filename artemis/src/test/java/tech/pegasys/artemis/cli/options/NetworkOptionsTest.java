@@ -68,4 +68,12 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final ArtemisConfiguration artemisConfiguration = getResultingArtemisConfiguration();
     assertThat(artemisConfiguration.getConstants()).isEqualTo(url);
   }
+
+  @Test
+  public void useInitialState() {
+    String initialState = "some-file-or-url";
+    final ArtemisConfiguration config =
+        getArtemisConfigurationFromArguments("--initial-state", initialState);
+    assertThat(config.getInitialState()).isEqualTo(initialState);
+  }
 }
