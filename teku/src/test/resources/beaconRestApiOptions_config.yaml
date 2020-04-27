@@ -1,5 +1,0 @@
-# beacon rest api
-rest-api-port: 5055
-rest-api-docs-enabled: True
-rest-api-enabled: True
-rest-api-interface: "127.100.0.1"
