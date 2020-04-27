@@ -21,7 +21,6 @@ public class InteropOptions {
       "--Xinterop-owned-validator-start-index";
   public static final String INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME =
       "--Xinterop-owned-validator-count";
-  public static final String INTEROP_START_STATE_OPTION_NAME = "--Xinterop-start-state";
   public static final String INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME =
       "--Xinterop-number-of-validators";
   public static final String INTEROP_ENABLED_OPTION_NAME = "--Xinterop-enabled";
@@ -29,7 +28,6 @@ public class InteropOptions {
   public static final Integer DEFAULT_X_INTEROP_GENESIS_TIME = null;
   public static final int DEFAULT_X_INTEROP_OWNED_VALIDATOR_START_INDEX = 0;
   public static final int DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT = 0;
-  public static final String DEFAULT_X_INTEROP_START_STATE = "";
   public static final int DEFAULT_X_INTEROP_NUMBER_OF_VALIDATORS = 64;
   public static final boolean DEFAULT_X_INTEROP_ENABLED = false;
 
@@ -59,14 +57,6 @@ public class InteropOptions {
 
   @CommandLine.Option(
       hidden = true,
-      names = {INTEROP_START_STATE_OPTION_NAME},
-      paramLabel = "<STRING>",
-      description = "Initial BeaconState to load",
-      arity = "1")
-  private String interopStartState = DEFAULT_X_INTEROP_START_STATE;
-
-  @CommandLine.Option(
-      hidden = true,
       names = {INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Represents the total number of validators in the network")
@@ -91,10 +81,6 @@ public class InteropOptions {
 
   public int getInteropOwnerValidatorCount() {
     return interopOwnerValidatorCount;
-  }
-
-  public String getInteropStartState() {
-    return interopStartState;
   }
 
   public int getInteropNumberOfValidators() {
