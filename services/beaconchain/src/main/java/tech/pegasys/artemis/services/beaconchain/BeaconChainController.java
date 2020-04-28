@@ -50,7 +50,9 @@ import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.networking.eth2.mock.NoOpEth2Network;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.artemis.networking.p2p.network.GossipConfig;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
@@ -143,12 +145,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return initialize().thenCompose((__) -> SafeFuture.fromRunnable(beaconRestAPI::start));
   }
 
-  private SafeFuture<?> startServices() {
-    return SafeFuture.allOfFailFast(
-        attestationManager.start(),
-        p2pNetwork.start(),
-        syncService.start(),
-        syncStateTracker.start());
+  private void startServices() {
+    SafeFuture.allOfFailFast(
+            attestationManager.start(),
+            p2pNetwork.start(),
+            syncService.start(),
+            syncStateTracker.start())
+        .reportExceptions();
   }
 
   @Override
@@ -188,11 +191,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.initAll();
               eventChannels.subscribe(TimeTickChannel.class, this);
 
-              recentChainData.subscribeStoreInitialized(
-                  () -> {
-                    this.onStoreInitialized();
-                    this.startServices().reportExceptions();
-                  });
+              recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
+              recentChainData.subscribeBestBlockInitialized(this::startServices);
             });
   }
 
@@ -222,7 +222,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initStateTransition() {
-    LOG.debug("BeaconChainController.initForkChoice()");
+    LOG.debug("BeaconChainController.initStateTransition()");
     stateTransition = new StateTransition();
   }
 
@@ -337,9 +337,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               config.isP2pDiscoveryEnabled(),
               config.getP2pDiscoveryBootnodes(),
               new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
-              true,
-              true,
-              true);
+              GossipConfig.DEFAULT_CONFIG,
+              new WireLogsConfig(
+                  config.isLogWireCipher(),
+                  config.isLogWirePlain(),
+                  config.isLogWireMuxFrames(),
+                  config.isLogWireGossip()));
+
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
               .config(p2pConfig)
@@ -382,7 +386,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class),
-            new BlockImporter(recentChainData, forkChoice, eventBus));
+            blockImporter);
     beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 

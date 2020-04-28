@@ -131,10 +131,7 @@ class DiscoveryNetworkTest {
                 Collections.emptyList(),
                 false,
                 Collections.emptyList(),
-                new TargetPeerRange(20, 30),
-                false,
-                false,
-                false));
+                new TargetPeerRange(20, 30)));
     assertThat(network.getEnr()).isEmpty();
   }
 

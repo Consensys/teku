@@ -28,12 +28,12 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.core.AttestationGenerator;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -42,24 +42,25 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationTopicHandlerTest {
 
-  public static final UnsignedLong SUBNET_ID = UnsignedLong.valueOf(1);
+  private static final UnsignedLong SUBNET_ID = UnsignedLong.valueOf(1);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
-  private final AttestationValidator attestationValidator =
-      Mockito.mock(AttestationValidator.class);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+  private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
   private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(eventBus, attestationValidator, SUBNET_ID);
+      new AttestationTopicHandler(
+          eventBus, attestationValidator, SUBNET_ID, dataStructureUtil.randomForkInfo());
 
   @BeforeEach
   public void setup() {
-    BeaconChainUtil.initializeStorage(storageClient, validatorKeys);
+    BeaconChainUtil.initializeStorage(recentChainData, validatorKeys);
   }
 
   @Test
   public void handleMessage_validAttestation() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(VALID);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
@@ -72,7 +73,7 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_failsValidation() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(INVALID);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
@@ -85,7 +86,7 @@ public class AttestationTopicHandlerTest {
   @Test
   public void handleMessage_saveForFuture() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = storageClient.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVED_FOR_FUTURE);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);

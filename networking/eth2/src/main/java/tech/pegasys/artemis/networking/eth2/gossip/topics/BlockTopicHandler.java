@@ -17,19 +17,19 @@ import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
-  public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
-  private final EventBus eventBus;
+  public static String TOPIC_NAME = "beacon_block";
   private final BlockValidator blockValidator;
 
-  public BlockTopicHandler(final EventBus eventBus, final BlockValidator blockValidator) {
-    super(eventBus);
-    this.eventBus = eventBus;
+  public BlockTopicHandler(
+      final EventBus eventBus, final BlockValidator blockValidator, final ForkInfo forkInfo) {
+    super(eventBus, forkInfo);
     this.blockValidator = blockValidator;
   }
 
@@ -39,8 +39,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   }
 
   @Override
-  public String getTopic() {
-    return BLOCKS_TOPIC;
+  public String getTopicName() {
+    return TOPIC_NAME;
   }
 
   @Override
@@ -49,19 +49,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   }
 
   @Override
-  protected boolean validateData(final SignedBeaconBlock block) {
-    ValidationResult validationResult = blockValidator.validate(block);
-    switch (validationResult) {
-      case INVALID:
-        return false;
-      case SAVED_FOR_FUTURE:
-        eventBus.post(createEvent(block));
-        return false;
-      case VALID:
-        return true;
-      default:
-        throw new UnsupportedOperationException(
-            "BlockTopicHandler: Unexpected block validation result: " + validationResult);
-    }
+  protected ValidationResult validateData(final SignedBeaconBlock block) {
+    return blockValidator.validate(block);
   }
 }
