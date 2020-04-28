@@ -30,7 +30,6 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AggregateGossipManagerTest {
 
@@ -46,7 +45,8 @@ public class AggregateGossipManagerTest {
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(contains(AggregateTopicHandler.TOPIC_NAME), any());
-    new AggregateGossipManager(gossipNetwork, eventBus, validator, Bytes4.rightPad(Bytes.EMPTY));
+    new AggregateGossipManager(
+        gossipNetwork, eventBus, validator, dataStructureUtil.randomForkInfo());
   }
 
   @Test

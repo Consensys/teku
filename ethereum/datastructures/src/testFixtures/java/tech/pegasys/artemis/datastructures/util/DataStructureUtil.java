@@ -41,6 +41,7 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -97,6 +98,10 @@ public final class DataStructureUtil {
 
   public UnsignedLong randomUnsignedLong() {
     return UnsignedLong.fromLongBits(randomLong());
+  }
+
+  private Bytes4 randomBytes4() {
+    return new Bytes4(randomBytes32().slice(0, 4));
   }
 
   public Bytes32 randomBytes32() {
@@ -435,14 +440,15 @@ public final class DataStructureUtil {
   }
 
   public Fork randomFork() {
-    return new Fork(
-        new Bytes4(randomBytes32().slice(0, 4)),
-        new Bytes4(randomBytes32().slice(0, 4)),
-        randomUnsignedLong());
+    return new Fork(randomBytes4(), randomBytes4(), randomUnsignedLong());
   }
 
   public ForkInfo randomForkInfo() {
     return new ForkInfo(randomFork(), randomBytes32());
+  }
+
+  public EnrForkId randomEnrForkId() {
+    return new EnrForkId(randomBytes4(), randomBytes4(), randomUnsignedLong());
   }
 
   public BeaconState randomBeaconState() {

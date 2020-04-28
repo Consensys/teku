@@ -15,12 +15,18 @@ package tech.pegasys.artemis.networking.p2p;
 
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
@@ -33,11 +39,13 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
+  private static final String ETH2_ENR_FIELD = "eth2";
   private static final Logger LOG = LogManager.getLogger();
 
   private final P2PNetwork<P> p2pNetwork;
@@ -127,6 +135,21 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
         new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
+  }
+
+  public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
+    // If no future fork is planned, set next_fork_version = current_fork_version to signal this
+    final Bytes4 nextVersion =
+        nextForkInfo
+            .map(Fork::getCurrent_version)
+            .orElse(currentForkInfo.getFork().getCurrent_version());
+    // If no future fork is planned, set next_fork_epoch = FAR_FUTURE_EPOCH to signal this
+    final UnsignedLong nextForkEpoch = nextForkInfo.map(Fork::getEpoch).orElse(FAR_FUTURE_EPOCH);
+
+    final EnrForkId enrForkId =
+        new EnrForkId(currentForkInfo.getForkDigest(), nextVersion, nextForkEpoch);
+    discoveryService.updateCustomENRField(
+        ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
   }
 
   @Override

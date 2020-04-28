@@ -26,17 +26,14 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
-import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final SignedAggregateAndProofValidator validator =
       mock(SignedAggregateAndProofValidator.class);
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final AggregateTopicHandler topicHandler =
-      new AggregateTopicHandler(eventBus, recentChainData.getCurrentForkDigest(), validator);
+      new AggregateTopicHandler(eventBus, dataStructureUtil.randomForkInfo(), validator);
 
   @Test
   public void handleMessage_validAggregate() {
