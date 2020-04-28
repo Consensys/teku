@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
@@ -36,6 +37,7 @@ import tech.pegasys.artemis.util.time.TimeProvider;
 public class Eth2NetworkBuilder {
 
   private NetworkConfig config;
+  private Eth2Config eth2Config;
   private EventBus eventBus;
   private RecentChainData recentChainData;
   private StorageQueryChannel historicalChainData;
@@ -54,8 +56,10 @@ public class Eth2NetworkBuilder {
     validate();
 
     // Setup eth2 handlers
+    final RpcEncoding rpcEncoding =
+        eth2Config.isSnappyCompressionEnabled() ? RpcEncoding.SSZ_SNAPPY : RpcEncoding.SSZ;
     final Eth2PeerManager eth2PeerManager =
-        Eth2PeerManager.create(recentChainData, historicalChainData, metricsSystem);
+        Eth2PeerManager.create(recentChainData, historicalChainData, metricsSystem, rpcEncoding);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -77,6 +81,7 @@ public class Eth2NetworkBuilder {
 
   private void validate() {
     assertNotNull("config", config);
+    assertNotNull("eth2Config", eth2Config);
     assertNotNull("eventBus", eventBus);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
@@ -90,6 +95,12 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder config(final NetworkConfig config) {
     checkNotNull(config);
     this.config = config;
+    return this;
+  }
+
+  public Eth2NetworkBuilder eth2Config(final Eth2Config eth2Config) {
+    checkNotNull(eth2Config);
+    this.eth2Config = eth2Config;
     return this;
   }
 

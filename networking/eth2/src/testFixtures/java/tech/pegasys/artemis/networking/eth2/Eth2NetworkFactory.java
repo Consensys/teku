@@ -32,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
@@ -73,6 +74,8 @@ public class Eth2NetworkFactory {
     protected RecentChainData recentChainData;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
+    // TODO - configure this in tests
+    protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -113,7 +116,8 @@ public class Eth2NetworkFactory {
         // Setup eth2 handlers
         final StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
         final Eth2PeerManager eth2PeerManager =
-            Eth2PeerManager.create(recentChainData, historicalChainData, METRICS_SYSTEM);
+            Eth2PeerManager.create(
+                recentChainData, historicalChainData, METRICS_SYSTEM, rpcEncoding);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);

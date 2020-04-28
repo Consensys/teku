@@ -32,6 +32,7 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
@@ -53,6 +54,8 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
       mock(CombinedChainDataClient.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
+  // TODO - run tests with different encoders
+  protected final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
   protected final BeaconChainMethods beaconChainMethods =
       BeaconChainMethods.create(
           asyncRunner,
@@ -60,7 +63,8 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
           combinedChainDataClient,
           recentChainData,
           new NoOpMetricsSystem(),
-          new StatusMessageFactory(recentChainData));
+          new StatusMessageFactory(recentChainData),
+          rpcEncoding);
 
   protected final NodeId nodeId = new MockNodeId();
   protected final RpcStream rpcStream = mock(RpcStream.class);
