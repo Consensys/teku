@@ -42,7 +42,8 @@ public class LoggingOptions {
       paramLabel = "<BOOLEAN>",
       description =
           "Whether frequent update events are logged (e.g. every slot event, with validators and attestations)",
-      arity = "1")
+      fallbackValue = "true",
+      arity = "0..1")
   private boolean logIncludeEventsEnabled = true;
 
   @CommandLine.Option(

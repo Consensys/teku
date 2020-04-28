@@ -53,6 +53,13 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void includeEvents_shouldNotRequireAValue() {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments("--log-include-events-enabled");
+    assertThat(artemisConfiguration.isLogIncludeEventsEnabled()).isTrue();
+  }
+
+  @Test
   public void logDestination_shouldAcceptConsoleAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments("--log-destination", "console");
