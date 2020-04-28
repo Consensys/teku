@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.ssz.sos.SimpleOffsetSerializable;
@@ -38,9 +39,21 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
     T data;
     try {
       data = deserializeData(bytes);
-      if (!validateData(data)) {
-        LOG.trace("Received invalid message for topic: {}", getTopic());
-        return false;
+      final ValidationResult validationResult = validateData(data);
+      switch (validationResult) {
+        case INVALID:
+          LOG.trace("Received invalid message for topic: {}", this::getTopic);
+          return false;
+        case SAVED_FOR_FUTURE:
+          LOG.trace("Deferring message for topic: {}", this::getTopic);
+          eventBus.post(createEvent(data));
+          return false;
+        case VALID:
+          eventBus.post(createEvent(data));
+          return true;
+        default:
+          throw new UnsupportedOperationException(
+              "Unexpected validation result: " + validationResult);
       }
     } catch (SSZException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
@@ -49,9 +62,6 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
       return false;
     }
-
-    eventBus.post(createEvent(data));
-    return true;
   }
 
   protected Object createEvent(T data) {
@@ -66,7 +76,7 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
 
   protected abstract T deserialize(Bytes bytes) throws SSZException;
 
-  protected abstract boolean validateData(T dataObject);
+  protected abstract ValidationResult validateData(T dataObject);
 
   private T deserializeData(Bytes bytes) throws SSZException {
     final T deserialized = deserialize(bytes);

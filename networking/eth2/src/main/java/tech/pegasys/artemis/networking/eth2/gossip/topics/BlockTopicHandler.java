@@ -49,19 +49,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   }
 
   @Override
-  protected boolean validateData(final SignedBeaconBlock block) {
-    ValidationResult validationResult = blockValidator.validate(block);
-    switch (validationResult) {
-      case INVALID:
-        return false;
-      case SAVED_FOR_FUTURE:
-        eventBus.post(createEvent(block));
-        return false;
-      case VALID:
-        return true;
-      default:
-        throw new UnsupportedOperationException(
-            "BlockTopicHandler: Unexpected block validation result: " + validationResult);
-    }
+  protected ValidationResult validateData(final SignedBeaconBlock block) {
+    return blockValidator.validate(block);
   }
 }
