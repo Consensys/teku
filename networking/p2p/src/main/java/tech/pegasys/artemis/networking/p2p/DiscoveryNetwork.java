@@ -14,16 +14,17 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
@@ -38,6 +39,7 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitvector;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -135,13 +137,17 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
         new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
   }
 
-  public void setForkInfo(final ForkInfo forkInfo) {
+  public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
+    // If no future fork is planned, set next_fork_version = current_fork_version to signal this
+    final Bytes4 nextVersion =
+        nextForkInfo
+            .map(Fork::getCurrent_version)
+            .orElse(currentForkInfo.getFork().getCurrent_version());
+    // If no future fork is planned, set next_fork_epoch = FAR_FUTURE_EPOCH to signal this
+    final UnsignedLong nextForkEpoch = nextForkInfo.map(Fork::getEpoch).orElse(FAR_FUTURE_EPOCH);
+
     final EnrForkId enrForkId =
-        new EnrForkId(
-            compute_fork_digest(
-                forkInfo.getFork().getCurrent_version(), forkInfo.getGenesisValidatorsRoot()),
-            forkInfo.getFork().getCurrent_version(),
-            FAR_FUTURE_EPOCH);
+        new EnrForkId(currentForkInfo.getForkDigest(), nextVersion, nextForkEpoch);
     discoveryService.updateCustomENRField(
         ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
   }

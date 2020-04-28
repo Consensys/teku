@@ -37,7 +37,7 @@ public class StatusMessageFactory {
     final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
 
     return new StatusMessage(
-        recentChainData.getCurrentForkDigest(),
+        recentChainData.getCurrentForkInfo().orElseThrow().getForkDigest(),
         finalizedRoot,
         finalizedEpoch,
         recentChainData.getBestBlockRoot().orElse(Bytes32.ZERO),
