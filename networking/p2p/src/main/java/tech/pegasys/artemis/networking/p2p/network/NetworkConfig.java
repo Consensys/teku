@@ -31,9 +31,32 @@ public class NetworkConfig {
   private final boolean isDiscoveryEnabled;
   private final List<String> bootnodes;
   private final TargetPeerRange targetPeerRange;
-  private final boolean logWireCipher;
-  private final boolean logWirePlain;
-  private final boolean logMuxFrames;
+  private final GossipConfig gossipConfig;
+  private final WireLogsConfig wireLogsConfig;
+
+  public NetworkConfig(
+      final PrivKey privateKey,
+      final String networkInterface,
+      final String advertisedIp,
+      final int listenPort,
+      final int advertisedPort,
+      final List<String> staticPeers,
+      final boolean isDiscoveryEnabled,
+      final List<String> bootnodes,
+      final TargetPeerRange targetPeerRange) {
+    this(
+        privateKey,
+        networkInterface,
+        advertisedIp,
+        listenPort,
+        advertisedPort,
+        staticPeers,
+        isDiscoveryEnabled,
+        bootnodes,
+        targetPeerRange,
+        GossipConfig.DEFAULT_CONFIG,
+        WireLogsConfig.DEFAULT_CONFIG);
+  }
 
   public NetworkConfig(
       final PrivKey privateKey,
@@ -45,9 +68,9 @@ public class NetworkConfig {
       final boolean isDiscoveryEnabled,
       final List<String> bootnodes,
       final TargetPeerRange targetPeerRange,
-      final boolean logWireCipher,
-      final boolean logWirePlain,
-      final boolean logMuxFrames) {
+      final GossipConfig gossipConfig,
+      final WireLogsConfig wireLogsConfig) {
+
     this.privateKey = privateKey;
     this.networkInterface = networkInterface;
 
@@ -65,9 +88,8 @@ public class NetworkConfig {
     this.isDiscoveryEnabled = isDiscoveryEnabled;
     this.bootnodes = bootnodes;
     this.targetPeerRange = targetPeerRange;
-    this.logWireCipher = logWireCipher;
-    this.logWirePlain = logWirePlain;
-    this.logMuxFrames = logMuxFrames;
+    this.gossipConfig = gossipConfig;
+    this.wireLogsConfig = wireLogsConfig;
   }
 
   public PrivKey getPrivateKey() {
@@ -106,15 +128,11 @@ public class NetworkConfig {
     return targetPeerRange;
   }
 
-  public boolean isLogWireCipher() {
-    return logWireCipher;
+  public GossipConfig getGossipConfig() {
+    return gossipConfig;
   }
 
-  public boolean isLogWirePlain() {
-    return logWirePlain;
-  }
-
-  public boolean isLogMuxFrames() {
-    return logMuxFrames;
+  public WireLogsConfig getWireLogsConfig() {
+    return wireLogsConfig;
   }
 }

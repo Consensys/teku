@@ -25,16 +25,21 @@ import io.libp2p.core.dsl.Builder.Defaults;
 import io.libp2p.core.dsl.BuilderJKt;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multistream.ProtocolBinding;
+import io.libp2p.core.pubsub.PubsubApi;
+import io.libp2p.core.pubsub.PubsubApiKt;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.etc.types.ByteArrayExtKt;
 import io.libp2p.mux.mplex.MplexStreamMuxer;
 import io.libp2p.protocol.Identify;
 import io.libp2p.protocol.Ping;
 import io.libp2p.pubsub.gossip.Gossip;
+import io.libp2p.pubsub.gossip.GossipRouter;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
+import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -101,7 +106,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.listenPort = config.getListenPort();
 
     // Setup gossip
-    gossip = new Gossip();
+    gossip = createGossip();
     final PubsubPublisherApi publisher = gossip.createPublisher(privKey, new Random().nextLong());
     gossipNetwork = new LibP2PGossipNetwork(gossip, publisher);
 
@@ -127,18 +132,38 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getProtocols().addAll(getDefaultProtocols());
               b.getProtocols().addAll(rpcHandlers.values());
 
-              if (config.isLogWireCipher()) {
+              if (config.getWireLogsConfig().isLogWireCipher()) {
                 b.getDebug().getBeforeSecureHandler().setLogger(LogLevel.DEBUG, "wire.ciphered");
               }
-              if (config.isLogWirePlain()) {
+              if (config.getWireLogsConfig().isLogWirePlain()) {
                 b.getDebug().getAfterSecureHandler().setLogger(LogLevel.DEBUG, "wire.plain");
               }
-              if (config.isLogMuxFrames()) {
+              if (config.getWireLogsConfig().isLogWireMuxFrames()) {
                 b.getDebug().getMuxFramesHandler().setLogger(LogLevel.DEBUG, "wire.mux");
               }
 
               b.getConnectionHandlers().add(peerManager);
             });
+  }
+
+  private Gossip createGossip() {
+    GossipRouter router = new GossipRouter();
+    router.setD(config.getGossipConfig().getD());
+    router.setDLow(config.getGossipConfig().getDLow());
+    router.setDHigh(config.getGossipConfig().getDHigh());
+    router.setDGossip(config.getGossipConfig().getDLazy());
+    router.setFanoutTTL(config.getGossipConfig().getFanoutTTL().toMillis());
+    router.setGossipSize(config.getGossipConfig().getAdvertise());
+    router.setGossipHistoryLength(config.getGossipConfig().getHistory());
+    router.setHeartbeatInterval(config.getGossipConfig().getHeartbeatInterval());
+
+    ChannelHandler debugHandler =
+        config.getWireLogsConfig().isLogWireGossip()
+            ? new LoggingHandler("wire.gossip", LogLevel.DEBUG)
+            : null;
+    PubsubApi pubsubApi = PubsubApiKt.createPubsubApi(router);
+
+    return new Gossip(router, pubsubApi, debugHandler);
   }
 
   private List<ProtocolBinding<?>> getDefaultProtocols() {
