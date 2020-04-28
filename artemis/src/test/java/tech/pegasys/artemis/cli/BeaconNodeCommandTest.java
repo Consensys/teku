@@ -31,6 +31,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 import tech.pegasys.artemis.util.config.LoggingDestination;
@@ -167,6 +169,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final ArtemisConfiguration artemisConfiguration =
         getArtemisConfigurationFromArguments("--Xinterop-enabled");
     assertThat(artemisConfiguration.isInteropEnabled()).isTrue();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"OFF", "FATAL", "WARN", "INFO", "DEBUG", "TRACE", "ALL"})
+  public void loglevel_shouldAcceptValues(String level) {
+    final String[] args = {"--logging", level};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
   }
 
   private Path createConfigFile() throws IOException {

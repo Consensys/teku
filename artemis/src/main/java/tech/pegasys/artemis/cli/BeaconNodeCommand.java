@@ -267,6 +267,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
     }
   }
 
+  public Level getLogLevel() {
+    return this.logLevel;
+  }
+
   private ArtemisConfiguration artemisConfiguration() {
     // TODO: validate option dependencies
     return ArtemisConfiguration.builder()
