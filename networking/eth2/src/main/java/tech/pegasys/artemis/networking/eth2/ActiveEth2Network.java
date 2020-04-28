@@ -132,9 +132,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {
     if (aggregateGossipManager == null) {
-      LOG.warn(
+      throw new IllegalStateException(
           "Attestation committee can not be subscribed due to gossip manager not being initialized");
-      return;
     }
     attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
   }
@@ -142,9 +141,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
     if (aggregateGossipManager == null) {
-      LOG.warn(
+      throw new IllegalStateException(
           "Attestation committee can not be unsubscribed due to gossip manager not being initialized");
-      return;
     }
     attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
   }
