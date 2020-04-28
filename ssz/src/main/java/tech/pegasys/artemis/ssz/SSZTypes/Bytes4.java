@@ -99,7 +99,7 @@ public class Bytes4 {
   }
 
   public String toUnprefixedHexString() {
-    return toHexString().substring(2);
+    return bytes.toUnprefixedHexString();
   }
 
   @Override
