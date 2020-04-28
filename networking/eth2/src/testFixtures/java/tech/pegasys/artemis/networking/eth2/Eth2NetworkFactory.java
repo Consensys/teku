@@ -74,7 +74,6 @@ public class Eth2NetworkFactory {
     protected RecentChainData recentChainData;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
-    // TODO - configure this in tests
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
 
     public Eth2Network startNetwork() throws Exception {
@@ -163,6 +162,11 @@ public class Eth2NetworkFactory {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
         BeaconChainUtil.create(0, recentChainData).initializeStorage();
       }
+    }
+
+    public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
+      this.rpcEncoding = rpcEncoding;
+      return this;
     }
 
     public Eth2P2PNetworkBuilder peer(final Eth2Network peer) {

@@ -18,14 +18,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.Store;
@@ -51,17 +55,29 @@ public class PeerStatusIntegrationTest {
     networkFactory.stopAll();
   }
 
-  @Test
-  public void shouldExchangeStatusMessagesOnConnection() throws Exception {
+  public static Stream<Arguments> getEncodings() {
+    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
+    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
+  }
+
+  @ParameterizedTest(name = "encoding: {0}")
+  @MethodSource("getEncodings")
+  public void shouldExchangeStatusMessagesOnConnection(
+      final String encodingName, final RpcEncoding encoding) throws Exception {
     final EventBus eventBus2 = new EventBus();
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(eventBus2);
     BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
 
     final Eth2Network network1 =
-        networkFactory.builder().recentChainData(recentChainData1).startNetwork();
+        networkFactory
+            .builder()
+            .rpcEncoding(encoding)
+            .recentChainData(recentChainData1)
+            .startNetwork();
     final Eth2Network network2 =
         networkFactory
             .builder()
+            .rpcEncoding(encoding)
             .eventBus(eventBus2)
             .recentChainData(recentChainData2)
             .startNetwork();
@@ -81,10 +97,16 @@ public class PeerStatusIntegrationTest {
     assertStatusMatchesStorage(recentChainData2, network1ViewOfPeer2.getStatus());
   }
 
-  @Test
-  public void shouldUpdatePeerStatus() throws Exception {
+  @ParameterizedTest(name = "encoding: {0}")
+  @MethodSource("getEncodings")
+  public void shouldUpdatePeerStatus(final String encodingName, final RpcEncoding encoding)
+      throws Exception {
     final Eth2Network network1 =
-        networkFactory.builder().recentChainData(recentChainData1).startNetwork();
+        networkFactory
+            .builder()
+            .rpcEncoding(encoding)
+            .recentChainData(recentChainData1)
+            .startNetwork();
 
     final EventBus eventBus2 = new EventBus();
     final RecentChainData storageClient2 = MemoryOnlyRecentChainData.create(eventBus2);
@@ -92,6 +114,7 @@ public class PeerStatusIntegrationTest {
     final Eth2Network network2 =
         networkFactory
             .builder()
+            .rpcEncoding(encoding)
             .eventBus(eventBus2)
             .recentChainData(storageClient2)
             .peer(network1)
