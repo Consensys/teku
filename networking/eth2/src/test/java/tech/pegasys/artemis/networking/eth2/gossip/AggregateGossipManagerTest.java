@@ -27,16 +27,17 @@ import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AggregateGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final SignedAggregateAndProofValidator validator =
+      mock(SignedAggregateAndProofValidator.class);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
@@ -45,7 +46,7 @@ public class AggregateGossipManagerTest {
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(contains(AggregateTopicHandler.TOPIC_NAME), any());
-    new AggregateGossipManager(gossipNetwork, eventBus, storageClient);
+    new AggregateGossipManager(gossipNetwork, eventBus, validator, Bytes4.rightPad(Bytes.EMPTY));
   }
 
   @Test

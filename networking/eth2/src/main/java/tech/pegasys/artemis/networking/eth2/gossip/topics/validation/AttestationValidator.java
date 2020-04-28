@@ -44,7 +44,8 @@ public class AttestationValidator {
       UnsignedLong.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
   private final Set<ValidatorAndSlot> receivedValidAttestations =
-      ConcurrentLimitedSet.create(VALID_ATTESTATION_SET_SIZE, LimitStrategy.DROP_OLDEST_ELEMENT);
+      ConcurrentLimitedSet.create(
+          VALID_ATTESTATION_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final RecentChainData recentChainData;
 
   public AttestationValidator(final RecentChainData recentChainData) {
@@ -96,7 +97,7 @@ public class AttestationValidator {
     return VALID;
   }
 
-  private ValidationResult singleOrAggregateAttestationChecks(final Attestation attestation) {
+  ValidationResult singleOrAggregateAttestationChecks(final Attestation attestation) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY

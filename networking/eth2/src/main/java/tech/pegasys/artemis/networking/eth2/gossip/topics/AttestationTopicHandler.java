@@ -27,8 +27,8 @@ import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
-  private final AttestationValidator attestationValidator;
   private final UnsignedLong subnetId;
+  private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
       final EventBus eventBus,
@@ -51,19 +51,7 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   }
 
   @Override
-  protected boolean validateData(final Attestation attestation) {
-    final ValidationResult validationResult = attestationValidator.validate(attestation, subnetId);
-    switch (validationResult) {
-      case INVALID:
-        return false;
-      case SAVED_FOR_FUTURE:
-        eventBus.post(createEvent(attestation));
-        return false;
-      case VALID:
-        return true;
-      default:
-        throw new UnsupportedOperationException(
-            "Unexpected attestation validation result: " + validationResult);
-    }
+  protected ValidationResult validateData(final Attestation attestation) {
+    return attestationValidator.validate(attestation, subnetId);
   }
 }
