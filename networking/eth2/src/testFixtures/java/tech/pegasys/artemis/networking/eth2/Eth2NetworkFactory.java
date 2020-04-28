@@ -147,10 +147,7 @@ public class Eth2NetworkFactory {
           peerAddresses,
           false,
           emptyList(),
-          new TargetPeerRange(20, 30),
-          false,
-          false,
-          false);
+          new TargetPeerRange(20, 30));
     }
 
     private void setDefaults() {
