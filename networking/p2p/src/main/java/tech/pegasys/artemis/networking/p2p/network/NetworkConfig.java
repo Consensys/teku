@@ -16,7 +16,6 @@ package tech.pegasys.artemis.networking.p2p.network;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
 import io.libp2p.core.crypto.PrivKey;
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
@@ -32,22 +31,8 @@ public class NetworkConfig {
   private final boolean isDiscoveryEnabled;
   private final List<String> bootnodes;
   private final TargetPeerRange targetPeerRange;
-
-  // Gossip options
-  // https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#the-gossip-domain-gossipsub
-  private int gossipD = 6;
-  private int gossipDLow = 4;
-  private int gossipDHigh = 12;
-  private int gossipDLazy = 6;
-  private Duration gossipFanoutTTL = Duration.ofSeconds(60);
-  private int gossipAdvertise = 3;
-  private int gossipHistory = 5;
-  private Duration gossipHeartbeatInterval = Duration.ofSeconds(1);
-
-  private boolean logWireCipher = false;
-  private boolean logWirePlain = false;
-  private boolean logWireMuxFrames = false;
-  private boolean logWireGossip = false;
+  private final GossipConfig gossipConfig;
+  private final WireLogsConfig wireLogsConfig;
 
   public NetworkConfig(
       final PrivKey privateKey,
@@ -59,6 +44,32 @@ public class NetworkConfig {
       final boolean isDiscoveryEnabled,
       final List<String> bootnodes,
       final TargetPeerRange targetPeerRange) {
+    this(
+        privateKey,
+        networkInterface,
+        advertisedIp,
+        listenPort,
+        advertisedPort,
+        staticPeers,
+        isDiscoveryEnabled,
+        bootnodes,
+        targetPeerRange,
+        GossipConfig.DEFAULT_CONFIG,
+        WireLogsConfig.DEFAULT_CONFIG);
+  }
+
+  public NetworkConfig(
+      final PrivKey privateKey,
+      final String networkInterface,
+      final String advertisedIp,
+      final int listenPort,
+      final int advertisedPort,
+      final List<String> staticPeers,
+      final boolean isDiscoveryEnabled,
+      final List<String> bootnodes,
+      final TargetPeerRange targetPeerRange,
+      final GossipConfig gossipConfig,
+      final WireLogsConfig wireLogsConfig) {
 
     this.privateKey = privateKey;
     this.networkInterface = networkInterface;
@@ -77,6 +88,8 @@ public class NetworkConfig {
     this.isDiscoveryEnabled = isDiscoveryEnabled;
     this.bootnodes = bootnodes;
     this.targetPeerRange = targetPeerRange;
+    this.gossipConfig = gossipConfig;
+    this.wireLogsConfig = wireLogsConfig;
   }
 
   public PrivKey getPrivateKey() {
@@ -115,111 +128,11 @@ public class NetworkConfig {
     return targetPeerRange;
   }
 
-  public int getGossipD() {
-    return gossipD;
+  public GossipConfig getGossipConfig() {
+    return gossipConfig;
   }
 
-  public int getGossipDLow() {
-    return gossipDLow;
-  }
-
-  public int getGossipDHigh() {
-    return gossipDHigh;
-  }
-
-  public int getGossipDLazy() {
-    return gossipDLazy;
-  }
-
-  public Duration getGossipFanoutTTL() {
-    return gossipFanoutTTL;
-  }
-
-  public int getGossipAdvertise() {
-    return gossipAdvertise;
-  }
-
-  public int getGossipHistory() {
-    return gossipHistory;
-  }
-
-  public Duration getGossipHeartbeatInterval() {
-    return gossipHeartbeatInterval;
-  }
-
-  public boolean isLogWireCipher() {
-    return logWireCipher;
-  }
-
-  public boolean isLogWirePlain() {
-    return logWirePlain;
-  }
-
-  public boolean isLogWireMuxFrames() {
-    return logWireMuxFrames;
-  }
-
-  public boolean isLogWireGossip() {
-    return logWireGossip;
-  }
-
-  public NetworkConfig setGossipD(int gossipD) {
-    this.gossipD = gossipD;
-    return this;
-  }
-
-  public NetworkConfig setGossipDLow(int gossipDLow) {
-    this.gossipDLow = gossipDLow;
-    return this;
-  }
-
-  public NetworkConfig setGossipDHigh(int gossipDHigh) {
-    this.gossipDHigh = gossipDHigh;
-    return this;
-  }
-
-  public NetworkConfig setGossipDLazy(int gossipDLazy) {
-    this.gossipDLazy = gossipDLazy;
-    return this;
-  }
-
-  public NetworkConfig setGossipFanoutTTL(Duration gossipFanoutTTL) {
-    this.gossipFanoutTTL = gossipFanoutTTL;
-    return this;
-  }
-
-  public NetworkConfig setGossipAdvertise(int gossipAdvertise) {
-    this.gossipAdvertise = gossipAdvertise;
-    return this;
-  }
-
-  public NetworkConfig setGossipHistory(int gossipHistory) {
-    this.gossipHistory = gossipHistory;
-    return this;
-  }
-
-  public NetworkConfig setGossipHeartbeatInterval(Duration gossipHeartbeatInterval) {
-    this.gossipHeartbeatInterval = gossipHeartbeatInterval;
-    return this;
-  }
-
-  public NetworkConfig setLogWireCipher(boolean logWireCipher) {
-    this.logWireCipher = logWireCipher;
-    return this;
-  }
-
-  public NetworkConfig setLogWirePlain(boolean logWirePlain) {
-    this.logWirePlain = logWirePlain;
-    return this;
-  }
-
-  public NetworkConfig setLogWireMuxFrames(boolean logWireMuxFrames) {
-    this.logWireMuxFrames = logWireMuxFrames;
-    return this;
-  }
-
-  public NetworkConfig setLogWireGossip(boolean logWireGossip) {
-    this.logWireGossip = logWireGossip;
-    return this;
+  public WireLogsConfig getWireLogsConfig() {
+    return wireLogsConfig;
   }
 }

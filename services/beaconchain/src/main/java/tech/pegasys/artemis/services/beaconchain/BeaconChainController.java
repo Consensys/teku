@@ -50,7 +50,9 @@ import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.networking.eth2.mock.NoOpEth2Network;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.artemis.networking.p2p.network.GossipConfig;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
@@ -328,19 +330,21 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               : KeyKt.unmarshalPrivateKey(bytes.get().toArrayUnsafe());
       NetworkConfig p2pConfig =
           new NetworkConfig(
-                  pk,
-                  config.getP2pInterface(),
-                  config.getP2pAdvertisedIp(),
-                  config.getP2pPort(),
-                  config.getP2pAdvertisedPort(),
-                  config.getP2pStaticPeers(),
-                  config.isP2pDiscoveryEnabled(),
-                  config.getP2pDiscoveryBootnodes(),
-                  new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()))
-              .setLogWireCipher(config.isLogWireCipher())
-              .setLogWirePlain(config.isLogWirePlain())
-              .setLogWireMuxFrames(config.isLogWireMuxFrames())
-              .setLogWireGossip(config.isLogWireGossip());
+              pk,
+              config.getP2pInterface(),
+              config.getP2pAdvertisedIp(),
+              config.getP2pPort(),
+              config.getP2pAdvertisedPort(),
+              config.getP2pStaticPeers(),
+              config.isP2pDiscoveryEnabled(),
+              config.getP2pDiscoveryBootnodes(),
+              new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
+              GossipConfig.DEFAULT_CONFIG,
+              new WireLogsConfig(
+                  config.isLogWireCipher(),
+                  config.isLogWirePlain(),
+                  config.isLogWireMuxFrames(),
+                  config.isLogWireGossip()));
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()

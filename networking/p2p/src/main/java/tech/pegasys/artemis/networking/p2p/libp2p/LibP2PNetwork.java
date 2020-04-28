@@ -132,13 +132,13 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getProtocols().addAll(getDefaultProtocols());
               b.getProtocols().addAll(rpcHandlers.values());
 
-              if (config.isLogWireCipher()) {
+              if (config.getWireLogsConfig().isLogWireCipher()) {
                 b.getDebug().getBeforeSecureHandler().setLogger(LogLevel.DEBUG, "wire.ciphered");
               }
-              if (config.isLogWirePlain()) {
+              if (config.getWireLogsConfig().isLogWirePlain()) {
                 b.getDebug().getAfterSecureHandler().setLogger(LogLevel.DEBUG, "wire.plain");
               }
-              if (config.isLogWireMuxFrames()) {
+              if (config.getWireLogsConfig().isLogWireMuxFrames()) {
                 b.getDebug().getMuxFramesHandler().setLogger(LogLevel.DEBUG, "wire.mux");
               }
 
@@ -147,18 +147,22 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   private Gossip createGossip() {
-    GossipRouter router = new GossipRouter();
-    router.setD(config.getGossipD());
-    router.setDLow(config.getGossipDLow());
-    router.setDHigh(config.getGossipDHigh());
-    router.setDGossip(config.getGossipDLazy());
-    router.setFanoutTTL(config.getGossipFanoutTTL().toMillis());
-    router.setGossipSize(config.getGossipAdvertise());
-    router.setGossipHistoryLength(config.getGossipHistory());
-    router.setHeartbeatInterval(config.getGossipHeartbeatInterval());
+    GossipRouter router = new GossipRouter() {
+      
+    };
+    router.setD(config.getGossipConfig().getD());
+    router.setDLow(config.getGossipConfig().getDLow());
+    router.setDHigh(config.getGossipConfig().getDHigh());
+    router.setDGossip(config.getGossipConfig().getDLazy());
+    router.setFanoutTTL(config.getGossipConfig().getFanoutTTL().toMillis());
+    router.setGossipSize(config.getGossipConfig().getAdvertise());
+    router.setGossipHistoryLength(config.getGossipConfig().getHistory());
+    router.setHeartbeatInterval(config.getGossipConfig().getHeartbeatInterval());
 
     ChannelHandler debugHandler =
-        config.isLogWireGossip() ? new LoggingHandler("wire.gossip", LogLevel.DEBUG) : null;
+        config.getWireLogsConfig().isLogWireGossip()
+            ? new LoggingHandler("wire.gossip", LogLevel.DEBUG)
+            : null;
     PubsubApi pubsubApi = PubsubApiKt.createPubsubApi(router);
 
     return new Gossip(router, pubsubApi, debugHandler);
