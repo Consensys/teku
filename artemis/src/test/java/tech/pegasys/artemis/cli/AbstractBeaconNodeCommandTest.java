@@ -23,11 +23,14 @@ import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public abstract class AbstractBeaconNodeCommandTest {
+  private static final Logger LOG = LogManager.getLogger();
   final StringWriter stringWriter = new StringWriter();
   protected final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
@@ -41,11 +44,18 @@ public abstract class AbstractBeaconNodeCommandTest {
   @TempDir Path dataPath;
 
   public ArtemisConfiguration getResultingArtemisConfiguration() {
-    final ArgumentCaptor<ArtemisConfiguration> configCaptor =
-        ArgumentCaptor.forClass(ArtemisConfiguration.class);
-    verify(startAction).accept(configCaptor.capture());
+    try {
+      final ArgumentCaptor<ArtemisConfiguration> configCaptor =
+          ArgumentCaptor.forClass(ArtemisConfiguration.class);
+      verify(startAction).accept(configCaptor.capture());
 
-    return configCaptor.getValue();
+      return configCaptor.getValue();
+    } catch (Throwable t) {
+      // Ensure we get the errors reported by Teku printed when a test provides invalid input
+      // Otherwise it's a nightmare trying to guess why the test is failing
+      LOG.error("Failed to parse artemis configuration: " + stringWriter);
+      throw t;
+    }
   }
 
   public ArtemisConfiguration getArtemisConfigurationFromArguments(String... arguments) {

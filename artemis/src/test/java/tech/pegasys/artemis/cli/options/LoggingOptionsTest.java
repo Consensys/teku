@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.LoggingOptions.LOG_DESTINATION_OPTION_NAME;
 import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
 
 import org.junit.jupiter.api.Test;
@@ -53,21 +52,28 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void logDestination_shouldAcceptFileAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "file");
+        getArtemisConfigurationFromArguments("--log-destination", "file");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
+  }
+
+  @Test
+  public void includeEvents_shouldNotRequireAValue() {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments("--log-include-events-enabled");
+    assertThat(artemisConfiguration.isLogIncludeEventsEnabled()).isTrue();
   }
 
   @Test
   public void logDestination_shouldAcceptConsoleAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "console");
+        getArtemisConfigurationFromArguments("--log-destination", "console");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
   @Test
   public void logDestination_shouldAcceptBothAsDestination() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "both");
+        getArtemisConfigurationFromArguments("--log-destination", "both");
     assertThat(artemisConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
   }
 }
