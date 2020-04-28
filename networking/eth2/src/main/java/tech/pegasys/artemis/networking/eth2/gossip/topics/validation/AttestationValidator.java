@@ -44,7 +44,8 @@ public class AttestationValidator {
       UnsignedLong.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
   private final Set<ValidatorAndSlot> receivedValidAttestations =
-      ConcurrentLimitedSet.create(VALID_ATTESTATION_SET_SIZE, LimitStrategy.DROP_OLDEST_ELEMENT);
+      ConcurrentLimitedSet.create(
+          VALID_ATTESTATION_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final RecentChainData recentChainData;
 
   public AttestationValidator(final RecentChainData recentChainData) {

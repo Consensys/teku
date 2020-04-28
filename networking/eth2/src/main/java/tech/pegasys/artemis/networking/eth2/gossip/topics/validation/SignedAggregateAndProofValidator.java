@@ -20,12 +20,14 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domai
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
+import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.artemis.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,8 +48,8 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class SignedAggregateAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
-  private final Set<AggregatorIndexAndSlot> receivedValidAggregations =
-      ConcurrentLimitedSet.create(VALID_BLOCK_SET_SIZE, LimitStrategy.DROP_OLDEST_ELEMENT);
+  private final Set<AggregatorIndexAndEpoch> receivedValidAggregations =
+      ConcurrentLimitedSet.create(VALID_BLOCK_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
 
@@ -62,9 +64,10 @@ public class SignedAggregateAndProofValidator {
     final Attestation aggregate = aggregateAndProof.getAggregate();
 
     final UnsignedLong aggregateSlot = aggregate.getData().getSlot();
-    final AggregatorIndexAndSlot aggregatorIndexAndSlot =
-        new AggregatorIndexAndSlot(aggregateAndProof.getIndex(), aggregateSlot);
-    if (receivedValidAggregations.contains(aggregatorIndexAndSlot)) {
+    final AggregatorIndexAndEpoch aggregatorIndexAndEpoch =
+        new AggregatorIndexAndEpoch(
+            aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
+    if (receivedValidAggregations.contains(aggregatorIndexAndEpoch)) {
       LOG.trace("Rejecting duplicate aggregate");
       return INVALID;
     }
@@ -76,9 +79,12 @@ public class SignedAggregateAndProofValidator {
       return aggregateValidationResult;
     }
 
-    // State must be present because the aggregate is valid
-    final BeaconState state =
-        recentChainData.getBlockState(aggregate.getData().getBeacon_block_root()).orElseThrow();
+    final Optional<BeaconState> maybeState =
+        recentChainData.getBlockState(aggregate.getData().getBeacon_block_root());
+    if (maybeState.isEmpty()) {
+      return SAVED_FOR_FUTURE;
+    }
+    final BeaconState state = maybeState.get();
     final BLSPublicKey aggregatorPublicKey =
         ValidatorsUtil.getValidatorPubKey(state, aggregateAndProof.getIndex());
 
@@ -109,7 +115,7 @@ public class SignedAggregateAndProofValidator {
       return INVALID;
     }
 
-    if (!receivedValidAggregations.add(aggregatorIndexAndSlot)) {
+    if (!receivedValidAggregations.add(aggregatorIndexAndEpoch)) {
       LOG.trace("Rejecting duplicate aggregate");
       return INVALID;
     }
@@ -146,13 +152,13 @@ public class SignedAggregateAndProofValidator {
     return BLS.verify(aggregatorPublicKey, signingRoot, selectionProof);
   }
 
-  private static class AggregatorIndexAndSlot {
+  private static class AggregatorIndexAndEpoch {
     private final UnsignedLong aggregatorIndex;
-    private final UnsignedLong slot;
+    private final UnsignedLong epoch;
 
-    private AggregatorIndexAndSlot(final UnsignedLong aggregatorIndex, final UnsignedLong slot) {
+    private AggregatorIndexAndEpoch(final UnsignedLong aggregatorIndex, final UnsignedLong epoch) {
       this.aggregatorIndex = aggregatorIndex;
-      this.slot = slot;
+      this.epoch = epoch;
     }
 
     @Override
@@ -163,14 +169,14 @@ public class SignedAggregateAndProofValidator {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      final AggregatorIndexAndSlot that = (AggregatorIndexAndSlot) o;
+      final AggregatorIndexAndEpoch that = (AggregatorIndexAndEpoch) o;
       return Objects.equals(aggregatorIndex, that.aggregatorIndex)
-          && Objects.equals(slot, that.slot);
+          && Objects.equals(epoch, that.epoch);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(aggregatorIndex, slot);
+      return Objects.hash(aggregatorIndex, epoch);
     }
   }
 }

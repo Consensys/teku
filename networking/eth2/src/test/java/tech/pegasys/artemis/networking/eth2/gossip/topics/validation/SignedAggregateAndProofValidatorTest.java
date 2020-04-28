@@ -38,6 +38,7 @@ import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.core.AggregateGenerator;
 import tech.pegasys.artemis.core.AttestationGenerator;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
@@ -135,6 +136,17 @@ class SignedAggregateAndProofValidatorTest {
   public void shouldSaveForFutureWhenAttestationValidatorSavesForFuture() {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
+    when(attestationValidator.singleOrAggregateAttestationChecks(
+            aggregate.getMessage().getAggregate()))
+        .thenReturn(SAVED_FOR_FUTURE);
+
+    assertThat(validator.validate(aggregate)).isEqualTo(SAVED_FOR_FUTURE);
+  }
+
+  @Test
+  public void shouldSaveForFutureWhenStateIsNotAvailable() throws Exception {
+    final SignedBlockAndState target = beaconChainUtil.createBlockAndStateAtSlot(ONE, true);
+    final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(target.toUnsigned());
     when(attestationValidator.singleOrAggregateAttestationChecks(
             aggregate.getMessage().getAggregate()))
         .thenReturn(SAVED_FOR_FUTURE);
