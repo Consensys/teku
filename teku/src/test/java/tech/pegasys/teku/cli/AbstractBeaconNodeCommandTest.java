@@ -53,7 +53,7 @@ public abstract class AbstractBeaconNodeCommandTest {
     } catch (Throwable t) {
       // Ensure we get the errors reported by Teku printed when a test provides invalid input
       // Otherwise it's a nightmare trying to guess why the test is failing
-      LOG.error("Failed to parse artemis configuration: " + stringWriter);
+      LOG.error("Failed to parse Teku configuration: " + stringWriter);
       throw t;
     }
   }
