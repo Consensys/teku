@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
@@ -109,9 +110,12 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
     deliverBytes(bytes, bytes.size());
   }
 
-  protected void deliverBytes(final Bytes bytes, final int consumeBytes) throws IOException {
+  protected void deliverBytes(final Bytes bytes, final int waitUntilBytesConsumed)
+      throws IOException {
+    checkArgument(
+        waitUntilBytesConsumed <= bytes.size(), "Cannot wait for more bytes than those supplied.");
     inputStream.deliverBytes(bytes);
-    final int maxRemainingBytes = bytes.size() - consumeBytes;
+    final int maxRemainingBytes = bytes.size() - waitUntilBytesConsumed;
     Waiter.waitFor(
         () ->
             assertThat(inputStream.countUnconsumedBytes()).isLessThanOrEqualTo(maxRemainingBytes));

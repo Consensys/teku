@@ -80,10 +80,10 @@ public class Eth2OutgoingRequestHandlerTest
     }
     inputStream.close();
 
-    asyncRequestRunner.executeRepeatedly(maxChunks - 1);
+    asyncRequestRunner.waitForExactly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
 
-    asyncRequestRunner.executeUntilDone();
+    asyncRequestRunner.waitForExactly(1);
     timeoutRunner.executeUntilDone();
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(3);
@@ -101,7 +101,7 @@ public class Eth2OutgoingRequestHandlerTest
     }
     inputStream.close();
 
-    asyncRequestRunner.executeRepeatedly(maxChunks - 1);
+    asyncRequestRunner.waitForExactly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
 
     // Fail to process the next block
@@ -111,7 +111,7 @@ public class Eth2OutgoingRequestHandlerTest
           throw error;
         });
 
-    asyncRequestRunner.executeUntilDone();
+    asyncRequestRunner.waitForExactly(1);
     timeoutRunner.executeUntilDone();
     verify(rpcStream, atLeastOnce()).close();
     assertThat(blocks.size()).isEqualTo(maxChunks - 1);
@@ -128,7 +128,7 @@ public class Eth2OutgoingRequestHandlerTest
     assertThat(finishedProcessingFuture).isNotDone();
     deliverInvalidChunk();
 
-    asyncRequestRunner.executeUntilDone();
+    asyncRequestRunner.waitForExactly(1);
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(1);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
@@ -151,7 +151,7 @@ public class Eth2OutgoingRequestHandlerTest
     }
     inputStream.close();
 
-    asyncRequestRunner.executeUntilDone();
+    asyncRequestRunner.waitForExactly(maxChunks);
     timeoutRunner.executeUntilDone();
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(3);
@@ -218,7 +218,7 @@ public class Eth2OutgoingRequestHandlerTest
 
     // Run timeouts
     assertThat(timeoutRunner.countDelayedActions()).isEqualTo(3);
-    asyncRequestRunner.executeQueuedActions();
+    asyncRequestRunner.waitForExactly(1);
     timeoutRunner.executeQueuedActions();
     assertThat(blocks.size()).isEqualTo(1);
     verify(rpcStream).close();
@@ -233,7 +233,7 @@ public class Eth2OutgoingRequestHandlerTest
 
     // Run timeouts
     assertThat(timeoutRunner.countDelayedActions()).isEqualTo(4);
-    asyncRequestRunner.executeUntilDone();
+    asyncRequestRunner.waitForExactly(2);
     timeoutRunner.executeQueuedActions(3);
     assertThat(blocks.size()).isEqualTo(2);
     verify(rpcStream, never()).close();
