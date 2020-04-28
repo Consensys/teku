@@ -4,7 +4,7 @@ log-include-events-enabled: False
 log-destination: "FILE"
 log-file: "a.log"
 log-file-name-pattern: "a%d.log"
-log-wire-cipher-enabled: True
-log-wire-plain-enabled: True
-log-wire-mux-enabled: True
-log-wire-gossip-enabled: True
+Xlog-wire-cipher-enabled: True
+Xlog-wire-plain-enabled: True
+Xlog-wire-mux-enabled: True
+Xlog-wire-gossip-enabled: True
