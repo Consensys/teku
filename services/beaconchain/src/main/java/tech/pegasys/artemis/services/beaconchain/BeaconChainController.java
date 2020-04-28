@@ -143,12 +143,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return initialize().thenCompose((__) -> SafeFuture.fromRunnable(beaconRestAPI::start));
   }
 
-  private SafeFuture<?> startServices() {
-    return SafeFuture.allOfFailFast(
-        attestationManager.start(),
-        p2pNetwork.start(),
-        syncService.start(),
-        syncStateTracker.start());
+  private void startServices() {
+    SafeFuture.allOfFailFast(
+            attestationManager.start(),
+            p2pNetwork.start(),
+            syncService.start(),
+            syncStateTracker.start())
+        .reportExceptions();
   }
 
   @Override
@@ -188,11 +189,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.initAll();
               eventChannels.subscribe(TimeTickChannel.class, this);
 
-              recentChainData.subscribeStoreInitialized(
-                  () -> {
-                    this.onStoreInitialized();
-                    this.startServices().reportExceptions();
-                  });
+              recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
+              recentChainData.subscribeBestBlockInitialized(this::startServices);
             });
   }
 
@@ -222,7 +220,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initStateTransition() {
-    LOG.debug("BeaconChainController.initForkChoice()");
+    LOG.debug("BeaconChainController.initStateTransition()");
     stateTransition = new StateTransition();
   }
 
@@ -382,7 +380,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class),
-            new BlockImporter(recentChainData, forkChoice, eventBus));
+            blockImporter);
     beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 

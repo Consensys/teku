@@ -45,6 +45,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
 
   private void initializeProtoArrayForkChoice() {
     protoArrayForkChoiceStrategy = ProtoArrayForkChoiceStrategy.create(recentChainData.getStore());
+    processHead();
   }
 
   public Bytes32 processHead() {
