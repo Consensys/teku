@@ -22,7 +22,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage.createPreGenesisForkDigest;
 import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.eventbus.EventBus;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptionsTest {
@@ -44,7 +44,7 @@ public class AttestationSubnetSubscriptionsTest {
   @BeforeEach
   void setUp() {
     recentChainData = mock(RecentChainData.class);
-    when(recentChainData.getCurrentForkDigest()).thenReturn(createPreGenesisForkDigest());
+    when(recentChainData.getCurrentForkDigest()).thenReturn(Bytes4.fromHexString("0x00000000"));
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
             gossipNetwork, recentChainData, mock(AttestationValidator.class), eventBus);
