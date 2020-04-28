@@ -34,7 +34,8 @@ public class AggregateGossipManager {
       final EventBus eventBus,
       final RecentChainData recentChainData) {
     final AggregateTopicHandler aggregateTopicHandler =
-        new AggregateTopicHandler(eventBus, recentChainData);
+        new AggregateTopicHandler(
+            eventBus, recentChainData.getCurrentForkDigest(), recentChainData);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(aggregateTopicHandler.getTopic(), aggregateTopicHandler);
     eventBus.register(this);

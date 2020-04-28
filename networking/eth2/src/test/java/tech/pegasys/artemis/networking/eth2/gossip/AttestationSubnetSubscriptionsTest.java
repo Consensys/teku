@@ -32,17 +32,22 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptionsTest {
   private AttestationSubnetSubscriptions subnetSubscriptions;
   private GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private EventBus eventBus = mock(EventBus.class);
+  private RecentChainData recentChainData;
 
   @BeforeEach
   void setUp() {
+    recentChainData = mock(RecentChainData.class);
+    when(recentChainData.getCurrentForkDigest()).thenReturn(Bytes4.fromHexString("0x00000000"));
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            gossipNetwork, mock(AttestationValidator.class), eventBus);
+            gossipNetwork, recentChainData, mock(AttestationValidator.class), eventBus);
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }
