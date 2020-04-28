@@ -272,19 +272,20 @@ jobs:
     executor: small_executor
     steps:
       - prepare
-#      - run:
-#          name: Build runnable Teku binaries
-#          command: |
-#            ./gradlew --no-daemon --parallel installDist
-#      - run:
-#          name: Extract OpenAPI JSON
-#          command: |
-#            cd build/install/teku
-#            bin/teku --rest-api-docs-enabled=true &
-#            wget -O api.json http://localhost:5051/swagger-docs
       - add_ssh_keys:
           fingerprints:
             - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
+      - run:
+          name: Build runnable Teku binaries
+          command: |
+            ./gradlew --no-daemon --parallel installDist
+      - run:
+          name: Extract OpenAPI JSON
+          command: |
+            build/install/teku/bin/teku --rest-api-docs-enabled=true &
+            TEKU_PID=$!
+            wget -O api.json http://localhost:5051/swagger-docs
+            kill $TEKU_PID
       - run:
           name: Set Git user params
           command: |
@@ -302,8 +303,7 @@ jobs:
             # pull might fail if the branch was just created
             git pull || true
 
-            touch testfile.txt
-            git add --all
+            git add api.json
             git commit -m "[skip ci] test"
             git push origin "$BRANCH"
 workflows:
