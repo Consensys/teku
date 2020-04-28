@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -42,7 +42,9 @@ public class AggregateGossipManagerTest {
 
   @BeforeEach
   public void setup() {
-    doReturn(topicChannel).when(gossipNetwork).subscribe(eq(AggregateTopicHandler.TOPIC), any());
+    doReturn(topicChannel)
+        .when(gossipNetwork)
+        .subscribe(contains(AggregateTopicHandler.TOPIC_NAME), any());
     new AggregateGossipManager(gossipNetwork, eventBus, storageClient);
   }
 
