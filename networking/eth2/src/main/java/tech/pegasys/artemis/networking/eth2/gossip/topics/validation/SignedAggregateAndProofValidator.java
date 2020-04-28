@@ -22,7 +22,7 @@ import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.isAggregato
 import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
 import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_SELECTION_PROOF;
-import static tech.pegasys.artemis.util.config.Constants.VALID_BLOCK_SET_SIZE;
+import static tech.pegasys.artemis.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -49,7 +49,8 @@ import tech.pegasys.artemis.util.config.Constants;
 public class SignedAggregateAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedValidAggregations =
-      ConcurrentLimitedSet.create(VALID_BLOCK_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      ConcurrentLimitedSet.create(
+          VALID_AGGREGATE_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
 
