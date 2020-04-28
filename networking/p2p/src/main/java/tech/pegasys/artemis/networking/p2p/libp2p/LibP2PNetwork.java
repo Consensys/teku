@@ -51,11 +51,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.io.Base64;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.jetbrains.annotations.NotNull;
-import pubsub.pb.Rpc.Message;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
@@ -151,14 +147,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   private Gossip createGossip() {
-    GossipRouter router =
-        new GossipRouter() {
-          @NotNull
-          @Override
-          protected String getMessageId(@NotNull Message msg) {
-            return Base64.encodeBytes(Hash.sha2_256(msg.getData().toByteArray()));
-          }
-        };
+    GossipRouter router = new Eth2GossipRouter();
     router.setD(config.getGossipConfig().getD());
     router.setDLow(config.getGossipConfig().getDLow());
     router.setDHigh(config.getGossipConfig().getDHigh());
