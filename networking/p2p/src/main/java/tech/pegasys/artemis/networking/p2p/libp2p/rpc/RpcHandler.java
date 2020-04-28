@@ -179,7 +179,10 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         return;
       }
       try {
-        outputStream.write(msg.array());
+        // TODO - we may want to optimize this to pass on ByteBuf's directly and manage their
+        //  garbage collection rather than immediately copying these bytes
+        final Bytes bytes = Bytes.wrapByteBuf(msg);
+        outputStream.write(bytes.toArray());
       } catch (IOException e) {
         // We should only hit this if the connected input pipe has been prematurely closed
         throw new IllegalStateException(e);
