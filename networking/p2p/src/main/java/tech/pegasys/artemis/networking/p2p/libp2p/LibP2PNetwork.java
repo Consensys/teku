@@ -147,9 +147,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   private Gossip createGossip() {
-    GossipRouter router = new GossipRouter() {
-      
-    };
+    GossipRouter router = new GossipRouter();
     router.setD(config.getGossipConfig().getD());
     router.setDLow(config.getGossipConfig().getDLow());
     router.setDHigh(config.getGossipConfig().getDHigh());
