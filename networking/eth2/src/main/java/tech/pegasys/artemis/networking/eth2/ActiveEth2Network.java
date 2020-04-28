@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationSubnetSubscriptions;
@@ -62,6 +63,14 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public SafeFuture<?> start() {
+    // Set the current fork info prior to discovery starting up.
+    final ForkInfo currentForkInfo =
+        recentChainData
+            .getCurrentForkInfo()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException("Can not start Eth2Network before genesis is known"));
+    discoveryNetwork.setForkInfo(currentForkInfo, recentChainData.getNextFork());
     return super.start().thenAccept(r -> startup());
   }
 
@@ -71,16 +80,16 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
     SignedAggregateAndProofValidator aggregateValidator =
         new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
+    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             discoveryNetwork, recentChainData, attestationValidator, eventBus);
     blockGossipManager =
-        new BlockGossipManager(discoveryNetwork, eventBus, blockValidator, recentChainData);
+        new BlockGossipManager(discoveryNetwork, eventBus, blockValidator, forkInfo);
     attestationGossipManager =
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
     aggregateGossipManager =
-        new AggregateGossipManager(
-            discoveryNetwork, eventBus, aggregateValidator, recentChainData.getCurrentForkDigest());
+        new AggregateGossipManager(discoveryNetwork, eventBus, aggregateValidator, forkInfo);
   }
 
   @Override

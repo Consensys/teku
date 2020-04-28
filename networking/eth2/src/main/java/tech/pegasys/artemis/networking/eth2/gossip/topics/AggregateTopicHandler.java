@@ -17,10 +17,10 @@ import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndProof> {
   public static String TOPIC_NAME = "beacon_aggregate_and_proof";
@@ -28,9 +28,9 @@ public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndPr
 
   public AggregateTopicHandler(
       final EventBus eventBus,
-      final Bytes4 forkDigest,
+      final ForkInfo forkInfo,
       final SignedAggregateAndProofValidator validator) {
-    super(eventBus, forkDigest);
+    super(eventBus, forkInfo);
     this.validator = validator;
   }
 

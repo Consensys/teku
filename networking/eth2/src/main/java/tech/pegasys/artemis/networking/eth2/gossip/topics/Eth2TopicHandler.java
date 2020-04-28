@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
@@ -29,9 +30,9 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
   private final Bytes4 forkDigest;
   protected final EventBus eventBus;
 
-  protected Eth2TopicHandler(final EventBus eventBus, final Bytes4 forkDigest) {
+  protected Eth2TopicHandler(final EventBus eventBus, final ForkInfo forkInfo) {
     this.eventBus = eventBus;
-    this.forkDigest = forkDigest;
+    this.forkDigest = forkInfo.getForkDigest();
   }
 
   @Override

@@ -29,22 +29,23 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptionsTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private AttestationSubnetSubscriptions subnetSubscriptions;
-  private GossipNetwork gossipNetwork = mock(GossipNetwork.class);
-  private EventBus eventBus = mock(EventBus.class);
-  private RecentChainData recentChainData;
+  private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
+  private final EventBus eventBus = mock(EventBus.class);
 
   @BeforeEach
   void setUp() {
-    recentChainData = mock(RecentChainData.class);
-    when(recentChainData.getCurrentForkDigest()).thenReturn(Bytes4.fromHexString("0x00000000"));
+    final RecentChainData recentChainData = mock(RecentChainData.class);
+    when(recentChainData.getCurrentForkInfo())
+        .thenReturn(Optional.of(dataStructureUtil.randomForkInfo()));
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
             gossipNetwork, recentChainData, mock(AttestationValidator.class), eventBus);

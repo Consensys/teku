@@ -20,10 +20,10 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
@@ -34,8 +34,8 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
       final EventBus eventBus,
       final AttestationValidator attestationValidator,
       final UnsignedLong subnetId,
-      final Bytes4 forkDigest) {
-    super(eventBus, forkDigest);
+      final ForkInfo forkInfo) {
+    super(eventBus, forkInfo);
     this.attestationValidator = attestationValidator;
     this.subnetId = subnetId;
   }
