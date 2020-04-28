@@ -220,7 +220,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initStateTransition() {
-    LOG.debug("BeaconChainController.initForkChoice()");
+    LOG.debug("BeaconChainController.initStateTransition()");
     stateTransition = new StateTransition();
   }
 
@@ -380,7 +380,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class),
-            new BlockImporter(recentChainData, forkChoice, eventBus));
+            blockImporter);
     beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 
