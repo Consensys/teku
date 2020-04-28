@@ -40,7 +40,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final RpcRequestDecoder<TRequest> requestDecoder;
 
   private final AsyncRunner asyncRunner;
-  private final AtomicBoolean requestReceived = new AtomicBoolean(false);
+  private final AtomicBoolean requestHandled = new AtomicBoolean(false);
 
   public Eth2IncomingRequestHandler(
       final AsyncRunner asyncRunner,
@@ -68,6 +68,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
       final Eth2Peer peer = peerLookup.getConnectedPeer(nodeId);
       handleRequest(peer, request, callback);
     } catch (final RpcException e) {
+      requestHandled.set(true);
       callback.completeWithError(e);
     }
   }
@@ -75,7 +76,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   private void handleRequest(
       Eth2Peer peer, TRequest request, ResponseCallback<TResponse> callback) {
     try {
-      requestReceived.set(true);
+      requestHandled.set(true);
       localMessageHandler.onIncomingMessage(peer, request, callback);
     } catch (final Throwable t) {
       LOG.error("Unhandled error while processing request " + method.getMultistreamId(), t);
@@ -89,7 +90,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
         .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
         .thenAccept(
             (__) -> {
-              if (!requestReceived.get()) {
+              if (!requestHandled.get()) {
                 LOG.debug(
                     "Failed to receive incoming request data within {} sec. Close stream.",
                     timeout.getSeconds());
@@ -101,6 +102,6 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
 
   @VisibleForTesting
   boolean hasRequestBeenReceived() {
-    return requestReceived.get();
+    return requestHandled.get();
   }
 }

@@ -164,7 +164,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-      rpcStream = new LibP2PRpcStream(p2pChannel, ctx);
+      rpcStream = new LibP2PRpcStream(nodeId, p2pChannel, ctx);
       activeFuture.complete(this);
     }
 
@@ -229,6 +229,12 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       if (rpcStream != null) {
         rpcStream.close().reportExceptions();
       }
+      closeOutputStream();
+      // Make sure to complete activation future in case we are never activated
+      activeFuture.completeExceptionally(new StreamClosedException());
+    }
+
+    private void closeOutputStream() {
       if (!outputStreamClosed) {
         outputStreamClosed = true;
         try {
@@ -237,8 +243,6 @@ public class RpcHandler implements ProtocolBinding<Controller> {
           throw new IllegalStateException(e);
         }
       }
-      // Make sure to complete activation future in case we are never activated
-      activeFuture.completeExceptionally(new StreamClosedException());
     }
   }
 }

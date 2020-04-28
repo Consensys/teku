@@ -13,12 +13,14 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p.rpc;
 
+import com.google.common.base.MoreObjects;
 import io.libp2p.core.P2PChannel;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -27,8 +29,11 @@ public class LibP2PRpcStream implements RpcStream {
   private final P2PChannel p2pChannel;
   private final ChannelHandlerContext ctx;
   private final AtomicBoolean writeStreamClosed = new AtomicBoolean(false);
+  private final NodeId nodeId;
 
-  public LibP2PRpcStream(final P2PChannel p2pChannel, final ChannelHandlerContext ctx) {
+  public LibP2PRpcStream(
+      final NodeId nodeId, final P2PChannel p2pChannel, final ChannelHandlerContext ctx) {
+    this.nodeId = nodeId;
     this.p2pChannel = p2pChannel;
     this.ctx = ctx;
   }
@@ -67,5 +72,14 @@ public class LibP2PRpcStream implements RpcStream {
           }
         });
     return future;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("nodeId", nodeId)
+        .add("channel id", ctx.channel().id())
+        .add("writeStreamClosed", writeStreamClosed)
+        .toString();
   }
 }
