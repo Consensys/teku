@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
@@ -36,14 +34,14 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void restApiDocsEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
+        getArtemisConfigurationFromArguments("--rest-api-docs-enabled");
     assertThat(artemisConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
   public void restApiEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
+        getArtemisConfigurationFromArguments("--rest-api-enabled");
     assertThat(artemisConfiguration.isRestApiEnabled()).isTrue();
   }
 }

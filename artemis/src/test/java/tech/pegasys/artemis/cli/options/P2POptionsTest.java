@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -42,14 +40,14 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
+        getArtemisConfigurationFromArguments("--p2p-enabled");
     assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
     final ArtemisConfiguration artemisConfiguration =
-        getArtemisConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
+        getArtemisConfigurationFromArguments("--p2p-discovery-enabled");
     assertThat(artemisConfiguration.isP2pEnabled()).isTrue();
   }
 }

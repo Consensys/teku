@@ -28,6 +28,7 @@ import tech.pegasys.artemis.bls.BLSPublicKey;
 public class ArtemisConfiguration {
   // Network
   private final String constants;
+  private final String initialState;
   private final Integer startupTargetPeerCount;
   private final Integer startupTimeoutSeconds;
 
@@ -48,7 +49,6 @@ public class ArtemisConfiguration {
   private final Integer interopGenesisTime;
   private final int interopOwnedValidatorStartIndex;
   private final int interopOwnedValidatorCount;
-  private final String interopStartState;
   private final int interopNumberOfValidators;
   private final boolean interopEnabled;
 
@@ -61,6 +61,7 @@ public class ArtemisConfiguration {
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
 
+  private final boolean eth1Enabled;
   // Deposit
   private final String eth1DepositContractAddress;
   private final String eth1Endpoint;
@@ -113,7 +114,7 @@ public class ArtemisConfiguration {
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
-      final String interopStartState,
+      final String initialState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
       final String validatorsKeyFile,
@@ -122,6 +123,7 @@ public class ArtemisConfiguration {
       final List<String> validatorExternalSignerPublicKeys,
       final String validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
+      final boolean eth1Enabled,
       final String eth1DepositContractAddress,
       final String eth1Endpoint,
       final boolean logColorEnabled,
@@ -157,7 +159,7 @@ public class ArtemisConfiguration {
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    this.interopStartState = interopStartState;
+    this.initialState = initialState;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
     this.validatorsKeyFile = validatorsKeyFile;
@@ -166,6 +168,7 @@ public class ArtemisConfiguration {
     this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
+    this.eth1Enabled = eth1Enabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.logColorEnabled = logColorEnabled;
@@ -258,8 +261,8 @@ public class ArtemisConfiguration {
     return interopOwnedValidatorCount;
   }
 
-  public String getInteropStartState() {
-    return interopStartState == null || interopStartState.isEmpty() ? null : interopStartState;
+  public String getInitialState() {
+    return initialState == null || initialState.isEmpty() ? null : initialState;
   }
 
   public int getInteropNumberOfValidators() {
@@ -305,6 +308,10 @@ public class ArtemisConfiguration {
 
   public int getValidatorExternalSignerTimeout() {
     return validatorExternalSignerTimeout;
+  }
+
+  public boolean isEth1Enabled() {
+    return eth1Enabled;
   }
 
   public String getEth1DepositContractAddress() {
@@ -400,7 +407,7 @@ public class ArtemisConfiguration {
   public void validateConfig() throws IllegalArgumentException {
     final int interopNumberOfValidators = getInteropNumberOfValidators();
     if (interopNumberOfValidators < Constants.SLOTS_PER_EPOCH) {
-      throw new IllegalArgumentException(
+      throw new InvalidConfigurationException(
           String.format(
               "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
               interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
@@ -417,7 +424,7 @@ public class ArtemisConfiguration {
           String.format(
               "Invalid configuration. The size of validator.validatorsKeystoreFiles [%d] and validator.validatorsKeystorePasswordFiles [%d] must match",
               validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
-      throw new IllegalArgumentException(errorMessage);
+      throw new InvalidConfigurationException(errorMessage);
     }
   }
 }

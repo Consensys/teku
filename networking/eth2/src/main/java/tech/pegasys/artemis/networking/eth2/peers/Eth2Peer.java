@@ -27,7 +27,6 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByR
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
@@ -90,15 +89,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<PeerStatus> sendStatus() {
-    final Eth2RpcMethod<StatusMessage, StatusMessage> statusMethod = rpcMethods.status();
-    return sendRequest(statusMethod, statusMessageFactory.createStatusMessage())
-        .thenCompose(ResponseStream::expectSingleResponse)
-        .thenApply(
-            remoteStatus -> {
-              final PeerStatus status = PeerStatus.fromStatusMessage(remoteStatus);
-              updateStatus(status);
-              return getStatus();
-            });
+    return requestSingleItem(rpcMethods.status(), statusMessageFactory.createStatusMessage())
+        .thenApply(PeerStatus::fromStatusMessage)
+        .thenPeek(this::updateStatus);
   }
 
   SafeFuture<Void> sendGoodbye(final UnsignedLong reason) {
@@ -140,27 +133,33 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   private <I extends RpcRequest, O> SafeFuture<Void> sendMessage(
       final Eth2RpcMethod<I, O> method, final I request) {
-    return sendRequest(method, request).thenCompose(ResponseStream::expectNoResponse);
+    final Eth2OutgoingRequestHandler<I, O> handler =
+        method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
+    SafeFuture<Void> respFuture = handler.getResponseStream().expectNoResponse();
+    return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
   }
 
-  private <I extends RpcRequest, O> SafeFuture<O> requestSingleItem(
+  public <I extends RpcRequest, O> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final I request) {
-    return sendRequest(method, request).thenCompose(ResponseStream::expectSingleResponse);
+    final Eth2OutgoingRequestHandler<I, O> handler =
+        method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
+    SafeFuture<O> respFuture = handler.getResponseStream().expectSingleResponse();
+    return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> requestStream(
       final Eth2RpcMethod<I, O> method,
       final I request,
       final ResponseStream.ResponseListener<O> listener) {
-    return sendRequest(method, request)
-        .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
-  }
-
-  public <I extends RpcRequest, O> SafeFuture<ResponseStream<O>> sendRequest(
-      final Eth2RpcMethod<I, O> method, final I request) {
-    Bytes payload = method.encodeRequest(request);
     final Eth2OutgoingRequestHandler<I, O> handler =
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
+    SafeFuture<Void> respFuture = handler.getResponseStream().expectMultipleResponses(listener);
+    return sendRequest(method, request, handler).thenCompose(__ -> respFuture);
+  }
+
+  private <I extends RpcRequest, O> SafeFuture<ResponseStream<O>> sendRequest(
+      final Eth2RpcMethod<I, O> method, final I request, Eth2OutgoingRequestHandler<I, O> handler) {
+    Bytes payload = method.encodeRequest(request);
     return this.sendRequest(method, payload, handler)
         .thenAccept(handler::handleInitialPayloadSent)
         .thenApply(
