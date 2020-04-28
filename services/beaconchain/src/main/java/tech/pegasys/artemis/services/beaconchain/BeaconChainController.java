@@ -83,6 +83,7 @@ import tech.pegasys.artemis.sync.util.NoopSyncService;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.InvalidConfigurationException;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
@@ -132,7 +133,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
-    this.setupInitialState = config.isInteropEnabled() || config.getInteropStartState() != null;
+    this.setupInitialState = config.isInteropEnabled() || config.getInitialState() != null;
   }
 
   @Override
@@ -177,8 +178,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               if (recentChainData.isPreGenesis()) {
                 if (setupInitialState) {
                   setupInitialState();
-                } else {
+                } else if (config.isEth1Enabled()) {
                   STATUS_LOG.loadingGenesisFromEth1Chain();
+                } else {
+                  throw new InvalidConfigurationException(
+                      "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
                 }
               }
               // Init other services
@@ -415,7 +419,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     StartupUtil.setupInitialState(
         recentChainData,
         config.getInteropGenesisTime(),
-        config.getInteropStartState(),
+        config.getInitialState(),
         config.getInteropNumberOfValidators());
   }
 
