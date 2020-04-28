@@ -111,6 +111,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     // Setup peers
     peerManager = new PeerManager(metricsSystem, reputationManager, peerHandlers, rpcHandlers);
 
+    // temporary flag
+    // set true for Lighthouse compatibility
+    // set false for Prysm compatibility
+    // TODO remove when all clients adjust the same Noise spec
+    NoiseXXSecureChannel.setRustInteroperability(false);
+
     host =
         BuilderJKt.hostJ(
             Defaults.None,
