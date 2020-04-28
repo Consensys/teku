@@ -40,6 +40,7 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
@@ -159,6 +160,7 @@ public class Eth2NetworkFactory {
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+        BeaconChainUtil.create(0, recentChainData).initializeStorage();
       }
     }
 
