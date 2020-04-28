@@ -14,8 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.cli.options.DataOptions.DATA_PATH_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.DataOptions.DATA_STORAGE_MODE_OPTION_NAME;
 import static tech.pegasys.teku.util.config.StateStorageMode.ARCHIVE;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
@@ -37,21 +35,21 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataStorageMode_shouldAcceptPrune() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "prune");
+        getTekuConfigurationFromArguments("--data-storage-mode", "prune");
     assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptArchive() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(DATA_STORAGE_MODE_OPTION_NAME, "archive");
+        getTekuConfigurationFromArguments("--data-storage-mode", "archive");
     assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
 
   @Test
   public void dataPath_shouldAcceptNonDefaultValues() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(DATA_PATH_OPTION_NAME, TEST_PATH);
+        getTekuConfigurationFromArguments("--data-path", TEST_PATH);
     assertThat(tekuConfiguration.getDataPath()).isEqualTo(TEST_PATH);
   }
 }

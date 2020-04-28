@@ -42,6 +42,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
     assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
+    assertThat(config.getInitialState())
+        .isEqualTo(networkDefinition.getInitialState().orElse(null));
     assertThat(config.getStartupTargetPeerCount())
         .isEqualTo(networkDefinition.getStartupTargetPeerCount());
     assertThat(config.getStartupTimeoutSeconds())
@@ -67,5 +69,13 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
     assertThat(tekuConfiguration.getConstants()).isEqualTo(url);
+  }
+
+  @Test
+  public void useInitialState() {
+    String initialState = "some-file-or-url";
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--initial-state", initialState);
+    assertThat(config.getInitialState()).isEqualTo(initialState);
   }
 }

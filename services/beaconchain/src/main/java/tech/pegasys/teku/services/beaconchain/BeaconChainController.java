@@ -82,6 +82,7 @@ import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.sync.util.NoopSyncService;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -132,22 +133,22 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
-    this.setupInitialState = config.isInteropEnabled() || config.getInteropStartState() != null;
+    this.setupInitialState = config.isInteropEnabled() || config.getInitialState() != null;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
     this.eventBus.register(this);
     LOG.debug("Starting {}", this.getClass().getSimpleName());
-    return initialize()
-        .thenCompose(
-            __ ->
-                SafeFuture.allOfFailFast(
-                    attestationManager.start(),
-                    p2pNetwork.start(),
-                    syncService.start(),
-                    SafeFuture.fromRunnable(beaconRestAPI::start),
-                    syncStateTracker.start()));
+    return initialize().thenCompose((__) -> SafeFuture.fromRunnable(beaconRestAPI::start));
+  }
+
+  private SafeFuture<?> startServices() {
+    return SafeFuture.allOfFailFast(
+        attestationManager.start(),
+        p2pNetwork.start(),
+        syncService.start(),
+        syncStateTracker.start());
   }
 
   @Override
@@ -176,14 +177,22 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               if (recentChainData.isPreGenesis()) {
                 if (setupInitialState) {
                   setupInitialState();
-                } else {
+                } else if (config.isEth1Enabled()) {
                   STATUS_LOG.loadingGenesisFromEth1Chain();
+                } else {
+                  throw new InvalidConfigurationException(
+                      "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state.");
                 }
               }
-              recentChainData.subscribeStoreInitialized(this::onStoreInitialized);
               // Init other services
               this.initAll();
               eventChannels.subscribe(TimeTickChannel.class, this);
+
+              recentChainData.subscribeStoreInitialized(
+                  () -> {
+                    this.onStoreInitialized();
+                    this.startServices().reportExceptions();
+                  });
             });
   }
 
@@ -412,7 +421,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     StartupUtil.setupInitialState(
         recentChainData,
         config.getInteropGenesisTime(),
-        config.getInteropStartState(),
+        config.getInitialState(),
         config.getInteropNumberOfValidators());
   }
 

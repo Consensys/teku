@@ -11,21 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.options;
+package tech.pegasys.teku.util.config;
 
-import picocli.CommandLine.Option;
-
-public class OutputOptions {
-
-  @Option(
-      hidden = true,
-      names = {"--Xtransition-record-directory"},
-      paramLabel = "<FILENAME>",
-      description = "Directory to record transition pre and post states",
-      arity = "1")
-  private String transitionRecordDirectory = null;
-
-  public String getTransitionRecordDirectory() {
-    return transitionRecordDirectory;
+public class InvalidConfigurationException extends RuntimeException {
+  public InvalidConfigurationException(final String message) {
+    super(message);
   }
 }

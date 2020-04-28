@@ -35,7 +35,7 @@ public class TekuConfigurationBuilder {
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
-  private String interopStartState;
+  private String initialState;
   private int interopNumberOfValidators;
   private boolean interopEnabled;
   private String validatorsKeyFile;
@@ -63,6 +63,7 @@ public class TekuConfigurationBuilder {
   private boolean restApiEnabled;
   private String restApiInterface;
   private NetworkDefinition network;
+  private boolean eth1Enabled;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -152,8 +153,8 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setInteropStartState(final String interopStartState) {
-    this.interopStartState = interopStartState;
+  public TekuConfigurationBuilder setInitialState(final String initialState) {
+    this.initialState = initialState;
     return this;
   }
 
@@ -200,6 +201,11 @@ public class TekuConfigurationBuilder {
   public TekuConfigurationBuilder setValidatorExternalSignerTimeout(
       final int validatorsExternalSignerTimeout) {
     this.validatorExternalSignerTimeout = validatorsExternalSignerTimeout;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setEth1Enabled(final boolean eth1Enabled) {
+    this.eth1Enabled = eth1Enabled;
     return this;
   }
 
@@ -304,6 +310,7 @@ public class TekuConfigurationBuilder {
   public TekuConfiguration build() {
     if (network != null) {
       constants = getOrDefault(constants, network::getConstants);
+      initialState = getOrOptionalDefault(initialState, network::getInitialState);
       startupTargetPeerCount =
           getOrDefault(startupTargetPeerCount, network::getStartupTargetPeerCount);
       startupTimeoutSeconds =
@@ -331,7 +338,7 @@ public class TekuConfigurationBuilder {
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,
-        interopStartState,
+        initialState,
         interopNumberOfValidators,
         interopEnabled,
         validatorsKeyFile,
@@ -340,6 +347,7 @@ public class TekuConfigurationBuilder {
         validatorExternalSignerPublicKeys,
         validatorExternalSignerUrl,
         validatorExternalSignerTimeout,
+        eth1Enabled,
         eth1DepositContractAddress,
         eth1Endpoint,
         logColorEnabled,

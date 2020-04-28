@@ -16,21 +16,10 @@ package tech.pegasys.teku.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
-import static tech.pegasys.teku.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
-import static tech.pegasys.teku.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
-import static tech.pegasys.teku.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
-import static tech.pegasys.teku.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
-import static tech.pegasys.teku.cli.options.InteropOptions.INTEROP_ENABLED_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
-import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
-import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
-import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_INTERFACE;
-import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_PORT;
-import static tech.pegasys.teku.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
+import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -176,7 +165,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void interopEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(INTEROP_ENABLED_OPTION_NAME);
+        getTekuConfigurationFromArguments("--Xinterop-enabled");
     assertThat(tekuConfiguration.isInteropEnabled()).isTrue();
   }
 
@@ -200,7 +189,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--Xinterop-genesis-time", "1",
       "--Xinterop-owned-validator-start-index", "0",
       "--Xinterop-owned-validator-count", "64",
-      "--Xinterop-start-state", "",
+      "--initial-state", "",
       "--Xinterop-number-of-validators", "64",
       "--Xinterop-enabled", "true",
       "--eth1-deposit-contract-address", "0x77f7bED277449F51505a4C54550B074030d989bC",
@@ -220,19 +209,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
-        .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
+        .setEth1DepositContractAddress(null)
+        .setEth1Endpoint(null)
         .setMetricsCategories(
             DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
-        .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
-        .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
-        .setP2pInterface(DEFAULT_P2P_INTERFACE)
-        .setP2pPort(DEFAULT_P2P_PORT)
-        .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
-        .setInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
-        .setInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
-        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT)
-        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setP2pAdvertisedPort(30303)
+        .setP2pDiscoveryEnabled(true)
+        .setP2pInterface("0.0.0.0")
+        .setP2pPort(30303)
+        .setP2pPrivateKeyFile(null)
+        .setInteropEnabled(false)
+        .setInteropGenesisTime(null)
+        .setInteropOwnedValidatorCount(0)
+        .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
   }
@@ -259,20 +248,21 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPeerUpperBound(30)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
-        .setInteropStartState("")
+        .setInitialState("")
         .setInteropOwnedValidatorStartIndex(0)
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)
         .setInteropEnabled(true)
         .setEth1DepositContractAddress("0x77f7bED277449F51505a4C54550B074030d989bC")
         .setEth1Endpoint("http://localhost:8545")
+        .setEth1Enabled(true)
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
         .setMetricsCategories(
             Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
-        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)

@@ -14,8 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.cli.options.P2POptions.P2P_DISCOVERY_ENABLED_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.P2POptions.P2P_ENABLED_OPTION_NAME;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -41,15 +39,14 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(P2P_ENABLED_OPTION_NAME);
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--p2p-enabled");
     assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(P2P_DISCOVERY_ENABLED_OPTION_NAME);
+        getTekuConfigurationFromArguments("--p2p-discovery-enabled");
     assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
   }
 }

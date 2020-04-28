@@ -14,8 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.REST_API_DOCS_ENABLED_OPTION_NAME;
-import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.REST_API_ENABLED_OPTION_NAME;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
@@ -36,14 +34,14 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void restApiDocsEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(REST_API_DOCS_ENABLED_OPTION_NAME);
+        getTekuConfigurationFromArguments("--rest-api-docs-enabled");
     assertThat(tekuConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
   public void restApiEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(REST_API_ENABLED_OPTION_NAME);
+        getTekuConfigurationFromArguments("--rest-api-enabled");
     assertThat(tekuConfiguration.isRestApiEnabled()).isTrue();
   }
 }

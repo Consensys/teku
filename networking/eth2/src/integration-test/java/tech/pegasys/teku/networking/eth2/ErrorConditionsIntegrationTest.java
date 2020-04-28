@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.util.Waiter;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -50,8 +49,7 @@ public class ErrorConditionsIntegrationTest {
     final Eth2RpcMethod<StatusMessage, StatusMessage> status =
         ((ActiveEth2Network) network1).getBeaconChainMethods().status();
     final SafeFuture<StatusMessage> response =
-        peer.sendRequest(status, new InvalidStatusMessage())
-            .thenCompose(ResponseStream::expectSingleResponse);
+        peer.requestSingleItem(status, new InvalidStatusMessage());
 
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
         .isInstanceOf(ExecutionException.class)

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.cli.options.LoggingOptions.LOG_DESTINATION_OPTION_NAME;
 import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
 
 import org.junit.jupiter.api.Test;
@@ -48,21 +47,28 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void logDestination_shouldAcceptFileAsDestination() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "file");
+        getTekuConfigurationFromArguments("--log-destination", "file");
     assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
+  }
+
+  @Test
+  public void includeEvents_shouldNotRequireAValue() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--log-include-events-enabled");
+    assertThat(tekuConfiguration.isLogIncludeEventsEnabled()).isTrue();
   }
 
   @Test
   public void logDestination_shouldAcceptConsoleAsDestination() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "console");
+        getTekuConfigurationFromArguments("--log-destination", "console");
     assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
   @Test
   public void logDestination_shouldAcceptBothAsDestination() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments(LOG_DESTINATION_OPTION_NAME, "both");
+        getTekuConfigurationFromArguments("--log-destination", "both");
     assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
   }
 }
