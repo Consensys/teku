@@ -23,30 +23,26 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
-  private final String attestationsTopic;
   private final UnsignedLong subnetId;
   private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
       final EventBus eventBus,
       final AttestationValidator attestationValidator,
-      final UnsignedLong subnetId) {
-    super(eventBus);
+      final UnsignedLong subnetId,
+      final Bytes4 forkDigest) {
+    super(eventBus, forkDigest);
     this.attestationValidator = attestationValidator;
-    this.attestationsTopic = getTopic(subnetId);
     this.subnetId = subnetId;
   }
 
-  private static String getTopic(final UnsignedLong subnetId) {
-    return "/eth2/committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation/ssz";
-  }
-
   @Override
-  public String getTopic() {
-    return attestationsTopic;
+  public String getTopicName() {
+    return "committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation";
   }
 
   @Override

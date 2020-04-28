@@ -40,7 +40,8 @@ public class BlockTopicHandlerTest {
   private final BlockValidator blockValidator =
       new BlockValidator(recentChainData, new StateTransition());
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, recentChainData);
-  private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, blockValidator);
+  private final BlockTopicHandler topicHandler =
+      new BlockTopicHandler(eventBus, blockValidator, recentChainData.getCurrentForkDigest());
 
   @BeforeEach
   public void setup() {

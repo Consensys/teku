@@ -23,6 +23,7 @@ import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AggregateGossipManager {
   private final EventBus eventBus;
@@ -32,9 +33,10 @@ public class AggregateGossipManager {
   public AggregateGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final SignedAggregateAndProofValidator validator) {
+      final SignedAggregateAndProofValidator validator,
+      final Bytes4 forkDigest) {
     final AggregateTopicHandler aggregateTopicHandler =
-        new AggregateTopicHandler(eventBus, validator);
+        new AggregateTopicHandler(eventBus, forkDigest, validator);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(aggregateTopicHandler.getTopic(), aggregateTopicHandler);
     eventBus.register(this);

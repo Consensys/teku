@@ -20,20 +20,23 @@ import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndProof> {
-  public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
+  public static String TOPIC_NAME = "beacon_aggregate_and_proof";
   private final SignedAggregateAndProofValidator validator;
 
   public AggregateTopicHandler(
-      final EventBus eventBus, final SignedAggregateAndProofValidator validator) {
-    super(eventBus);
+      final EventBus eventBus,
+      final Bytes4 forkDigest,
+      final SignedAggregateAndProofValidator validator) {
+    super(eventBus, forkDigest);
     this.validator = validator;
   }
 
   @Override
-  public String getTopic() {
-    return TOPIC;
+  public String getTopicName() {
+    return TOPIC_NAME;
   }
 
   @Override

@@ -37,6 +37,7 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
+
   private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
@@ -71,12 +72,15 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     SignedAggregateAndProofValidator aggregateValidator =
         new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
-        new AttestationSubnetSubscriptions(discoveryNetwork, attestationValidator, eventBus);
-    blockGossipManager = new BlockGossipManager(discoveryNetwork, eventBus, blockValidator);
+        new AttestationSubnetSubscriptions(
+            discoveryNetwork, recentChainData, attestationValidator, eventBus);
+    blockGossipManager =
+        new BlockGossipManager(discoveryNetwork, eventBus, blockValidator, recentChainData);
     attestationGossipManager =
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
     aggregateGossipManager =
-        new AggregateGossipManager(discoveryNetwork, eventBus, aggregateValidator);
+        new AggregateGossipManager(
+            discoveryNetwork, eventBus, aggregateValidator, recentChainData.getCurrentForkDigest());
   }
 
   @Override
@@ -128,11 +132,19 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {
+    if (aggregateGossipManager == null) {
+      throw new IllegalStateException(
+          "Attestation committee can not be subscribed due to gossip manager not being initialized");
+    }
     attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
   }
 
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
+    if (aggregateGossipManager == null) {
+      throw new IllegalStateException(
+          "Attestation committee can not be unsubscribed due to gossip manager not being initialized");
+    }
     attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
   }
 

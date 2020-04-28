@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -39,16 +39,18 @@ public class BlockGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BlockValidator blockValidator =
-      new BlockValidator(storageClient, new StateTransition());
+      new BlockValidator(recentChainData, new StateTransition());
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @BeforeEach
   public void setup() {
-    doReturn(topicChannel).when(gossipNetwork).subscribe(eq(BlockTopicHandler.BLOCKS_TOPIC), any());
-    new BlockGossipManager(gossipNetwork, eventBus, blockValidator);
+    doReturn(topicChannel)
+        .when(gossipNetwork)
+        .subscribe(contains(BlockTopicHandler.TOPIC_NAME), any());
+    new BlockGossipManager(gossipNetwork, eventBus, blockValidator, recentChainData);
   }
 
   @Test

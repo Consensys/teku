@@ -72,6 +72,10 @@ public class ArtemisConfiguration {
   private final LoggingDestination logDestination;
   private final String logFile;
   private final String logFileNamePattern;
+  private final boolean logWireCipher;
+  private final boolean logWirePlain;
+  private final boolean logWireMuxFrames;
+  private final boolean logWireGossip;
 
   // Output
   private final String transitionRecordDirectory;
@@ -131,6 +135,10 @@ public class ArtemisConfiguration {
       final LoggingDestination logDestination,
       final String logFile,
       final String logFileNamePattern,
+      final boolean logWireCipher,
+      final boolean logWirePlain,
+      final boolean logWireMuxFrames,
+      final boolean logWireGossip,
       final String transitionRecordDirectory,
       final boolean metricsEnabled,
       final int metricsPort,
@@ -176,6 +184,10 @@ public class ArtemisConfiguration {
     this.logDestination = logDestination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
+    this.logWireCipher = logWireCipher;
+    this.logWirePlain = logWirePlain;
+    this.logWireMuxFrames = logWireMuxFrames;
+    this.logWireGossip = logWireGossip;
     this.transitionRecordDirectory = transitionRecordDirectory;
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
@@ -340,6 +352,22 @@ public class ArtemisConfiguration {
 
   public String getLogFileNamePattern() {
     return logFileNamePattern;
+  }
+
+  public boolean isLogWireCipher() {
+    return logWireCipher;
+  }
+
+  public boolean isLogWirePlain() {
+    return logWirePlain;
+  }
+
+  public boolean isLogWireMuxFrames() {
+    return logWireMuxFrames;
+  }
+
+  public boolean isLogWireGossip() {
+    return logWireGossip;
   }
 
   public String getTransitionRecordDirectory() {
