@@ -306,6 +306,7 @@ jobs:
             git add api.json
             git commit -m "[skip ci] test"
             git push origin "$BRANCH"
+
 workflows:
   version: 2
   circleci:
