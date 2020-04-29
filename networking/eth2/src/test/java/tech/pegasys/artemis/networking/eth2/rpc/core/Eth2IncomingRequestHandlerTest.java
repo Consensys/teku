@@ -94,8 +94,6 @@ public class Eth2IncomingRequestHandlerTest
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
     asyncRunner.executeQueuedActions();
-
     verify(rpcStream, never()).close();
-    verify(rpcStream, never()).closeWriteStream();
   }
 }

@@ -127,8 +127,10 @@ public class Eth2OutgoingRequestHandlerTest
     deliverChunk(0);
     assertThat(finishedProcessingFuture).isNotDone();
     deliverInvalidChunk();
+    inputStream.close();
 
     asyncRequestRunner.waitForExactly(1);
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(1);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
