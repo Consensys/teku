@@ -100,25 +100,24 @@ public class ValidatorsUtil {
   }
 
   public static Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
-    final Integer validatorIndex =
-        BeaconStateCache.getTransitionCaches(state)
-            .getValidatorIndex()
-            .get(
-                publicKey,
-                key -> {
-                  SSZList<Validator> validators = state.getValidators();
-                  for (int i = 0; i < validators.size(); i++) {
-                    final Validator validator = validators.get(i);
-                    if (validator.getPubkey().equals(publicKey)) {
-                      return i;
-                    }
-                  }
-                  return null;
-                });
-    return Optional.ofNullable(validatorIndex)
+    return Optional.ofNullable(
+            BeaconStateCache.getTransitionCaches(state)
+                .getValidatorIndex()
+                .get(publicKey, key -> getIndexForPublicKey(state.getValidators(), publicKey)))
         // The cache is shared between all states, so filter out any cached responses for validators
         // that are only added into later states
         .filter(index -> index < state.getValidators().size());
+  }
+
+  private static Integer getIndexForPublicKey(Iterable<Validator> validators, BLSPublicKey pubKey) {
+    int i = 0;
+    for (Validator validator : validators) {
+      if (pubKey.equals(validator.getPubkey())) {
+        return i;
+      }
+      i++;
+    }
+    return null;
   }
 
   /**
