@@ -229,7 +229,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPort(30303)
         .setP2pPrivateKeyFile(null)
         .setInteropEnabled(false)
-        .setInteropGenesisTime(null)
+        .setInteropGenesisTime(0)
         .setInteropOwnedValidatorCount(0)
         .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
