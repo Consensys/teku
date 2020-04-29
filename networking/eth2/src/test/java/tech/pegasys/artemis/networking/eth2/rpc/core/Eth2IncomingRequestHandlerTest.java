@@ -28,25 +28,27 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class Eth2IncomingRequestHandlerTest
+public abstract class Eth2IncomingRequestHandlerTest
     extends AbstractRequestHandlerTest<
         Eth2IncomingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>> {
-
-  private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
-      blocksByRangeMethod = beaconChainMethods.beaconBlocksByRange();
 
   private final BeaconState state = mock(BeaconState.class);
   private final BeaconBlocksByRangeRequestMessage request =
       new BeaconBlocksByRangeRequestMessage(UnsignedLong.ONE, UnsignedLong.ONE, UnsignedLong.ONE);
-  private final Bytes requestData = blocksByRangeMethod.encodeRequest(request);
+
+  private Bytes requestData;
 
   @BeforeEach
   @Override
   public void setup() {
     super.setup();
+    requestData = beaconChainMethods.beaconBlocksByRange().encodeRequest(request);
+
     lenient().when(state.getSlot()).thenReturn(UnsignedLong.ONE);
     lenient()
         .when(combinedChainDataClient.getNonfinalizedBlockState(any()))
@@ -58,8 +60,8 @@ public class Eth2IncomingRequestHandlerTest
 
   @Override
   protected Eth2IncomingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
-      createRequestHandler() {
-    return blocksByRangeMethod.createIncomingRequestHandler();
+      createRequestHandler(final BeaconChainMethods beaconChainMethods) {
+    return beaconChainMethods.beaconBlocksByRange().createIncomingRequestHandler();
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlot(final UnsignedLong slot) {
@@ -95,5 +97,22 @@ public class Eth2IncomingRequestHandlerTest
     asyncRunner.executeQueuedActions();
     asyncRunner.executeQueuedActions();
     verify(rpcStream, never()).close();
+  }
+
+  public static class Eth2IncomingRequestHandlerTest_ssz extends Eth2IncomingRequestHandlerTest {
+
+    @Override
+    protected RpcEncoding getRpcEncoding() {
+      return RpcEncoding.SSZ;
+    }
+  }
+
+  public static class Eth2IncomingRequestHandlerTest_sszSnappy
+      extends Eth2IncomingRequestHandlerTest {
+
+    @Override
+    protected RpcEncoding getRpcEncoding() {
+      return RpcEncoding.SSZ_SNAPPY;
+    }
   }
 }

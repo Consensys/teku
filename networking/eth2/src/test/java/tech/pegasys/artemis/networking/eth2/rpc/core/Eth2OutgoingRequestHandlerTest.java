@@ -23,39 +23,43 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
+import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
-public class Eth2OutgoingRequestHandlerTest
+public abstract class Eth2OutgoingRequestHandlerTest
     extends AbstractRequestHandlerTest<
         Eth2OutgoingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>> {
 
   private final StubAsyncRunner asyncRequestRunner = new StubAsyncRunner();
   private final StubAsyncRunner timeoutRunner = new StubAsyncRunner();
 
-  private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
-      blocksByRangeMethod = beaconChainMethods.beaconBlocksByRange();
-  private final RpcEncoder rpcEncoder = blocksByRangeMethod.getRpcEncoder();
-  private final List<Bytes> chunks = List.of(chunkBytes(0), chunkBytes(1), chunkBytes(2));
-
-  private final int maxChunks = chunks.size();
-
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
-  private SafeFuture<Void> finishedProcessingFuture;
   private final AtomicReference<ResponseListener<SignedBeaconBlock>> responseListener =
       new AtomicReference<>(blocks::add);
+  private final int maxChunks = 3;
+
+  private RpcEncoder rpcEncoder;
+  private List<Bytes> chunks;
+  private SafeFuture<Void> finishedProcessingFuture;
 
   @BeforeEach
   @Override
   public void setup() {
     super.setup();
+    rpcEncoder = beaconChainMethods.beaconBlocksByRange().getRpcEncoder();
+    chunks = IntStream.range(0, maxChunks).mapToObj(this::chunkBytes).collect(Collectors.toList());
+
     finishedProcessingFuture =
         reqHandler
             .getResponseStream()
@@ -64,9 +68,9 @@ public class Eth2OutgoingRequestHandlerTest
 
   @Override
   protected Eth2OutgoingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
-      createRequestHandler() {
+      createRequestHandler(final BeaconChainMethods beaconChainMethods) {
     return new Eth2OutgoingRequestHandler<>(
-        asyncRequestRunner, timeoutRunner, blocksByRangeMethod, maxChunks);
+        asyncRequestRunner, timeoutRunner, beaconChainMethods.beaconBlocksByRange(), maxChunks);
   }
 
   @Test
@@ -267,6 +271,23 @@ public class Eth2OutgoingRequestHandlerTest
     if (chunk < maxChunks - 1) {
       // Make sure we finish processing this chunk, and loop back around to wait on the next
       Waiter.waitFor(() -> assertThat(inputStream.isWaitingOnNextByteToBeDelivered()).isTrue());
+    }
+  }
+
+  public static class Eth2OutgoingRequestHandlerTest_ssz extends Eth2OutgoingRequestHandlerTest {
+
+    @Override
+    protected RpcEncoding getRpcEncoding() {
+      return RpcEncoding.SSZ;
+    }
+  }
+
+  public static class Eth2OutgoingRequestHandlerTest_sszSnappy
+      extends Eth2OutgoingRequestHandlerTest {
+
+    @Override
+    protected RpcEncoding getRpcEncoding() {
+      return RpcEncoding.SSZ_SNAPPY;
     }
   }
 }

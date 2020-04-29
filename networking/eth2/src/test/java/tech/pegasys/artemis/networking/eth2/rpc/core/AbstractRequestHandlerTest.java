@@ -54,17 +54,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
       mock(CombinedChainDataClient.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
-  // TODO - run tests with different encoders
-  protected final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
-  protected final BeaconChainMethods beaconChainMethods =
-      BeaconChainMethods.create(
-          asyncRunner,
-          peerLookup,
-          combinedChainDataClient,
-          recentChainData,
-          new NoOpMetricsSystem(),
-          new StatusMessageFactory(recentChainData),
-          rpcEncoding);
+  protected BeaconChainMethods beaconChainMethods;
 
   protected final NodeId nodeId = new MockNodeId();
   protected final RpcStream rpcStream = mock(RpcStream.class);
@@ -77,7 +67,17 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
 
   @BeforeEach
   public void setup() {
-    reqHandler = createRequestHandler();
+    beaconChainMethods =
+        BeaconChainMethods.create(
+            asyncRunner,
+            peerLookup,
+            combinedChainDataClient,
+            recentChainData,
+            new NoOpMetricsSystem(),
+            new StatusMessageFactory(recentChainData),
+            getRpcEncoding());
+
+    reqHandler = createRequestHandler(beaconChainMethods);
 
     lenient().when(rpcStream.close()).thenReturn(SafeFuture.COMPLETE);
     lenient().when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
@@ -85,6 +85,10 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
     lenient().when(peerLookup.getConnectedPeer(nodeId)).thenReturn(peer);
 
     // Setup thread to process input
+    startProcessingInput();
+  }
+
+  protected void startProcessingInput() {
     inputHandlerThread =
         new Thread(
             () -> {
@@ -108,7 +112,9 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
     Waiter.waitFor(() -> assertThat(inputHandlerDone).isTrue());
   }
 
-  protected abstract T createRequestHandler();
+  protected abstract T createRequestHandler(final BeaconChainMethods beaconChainMethods);
+
+  protected abstract RpcEncoding getRpcEncoding();
 
   protected void deliverBytes(final Bytes bytes) throws IOException {
     deliverBytes(bytes, bytes.size());
