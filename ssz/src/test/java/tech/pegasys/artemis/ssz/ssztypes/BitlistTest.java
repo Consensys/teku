@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.ssz.ssztypes;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 
 class BitlistTest {
-  private static int bitlistMaxSize = 4000;
+  private static final int BITLIST_MAX_SIZE = 4000;
 
   @Test
   void initTest() {
@@ -120,13 +121,13 @@ class BitlistTest {
     Bitlist bitlist = createBitlist();
 
     Bytes bitlistSerialized = bitlist.serialize();
-    Bitlist newBitlist = Bitlist.fromBytes(bitlistSerialized, bitlistMaxSize);
+    Bitlist newBitlist = Bitlist.fromBytes(bitlistSerialized, BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
   @Test
   void serializationTest2() {
-    Bitlist bitlist = new Bitlist(9, bitlistMaxSize);
+    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE);
     bitlist.setBit(0);
     bitlist.setBit(3);
     bitlist.setBit(4);
@@ -141,7 +142,7 @@ class BitlistTest {
 
   @Test
   void deserializationTest2() {
-    Bitlist bitlist = new Bitlist(9, bitlistMaxSize);
+    Bitlist bitlist = new Bitlist(9, BITLIST_MAX_SIZE);
     bitlist.setBit(0);
     bitlist.setBit(3);
     bitlist.setBit(4);
@@ -150,12 +151,19 @@ class BitlistTest {
     bitlist.setBit(7);
     bitlist.setBit(8);
 
-    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"), bitlistMaxSize);
+    Bitlist newBitlist = Bitlist.fromBytes(Bytes.fromHexString("0xf903"), BITLIST_MAX_SIZE);
     Assertions.assertEquals(bitlist, newBitlist);
   }
 
+  @Test
+  void deserializationShouldRejectZeroLengthBytes() {
+    assertThatThrownBy(() -> Bitlist.fromBytes(Bytes.EMPTY, BITLIST_MAX_SIZE))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("at least one byte");
+  }
+
   private static Bitlist create(int... bits) {
-    Bitlist bitlist = new Bitlist(18, bitlistMaxSize);
+    Bitlist bitlist = new Bitlist(18, BITLIST_MAX_SIZE);
     IntStream.of(bits).forEach(bitlist::setBit);
     return bitlist;
   }
