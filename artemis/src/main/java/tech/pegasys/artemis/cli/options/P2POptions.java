@@ -105,7 +105,7 @@ public class P2POptions {
       paramLabel = "<BOOLEAN>",
       description = "Enables snappy compression for P2P traffic",
       arity = "1")
-  private Boolean p2pSnappyEnabled;
+  private Boolean p2pSnappyEnabled = null;
 
   public boolean isP2pEnabled() {
     return p2pEnabled;
