@@ -17,6 +17,7 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
 import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
@@ -25,6 +26,7 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -121,6 +123,13 @@ public class AttestationValidator {
     }
 
     final BeaconState state = maybeState.get();
+
+    final List<Integer> committee =
+        get_beacon_committee(
+            state, attestation.getData().getSlot(), attestation.getData().getIndex());
+    if (committee.size() != attestation.getAggregation_bits().getCurrentSize()) {
+      return INVALID;
+    }
 
     // The signature of attestation is valid.
     final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
