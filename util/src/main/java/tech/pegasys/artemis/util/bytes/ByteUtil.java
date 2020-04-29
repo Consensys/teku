@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 public abstract class ByteUtil {
 
   /**
-   * Convert a byte value to a postive integer value
+   * Convert a byte value to a positive integer value
    *
    * @param value A byte value
    * @return The corresponding positive integer value

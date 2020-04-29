@@ -25,12 +25,19 @@ import java.util.Optional;
 public class NetworkDefinition {
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
       ImmutableMap.<String, NetworkDefinition>builder()
-          .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())
+          .put(
+              "minimal",
+              builder()
+                  .constants("minimal")
+                  .snappyCompressionEnabled(false)
+                  .startupTargetPeerCount(0)
+                  .build())
           .put("mainnet", builder().constants("mainnet").snappyCompressionEnabled(true).build())
           .put(
               "topaz",
               builder()
                   .constants("mainnet")
+                  .snappyCompressionEnabled(true)
                   .initialState(
                       "https://github.com/eth2-clients/eth2-testnets/raw/master/prysm/Topaz(v0.11.1)/genesis.ssz")
                   .discoveryBootnodes(

@@ -52,6 +52,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void snappyCompressionDefaultValueIsSet() {
+    final String[] args = {};
+
+    beaconNodeCommand.parse(args);
+
+    final ArtemisConfiguration artemisConfiguration = getResultingArtemisConfiguration();
+    assertThat(artemisConfiguration.isP2pSnappyEnabled()).isFalse();
+  }
+
+  @Test
   public void mainnetNetworkDefaultsSnappyCompressionOn() {
     final String[] args = {"--network", "mainnet"};
 

@@ -34,7 +34,7 @@ import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
-public abstract class ErrorConditionsIntegrationTest {
+public class ErrorConditionsIntegrationTest {
 
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
 
