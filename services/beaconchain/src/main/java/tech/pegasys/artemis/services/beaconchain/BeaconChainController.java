@@ -50,7 +50,9 @@ import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.artemis.networking.eth2.mock.NoOpEth2Network;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.artemis.networking.p2p.network.GossipConfig;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.attestation.AggregatingAttestationPool;
@@ -96,7 +98,7 @@ import tech.pegasys.artemis.validator.coordinator.ValidatorApiHandler;
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private DelayedExecutorAsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+  private final DelayedExecutorAsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final ArtemisConfiguration config;
@@ -104,6 +106,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final EventBus eventBus;
   private final boolean setupInitialState;
   private final SlotEventsChannel slotEventsChannelPublisher;
+  private final NodeSlot nodeSlot = new NodeSlot(ZERO);
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -117,7 +120,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationManager attestationManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
-  private volatile NodeSlot nodeSlot = new NodeSlot(ZERO);
 
   private SyncStateTracker syncStateTracker;
 
@@ -335,9 +337,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               config.isP2pDiscoveryEnabled(),
               config.getP2pDiscoveryBootnodes(),
               new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
-              true,
-              true,
-              true);
+              GossipConfig.DEFAULT_CONFIG,
+              new WireLogsConfig(
+                  config.isLogWireCipher(),
+                  config.isLogWirePlain(),
+                  config.isLogWireMuxFrames(),
+                  config.isLogWireGossip()));
+
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
               .config(p2pConfig)

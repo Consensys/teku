@@ -17,38 +17,51 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+  private final SignedAggregateAndProofValidator validator =
+      mock(SignedAggregateAndProofValidator.class);
   private final AggregateTopicHandler topicHandler =
-      new AggregateTopicHandler(eventBus, recentChainData.getCurrentForkDigest(), recentChainData);
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(12, recentChainData);
+      new AggregateTopicHandler(eventBus, dataStructureUtil.randomForkInfo(), validator);
 
-  @BeforeEach
-  public void setup() {
-    beaconChainUtil.initializeStorage();
+  @Test
+  public void handleMessage_validAggregate() {
+    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
+    when(validator.validate(aggregate)).thenReturn(ValidationResult.VALID);
+
+    final boolean result = topicHandler.handleMessage(SimpleOffsetSerializer.serialize(aggregate));
+    assertThat(result).isTrue();
+    verify(eventBus).post(aggregate);
   }
 
   @Test
-  public void handleMessage_invalidAttestation_badState() throws Exception {
+  public void handleMessage_savedForFuture() {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
-    final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
+    when(validator.validate(aggregate)).thenReturn(ValidationResult.SAVED_FOR_FUTURE);
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
+    final boolean result = topicHandler.handleMessage(SimpleOffsetSerializer.serialize(aggregate));
+    assertThat(result).isFalse();
+    verify(eventBus).post(aggregate);
+  }
+
+  @Test
+  public void handleMessage_invalidAggregate() {
+    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
+    when(validator.validate(aggregate)).thenReturn(ValidationResult.INVALID);
+
+    final boolean result = topicHandler.handleMessage(SimpleOffsetSerializer.serialize(aggregate));
+    assertThat(result).isFalse();
     verify(eventBus, never()).post(aggregate);
   }
 }

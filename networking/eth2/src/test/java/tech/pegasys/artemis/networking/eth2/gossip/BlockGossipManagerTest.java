@@ -50,7 +50,8 @@ public class BlockGossipManagerTest {
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(contains(BlockTopicHandler.TOPIC_NAME), any());
-    new BlockGossipManager(gossipNetwork, eventBus, blockValidator, recentChainData);
+    new BlockGossipManager(
+        gossipNetwork, eventBus, blockValidator, dataStructureUtil.randomForkInfo());
   }
 
   @Test

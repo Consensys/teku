@@ -24,6 +24,7 @@ dependencies {
   implementation 'tech.pegasys.discovery:discovery'
 
   testImplementation testFixtures(project(':ethereum:statetransition'))
+  testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'

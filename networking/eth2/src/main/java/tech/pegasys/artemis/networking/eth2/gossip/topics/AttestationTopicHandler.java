@@ -20,22 +20,22 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
-import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
-  private final AttestationValidator attestationValidator;
   private final UnsignedLong subnetId;
+  private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
       final EventBus eventBus,
       final AttestationValidator attestationValidator,
       final UnsignedLong subnetId,
-      final Bytes4 forkDigest) {
-    super(eventBus, forkDigest);
+      final ForkInfo forkInfo) {
+    super(eventBus, forkInfo);
     this.attestationValidator = attestationValidator;
     this.subnetId = subnetId;
   }
@@ -51,19 +51,7 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   }
 
   @Override
-  protected boolean validateData(final Attestation attestation) {
-    final ValidationResult validationResult = attestationValidator.validate(attestation, subnetId);
-    switch (validationResult) {
-      case INVALID:
-        return false;
-      case SAVED_FOR_FUTURE:
-        eventBus.post(createEvent(attestation));
-        return false;
-      case VALID:
-        return true;
-      default:
-        throw new UnsupportedOperationException(
-            "Unexpected attestation validation result: " + validationResult);
-    }
+  protected ValidationResult validateData(final Attestation attestation) {
+    return attestationValidator.validate(attestation, subnetId);
   }
 }

@@ -81,7 +81,10 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private TopicChannel createChannelForSubnetId(final UnsignedLong subnetId) {
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(
-            eventBus, attestationValidator, subnetId, recentChainData.getCurrentForkDigest());
+            eventBus,
+            attestationValidator,
+            subnetId,
+            recentChainData.getCurrentForkInfo().orElseThrow());
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

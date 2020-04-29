@@ -34,6 +34,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
@@ -50,6 +51,7 @@ public class AttestationGossipManagerTest {
 
   @BeforeEach
   public void setup() {
+    BeaconChainUtil.create(0, recentChainData).initializeStorage();
     doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
     attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(

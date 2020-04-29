@@ -83,10 +83,7 @@ public class DiscoveryNetworkFactory {
                 staticPeers,
                 true,
                 bootnodes,
-                new TargetPeerRange(20, 30),
-                false,
-                false,
-                false);
+                new TargetPeerRange(20, 30));
         final ReputationManager reputationManager =
             new ReputationManager(
                 StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
