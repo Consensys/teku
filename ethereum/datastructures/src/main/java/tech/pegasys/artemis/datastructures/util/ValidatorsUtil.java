@@ -24,6 +24,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.cache.Cache;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ValidatorsUtil {
@@ -100,13 +101,11 @@ public class ValidatorsUtil {
   }
 
   public static Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
-    return Optional.ofNullable(
-            BeaconStateCache.getTransitionCaches(state)
-                .getValidatorIndex()
-                .get(publicKey, key -> getIndexForPublicKey(state.getValidators(), publicKey)))
-        // The cache is shared between all states, so filter out any cached responses for validators
-        // that are only added into later states
-        .filter(index -> index < state.getValidators().size());
+    Cache<BLSPublicKey, Integer> validatorCache =
+        BeaconStateCache.getTransitionCaches(state).getValidatorIndex();
+    SSZList<Validator> validators = state.getValidators(); // new, immutable collection
+    Integer pos = validatorCache.get(publicKey, key -> getIndexForPublicKey(validators, publicKey));
+    return Optional.ofNullable(pos);
   }
 
   private static Integer getIndexForPublicKey(Iterable<Validator> validators, BLSPublicKey pubKey) {
