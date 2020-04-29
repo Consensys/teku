@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import io.libp2p.pubsub.gossip.GossipRouter;
+import java.util.Base64;
 import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.io.Base64;
 import org.jetbrains.annotations.NotNull;
 import pubsub.pb.Rpc.Message;
 
@@ -25,6 +25,8 @@ public class Eth2GossipRouter extends GossipRouter {
   @NotNull
   @Override
   protected String getMessageId(@NotNull Message msg) {
-    return Base64.encodeBytes(Hash.sha2_256(msg.getData().toByteArray()));
+    return Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(Hash.sha2_256(msg.getData().toByteArray()));
   }
 }
