@@ -269,7 +269,7 @@ jobs:
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
   publishAPIDoc:
-    executor: small_executor
+    executor: medium_executor
     steps:
       - prepare
       - add_ssh_keys:
@@ -304,7 +304,7 @@ jobs:
             git pull || true
 
             git add api.json
-            git commit -m "[skip ci] test"
+            git commit -m "[skip ci] update Teku REST API OpenAPI JSON definition"
             git push origin "$BRANCH"
 
 workflows:
