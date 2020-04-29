@@ -113,6 +113,7 @@ public class Bitlist {
   public static Bitlist fromBytes(Bytes bytes, long maxSize) {
     int numBytes = bytes.size();
     checkArgument(numBytes > 0, "Bitlist must contain at least one byte");
+    checkArgument(bytes.get(numBytes - 1) != 0, "Bitlist data must contain end marker bit");
     int leadingBitIndex = 0;
     while ((bytes.get(numBytes - 1) >>> (7 - leadingBitIndex)) % 2 == 0) {
       leadingBitIndex++;

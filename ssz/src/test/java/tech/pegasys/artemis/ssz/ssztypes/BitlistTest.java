@@ -162,6 +162,13 @@ class BitlistTest {
         .hasMessageContaining("at least one byte");
   }
 
+  @Test
+  void deserializationShouldRejectDataWhenEndMarkerBitNotSet() {
+    assertThatThrownBy(() -> Bitlist.fromBytes(Bytes.of(0), BITLIST_MAX_SIZE))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("marker bit");
+  }
+
   private static Bitlist create(int... bits) {
     Bitlist bitlist = new Bitlist(18, BITLIST_MAX_SIZE);
     IntStream.of(bits).forEach(bitlist::setBit);
