@@ -20,35 +20,29 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
-  private final String attestationsTopic;
   private final UnsignedLong subnetId;
-  private final EventBus eventBus;
   private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
       final EventBus eventBus,
       final AttestationValidator attestationValidator,
-      final UnsignedLong subnetId) {
-    super(eventBus);
-    this.eventBus = eventBus;
+      final UnsignedLong subnetId,
+      final ForkInfo forkInfo) {
+    super(eventBus, forkInfo);
     this.attestationValidator = attestationValidator;
-    this.attestationsTopic = getTopic(subnetId);
     this.subnetId = subnetId;
   }
 
-  private static String getTopic(final UnsignedLong subnetId) {
-    return "/eth2/committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation/ssz";
-  }
-
   @Override
-  public String getTopic() {
-    return attestationsTopic;
+  public String getTopicName() {
+    return "committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation";
   }
 
   @Override
@@ -57,19 +51,7 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   }
 
   @Override
-  protected boolean validateData(final Attestation attestation) {
-    final ValidationResult validationResult = attestationValidator.validate(attestation, subnetId);
-    switch (validationResult) {
-      case INVALID:
-        return false;
-      case SAVED_FOR_FUTURE:
-        eventBus.post(createEvent(attestation));
-        return false;
-      case VALID:
-        return true;
-      default:
-        throw new UnsupportedOperationException(
-            "Unexpected attestation validation result: " + validationResult);
-    }
+  protected ValidationResult validateData(final Attestation attestation) {
+    return attestationValidator.validate(attestation, subnetId);
   }
 }

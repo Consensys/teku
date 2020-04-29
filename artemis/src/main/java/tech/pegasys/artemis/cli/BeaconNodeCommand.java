@@ -267,6 +267,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
     }
   }
 
+  public Level getLogLevel() {
+    return this.logLevel;
+  }
+
   private ArtemisConfiguration artemisConfiguration() {
     // TODO: validate option dependencies
     return ArtemisConfiguration.builder()
@@ -305,6 +309,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setLogDestination(loggingOptions.getLogDestination())
         .setLogFile(loggingOptions.getLogFile())
         .setLogFileNamePattern(loggingOptions.getLogFileNamePattern())
+        .setLogWireCipher(loggingOptions.isLogWireCipherEnabled())
+        .setLogWirePlain(loggingOptions.isLogWirePlainEnabled())
+        .setLogWireMuxFrames(loggingOptions.isLogWireMuxEnabled())
+        .setLogWireGossip(loggingOptions.isLogWireGossipEnabled())
         .setTransitionRecordDirectory(outputOptions.getTransitionRecordDirectory())
         .setMetricsEnabled(metricsOptions.isMetricsEnabled())
         .setMetricsPort(metricsOptions.getMetricsPort())

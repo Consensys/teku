@@ -54,16 +54,16 @@ public class NodeManager {
       throws Exception {
     final EventBus eventBus = new EventBus();
     final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, validatorKeys);
+    chainUtil.initializeStorage();
+
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).recentChainData(storageClient);
 
     configureNetwork.accept(networkBuilder);
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
-
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, validatorKeys);
-    chainUtil.initializeStorage();
-
     return new NodeManager(eventBus, storageClient, chainUtil, eth2Network);
   }
 
