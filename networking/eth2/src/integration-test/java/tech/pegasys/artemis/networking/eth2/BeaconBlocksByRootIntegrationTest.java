@@ -51,6 +51,7 @@ public class BeaconBlocksByRootIntegrationTest {
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
     storageClient1 = MemoryOnlyRecentChainData.create(eventBus1);
+    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final Eth2Network network1 =
         networkFactory.builder().eventBus(eventBus1).recentChainData(storageClient1).startNetwork();
     final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
@@ -63,22 +64,13 @@ public class BeaconBlocksByRootIntegrationTest {
   }
 
   @Test
-  public void shouldSendEmptyResponsePreGenesisEvent() throws Exception {
-    final List<Bytes32> blockRoots = singletonList(Bytes32.ZERO);
-    final List<SignedBeaconBlock> response = requestBlocks(blockRoots);
-    assertThat(response).isEmpty();
-  }
-
-  @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final List<SignedBeaconBlock> response = requestBlocks(singletonList(Bytes32.ZERO));
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldReturnSingleBlockWhenOnlyOneMatches() throws Exception {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
 
     final List<SignedBeaconBlock> response =
@@ -88,7 +80,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void requestBlocksByRootAfterPeerDisconnectedImmediately() {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
@@ -104,7 +95,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void requestBlocksByRootAfterPeerDisconnected() {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
@@ -120,7 +110,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void requestBlockByRootAfterPeerDisconnectedImmediately() {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
@@ -134,7 +123,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void requestBlockByRootAfterPeerDisconnected() {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
@@ -148,7 +136,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void shouldReturnMultipleBlocksWhenAllRequestsMatch() throws Exception {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
     final List<Bytes32> blockRoots =
         blocks.stream()
@@ -161,7 +148,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void shouldReturnMatchingBlocksWhenSomeRequestsDoNotMatch() throws Exception {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
 
     // Real block roots interspersed with ones that don't match any blocks

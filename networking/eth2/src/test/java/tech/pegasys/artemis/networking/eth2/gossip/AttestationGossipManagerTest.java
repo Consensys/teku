@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -34,13 +34,16 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.statetransition.BeaconChainUtil;
+import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final String topicRegex = "/eth2/committee_index\\d+_beacon_attestation/ssz";
   private final EventBus eventBus = new EventBus();
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
   private AttestationSubnetSubscriptions attestationSubnetSubscriptions;
@@ -48,11 +51,11 @@ public class AttestationGossipManagerTest {
 
   @BeforeEach
   public void setup() {
-    doReturn(topicChannel)
-        .when(gossipNetwork)
-        .subscribe(argThat((val) -> val.matches(topicRegex)), any());
+    BeaconChainUtil.create(0, recentChainData).initializeStorage();
+    doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
     attestationSubnetSubscriptions =
-        new AttestationSubnetSubscriptions(gossipNetwork, attestationValidator, eventBus);
+        new AttestationSubnetSubscriptions(
+            gossipNetwork, recentChainData, attestationValidator, eventBus);
     attestationGossipManager =
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
   }

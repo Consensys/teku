@@ -18,12 +18,14 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.core.StateTransition;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationSubnetSubscriptions;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -36,6 +38,7 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
+
   private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
@@ -60,6 +63,14 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public SafeFuture<?> start() {
+    // Set the current fork info prior to discovery starting up.
+    final ForkInfo currentForkInfo =
+        recentChainData
+            .getCurrentForkInfo()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException("Can not start Eth2Network before genesis is known"));
+    discoveryNetwork.setForkInfo(currentForkInfo, recentChainData.getNextFork());
     return super.start().thenAccept(r -> startup());
   }
 
@@ -67,13 +78,18 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     state.set(State.RUNNING);
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
+    SignedAggregateAndProofValidator aggregateValidator =
+        new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
+    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
-        new AttestationSubnetSubscriptions(discoveryNetwork, attestationValidator, eventBus);
-    blockGossipManager = new BlockGossipManager(discoveryNetwork, eventBus, blockValidator);
+        new AttestationSubnetSubscriptions(
+            discoveryNetwork, recentChainData, attestationValidator, eventBus);
+    blockGossipManager =
+        new BlockGossipManager(discoveryNetwork, eventBus, blockValidator, forkInfo);
     attestationGossipManager =
         new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
     aggregateGossipManager =
-        new AggregateGossipManager(discoveryNetwork, eventBus, recentChainData);
+        new AggregateGossipManager(discoveryNetwork, eventBus, aggregateValidator, forkInfo);
   }
 
   @Override
@@ -125,11 +141,19 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {
+    if (aggregateGossipManager == null) {
+      throw new IllegalStateException(
+          "Attestation committee can not be subscribed due to gossip manager not being initialized");
+    }
     attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
   }
 
   @Override
   public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
+    if (aggregateGossipManager == null) {
+      throw new IllegalStateException(
+          "Attestation committee can not be unsubscribed due to gossip manager not being initialized");
+    }
     attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
   }
 
