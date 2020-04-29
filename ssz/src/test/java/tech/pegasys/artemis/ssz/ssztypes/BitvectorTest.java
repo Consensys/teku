@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.ssz.ssztypes;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
@@ -70,6 +72,12 @@ class BitvectorTest {
     Bytes bitvectorSerialized = bitvector.serialize();
     Bitvector newBitvector = Bitvector.fromBytes(bitvectorSerialized, testBitvectorLength);
     Assertions.assertEquals(bitvector, newBitvector);
+  }
+
+  @Test
+  public void deserializationEmptyBytesTest() {
+    final Bitvector result = Bitvector.fromBytes(Bytes.EMPTY, 0);
+    assertThat(result.getSize()).isZero();
   }
 
   @Test
