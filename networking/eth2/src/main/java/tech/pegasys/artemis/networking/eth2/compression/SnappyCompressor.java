@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.SnappyFramedInputStream;
 import org.xerial.snappy.SnappyFramedOutputStream;
+import tech.pegasys.artemis.util.iostreams.DelegatingInputStream;
 
 public class SnappyCompressor implements Compressor {
   // The max uncompressed bytes that will be packed into a single frame
@@ -42,7 +43,11 @@ public class SnappyCompressor implements Compressor {
 
   @Override
   public Bytes uncompress(final InputStream input, final int maxBytes) throws CompressionException {
-    try (final InputStream snappyIn = new SnappyFramedInputStream(input)) {
+    // This is a bit of a hack - but we don't want to close the underlying stream when
+    // we close the SnappyFramedInputStream
+    final UnclosableInputStream wrappedStream = new UnclosableInputStream(input);
+
+    try (final InputStream snappyIn = new SnappyFramedInputStream(wrappedStream)) {
       return Bytes.wrap(snappyIn.readNBytes(maxBytes));
     } catch (IOException e) {
       throw new CompressionException("Unable to uncompress data", e);
@@ -55,5 +60,17 @@ public class SnappyCompressor implements Compressor {
     // See:
     // https://github.com/google/snappy/blob/537f4ad6240e586970fe554614542e9717df7902/snappy.cc#L98
     return 32 + uncompressedLength + uncompressedLength / 6;
+  }
+
+  private static class UnclosableInputStream extends DelegatingInputStream {
+
+    public UnclosableInputStream(final InputStream wrapped) {
+      super(wrapped);
+    }
+
+    @Override
+    public void close() {
+      // Don't close wrapped input stream
+    }
   }
 }
