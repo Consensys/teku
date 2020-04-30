@@ -27,6 +27,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.CompressionException;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.PayloadLargerThanExpectedException;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.PayloadSmallerThanExpectedException;
 
 public class SnappyCompressorTest {
   // The static snappy header taken from the Snappy library
@@ -47,7 +50,7 @@ public class SnappyCompressorTest {
     final Bytes compressed = compressor.compress(serializedState);
     assertThat(compressed).isNotEqualTo(serializedState);
 
-    final Bytes uncompressed = compressor.uncompress(compressed);
+    final Bytes uncompressed = compressor.uncompress(compressed, serializedState.size());
     assertThat(uncompressed).isEqualTo(serializedState);
   }
 
@@ -57,7 +60,7 @@ public class SnappyCompressorTest {
     final Bytes serializedState =
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
 
-    assertThatThrownBy(() -> compressor.uncompress(serializedState))
+    assertThatThrownBy(() -> compressor.uncompress(serializedState, serializedState.size()))
         .isInstanceOf(CompressionException.class);
   }
 
@@ -87,19 +90,35 @@ public class SnappyCompressorTest {
   }
 
   @Test
-  public void uncompress_partialValue() throws Exception {
+  public void uncompress_truncatedPayload() {
     final BeaconState state = dataStructureUtil.randomBeaconState(0);
     final Bytes serializedState =
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
 
-    final Bytes compressed = compressor.compress(serializedState);
-    final int maxBytes = MAX_FRAME_CONTENT_SIZE / 2;
-    // Check assumptions
-    assertThat(serializedState.size()).isGreaterThan(MAX_FRAME_CONTENT_SIZE);
+    // Compress and deliver only part of the payload
+    final int payloadSize = serializedState.size();
+    final Bytes compressed = compressor.compress(serializedState.slice(1));
 
     final InputStream input = new ByteArrayInputStream(compressed.toArrayUnsafe());
-    final Bytes uncompressed = compressor.uncompress(input, maxBytes);
-    assertThat(uncompressed.size()).isLessThanOrEqualTo(maxBytes);
+    assertThatThrownBy(() -> compressor.uncompress(input, payloadSize))
+        .isInstanceOf(PayloadSmallerThanExpectedException.class);
+  }
+
+  @Test
+  public void uncompress_appendExtraDataToPayload() {
+    final BeaconState state = dataStructureUtil.randomBeaconState(0);
+    final Bytes serializedState =
+        Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
+
+    // Compress too much data
+    final int payloadSize = serializedState.size();
+    final Bytes payloadWithExtraData =
+        Bytes.concatenate(serializedState, Bytes.fromHexString("0x01"));
+    final Bytes compressed = compressor.compress(payloadWithExtraData);
+
+    final InputStream input = new ByteArrayInputStream(compressed.toArrayUnsafe());
+    assertThatThrownBy(() -> compressor.uncompress(input, payloadSize))
+        .isInstanceOf(PayloadLargerThanExpectedException.class);
   }
 
   @Test

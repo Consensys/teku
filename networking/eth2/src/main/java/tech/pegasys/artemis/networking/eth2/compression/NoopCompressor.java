@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.eth2.compression;
 import java.io.IOException;
 import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.CompressionException;
 
 public class NoopCompressor implements Compressor {
 
@@ -25,14 +26,15 @@ public class NoopCompressor implements Compressor {
   }
 
   @Override
-  public Bytes uncompress(final Bytes data) {
+  public Bytes uncompress(final Bytes data, final int uncompressedPayloadSize) {
     return data;
   }
 
   @Override
-  public Bytes uncompress(final InputStream input, final int maxBytes) throws CompressionException {
+  public Bytes uncompress(final InputStream input, final int uncompressedPayloadSize)
+      throws CompressionException {
     try {
-      return Bytes.wrap(input.readNBytes(maxBytes));
+      return Bytes.wrap(input.readNBytes(uncompressedPayloadSize));
     } catch (IOException e) {
       throw new CompressionException("Unable to uncompress data", e);
     }

@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.CompressionException;
 
 public interface Compressor {
 
@@ -32,12 +33,14 @@ public interface Compressor {
    * Returns the uncompressed data.
    *
    * @param data The data to uncompress.
+   * @param uncompressedPayloadSize The expected size of the uncompressed payload
    * @return The uncompressed data.
    */
-  default Bytes uncompress(final Bytes data) throws CompressionException {
+  default Bytes uncompress(final Bytes data, final int uncompressedPayloadSize)
+      throws CompressionException {
     try (final InputStream byteStream = new ByteArrayInputStream(data.toArrayUnsafe())) {
       // Read everything
-      return uncompress(byteStream, Integer.MAX_VALUE);
+      return uncompress(byteStream, uncompressedPayloadSize);
     } catch (IOException e) {
       throw new RuntimeException(
           "Unexpected error encountered while preparing to uncompress bytes", e);
@@ -49,10 +52,11 @@ public interface Compressor {
    * detected or an error occurs.
    *
    * @param input The underlying {@link InputStream} to read from.
-   * @param maxBytes The maximum number of uncompressed bytes to produce
+   * @param uncompressedPayloadSize The expected size of the uncompressed payload
    * @return The uncompressed bytes read from the underlying inputStream {@code input} stream.
    */
-  Bytes uncompress(final InputStream input, final int maxBytes) throws CompressionException;
+  Bytes uncompress(final InputStream input, final int uncompressedPayloadSize)
+      throws CompressionException;
 
   /**
    * Returns a maximum estimate of the size of a compressed payload given the uncompressed payload

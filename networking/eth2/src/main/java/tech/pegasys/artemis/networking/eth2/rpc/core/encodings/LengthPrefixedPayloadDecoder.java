@@ -22,8 +22,10 @@ import java.io.InputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.eth2.compression.CompressionException;
 import tech.pegasys.artemis.networking.eth2.compression.Compressor;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.CompressionException;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.PayloadLargerThanExpectedException;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.PayloadSmallerThanExpectedException;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 
 class LengthPrefixedPayloadDecoder<T> {
@@ -45,6 +47,10 @@ class LengthPrefixedPayloadDecoder<T> {
     try {
       final int uncompressedPayloadSize = processLengthPrefixHeader(inputStream);
       return processPayload(inputStream, uncompressedPayloadSize);
+    } catch (PayloadSmallerThanExpectedException e) {
+      throw RpcException.PAYLOAD_TRUNCATED;
+    } catch (PayloadLargerThanExpectedException e) {
+      throw RpcException.EXTRA_DATA_APPENDED;
     } catch (CompressionException e) {
       LOG.debug("Failed to uncompress rpc payload", e);
       throw RpcException.FAILED_TO_UNCOMPRESS_MESSAGE;
@@ -102,7 +108,7 @@ class LengthPrefixedPayloadDecoder<T> {
       throws RpcException, CompressionException {
     final Bytes uncompressedPayload = compressor.uncompress(inputStream, uncompressedPayloadSize);
     if (uncompressedPayload.size() < uncompressedPayloadSize) {
-      throw RpcException.MESSAGE_TRUNCATED;
+      throw RpcException.PAYLOAD_TRUNCATED;
     }
     return payloadEncoder.decode(uncompressedPayload);
   }

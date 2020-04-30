@@ -52,16 +52,16 @@ class LengthPrefixedEncodingTest {
   public void decodePayload_shouldReturnErrorWhenNoPayloadIsPresent() {
     final InputStream invalidMessage = inputStream(ONE_BYTE_LENGTH_PREFIX);
     assertThatThrownBy(() -> encoding.decodePayload(invalidMessage, StatusMessage.class))
-        .isEqualTo(RpcException.MESSAGE_TRUNCATED);
+        .isEqualTo(RpcException.PAYLOAD_TRUNCATED);
   }
 
   @Test
-  public void decodePayload_shouldReturnErrorWhenMessageTooShort() {
+  public void decodePayload_shouldReturnErrorWhenPayloadTooShort() {
     final Bytes correctMessage = createValidStatusMessage();
     final int truncatedSize = correctMessage.size() - 5;
     final InputStream partialMessage = inputStream(correctMessage.slice(0, truncatedSize));
     assertThatThrownBy(() -> encoding.decodePayload(partialMessage, StatusMessage.class))
-        .isEqualTo(RpcException.MESSAGE_TRUNCATED);
+        .isEqualTo(RpcException.PAYLOAD_TRUNCATED);
   }
 
   @Test

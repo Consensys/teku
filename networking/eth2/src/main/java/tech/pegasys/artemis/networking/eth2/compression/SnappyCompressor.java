@@ -20,6 +20,9 @@ import java.io.OutputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.SnappyFramedInputStream;
 import org.xerial.snappy.SnappyFramedOutputStream;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.CompressionException;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.PayloadLargerThanExpectedException;
+import tech.pegasys.artemis.networking.eth2.compression.exceptions.PayloadSmallerThanExpectedException;
 import tech.pegasys.artemis.util.iostreams.DelegatingInputStream;
 
 public class SnappyCompressor implements Compressor {
@@ -42,13 +45,30 @@ public class SnappyCompressor implements Compressor {
   }
 
   @Override
-  public Bytes uncompress(final InputStream input, final int maxBytes) throws CompressionException {
+  public Bytes uncompress(final InputStream input, final int uncompressedPayloadSize)
+      throws CompressionException {
     // This is a bit of a hack - but we don't want to close the underlying stream when
     // we close the SnappyFramedInputStream
     final UnclosableInputStream wrappedStream = new UnclosableInputStream(input);
 
     try (final InputStream snappyIn = new SnappyFramedInputStream(wrappedStream)) {
-      return Bytes.wrap(snappyIn.readNBytes(maxBytes));
+      final Bytes uncompressed = Bytes.wrap(snappyIn.readNBytes(uncompressedPayloadSize));
+
+      // Validate payload is of expected size
+      if (uncompressed.size() < uncompressedPayloadSize) {
+        throw new PayloadSmallerThanExpectedException(
+            String.format(
+                "Expected %d bytes but only uncompressed %d bytes",
+                uncompressedPayloadSize, uncompressed.size()));
+      }
+      if (snappyIn.available() > 0) {
+        throw new PayloadLargerThanExpectedException(
+            String.format(
+                "Expected %d bytes, but at least %d extra bytes are appended",
+                uncompressedPayloadSize, snappyIn.available()));
+      }
+
+      return uncompressed;
     } catch (IOException e) {
       throw new CompressionException("Unable to uncompress data", e);
     }

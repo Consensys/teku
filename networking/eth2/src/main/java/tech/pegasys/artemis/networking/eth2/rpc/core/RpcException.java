@@ -37,6 +37,8 @@ public class RpcException extends Exception {
       new RpcException(INVALID_REQUEST_CODE, "Extra data appended to end of message");
   public static final RpcException MESSAGE_TRUNCATED =
       new RpcException(INVALID_REQUEST_CODE, "Message was truncated");
+  public static final RpcException PAYLOAD_TRUNCATED =
+      new RpcException(INVALID_REQUEST_CODE, "Message payload smaller than expected");
 
   // Constraint violation
   public static final RpcException CHUNK_TOO_LONG =

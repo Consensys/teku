@@ -11,11 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.compression;
+package tech.pegasys.artemis.networking.eth2.compression.exceptions;
 
 public class CompressionException extends Exception {
 
   public CompressionException(final String message, final Throwable cause) {
     super(message, cause);
+  }
+
+  public CompressionException(final String message) {
+    super(message);
   }
 }
