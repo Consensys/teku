@@ -206,9 +206,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(
+  public void subscribeToBeaconCommitteeForAggregation(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
-    attestationTopicSubscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
+    attestationTopicSubscriptions.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
+  }
+
+  @Override
+  public void updateRandomSubnetSubscriptions(
+          final int committeeIndex, final UnsignedLong subscriptionEndSlot) {
+    attestationTopicSubscriptions.subscribeToCommitteeForStability(committeeIndex, subscriptionEndSlot);
   }
 
   @Override

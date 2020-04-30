@@ -71,7 +71,7 @@ class AggregationDutyTest {
     final int committeeIndex = 2;
     duty.addValidator(
         validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-    verify(validatorApiChannel).subscribeToBeaconCommittee(committeeIndex, SLOT);
+    verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
   }
 
   @Test
@@ -82,7 +82,7 @@ class AggregationDutyTest {
     duty.addValidator(
         validator2, 2, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
 
-    verify(validatorApiChannel, times(1)).subscribeToBeaconCommittee(committeeIndex, SLOT);
+    verify(validatorApiChannel, times(1)).subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
   }
 
   @Test
@@ -217,7 +217,7 @@ class AggregationDutyTest {
   public void shouldFailWhenUnsignedAttestationNotCreated() {
     duty.addValidator(
         validator1, 1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
-    verify(validatorApiChannel).subscribeToBeaconCommittee(anyInt(), any());
+    verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(anyInt(), any());
 
     assertThat(duty.performDuty()).isCompletedExceptionally();
     verifyNoMoreInteractions(validatorApiChannel);

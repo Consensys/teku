@@ -331,9 +331,9 @@ class ValidatorApiHandlerTest {
   public void subscribeToBeaconCommittee_shouldSubscribeViaAttestationTopicSubscriptions() {
     final int committeeIndex = 10;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(13);
-    validatorApiHandler.subscribeToBeaconCommittee(committeeIndex, aggregationSlot);
+    validatorApiHandler.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
 
-    verify(attestationTopicSubscriptions).subscribeToCommittee(committeeIndex, aggregationSlot);
+    verify(attestationTopicSubscriptions).subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
   }
 
   @Test

@@ -32,7 +32,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     this.eth2Network = eth2Network;
   }
 
-  public synchronized void subscribeToCommittee(
+  public synchronized void subscribeToCommitteeForAggregation(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
     eth2Network.subscribeToAttestationCommitteeTopic(committeeIndex);
     final UnsignedLong currentUnsubscribeSlot =

@@ -16,6 +16,7 @@ package tech.pegasys.artemis.validator.api;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
@@ -41,7 +42,9 @@ public interface ValidatorApiChannel {
 
   SafeFuture<Optional<Attestation>> createAggregate(AttestationData attestationData);
 
-  void subscribeToBeaconCommittee(int committeeIndex, UnsignedLong aggregationSlot);
+  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UnsignedLong aggregationSlot);
+
+  void updateRandomSubnetSubscriptions(Map<Integer, UnsignedLong> subnetIdToUnsubscriptionSlot);
 
   void sendSignedAttestation(Attestation attestation);
 

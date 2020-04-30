@@ -32,7 +32,7 @@ class AttestationTopicSubscriberTest {
   @Test
   public void shouldSubscribeToCommittee() {
     final int committeeIndex = 10;
-    subscriptions.subscribeToCommittee(committeeIndex, ONE);
+    subscriptions.subscribeToCommitteeForAggregation(committeeIndex, ONE);
 
     verify(eth2Network).subscribeToAttestationCommitteeTopic(committeeIndex);
   }
@@ -41,7 +41,7 @@ class AttestationTopicSubscriberTest {
   public void shouldUnsubscribeFromCommitteeWhenPastSlot() {
     final int committeeIndex = 12;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(10);
-    subscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
+    subscriptions.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
 
     subscriptions.onSlot(aggregationSlot.plus(ONE));
 
@@ -52,7 +52,7 @@ class AttestationTopicSubscriberTest {
   public void shouldNotUnsubscribeAtStartOfTargetSlot() {
     final int committeeIndex = 16;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(10);
-    subscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
+    subscriptions.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
 
     subscriptions.onSlot(aggregationSlot);
 
@@ -65,8 +65,8 @@ class AttestationTopicSubscriberTest {
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
 
-    subscriptions.subscribeToCommittee(committeeIndex, firstSlot);
-    subscriptions.subscribeToCommittee(committeeIndex, secondSlot);
+    subscriptions.subscribeToCommitteeForAggregation(committeeIndex, firstSlot);
+    subscriptions.subscribeToCommitteeForAggregation(committeeIndex, secondSlot);
 
     subscriptions.onSlot(firstSlot.plus(ONE));
     verify(eth2Network, never()).unsubscribeFromAttestationCommitteeTopic(committeeIndex);
@@ -81,8 +81,8 @@ class AttestationTopicSubscriberTest {
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
 
-    subscriptions.subscribeToCommittee(committeeIndex, secondSlot);
-    subscriptions.subscribeToCommittee(committeeIndex, firstSlot);
+    subscriptions.subscribeToCommitteeForAggregation(committeeIndex, secondSlot);
+    subscriptions.subscribeToCommitteeForAggregation(committeeIndex, firstSlot);
 
     subscriptions.onSlot(firstSlot.plus(ONE));
     verify(eth2Network, never()).unsubscribeFromAttestationCommitteeTopic(committeeIndex);
