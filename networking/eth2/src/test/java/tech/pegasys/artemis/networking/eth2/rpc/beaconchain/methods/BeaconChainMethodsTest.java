@@ -53,6 +53,8 @@ public class BeaconChainMethodsTest {
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
+  final MetadataMessageFactory metadataMessageFactory = new MetadataMessageFactory();
+
   private final BeaconChainMethods beaconChainMethods =
       BeaconChainMethods.create(
           asyncRunner,
@@ -60,7 +62,8 @@ public class BeaconChainMethodsTest {
           combinedChainDataClient,
           recentChainData,
           metricsSystem,
-          statusMessageFactory);
+          statusMessageFactory,
+          metadataMessageFactory);
 
   @Test
   void testStatusRoundtripSerialization() throws Exception {

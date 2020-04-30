@@ -54,8 +54,10 @@ public class Eth2NetworkBuilder {
     validate();
 
     // Setup eth2 handlers
+    final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
     final Eth2PeerManager eth2PeerManager =
-        Eth2PeerManager.create(recentChainData, historicalChainData, metricsSystem);
+        Eth2PeerManager.create(
+            recentChainData, historicalChainData, metricsSystem, attestationSubnetService);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -63,7 +65,8 @@ public class Eth2NetworkBuilder {
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network = buildNetwork();
 
-    return new ActiveEth2Network(network, eth2PeerManager, eventBus, recentChainData);
+    return new ActiveEth2Network(
+        network, eth2PeerManager, eventBus, recentChainData, attestationSubnetService);
   }
 
   protected DiscoveryNetwork<?> buildNetwork() {

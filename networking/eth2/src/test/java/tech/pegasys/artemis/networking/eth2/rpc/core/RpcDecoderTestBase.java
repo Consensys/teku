@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.MetadataMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
@@ -69,7 +70,8 @@ public class RpcDecoderTestBase {
           combinedChainDataClient,
           RECENT_CHAIN_DATA,
           new NoOpMetricsSystem(),
-          new StatusMessageFactory(RECENT_CHAIN_DATA));
+          new StatusMessageFactory(RECENT_CHAIN_DATA),
+          new MetadataMessageFactory());
 
   @SuppressWarnings("unchecked")
   protected static final Eth2RpcMethod<

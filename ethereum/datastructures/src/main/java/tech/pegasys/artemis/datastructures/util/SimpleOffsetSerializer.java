@@ -39,8 +39,10 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -108,7 +110,9 @@ public class SimpleOffsetSerializer {
             SignedAggregateAndProof.class,
             ForkData.class,
             EnrForkId.class,
-            VoteTracker.class);
+            VoteTracker.class,
+            MetadataMessage.class,
+            EmptyMessage.class);
 
     for (Class classItem : classes) {
       classReflectionInfo.put(classItem, new ReflectionInformation(classItem));

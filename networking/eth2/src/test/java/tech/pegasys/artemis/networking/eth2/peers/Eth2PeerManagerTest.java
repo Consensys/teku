@@ -22,6 +22,7 @@ import java.util.List;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.networking.eth2.AttestationSubnetService;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
@@ -44,7 +45,11 @@ public class Eth2PeerManagerTest {
 
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(
-          combinedChainDataClient, storageClient, new NoOpMetricsSystem(), peerValidatorFactory);
+          combinedChainDataClient,
+          storageClient,
+          new NoOpMetricsSystem(),
+          peerValidatorFactory,
+          new AttestationSubnetService());
 
   @BeforeEach
   public void setup() {

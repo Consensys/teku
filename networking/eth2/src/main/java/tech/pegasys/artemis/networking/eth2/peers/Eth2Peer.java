@@ -25,7 +25,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -129,6 +131,10 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         rpcMethods.beaconBlocksByRange();
     return requestStream(
         blocksByRange, new BeaconBlocksByRangeRequestMessage(startSlot, count, step), listener);
+  }
+
+  public SafeFuture<MetadataMessage> requestMetadata() {
+    return requestSingleItem(rpcMethods.getMetadata(), new EmptyMessage());
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> sendMessage(
