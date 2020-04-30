@@ -53,6 +53,7 @@ import tech.pegasys.artemis.storage.server.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.Eth1Address;
 import tech.pegasys.artemis.util.config.InvalidConfigurationException;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
 import tech.pegasys.teku.logging.LoggingConfigurator;
@@ -155,13 +156,18 @@ public class BeaconNodeCommand implements Callable<Integer> {
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
   }
 
+  private CommandLine registerConverters(final CommandLine commandLine) {
+    return commandLine
+        .registerConverter(MetricCategory.class, metricCategoryConverter)
+        .registerConverter(Eth1Address.class, Eth1Address::fromHexString);
+  }
+
   private CommandLine getConfigFileCommandLine(final ConfigFileCommand configFileCommand) {
-    return new CommandLine(configFileCommand)
-        .registerConverter(MetricCategory.class, metricCategoryConverter);
+    return registerConverters(new CommandLine(configFileCommand));
   }
 
   private CommandLine getCommandLine() {
-    return new CommandLine(this).registerConverter(MetricCategory.class, metricCategoryConverter);
+    return registerConverters(new CommandLine(this));
   }
 
   public int parse(final String[] args) {
