@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.rpc.core.encodings;
 
 import static tech.pegasys.artemis.util.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.artemis.util.iostreams.IOStreamConstants.END_OF_STREAM;
 
 import com.google.protobuf.CodedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -32,7 +33,6 @@ class LengthPrefixedPayloadDecoder<T> {
   private static final Logger LOG = LogManager.getLogger();
 
   static final Bytes MAX_CHUNK_SIZE_PREFIX = ProtobufEncoder.encodeVarInt(MAX_CHUNK_SIZE);
-  private static final int END_OF_STREAM = -1;
 
   private final RpcPayloadEncoder<T> payloadEncoder;
   private final Compressor compressor;

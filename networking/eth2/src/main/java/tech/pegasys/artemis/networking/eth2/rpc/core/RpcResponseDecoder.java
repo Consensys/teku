@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2.rpc.core;
 
 import static tech.pegasys.artemis.networking.eth2.rpc.core.RpcResponseStatus.SUCCESS_RESPONSE_CODE;
 import static tech.pegasys.artemis.util.bytes.ByteUtil.toByteExactUnsigned;
+import static tech.pegasys.artemis.util.iostreams.IOStreamConstants.END_OF_STREAM;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,8 +32,6 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
  */
 public class RpcResponseDecoder<T> {
   private static final Logger LOG = LogManager.getLogger();
-
-  private static final int END_OF_STREAM = -1;
 
   private final Class<T> responseType;
   private final RpcEncoding encoding;
