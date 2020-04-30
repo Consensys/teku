@@ -36,7 +36,7 @@ public class MetadataMessage implements RpcRequest, SimpleOffsetSerializable, SS
   private final Bitvector attnets; // vector of size Constants.ATTESTATION_SUBNET_COUNT
 
   public MetadataMessage() {
-    this((UnsignedLong.ZERO), new Bitvector(Constants.ATTESTATION_SUBNET_COUNT));
+    this(UnsignedLong.ZERO, new Bitvector(Constants.ATTESTATION_SUBNET_COUNT));
   }
 
   public MetadataMessage(UnsignedLong seqNumber, Bitvector attnets) {
