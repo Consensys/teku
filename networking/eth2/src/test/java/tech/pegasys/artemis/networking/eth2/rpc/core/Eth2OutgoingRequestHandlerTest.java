@@ -130,7 +130,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
     deliverChunk(0);
     assertThat(finishedProcessingFuture).isNotDone();
-    deliverInvalidChunk();
+    deliverError();
     inputStream.close();
 
     asyncRequestRunner.waitForExactly(1);
@@ -259,10 +259,9 @@ public abstract class Eth2OutgoingRequestHandlerTest
     return rpcEncoder.encodeSuccessfulResponse(block);
   }
 
-  private void deliverInvalidChunk() throws IOException {
-    // Send a chunk with error code 1, message length 0
-    final Bytes invalidChunk = Bytes.fromHexString("0x0100");
-    deliverBytes(invalidChunk);
+  private void deliverError() throws IOException {
+    final Bytes errorChunk = rpcEncoder.encodeErrorResponse(RpcException.SERVER_ERROR);
+    deliverBytes(errorChunk);
   }
 
   private void deliverChunk(final int chunk) throws IOException {

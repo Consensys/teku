@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.util.iostreams;
 
+import static tech.pegasys.artemis.util.iostreams.IOStreamConstants.END_OF_STREAM;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayDeque;
@@ -61,7 +63,7 @@ public class MockInputStream extends InputStream {
     final List<Byte> bytes = new ArrayList<>();
     while (bytes.size() < len) {
       final int nextByte = read();
-      if (nextByte == -1) {
+      if (nextByte == END_OF_STREAM) {
         // End of stream
         break;
       }
@@ -72,7 +74,13 @@ public class MockInputStream extends InputStream {
 
   @Override
   public int read(final byte[] b, final int off, final int len) throws IOException {
-    return super.read(b, off, len);
+    final byte[] bytesToCopy = readNBytes(len);
+    if (bytesToCopy.length == 0) {
+      return END_OF_STREAM;
+    }
+
+    System.arraycopy(bytesToCopy, 0, b, off, bytesToCopy.length);
+    return bytesToCopy.length;
   }
 
   @Override
@@ -141,7 +149,7 @@ public class MockInputStream extends InputStream {
       consumedBytes.add(nextByte);
       return OptionalInt.of(ByteUtil.toUnsignedInt(nextByte));
     } else if (closed) {
-      return OptionalInt.of(-1);
+      return OptionalInt.of(END_OF_STREAM);
     }
     return OptionalInt.empty();
   }
