@@ -35,6 +35,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
+import tech.pegasys.artemis.util.config.Eth1Address;
 import tech.pegasys.artemis.util.config.LoggingDestination;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
 
@@ -244,6 +245,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
+    Eth1Address address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
     return ArtemisConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
@@ -263,7 +265,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)
         .setInteropEnabled(true)
-        .setEth1DepositContractAddress("0x77f7bED277449F51505a4C54550B074030d989bC")
+        .setEth1DepositContractAddress(address)
         .setEth1Endpoint("http://localhost:8545")
         .setEth1Enabled(true)
         .setMetricsEnabled(false)
