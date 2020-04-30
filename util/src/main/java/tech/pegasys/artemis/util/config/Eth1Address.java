@@ -18,13 +18,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 
-public class Eth1DepositContractAddress {
+public class Eth1Address {
   /** The number of bytes in this value - i.e. 20 */
   private static final int SIZE = 20;
 
   private final Bytes bytes;
 
-  public Eth1DepositContractAddress(Bytes bytes) {
+  public Eth1Address(Bytes bytes) {
     checkArgument(
         bytes.size() == SIZE,
         "Bytes%s should be %s bytes, but was %s bytes.",
@@ -42,7 +42,7 @@ public class Eth1DepositContractAddress {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final Eth1DepositContractAddress address = (Eth1DepositContractAddress) o;
+    final Eth1Address address = (Eth1Address) o;
     return bytes.equals(address.bytes);
   }
 
@@ -56,9 +56,9 @@ public class Eth1DepositContractAddress {
     return bytes.toString();
   }
 
-  public static Eth1DepositContractAddress fromHexString(String value) {
+  public static Eth1Address fromHexString(String value) {
     Bytes bytes = Bytes.fromHexString(value);
-    return new Eth1DepositContractAddress(bytes);
+    return new Eth1Address(bytes);
   }
 
   public String toHexString() {
@@ -67,9 +67,5 @@ public class Eth1DepositContractAddress {
 
   public Bytes toBytes() {
     return bytes;
-  }
-
-  public static Eth1DepositContractAddress empty() {
-    return new Eth1DepositContractAddress(Bytes.wrap(new byte[SIZE]));
   }
 }
