@@ -64,7 +64,7 @@ public class ArtemisConfiguration {
 
   private final boolean eth1Enabled;
   // Deposit
-  private final String eth1DepositContractAddress;
+  private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
 
   // Logging
@@ -130,7 +130,7 @@ public class ArtemisConfiguration {
       final String validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
       final boolean eth1Enabled,
-      final String eth1DepositContractAddress,
+      final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
@@ -333,7 +333,7 @@ public class ArtemisConfiguration {
     return eth1Enabled;
   }
 
-  public String getEth1DepositContractAddress() {
+  public Eth1Address getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
   }
 

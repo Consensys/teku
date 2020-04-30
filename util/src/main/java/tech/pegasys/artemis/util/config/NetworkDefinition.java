@@ -42,7 +42,8 @@ public class NetworkDefinition {
                       "https://github.com/eth2-clients/eth2-testnets/raw/master/prysm/Topaz(v0.11.1)/genesis.ssz")
                   .discoveryBootnodes(
                       "enr:-Ku4QAGwOT9StqmwI5LHaIymIO4ooFKfNkEjWa0f1P8OsElgBh2Ijb-GrD_-b9W4kcPFcwmHQEy5RncqXNqdpVo1heoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
-                  .eth1DepositContractAddress("0x5cA1e00004366Ac85f492887AAab12d0e6418876")
+                  .eth1DepositContractAddress(
+                      Eth1Address.fromHexString("0x5cA1e00004366Ac85f492887AAab12d0e6418876"))
                   .build())
           .build();
 
@@ -51,7 +52,7 @@ public class NetworkDefinition {
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
-  private final Optional<String> eth1DepositContractAddress;
+  private final Optional<Eth1Address> eth1DepositContractAddress;
   private final Optional<String> eth1Endpoint;
   private final Optional<Boolean> snappyCompressionEnabled;
 
@@ -61,7 +62,7 @@ public class NetworkDefinition {
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
-      final Optional<String> eth1DepositContractAddress,
+      final Optional<Eth1Address> eth1DepositContractAddress,
       final Optional<String> eth1Endpoint,
       final Optional<Boolean> snappyCompressionEnabled) {
     this.constants = constants;
@@ -102,7 +103,7 @@ public class NetworkDefinition {
     return discoveryBootnodes;
   }
 
-  public Optional<String> getEth1DepositContractAddress() {
+  public Optional<Eth1Address> getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
   }
 
@@ -120,7 +121,7 @@ public class NetworkDefinition {
     private int startupTargetPeerCount = Constants.DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = Constants.DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private List<String> discoveryBootnodes = new ArrayList<>();
-    private Optional<String> eth1DepositContractAddress = Optional.empty();
+    private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
     private Optional<String> eth1Endpoint = Optional.empty();
     private Optional<Boolean> snappyCompressionEnabled = Optional.empty();
 
@@ -149,8 +150,8 @@ public class NetworkDefinition {
       return this;
     }
 
-    public Builder eth1DepositContractAddress(final String eth1DepositContractAddress) {
-      this.eth1DepositContractAddress = Optional.of(eth1DepositContractAddress);
+    public Builder eth1DepositContractAddress(final Eth1Address eth1Address) {
+      this.eth1DepositContractAddress = Optional.of(eth1Address);
       return this;
     }
 

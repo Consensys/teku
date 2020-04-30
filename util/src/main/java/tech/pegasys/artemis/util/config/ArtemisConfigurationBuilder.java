@@ -47,7 +47,7 @@ public class ArtemisConfigurationBuilder {
   private List<String> validatorExternalSignerPublicKeys;
   private String validatorExternalSignerUrl;
   private int validatorExternalSignerTimeout;
-  private String eth1DepositContractAddress;
+  private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
@@ -223,7 +223,7 @@ public class ArtemisConfigurationBuilder {
   }
 
   public ArtemisConfigurationBuilder setEth1DepositContractAddress(
-      final String eth1DepositContractAddress) {
+      final Eth1Address eth1DepositContractAddress) {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     return this;
   }
