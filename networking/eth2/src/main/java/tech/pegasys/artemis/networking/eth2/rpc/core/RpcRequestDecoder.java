@@ -37,16 +37,19 @@ public class RpcRequestDecoder<T extends RpcRequest> {
   }
 
   public T decodeRequest(final InputStream input) throws RpcException {
+    final T request = encoding.decodePayload(input, requestType);
+
+    // Check for extra bytes remaining
     try {
-      final T request = encoding.decodePayload(input, requestType);
       if (input.available() != 0) {
         throw RpcException.EXTRA_DATA_APPENDED;
       }
-      return request;
     } catch (IOException e) {
-      LOG.error(
-          "Unexpected error encountered while checking bytes available in rpc input stream.", e);
-      throw RpcException.SERVER_ERROR;
+      // We were unable to check for extra bytes - log a warning and continue on
+      LOG.warn(
+          "Unexpected error encountered while checking bytes remaining in rpc input stream.", e);
     }
+
+    return request;
   }
 }
