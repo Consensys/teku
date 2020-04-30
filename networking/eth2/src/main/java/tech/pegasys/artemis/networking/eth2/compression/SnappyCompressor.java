@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.compression;
 
+import com.google.common.io.ByteStreams;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,9 +50,12 @@ public class SnappyCompressor implements Compressor {
       throws CompressionException {
     // This is a bit of a hack - but we don't want to close the underlying stream when
     // we close the SnappyFramedInputStream
-    final UnclosableInputStream wrappedStream = new UnclosableInputStream(input);
+    final UncloseableInputStream unclosableStream = new UncloseableInputStream(input);
+    // Limit the max number of bytes we're allowed to read
+    final InputStream limitedStream =
+        ByteStreams.limit(unclosableStream, getMaxCompressedLength(uncompressedPayloadSize));
 
-    try (final InputStream snappyIn = new SnappyFramedInputStream(wrappedStream)) {
+    try (final InputStream snappyIn = new SnappyFramedInputStream(limitedStream)) {
       final Bytes uncompressed = Bytes.wrap(snappyIn.readNBytes(uncompressedPayloadSize));
 
       // Validate payload is of expected size
@@ -82,9 +86,9 @@ public class SnappyCompressor implements Compressor {
     return 32 + uncompressedLength + uncompressedLength / 6;
   }
 
-  private static class UnclosableInputStream extends DelegatingInputStream {
+  private static class UncloseableInputStream extends DelegatingInputStream {
 
-    public UnclosableInputStream(final InputStream wrapped) {
+    public UncloseableInputStream(final InputStream wrapped) {
       super(wrapped);
     }
 

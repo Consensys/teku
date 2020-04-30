@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -122,7 +121,6 @@ public class SnappyCompressorTest {
   }
 
   @Test
-  @Disabled("We need to handle this case")
   public void uncompress_maliciousBytes() {
     // The number of underlying uncompressed bytes encoded
     final int uncompressedByteCount = 4;
@@ -148,7 +146,6 @@ public class SnappyCompressorTest {
   }
 
   @Test
-  @Disabled("SnappyCompressor will currently block in this case")
   public void uncompress_partialValueWhenFullFrameUnavailable() throws Exception {
     final BeaconState state = dataStructureUtil.randomBeaconState(0);
     final Bytes serializedState =
@@ -159,14 +156,14 @@ public class SnappyCompressorTest {
     final int bytesToRead = partialPayloadSize / 2;
     // Check assumptions
     assertThat(serializedState.size()).isGreaterThan(MAX_FRAME_CONTENT_SIZE);
-
     // Calculate the number of compressed bytes to request
     final int fullCapacity = Math.max(compressed.size(), serializedState.size());
+
     try (final PipedOutputStream outputStream = new PipedOutputStream();
         final InputStream inputStream = new PipedInputStream(outputStream, fullCapacity)) {
       outputStream.write(compressed.slice(0, partialPayloadSize).toArrayUnsafe());
-      final Bytes result = compressor.uncompress(inputStream, bytesToRead);
-      assertThat(result.size()).isLessThanOrEqualTo(bytesToRead);
+      assertThatThrownBy(() -> compressor.uncompress(inputStream, bytesToRead))
+          .isInstanceOf(CompressionException.class);
     }
   }
 }
