@@ -29,6 +29,12 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 public class SnappyCompressorTest {
+  // The static snappy header taken from the Snappy library
+  // see:
+  // https://github.com/xerial/snappy-java/blob/de99182a82516c60d29813820926003b2543faf5/src/main/java/org/xerial/snappy/SnappyFramed.java#L121
+  private static final Bytes SNAPPY_HEADER =
+      Bytes.wrap(new byte[] {(byte) 0xff, 0x06, 0x00, 0x00, 0x73, 0x4e, 0x61, 0x50, 0x70, 0x59});
+
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Compressor compressor = new SnappyCompressor();
 
@@ -94,6 +100,32 @@ public class SnappyCompressorTest {
     final InputStream input = new ByteArrayInputStream(compressed.toArrayUnsafe());
     final Bytes uncompressed = compressor.uncompress(input, maxBytes);
     assertThat(uncompressed.size()).isLessThanOrEqualTo(maxBytes);
+  }
+
+  @Test
+  @Disabled("We need to handle this case")
+  public void uncompress_maliciousBytes() {
+    // The number of underlying uncompressed bytes encoded
+    final int uncompressedByteCount = 4;
+
+    // Build a set of compressed data with a snappy header, and one frame for each uncompressed byte
+    final Bytes singleByte = compressor.compress(Bytes.of(0x01));
+    final Bytes singleByteFrame = singleByte.slice(SNAPPY_HEADER.size());
+    final Bytes[] headerAndFrames = new Bytes[uncompressedByteCount + 1];
+    headerAndFrames[0] = SNAPPY_HEADER;
+    for (int i = 0; i < uncompressedByteCount; i++) {
+      headerAndFrames[i + 1] = singleByteFrame;
+    }
+    final Bytes maliciousPayload = Bytes.concatenate(headerAndFrames);
+
+    // Check assumptions - we want to build a set of bytes with valid frames that
+    // exceeds the maximum expected compressed size given the underlying data
+    final int maxExpectedCompressedBytes = compressor.getMaxCompressedLength(uncompressedByteCount);
+    assertThat(maliciousPayload.size()).isGreaterThan(maxExpectedCompressedBytes);
+
+    final InputStream input = new ByteArrayInputStream(maliciousPayload.toArray());
+    assertThatThrownBy(() -> compressor.uncompress(input, uncompressedByteCount))
+        .isInstanceOf(CompressionException.class);
   }
 
   @Test
