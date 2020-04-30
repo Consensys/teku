@@ -20,8 +20,6 @@ dependencyManagement {
 
     dependency 'commons-cli:commons-cli:1.4'
 
-    dependency 'de.undercouch:bson4jackson:2.9.2'
-
     dependency 'info.picocli:picocli:4.2.0'
 
     dependency 'io.javalin:javalin:3.7.0'
@@ -67,7 +65,7 @@ dependencyManagement {
     dependency 'org.apache.commons:commons-lang3:3.9'
     dependency 'org.apache.commons:commons-compress:1.20'
 
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.12.1') {
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.13.2') {
       entry 'log4j-api'
       entry 'log4j-core'
       entry 'log4j-slf4j-impl'

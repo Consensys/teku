@@ -10,7 +10,6 @@ dependencies {
   implementation project(':util')
   implementation project(':ssz')
 
-  implementation 'de.undercouch:bson4jackson'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.projectreactor:reactor-core'
   implementation 'io.vertx:vertx-core'
