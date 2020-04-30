@@ -1,7 +1,8 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.10.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.11.0'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.11.0'
 
     dependency 'com.google.auto.service:auto-service:1.0-rc6'
 
@@ -33,7 +34,6 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.9.0'
 
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2'
     dependency 'io.swagger.core.v3:swagger-core:2.1.1'
     dependency 'org.webjars:swagger-ui:3.24.3'
     dependency 'io.github.classgraph:classgraph:4.8.34'
