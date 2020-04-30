@@ -23,7 +23,7 @@ public class InteropOptions {
       paramLabel = "<INTEGER>",
       description = "Time of mocked genesis",
       arity = "1")
-  private Integer interopGenesisTime = null;
+  private int interopGenesisTime = 0;
 
   @Option(
       hidden = true,

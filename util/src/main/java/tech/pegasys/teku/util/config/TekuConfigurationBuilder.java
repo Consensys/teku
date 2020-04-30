@@ -51,6 +51,10 @@ public class TekuConfigurationBuilder {
   private LoggingDestination logDestination;
   private String logFile;
   private String logFileNamePattern;
+  private boolean logWireCipher;
+  private boolean logWirePlain;
+  private boolean logWireMuxFrames;
+  private boolean logWireGossip;
   private String transitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
@@ -246,6 +250,26 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setLogWireCipher(boolean logWireCipher) {
+    this.logWireCipher = logWireCipher;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setLogWirePlain(boolean logWirePlain) {
+    this.logWirePlain = logWirePlain;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setLogWireMuxFrames(boolean logWireMuxFrames) {
+    this.logWireMuxFrames = logWireMuxFrames;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setLogWireGossip(boolean logWireGossip) {
+    this.logWireGossip = logWireGossip;
+    return this;
+  }
+
   public TekuConfigurationBuilder setTransitionRecordDirectory(
       final String transitionRecordDirectory) {
     this.transitionRecordDirectory = transitionRecordDirectory;
@@ -355,6 +379,10 @@ public class TekuConfigurationBuilder {
         logDestination,
         logFile,
         logFileNamePattern,
+        logWireCipher,
+        logWirePlain,
+        logWireMuxFrames,
+        logWireGossip,
         transitionRecordDirectory,
         metricsEnabled,
         metricsPort,

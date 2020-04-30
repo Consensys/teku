@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -90,6 +91,20 @@ class AttestationValidatorTest {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
     assertThat(validate(attestation)).isEqualTo(VALID);
+  }
+
+  @Test
+  public void shouldRejectAttestationWithIncorrectAggregateBitsSize() {
+    final Attestation attestation =
+        attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
+    final Bitlist validAggregationBits = attestation.getAggregation_bits();
+    final Bitlist invalidAggregationBits =
+        new Bitlist(validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize());
+    invalidAggregationBits.setAllBits(validAggregationBits);
+    final Attestation invalidAttestation =
+        new Attestation(
+            invalidAggregationBits, attestation.getData(), attestation.getAggregate_signature());
+    assertThat(validate(invalidAttestation)).isEqualTo(INVALID);
   }
 
   @Test

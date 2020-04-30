@@ -21,7 +21,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
@@ -35,6 +34,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.protoarray.StubForkChoiceStrategy;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
@@ -62,7 +62,8 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final int validatorCount, final RecentChainData storageClient) {
-    final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorCount);
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
     return create(storageClient, validatorKeys);
   }
 

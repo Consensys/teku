@@ -48,7 +48,7 @@ public class BlockValidator {
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
   private final Set<SlotAndProposer> receivedValidBlockInfoSet =
-      ConcurrentLimitedSet.create(VALID_BLOCK_SET_SIZE, LimitStrategy.DROP_OLDEST_ELEMENT);
+      ConcurrentLimitedSet.create(VALID_BLOCK_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
 
   public BlockValidator(RecentChainData recentChainData, StateTransition stateTransition) {
     this.recentChainData = recentChainData;

@@ -31,6 +31,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.util.config.LoggingDestination;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -169,6 +171,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(tekuConfiguration.isInteropEnabled()).isTrue();
   }
 
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"OFF", "FATAL", "WARN", "INFO", "DEBUG", "TRACE", "ALL"})
+  public void loglevel_shouldAcceptValues(String level) {
+    final String[] args = {"--logging", level};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -219,7 +229,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPort(30303)
         .setP2pPrivateKeyFile(null)
         .setInteropEnabled(false)
-        .setInteropGenesisTime(null)
+        .setInteropGenesisTime(0)
         .setInteropOwnedValidatorCount(0)
         .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)

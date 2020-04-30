@@ -104,7 +104,7 @@ public class PeerChainValidator {
     }
 
     // Check fork compatibility
-    Bytes4 expectedForkDigest = storageClient.getCurrentForkDigest();
+    Bytes4 expectedForkDigest = storageClient.getCurrentForkInfo().orElseThrow().getForkDigest();
     if (!Objects.equals(expectedForkDigest, status.getForkDigest())) {
       LOG.trace(
           "Peer's fork ({}) differs from our fork ({}): {}",

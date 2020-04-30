@@ -40,6 +40,7 @@ import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -147,10 +148,7 @@ public class Eth2NetworkFactory {
           peerAddresses,
           false,
           emptyList(),
-          new TargetPeerRange(20, 30),
-          false,
-          false,
-          false);
+          new TargetPeerRange(20, 30));
     }
 
     private void setDefaults() {
@@ -159,6 +157,7 @@ public class Eth2NetworkFactory {
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+        BeaconChainUtil.create(0, recentChainData).initializeStorage();
       }
     }
 

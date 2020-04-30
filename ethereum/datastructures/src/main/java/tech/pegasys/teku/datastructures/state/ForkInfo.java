@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.datastructures.state;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class ForkInfo {
   private final Fork fork;
@@ -32,6 +35,10 @@ public class ForkInfo {
 
   public Bytes32 getGenesisValidatorsRoot() {
     return genesisValidatorsRoot;
+  }
+
+  public Bytes4 getForkDigest() {
+    return compute_fork_digest(fork.getCurrent_version(), genesisValidatorsRoot);
   }
 
   @Override

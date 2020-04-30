@@ -19,10 +19,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.datastructures.state.Fork;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
@@ -33,6 +39,8 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class DiscoveryNetworkTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
 
@@ -123,10 +131,34 @@ class DiscoveryNetworkTest {
                 Collections.emptyList(),
                 false,
                 Collections.emptyList(),
-                new TargetPeerRange(20, 30),
-                false,
-                false,
-                false));
+                new TargetPeerRange(20, 30)));
     assertThat(network.getEnr()).isEmpty();
+  }
+
+  @Test
+  public void setForkInfo_noFutureForkScheduled() {
+    final ForkInfo currentForkInfo = dataStructureUtil.randomForkInfo();
+    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
+
+    final EnrForkId expectedEnrForkId =
+        new EnrForkId(
+            currentForkInfo.getForkDigest(),
+            currentForkInfo.getFork().getCurrent_version(),
+            FAR_FUTURE_EPOCH);
+    verify(discoveryService)
+        .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(expectedEnrForkId));
+  }
+
+  @Test
+  public void setForkInfo_futureForkScheduled() {
+    final ForkInfo currentForkInfo = dataStructureUtil.randomForkInfo();
+    final Fork nextFork = dataStructureUtil.randomFork();
+    discoveryNetwork.setForkInfo(currentForkInfo, Optional.of(nextFork));
+
+    final EnrForkId expectedEnrForkId =
+        new EnrForkId(
+            currentForkInfo.getForkDigest(), nextFork.getCurrent_version(), nextFork.getEpoch());
+    verify(discoveryService)
+        .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(expectedEnrForkId));
   }
 }

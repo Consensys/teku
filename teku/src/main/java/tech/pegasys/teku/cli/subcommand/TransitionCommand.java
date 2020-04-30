@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -124,7 +125,7 @@ public class TransitionCommand implements Runnable {
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
-      BeaconState state = SimpleOffsetSerializer.deserialize(inData, BeaconStateImpl.class);
+      BeaconState state = readState(inData);
 
       final StateTransition stateTransition = new StateTransition();
       try {
@@ -135,6 +136,8 @@ public class TransitionCommand implements Runnable {
           | SlotProcessingException e) {
         SUB_COMMAND_LOG.error("State transition failed", e);
       }
+    } catch (final SSZException e) {
+      SUB_COMMAND_LOG.error(e.getMessage());
     } catch (final IOException e) {
       SUB_COMMAND_LOG.error("I/O error: " + e.toString());
     }
@@ -153,9 +156,21 @@ public class TransitionCommand implements Runnable {
     }
   }
 
+  private BeaconStateImpl readState(final Bytes inData) {
+    return deserialize(inData, BeaconStateImpl.class, "pre state");
+  }
+
   private SignedBeaconBlock readBlock(final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
-    return SimpleOffsetSerializer.deserialize(blockData, SignedBeaconBlock.class);
+    return deserialize(blockData, SignedBeaconBlock.class, path);
+  }
+
+  private <T> T deserialize(final Bytes data, final Class<T> type, final String descriptor) {
+    try {
+      return SimpleOffsetSerializer.deserialize(data, type);
+    } catch (final IllegalArgumentException e) {
+      throw new SSZException("Failed to parse SSZ (" + descriptor + "): " + e.getMessage(), e);
+    }
   }
 
   @Override

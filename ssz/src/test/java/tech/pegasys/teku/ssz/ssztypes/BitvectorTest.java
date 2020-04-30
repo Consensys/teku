@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.ssz.ssztypes;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
@@ -70,6 +73,26 @@ class BitvectorTest {
     Bytes bitvectorSerialized = bitvector.serialize();
     Bitvector newBitvector = Bitvector.fromBytes(bitvectorSerialized, testBitvectorLength);
     Assertions.assertEquals(bitvector, newBitvector);
+  }
+
+  @Test
+  public void deserializationEmptyBytesTest() {
+    final Bitvector result = Bitvector.fromBytes(Bytes.EMPTY, 0);
+    assertThat(result.getSize()).isZero();
+  }
+
+  @Test
+  public void deserializationNotEnoughBytes() {
+    assertThatThrownBy(() -> Bitvector.fromBytes(Bytes.of(1, 2, 3), 50))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Incorrect data size");
+  }
+
+  @Test
+  public void deserializationTooManyBytes() {
+    assertThatThrownBy(() -> Bitvector.fromBytes(Bytes.of(1, 2, 3), 1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Incorrect data size");
   }
 
   @Test

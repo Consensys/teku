@@ -68,6 +68,42 @@ public class LoggingOptions {
       arity = "1")
   private String logFileNamePattern = DEFAULT_LOG_FILE_NAME_PATTERN;
 
+  @CommandLine.Option(
+      names = {"--Xlog-wire-cipher-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether raw encrypted wire packets are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireCipherEnabled = false;
+
+  @CommandLine.Option(
+      names = {"--Xlog-wire-plain-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether raw decrypted wire packets are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWirePlainEnabled = false;
+
+  @CommandLine.Option(
+      names = {"--Xlog-wire-mux-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether multiplexer wire packets (aka Libp2p stream frames) are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireMuxEnabled = false;
+
+  @CommandLine.Option(
+      names = {"--Xlog-wire-gossip-enabled"},
+      hidden = true,
+      paramLabel = "<BOOLEAN>",
+      description = "Whether gossip messages are logged",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logWireGossipEnabled = false;
+
   public boolean isLogColorEnabled() {
     return logColorEnabled;
   }
@@ -86,5 +122,21 @@ public class LoggingOptions {
 
   public String getLogFileNamePattern() {
     return logFileNamePattern;
+  }
+
+  public boolean isLogWireCipherEnabled() {
+    return logWireCipherEnabled;
+  }
+
+  public boolean isLogWirePlainEnabled() {
+    return logWirePlainEnabled;
+  }
+
+  public boolean isLogWireMuxEnabled() {
+    return logWireMuxEnabled;
+  }
+
+  public boolean isLogWireGossipEnabled() {
+    return logWireGossipEnabled;
   }
 }

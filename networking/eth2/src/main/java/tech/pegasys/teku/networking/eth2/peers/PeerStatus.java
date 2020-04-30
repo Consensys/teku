@@ -24,7 +24,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class PeerStatus {
-  private static PeerStatus PREGENESIS_STATUS = createPreGenesisStatus();
+  private static final PeerStatus PREGENESIS_STATUS = createPreGenesisStatus();
 
   private final Bytes4 forkDigest;
   private final Checkpoint finalizedCheckpoint;

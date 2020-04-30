@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.datastructures.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -114,7 +115,11 @@ public class AttestationUtil {
   public static List<Integer> get_attesting_indices(
       BeaconState state, AttestationData data, Bitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
-
+    checkArgument(
+        bits.getCurrentSize() == committee.size(),
+        "Aggregation bitlist size (%s) does not match committee size (%s)",
+        bits.getCurrentSize(),
+        committee.size());
     Set<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
       int index = committee.get(i);

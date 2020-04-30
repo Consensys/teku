@@ -75,15 +75,16 @@ public class SyncingNodeManager {
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(recentChainData, validatorKeys);
+    chainUtil.initializeStorage();
+
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).recentChainData(recentChainData);
 
     configureNetwork.accept(networkBuilder);
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
-
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(recentChainData, validatorKeys);
-    chainUtil.initializeStorage();
 
     ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
     BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);

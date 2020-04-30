@@ -17,6 +17,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
@@ -32,8 +33,10 @@ public class BlockGossipManager {
   public BlockGossipManager(
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
-      final BlockValidator blockValidator) {
-    final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, blockValidator);
+      final BlockValidator blockValidator,
+      final ForkInfo forkInfo) {
+    final BlockTopicHandler topicHandler =
+        new BlockTopicHandler(eventBus, blockValidator, forkInfo);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     eventBus.register(this);

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -27,23 +27,26 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.AggregateTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AggregateGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final SignedAggregateAndProofValidator validator =
+      mock(SignedAggregateAndProofValidator.class);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @BeforeEach
   public void setup() {
-    doReturn(topicChannel).when(gossipNetwork).subscribe(eq(AggregateTopicHandler.TOPIC), any());
-    new AggregateGossipManager(gossipNetwork, eventBus, storageClient);
+    doReturn(topicChannel)
+        .when(gossipNetwork)
+        .subscribe(contains(AggregateTopicHandler.TOPIC_NAME), any());
+    new AggregateGossipManager(
+        gossipNetwork, eventBus, validator, dataStructureUtil.randomForkInfo());
   }
 
   @Test

@@ -159,6 +159,7 @@ public class Constants {
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
   public static final int VALID_ATTESTATION_SET_SIZE = 1000;
+  public static final int VALID_AGGREGATE_SET_SIZE = 1000;
 
   static {
     setConstants("minimal");
