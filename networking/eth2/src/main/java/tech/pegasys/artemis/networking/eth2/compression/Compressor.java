@@ -48,8 +48,7 @@ public interface Compressor {
   }
 
   /**
-   * Uncompress up to {@code maxBytes} bytes. May return fewer bytes if the end of stream is
-   * detected or an error occurs.
+   * Uncompress a value expected to be {@code uncompressedPayloadSize} bytes.
    *
    * @param input The underlying {@link InputStream} to read from.
    * @param uncompressedPayloadSize The expected size of the uncompressed payload
