@@ -130,7 +130,7 @@ public class PeerChainValidatorTest {
   public void chainsAreCompatible_localChainAtGenesisRemote_remoteWillNotReturnGenesis() {
     // Setup mocks
     forksMatch();
-    remoteOnSameChainButReturnsResponseWhenGenesisRequested();
+    remoteOnSameChainButReturnsInvalidResponseWhenGenesisRequested();
 
     final SafeFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
@@ -317,7 +317,7 @@ public class PeerChainValidatorTest {
     when(peer.requestBlockBySlot(earlierBlockSlot)).thenReturn(blockFuture);
   }
 
-  private void remoteOnSameChainButReturnsResponseWhenGenesisRequested() {
+  private void remoteOnSameChainButReturnsInvalidResponseWhenGenesisRequested() {
     final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
         SafeFuture.completedFuture(Optional.of(genesisBlock));
 

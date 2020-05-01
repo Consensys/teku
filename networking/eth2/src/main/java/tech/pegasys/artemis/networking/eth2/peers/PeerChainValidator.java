@@ -188,6 +188,11 @@ public class PeerChainValidator {
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
       Checkpoint finalizedCheckpoint) {
     final UnsignedLong finalizedEpochSlot = finalizedCheckpoint.getEpochStartSlot();
+    if (finalizedEpochSlot.equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT))) {
+      // Assume that our genesis blocks match because we've already verified the fork
+      // digest.
+      return SafeFuture.completedFuture(true);
+    }
     return historicalChainData
         .getLatestFinalizedBlockAtSlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
@@ -195,7 +200,8 @@ public class PeerChainValidator {
             blockSlot -> {
               if (blockSlot.equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT))) {
                 // Assume that our genesis blocks match because we've already verified the fork
-                // digest.
+                // digest. Need to repeat this check in case we finalized a later epoch without
+                // producing blocks (eg the genesis block is still the one in effect at epoch 2)
                 return SafeFuture.completedFuture(true);
               }
               return peer.requestBlockBySlot(blockSlot)
