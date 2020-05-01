@@ -589,7 +589,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       EVENT_LOG.slotEvent(
           nodeSlot,
           recentChainData.getBestSlot(),
-          recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
+          headBlockRoot,
+          nodeEpoch,
           recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
           recentChainData.getFinalizedRoot());
       this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
