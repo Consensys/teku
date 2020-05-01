@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p.rpc;
 
+import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
+
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
 import io.libp2p.core.multistream.Mode;
@@ -231,21 +233,21 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     }
 
     private void close() {
-      p2pChannel
-          .closeFuture()
+      SafeFuture.of(p2pChannel.closeFuture())
           .whenComplete(
               (res, err) -> {
                 if (err != null) {
                   LOG.warn("Failed to close p2pChannel.", err);
                 }
                 closeOutputStream();
-              });
+              })
+          .reportExceptions();
 
       if (rpcStream != null) {
         rpcStream.close().reportExceptions();
-      } else {
-        p2pChannel.close();
       }
+      // We're listening for the result of the close future above, so we can ignore this future
+      ignoreFuture(p2pChannel.close());
 
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());
