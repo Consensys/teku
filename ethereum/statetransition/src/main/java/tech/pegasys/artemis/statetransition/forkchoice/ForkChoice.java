@@ -57,8 +57,17 @@ public class ForkChoice implements FinalizedCheckpointChannel {
     return headBlockRoot;
   }
 
-  public BlockImportResult onBlock(final MutableStore store, final SignedBeaconBlock block) {
-    return on_block(store, block, stateTransition, protoArrayForkChoiceStrategy);
+  public BlockImportResult onBlock(final SignedBeaconBlock block) {
+    Store.Transaction transaction = recentChainData.startStoreTransaction();
+    final BlockImportResult result = on_block(transaction, block, stateTransition);
+
+    if (!result.isSuccessful()) {
+      return result;
+    }
+
+    transaction.commit().join();
+    protoArrayForkChoiceStrategy.onBlock(recentChainData.getStore(), block.getMessage());
+    return result;
   }
 
   public AttestationProcessingResult onAttestation(
