@@ -85,8 +85,8 @@ public class BeaconChainMethods {
         createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
         createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
         createBeaconBlocksByRoot(asyncRunner, recentChainData, peerLookup, rpcEncoding),
-        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding));
-    createMetadata(asyncRunner, metadataMessageFactory, peerLookup, rpcEncoding));
+        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding),
+        createMetadata(asyncRunner, metadataMessageFactory, peerLookup, rpcEncoding));
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
