@@ -151,8 +151,7 @@ public class ForkChoiceUtil {
   public static BlockImportResult on_block(
       final MutableStore store,
       final SignedBeaconBlock signed_block,
-      final StateTransition st,
-      final ForkChoiceStrategy forkChoiceStrategy) {
+      final StateTransition st) {
     final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
@@ -228,8 +227,6 @@ public class ForkChoiceUtil {
         }
       }
     }
-
-    forkChoiceStrategy.onBlock(store, block);
 
     final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
     return BlockImportResult.successful(record);

@@ -53,23 +53,13 @@ public class BlockImporter {
             block.getMessage().hash_tree_root());
         return BlockImportResult.knownBlock(block);
       }
-      Store.Transaction transaction = recentChainData.startStoreTransaction();
-      final BlockImportResult result = forkChoice.onBlock(transaction, block);
-      if (!result.isSuccessful()) {
-        LOG.trace(
-            "Failed to import block for reason {}: {}",
-            result.getFailureReason(),
-            block.getMessage());
-        return result;
-      }
-      LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
 
+      BlockImportResult result = forkChoice.onBlock(block);
       final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
-      transaction.commit().join();
       eventBus.post(new ImportedBlockEvent(block));
       record.ifPresent(eventBus::post);
-
       return result;
+
     } catch (Exception e) {
       LOG.error("Internal error while importing block: " + block.getMessage(), e);
       return BlockImportResult.internalError(e);
