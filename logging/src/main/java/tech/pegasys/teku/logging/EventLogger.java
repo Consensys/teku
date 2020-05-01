@@ -71,7 +71,7 @@ public class EventLogger {
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch,
       final Bytes32 finalizedRoot) {
-    String blockRoot = "empty";
+    String blockRoot = " x ... empty";
     if (nodeSlot.equals(bestBlock)) {
       blockRoot = shortenHash(bestBlockRoot.toHexString());
     }
