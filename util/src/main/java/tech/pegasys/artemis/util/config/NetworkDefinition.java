@@ -49,7 +49,7 @@ public class NetworkDefinition {
               builder()
                   .constants("https://github.com/goerli/schlesi/raw/master/teku/chain.yaml")
                   .snappyCompressionEnabled(true)
-                  .initialState("https://github.com/goerli/schlesi/raw/master/light/genesis.ssz")
+                  .initialState("https://github.com/goerli/schlesi/raw/master/teku/genesis.ssz")
                   .discoveryBootnodes(
                       "enr:-LK4QJ-6k6QytxOn7P9BdDZHXesHz3aaglpvo-VcTGc-rfr5H4DBzjQsjg6stZoy1H-p3yK21IISkJHe742QTVwRS_IEh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQINdLr6UY7y2CzshX4n_BbdYM1G40rpdEs84Mdoyv_ZyYN0Y3CCIyiDdWRwgiMo",
                       "enr:-LK4QFO0gKFieMiNrUystSk5Xt7DmIgusloLudv-gH8Krjw9SsUDZRk---H-3hwvL9rMfsMcZwU6L5ezK2d1_dG0UgECh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQPNb3TG-iN0aGTagN4peO0SEkWKklJOvloWL0He8pnB_4N0Y3CCJRyDdWRwgiUc",
