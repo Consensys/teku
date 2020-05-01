@@ -88,7 +88,7 @@ public class SyncingNodeManager {
 
     ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
     BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
-    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
+    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         new FutureItems<>(SignedBeaconBlock::getSlot);
     final FetchRecentBlocksService recentBlockFetcher =
