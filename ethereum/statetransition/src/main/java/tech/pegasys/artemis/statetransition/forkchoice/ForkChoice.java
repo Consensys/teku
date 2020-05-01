@@ -22,19 +22,15 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.AttestationProcessingResult;
 import tech.pegasys.artemis.core.results.BlockImportResult;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.forkchoice.MutableStore;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.protoarray.ProtoArrayForkChoiceStrategy;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.client.RecentChainData;
-
-import java.util.Optional;
 
 public class ForkChoice implements FinalizedCheckpointChannel {
 
@@ -71,16 +67,13 @@ public class ForkChoice implements FinalizedCheckpointChannel {
 
     if (!result.isSuccessful()) {
       LOG.trace(
-              "Failed to import block for reason {}: {}",
-              result.getFailureReason(),
-              block.getMessage());
+          "Failed to import block for reason {}: {}",
+          result.getFailureReason(),
+          block.getMessage());
       return result;
     }
 
-    LOG.trace(
-            "Successfully imported block {}",
-            block.getMessage().hash_tree_root()
-    );
+    LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
 
     transaction.commit().join();
     protoArrayForkChoiceStrategy.onBlock(recentChainData.getStore(), block.getMessage());

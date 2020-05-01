@@ -149,9 +149,7 @@ public class ForkChoiceUtil {
    */
   @CheckReturnValue
   public static BlockImportResult on_block(
-      final MutableStore store,
-      final SignedBeaconBlock signed_block,
-      final StateTransition st) {
+      final MutableStore store, final SignedBeaconBlock signed_block, final StateTransition st) {
     final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 

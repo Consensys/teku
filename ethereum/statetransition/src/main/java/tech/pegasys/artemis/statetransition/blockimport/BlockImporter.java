@@ -25,7 +25,6 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -59,7 +58,6 @@ public class BlockImporter {
       eventBus.post(new ImportedBlockEvent(block));
       record.ifPresent(eventBus::post);
       return result;
-
     } catch (Exception e) {
       LOG.error("Internal error while importing block: " + block.getMessage(), e);
       return BlockImportResult.internalError(e);
