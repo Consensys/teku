@@ -82,7 +82,8 @@ class AggregationDutyTest {
     duty.addValidator(
         validator2, 2, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
 
-    verify(validatorApiChannel, times(1)).subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
+    verify(validatorApiChannel, times(1))
+        .subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
   }
 
   @Test

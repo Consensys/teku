@@ -21,7 +21,6 @@ import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.validator.anticorruption.ValidatorAnticorruptionLayer;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
@@ -45,9 +44,11 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = config.getEventChannels();
     final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
     final ValidatorApiChannel validatorApiChannel =
-            config.getEventChannels().getPublisher(ValidatorApiChannel.class);
-    final RetryingDutyLoader dutyLoader = createDutyLoader(validatorApiChannel, asyncRunner, validators);
-    final StableSubnetSubscriber stableSubnetSubscriber = new StableSubnetSubscriber(validatorApiChannel, validators);
+        config.getEventChannels().getPublisher(ValidatorApiChannel.class);
+    final RetryingDutyLoader dutyLoader =
+        createDutyLoader(validatorApiChannel, asyncRunner, validators);
+    final StableSubnetSubscriber stableSubnetSubscriber =
+        new StableSubnetSubscriber(validatorApiChannel, validators);
     final DutyScheduler dutyScheduler = new DutyScheduler(dutyLoader, stableSubnetSubscriber);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);

@@ -333,7 +333,8 @@ class ValidatorApiHandlerTest {
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(13);
     validatorApiHandler.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
 
-    verify(attestationTopicSubscriptions).subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
+    verify(attestationTopicSubscriptions)
+        .subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
   }
 
   @Test

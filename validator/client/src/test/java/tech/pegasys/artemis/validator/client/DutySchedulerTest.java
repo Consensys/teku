@@ -82,7 +82,7 @@ class DutySchedulerTest {
                   forkProvider,
                   () -> new ScheduledDuties(dutyFactory),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
-              stableSubnetSubscriber);
+          stableSubnetSubscriber);
 
   @BeforeEach
   public void setUp() {
@@ -222,7 +222,7 @@ class DutySchedulerTest {
                     forkProvider,
                     () -> scheduledDuties,
                     Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
-                stableSubnetSubscriber);
+            stableSubnetSubscriber);
     final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);

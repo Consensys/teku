@@ -31,8 +31,8 @@ public class DutyScheduler implements ValidatorTimingChannel {
   private final StableSubnetSubscriber stableSubnetSubscriber;
   private NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
 
-  public DutyScheduler(final DutyLoader epochDutiesScheduler,
-                       final StableSubnetSubscriber stableSubnetSubscriber) {
+  public DutyScheduler(
+      final DutyLoader epochDutiesScheduler, final StableSubnetSubscriber stableSubnetSubscriber) {
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.stableSubnetSubscriber = stableSubnetSubscriber;
   }
