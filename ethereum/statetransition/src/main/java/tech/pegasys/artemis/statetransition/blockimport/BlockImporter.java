@@ -52,12 +52,21 @@ public class BlockImporter {
             block.getMessage().hash_tree_root());
         return BlockImportResult.knownBlock(block);
       }
+
       BlockImportResult result = forkChoice.onBlock(block);
-      if (result.isSuccessful()) {
-        final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
-        eventBus.post(new ImportedBlockEvent(block));
-        record.ifPresent(eventBus::post);
+      if (!result.isSuccessful()) {
+        LOG.trace(
+            "Failed to import block for reason {}: {}",
+            result.getFailureReason(),
+            block.getMessage());
+        return result;
       }
+      LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
+
+      final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
+      eventBus.post(new ImportedBlockEvent(block));
+      record.ifPresent(eventBus::post);
+
       return result;
     } catch (Exception e) {
       LOG.error("Internal error while importing block: " + block.getMessage(), e);

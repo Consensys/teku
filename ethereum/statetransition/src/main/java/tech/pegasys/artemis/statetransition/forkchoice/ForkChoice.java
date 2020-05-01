@@ -66,14 +66,8 @@ public class ForkChoice implements FinalizedCheckpointChannel {
     final BlockImportResult result = on_block(transaction, block, stateTransition);
 
     if (!result.isSuccessful()) {
-      LOG.trace(
-          "Failed to import block for reason {}: {}",
-          result.getFailureReason(),
-          block.getMessage());
       return result;
     }
-
-    LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
 
     transaction.commit().join();
     protoArrayForkChoiceStrategy.onBlock(recentChainData.getStore(), block.getMessage());
