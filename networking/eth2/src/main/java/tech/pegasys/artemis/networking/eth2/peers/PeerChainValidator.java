@@ -193,14 +193,11 @@ public class PeerChainValidator {
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(
             blockSlot -> {
-              if (blockSlot.equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT))) {
-                // Assume that our genesis blocks match because we've already verified the fork
-                // digest.
-                return SafeFuture.completedFuture(true);
-              }
               return peer.requestBlockBySlot(blockSlot)
                   .thenApply(
-                      block -> validateBlockRootsMatch(block, finalizedCheckpoint.getRoot()));
+                      block ->
+                          validateRemoteBlockMatchesOurFinalizedBlock(
+                              block, finalizedCheckpoint.getRoot(), blockSlot));
             });
   }
 
@@ -216,6 +213,22 @@ public class PeerChainValidator {
         .map(SignedBeaconBlock::getSlot)
         .orElseThrow(
             () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
+  }
+
+  private boolean validateRemoteBlockMatchesOurFinalizedBlock(
+      final SignedBeaconBlock block, final Bytes32 root, final UnsignedLong slot) {
+    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    if (slot.equals(genesisSlot) && block.getSlot().compareTo(genesisSlot) > 0) {
+      // Account for prysm's special handling of genesis block
+      // As of 2020-02-07, queries for the genesis block will return the first non-genesis block
+      LOG.trace(
+          "Query for genesis block at {} returned block at slot {}.  Bypass check and accept peer {}.",
+          genesisSlot,
+          block.getSlot(),
+          peer.getId());
+      return true;
+    }
+    return validateBlockRootsMatch(block, root);
   }
 
   private boolean validateBlockRootsMatch(final SignedBeaconBlock block, final Bytes32 root) {
