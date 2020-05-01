@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p.rpc;
 
+import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
+
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
 import io.libp2p.core.multistream.Mode;
@@ -184,8 +186,10 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         final Bytes bytes = Bytes.wrapByteBuf(msg);
         outputStream.write(bytes.toArray());
       } catch (IOException e) {
-        // We should only hit this if the connected input pipe has been prematurely closed
-        throw new IllegalStateException(e);
+        // We should only hit this if the connected input pipe has been closed,
+        // which means we're done processing this stream of data
+        LOG.debug("Caught exception while delivering bytes to input stream, closing channel.", e);
+        close();
       }
     }
 
@@ -229,10 +233,22 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     }
 
     private void close() {
+      SafeFuture.of(p2pChannel.closeFuture())
+          .whenComplete(
+              (res, err) -> {
+                if (err != null) {
+                  LOG.warn("Failed to close p2pChannel.", err);
+                }
+                closeOutputStream();
+              })
+          .reportExceptions();
+
       if (rpcStream != null) {
         rpcStream.close().reportExceptions();
       }
-      closeOutputStream();
+      // We're listening for the result of the close future above, so we can ignore this future
+      ignoreFuture(p2pChannel.close());
+
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());
     }
