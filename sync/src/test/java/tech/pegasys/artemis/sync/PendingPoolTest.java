@@ -16,7 +16,6 @@ package tech.pegasys.artemis.sync;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +29,10 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
 public class PendingPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final EventBus eventBus = new EventBus();
   private final UnsignedLong historicalTolerance = UnsignedLong.valueOf(5);
   private final UnsignedLong futureTolerance = UnsignedLong.valueOf(2);
   private final PendingPool<SignedBeaconBlock> pendingPool =
-      PendingPool.createForBlocks(eventBus, historicalTolerance, futureTolerance);
+      PendingPool.createForBlocks(historicalTolerance, futureTolerance);
   private UnsignedLong currentSlot = historicalTolerance.times(UnsignedLong.valueOf(2));
   private List<Bytes32> requiredRootEvents = new ArrayList<>();
   private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
