@@ -22,7 +22,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class MetadataMessageFactory implements Consumer<Iterable<Integer>> {
 
-  private AtomicLong seqNumberGenerator = new AtomicLong();
+  private final AtomicLong seqNumberGenerator = new AtomicLong();
   private volatile MetadataMessage currentMessage = MetadataMessage.createDefault();
 
   @Override
