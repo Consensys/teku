@@ -64,7 +64,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return safeFuture;
   }
 
-  public static <U> SafeFuture<U> of(final Supplier<CompletionStage<U>> futureSupplier) {
+  public static <U> SafeFuture<U> of(final ExceptionThrowingFutureSupplier<U> futureSupplier) {
     try {
       return SafeFuture.of(futureSupplier.get());
     } catch (Throwable e) {
@@ -101,7 +101,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
-  public static SafeFuture<Void> fromRunnable(final Runnable action) {
+  public static SafeFuture<Void> fromRunnable(final ExceptionThrowingRunnable action) {
     try {
       action.run();
       return SafeFuture.COMPLETE;
