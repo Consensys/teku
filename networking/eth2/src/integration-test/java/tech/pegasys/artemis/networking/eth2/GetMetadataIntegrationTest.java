@@ -58,7 +58,7 @@ public class GetMetadataIntegrationTest {
     network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
 
     MetadataMessage md3 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
-    assertThat(md3.getSeqNumber()).isNotEqualTo(md2.getSeqNumber());
+    assertThat(md3.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
     assertThat(
             IntStream.range(0, Constants.ATTESTATION_SUBNET_COUNT)
                 .map(i -> md3.getAttnets().getBit(i) ? 1 : 0)
