@@ -130,7 +130,7 @@ public class PeerChainValidatorTest {
   public void chainsAreCompatible_localChainAtGenesisRemote_remoteWillNotReturnGenesis() {
     // Setup mocks
     forksMatch();
-    remoteOnSameChainButWillNotReturnGenesis();
+    remoteOnSameChainButReturnsResponseWhenGenesisRequested();
 
     final SafeFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
@@ -317,15 +317,18 @@ public class PeerChainValidatorTest {
     when(peer.requestBlockBySlot(earlierBlockSlot)).thenReturn(blockFuture);
   }
 
-  private void remoteOnSameChainButWillNotReturnGenesis() {
-    final SafeFuture<SignedBeaconBlock> postGenesisBlock = SafeFuture.completedFuture(earlierBlock);
+  private void remoteOnSameChainButReturnsResponseWhenGenesisRequested() {
     final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
         SafeFuture.completedFuture(Optional.of(genesisBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(genesisCheckpoint);
     when(historicalChainData.getLatestFinalizedBlockAtSlot(genesisSlot))
         .thenReturn(optionalBlockFuture);
-    when(peer.requestBlockBySlot(genesisSlot)).thenReturn(postGenesisBlock);
+    when(peer.requestBlockBySlot(genesisSlot))
+        .thenReturn(
+            SafeFuture.failedFuture(
+                new IllegalStateException(
+                    "Received multiple responses when single response expected")));
   }
 
   private void remoteChainIsAheadOnDifferentChain() {
