@@ -28,10 +28,13 @@ import tech.pegasys.artemis.validator.api.ValidatorTimingChannel;
 public class DutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final DutyLoader epochDutiesScheduler;
+  private final StableSubnetSubscriber stableSubnetSubscriber;
   private NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
 
-  public DutyScheduler(final DutyLoader epochDutiesScheduler) {
+  public DutyScheduler(final DutyLoader epochDutiesScheduler,
+                       final StableSubnetSubscriber stableSubnetSubscriber) {
     this.epochDutiesScheduler = epochDutiesScheduler;
+    this.stableSubnetSubscriber = stableSubnetSubscriber;
   }
 
   @Override
@@ -40,6 +43,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
     removePriorEpochs(epochNumber);
     dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
     dutiesByEpoch.computeIfAbsent(epochNumber.plus(ONE), this::requestDutiesForEpoch);
+    stableSubnetSubscriber.onSlot(slot);
   }
 
   @Override

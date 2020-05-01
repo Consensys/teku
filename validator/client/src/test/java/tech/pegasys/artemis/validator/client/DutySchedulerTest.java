@@ -67,6 +67,7 @@ class DutySchedulerTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
+  private final StableSubnetSubscriber stableSubnetSubscriber = mock(StableSubnetSubscriber.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -80,7 +81,8 @@ class DutySchedulerTest {
                   validatorApiChannel,
                   forkProvider,
                   () -> new ScheduledDuties(dutyFactory),
-                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
+                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
+              stableSubnetSubscriber);
 
   @BeforeEach
   public void setUp() {
@@ -219,7 +221,8 @@ class DutySchedulerTest {
                     validatorApiChannel,
                     forkProvider,
                     () -> scheduledDuties,
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
+                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
+                stableSubnetSubscriber);
     final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);

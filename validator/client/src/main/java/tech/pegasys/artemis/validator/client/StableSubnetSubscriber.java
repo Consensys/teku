@@ -15,11 +15,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.lang.Integer.max;
+import static java.lang.Integer.min;
 import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION;
 import static tech.pegasys.artemis.util.config.Constants.RANDOM_SUBNETS_PER_VALIDATOR;
 
-public class StableSubnetSubscriber implements ValidatorTimingChannel {
+public class StableSubnetSubscriber {
 
   private final ValidatorApiChannel validatorApiChannel;
   private final Map<BLSPublicKey, Validator> validators;
@@ -32,12 +33,13 @@ public class StableSubnetSubscriber implements ValidatorTimingChannel {
                                 Map<BLSPublicKey, Validator> validators) {
     this.validatorApiChannel = validatorApiChannel;
     this.validators = validators;
+    onSlot(UnsignedLong.ZERO);
   }
 
-  @Override
   public void onSlot(UnsignedLong slot) {
     boolean updated = adjustNumberOfSubscriptionsToNumberOfValidators(slot);
 
+    // Iterate through current subscriptions to replace the ones that have expired
     final Iterator<Map.Entry<Integer, UnsignedLong>> iterator =
             subnetIdToUnsubscriptionSlot.entrySet().iterator();
     while (iterator.hasNext()) {
@@ -53,6 +55,7 @@ public class StableSubnetSubscriber implements ValidatorTimingChannel {
       updated = true;
     }
 
+    // If any update was made to the subscriptions pass the new subscription set to BeaconNode
     if (updated) {
       validatorApiChannel.updateRandomSubnetSubscriptions(subnetIdToUnsubscriptionSlot);
     }
@@ -65,7 +68,7 @@ public class StableSubnetSubscriber implements ValidatorTimingChannel {
   private boolean adjustNumberOfSubscriptionsToNumberOfValidators(UnsignedLong currentSlot) {
     boolean updated = false;
 
-    int totalNumberOfSubscriptions = max(
+    int totalNumberOfSubscriptions = min(
             ATTESTATION_SUBNET_COUNT,
             RANDOM_SUBNETS_PER_VALIDATOR * validators.size()
     );
@@ -126,16 +129,4 @@ public class StableSubnetSubscriber implements ValidatorTimingChannel {
   private int getRandomSubscriptionLength() {
     return EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION + rand.nextInt(EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION);
   }
-
-  @Override
-  public void onChainReorg(UnsignedLong newSlot) {}
-
-  @Override
-  public void onBlockProductionDue(UnsignedLong slot) {}
-
-  @Override
-  public void onAttestationCreationDue(UnsignedLong slot) {}
-
-  @Override
-  public void onAttestationAggregationDue(UnsignedLong slot) {}
 }
