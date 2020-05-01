@@ -36,12 +36,12 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   public synchronized void subscribeToCommittee(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
     final int subnetId = committeeIndexToSubnetId(committeeIndex);
-    final UnsignedLong currentUnsubscribeSlot =
+    final UnsignedLong currentUnsubscriptionSlot =
         unsubscriptionSlotBySubnetId.getOrDefault(subnetId, ZERO);
-    if (currentUnsubscribeSlot.equals(ZERO)) {
+    if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2Network.subscribeToAttestationSubnetId(subnetId);
     }
-    unsubscriptionSlotBySubnetId.put(committeeIndex, max(currentUnsubscribeSlot, aggregationSlot));
+    unsubscriptionSlotBySubnetId.put(subnetId, max(currentUnsubscriptionSlot, aggregationSlot));
   }
 
   @Override
