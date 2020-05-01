@@ -184,8 +184,10 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         final Bytes bytes = Bytes.wrapByteBuf(msg);
         outputStream.write(bytes.toArray());
       } catch (IOException e) {
-        // We should only hit this if the connected input pipe has been prematurely closed
-        throw new IllegalStateException(e);
+        // We should only hit this if the connected input pipe has been closed,
+        // which means we're done processing this stream of data
+        LOG.debug("Caught exception while delivering bytes to input stream, closing channel.", e);
+        close();
       }
     }
 
@@ -229,10 +231,22 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     }
 
     private void close() {
+      p2pChannel
+          .closeFuture()
+          .whenComplete(
+              (res, err) -> {
+                if (err != null) {
+                  LOG.warn("Failed to close p2pChannel.", err);
+                }
+                closeOutputStream();
+              });
+
       if (rpcStream != null) {
         rpcStream.close().reportExceptions();
+      } else {
+        p2pChannel.close();
       }
-      closeOutputStream();
+
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());
     }
