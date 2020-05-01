@@ -16,8 +16,6 @@ package tech.pegasys.artemis.statetransition.forkchoice;
 import static tech.pegasys.artemis.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.artemis.core.ForkChoiceUtil.on_block;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.core.results.AttestationProcessingResult;
@@ -33,8 +31,6 @@ import tech.pegasys.artemis.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class ForkChoice implements FinalizedCheckpointChannel {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
