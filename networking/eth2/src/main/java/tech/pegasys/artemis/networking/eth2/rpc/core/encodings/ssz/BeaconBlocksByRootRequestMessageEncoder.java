@@ -37,7 +37,7 @@ public class BeaconBlocksByRootRequestMessageEncoder
   public BeaconBlocksByRootRequestMessage decode(final Bytes message) throws RpcException {
     if (message.size() % Bytes32.SIZE != 0) {
       LOG.trace("Cannot split message into Bytes32 chunks {}", message);
-      throw RpcException.MALFORMED_REQUEST_ERROR;
+      throw RpcException.DESERIALIZATION_FAILED;
     }
     final List<Bytes32> blockRoots = new ArrayList<>();
     for (int i = 0; i < message.size(); i += Bytes32.SIZE) {

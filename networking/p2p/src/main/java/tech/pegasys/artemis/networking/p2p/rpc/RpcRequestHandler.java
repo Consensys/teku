@@ -13,13 +13,9 @@
 
 package tech.pegasys.artemis.networking.p2p.rpc;
 
-import io.netty.buffer.ByteBuf;
+import java.io.InputStream;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
 public interface RpcRequestHandler {
-  void onActivation(final RpcStream rpcStream);
-
-  void onData(NodeId nodeId, RpcStream rpcStream, ByteBuf bytes);
-
-  void onRequestComplete();
+  void processInput(final NodeId nodeId, final RpcStream rpcStream, final InputStream input);
 }

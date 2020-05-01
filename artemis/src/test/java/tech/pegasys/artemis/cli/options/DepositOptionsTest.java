@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.Eth1Address;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -25,10 +26,10 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldReadDepositOptionsFromConfigurationFile() {
     final ArtemisConfiguration config =
         getArtemisConfigurationFromFile("depositOptions_config.yaml");
+    Eth1Address address = Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
 
     assertThat(config.isEth1Enabled()).isFalse();
-    assertThat(config.getEth1DepositContractAddress())
-        .isEqualTo("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
+    assertThat(config.getEth1DepositContractAddress()).isEqualTo(address);
     assertThat(config.getEth1Endpoint()).isEqualTo("http://example.com:1234/path/");
   }
 

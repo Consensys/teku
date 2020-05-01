@@ -11,7 +11,6 @@ dependencies {
   implementation project(':storage')
   implementation project(':util')
 
-  implementation 'de.undercouch:bson4jackson'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
   implementation 'org.apache.tuweni:tuweni-bytes'

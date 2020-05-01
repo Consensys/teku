@@ -18,13 +18,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.bls.BLSKeyPair;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
@@ -38,12 +42,20 @@ public class BlockPropagationIntegrationTest {
     networkFactory.stopAll();
   }
 
-  @Test
-  public void shouldFetchUnknownAncestorsOfPropagatedBlock() throws Exception {
+  public static Stream<Arguments> getEncodings() {
+    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
+    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
+  }
+
+  @ParameterizedTest(name = "encoding: {0}")
+  @MethodSource("getEncodings")
+  public void shouldFetchUnknownAncestorsOfPropagatedBlock(
+      final String encodingName, final RpcEncoding encoding) throws Exception {
     UnsignedLong currentSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
     // Setup node 1
-    SyncingNodeManager node1 = SyncingNodeManager.create(networkFactory, validatorKeys);
+    SyncingNodeManager node1 =
+        SyncingNodeManager.create(networkFactory, validatorKeys, c -> c.rpcEncoding(encoding));
     node1.chainUtil().setSlot(currentSlot);
 
     // Add some blocks to node1, which node 2 will need to fetch
@@ -55,7 +67,8 @@ public class BlockPropagationIntegrationTest {
     }
 
     // Setup node 2
-    SyncingNodeManager node2 = SyncingNodeManager.create(networkFactory, validatorKeys);
+    SyncingNodeManager node2 =
+        SyncingNodeManager.create(networkFactory, validatorKeys, c -> c.rpcEncoding(encoding));
 
     // Connect networks
     Waiter.waitFor(node1.connect(node2));

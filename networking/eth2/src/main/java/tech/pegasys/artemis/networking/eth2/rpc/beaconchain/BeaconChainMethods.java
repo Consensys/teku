@@ -79,24 +79,26 @@ public class BeaconChainMethods {
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
-      final MetadataMessageFactory metadataMessageFactory) {
+      final MetadataMessageFactory metadataMessageFactory,
+      final RpcEncoding rpcEncoding) {
     return new BeaconChainMethods(
-        createStatus(asyncRunner, statusMessageFactory, peerLookup),
-        createGoodBye(asyncRunner, metricsSystem, peerLookup),
-        createBeaconBlocksByRoot(asyncRunner, recentChainData, peerLookup),
-        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup),
-        createMetadata(asyncRunner, metadataMessageFactory, peerLookup));
+        createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
+        createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
+        createBeaconBlocksByRoot(asyncRunner, recentChainData, peerLookup, rpcEncoding),
+        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding));
+    createMetadata(asyncRunner, metadataMessageFactory, peerLookup, rpcEncoding));
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
       final AsyncRunner asyncRunner,
       final StatusMessageFactory statusMessageFactory,
-      final PeerLookup peerLookup) {
+      final PeerLookup peerLookup,
+      final RpcEncoding rpcEncoding) {
     final StatusMessageHandler statusHandler = new StatusMessageHandler(statusMessageFactory);
     return new Eth2RpcMethod<>(
         asyncRunner,
         STATUS,
-        RpcEncoding.SSZ,
+        rpcEncoding,
         StatusMessage.class,
         StatusMessage.class,
         true,
@@ -107,12 +109,13 @@ public class BeaconChainMethods {
   private static Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> createGoodBye(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final PeerLookup peerLookup) {
+      final PeerLookup peerLookup,
+      final RpcEncoding rpcEncoding) {
     final GoodbyeMessageHandler goodbyeHandler = new GoodbyeMessageHandler(metricsSystem);
     return new Eth2RpcMethod<>(
         asyncRunner,
         GOODBYE,
-        RpcEncoding.SSZ,
+        rpcEncoding,
         GoodbyeMessage.class,
         GoodbyeMessage.class,
         false,
@@ -124,13 +127,14 @@ public class BeaconChainMethods {
       createBeaconBlocksByRoot(
           final AsyncRunner asyncRunner,
           final RecentChainData recentChainData,
-          final PeerLookup peerLookup) {
+          final PeerLookup peerLookup,
+          final RpcEncoding rpcEncoding) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
         new BeaconBlocksByRootMessageHandler(recentChainData);
     return new Eth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_ROOT,
-        RpcEncoding.SSZ,
+        rpcEncoding,
         BeaconBlocksByRootRequestMessage.class,
         SignedBeaconBlock.class,
         true,
@@ -142,14 +146,15 @@ public class BeaconChainMethods {
       createBeaconBlocksByRange(
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
-          final PeerLookup peerLookup) {
+          final PeerLookup peerLookup,
+          final RpcEncoding rpcEncoding) {
 
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
         new BeaconBlocksByRangeMessageHandler(combinedChainDataClient);
     return new Eth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_RANGE,
-        RpcEncoding.SSZ,
+        rpcEncoding,
         BeaconBlocksByRangeRequestMessage.class,
         SignedBeaconBlock.class,
         true,
@@ -160,12 +165,13 @@ public class BeaconChainMethods {
   private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(
       final AsyncRunner asyncRunner,
       final MetadataMessageFactory metadataMessageFactory,
-      final PeerLookup peerLookup) {
+      final PeerLookup peerLookup,
+      final RpcEncoding rpcEncoding) {
     MetadataMessageHandler messageHandler = new MetadataMessageHandler(metadataMessageFactory);
     return new Eth2RpcMethod<EmptyMessage, MetadataMessage>(
         asyncRunner,
         GET_METADATA,
-        RpcEncoding.SSZ,
+        rpcEncoding,
         EmptyMessage.class,
         MetadataMessage.class,
         true,

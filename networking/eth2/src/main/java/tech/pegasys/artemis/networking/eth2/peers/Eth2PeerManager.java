@@ -53,11 +53,11 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
       final PeerValidatorFactory peerValidatorFactory,
-      final AttestationSubnetService attestationSubnetService) {
+      final AttestationSubnetService attestationSubnetService,
+      final RpcEncoding rpcEncoding) {
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
     MetadataMessageFactory metadataMessageFactory = new MetadataMessageFactory();
     attestationSubnetService.subscribeToUpdates(metadataMessageFactory);
-
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
@@ -67,14 +67,16 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             storageClient,
             metricsSystem,
             statusMessageFactory,
-            metadataMessageFactory);
+            metadataMessageFactory,
+            rpcEncoding);
   }
 
   public static Eth2PeerManager create(
       final RecentChainData storageClient,
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
-      final AttestationSubnetService attestationSubnetService) {
+      final AttestationSubnetService attestationSubnetService,
+      final RpcEncoding rpcEncoding) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
             PeerChainValidator.create(storageClient, historicalChainData, peer, status);
@@ -83,7 +85,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         storageClient,
         metricsSystem,
         peerValidatorFactory,
-        attestationSubnetService);
+        attestationSubnetService,
+        rpcEncoding);
   }
 
   @Override
