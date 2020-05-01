@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZException;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -69,11 +70,11 @@ public class TransitionCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public void blocks(
+  public int blocks(
       @Mixin InAndOutParams params,
       @Parameters(paramLabel = "block", description = "Files to read blocks from")
           List<String> blocks) {
-    processStateTransition(
+    return processStateTransition(
         params,
         (state, stateTransition) -> {
           if (blocks != null) {
@@ -98,7 +99,7 @@ public class TransitionCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public void slots(
+  public int slots(
       @Mixin InAndOutParams params,
       @Option(
               names = {"--delta", "-d"},
@@ -106,7 +107,7 @@ public class TransitionCommand implements Runnable {
           boolean delta,
       @Parameters(paramLabel = "<number>", description = "Number of slots to process")
           long number) {
-    processStateTransition(
+    return processStateTransition(
         params,
         (state, stateTransition) -> {
           UnsignedLong targetSlot = UnsignedLong.valueOf(number);
@@ -117,26 +118,35 @@ public class TransitionCommand implements Runnable {
         });
   }
 
-  private void processStateTransition(
+  private int processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
     Constants.setConstants(
         NetworkDefinition.fromCliArg(params.networkOptions.getNetwork()).getConstants());
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
-      BeaconState state = SimpleOffsetSerializer.deserialize(inData, BeaconStateImpl.class);
+      BeaconState state = readState(inData);
 
       final StateTransition stateTransition = new StateTransition();
       try {
         BeaconState result = transition.applyTransition(state, stateTransition);
         out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());
+        return 0;
       } catch (final StateTransitionException
           | EpochProcessingException
           | SlotProcessingException e) {
         SUB_COMMAND_LOG.error("State transition failed", e);
+        return 1;
       }
+    } catch (final SSZException e) {
+      SUB_COMMAND_LOG.error(e.getMessage());
+      return 1;
     } catch (final IOException e) {
       SUB_COMMAND_LOG.error("I/O error: " + e.toString());
+      return 1;
+    } catch (final Throwable t) {
+      t.printStackTrace();
+      return 2;
     }
   }
 
@@ -153,9 +163,21 @@ public class TransitionCommand implements Runnable {
     }
   }
 
+  private BeaconStateImpl readState(final Bytes inData) {
+    return deserialize(inData, BeaconStateImpl.class, "pre state");
+  }
+
   private SignedBeaconBlock readBlock(final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
-    return SimpleOffsetSerializer.deserialize(blockData, SignedBeaconBlock.class);
+    return deserialize(blockData, SignedBeaconBlock.class, path);
+  }
+
+  private <T> T deserialize(final Bytes data, final Class<T> type, final String descriptor) {
+    try {
+      return SimpleOffsetSerializer.deserialize(data, type);
+    } catch (final IllegalArgumentException e) {
+      throw new SSZException("Failed to parse SSZ (" + descriptor + "): " + e.getMessage(), e);
+    }
   }
 
   @Override

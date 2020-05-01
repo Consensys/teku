@@ -21,9 +21,9 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 
 public interface ForkChoiceStrategy {
 
-  Bytes32 findHead(final ReadOnlyStore store);
+  Bytes32 findHead(final MutableStore store);
 
-  void onAttestation(final IndexedAttestation attestation);
+  void onAttestation(final MutableStore store, final IndexedAttestation attestation);
 
-  void onBlock(final MutableStore store, final BeaconBlock block);
+  void onBlock(final ReadOnlyStore store, final BeaconBlock block);
 }

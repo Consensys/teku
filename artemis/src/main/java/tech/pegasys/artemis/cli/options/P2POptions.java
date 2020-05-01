@@ -15,113 +15,97 @@ package tech.pegasys.artemis.cli.options;
 
 import java.util.ArrayList;
 import java.util.List;
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 public class P2POptions {
 
-  public static final String P2P_ENABLED_OPTION_NAME = "--p2p-enabled";
-  public static final String P2P_INTERFACE_OPTION_NAME = "--p2p-interface";
-  public static final String P2P_PORT_OPTION_NAME = "--p2p-port";
-  public static final String P2P_DISCOVERY_ENABLED_OPTION_NAME = "--p2p-discovery-enabled";
-  public static final String P2P_DISCOVERY_BOOTNODES_OPTION_NAME = "--p2p-discovery-bootnodes";
-  public static final String P2P_ADVERTISED_IP_OPTION_NAME = "--p2p-advertised-ip";
-  public static final String P2P_ADVERTISED_PORT_OPTION_NAME = "--p2p-advertised-port";
-  public static final String P2P_PRIVATE_KEY_FILE_OPTION_NAME = "--p2p-private-key-file";
-  public static final String P2P_PEER_LOWER_BOUND_OPTION_NAME = "--p2p-peer-lower-bound";
-  public static final String P2P_PEER_UPPER_BOUND_OPTION_NAME = "--p2p-peer-upper-bound";
-  public static final String P2P_STATIC_PEERS_OPTION_NAME = "--p2p-static-peers";
-
-  public static final boolean DEFAULT_P2P_ENABLED = true;
-  public static final String DEFAULT_P2P_INTERFACE = "0.0.0.0";
-  public static final int DEFAULT_P2P_PORT = 30303;
-  public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
-  public static final List<String> DEFAULT_P2P_DISCOVERY_BOOTNODES =
-      new ArrayList<>(); // depends on network option
-  public static final String DEFAULT_P2P_ADVERTISED_IP = "127.0.0.1";
-  public static final int DEFAULT_P2P_ADVERTISED_PORT = DEFAULT_P2P_PORT;
-  public static final String DEFAULT_P2P_PRIVATE_KEY_FILE = null;
-  public static final int DEFAULT_P2P_PEER_LOWER_BOUND = 20;
-  public static final int DEFAULT_P2P_PEER_UPPER_BOUND = 30;
-  public static final List<String> DEFAULT_P2P_STATIC_PEERS = new ArrayList<>();
-
-  @CommandLine.Option(
-      names = {P2P_ENABLED_OPTION_NAME},
+  @Option(
+      names = {"--p2p-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables peer to peer",
-      arity = "1")
-  private boolean p2pEnabled = DEFAULT_P2P_ENABLED;
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean p2pEnabled = true;
 
-  @CommandLine.Option(
-      names = {P2P_INTERFACE_OPTION_NAME},
+  @Option(
+      names = {"--p2p-interface"},
       paramLabel = "<NETWORK>",
       description = "Peer to peer network interface",
       arity = "1")
-  private String p2pInterface = DEFAULT_P2P_INTERFACE;
+  private String p2pInterface = "0.0.0.0";
 
-  @CommandLine.Option(
-      names = {P2P_PORT_OPTION_NAME},
+  @Option(
+      names = {"--p2p-port"},
       paramLabel = "<INTEGER>",
       description = "Peer to peer port",
       arity = "1")
-  private int p2pPort = DEFAULT_P2P_PORT;
+  private int p2pPort = 30303;
 
-  @CommandLine.Option(
-      names = {P2P_DISCOVERY_ENABLED_OPTION_NAME},
+  @Option(
+      names = {"--p2p-discovery-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables discv5 discovery",
-      arity = "1")
-  private boolean p2pDiscoveryEnabled = DEFAULT_P2P_DISCOVERY_ENABLED;
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean p2pDiscoveryEnabled = true;
 
-  @CommandLine.Option(
-      names = {P2P_DISCOVERY_BOOTNODES_OPTION_NAME},
+  @Option(
+      names = {"--p2p-discovery-bootnodes"},
       paramLabel = "<enode://id@host:port>",
       description = "ENR of the bootnode",
       split = ",",
       arity = "0..*")
-  private List<String> p2pDiscoveryBootnodes = DEFAULT_P2P_DISCOVERY_BOOTNODES;
+  private List<String> p2pDiscoveryBootnodes = null;
 
-  @CommandLine.Option(
-      names = {P2P_ADVERTISED_IP_OPTION_NAME},
+  @Option(
+      names = {"--p2p-advertised-ip"},
       paramLabel = "<NETWORK>",
       description = "Peer to peer advertised ip",
       arity = "1")
-  private String p2pAdvertisedIp = DEFAULT_P2P_ADVERTISED_IP;
+  private String p2pAdvertisedIp = "127.0.0.1";
 
-  @CommandLine.Option(
-      names = {P2P_ADVERTISED_PORT_OPTION_NAME},
+  @Option(
+      names = {"--p2p-advertised-port"},
       paramLabel = "<INTEGER>",
       description = "Peer to peer advertised port",
       arity = "1")
-  private int p2pAdvertisedPort = DEFAULT_P2P_ADVERTISED_PORT;
+  private int p2pAdvertisedPort = p2pPort;
 
-  @CommandLine.Option(
-      names = {P2P_PRIVATE_KEY_FILE_OPTION_NAME},
+  @Option(
+      names = {"--p2p-private-key-file"},
       paramLabel = "<FILENAME>",
       description = "This node's private key file",
       arity = "1")
-  private String p2pPrivateKeyFile = DEFAULT_P2P_PRIVATE_KEY_FILE;
+  private String p2pPrivateKeyFile = null;
 
-  @CommandLine.Option(
-      names = {P2P_PEER_LOWER_BOUND_OPTION_NAME},
+  @Option(
+      names = {"--p2p-peer-lower-bound"},
       paramLabel = "<INTEGER>",
       description = "Lower bound on the target number of peers",
       arity = "1")
-  private int p2pLowerBound = DEFAULT_P2P_PEER_LOWER_BOUND;
+  private int p2pLowerBound = 20;
 
-  @CommandLine.Option(
-      names = {P2P_PEER_UPPER_BOUND_OPTION_NAME},
+  @Option(
+      names = {"--p2p-peer-upper-bound"},
       paramLabel = "<INTEGER>",
       description = "Upper bound on the target number of peers",
       arity = "1")
-  private int p2pUpperBound = DEFAULT_P2P_PEER_UPPER_BOUND;
+  private int p2pUpperBound = 30;
 
-  @CommandLine.Option(
-      names = {P2P_STATIC_PEERS_OPTION_NAME},
+  @Option(
+      names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
       description = "Static peers",
       split = ",",
       arity = "0..*")
-  private List<String> p2pStaticPeers = DEFAULT_P2P_STATIC_PEERS;
+  private List<String> p2pStaticPeers = new ArrayList<>();
+
+  @Option(
+      names = {"--p2p-snappy-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables snappy compression for P2P traffic",
+      arity = "1")
+  private Boolean p2pSnappyEnabled = null;
 
   public boolean isP2pEnabled() {
     return p2pEnabled;
@@ -165,5 +149,9 @@ public class P2POptions {
 
   public List<String> getP2pStaticPeers() {
     return p2pStaticPeers;
+  }
+
+  public Boolean isP2pSnappyEnabled() {
+    return p2pSnappyEnabled;
   }
 }

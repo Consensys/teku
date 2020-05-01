@@ -1,5 +1,6 @@
 # network
 network: "minimal"
+#initial-state: ""
 
 # p2p
 # p2p-enabled options:
@@ -12,13 +13,13 @@ p2p-discovery-enabled: False
 p2p-advertised-port: 9000
 #this.privKey.bytes().toHexString() who's corresponding sha2(publicKey) == 16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ
 p2p-private-key-file: "path/to/file"
+p2p-snappy-enabled: False
 
 # interop
 # when genesis time is set to 0, teku takes genesis time as currentTime + 5 seconds.
 Xinterop-genesis-time: 0
 Xinterop-owned-validator-start-index: 0
 Xinterop-owned-validator-count: 64
-Xinterop-start-state: ""
 Xinterop-number-of-validators: 64
 Xinterop-enabled: True
 
@@ -43,7 +44,7 @@ eth1-endpoint: "http://localhost:8545"
 metrics-enabled: False
 metrics-port: 8008
 metrics-interface: "127.0.0.1"
-metrics-categories: ["BEACON","JVM","PROCESS"]
+metrics-categories: ["BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"]
 
 # database
 #data-path: "."

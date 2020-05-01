@@ -14,15 +14,14 @@
 package tech.pegasys.artemis.util.config;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.resource.ResourceLoader;
 
 public class Constants {
 
@@ -145,7 +144,6 @@ public class Constants {
   public static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   // Teku Validator Client Specific
-  public static final long VALIDATOR_DUTIES_TIMEOUT = 15; // in sec
   public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
   public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
 
@@ -155,8 +153,13 @@ public class Constants {
   public static final int ATTESTATION_SUBNET_COUNT = 64;
   public static final int TTFB_TIMEOUT = 5; // in sec
   public static final int RESP_TIMEOUT = 10; // in sec
-  public static final int ATTESTATION_PROPAGATION_SLOT_RANGE = 32;
+  public static final UnsignedLong ATTESTATION_PROPAGATION_SLOT_RANGE = UnsignedLong.valueOf(32);
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
+
+  // Teku Networking Specific
+  public static final int VALID_BLOCK_SET_SIZE = 1000;
+  public static final int VALID_ATTESTATION_SET_SIZE = 1000;
+  public static final int VALID_AGGREGATE_SET_SIZE = 1000;
 
   static {
     setConstants("minimal");
@@ -171,13 +174,9 @@ public class Constants {
   }
 
   private static InputStream createInputStream(final String source) throws IOException {
-    if (source.contains(":")) {
-      return new URL(source).openStream();
-    } else if ("mainnet".equals(source) || "minimal".equals(source)) {
-      return Constants.class.getResourceAsStream(source + ".yaml");
-    } else {
-      // Treat it as a file
-      return Files.newInputStream(Path.of(source));
-    }
+    return ResourceLoader.classpathUrlOrFile(
+            Constants.class, name -> name + ".yaml", "mainnet", "minimal")
+        .load(source)
+        .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }
 }

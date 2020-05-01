@@ -18,14 +18,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @Test
   void vectorLengthsTest() {
@@ -100,5 +104,13 @@ class BeaconStateTest {
     } finally {
       Constants.setConstants("minimal");
     }
+  }
+
+  @Test
+  void roundTripViaSsz() {
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
+    Bytes bytes = SimpleOffsetSerializer.serialize(beaconState);
+    BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
+    assertEquals(beaconState, state);
   }
 }

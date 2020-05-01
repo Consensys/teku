@@ -70,6 +70,12 @@ public class ValidatorsUtil {
         && validator.getActivation_epoch().equals(Constants.FAR_FUTURE_EPOCH);
   }
 
+  public static BLSPublicKey getValidatorPubKey(BeaconState state, UnsignedLong validatorIndex) {
+    return BeaconStateCache.getTransitionCaches(state)
+        .getValidatorsPubKeys()
+        .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey());
+  }
+
   /**
    * Get active validator indices at ``epoch``.
    *

@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -34,24 +35,42 @@ import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class BeaconBlocksByRangeIntegrationTest {
+public abstract class BeaconBlocksByRangeIntegrationTest {
 
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private Eth2Peer peer1;
-  private RecentChainData storageClient1;
+  private RecentChainData recentChainData1;
   private BeaconChainUtil beaconChainUtil;
 
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    storageClient1 = MemoryOnlyRecentChainData.create(eventBus1);
-    final Eth2Network network1 =
-        networkFactory.builder().eventBus(eventBus1).recentChainData(storageClient1).startNetwork();
+    final RpcEncoding rpcEncoding = getEncoding();
+    recentChainData1 = MemoryOnlyRecentChainData.create(eventBus1);
+    beaconChainUtil = BeaconChainUtil.create(1, recentChainData1);
+    beaconChainUtil.initializeStorage();
 
-    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
+    final Eth2Network network1 =
+        networkFactory
+            .builder()
+            .rpcEncoding(rpcEncoding)
+            .eventBus(eventBus1)
+            .recentChainData(recentChainData1)
+            .startNetwork();
+
+    final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(new EventBus());
+    BeaconChainUtil.create(1, recentChainData2).initializeStorage();
+    final Eth2Network network2 =
+        networkFactory
+            .builder()
+            .rpcEncoding(rpcEncoding)
+            .peer(network1)
+            .recentChainData(recentChainData2)
+            .startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
-    beaconChainUtil = BeaconChainUtil.create(1, storageClient1);
   }
+
+  protected abstract RpcEncoding getEncoding();
 
   @AfterEach
   public void tearDown() {
@@ -60,66 +79,43 @@ public class BeaconBlocksByRangeIntegrationTest {
 
   @Test
   public void shouldSendEmptyResponsePreGenesisEvent() throws Exception {
-    final List<SignedBeaconBlock> response = requestBlocks(Bytes32.ZERO);
+    final List<SignedBeaconBlock> response = requestBlocks();
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
-    beaconChainUtil.initializeStorage();
-    final List<SignedBeaconBlock> response =
-        requestBlocks(storageClient1.getBestBlockRoot().orElseThrow());
+    final List<SignedBeaconBlock> response = requestBlocks();
     assertThat(response).isEmpty();
-  }
-
-  @Test
-  public void shouldSendEmptyResponseWhenHeadBlockRootDoesNotMatchAnyBlock() throws Exception {
-    beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(1);
-    final List<SignedBeaconBlock> response = requestBlocks(Bytes32.ZERO);
-    assertThat(response).isEmpty();
-  }
-
-  @Test
-  public void shouldRespondWithBlocksWhenHeadBlockRootIsNotOnCanonicalChain() throws Exception {
-    beaconChainUtil.initializeStorage();
-    final SignedBeaconBlock nonCanonicalBlock = beaconChainUtil.createAndImportBlockAtSlot(1);
-    storageClient1.updateBestBlock(nonCanonicalBlock.getParent_root(), UnsignedLong.ZERO);
-    final List<SignedBeaconBlock> response =
-        requestBlocks(nonCanonicalBlock.getMessage().hash_tree_root());
-    assertThat(response).containsExactly(nonCanonicalBlock);
   }
 
   @Test
   public void shouldRespondWithBlocksFromCanonicalChain() throws Exception {
-    beaconChainUtil.initializeStorage();
-
     final SignedBeaconBlock block1 = beaconChainUtil.createAndImportBlockAtSlot(1);
     final Bytes32 block1Root = block1.getMessage().hash_tree_root();
-    storageClient1.updateBestBlock(block1Root, block1.getSlot());
+    recentChainData1.updateBestBlock(block1Root, block1.getSlot());
 
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+    recentChainData1.updateBestBlock(block2Root, block2.getSlot());
 
-    final List<SignedBeaconBlock> response = requestBlocks(block2Root);
+    final List<SignedBeaconBlock> response = requestBlocks();
     assertThat(response).containsExactly(block1, block2);
   }
 
   @Test
   public void requestBlocksByRangeAfterPeerDisconnectedImmediately() throws Exception {
     // Setup chain
-    beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(1);
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+    recentChainData1.updateBestBlock(block2Root, block2.getSlot());
 
     peer1.disconnectImmediately();
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
-            block2Root, UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -130,17 +126,16 @@ public class BeaconBlocksByRangeIntegrationTest {
   @Test
   public void requestBlocksByRangeAfterPeerDisconnected() throws Exception {
     // Setup chain
-    beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(1);
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+    recentChainData1.updateBestBlock(block2Root, block2.getSlot());
 
     peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
-            block2Root, UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -151,15 +146,13 @@ public class BeaconBlocksByRangeIntegrationTest {
   @Test
   public void requestBlockBySlotAfterPeerDisconnectedImmediately() throws Exception {
     // Setup chain
-    beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(1);
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+    recentChainData1.updateBestBlock(block2Root, block2.getSlot());
 
     peer1.disconnectImmediately();
-    final SafeFuture<SignedBeaconBlock> res =
-        peer1.requestBlockBySlot(block2Root, UnsignedLong.ONE);
+    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UnsignedLong.ONE);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -169,32 +162,44 @@ public class BeaconBlocksByRangeIntegrationTest {
   @Test
   public void requestBlockByRootAfterPeerDisconnected() throws Exception {
     // Setup chain
-    beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(1);
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+    recentChainData1.updateBestBlock(block2Root, block2.getSlot());
 
     peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
-    final SafeFuture<SignedBeaconBlock> res =
-        peer1.requestBlockBySlot(block2Root, UnsignedLong.ONE);
+    final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UnsignedLong.ONE);
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
     assertThatThrownBy(res::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
   }
 
-  private List<SignedBeaconBlock> requestBlocks(final Bytes32 headBlockRoot)
+  private List<SignedBeaconBlock> requestBlocks()
       throws InterruptedException, java.util.concurrent.ExecutionException,
           java.util.concurrent.TimeoutException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(
         peer1.requestBlocksByRange(
-            headBlockRoot,
-            UnsignedLong.ONE,
-            UnsignedLong.valueOf(10),
-            UnsignedLong.ONE,
-            blocks::add));
+            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add));
     return blocks;
+  }
+
+  public static class BeaconBlocksByRangeIntegrationTest_ssz
+      extends BeaconBlocksByRangeIntegrationTest {
+
+    @Override
+    protected RpcEncoding getEncoding() {
+      return RpcEncoding.SSZ;
+    }
+  }
+
+  public static class BeaconBlocksByRangeIntegrationTest_sszSnappy
+      extends BeaconBlocksByRangeIntegrationTest {
+
+    @Override
+    protected RpcEncoding getEncoding() {
+      return RpcEncoding.SSZ_SNAPPY;
+    }
   }
 }

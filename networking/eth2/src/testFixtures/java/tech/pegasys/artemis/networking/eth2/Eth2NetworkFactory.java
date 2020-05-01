@@ -32,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
@@ -40,6 +41,7 @@ import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.api.StorageQueryChannel;
 import tech.pegasys.artemis.storage.api.StubStorageQueryChannel;
 import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
@@ -72,6 +74,7 @@ public class Eth2NetworkFactory {
     protected RecentChainData recentChainData;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
+    protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -112,7 +115,8 @@ public class Eth2NetworkFactory {
         // Setup eth2 handlers
         final StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
         final Eth2PeerManager eth2PeerManager =
-            Eth2PeerManager.create(recentChainData, historicalChainData, METRICS_SYSTEM);
+            Eth2PeerManager.create(
+                recentChainData, historicalChainData, METRICS_SYSTEM, rpcEncoding);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
@@ -147,10 +151,7 @@ public class Eth2NetworkFactory {
           peerAddresses,
           false,
           emptyList(),
-          new TargetPeerRange(20, 30),
-          false,
-          false,
-          false);
+          new TargetPeerRange(20, 30));
     }
 
     private void setDefaults() {
@@ -159,7 +160,13 @@ public class Eth2NetworkFactory {
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+        BeaconChainUtil.create(0, recentChainData).initializeStorage();
       }
+    }
+
+    public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
+      this.rpcEncoding = rpcEncoding;
+      return this;
     }
 
     public Eth2P2PNetworkBuilder peer(final Eth2Network peer) {

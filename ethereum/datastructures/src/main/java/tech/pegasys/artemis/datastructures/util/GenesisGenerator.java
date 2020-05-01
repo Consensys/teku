@@ -25,8 +25,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -55,6 +53,8 @@ public class GenesisGenerator {
   private final SSZMutableList<DepositData> depositDataList =
       SSZList.createMutable(DepositData.class, depositListLength);
 
+  private int activeValidatorCount = 0;
+
   public GenesisGenerator() {
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
     final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
@@ -79,7 +79,7 @@ public class GenesisGenerator {
     // Process deposits
     deposits.forEach(
         deposit -> {
-          LOG.debug("About to process deposit: " + depositDataList.size());
+          LOG.trace("About to process deposit: {}", depositDataList::size);
           depositDataList.add(deposit.getData());
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
@@ -97,6 +97,10 @@ public class GenesisGenerator {
       return;
     }
     Validator validator = state.getValidators().get(index);
+    if (validator.getActivation_epoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))) {
+      // Validator is already activated (and thus already has the max effective balance)
+      return;
+    }
     UnsignedLong balance = state.getBalances().get(index);
     UnsignedLong effective_balance =
         BeaconStateUtil.min(
@@ -109,6 +113,7 @@ public class GenesisGenerator {
     if (validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
       activation_eligibility_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
       activation_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
+      activeValidatorCount++;
     }
 
     Validator modifiedValidator =
@@ -125,18 +130,17 @@ public class GenesisGenerator {
     state.getValidators().set(index, modifiedValidator);
   }
 
-  public BeaconState getGenesisState() {
-    return getGenesisStateIfValid(state -> true).orElseThrow();
+  public int getActiveValidatorCount() {
+    return activeValidatorCount;
   }
 
-  public Optional<BeaconState> getGenesisStateIfValid(Predicate<BeaconState> validityCriteria) {
-    if (!validityCriteria.test(state)) {
-      return Optional.empty();
-    }
+  public UnsignedLong getGenesisTime() {
+    return state.getGenesis_time();
+  }
 
+  public BeaconState getGenesisState() {
     finalizeState();
-
-    return Optional.of(state.commitChanges());
+    return state.commitChanges();
   }
 
   private void finalizeState() {

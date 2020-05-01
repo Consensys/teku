@@ -40,6 +40,8 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.artemis.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -50,6 +52,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -97,6 +100,10 @@ public final class DataStructureUtil {
     return UnsignedLong.fromLongBits(randomLong());
   }
 
+  private Bytes4 randomBytes4() {
+    return new Bytes4(randomBytes32().slice(0, 4));
+  }
+
   public Bytes32 randomBytes32() {
     final Random random = new Random(nextSeed());
     return Bytes32.random(random);
@@ -109,6 +116,11 @@ public final class DataStructureUtil {
   public <T> SSZList<T> randomSSZList(
       Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator) {
     return randomSSZList(classInfo, maxSize / 10, maxSize, valueGenerator);
+  }
+
+  public <T> SSZList<T> randomFullSSZList(
+      Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator) {
+    return randomSSZList(classInfo, maxSize, maxSize, valueGenerator);
   }
 
   public <T> SSZList<T> randomSSZList(
@@ -181,7 +193,15 @@ public final class DataStructureUtil {
   }
 
   public AggregateAndProof randomAggregateAndProof() {
-    return new AggregateAndProof(randomUnsignedLong(), randomSignature(), randomAttestation());
+    return new AggregateAndProof(randomUnsignedLong(), randomAttestation(), randomSignature());
+  }
+
+  public SignedAggregateAndProof randomSignedAggregateAndProof() {
+    return new SignedAggregateAndProof(randomAggregateAndProof(), randomSignature());
+  }
+
+  public VoteTracker randomVoteTracker() {
+    return new VoteTracker(randomBytes32(), randomBytes32(), randomUnsignedLong());
   }
 
   public PendingAttestation randomPendingAttestation() {
@@ -249,14 +269,18 @@ public final class DataStructureUtil {
     return new BeaconBlockAndState(block, state);
   }
 
-  public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot) {
+  public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot, boolean isFull) {
     UnsignedLong slot = UnsignedLong.valueOf(slotNum);
 
     final UnsignedLong proposer_index = randomUnsignedLong();
     Bytes32 state_root = randomBytes32();
-    BeaconBlockBody body = randomBeaconBlockBody();
+    BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
 
     return new BeaconBlock(slot, proposer_index, parentRoot, state_root, body);
+  }
+
+  public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot) {
+    return randomBeaconBlock(slotNum, parentRoot, false);
   }
 
   public SignedBeaconBlockHeader randomSignedBeaconBlockHeader() {
@@ -284,6 +308,23 @@ public final class DataStructureUtil {
         randomSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation),
         randomSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex),
         randomSSZList(
+            SignedVoluntaryExit.class,
+            Constants.MAX_VOLUNTARY_EXITS,
+            this::randomSignedVoluntaryExit));
+  }
+
+  public BeaconBlockBody randomFullBeaconBlockBody() {
+    return new BeaconBlockBody(
+        randomSignature(),
+        randomEth1Data(),
+        Bytes32.ZERO,
+        randomFullSSZList(
+            ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS, this::randomProposerSlashing),
+        randomFullSSZList(
+            AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS, this::randomAttesterSlashing),
+        randomFullSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation),
+        randomFullSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex),
+        randomFullSSZList(
             SignedVoluntaryExit.class,
             Constants.MAX_VOLUNTARY_EXITS,
             this::randomSignedVoluntaryExit));
@@ -399,14 +440,15 @@ public final class DataStructureUtil {
   }
 
   public Fork randomFork() {
-    return new Fork(
-        new Bytes4(randomBytes32().slice(0, 4)),
-        new Bytes4(randomBytes32().slice(0, 4)),
-        randomUnsignedLong());
+    return new Fork(randomBytes4(), randomBytes4(), randomUnsignedLong());
   }
 
   public ForkInfo randomForkInfo() {
     return new ForkInfo(randomFork(), randomBytes32());
+  }
+
+  public EnrForkId randomEnrForkId() {
+    return new EnrForkId(randomBytes4(), randomBytes4(), randomUnsignedLong());
   }
 
   public BeaconState randomBeaconState() {

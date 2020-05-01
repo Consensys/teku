@@ -30,6 +30,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.status.StatusLogger;
+import tech.pegasys.artemis.util.config.LoggingDestination;
 
 public class LoggingConfigurator {
 
@@ -39,7 +40,7 @@ public class LoggingConfigurator {
   private static final String LOG4J_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
   private static final String LOG4J_LEGACY_CONFIG_FILE_KEY = "log4j.configurationFile";
   private static final String CONSOLE_APPENDER_NAME = "teku-console-appender";
-  private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} [%-5level] - %msg%n";
+  private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} %-5level - %msg%n";
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
   private static final String FILE_MESSAGE_FORMAT =
       "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
@@ -122,11 +123,15 @@ public class LoggingConfigurator {
       case DEFAULT_BOTH:
         // fall through
       case BOTH:
-        onlyEventsLoggerToConsole(configuration);
+        consoleAppender = consoleAppender(configuration);
+        final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
+        final LoggerConfig statusLogger = setUpStatusLogger(consoleAppender);
+        configuration.addLogger(eventsLogger.getName(), eventsLogger);
+        configuration.addLogger(statusLogger.getName(), statusLogger);
 
         fileAppender = fileAppender(configuration);
 
-        setUpStatusLogger(fileAppender);
+        setUpStatusLogger(consoleAppender);
         addAppenderToRootLogger(configuration, fileAppender);
         break;
     }
@@ -195,14 +200,6 @@ public class LoggingConfigurator {
     configuration.getRootLogger().addAppender(appender, null, null);
   }
 
-  private static void onlyEventsLoggerToConsole(final AbstractConfiguration configuration) {
-
-    final Appender consoleAppender = consoleAppender(configuration);
-    final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
-    configuration.addAppender(consoleAppender);
-    configuration.addLogger(eventsLogger.getName(), eventsLogger);
-  }
-
   private static LoggerConfig setUpEventsLogger(final Appender appender) {
     final Level eventsLogLevel = INCLUDE_EVENTS ? ROOT_LOG_LEVEL : Level.OFF;
     final LoggerConfig logger = new LoggerConfig(EVENT_LOGGER_NAME, eventsLogLevel, true);
@@ -210,9 +207,10 @@ public class LoggingConfigurator {
     return logger;
   }
 
-  private static void setUpStatusLogger(final Appender appender) {
+  private static LoggerConfig setUpStatusLogger(final Appender appender) {
     final LoggerConfig logger = new LoggerConfig(STATUS_LOGGER_NAME, ROOT_LOG_LEVEL, true);
     logger.addAppender(appender, ROOT_LOG_LEVEL, null);
+    return logger;
   }
 
   private static Appender consoleAppender(final AbstractConfiguration configuration) {

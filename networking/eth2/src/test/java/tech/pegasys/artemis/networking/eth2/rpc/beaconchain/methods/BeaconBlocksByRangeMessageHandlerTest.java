@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -21,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler.INVALID_STEP;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
@@ -37,8 +37,8 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByR
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 class BeaconBlocksByRangeMessageHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -52,24 +52,11 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @SuppressWarnings("unchecked")
   private final ResponseCallback<SignedBeaconBlock> listener = mock(ResponseCallback.class);
 
-  private final CombinedChainDataClient storageClient = mock(CombinedChainDataClient.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
 
   private final BeaconBlocksByRangeMessageHandler handler =
-      new BeaconBlocksByRangeMessageHandler(storageClient);
-
-  @Test
-  public void shouldReturnNoBlocksWhenHeadBlockIsNotInStore() {
-    final Bytes32 headBlockRoot = Bytes32.fromHexStringLenient("0x123456");
-    when(storageClient.getNonfinalizedBlockState(headBlockRoot)).thenReturn(Optional.empty());
-
-    handler.onIncomingMessage(
-        peer,
-        new BeaconBlocksByRangeRequestMessage(headBlockRoot, UnsignedLong.ZERO, ONE, ONE),
-        listener);
-
-    verify(storageClient, never()).getBlockAtSlotExact(any(), any());
-    verifyNoBlocksReturned();
-  }
+      new BeaconBlocksByRangeMessageHandler(combinedChainDataClient);
 
   @Test
   public void shouldReturnNoBlocksWhenThereAreNoBlocksAtOrAfterStartSlot() {
@@ -80,13 +67,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Series of empty blocks leading up to our best slot.
     withCanonicalHeadBlock(headBlock, UnsignedLong.valueOf(20));
 
-    when(storageClient.getBlockAtSlotExact(any(), any()))
+    when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
         .thenReturn(completedFuture(Optional.empty()));
 
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlock.getMessage().hash_tree_root(),
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -107,13 +93,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     BLOCKS.forEach(
         block ->
-            when(storageClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
+            when(combinedChainDataClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
                 .thenReturn(completedFuture(Optional.of(block))));
 
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -134,13 +119,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     BLOCKS.forEach(
         block ->
-            when(storageClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
+            when(combinedChainDataClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
                 .thenReturn(completedFuture(Optional.of(block))));
 
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -161,13 +145,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     BLOCKS.forEach(
         block ->
-            when(storageClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
+            when(combinedChainDataClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
                 .thenReturn(completedFuture(Optional.of(block))));
 
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -197,7 +180,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -229,7 +211,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot,
             UnsignedLong.valueOf(startBlock),
             UnsignedLong.valueOf(count),
             UnsignedLong.valueOf(skip)),
@@ -257,13 +238,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlockRoot, UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
+            UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
         listener);
 
     verifyNoBlocksReturned();
-    verify(storageClient).getBlockAtSlotExact(UnsignedLong.valueOf(15), headBlockRoot);
-    verify(storageClient).getBlockAtSlotExact(UnsignedLong.valueOf(20), headBlockRoot);
-    verify(storageClient, never()).getBlockAtSlotExact(greaterThan(bestSlot), any());
+    verify(combinedChainDataClient).getBlockAtSlotExact(UnsignedLong.valueOf(15), headBlockRoot);
+    verify(combinedChainDataClient).getBlockAtSlotExact(UnsignedLong.valueOf(20), headBlockRoot);
+    verify(combinedChainDataClient, never()).getBlockAtSlotExact(greaterThan(bestSlot), any());
   }
 
   @Test
@@ -280,15 +261,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            headBlock.getMessage().hash_tree_root(),
-            UnsignedLong.valueOf(startBlock),
-            count,
-            UnsignedLong.valueOf(skip)),
+            UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
         listener);
 
-    verify(listener).completeWithError(RpcException.INVALID_STEP);
+    verify(listener).completeWithError(INVALID_STEP);
     verifyNoMoreInteractions(listener);
-    verifyNoMoreInteractions(storageClient);
+    verifyNoMoreInteractions(combinedChainDataClient);
   }
 
   private void withCanonicalHeadBlock(final SignedBeaconBlock headBlock) {
@@ -310,17 +288,20 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   private void withCanonicalHeadBlock(
       final SignedBeaconBlock headBlock, final UnsignedLong bestSlot) {
-    when(storageClient.getNonfinalizedBlockState(headBlock.getMessage().hash_tree_root()))
-        .thenReturn(Optional.of(dataStructureUtil.randomBeaconState(bestSlot)));
+    Bytes32 bestBlockRoot = headBlock.getMessage().hash_tree_root();
+    when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(bestBlockRoot));
+    when(combinedChainDataClient.getStateByBlockRoot(bestBlockRoot))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomBeaconState(bestSlot))));
   }
 
   private void withBlockAtSlot(final int slot, final Bytes32 headBlockRoot) {
-    when(storageClient.getBlockAtSlotExact(UnsignedLong.valueOf(slot), headBlockRoot))
+    when(combinedChainDataClient.getBlockAtSlotExact(UnsignedLong.valueOf(slot), headBlockRoot))
         .thenReturn(completedFuture(Optional.of(BLOCKS.get(slot))));
   }
 
   private void withEmptySlot(final int slot, final Bytes32 headBlockRoot) {
-    when(storageClient.getBlockAtSlotExact(UnsignedLong.valueOf(slot), headBlockRoot))
+    when(combinedChainDataClient.getBlockAtSlotExact(UnsignedLong.valueOf(slot), headBlockRoot))
         .thenReturn(completedFuture(Optional.empty()));
   }
 

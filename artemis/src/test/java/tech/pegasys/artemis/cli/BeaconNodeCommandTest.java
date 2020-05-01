@@ -15,53 +15,66 @@ package tech.pegasys.artemis.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static tech.pegasys.artemis.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
-import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
-import static tech.pegasys.artemis.cli.options.DepositOptions.DEFAULT_ETH1_ENDPOINT;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_ENABLED;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_GENESIS_TIME;
-import static tech.pegasys.artemis.cli.options.InteropOptions.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
-import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_DESTINATION;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.artemis.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.artemis.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_ADVERTISED_PORT;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_DISCOVERY_ENABLED;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_INTERFACE;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PORT;
-import static tech.pegasys.artemis.cli.options.P2POptions.DEFAULT_P2P_PRIVATE_KEY_FILE;
+import static tech.pegasys.artemis.util.config.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.artemis.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
+import tech.pegasys.artemis.util.config.Eth1Address;
+import tech.pegasys.artemis.util.config.LoggingDestination;
 import tech.pegasys.artemis.util.config.NetworkDefinition;
 
-public class BeaconNodeCommandTest {
+public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
-  private final PrintWriter outputWriter = new PrintWriter(new StringWriter(), true);
-  private final PrintWriter errorWriter = new PrintWriter(new StringWriter(), true);
+  @Test
+  public void unknownOptionShouldDisplayShortHelpMessage() {
+    final String[] args = {"--hlp"};
 
-  @SuppressWarnings("unchecked")
-  private final Consumer<ArtemisConfiguration> startAction = mock(Consumer.class);
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("Unknown option");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(str).doesNotContain("Default");
+  }
 
-  private BeaconNodeCommand beaconNodeCommand =
-      new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
+  @Test
+  public void invalidValueShouldDisplayShortHelpMessage() {
+    final String[] args = {"--metrics-enabled=bob"};
 
-  @TempDir Path dataPath;
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("Invalid value");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(str).doesNotContain("Default");
+  }
+
+  @Test
+  public void helpOptionShouldDisplayFullHelp() {
+    final String[] args = {"--help"};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("Description:");
+    assertThat(str).contains("Default");
+    assertThat(str).doesNotContain("To display full help:");
+  }
 
   @Test
   public void loadDefaultsWhenNoArgsArePassed() {
@@ -152,6 +165,21 @@ public class BeaconNodeCommandTest {
     assertArtemisConfiguration(expectedCompleteConfigInFileBuilder().build());
   }
 
+  @Test
+  public void interopEnabled_shouldNotRequireAValue() {
+    final ArtemisConfiguration artemisConfiguration =
+        getArtemisConfigurationFromArguments("--Xinterop-enabled");
+    assertThat(artemisConfiguration.isInteropEnabled()).isTrue();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"OFF", "FATAL", "WARN", "INFO", "DEBUG", "TRACE", "ALL"})
+  public void loglevel_shouldAcceptValues(String level) {
+    final String[] args = {"--logging", level};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -172,7 +200,7 @@ public class BeaconNodeCommandTest {
       "--Xinterop-genesis-time", "1",
       "--Xinterop-owned-validator-start-index", "0",
       "--Xinterop-owned-validator-count", "64",
-      "--Xinterop-start-state", "",
+      "--initial-state", "",
       "--Xinterop-number-of-validators", "64",
       "--Xinterop-enabled", "true",
       "--eth1-deposit-contract-address", "0x77f7bED277449F51505a4C54550B074030d989bC",
@@ -180,7 +208,7 @@ public class BeaconNodeCommandTest {
       "--metrics-enabled", "false",
       "--metrics-port", "8008",
       "--metrics-interface", "127.0.0.1",
-      "--metrics-categories", "BEACON,JVM,PROCESS",
+      "--metrics-categories", "BEACON,LIBP2P,NETWORK,EVENTBUS,JVM,PROCESS",
       "--data-path", dataPath.toString(),
       "--data-storage-mode", "prune",
       "--rest-api-port", "5051",
@@ -192,18 +220,19 @@ public class BeaconNodeCommandTest {
 
   private ArtemisConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
-        .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
-        .setMetricsCategories(DEFAULT_METRICS_CATEGORIES)
-        .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
-        .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
-        .setP2pInterface(DEFAULT_P2P_INTERFACE)
-        .setP2pPort(DEFAULT_P2P_PORT)
-        .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
-        .setInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
-        .setInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
-        .setInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT)
-        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setEth1DepositContractAddress(null)
+        .setEth1Endpoint(null)
+        .setMetricsCategories(
+            DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
+        .setP2pAdvertisedPort(30303)
+        .setP2pDiscoveryEnabled(true)
+        .setP2pInterface("0.0.0.0")
+        .setP2pPort(30303)
+        .setP2pPrivateKeyFile(null)
+        .setInteropEnabled(false)
+        .setInteropGenesisTime(0)
+        .setInteropOwnedValidatorCount(0)
+        .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
   }
@@ -211,10 +240,12 @@ public class BeaconNodeCommandTest {
   private ArtemisConfigurationBuilder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
         .setLogFile("teku.log")
+        .setLogDestination(LoggingDestination.BOTH)
         .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder() {
+    Eth1Address address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
     return ArtemisConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
@@ -229,19 +260,21 @@ public class BeaconNodeCommandTest {
         .setP2pPeerUpperBound(30)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
-        .setInteropStartState("")
+        .setInitialState("")
         .setInteropOwnedValidatorStartIndex(0)
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)
         .setInteropEnabled(true)
-        .setEth1DepositContractAddress("0x77f7bED277449F51505a4C54550B074030d989bC")
+        .setEth1DepositContractAddress(address)
         .setEth1Endpoint("http://localhost:8545")
+        .setEth1Enabled(true)
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
-        .setMetricsCategories(Arrays.asList("BEACON", "JVM", "PROCESS"))
+        .setMetricsCategories(
+            Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
         .setLogColorEnabled(true)
-        .setLogDestination(DEFAULT_LOG_DESTINATION)
+        .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
@@ -249,7 +282,7 @@ public class BeaconNodeCommandTest {
         .setValidatorKeystorePasswordFiles(Collections.emptyList())
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
-        .setDataStorageMode("prune")
+        .setDataStorageMode(PRUNE)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
@@ -257,11 +290,7 @@ public class BeaconNodeCommandTest {
   }
 
   private void assertArtemisConfiguration(final ArtemisConfiguration expected) {
-    final ArgumentCaptor<ArtemisConfiguration> configCaptor =
-        ArgumentCaptor.forClass(ArtemisConfiguration.class);
-    verify(startAction).accept(configCaptor.capture());
-
-    final ArtemisConfiguration actual = configCaptor.getValue();
+    final ArtemisConfiguration actual = getResultingArtemisConfiguration();
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
   }
 

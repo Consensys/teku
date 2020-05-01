@@ -46,7 +46,11 @@ public class ForkChoiceUtil {
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
-    return time.minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    return getCurrentSlot(time, store.getGenesisTime());
+  }
+
+  public static UnsignedLong getCurrentSlot(UnsignedLong currentTime, UnsignedLong genesisTime) {
+    return currentTime.minus(genesisTime).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
   public static UnsignedLong get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
@@ -298,17 +302,16 @@ public class ForkChoiceUtil {
               IndexedAttestation indexed_attestation;
               try {
                 indexed_attestation = get_indexed_attestation(target_state, attestation);
-              } catch (IndexOutOfBoundsException e) {
+              } catch (IllegalArgumentException e) {
                 return AttestationProcessingResult.invalid(
-                    "on_attestation: Attestation is not valid, IndexOutOfBoundsException: "
-                        + e.getMessage());
+                    "on_attestation: Attestation is not valid: " + e.getMessage());
               }
               if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
                 return AttestationProcessingResult.invalid(
                     "on_attestation: Attestation is not valid");
               }
 
-              forkChoiceStrategy.onAttestation(indexed_attestation);
+              forkChoiceStrategy.onAttestation(store, indexed_attestation);
 
               return AttestationProcessingResult.SUCCESSFUL;
             });

@@ -32,6 +32,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -40,7 +41,7 @@ import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class BeaconBlocksByRootIntegrationTest {
+public abstract class BeaconBlocksByRootIntegrationTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
@@ -50,12 +51,23 @@ public class BeaconBlocksByRootIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
+    final RpcEncoding rpcEncoding = getEncoding();
+
     storageClient1 = MemoryOnlyRecentChainData.create(eventBus1);
+    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final Eth2Network network1 =
-        networkFactory.builder().eventBus(eventBus1).recentChainData(storageClient1).startNetwork();
-    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
+        networkFactory
+            .builder()
+            .rpcEncoding(rpcEncoding)
+            .eventBus(eventBus1)
+            .recentChainData(storageClient1)
+            .startNetwork();
+    final Eth2Network network2 =
+        networkFactory.builder().rpcEncoding(rpcEncoding).peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
   }
+
+  protected abstract RpcEncoding getEncoding();
 
   @AfterEach
   public void tearDown() {
@@ -63,22 +75,13 @@ public class BeaconBlocksByRootIntegrationTest {
   }
 
   @Test
-  public void shouldSendEmptyResponsePreGenesisEvent() throws Exception {
-    final List<Bytes32> blockRoots = singletonList(Bytes32.ZERO);
-    final List<SignedBeaconBlock> response = requestBlocks(blockRoots);
-    assertThat(response).isEmpty();
-  }
-
-  @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final List<SignedBeaconBlock> response = requestBlocks(singletonList(Bytes32.ZERO));
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldReturnSingleBlockWhenOnlyOneMatches() throws Exception {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
 
     final List<SignedBeaconBlock> response =
@@ -88,7 +91,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void requestBlocksByRootAfterPeerDisconnectedImmediately() {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
@@ -104,7 +106,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void requestBlocksByRootAfterPeerDisconnected() {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
@@ -120,7 +121,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void requestBlockByRootAfterPeerDisconnectedImmediately() {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
@@ -134,7 +134,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void requestBlockByRootAfterPeerDisconnected() {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
@@ -148,7 +147,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void shouldReturnMultipleBlocksWhenAllRequestsMatch() throws Exception {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
     final List<Bytes32> blockRoots =
         blocks.stream()
@@ -161,7 +159,6 @@ public class BeaconBlocksByRootIntegrationTest {
 
   @Test
   public void shouldReturnMatchingBlocksWhenSomeRequestsDoNotMatch() throws Exception {
-    BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
 
     // Real block roots interspersed with ones that don't match any blocks
@@ -191,5 +188,22 @@ public class BeaconBlocksByRootIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(peer1.requestBlocksByRoot(blockRoots, blocks::add));
     return blocks;
+  }
+
+  public static class BeaconBlocksByRootIntegrationTest_ssz
+      extends BeaconBlocksByRootIntegrationTest {
+
+    @Override
+    protected RpcEncoding getEncoding() {
+      return RpcEncoding.SSZ;
+    }
+  }
+
+  public static class BeaconBlocksByRootIntegrationTest_sszSnappy
+      extends BeaconBlocksByRootIntegrationTest {
+    @Override
+    protected RpcEncoding getEncoding() {
+      return RpcEncoding.SSZ_SNAPPY;
+    }
   }
 }
