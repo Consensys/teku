@@ -66,15 +66,20 @@ public class EventLogger {
 
   public void slotEvent(
       final UnsignedLong nodeSlot,
-      final UnsignedLong bestSlot,
+      final UnsignedLong bestBlock,
+      final Bytes32 bestBlockRoot,
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch,
       final Bytes32 finalizedRoot) {
+    String blockRoot = "empty";
+    if (nodeSlot.equals(bestBlock)) {
+      blockRoot = shortenHash(bestBlockRoot.toHexString());
+    }
     final String slotEventLog =
         String.format(
-            "Slot Event *** Current slot: %s, Head block: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s",
+            "Slot Event *** Slot: %s, Block: %s, Epoch: %s, Finalized Epoch: %s, Finalized Root: %s",
             nodeSlot.toString(),
-            bestSlot.toString(),
+            blockRoot,
             justifiedEpoch.toString(),
             finalizedEpoch.toString(),
             shortenHash(finalizedRoot.toHexString()));
