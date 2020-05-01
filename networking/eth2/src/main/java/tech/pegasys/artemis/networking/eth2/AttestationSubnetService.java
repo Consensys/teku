@@ -30,12 +30,8 @@ public class AttestationSubnetService {
     currentSubscriptions = subnetIndices;
   }
 
-  public Iterable<Integer> getCurrentAttestatoinSubnetSubscriptions() {
-    return currentSubscriptions;
-  }
-
   public long subscribeToUpdates(Consumer<Iterable<Integer>> observer) {
-    observer.accept(getCurrentAttestatoinSubnetSubscriptions());
+    observer.accept(currentSubscriptions);
     return subscribers.subscribe(observer);
   }
 
