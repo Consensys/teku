@@ -34,7 +34,7 @@ class AttestationTopicSubscriberTest {
     final int committeeIndex = 10;
     subscriptions.subscribeToCommittee(committeeIndex, ONE);
 
-    verify(eth2Network).subscribeToAttestationCommitteeTopic(committeeIndex);
+    verify(eth2Network).subscribeToAttestationSubnetId(committeeIndex);
   }
 
   @Test
@@ -45,7 +45,7 @@ class AttestationTopicSubscriberTest {
 
     subscriptions.onSlot(aggregationSlot.plus(ONE));
 
-    verify(eth2Network).unsubscribeFromAttestationCommitteeTopic(committeeIndex);
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(committeeIndex);
   }
 
   @Test
@@ -56,7 +56,7 @@ class AttestationTopicSubscriberTest {
 
     subscriptions.onSlot(aggregationSlot);
 
-    verify(eth2Network, never()).unsubscribeFromAttestationCommitteeTopic(committeeIndex);
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(committeeIndex);
   }
 
   @Test
@@ -69,10 +69,10 @@ class AttestationTopicSubscriberTest {
     subscriptions.subscribeToCommittee(committeeIndex, secondSlot);
 
     subscriptions.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationCommitteeTopic(committeeIndex);
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(committeeIndex);
 
     subscriptions.onSlot(secondSlot.plus(ONE));
-    verify(eth2Network).unsubscribeFromAttestationCommitteeTopic(committeeIndex);
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(committeeIndex);
   }
 
   @Test
@@ -85,9 +85,9 @@ class AttestationTopicSubscriberTest {
     subscriptions.subscribeToCommittee(committeeIndex, firstSlot);
 
     subscriptions.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationCommitteeTopic(committeeIndex);
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(committeeIndex);
 
     subscriptions.onSlot(secondSlot.plus(ONE));
-    verify(eth2Network).unsubscribeFromAttestationCommitteeTopic(committeeIndex);
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(committeeIndex);
   }
 }

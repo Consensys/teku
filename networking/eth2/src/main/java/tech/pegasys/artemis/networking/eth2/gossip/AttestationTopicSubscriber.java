@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
-  private final Map<Integer, UnsignedLong> unsubscriptionSlotByCommittee = new HashMap<>();
+  private final Map<Integer, UnsignedLong> unsubscriptionSlotBySubnetId = new HashMap<>();
   private final Eth2Network eth2Network;
 
   public AttestationTopicSubscriber(final Eth2Network eth2Network) {
@@ -34,22 +35,25 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
 
   public synchronized void subscribeToCommittee(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
-    eth2Network.subscribeToAttestationCommitteeTopic(committeeIndex);
+    final int subnetId = committeeIndexToSubnetId(committeeIndex);
     final UnsignedLong currentUnsubscribeSlot =
-        unsubscriptionSlotByCommittee.getOrDefault(committeeIndex, ZERO);
-    unsubscriptionSlotByCommittee.put(committeeIndex, max(currentUnsubscribeSlot, aggregationSlot));
+        unsubscriptionSlotBySubnetId.getOrDefault(subnetId, ZERO);
+    if (currentUnsubscribeSlot.equals(ZERO)) {
+      eth2Network.subscribeToAttestationSubnetId(subnetId);
+    }
+    unsubscriptionSlotBySubnetId.put(committeeIndex, max(currentUnsubscribeSlot, aggregationSlot));
   }
 
   @Override
   public synchronized void onSlot(final UnsignedLong slot) {
     final Iterator<Entry<Integer, UnsignedLong>> iterator =
-        unsubscriptionSlotByCommittee.entrySet().iterator();
+        unsubscriptionSlotBySubnetId.entrySet().iterator();
     while (iterator.hasNext()) {
       final Entry<Integer, UnsignedLong> entry = iterator.next();
       if (entry.getValue().compareTo(slot) < 0) {
         iterator.remove();
-        int committeeIndex = entry.getKey();
-        eth2Network.unsubscribeFromAttestationCommitteeTopic(committeeIndex);
+        int subnetId = entry.getKey();
+        eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
       }
     }
   }
