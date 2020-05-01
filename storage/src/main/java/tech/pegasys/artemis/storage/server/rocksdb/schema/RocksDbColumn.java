@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage.server.rocksdb.schema;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.util.bytes.ByteUtil.toByteExact;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.storage.server.rocksdb.serialization.RocksDbSerializer;
@@ -36,8 +36,7 @@ public class RocksDbColumn<TKey, TValue> {
       final int id,
       final RocksDbSerializer<K> keySerializer,
       final RocksDbSerializer<V> valueSerializer) {
-    final byte byteId = (byte) id;
-    checkArgument((int) byteId == id, "Invalid id supplied");
+    final byte byteId = toByteExact(id);
     return new RocksDbColumn<>(new byte[] {byteId}, keySerializer, valueSerializer);
   }
 

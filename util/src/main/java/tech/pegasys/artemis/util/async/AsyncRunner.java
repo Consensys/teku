@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 public interface AsyncRunner {
 
-  default SafeFuture<Void> runAsync(final Runnable action) {
+  default SafeFuture<Void> runAsync(final ExceptionThrowingRunnable action) {
     return runAsync(() -> SafeFuture.fromRunnable(action));
   }
 
@@ -28,7 +28,7 @@ public interface AsyncRunner {
       Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit);
 
   default SafeFuture<Void> runAfterDelay(
-      final Runnable action, long delayAmount, TimeUnit delayUnit) {
+      final ExceptionThrowingRunnable action, long delayAmount, TimeUnit delayUnit) {
     return runAfterDelay(() -> SafeFuture.fromRunnable(action), delayAmount, delayUnit);
   }
 

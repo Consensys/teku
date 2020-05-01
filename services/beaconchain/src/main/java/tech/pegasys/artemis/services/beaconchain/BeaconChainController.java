@@ -45,6 +45,7 @@ import tech.pegasys.artemis.datastructures.blocks.NodeSlot;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.events.EventChannels;
+import tech.pegasys.artemis.networking.eth2.Eth2Config;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationTopicSubscriber;
@@ -322,11 +323,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       this.p2pNetwork = new NoOpEth2Network();
     } else {
       final Optional<Bytes> bytes = getP2pPrivateKeyBytes();
-      PrivKey pk =
+      final PrivKey pk =
           bytes.isEmpty()
               ? KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()
               : KeyKt.unmarshalPrivateKey(bytes.get().toArrayUnsafe());
-      NetworkConfig p2pConfig =
+      final NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
               config.getP2pInterface(),
@@ -343,10 +344,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   config.isLogWirePlain(),
                   config.isLogWireMuxFrames(),
                   config.isLogWireGossip()));
+      final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
               .config(p2pConfig)
+              .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))

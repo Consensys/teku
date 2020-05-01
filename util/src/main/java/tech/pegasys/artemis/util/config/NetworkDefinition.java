@@ -25,12 +25,19 @@ import java.util.Optional;
 public class NetworkDefinition {
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
       ImmutableMap.<String, NetworkDefinition>builder()
-          .put("minimal", builder().constants("minimal").startupTargetPeerCount(0).build())
-          .put("mainnet", builder().constants("mainnet").build())
+          .put(
+              "minimal",
+              builder()
+                  .constants("minimal")
+                  .snappyCompressionEnabled(false)
+                  .startupTargetPeerCount(0)
+                  .build())
+          .put("mainnet", builder().constants("mainnet").snappyCompressionEnabled(true).build())
           .put(
               "topaz",
               builder()
                   .constants("mainnet")
+                  .snappyCompressionEnabled(true)
                   .initialState(
                       "https://github.com/eth2-clients/eth2-testnets/raw/master/prysm/Topaz(v0.11.1)/genesis.ssz")
                   .discoveryBootnodes(
@@ -47,6 +54,7 @@ public class NetworkDefinition {
   private final List<String> discoveryBootnodes;
   private final Optional<Eth1Address> eth1DepositContractAddress;
   private final Optional<String> eth1Endpoint;
+  private final Optional<Boolean> snappyCompressionEnabled;
 
   private NetworkDefinition(
       final String constants,
@@ -55,7 +63,8 @@ public class NetworkDefinition {
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
-      final Optional<String> eth1Endpoint) {
+      final Optional<String> eth1Endpoint,
+      final Optional<Boolean> snappyCompressionEnabled) {
     this.constants = constants;
     this.initialState = initialState;
     this.startupTargetPeerCount = startupTargetPeerCount;
@@ -63,6 +72,7 @@ public class NetworkDefinition {
     this.discoveryBootnodes = discoveryBootnodes;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
+    this.snappyCompressionEnabled = snappyCompressionEnabled;
   }
 
   public static NetworkDefinition fromCliArg(final String arg) {
@@ -101,6 +111,10 @@ public class NetworkDefinition {
     return eth1Endpoint;
   }
 
+  public Optional<Boolean> getSnappyCompressionEnabled() {
+    return snappyCompressionEnabled;
+  }
+
   private static class Builder {
     private String constants;
     private Optional<String> initialState = Optional.empty();
@@ -109,6 +123,7 @@ public class NetworkDefinition {
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Optional<Eth1Address> eth1DepositContractAddress = Optional.empty();
     private Optional<String> eth1Endpoint = Optional.empty();
+    private Optional<Boolean> snappyCompressionEnabled = Optional.empty();
 
     public Builder constants(final String constants) {
       this.constants = constants;
@@ -145,6 +160,11 @@ public class NetworkDefinition {
       return this;
     }
 
+    public Builder snappyCompressionEnabled(final boolean isEnabled) {
+      snappyCompressionEnabled = Optional.of(isEnabled);
+      return this;
+    }
+
     public NetworkDefinition build() {
       checkNotNull(constants, "Missing constants");
       return new NetworkDefinition(
@@ -154,7 +174,8 @@ public class NetworkDefinition {
           startupTimeoutSeconds,
           discoveryBootnodes,
           eth1DepositContractAddress,
-          eth1Endpoint);
+          eth1Endpoint,
+          snappyCompressionEnabled);
     }
   }
 }

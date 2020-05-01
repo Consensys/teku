@@ -16,16 +16,20 @@ package tech.pegasys.artemis.networking.eth2;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -39,10 +43,13 @@ public class ErrorConditionsIntegrationTest {
     networkFactory.stopAll();
   }
 
-  @Test
-  public void shouldRejectInvalidRequests() throws Exception {
-    final Eth2Network network1 = networkFactory.builder().startNetwork();
-    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
+  @ParameterizedTest(name = "encoding: {0}")
+  @MethodSource("getEncodings")
+  public void shouldRejectInvalidRequests(final String encodingName, final RpcEncoding encoding)
+      throws Exception {
+    final Eth2Network network1 = networkFactory.builder().rpcEncoding(encoding).startNetwork();
+    final Eth2Network network2 =
+        networkFactory.builder().rpcEncoding(encoding).peer(network1).startNetwork();
 
     final Eth2Peer peer = network1.getPeer(network2.getNodeId()).orElseThrow();
 
@@ -54,7 +61,12 @@ public class ErrorConditionsIntegrationTest {
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
         .isInstanceOf(ExecutionException.class)
         .extracting(Throwable::getCause)
-        .isEqualToComparingFieldByField(RpcException.MALFORMED_REQUEST_ERROR);
+        .isEqualToComparingFieldByField(RpcException.DESERIALIZATION_FAILED);
+  }
+
+  public static Stream<Arguments> getEncodings() {
+    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
+    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
   }
 
   // Deliberately doesn't serialize to a valid STATUS message.

@@ -24,4 +24,5 @@ dependencies {
   testFixturesApi 'com.google.guava:guava'
 
   testFixturesImplementation 'org.awaitility:awaitility'
+  testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
 }
