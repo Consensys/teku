@@ -22,6 +22,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -42,6 +48,31 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
       eth2Network.subscribeToAttestationSubnetId(subnetId);
     }
     unsubscriptionSlotBySubnetId.put(subnetId, max(currentUnsubscriptionSlot, aggregationSlot));
+  }
+
+  public synchronized void subscribeToPersistentSubnets(
+      final Set<SubnetSubscription> newSubscriptions) {
+    boolean updated = false;
+
+    for (SubnetSubscription subnetSubscription : newSubscriptions) {
+      int subnetId = subnetSubscription.getSubnetId();
+      UnsignedLong existingUnsubscriptionSlot =
+              Optional.ofNullable(unsubscriptionSlotBySubnetId.get(subnetId))
+              .orElse(ZERO);
+
+      if (existingUnsubscriptionSlot.equals(ZERO)) {
+        updated = true;
+      }
+
+      unsubscriptionSlotBySubnetId.put(
+              subnetId,
+              max(existingUnsubscriptionSlot, subnetSubscription.getUnsubscriptionSlot())
+      );
+    }
+
+    if (updated) {
+      eth2Network.setLongTermAttestationSubnetSubscriptions(unsubscriptionSlotBySubnetId.keySet());
+    }
   }
 
   @Override

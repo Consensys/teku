@@ -63,7 +63,7 @@ import tech.pegasys.teku.util.async.ExceptionThrowingFunction;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
-import tech.pegasys.teku.validator.api.SubnetSubscription;
+import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 
@@ -74,7 +74,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
-  private final AttestationTopicSubscriber attestationTopicSubscriptions;
+  private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
@@ -83,14 +83,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
-      final AttestationTopicSubscriber attestationTopicSubscriptions,
+      final AttestationTopicSubscriber attestationTopicSubscriber,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateTracker = syncStateTracker;
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
-    this.attestationTopicSubscriptions = attestationTopicSubscriptions;
+    this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.eventBus = eventBus;
   }
 
@@ -213,13 +213,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void subscribeToBeaconCommitteeForAggregation(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
-    attestationTopicSubscriptions.subscribeToCommitteeForAggregation(
-        committeeIndex, aggregationSlot);
+    attestationTopicSubscriber.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
   }
 
   @Override
   public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
-    // To be implemented in another PR.
+    attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions);
   }
 
   @Override

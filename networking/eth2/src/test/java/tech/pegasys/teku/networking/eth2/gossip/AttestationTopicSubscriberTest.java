@@ -19,6 +19,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 
@@ -26,13 +27,12 @@ class AttestationTopicSubscriberTest {
 
   private final Eth2Network eth2Network = mock(Eth2Network.class);
 
-  private final AttestationTopicSubscriber subscriptions =
-      new AttestationTopicSubscriber(eth2Network);
+  private final AttestationTopicSubscriber subscriber = new AttestationTopicSubscriber(eth2Network);
 
   @Test
   public void shouldSubscribeToSubnet() {
     final int subnetId = 10;
-    subscriptions.subscribeToCommitteeForAggregation(subnetId, ONE);
+    subscriber.subscribeToCommitteeForAggregation(subnetId, ONE);
 
     verify(eth2Network).subscribeToAttestationSubnetId(subnetId);
   }
@@ -41,9 +41,9 @@ class AttestationTopicSubscriberTest {
   public void shouldUnsubscribeFromSubnetWhenPastSlot() {
     final int subnetId = 12;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(10);
-    subscriptions.subscribeToCommitteeForAggregation(subnetId, aggregationSlot);
 
-    subscriptions.onSlot(aggregationSlot.plus(ONE));
+    subscriber.subscribeToCommitteeForAggregation(subnetId, aggregationSlot);
+    subscriber.onSlot(aggregationSlot.plus(ONE));
 
     verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
   }
@@ -52,9 +52,9 @@ class AttestationTopicSubscriberTest {
   public void shouldNotUnsubscribeAtStartOfTargetSlot() {
     final int subnetId = 16;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(10);
-    subscriptions.subscribeToCommitteeForAggregation(subnetId, aggregationSlot);
 
-    subscriptions.onSlot(aggregationSlot);
+    subscriber.subscribeToCommitteeForAggregation(subnetId, aggregationSlot);
+    subscriber.onSlot(aggregationSlot);
 
     verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
   }
@@ -65,13 +65,13 @@ class AttestationTopicSubscriberTest {
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
 
-    subscriptions.subscribeToCommitteeForAggregation(subnetId, firstSlot);
-    subscriptions.subscribeToCommitteeForAggregation(subnetId, secondSlot);
+    subscriber.subscribeToCommitteeForAggregation(subnetId, firstSlot);
+    subscriber.subscribeToCommitteeForAggregation(subnetId, secondSlot);
 
-    subscriptions.onSlot(firstSlot.plus(ONE));
+    subscriber.onSlot(firstSlot.plus(ONE));
     verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
 
-    subscriptions.onSlot(secondSlot.plus(ONE));
+    subscriber.onSlot(secondSlot.plus(ONE));
     verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
@@ -81,13 +81,60 @@ class AttestationTopicSubscriberTest {
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
 
-    subscriptions.subscribeToCommitteeForAggregation(subnetId, secondSlot);
-    subscriptions.subscribeToCommitteeForAggregation(subnetId, firstSlot);
+    subscriber.subscribeToCommitteeForAggregation(subnetId, secondSlot);
+    subscriber.subscribeToCommitteeForAggregation(subnetId, firstSlot);
 
-    subscriptions.onSlot(firstSlot.plus(ONE));
+    subscriber.onSlot(firstSlot.plus(ONE));
     verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
 
-    subscriptions.onSlot(secondSlot.plus(ONE));
+    subscriber.onSlot(secondSlot.plus(ONE));
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+  }
+
+  @Test
+  public void shouldSubscribeToNewSubnetsAndUpdateENR_forRandomsSubscriptions() {
+    Map<Integer, UnsignedLong> randomSubnetSubscriptions =
+        Map.of(
+            1, UnsignedLong.valueOf(20),
+            2, UnsignedLong.valueOf(15));
+    subscriber.subscribeToPersistentSubnets(randomSubnetSubscriptions);
+    verify(eth2Network)
+        .setLongTermAttestationSubnetSubscriptions(randomSubnetSubscriptions.keySet());
+
+    verify(eth2Network).subscribeToAttestationSubnetId(1);
+    verify(eth2Network).subscribeToAttestationSubnetId(2);
+  }
+
+  @Test
+  public void shouldExtendSubscriptionPeriod_forRandomSubscriptions() {
+    final int subnetId = 3;
+    final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
+    final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
+    Map<Integer, UnsignedLong> randomSubnetSubscriptions = Map.of(subnetId, secondSlot);
+
+    subscriber.subscribeToCommitteeForAggregation(subnetId, firstSlot);
+    subscriber.subscribeToPersistentSubnets(randomSubnetSubscriptions);
+
+    subscriber.onSlot(firstSlot.plus(ONE));
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
+
+    subscriber.onSlot(secondSlot.plus(ONE));
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+  }
+
+  @Test
+  public void shouldPreserveLaterSubscription_forRandomSubscriptions() {
+    final int subnetId = 3;
+    final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
+    final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
+    Map<Integer, UnsignedLong> randomSubnetSubscriptions = Map.of(subnetId, firstSlot);
+    subscriber.subscribeToCommitteeForAggregation(subnetId, secondSlot);
+    subscriber.subscribeToPersistentSubnets(randomSubnetSubscriptions);
+
+    subscriber.onSlot(firstSlot.plus(ONE));
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
+
+    subscriber.onSlot(secondSlot.plus(ONE));
     verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
   }
 }

@@ -31,7 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.validator.api.SubnetSubscription;
+import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 @SuppressWarnings("unchecked")
