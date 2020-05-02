@@ -304,7 +304,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initAttestationPropagationManager() {
     final PendingPool<DelayableAttestation> pendingAttestations =
-        PendingPool.createForAttestations(eventBus);
+        PendingPool.createForAttestations();
     final FutureItems<DelayableAttestation> futureAttestations =
         new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
     final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
@@ -403,7 +403,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (!config.isP2pEnabled()) {
       syncService = new NoopSyncService();
     } else {
-      final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
+      final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
       final FutureItems<SignedBeaconBlock> futureBlocks =
           new FutureItems<>(SignedBeaconBlock::getSlot);
       final FetchRecentBlocksService recentBlockFetcher =
