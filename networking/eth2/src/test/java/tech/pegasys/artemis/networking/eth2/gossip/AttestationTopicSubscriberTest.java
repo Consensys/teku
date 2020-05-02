@@ -30,64 +30,64 @@ class AttestationTopicSubscriberTest {
       new AttestationTopicSubscriber(eth2Network);
 
   @Test
-  public void shouldSubscribeToCommittee() {
-    final int committeeIndex = 10;
-    subscriptions.subscribeToCommittee(committeeIndex, ONE);
+  public void shouldSubscribeToSubnet() {
+    final int subnetId = 10;
+    subscriptions.subscribeToCommittee(subnetId, ONE);
 
-    verify(eth2Network).subscribeToAttestationSubnetId(committeeIndex);
+    verify(eth2Network).subscribeToAttestationSubnetId(subnetId);
   }
 
   @Test
-  public void shouldUnsubscribeFromCommitteeWhenPastSlot() {
-    final int committeeIndex = 12;
+  public void shouldUnsubscribeFromSubnetWhenPastSlot() {
+    final int subnetId = 12;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(10);
-    subscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
+    subscriptions.subscribeToCommittee(subnetId, aggregationSlot);
 
     subscriptions.onSlot(aggregationSlot.plus(ONE));
 
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(committeeIndex);
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
   public void shouldNotUnsubscribeAtStartOfTargetSlot() {
-    final int committeeIndex = 16;
+    final int subnetId = 16;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(10);
-    subscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
+    subscriptions.subscribeToCommittee(subnetId, aggregationSlot);
 
     subscriptions.onSlot(aggregationSlot);
 
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(committeeIndex);
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
   public void shouldExtendSubscriptionPeriod() {
-    final int committeeIndex = 3;
+    final int subnetId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
 
-    subscriptions.subscribeToCommittee(committeeIndex, firstSlot);
-    subscriptions.subscribeToCommittee(committeeIndex, secondSlot);
+    subscriptions.subscribeToCommittee(subnetId, firstSlot);
+    subscriptions.subscribeToCommittee(subnetId, secondSlot);
 
     subscriptions.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(committeeIndex);
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
 
     subscriptions.onSlot(secondSlot.plus(ONE));
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(committeeIndex);
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
   }
 
   @Test
   public void shouldPreserveLaterSubscriptionPeriodWhenEarlierSlotAdded() {
-    final int committeeIndex = 3;
+    final int subnetId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
 
-    subscriptions.subscribeToCommittee(committeeIndex, secondSlot);
-    subscriptions.subscribeToCommittee(committeeIndex, firstSlot);
+    subscriptions.subscribeToCommittee(subnetId, secondSlot);
+    subscriptions.subscribeToCommittee(subnetId, firstSlot);
 
     subscriptions.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(committeeIndex);
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
 
     subscriptions.onSlot(secondSlot.plus(ONE));
-    verify(eth2Network).unsubscribeFromAttestationSubnetId(committeeIndex);
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
   }
 }
