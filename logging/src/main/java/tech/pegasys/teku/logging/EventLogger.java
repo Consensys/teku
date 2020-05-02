@@ -68,7 +68,7 @@ public class EventLogger {
       final UnsignedLong nodeSlot,
       final UnsignedLong bestBlock,
       final Bytes32 bestBlockRoot,
-      final UnsignedLong justifiedEpoch,
+      final UnsignedLong nodeEpoch,
       final UnsignedLong finalizedEpoch,
       final Bytes32 finalizedRoot) {
     String blockRoot = " x ... empty";
@@ -80,7 +80,7 @@ public class EventLogger {
             "Slot Event *** Slot: %s, Block: %s, Epoch: %s, Finalized Epoch: %s, Finalized Root: %s",
             nodeSlot.toString(),
             blockRoot,
-            justifiedEpoch.toString(),
+            nodeEpoch.toString(),
             finalizedEpoch.toString(),
             shortenHash(finalizedRoot.toHexString()));
     info(slotEventLog, Color.WHITE);
