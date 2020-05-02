@@ -70,19 +70,21 @@ public class EventLogger {
       final Bytes32 bestBlockRoot,
       final UnsignedLong nodeEpoch,
       final UnsignedLong finalizedEpoch,
-      final Bytes32 finalizedRoot) {
+      final Bytes32 finalizedRoot,
+      final int numPeers) {
     String blockRoot = " x ... empty";
     if (nodeSlot.equals(bestBlock)) {
       blockRoot = shortenHash(bestBlockRoot.toHexString());
     }
     final String slotEventLog =
         String.format(
-            "Slot Event *** Slot: %s, Block: %s, Epoch: %s, Finalized Epoch: %s, Finalized Root: %s",
+            "Slot Event *** Slot: %s, Block: %s, Epoch: %s, Finalized Epoch: %s, Finalized Root: %s, Peers: %d",
             nodeSlot.toString(),
             blockRoot,
             nodeEpoch.toString(),
             finalizedEpoch.toString(),
-            shortenHash(finalizedRoot.toHexString()));
+            shortenHash(finalizedRoot.toHexString()),
+            numPeers);
     info(slotEventLog, Color.WHITE);
   }
 
