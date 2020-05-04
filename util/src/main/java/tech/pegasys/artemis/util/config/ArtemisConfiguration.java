@@ -27,7 +27,10 @@ import tech.pegasys.artemis.bls.BLSPublicKey;
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
   // Network
-  private final String network;
+  private final String constants;
+  private final String initialState;
+  private final Integer startupTargetPeerCount;
+  private final Integer startupTimeoutSeconds;
 
   // P2P
   private final boolean p2pEnabled;
@@ -41,12 +44,12 @@ public class ArtemisConfiguration {
   private final int p2pPeerLowerBound;
   private final int p2pPeerUpperBound;
   private final List<String> p2pStaticPeers;
+  private final boolean p2pSnappyEnabled;
 
   // Interop
   private final Integer interopGenesisTime;
   private final int interopOwnedValidatorStartIndex;
   private final int interopOwnedValidatorCount;
-  private final String interopStartState;
   private final int interopNumberOfValidators;
   private final boolean interopEnabled;
 
@@ -59,16 +62,21 @@ public class ArtemisConfiguration {
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
 
+  private final boolean eth1Enabled;
   // Deposit
-  private final String eth1DepositContractAddress;
+  private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
 
   // Logging
   private final boolean logColorEnabled;
   private final boolean logIncludeEventsEnabled;
-  private final String logDestination;
+  private final LoggingDestination logDestination;
   private final String logFile;
   private final String logFileNamePattern;
+  private final boolean logWireCipher;
+  private final boolean logWirePlain;
+  private final boolean logWireMuxFrames;
+  private final boolean logWireGossip;
 
   // Output
   private final String transitionRecordDirectory;
@@ -81,7 +89,7 @@ public class ArtemisConfiguration {
 
   // Database
   private final String dataPath;
-  private final String dataStorageMode;
+  private final StateStorageMode dataStorageMode;
 
   // Beacon REST API
   private final int restApiPort;
@@ -94,7 +102,9 @@ public class ArtemisConfiguration {
   }
 
   ArtemisConfiguration(
-      final String network,
+      final String constants,
+      final Integer startupTargetPeerCount,
+      final Integer startupTimeoutSeconds,
       final boolean p2pEnabled,
       final String p2pInterface,
       final int p2pPort,
@@ -106,10 +116,11 @@ public class ArtemisConfiguration {
       final int p2pPeerLowerBound,
       final int p2pPeerUpperBound,
       final List<String> p2pStaticPeers,
+      final boolean p2pSnappyEnabled,
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
-      final String interopStartState,
+      final String initialState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
       final String validatorsKeyFile,
@@ -118,25 +129,32 @@ public class ArtemisConfiguration {
       final List<String> validatorExternalSignerPublicKeys,
       final String validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
-      final String eth1DepositContractAddress,
+      final boolean eth1Enabled,
+      final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
-      final String logDestination,
+      final LoggingDestination logDestination,
       final String logFile,
       final String logFileNamePattern,
+      final boolean logWireCipher,
+      final boolean logWirePlain,
+      final boolean logWireMuxFrames,
+      final boolean logWireGossip,
       final String transitionRecordDirectory,
       final boolean metricsEnabled,
       final int metricsPort,
       final String metricsInterface,
       final List<String> metricsCategories,
       final String dataPath,
-      final String dataStorageMode,
+      final StateStorageMode dataStorageMode,
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
       final String restApiInterface) {
-    this.network = network;
+    this.constants = constants;
+    this.startupTargetPeerCount = startupTargetPeerCount;
+    this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.p2pEnabled = p2pEnabled;
     this.p2pInterface = p2pInterface;
     this.p2pPort = p2pPort;
@@ -148,10 +166,11 @@ public class ArtemisConfiguration {
     this.p2pPeerLowerBound = p2pPeerLowerBound;
     this.p2pPeerUpperBound = p2pPeerUpperBound;
     this.p2pStaticPeers = p2pStaticPeers;
+    this.p2pSnappyEnabled = p2pSnappyEnabled;
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    this.interopStartState = interopStartState;
+    this.initialState = initialState;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
     this.validatorsKeyFile = validatorsKeyFile;
@@ -160,6 +179,7 @@ public class ArtemisConfiguration {
     this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
+    this.eth1Enabled = eth1Enabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.logColorEnabled = logColorEnabled;
@@ -167,6 +187,10 @@ public class ArtemisConfiguration {
     this.logDestination = logDestination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
+    this.logWireCipher = logWireCipher;
+    this.logWirePlain = logWirePlain;
+    this.logWireMuxFrames = logWireMuxFrames;
+    this.logWireGossip = logWireGossip;
     this.transitionRecordDirectory = transitionRecordDirectory;
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
@@ -180,8 +204,16 @@ public class ArtemisConfiguration {
     this.restApiInterface = restApiInterface;
   }
 
-  public String getNetwork() {
-    return network;
+  public String getConstants() {
+    return constants;
+  }
+
+  public int getStartupTargetPeerCount() {
+    return startupTargetPeerCount;
+  }
+
+  public int getStartupTimeoutSeconds() {
+    return startupTimeoutSeconds;
   }
 
   public boolean isP2pEnabled() {
@@ -228,6 +260,10 @@ public class ArtemisConfiguration {
     return p2pStaticPeers;
   }
 
+  public boolean isP2pSnappyEnabled() {
+    return p2pSnappyEnabled;
+  }
+
   public Integer getInteropGenesisTime() {
     if (interopGenesisTime == 0) {
       return Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
@@ -244,8 +280,8 @@ public class ArtemisConfiguration {
     return interopOwnedValidatorCount;
   }
 
-  public String getInteropStartState() {
-    return interopStartState == null || interopStartState.isEmpty() ? null : interopStartState;
+  public String getInitialState() {
+    return initialState == null || initialState.isEmpty() ? null : initialState;
   }
 
   public int getInteropNumberOfValidators() {
@@ -293,7 +329,11 @@ public class ArtemisConfiguration {
     return validatorExternalSignerTimeout;
   }
 
-  public String getEth1DepositContractAddress() {
+  public boolean isEth1Enabled() {
+    return eth1Enabled;
+  }
+
+  public Eth1Address getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
   }
 
@@ -309,7 +349,7 @@ public class ArtemisConfiguration {
     return logIncludeEventsEnabled;
   }
 
-  public String getLogDestination() {
+  public LoggingDestination getLogDestination() {
     return logDestination;
   }
 
@@ -319,6 +359,22 @@ public class ArtemisConfiguration {
 
   public String getLogFileNamePattern() {
     return logFileNamePattern;
+  }
+
+  public boolean isLogWireCipher() {
+    return logWireCipher;
+  }
+
+  public boolean isLogWirePlain() {
+    return logWirePlain;
+  }
+
+  public boolean isLogWireMuxFrames() {
+    return logWireMuxFrames;
+  }
+
+  public boolean isLogWireGossip() {
+    return logWireGossip;
   }
 
   public String getTransitionRecordDirectory() {
@@ -345,7 +401,7 @@ public class ArtemisConfiguration {
     return dataPath;
   }
 
-  public String getDataStorageMode() {
+  public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
   }
 
@@ -386,7 +442,7 @@ public class ArtemisConfiguration {
   public void validateConfig() throws IllegalArgumentException {
     final int interopNumberOfValidators = getInteropNumberOfValidators();
     if (interopNumberOfValidators < Constants.SLOTS_PER_EPOCH) {
-      throw new IllegalArgumentException(
+      throw new InvalidConfigurationException(
           String.format(
               "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
               interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
@@ -403,7 +459,7 @@ public class ArtemisConfiguration {
           String.format(
               "Invalid configuration. The size of validator.validatorsKeystoreFiles [%d] and validator.validatorsKeystorePasswordFiles [%d] must match",
               validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
-      throw new IllegalArgumentException(errorMessage);
+      throw new InvalidConfigurationException(errorMessage);
     }
   }
 }

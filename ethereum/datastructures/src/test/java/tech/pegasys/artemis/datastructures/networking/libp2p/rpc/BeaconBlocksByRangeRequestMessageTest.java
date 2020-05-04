@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
@@ -27,10 +26,7 @@ class BeaconBlocksByRangeRequestMessageTest {
   public void shouldRoundTripViaSsz() {
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(
-            Bytes32.fromHexStringLenient("0x01"),
-            UnsignedLong.valueOf(2),
-            UnsignedLong.valueOf(3),
-            UnsignedLong.valueOf(4));
+            UnsignedLong.valueOf(2), UnsignedLong.valueOf(3), UnsignedLong.valueOf(4));
     final Bytes data = SimpleOffsetSerializer.serialize(request);
     final BeaconBlocksByRangeRequestMessage result =
         SimpleOffsetSerializer.deserialize(data, BeaconBlocksByRangeRequestMessage.class);

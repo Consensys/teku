@@ -1,0 +1,10 @@
+# logging
+log-color-enabled: False
+log-include-events-enabled: False
+log-destination: "FILE"
+log-file: "a.log"
+log-file-name-pattern: "a%d.log"
+Xlog-wire-cipher-enabled: True
+Xlog-wire-plain-enabled: True
+Xlog-wire-mux-enabled: True
+Xlog-wire-gossip-enabled: True

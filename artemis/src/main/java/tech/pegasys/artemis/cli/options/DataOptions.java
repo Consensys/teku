@@ -13,37 +13,36 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.config.StateStorageMode;
 
 public class DataOptions {
-  public static final String DATA_PATH_OPTION_NAME = "--data-path";
-  public static final String DATA_STORAGE_MODE_OPTION_NAME = "--data-storage-mode";
 
-  public static final String DEFAULT_DATA_PATH =
-      VersionProvider.defaultStoragePath() + System.getProperty("file.separator") + "data";
-  public static final String DEFAULT_DATA_STORAGE_MODE = "prune";
-
-  @CommandLine.Option(
-      names = {DATA_PATH_OPTION_NAME},
+  @Option(
+      names = {"--data-path"},
       paramLabel = "<FILENAME>",
       description = "Path to output data files",
       arity = "1")
-  private String dataPath = DEFAULT_DATA_PATH;
+  private String dataPath = defaultDataPath();
 
-  @CommandLine.Option(
-      names = {DATA_STORAGE_MODE_OPTION_NAME},
+  @Option(
+      names = {"--data-storage-mode"},
       paramLabel = "<STORAGE_MODE>",
       description =
-          "Sets the strategy for handling historical chain data.  Supported values include: 'prune', and 'archive'",
+          "Sets the strategy for handling historical chain data.  (Valid values: ${COMPLETION-CANDIDATES})",
       arity = "1")
-  private String dataStorageMode = DEFAULT_DATA_STORAGE_MODE;
+  private StateStorageMode dataStorageMode = StateStorageMode.PRUNE;
 
   public String getDataPath() {
     return dataPath;
   }
 
-  public String getDataStorageMode() {
+  public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
+  }
+
+  private static String defaultDataPath() {
+    return VersionProvider.defaultStoragePath() + System.getProperty("file.separator") + "data";
   }
 }

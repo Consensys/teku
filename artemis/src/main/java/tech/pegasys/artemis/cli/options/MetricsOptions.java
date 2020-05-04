@@ -13,49 +13,53 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import java.util.ArrayList;
-import picocli.CommandLine;
+import com.google.common.collect.ImmutableSet;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.hyperledger.besu.metrics.StandardMetricCategory;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
+import picocli.CommandLine.Option;
+import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 
 public class MetricsOptions {
 
-  public static final String METRICS_ENABLED_OPTION_NAME = "--metrics-enabled";
-  public static final String METRICS_PORT_OPTION_NAME = "--metrics-port";
-  public static final String METRICS_INTERFACE_OPTION_NAME = "--metrics-interface";
-  public static final String METRICS_CATEGORIES_OPTION_NAME = "--metrics-categories";
+  public static final ImmutableSet<MetricCategory> DEFAULT_METRICS_CATEGORIES =
+      ImmutableSet.<MetricCategory>builder()
+          .addAll(EnumSet.allOf(StandardMetricCategory.class))
+          .addAll(EnumSet.allOf(ArtemisMetricCategory.class))
+          .build();
 
-  public static final boolean DEFAULT_METRICS_ENABLED = false;
-  public static final int DEFAULT_METRICS_PORT = 8008;
-  public static final String DEFAULT_METRICS_INTERFACE = "127.0.0.1";
-  public static final ArrayList<String> DEFAULT_METRICS_CATEGORIES = new ArrayList<>();
-
-  @CommandLine.Option(
-      names = {METRICS_ENABLED_OPTION_NAME},
+  @Option(
+      names = {"--metrics-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables metrics collection via Prometheus",
-      arity = "1")
-  private boolean metricsEnabled = DEFAULT_METRICS_ENABLED;
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean metricsEnabled = false;
 
-  @CommandLine.Option(
-      names = {METRICS_PORT_OPTION_NAME},
+  @Option(
+      names = {"--metrics-port"},
       paramLabel = "<INTEGER>",
       description = "Metrics port to expose metrics for Prometheus",
       arity = "1")
-  private int metricsPort = DEFAULT_METRICS_PORT;
+  private int metricsPort = 8008;
 
-  @CommandLine.Option(
-      names = {METRICS_INTERFACE_OPTION_NAME},
+  @Option(
+      names = {"--metrics-interface"},
       paramLabel = "<NETWORK>",
       description = "Metrics network interface to expose metrics for Prometheus",
       arity = "1")
-  private String metricsInterface = DEFAULT_METRICS_INTERFACE;
+  private String metricsInterface = "127.0.0.1";
 
-  @CommandLine.Option(
-      names = {METRICS_CATEGORIES_OPTION_NAME},
+  @Option(
+      names = {"--metrics-categories"},
       paramLabel = "<METRICS_CATEGORY>",
       description = "Metric categories to enable",
       split = ",",
       arity = "0..*")
-  private ArrayList<String> metricsCategories = DEFAULT_METRICS_CATEGORIES;
+  private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
 
   public boolean isMetricsEnabled() {
     return metricsEnabled;
@@ -69,7 +73,7 @@ public class MetricsOptions {
     return metricsInterface;
   }
 
-  public ArrayList<String> getMetricsCategories() {
-    return metricsCategories;
+  public List<String> getMetricsCategories() {
+    return metricsCategories.stream().map(Object::toString).collect(Collectors.toList());
   }
 }

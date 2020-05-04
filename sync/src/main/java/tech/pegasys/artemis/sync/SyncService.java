@@ -24,4 +24,12 @@ public interface SyncService {
   SyncingStatus getSyncStatus();
 
   boolean isSyncActive();
+
+  long subscribeToSyncChanges(SyncSubscriber subscriber);
+
+  void unsubscribeFromSyncChanges(long subscriberId);
+
+  interface SyncSubscriber {
+    void onSyncingChange(boolean isSyncing);
+  }
 }

@@ -13,22 +13,29 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 public class NetworkOptions {
 
-  public static final String NETWORK_OPTION_NAME = "--network";
-
-  public static final String DEFAULT_NETWORK = "minimal";
-
-  @CommandLine.Option(
-      names = {"-n", NETWORK_OPTION_NAME},
+  @Option(
+      names = {"-n", "--network"},
       paramLabel = "<NETWORK>",
-      description = "Represents which network to use",
+      description = "Represents which network to use.",
       arity = "1")
-  private String network = DEFAULT_NETWORK;
+  private String network = "minimal";
+
+  @Option(
+      names = {"--initial-state"},
+      paramLabel = "<STRING>",
+      description = "Initial BeaconState to load",
+      arity = "1")
+  private String initialState = null;
 
   public String getNetwork() {
     return network;
+  }
+
+  public String getInitialState() {
+    return initialState;
   }
 }

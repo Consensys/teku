@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
+import static tech.pegasys.artemis.core.ForkChoiceUtil.get_current_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.get_current_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
@@ -92,28 +92,29 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> checkRemoteChain() {
-    // Check fork compatibility
-    Bytes4 expectedFork = storageClient.getForkAtSlot(status.getHeadSlot());
-    if (!Objects.equals(expectedFork, status.getHeadForkVersion())) {
-      LOG.trace(
-          "Peer's fork ({}) differs from our fork ({}): {}",
-          status.getHeadForkVersion(),
-          expectedFork,
-          peer);
-      return SafeFuture.completedFuture(false);
-    }
-
-    // Shortcut finalized block checks if our node or our peer has not reached genesis
+    // Shortcut checks if our node or our peer has not reached genesis
     if (storageClient.isPreGenesis()) {
       // If we haven't reached genesis, accept our peer at this point
       LOG.trace("Validating peer pre-genesis, skip finalized block checks for peer {}", peer);
       return SafeFuture.completedFuture(true);
-    } else if (PeerStatus.isPreGenesisStatus(status, expectedFork)) {
+    } else if (PeerStatus.isPreGenesisStatus(status)) {
       // Our peer hasn't reached genesis, accept them for now
       LOG.trace("Peer has not reached genesis, skip finalized block checks for peer {}", peer);
       return SafeFuture.completedFuture(true);
     }
 
+    // Check fork compatibility
+    Bytes4 expectedForkDigest = storageClient.getCurrentForkInfo().orElseThrow().getForkDigest();
+    if (!Objects.equals(expectedForkDigest, status.getForkDigest())) {
+      LOG.trace(
+          "Peer's fork ({}) differs from our fork ({}): {}",
+          status.getForkDigest(),
+          expectedForkDigest,
+          peer);
+      return SafeFuture.completedFuture(false);
+    }
+
+    // Check finalized checkpoint compatibility
     final Checkpoint finalizedCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
     final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
@@ -187,16 +188,25 @@ public class PeerChainValidator {
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
       Checkpoint finalizedCheckpoint) {
     final UnsignedLong finalizedEpochSlot = finalizedCheckpoint.getEpochStartSlot();
+    if (finalizedEpochSlot.equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT))) {
+      // Assume that our genesis blocks match because we've already verified the fork
+      // digest.
+      return SafeFuture.completedFuture(true);
+    }
     return historicalChainData
         .getLatestFinalizedBlockAtSlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(
             blockSlot -> {
-              return peer.requestBlockBySlot(status.getHeadRoot(), blockSlot)
+              if (blockSlot.equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT))) {
+                // Assume that our genesis blocks match because we've already verified the fork
+                // digest. Need to repeat this check in case we finalized a later epoch without
+                // producing blocks (eg the genesis block is still the one in effect at epoch 2)
+                return SafeFuture.completedFuture(true);
+              }
+              return peer.requestBlockBySlot(blockSlot)
                   .thenApply(
-                      block ->
-                          validateRemoteBlockMatchesOurFinalizedBlock(
-                              block, finalizedCheckpoint.getRoot(), blockSlot));
+                      block -> validateBlockRootsMatch(block, finalizedCheckpoint.getRoot()));
             });
   }
 
@@ -212,22 +222,6 @@ public class PeerChainValidator {
         .map(SignedBeaconBlock::getSlot)
         .orElseThrow(
             () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
-  }
-
-  private boolean validateRemoteBlockMatchesOurFinalizedBlock(
-      final SignedBeaconBlock block, final Bytes32 root, final UnsignedLong slot) {
-    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    if (slot.equals(genesisSlot) && block.getSlot().compareTo(genesisSlot) > 0) {
-      // Account for prysm's special handling of genesis block
-      // As of 2020-02-07, queries for the genesis block will return the first non-genesis block
-      LOG.trace(
-          "Query for genesis block at {} returned block at slot {}.  Bypass check and accept peer {}.",
-          genesisSlot,
-          block.getSlot(),
-          peer.getId());
-      return true;
-    }
-    return validateBlockRootsMatch(block, root);
   }
 
   private boolean validateBlockRootsMatch(final SignedBeaconBlock block, final Bytes32 root) {

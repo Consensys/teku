@@ -44,6 +44,7 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
     description =
         "Register a validator from existing keys by sending a deposit transaction to an Ethereum 1 node",
     mixinStandardHelpOptions = true,
+    showDefaultValues = true,
     abbreviateSynopsis = true,
     versionProvider = VersionProvider.class,
     synopsisHeading = "%n",

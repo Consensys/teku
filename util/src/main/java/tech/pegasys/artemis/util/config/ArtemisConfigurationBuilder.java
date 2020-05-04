@@ -14,9 +14,15 @@
 package tech.pegasys.artemis.util.config;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 public class ArtemisConfigurationBuilder {
-  private String network;
+  private static boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
+
+  private String constants;
+  private Integer startupTargetPeerCount;
+  private Integer startupTimeoutSeconds;
   private boolean p2pEnabled;
   private String p2pInterface;
   private int p2pPort;
@@ -28,10 +34,11 @@ public class ArtemisConfigurationBuilder {
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
   private List<String> p2pStaticPeers;
+  private Boolean p2pSnappyEnabled;
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
-  private String interopStartState;
+  private String initialState;
   private int interopNumberOfValidators;
   private boolean interopEnabled;
   private String validatorsKeyFile;
@@ -40,27 +47,44 @@ public class ArtemisConfigurationBuilder {
   private List<String> validatorExternalSignerPublicKeys;
   private String validatorExternalSignerUrl;
   private int validatorExternalSignerTimeout;
-  private String eth1DepositContractAddress;
+  private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
-  private String logDestination;
+  private LoggingDestination logDestination;
   private String logFile;
   private String logFileNamePattern;
+  private boolean logWireCipher;
+  private boolean logWirePlain;
+  private boolean logWireMuxFrames;
+  private boolean logWireGossip;
   private String transitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
   private String metricsInterface;
   private List<String> metricsCategories;
   private String dataPath;
-  private String dataStorageMode;
+  private StateStorageMode dataStorageMode;
   private int restApiPort;
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
   private String restApiInterface;
+  private NetworkDefinition network;
+  private boolean eth1Enabled;
 
-  public ArtemisConfigurationBuilder setNetwork(final String network) {
-    this.network = network;
+  public ArtemisConfigurationBuilder setConstants(final String constants) {
+    this.constants = constants;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setStartupTargetPeerCount(
+      final Integer startupTargetPeerCount) {
+    this.startupTargetPeerCount = startupTargetPeerCount;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setStartupTimeoutSeconds(final Integer startupTimeoutSeconds) {
+    this.startupTimeoutSeconds = startupTimeoutSeconds;
     return this;
   }
 
@@ -120,6 +144,11 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
+  public ArtemisConfigurationBuilder setP2pSnappyEnabled(final Boolean p2pSnappyEnabled) {
+    this.p2pSnappyEnabled = p2pSnappyEnabled;
+    return this;
+  }
+
   public ArtemisConfigurationBuilder setInteropGenesisTime(final Integer interopGenesisTime) {
     this.interopGenesisTime = interopGenesisTime;
     return this;
@@ -137,8 +166,8 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setInteropStartState(final String interopStartState) {
-    this.interopStartState = interopStartState;
+  public ArtemisConfigurationBuilder setInitialState(final String initialState) {
+    this.initialState = initialState;
     return this;
   }
 
@@ -188,8 +217,13 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
+  public ArtemisConfigurationBuilder setEth1Enabled(final boolean eth1Enabled) {
+    this.eth1Enabled = eth1Enabled;
+    return this;
+  }
+
   public ArtemisConfigurationBuilder setEth1DepositContractAddress(
-      final String eth1DepositContractAddress) {
+      final Eth1Address eth1DepositContractAddress) {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     return this;
   }
@@ -210,7 +244,7 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setLogDestination(final String logDestination) {
+  public ArtemisConfigurationBuilder setLogDestination(final LoggingDestination logDestination) {
     this.logDestination = logDestination;
     return this;
   }
@@ -222,6 +256,26 @@ public class ArtemisConfigurationBuilder {
 
   public ArtemisConfigurationBuilder setLogFileNamePattern(final String logFileNamePattern) {
     this.logFileNamePattern = logFileNamePattern;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setLogWireCipher(boolean logWireCipher) {
+    this.logWireCipher = logWireCipher;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setLogWirePlain(boolean logWirePlain) {
+    this.logWirePlain = logWirePlain;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setLogWireMuxFrames(boolean logWireMuxFrames) {
+    this.logWireMuxFrames = logWireMuxFrames;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setLogWireGossip(boolean logWireGossip) {
+    this.logWireGossip = logWireGossip;
     return this;
   }
 
@@ -256,7 +310,7 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setDataStorageMode(final String dataStorageMode) {
+  public ArtemisConfigurationBuilder setDataStorageMode(final StateStorageMode dataStorageMode) {
     this.dataStorageMode = dataStorageMode;
     return this;
   }
@@ -281,9 +335,32 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
+  public ArtemisConfigurationBuilder setNetwork(final NetworkDefinition network) {
+    this.network = network;
+    return this;
+  }
+
   public ArtemisConfiguration build() {
+    if (network != null) {
+      constants = getOrDefault(constants, network::getConstants);
+      initialState = getOrOptionalDefault(initialState, network::getInitialState);
+      startupTargetPeerCount =
+          getOrDefault(startupTargetPeerCount, network::getStartupTargetPeerCount);
+      startupTimeoutSeconds =
+          getOrDefault(startupTimeoutSeconds, network::getStartupTimeoutSeconds);
+      eth1DepositContractAddress =
+          getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
+      p2pDiscoveryBootnodes = getOrDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
+      eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
+      p2pSnappyEnabled =
+          getOrOptionalDefault(p2pSnappyEnabled, network::getSnappyCompressionEnabled);
+    }
+
+    p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
     return new ArtemisConfiguration(
-        network,
+        constants,
+        startupTargetPeerCount,
+        startupTimeoutSeconds,
         p2pEnabled,
         p2pInterface,
         p2pPort,
@@ -295,10 +372,11 @@ public class ArtemisConfigurationBuilder {
         p2pPeerLowerBound,
         p2pPeerUpperBound,
         p2pStaticPeers,
+        p2pSnappyEnabled,
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,
-        interopStartState,
+        initialState,
         interopNumberOfValidators,
         interopEnabled,
         validatorsKeyFile,
@@ -307,6 +385,7 @@ public class ArtemisConfigurationBuilder {
         validatorExternalSignerPublicKeys,
         validatorExternalSignerUrl,
         validatorExternalSignerTimeout,
+        eth1Enabled,
         eth1DepositContractAddress,
         eth1Endpoint,
         logColorEnabled,
@@ -314,6 +393,10 @@ public class ArtemisConfigurationBuilder {
         logDestination,
         logFile,
         logFileNamePattern,
+        logWireCipher,
+        logWirePlain,
+        logWireMuxFrames,
+        logWireGossip,
         transitionRecordDirectory,
         metricsEnabled,
         metricsPort,
@@ -325,5 +408,14 @@ public class ArtemisConfigurationBuilder {
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface);
+  }
+
+  private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {
+    return getOrOptionalDefault(explicitValue, () -> Optional.of(predefinedNetworkValue.get()));
+  }
+
+  private <T> T getOrOptionalDefault(
+      final T explicitValue, final Supplier<Optional<T>> predefinedNetworkValue) {
+    return explicitValue != null ? explicitValue : predefinedNetworkValue.get().orElse(null);
   }
 }

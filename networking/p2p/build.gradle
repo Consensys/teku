@@ -8,8 +8,8 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':storage')
   implementation project(':util')
+  implementation project(':ssz')
 
-  implementation 'de.undercouch:bson4jackson'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.projectreactor:reactor-core'
   implementation 'io.vertx:vertx-core'
@@ -23,6 +23,7 @@ dependencies {
   implementation 'tech.pegasys.discovery:discovery'
 
   testImplementation testFixtures(project(':ethereum:statetransition'))
+  testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'

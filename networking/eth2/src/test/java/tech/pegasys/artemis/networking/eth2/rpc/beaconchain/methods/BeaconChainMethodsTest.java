@@ -17,16 +17,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.primitives.UnsignedLong;
-import io.netty.buffer.Unpooled;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RequestRpcDecoder;
+import tech.pegasys.artemis.networking.eth2.rpc.core.RpcRequestDecoder;
+import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.client.RecentChainData;
@@ -35,7 +42,7 @@ import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class BeaconChainMethodsTest {
 
-  private static final Bytes RECORDED_STATUS_REQUEST_BYTES =
+  private static final Bytes SSZ_RECORDED_STATUS_REQUEST_BYTES =
       Bytes.fromHexString(
           "0x54000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E60000000000000000");
   private static final StatusMessage RECORDED_STATUS_MESSAGE_DATA =
@@ -53,17 +60,11 @@ public class BeaconChainMethodsTest {
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
-  private final BeaconChainMethods beaconChainMethods =
-      BeaconChainMethods.create(
-          asyncRunner,
-          peerLookup,
-          combinedChainDataClient,
-          recentChainData,
-          metricsSystem,
-          statusMessageFactory);
 
-  @Test
-  void testStatusRoundtripSerialization() throws Exception {
+  @ParameterizedTest(name = "encoding: {0}")
+  @MethodSource("getEncodings")
+  void testStatusRoundtripSerialization(String name, RpcEncoding encoding) throws Exception {
+    final BeaconChainMethods methods = getMethods(encoding);
     final StatusMessage expected =
         new StatusMessage(
             Bytes4.rightPad(Bytes.of(4)),
@@ -72,24 +73,39 @@ public class BeaconChainMethodsTest {
             Bytes32.random(),
             UnsignedLong.ZERO);
 
-    final Bytes encoded = beaconChainMethods.status().encodeRequest(expected);
-    final RequestRpcDecoder<StatusMessage> decoder =
-        beaconChainMethods.status().createRequestDecoder();
-    StatusMessage decodedRequest =
-        decoder.onDataReceived(Unpooled.wrappedBuffer(encoded.toArrayUnsafe())).orElseThrow();
-    decoder.close();
+    final Bytes encoded = methods.status().encodeRequest(expected);
+    final RpcRequestDecoder<StatusMessage> decoder = methods.status().createRequestDecoder();
+    StatusMessage decodedRequest = decoder.decodeRequest(inputStream(encoded));
 
     assertThat(decodedRequest).isEqualTo(expected);
   }
 
   @Test
   public void shouldDecodeStatusMessageRequest() throws Exception {
-    final RequestRpcDecoder<StatusMessage> decoder =
-        beaconChainMethods.status().createRequestDecoder();
+    final BeaconChainMethods methods = getMethods(RpcEncoding.SSZ);
+    final RpcRequestDecoder<StatusMessage> decoder = methods.status().createRequestDecoder();
     final StatusMessage decodedRequest =
-        decoder
-            .onDataReceived(Unpooled.wrappedBuffer(RECORDED_STATUS_REQUEST_BYTES.toArrayUnsafe()))
-            .orElseThrow();
+        decoder.decodeRequest(inputStream(SSZ_RECORDED_STATUS_REQUEST_BYTES));
     assertThat(decodedRequest).isEqualTo(RECORDED_STATUS_MESSAGE_DATA);
+  }
+
+  private InputStream inputStream(final Bytes bytes) {
+    return new ByteArrayInputStream(bytes.toArrayUnsafe());
+  }
+
+  public static Stream<Arguments> getEncodings() {
+    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
+    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
+  }
+
+  private BeaconChainMethods getMethods(final RpcEncoding rpcEncoding) {
+    return BeaconChainMethods.create(
+        asyncRunner,
+        peerLookup,
+        combinedChainDataClient,
+        recentChainData,
+        metricsSystem,
+        statusMessageFactory,
+        rpcEncoding);
   }
 }

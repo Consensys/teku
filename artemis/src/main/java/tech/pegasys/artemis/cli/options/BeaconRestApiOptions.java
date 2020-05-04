@@ -13,47 +13,39 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 public class BeaconRestApiOptions {
 
-  public static final String REST_API_PORT_OPTION_NAME = "--rest-api-port";
-  public static final String REST_API_DOCS_ENABLED_OPTION_NAME = "--rest-api-docs-enabled";
-  public static final String REST_API_ENABLED_OPTION_NAME = "--rest-api-enabled";
-  public static final String REST_API_INTERFACE_OPTION_NAME = "--rest-api-interface";
-
-  public static final int DEFAULT_REST_API_PORT = 5051;
-  public static final boolean DEFAULT_REST_API_DOCS_ENABLED = false;
-  public static final boolean DEFAULT_REST_API_ENABLED = false;
-  public static final String DEFAULT_REST_API_INTERFACE = "127.0.0.1";
-
-  @CommandLine.Option(
-      names = {REST_API_PORT_OPTION_NAME},
+  @Option(
+      names = {"--rest-api-port"},
       paramLabel = "<INTEGER>",
       description = "Port number of Beacon Rest API",
       arity = "1")
-  private int restApiPort = DEFAULT_REST_API_PORT;
+  private int restApiPort = 5051;
 
-  @CommandLine.Option(
-      names = {REST_API_DOCS_ENABLED_OPTION_NAME},
+  @Option(
+      names = {"--rest-api-docs-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable swagger-docs and swagger-ui endpoints",
-      arity = "1")
-  private boolean restApiDocsEnabled = DEFAULT_REST_API_DOCS_ENABLED;
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean restApiDocsEnabled = false;
 
-  @CommandLine.Option(
-      names = {REST_API_ENABLED_OPTION_NAME},
+  @Option(
+      names = {"--rest-api-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables Beacon Rest API",
-      arity = "1")
-  private boolean restApiEnabled = DEFAULT_REST_API_ENABLED;
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean restApiEnabled = false;
 
-  @CommandLine.Option(
-      names = {REST_API_INTERFACE_OPTION_NAME},
+  @Option(
+      names = {"--rest-api-interface"},
       paramLabel = "<NETWORK>",
       description = "Interface of Beacon Rest API",
       arity = "1")
-  private String restApiInterface = DEFAULT_REST_API_INTERFACE;
+  private String restApiInterface = "127.0.0.1";
 
   public int getRestApiPort() {
     return restApiPort;

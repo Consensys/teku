@@ -14,23 +14,21 @@
 package tech.pegasys.artemis.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.util.config.Constants.ZERO_HASH;
 
-import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLS;
+import tech.pegasys.artemis.core.blockvalidator.BatchBlockValidator;
+import tech.pegasys.artemis.core.blockvalidator.BlockValidator;
+import tech.pegasys.artemis.core.blockvalidator.BlockValidator.BlockValidationResult;
 import tech.pegasys.artemis.core.exceptions.BlockProcessingException;
 import tech.pegasys.artemis.core.exceptions.EpochProcessingException;
 import tech.pegasys.artemis.core.exceptions.SlotProcessingException;
@@ -38,7 +36,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.metrics.EpochMetrics;
 
@@ -46,16 +43,34 @@ public class StateTransition {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private static BlockValidator createDefaultBlockValidator() {
+    return new BatchBlockValidator();
+  }
+
   private final Optional<EpochMetrics> epochMetrics;
+  private final BlockValidator blockValidator;
 
   public StateTransition() {
-    this.epochMetrics = Optional.empty();
+    this(Optional.empty(), createDefaultBlockValidator());
   }
 
   public StateTransition(EpochMetrics epochMetrics) {
-    this.epochMetrics = Optional.of(epochMetrics);
+    this(Optional.of(epochMetrics), createDefaultBlockValidator());
   }
 
+  public StateTransition(BlockValidator blockValidator) {
+    this(Optional.empty(), blockValidator);
+  }
+
+  private StateTransition(Optional<EpochMetrics> epochMetrics, BlockValidator blockValidator) {
+    this.epochMetrics = epochMetrics;
+    this.blockValidator = blockValidator;
+  }
+
+  public BeaconState initiate(BeaconState preState, SignedBeaconBlock signed_block)
+      throws StateTransitionException {
+    return initiate(preState, signed_block, true);
+  }
   /**
    * v0.7.1
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
@@ -71,30 +86,21 @@ public class StateTransition {
       BeaconState preState, SignedBeaconBlock signed_block, boolean validateStateRootAndSignatures)
       throws StateTransitionException {
     try {
+      BlockValidator blockValidator =
+          validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOP;
       final BeaconBlock block = signed_block.getMessage();
 
       // Process slots (including those with no blocks) since block
       BeaconState postSlotState = process_slots(preState, block.getSlot());
 
-      // Verify signature
-      if (validateStateRootAndSignatures) {
-        checkArgument(
-            verify_block_signature(postSlotState, signed_block),
-            "state_transition: Verify signature");
-      }
       // Process_block
-      BeaconState postState = process_block(postSlotState, block, validateStateRootAndSignatures);
+      BeaconState postState = process_block(postSlotState, block);
 
-      Bytes32 stateRoot = postState.hash_tree_root();
-      // Validate state root (`validate_state_root == True` in production)
-      if (validateStateRootAndSignatures) {
-        Preconditions.checkArgument(
-            block.getState_root().equals(stateRoot),
-            "Block state root does NOT match the calculated state root!\n"
-                + "Block state root: "
-                + signed_block.getMessage().getState_root().toHexString()
-                + "New state root: "
-                + stateRoot.toHexString());
+      BlockValidationResult blockValidationResult =
+          blockValidator.validate(postSlotState, signed_block, postState).join();
+
+      if (!blockValidationResult.isValid()) {
+        throw new BlockProcessingException(blockValidationResult.getReason());
       }
 
       return postState;
@@ -107,23 +113,6 @@ public class StateTransition {
     }
   }
 
-  private static boolean verify_block_signature(
-      final BeaconState state, SignedBeaconBlock signed_block) {
-    final Validator proposer =
-        state
-            .getValidators()
-            .get(toIntExact(signed_block.getMessage().getProposer_index().longValue()));
-    final Bytes signing_root =
-        BeaconStateUtil.compute_signing_root(
-            signed_block.getMessage(), BeaconStateUtil.get_domain(state, DOMAIN_BEACON_PROPOSER));
-    return BLS.verify(proposer.getPubkey(), signing_root, signed_block.getSignature());
-  }
-
-  public BeaconState initiate(BeaconState state, SignedBeaconBlock block)
-      throws StateTransitionException {
-    return initiate(state, block, true);
-  }
-
   /**
    * v0.7.1
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
@@ -131,15 +120,14 @@ public class StateTransition {
    *
    * @throws BlockProcessingException
    */
-  private BeaconState process_block(
-      BeaconState preState, BeaconBlock block, boolean validateStateRootAndSignatures)
+  private BeaconState process_block(BeaconState preState, BeaconBlock block)
       throws BlockProcessingException {
     return preState.updated(
         state -> {
           BlockProcessorUtil.process_block_header(state, block);
-          BlockProcessorUtil.process_randao(state, block.getBody(), validateStateRootAndSignatures);
+          BlockProcessorUtil.process_randao_no_validation(state, block.getBody());
           BlockProcessorUtil.process_eth1_data(state, block.getBody());
-          BlockProcessorUtil.process_operations(state, block.getBody());
+          BlockProcessorUtil.process_operations_no_validation(state, block.getBody());
         });
   }
 

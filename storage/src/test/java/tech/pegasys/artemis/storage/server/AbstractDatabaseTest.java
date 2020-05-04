@@ -46,9 +46,10 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.Transaction;
-import tech.pegasys.artemis.storage.TrackingStorageUpdateChannel;
+import tech.pegasys.artemis.storage.api.TrackingStorageUpdateChannel;
 import tech.pegasys.artemis.storage.events.StorageUpdateResult;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.config.StateStorageMode;
 
 public abstract class AbstractDatabaseTest {
 

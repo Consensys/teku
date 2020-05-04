@@ -38,7 +38,6 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
 import tech.pegasys.teku.logging.LoggingConfiguration;
 import tech.pegasys.teku.logging.LoggingConfigurator;
-import tech.pegasys.teku.logging.LoggingDestination;
 import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconNode {
@@ -66,7 +65,7 @@ public class BeaconNode {
     this.serviceConfig =
         new ServiceConfig(new SystemTimeProvider(), eventBus, eventChannels, metricsSystem, config);
     this.serviceConfig.getConfig().validateConfig();
-    Constants.setConstants(config.getNetwork());
+    Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDirectory();
     if (transitionRecordDir != null) {
@@ -81,9 +80,11 @@ public class BeaconNode {
         new LoggingConfiguration(
             config.isLogColorEnabled(),
             config.isLogIncludeEventsEnabled(),
-            LoggingDestination.get(config.getLogDestination()),
+            config.getLogDestination(),
             config.getLogFile(),
             config.getLogFileNamePattern()));
+
+    STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
   }
 
   public void start() {

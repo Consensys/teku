@@ -35,7 +35,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.TrackingStorageUpdateChannel;
+import tech.pegasys.artemis.storage.api.TrackingStorageUpdateChannel;
+import tech.pegasys.artemis.util.config.StateStorageMode;
 import tech.pegasys.artemis.util.file.FileUtil;
 
 public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabaseTest {

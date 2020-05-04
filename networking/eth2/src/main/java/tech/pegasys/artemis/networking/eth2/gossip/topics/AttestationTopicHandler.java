@@ -13,40 +13,36 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static java.lang.StrictMath.toIntExact;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
-  private static final Logger LOG = LogManager.getLogger();
-  private final String attestationsTopic;
-  private final RecentChainData recentChainData;
+  private final UnsignedLong subnetId;
+  private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
-      final EventBus eventBus, final RecentChainData recentChainData, final int committeeIndex) {
-    super(eventBus);
-    this.attestationsTopic = getTopic(committeeIndex);
-    this.recentChainData = recentChainData;
-  }
-
-  private static String getTopic(final int committeeIndex) {
-    return "/eth2/index" + committeeIndex + "_beacon_attestation/ssz";
+      final EventBus eventBus,
+      final AttestationValidator attestationValidator,
+      final UnsignedLong subnetId,
+      final ForkInfo forkInfo) {
+    super(eventBus, forkInfo);
+    this.attestationValidator = attestationValidator;
+    this.subnetId = subnetId;
   }
 
   @Override
-  public String getTopic() {
-    return attestationsTopic;
+  public String getTopicName() {
+    return "committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation";
   }
 
   @Override
@@ -55,25 +51,7 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   }
 
   @Override
-  protected boolean validateData(final Attestation attestation) {
-    final BeaconState state =
-        recentChainData.getStore().getBlockState(attestation.getData().getBeacon_block_root());
-    if (state == null) {
-      LOG.trace(
-          "Attestation BeaconState was not found in Store. Attestation: ({}), block_root: ({}) on {}",
-          attestation.hash_tree_root(),
-          attestation.getData().getBeacon_block_root(),
-          getTopic());
-      return false;
-    }
-    final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
-    final boolean validAttestation = is_valid_indexed_attestation(state, indexedAttestation);
-    if (!validAttestation) {
-      LOG.trace(
-          "Received invalid attestation ({}) on {}", attestation.hash_tree_root(), getTopic());
-      return false;
-    }
-
-    return true;
+  protected ValidationResult validateData(final Attestation attestation) {
+    return attestationValidator.validate(attestation, subnetId);
   }
 }

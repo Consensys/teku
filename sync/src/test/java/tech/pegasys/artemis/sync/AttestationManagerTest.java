@@ -36,6 +36,7 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
@@ -49,7 +50,7 @@ class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final PendingPool<DelayableAttestation> pendingAttestations =
-      PendingPool.createForAttestations(eventBus);
+      PendingPool.createForAttestations();
   private final FutureItems<DelayableAttestation> futureAttestations =
       new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
 
@@ -90,16 +91,16 @@ class AttestationManagerTest {
 
   @Test
   public void shouldProcessAggregatesThatAreReadyImmediately() {
-    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
-    when(attestationProcessor.processAttestation(aggregateAndProof.getAggregate()))
-        .thenReturn(SUCCESSFUL);
+    final SignedAggregateAndProof aggregateAndProof =
+        dataStructureUtil.randomSignedAggregateAndProof();
+    final Attestation aggregate = aggregateAndProof.getMessage().getAggregate();
+    when(attestationProcessor.processAttestation(aggregate)).thenReturn(SUCCESSFUL);
     eventBus.post(aggregateAndProof);
 
-    verify(attestationProcessor).processAttestation(aggregateAndProof.getAggregate());
+    verify(attestationProcessor).processAttestation(aggregate);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(processedAggregateEvents)
-        .containsExactly(new ProcessedAggregateEvent(aggregateAndProof.getAggregate()));
+    assertThat(processedAggregateEvents).containsExactly(new ProcessedAggregateEvent(aggregate));
     assertThat(processedAttestationEvents).isEmpty();
   }
 
@@ -197,8 +198,10 @@ class AttestationManagerTest {
   @Test
   public void shouldNotPublishProcessedAggregateEventUntilDelayedAggregateIsProcessedSuccessful() {
     final Attestation attestation = attestationFromSlot(100);
-    final AggregateAndProof aggregateAndProof =
-        new AggregateAndProof(UnsignedLong.ZERO, BLSSignature.empty(), attestation);
+    final SignedAggregateAndProof aggregateAndProof =
+        new SignedAggregateAndProof(
+            new AggregateAndProof(UnsignedLong.ZERO, attestation, BLSSignature.empty()),
+            BLSSignature.empty());
     when(attestationProcessor.processAttestation(attestation))
         .thenReturn(FAILED_NOT_FROM_PAST)
         .thenReturn(SUCCESSFUL);

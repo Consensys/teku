@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_commi
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.artemis.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
@@ -37,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 
@@ -272,5 +274,13 @@ public class CommitteeUtil {
 
   public static boolean isAggregator(final BLSSignature slot_signature, final int modulo) {
     return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo) == 0;
+  }
+
+  public static UnsignedLong getSubnetId(final Attestation attestation) {
+    return committeeIndexToSubnetId(attestation.getData().getIndex());
+  }
+
+  public static UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
+    return committeeIndex.mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT));
   }
 }

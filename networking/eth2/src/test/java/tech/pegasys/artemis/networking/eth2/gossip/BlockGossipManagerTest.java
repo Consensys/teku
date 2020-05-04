@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,10 +23,12 @@ import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.core.StateTransition;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
@@ -37,14 +39,19 @@ public class BlockGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+  private final BlockValidator blockValidator =
+      new BlockValidator(recentChainData, new StateTransition());
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @BeforeEach
   public void setup() {
-    doReturn(topicChannel).when(gossipNetwork).subscribe(eq(BlockTopicHandler.BLOCKS_TOPIC), any());
-    new BlockGossipManager(gossipNetwork, eventBus, storageClient);
+    doReturn(topicChannel)
+        .when(gossipNetwork)
+        .subscribe(contains(BlockTopicHandler.TOPIC_NAME), any());
+    new BlockGossipManager(
+        gossipNetwork, eventBus, blockValidator, dataStructureUtil.randomForkInfo());
   }
 
   @Test

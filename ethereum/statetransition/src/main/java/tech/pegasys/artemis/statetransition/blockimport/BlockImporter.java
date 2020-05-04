@@ -25,8 +25,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.client.RecentChainData;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
@@ -52,8 +52,8 @@ public class BlockImporter {
             block.getMessage().hash_tree_root());
         return BlockImportResult.knownBlock(block);
       }
-      Store.Transaction transaction = recentChainData.startStoreTransaction();
-      final BlockImportResult result = forkChoice.onBlock(transaction, block);
+
+      BlockImportResult result = forkChoice.onBlock(block);
       if (!result.isSuccessful()) {
         LOG.trace(
             "Failed to import block for reason {}: {}",
@@ -64,7 +64,6 @@ public class BlockImporter {
       LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
 
       final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
-      transaction.commit().join();
       eventBus.post(new ImportedBlockEvent(block));
       record.ifPresent(eventBus::post);
 
@@ -73,6 +72,10 @@ public class BlockImporter {
       LOG.error("Internal error while importing block: " + block.getMessage(), e);
       return BlockImportResult.internalError(e);
     }
+  }
+
+  public SafeFuture<BlockImportResult> importBlockAsync(final SignedBeaconBlock block) {
+    return SafeFuture.of(() -> importBlock(block));
   }
 
   @Subscribe

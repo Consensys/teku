@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.forkchoice;
 
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.artemis.statetransition.forkchoice.ForkChoiceUtil.on_block;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_attestation;
+import static tech.pegasys.artemis.core.ForkChoiceUtil.on_block;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.core.StateTransition;
@@ -45,18 +45,29 @@ public class ForkChoice implements FinalizedCheckpointChannel {
 
   private void initializeProtoArrayForkChoice() {
     protoArrayForkChoiceStrategy = ProtoArrayForkChoiceStrategy.create(recentChainData.getStore());
+    processHead();
   }
 
   public Bytes32 processHead() {
-    Store store = recentChainData.getStore();
-    Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(store);
-    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    Store.Transaction transaction = recentChainData.startStoreTransaction();
+    Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(transaction);
+    transaction.commit(() -> {}, "Failed to persist validator vote changes.");
+    BeaconBlock headBlock = recentChainData.getStore().getBlock(headBlockRoot);
     recentChainData.updateBestBlock(headBlockRoot, headBlock.getSlot());
     return headBlockRoot;
   }
 
-  public BlockImportResult onBlock(final MutableStore store, final SignedBeaconBlock block) {
-    return on_block(store, block, stateTransition, protoArrayForkChoiceStrategy);
+  public BlockImportResult onBlock(final SignedBeaconBlock block) {
+    Store.Transaction transaction = recentChainData.startStoreTransaction();
+    final BlockImportResult result = on_block(transaction, block, stateTransition);
+
+    if (!result.isSuccessful()) {
+      return result;
+    }
+
+    transaction.commit().join();
+    protoArrayForkChoiceStrategy.onBlock(recentChainData.getStore(), block.getMessage());
+    return result;
   }
 
   public AttestationProcessingResult onAttestation(

@@ -13,12 +13,14 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.getValidatorPubKey;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
@@ -32,15 +34,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.BLS;
 import tech.pegasys.artemis.bls.BLSPublicKey;
 import tech.pegasys.artemis.bls.BLSSignature;
+import tech.pegasys.artemis.bls.BLSSignatureVerifier;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.ssz.SSZTypes.Bitlist;
 import tech.pegasys.artemis.ssz.SSZTypes.SSZList;
@@ -114,7 +115,11 @@ public class AttestationUtil {
   public static List<Integer> get_attesting_indices(
       BeaconState state, AttestationData data, Bitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
-
+    checkArgument(
+        bits.getCurrentSize() == committee.size(),
+        "Aggregation bitlist size (%s) does not match committee size (%s)",
+        bits.getCurrentSize(),
+        committee.size());
     Set<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
       int index = committee.get(i);
@@ -133,19 +138,26 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
-  public static Boolean is_valid_indexed_attestation(
+  public static boolean is_valid_indexed_attestation(
       BeaconState state, IndexedAttestation indexed_attestation) {
+    return is_valid_indexed_attestation(state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
+  }
+
+  public static boolean is_valid_indexed_attestation(
+      BeaconState state,
+      IndexedAttestation indexed_attestation,
+      BLSSignatureVerifier signatureVerifier) {
     SSZList<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
     if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
-      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
+      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
       return false;
     }
 
     List<UnsignedLong> bit_0_indices_sorted =
         attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
     if (!attesting_indices.equals(bit_0_indices_sorted)) {
-      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
+      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
@@ -160,17 +172,11 @@ public class AttestationUtil {
             state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     Bytes signing_root = compute_signing_root(indexed_attestation.getData(), domain);
 
-    if (!BLS.fastAggregateVerify(pubkeys, signing_root, signature)) {
-      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+    if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
+      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;
-  }
-
-  private static BLSPublicKey getValidatorPubKey(BeaconState state, UnsignedLong validatorIndex) {
-    return BeaconStateCache.getTransitionCaches(state)
-        .getValidatorsPubKeys()
-        .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey());
   }
 
   // Set bits of the newAttestation on the oldBitlist

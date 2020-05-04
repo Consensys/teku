@@ -13,72 +13,49 @@
 
 package tech.pegasys.artemis.cli.options;
 
-import picocli.CommandLine;
+import picocli.CommandLine.Option;
 
 public class InteropOptions {
-  public static final String INTEROP_GENESIS_TIME_OPTION_NAME = "--Xinterop-genesis-time";
-  public static final String INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME =
-      "--Xinterop-owned-validator-start-index";
-  public static final String INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME =
-      "--Xinterop-owned-validator-count";
-  public static final String INTEROP_START_STATE_OPTION_NAME = "--Xinterop-start-state";
-  public static final String INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME =
-      "--Xinterop-number-of-validators";
-  public static final String INTEROP_ENABLED_OPTION_NAME = "--Xinterop-enabled";
 
-  public static final Integer DEFAULT_X_INTEROP_GENESIS_TIME = null;
-  public static final int DEFAULT_X_INTEROP_OWNED_VALIDATOR_START_INDEX = 0;
-  public static final int DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT = 0;
-  public static final String DEFAULT_X_INTEROP_START_STATE = "";
-  public static final int DEFAULT_X_INTEROP_NUMBER_OF_VALIDATORS = 64;
-  public static final boolean DEFAULT_X_INTEROP_ENABLED = false;
-
-  @CommandLine.Option(
+  @Option(
       hidden = true,
-      names = {INTEROP_GENESIS_TIME_OPTION_NAME},
+      names = {"--Xinterop-genesis-time"},
       paramLabel = "<INTEGER>",
       description = "Time of mocked genesis",
       arity = "1")
-  private Integer interopGenesisTime = DEFAULT_X_INTEROP_GENESIS_TIME;
+  private int interopGenesisTime = 0;
 
-  @CommandLine.Option(
+  @Option(
       hidden = true,
-      names = {INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME},
+      names = {"--Xinterop-owned-validator-start-index"},
       paramLabel = "<INTEGER>",
       description = "Index of first validator owned by this node",
       arity = "1")
-  private int interopOwnerValidatorStartIndex = DEFAULT_X_INTEROP_OWNED_VALIDATOR_START_INDEX;
+  private int interopOwnerValidatorStartIndex = 0;
 
-  @CommandLine.Option(
+  @Option(
       hidden = true,
-      names = {INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME},
+      names = {"--Xinterop-owned-validator-count"},
       paramLabel = "<INTEGER>",
       description = "Number of validators owned by this node",
       arity = "1")
-  private int interopOwnerValidatorCount = DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
+  private int interopOwnerValidatorCount = 0;
 
-  @CommandLine.Option(
+  @Option(
       hidden = true,
-      names = {INTEROP_START_STATE_OPTION_NAME},
-      paramLabel = "<STRING>",
-      description = "Initial BeaconState to load",
-      arity = "1")
-  private String interopStartState = DEFAULT_X_INTEROP_START_STATE;
-
-  @CommandLine.Option(
-      hidden = true,
-      names = {INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME},
+      names = {"--Xinterop-number-of-validators"},
       paramLabel = "<INTEGER>",
       description = "Represents the total number of validators in the network")
-  private int interopNumberOfValidators = DEFAULT_X_INTEROP_NUMBER_OF_VALIDATORS;
+  private int interopNumberOfValidators = 64;
 
-  @CommandLine.Option(
+  @Option(
       hidden = true,
-      names = {INTEROP_ENABLED_OPTION_NAME},
+      names = {"--Xinterop-enabled"},
       paramLabel = "<BOOLEAN>",
+      fallbackValue = "true",
       description = "Enables developer options for testing",
-      arity = "1")
-  private boolean interopEnabled = DEFAULT_X_INTEROP_ENABLED;
+      arity = "0..1")
+  private boolean interopEnabled = false;
 
   public Integer getInteropGenesisTime() {
     return interopGenesisTime;
@@ -90,10 +67,6 @@ public class InteropOptions {
 
   public int getInteropOwnerValidatorCount() {
     return interopOwnerValidatorCount;
-  }
-
-  public String getInteropStartState() {
-    return interopStartState;
   }
 
   public int getInteropNumberOfValidators() {

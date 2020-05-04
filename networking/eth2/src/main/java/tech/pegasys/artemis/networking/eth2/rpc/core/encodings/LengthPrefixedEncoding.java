@@ -13,127 +13,53 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core.encodings;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.InvalidProtocolBufferException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.OptionalInt;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.eth2.compression.Compressor;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 
+/**
+ * Represents an rpc payload encoding where the header consists of a single protobuf varint holding
+ * the length of the uncompressed payload
+ */
 public class LengthPrefixedEncoding implements RpcEncoding {
-  private static final Logger LOG = LogManager.getLogger();
-  private static final int MAX_CHUNK_SIZE = 1048576;
-  // Any protobuf length requiring more bytes than this will also be bigger.
-  private static final int MAXIMUM_VARINT_LENGTH = writeVarInt(MAX_CHUNK_SIZE).size();
-
   private final String name;
-  private final RpcPayloadEncoders payloadEncoder;
+  private final RpcPayloadEncoders payloadEncoders;
+  private final Compressor compressor;
 
-  LengthPrefixedEncoding(final String name, final RpcPayloadEncoders payloadEncoder) {
+  LengthPrefixedEncoding(
+      final String name, final RpcPayloadEncoders payloadEncoders, final Compressor compressor) {
     this.name = name;
-    this.payloadEncoder = payloadEncoder;
+    this.payloadEncoders = payloadEncoders;
+    this.compressor = compressor;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> Bytes encode(final T message) {
-    final RpcPayloadEncoder<T> encoder = payloadEncoder.getEncoder((Class<T>) message.getClass());
-    final Bytes payload = encoder.encode(message);
+  public <T> Bytes encodePayload(final T message) {
+    final RpcPayloadEncoder<T> payloadEncoder =
+        payloadEncoders.getEncoder((Class<T>) message.getClass());
+    final Bytes payload = payloadEncoder.encode(message);
     return encodeMessageWithLength(payload);
   }
 
-  private Bytes encodeMessageWithLength(final Bytes payload) {
-    final Bytes header = writeVarInt(payload.size());
-    return Bytes.concatenate(header, payload);
-  }
-
   @Override
-  public <T> T decode(final Bytes message, final Class<T> clazz) throws RpcException {
-    return decode(message, payloadEncoder.getEncoder(clazz));
+  public <T> T decodePayload(final InputStream inputStream, final Class<T> payloadType)
+      throws RpcException {
+    final LengthPrefixedPayloadDecoder<T> payloadDecoder =
+        new LengthPrefixedPayloadDecoder<>(payloadEncoders.getEncoder(payloadType), compressor);
+    return payloadDecoder.decodePayload(inputStream);
   }
 
-  private <T> T decode(final Bytes message, final RpcPayloadEncoder<T> parser) throws RpcException {
-    try {
-      final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
-      final int expectedLength;
-      try {
-        expectedLength = in.readRawVarint32();
-      } catch (final InvalidProtocolBufferException e) {
-        LOG.trace("Invalid length prefix", e);
-        throw RpcException.MALFORMED_REQUEST_ERROR;
-      }
-
-      if (expectedLength > MAX_CHUNK_SIZE) {
-        LOG.trace("Rejecting message as length is too long");
-        throw RpcException.CHUNK_TOO_LONG_ERROR;
-      }
-
-      final Bytes payload;
-      try {
-        payload = Bytes.wrap(in.readRawBytes(expectedLength));
-      } catch (final InvalidProtocolBufferException e) {
-        LOG.trace("Failed to read message data", e);
-        throw RpcException.INCORRECT_LENGTH_ERROR;
-      }
-
-      if (!in.isAtEnd()) {
-        LOG.trace("Rejecting message because actual message length exceeds specified length");
-        throw RpcException.INCORRECT_LENGTH_ERROR;
-      }
-
-      return parser.decode(payload);
-    } catch (IOException e) {
-      LOG.error("Unexpected error while processing message: " + message, e);
-      throw RpcException.SERVER_ERROR;
-    }
+  private Bytes encodeMessageWithLength(final Bytes payload) {
+    final Bytes header = ProtobufEncoder.encodeVarInt(payload.size());
+    final Bytes compressedPayload;
+    compressedPayload = compressor.compress(payload);
+    return Bytes.concatenate(header, compressedPayload);
   }
 
   @Override
   public String getName() {
     return name;
-  }
-
-  @Override
-  public OptionalInt getMessageLength(final Bytes message) throws RpcException {
-    final OptionalInt maybePrefixLength = getLengthPrefixSize(message);
-    if (maybePrefixLength.isEmpty()) {
-      return OptionalInt.empty();
-    }
-    final int prefixLength = maybePrefixLength.getAsInt();
-    final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
-    try {
-      return OptionalInt.of(in.readRawVarint32() + prefixLength);
-    } catch (final IOException e) {
-      throw RpcException.MALFORMED_MESSAGE_LENGTH_ERROR;
-    }
-  }
-
-  // Var int ends at first byte where (b & 0x80) == 0
-  private OptionalInt getLengthPrefixSize(final Bytes message) throws RpcException {
-    for (int i = 0; i < message.size() && i <= MAXIMUM_VARINT_LENGTH; i++) {
-      if (i >= MAXIMUM_VARINT_LENGTH) {
-        throw RpcException.CHUNK_TOO_LONG_ERROR;
-      }
-      if ((message.get(i) & 0x80) == 0) {
-        return OptionalInt.of(i + 1);
-      }
-    }
-    return OptionalInt.empty();
-  }
-
-  private static Bytes writeVarInt(final int value) {
-    try {
-      final ByteArrayOutputStream output = new ByteArrayOutputStream();
-      final CodedOutputStream codedOutputStream = CodedOutputStream.newInstance(output);
-      codedOutputStream.writeUInt32NoTag(value);
-      codedOutputStream.flush();
-      return Bytes.wrap(output.toByteArray());
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 }

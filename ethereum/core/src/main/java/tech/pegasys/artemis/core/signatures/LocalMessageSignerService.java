@@ -42,6 +42,11 @@ public class LocalMessageSignerService implements MessageSignerService {
   }
 
   @Override
+  public SafeFuture<BLSSignature> signAggregateAndProof(final Bytes signingRoot) {
+    return sign(signingRoot);
+  }
+
+  @Override
   public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
     return sign(signingRoot);
   }

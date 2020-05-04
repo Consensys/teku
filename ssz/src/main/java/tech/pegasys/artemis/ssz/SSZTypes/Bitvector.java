@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.ssz.SSZTypes;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
 
 import com.google.common.base.Objects;
@@ -40,6 +41,13 @@ public class Bitvector {
     this.size = bitvector.size;
   }
 
+  public Bitvector(Iterable<Integer> indicesToSet, int size) {
+    this(size);
+    for (int i : indicesToSet) {
+      setBit(i);
+    }
+  }
+
   public void setBit(int i) {
     checkElementIndex(i, size);
     data.set(i);
@@ -61,12 +69,17 @@ public class Bitvector {
 
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
-    byte[] array = new byte[(size + 7) / 8];
+    byte[] array = new byte[sszSerializationLength(size)];
     IntStream.range(0, size).forEach(i -> array[i / 8] |= ((data.get(i) ? 1 : 0) << (i % 8)));
     return Bytes.wrap(array);
   }
 
   public static Bitvector fromBytes(Bytes bytes, int size) {
+    checkArgument(
+        bytes.size() == sszSerializationLength(size),
+        "Incorrect data size (%s) for Bitvector of size %s",
+        bytes.size(),
+        size);
     BitSet bitset = new BitSet(size);
 
     for (int i = size - 1; i >= 0; i--) {
@@ -76,6 +89,10 @@ public class Bitvector {
     }
 
     return new Bitvector(bitset, size);
+  }
+
+  private static int sszSerializationLength(final int size) {
+    return (size + 7) / 8;
   }
 
   public Bitvector rightShift(int i) {

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.gossip;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,32 +23,35 @@ import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
+import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AggregateGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
-  private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
+  private final SignedAggregateAndProofValidator validator =
+      mock(SignedAggregateAndProofValidator.class);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @BeforeEach
   public void setup() {
-    doReturn(topicChannel).when(gossipNetwork).subscribe(eq(AggregateTopicHandler.TOPIC), any());
-    new AggregateGossipManager(gossipNetwork, eventBus, storageClient);
+    doReturn(topicChannel)
+        .when(gossipNetwork)
+        .subscribe(contains(AggregateTopicHandler.TOPIC_NAME), any());
+    new AggregateGossipManager(
+        gossipNetwork, eventBus, validator, dataStructureUtil.randomForkInfo());
   }
 
   @Test
   public void onNewAggregate() {
-    final AggregateAndProof aggregate = dataStructureUtil.randomAggregateAndProof();
+    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
 
     eventBus.post(aggregate);
