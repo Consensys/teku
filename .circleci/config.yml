@@ -295,7 +295,7 @@ jobs:
   publishAPIDoc:
     executor: node_executor
     steps:
-      - prepare
+      - checkout
       - attach_workspace:
           at: /tmp/project
       - add_ssh_keys:
