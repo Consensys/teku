@@ -34,7 +34,7 @@ export GENESIS_FILE="/tmp/genesis.ssz"
 CURRENT_TIME=$(date +%s)
 GENESIS_TIME=$((CURRENT_TIME + START_DELAY))
 
-export START_ARTEMIS=true
+export START_TEKU=true
 export START_LIGHTHOUSE=true
 export START_TRINITY=false
 export START_NIMBUS=false
@@ -44,10 +44,10 @@ export START_HARMONY=true
 
 zcli keys generate |zcli genesis mock --count $VALIDATOR_COUNT --genesis-time $GENESIS_TIME --out $GENESIS_FILE
 
-if [ "$START_ARTEMIS" = true ]
+if [ "$START_TEKU" = true ]
 then
 
-    export ARTEMIS_JAVA_VERSION=openjdk64-11.0.1
+    export TEKU_JAVA_VERSION=openjdk64-11.0.1
     SCRIPT_DIR=`pwd`
     CONFIG_DIR=$SCRIPT_DIR/../config
 
@@ -75,14 +75,14 @@ then
 
     #if [ "$PEERS" != "" ]
     #then
-    #     ARTEMIS_PEERS=$(echo $PEERS | awk '{gsub(/\./,"\\.")}1' | awk '{gsub(/\//,"\\/")}1')
-    #     ARTEMIS_PEERS=$(echo [\"$ARTEMIS_PEERS\"] )
-    #     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" peers $ARTEMIS_PEERS
+    #     TEKU_PEERS=$(echo $PEERS | awk '{gsub(/\./,"\\.")}1' | awk '{gsub(/\//,"\\/")}1')
+    #     TEKU_PEERS=$(echo [\"$TEKU_PEERS\"] )
+    #     sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" peers $TEKU_PEERS
          sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" discovery "\"static\""
          sh configurator.sh "$CONFIG_DIR/runConfig.0.yaml" isBootnode false
     #fi
     sed -i "" '10d' "$CONFIG_DIR/runConfig.0.yaml"
-    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./teku --config=$CONFIG_DIR/runConfig.0.yaml --logging=DEBUG; sleep 20"
+    tmux new-session -d -s foo "jenv local $TEKU_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./teku --config=$CONFIG_DIR/runConfig.0.yaml --logging=DEBUG; sleep 20"
 fi
 
 
@@ -93,7 +93,7 @@ then
     #TODO: make port configurable
     export LISTEN_ADDRESS=127.0.0.1
     export PORT=19001
-    #TODO: use a relative path to lighthouse dir.  the best way would be to deploy it to $ARTEMIS_ROOT/scripts/demo/node_lighthouse
+    #TODO: use a relative path to lighthouse dir.  the best way would be to deploy it to $TEKU_ROOT/scripts/demo/node_lighthouse
     export DIR=$HOME/projects/consensys/pegasys/lighthouse/lighthouse/target/release
 
     export RUST_LOG=libp2p_gossipsub=debug
