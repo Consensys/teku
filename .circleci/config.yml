@@ -44,6 +44,10 @@ executors:
       docker_layer_caching: true
     working_directory: ~/project
 
+  node_executor:
+    docker:
+      - image: circleci/node:12.9.0-stretch
+
 commands:
   prepare:
     description: "Prepare"
@@ -268,13 +272,10 @@ jobs:
             docker login --username "${DOCKER_USER}" --password "${DOCKER_PASSWORD}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
-  publishAPIDoc:
+  extractAPISpec:
     executor: medium_executor
     steps:
       - prepare
-      - add_ssh_keys:
-          fingerprints:
-            - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
       - run:
           name: Build runnable Teku binaries
           command: |
@@ -282,30 +283,78 @@ jobs:
       - run:
           name: Extract OpenAPI JSON
           command: |
+            JSON_SPEC_FILE="latest.json"
+            if [ "${CIRCLE_TAG}" != "" ];
+            then
+              JSON_SPEC_FILE="${CIRCLE_TAG}.json"
+            fi
             build/install/teku/bin/teku --rest-api-docs-enabled=true &
             TEKU_PID=$!
-            wget -O api.json http://localhost:5051/swagger-docs
+            wget -O "${JSON_SPEC_FILE}" http://localhost:5051/swagger-docs
             kill $TEKU_PID
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - $JSON_SPEC_FILE
+
+  publishAPIDoc:
+    executor: node_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: /tmp/project
+      - add_ssh_keys:
+          fingerprints:
+            - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
       - run:
           name: Set Git user params
           command: |
             git config --global user.name $CIRCLE_USERNAME
             git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
       - run:
-          name: Deploy to GitHub Pages
+          name: Chechout GitHub Pages branch
           command: |
             readonly BRANCH='gh-pages-test-do-not-remove-yet'
-
-            echo "Debugging env vars:"
-            echo "BRANCH=$BRANCH"
-
             git checkout "$BRANCH" || git checkout -b "$BRANCH"
-            # pull might fail if the branch was just created
-            git pull || true
-
-            git add api.json
-            git commit -m "[skip ci] update Teku REST API OpenAPI JSON definition"
-            git push origin "$BRANCH"
+            ls -la .
+            ls -la /tmp/project
+#      - restore_cache:
+#          keys:
+#            - deps-{{ checksum "package.json" }}
+#      - run:
+#          name: Install dependencies
+#          command: |
+#            npm install
+#      - save_cache:
+#          paths:
+#            - ./node_modules
+#          key: deps-{{ checksum "package.json" }}
+#      - run:
+#          name: Run markdown link checker
+#          command: |
+#            npm run test:links
+#      - run:
+#          name: Generate API doc site files
+#          command: |
+#            ./gradlew --no-daemon --parallel updateAPIVersionFile
+#      - run:
+#          name: Deploy to GitHub Pages
+#          command: |
+#            readonly BRANCH='gh-pages-test-do-not-remove-yet'
+#
+#            JSON_SPEC_FILE="latest.json"
+#            if [ "${CIRCLE_TAG}" != "" ];
+#            then
+#              JSON_SPEC_FILE="${CIRCLE_TAG}.json"
+#            fi
+#
+#            git checkout "$BRANCH" || git checkout -b "$BRANCH"
+#            # pull might fail if the branch was just created
+#            git pull || true
+#
+#            git add "${JSON_SPEC_FILE}"
+#            git commit -m "[skip ci] update Teku REST API OpenAPI JSON definition"
+#            git push origin "$BRANCH"
 
 workflows:
   version: 2
@@ -358,10 +407,13 @@ workflows:
       #            - acceptanceTests
       #            - referenceTests
       #            - docker
+      - extractAPISpec
       - publishAPIDoc
+          requires:
+            - extractAPISpec
 #          filters:
 #            branches:
-#              only: pull/1585
+#              only: master
 
   nightly:
     triggers:
