@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.networking.eth2.rpc.core.AsyncResponseProcessor.AsyncProcessingErrorHandler;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
 
@@ -30,7 +31,7 @@ public class AsyncResponseProcessorTest {
   private final List<String> responses = new ArrayList<>();
   private final List<Throwable> errors = new ArrayList<>();
   private final Consumer<String> defaultProcessor = responses::add;
-  private final Consumer<Throwable> errorConsumer = errors::add;
+  private final AsyncProcessingErrorHandler errorConsumer = errors::add;
 
   private final AtomicReference<Consumer<String>> requestProcessor =
       new AtomicReference<>(defaultProcessor);

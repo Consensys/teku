@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -22,10 +21,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,21 +52,17 @@ public class AttestationSubnetSubscriptionsTest {
 
   @Test
   void getChannelReturnsEmptyIfNotSubscribedToSubnet() {
-    UnsignedLong COMMITTEE_INDEX = UnsignedLong.ONE;
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX);
+    int COMMITTEE_INDEX = 1;
+    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX);
     assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX)).isNotEqualTo(Optional.empty());
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX.plus(UnsignedLong.ONE)))
-        .isEqualTo(Optional.empty());
+    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX + 1)).isEqualTo(Optional.empty());
   }
 
   @Test
-  void getChannelReturnsTheChannelFromSameSubnetEvenIfNotSubscribedToSpecificCommittee() {
-    UnsignedLong COMMITTEE_INDEX = UnsignedLong.ONE;
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX);
+  void getChannelReturnsTheChannelFromSubnet() {
+    int COMMITTEE_INDEX = 1;
+    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX);
     assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX)).isNotEqualTo(Optional.empty());
-    assertThat(
-            subnetSubscriptions.getChannel(COMMITTEE_INDEX.plus(valueOf(ATTESTATION_SUBNET_COUNT))))
-        .isNotEqualTo(Optional.empty());
   }
 
   @Test
@@ -79,11 +72,11 @@ public class AttestationSubnetSubscriptionsTest {
     when(gossipNetwork.subscribe(contains("committee_index1"), any())).thenReturn(topicChannel1);
     when(gossipNetwork.subscribe(contains("committee_index2"), any())).thenReturn(topicChannel2);
 
-    UnsignedLong COMMITTEE_INDEX_1 = UnsignedLong.ONE;
-    UnsignedLong COMMITTEE_INDEX_2 = UnsignedLong.valueOf(2);
+    int COMMITTEE_INDEX_1 = 1;
+    int COMMITTEE_INDEX_2 = 2;
 
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX_1);
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX_2);
+    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX_1);
+    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX_2);
 
     verifyNoInteractions(topicChannel2);
 
@@ -97,63 +90,21 @@ public class AttestationSubnetSubscriptionsTest {
   }
 
   @Test
-  void shouldSubscribeToCommitteesOnSameSubnet() {
-    TopicChannel topicChannel = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("committee_index1"), any())).thenReturn(topicChannel);
-
-    UnsignedLong COMMITTEE_INDEX_1 = UnsignedLong.ONE;
-    UnsignedLong COMMITTEE_INDEX_65 = UnsignedLong.valueOf(65);
-
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX_1);
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX_65);
-
-    verify(gossipNetwork).subscribe(any(), any());
-
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_1))
-        .isEqualTo(Optional.of(topicChannel));
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_65))
-        .isEqualTo(Optional.of(topicChannel));
-  }
-
-  @Test
   void shouldUnsubscribeFromOnlyCommitteeOnSubnet() {
     TopicChannel topicChannel = mock(TopicChannel.class);
     when(gossipNetwork.subscribe(contains("committee_index1"), any())).thenReturn(topicChannel);
 
-    UnsignedLong COMMITTEE_INDEX_1 = UnsignedLong.ONE;
+    int COMMITTEE_INDEX_1 = 1;
 
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX_1);
+    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX_1);
 
     verify(gossipNetwork).subscribe(any(), any());
 
     assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_1))
         .isEqualTo(Optional.of(topicChannel));
 
-    subnetSubscriptions.unsubscribeFromCommitteeTopic(COMMITTEE_INDEX_1);
+    subnetSubscriptions.unsubscribeFromSubnetId(COMMITTEE_INDEX_1);
 
     verify(topicChannel).close();
-  }
-
-  @Test
-  void shouldNotUnsubscribeFromSubnetWhenOtherCommitteesStillRequireIt() {
-    TopicChannel topicChannel = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("committee_index1"), any())).thenReturn(topicChannel);
-
-    UnsignedLong COMMITTEE_INDEX_1 = UnsignedLong.ONE;
-    UnsignedLong COMMITTEE_INDEX_65 = UnsignedLong.valueOf(65);
-
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX_1);
-    subnetSubscriptions.subscribeToCommitteeTopic(COMMITTEE_INDEX_65);
-
-    verify(gossipNetwork).subscribe(any(), any());
-
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_1))
-        .isEqualTo(Optional.of(topicChannel));
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_65))
-        .isEqualTo(Optional.of(topicChannel));
-
-    subnetSubscriptions.unsubscribeFromCommitteeTopic(COMMITTEE_INDEX_1);
-
-    verifyNoInteractions(topicChannel);
   }
 }

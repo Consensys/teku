@@ -23,7 +23,6 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Validat
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +41,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationTopicHandlerTest {
 
-  private static final UnsignedLong SUBNET_ID = UnsignedLong.valueOf(1);
+  private static final int SUBNET_ID = 1;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);

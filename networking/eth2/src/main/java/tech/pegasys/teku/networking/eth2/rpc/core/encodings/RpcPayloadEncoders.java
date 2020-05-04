@@ -19,6 +19,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.SimpleOffsetSszEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.StringSszEncoder;
 
 public class RpcPayloadEncoders {
 
@@ -30,6 +34,15 @@ public class RpcPayloadEncoders {
       final Function<Class<?>, RpcPayloadEncoder<?>> defaultEncoderProvider) {
     this.encoders = encoders;
     this.defaultEncoderProvider = defaultEncoderProvider;
+  }
+
+  public static RpcPayloadEncoders createSszEncoders() {
+    return RpcPayloadEncoders.builder()
+        .withEncoder(
+            BeaconBlocksByRootRequestMessage.class, new BeaconBlocksByRootRequestMessageEncoder())
+        .withEncoder(String.class, new StringSszEncoder())
+        .defaultEncoderProvider(SimpleOffsetSszEncoder::new)
+        .build();
   }
 
   public static RpcPayloadEncoders.Builder builder() {

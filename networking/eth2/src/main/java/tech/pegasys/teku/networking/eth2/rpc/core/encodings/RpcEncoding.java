@@ -13,31 +13,41 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
-import java.util.OptionalInt;
+import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.networking.eth2.compression.NoopCompressor;
+import tech.pegasys.teku.networking.eth2.compression.SnappyCompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.SimpleOffsetSszEncoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.StringSszEncoder;
 
 public interface RpcEncoding {
   RpcEncoding SSZ =
       new LengthPrefixedEncoding(
-          "ssz",
-          RpcPayloadEncoders.builder()
-              .withEncoder(
-                  BeaconBlocksByRootRequestMessage.class,
-                  new BeaconBlocksByRootRequestMessageEncoder())
-              .withEncoder(String.class, new StringSszEncoder())
-              .defaultEncoderProvider(SimpleOffsetSszEncoder::new)
-              .build());
+          "ssz", RpcPayloadEncoders.createSszEncoders(), new NoopCompressor());
 
-  <T> Bytes encode(T message);
+  RpcEncoding SSZ_SNAPPY =
+      new LengthPrefixedEncoding(
+          "ssz_snappy", RpcPayloadEncoders.createSszEncoders(), new SnappyCompressor());
 
-  <T> T decode(Bytes message, Class<T> clazz) throws RpcException;
+  /**
+   * Encodes a payload with its encoding-dependent header
+   *
+   * @param payload The payload to encode
+   * @param <T> The type of payload
+   * @return The encoded header and payload bytes
+   */
+  <T> Bytes encodePayload(T payload);
+
+  /**
+   * Synchronously decodes a single payload value from the given input stream. The first available
+   * byte is expected to be the first byte of an encoded payload and header matching the expected
+   * type.
+   *
+   * @param <T> The type of payload to decode
+   * @param payloadType The type of payload to decode
+   * @return The decoded payload
+   */
+  <T> T decodePayload(final InputStream inputStream, final Class<T> payloadType)
+      throws RpcException;
 
   String getName();
-
-  OptionalInt getMessageLength(Bytes message) throws RpcException;
 }

@@ -70,11 +70,11 @@ public class TransitionCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public void blocks(
+  public int blocks(
       @Mixin InAndOutParams params,
       @Parameters(paramLabel = "block", description = "Files to read blocks from")
           List<String> blocks) {
-    processStateTransition(
+    return processStateTransition(
         params,
         (state, stateTransition) -> {
           if (blocks != null) {
@@ -99,7 +99,7 @@ public class TransitionCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public void slots(
+  public int slots(
       @Mixin InAndOutParams params,
       @Option(
               names = {"--delta", "-d"},
@@ -107,7 +107,7 @@ public class TransitionCommand implements Runnable {
           boolean delta,
       @Parameters(paramLabel = "<number>", description = "Number of slots to process")
           long number) {
-    processStateTransition(
+    return processStateTransition(
         params,
         (state, stateTransition) -> {
           UnsignedLong targetSlot = UnsignedLong.valueOf(number);
@@ -118,7 +118,7 @@ public class TransitionCommand implements Runnable {
         });
   }
 
-  private void processStateTransition(
+  private int processStateTransition(
       final InAndOutParams params, final StateTransitionFunction transition) {
     Constants.setConstants(
         NetworkDefinition.fromCliArg(params.networkOptions.getNetwork()).getConstants());
@@ -131,15 +131,22 @@ public class TransitionCommand implements Runnable {
       try {
         BeaconState result = transition.applyTransition(state, stateTransition);
         out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());
+        return 0;
       } catch (final StateTransitionException
           | EpochProcessingException
           | SlotProcessingException e) {
         SUB_COMMAND_LOG.error("State transition failed", e);
+        return 1;
       }
     } catch (final SSZException e) {
       SUB_COMMAND_LOG.error(e.getMessage());
+      return 1;
     } catch (final IOException e) {
       SUB_COMMAND_LOG.error("I/O error: " + e.toString());
+      return 1;
+    } catch (final Throwable t) {
+      t.printStackTrace();
+      return 2;
     }
   }
 

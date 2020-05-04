@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public class TekuConfigurationBuilder {
+  private static boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
   private String constants;
   private Integer startupTargetPeerCount;
   private Integer startupTimeoutSeconds;
@@ -32,6 +33,7 @@ public class TekuConfigurationBuilder {
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
   private List<String> p2pStaticPeers;
+  private Boolean p2pSnappyEnabled;
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
@@ -44,7 +46,7 @@ public class TekuConfigurationBuilder {
   private List<String> validatorExternalSignerPublicKeys;
   private String validatorExternalSignerUrl;
   private int validatorExternalSignerTimeout;
-  private String eth1DepositContractAddress;
+  private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
@@ -140,6 +142,11 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setP2pSnappyEnabled(final Boolean p2pSnappyEnabled) {
+    this.p2pSnappyEnabled = p2pSnappyEnabled;
+    return this;
+  }
+
   public TekuConfigurationBuilder setInteropGenesisTime(final Integer interopGenesisTime) {
     this.interopGenesisTime = interopGenesisTime;
     return this;
@@ -214,7 +221,7 @@ public class TekuConfigurationBuilder {
   }
 
   public TekuConfigurationBuilder setEth1DepositContractAddress(
-      final String eth1DepositContractAddress) {
+      final Eth1Address eth1DepositContractAddress) {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     return this;
   }
@@ -343,7 +350,11 @@ public class TekuConfigurationBuilder {
           getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
       p2pDiscoveryBootnodes = getOrDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
       eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
+      p2pSnappyEnabled =
+          getOrOptionalDefault(p2pSnappyEnabled, network::getSnappyCompressionEnabled);
     }
+
+    p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
     return new TekuConfiguration(
         constants,
         startupTargetPeerCount,
@@ -359,6 +370,7 @@ public class TekuConfigurationBuilder {
         p2pPeerLowerBound,
         p2pPeerUpperBound,
         p2pStaticPeers,
+        p2pSnappyEnabled,
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,

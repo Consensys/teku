@@ -40,17 +40,17 @@ final class RpcEncoderTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UnsignedLong.ZERO);
 
-  private final RpcEncoder codec = new RpcEncoder(RpcEncoding.SSZ);
+  private final RpcEncoder encoder = new RpcEncoder(RpcEncoding.SSZ);
 
   @Test
   public void shouldEncodeStatusRequest() {
-    final Bytes actualBytes = codec.encodeRequest(RECORDED_STATUS_MESSAGE_DATA);
+    final Bytes actualBytes = encoder.encodeRequest(RECORDED_STATUS_MESSAGE_DATA);
     assertThat(actualBytes).isEqualTo(RECORDED_STATUS_REQUEST_BYTES);
   }
 
   @Test
   public void shouldEncodeSuccessfulResponse() {
-    final Bytes actual = codec.encodeSuccessfulResponse(RECORDED_STATUS_MESSAGE_DATA);
+    final Bytes actual = encoder.encodeSuccessfulResponse(RECORDED_STATUS_MESSAGE_DATA);
     assertThat(actual).isEqualTo(RECORDED_STATUS_RESPONSE_BYTES);
   }
 }

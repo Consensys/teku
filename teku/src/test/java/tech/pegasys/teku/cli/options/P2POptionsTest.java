@@ -49,4 +49,60 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--p2p-discovery-enabled");
     assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
   }
+
+  @Test
+  public void snappyCompressionDefaultValueIsSet() {
+    final String[] args = {};
+
+    beaconNodeCommand.parse(args);
+
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isFalse();
+  }
+
+  @Test
+  public void mainnetNetworkDefaultsSnappyCompressionOn() {
+    final String[] args = {"--network", "mainnet"};
+
+    beaconNodeCommand.parse(args);
+
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+  }
+
+  @Test
+  public void minimalNetworkDefaultsSnappyCompressionOff() {
+    final String[] args = {"--network", "minimal"};
+
+    beaconNodeCommand.parse(args);
+
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isFalse();
+  }
+
+  @Test
+  public void overrideMainnetSnappyDefault() {
+    final String[] args = {
+      "--network", "mainnet",
+      "--p2p-snappy-enabled", "false"
+    };
+
+    beaconNodeCommand.parse(args);
+
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isFalse();
+  }
+
+  @Test
+  public void overrideMinimalSnappyDefault() {
+    final String[] args = {
+      "--network", "minimal",
+      "--p2p-snappy-enabled", "true"
+    };
+
+    beaconNodeCommand.parse(args);
+
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+  }
 }

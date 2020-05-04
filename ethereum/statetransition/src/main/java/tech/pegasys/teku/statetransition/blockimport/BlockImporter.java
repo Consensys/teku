@@ -25,7 +25,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -53,8 +52,8 @@ public class BlockImporter {
             block.getMessage().hash_tree_root());
         return BlockImportResult.knownBlock(block);
       }
-      Store.Transaction transaction = recentChainData.startStoreTransaction();
-      final BlockImportResult result = forkChoice.onBlock(transaction, block);
+
+      BlockImportResult result = forkChoice.onBlock(block);
       if (!result.isSuccessful()) {
         LOG.trace(
             "Failed to import block for reason {}: {}",
@@ -65,7 +64,6 @@ public class BlockImporter {
       LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
 
       final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
-      transaction.commit().join();
       eventBus.post(new ImportedBlockEvent(block));
       record.ifPresent(eventBus::post);
 

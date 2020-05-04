@@ -15,8 +15,10 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -37,6 +39,10 @@ public class BeaconBlocksByRangeMessageHandler
     implements LocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
 
+  @VisibleForTesting
+  static final RpcException INVALID_STEP =
+      new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero");
+
   private final CombinedChainDataClient combinedChainDataClient;
 
   public BeaconBlocksByRangeMessageHandler(final CombinedChainDataClient combinedChainDataClient) {
@@ -55,7 +61,7 @@ public class BeaconBlocksByRangeMessageHandler
         message.getCount(),
         message.getStep());
     if (message.getStep().compareTo(ONE) < 0) {
-      callback.completeWithError(RpcException.INVALID_STEP);
+      callback.completeWithError(INVALID_STEP);
       return;
     }
     sendMatchingBlocks(message, callback)

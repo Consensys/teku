@@ -140,21 +140,21 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   @Override
-  public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {
+  public void subscribeToAttestationSubnetId(final int subnetId) {
     if (aggregateGossipManager == null) {
       throw new IllegalStateException(
           "Attestation committee can not be subscribed due to gossip manager not being initialized");
     }
-    attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
+    attestationGossipManager.subscribeToSubnetId(subnetId);
   }
 
   @Override
-  public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {
+  public void unsubscribeFromAttestationSubnetId(final int subnetId) {
     if (aggregateGossipManager == null) {
       throw new IllegalStateException(
           "Attestation committee can not be unsubscribed due to gossip manager not being initialized");
     }
-    attestationGossipManager.unsubscribeFromCommitteeTopic(committeeIndex);
+    attestationGossipManager.unsubscribeFromSubnetId(subnetId);
   }
 
   @Override

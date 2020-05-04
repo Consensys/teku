@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.schema;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.util.bytes.ByteUtil.toByteExact;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;
@@ -28,9 +28,8 @@ public class RocksDbVariable<TValue> {
   }
 
   public static <T> RocksDbVariable<T> create(final int id, final RocksDbSerializer<T> serializer) {
-    final byte byteId = (byte) id;
-    checkArgument((int) byteId == id, "Invalid id supplied");
-    return new RocksDbVariable<T>(new byte[] {(byte) id}, serializer);
+    final byte byteId = toByteExact(id);
+    return new RocksDbVariable<T>(new byte[] {byteId}, serializer);
   }
 
   public Bytes getId() {

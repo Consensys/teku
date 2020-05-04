@@ -46,14 +46,13 @@ public class AttestationGossipManagerTest {
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
-  private AttestationSubnetSubscriptions attestationSubnetSubscriptions;
   private AttestationGossipManager attestationGossipManager;
 
   @BeforeEach
   public void setup() {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
     doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
-    attestationSubnetSubscriptions =
+    AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             gossipNetwork, recentChainData, attestationValidator, eventBus);
     attestationGossipManager =
@@ -64,7 +63,7 @@ public class AttestationGossipManagerTest {
   public void onNewAttestation_afterMatchingAssignment() {
     // Setup committee assignment
     final int committeeIndex = 2;
-    attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
+    attestationGossipManager.subscribeToSubnetId(committeeIndex);
 
     // Post new attestation
     final Attestation attestation = dataStructureUtil.randomAttestation();
@@ -87,7 +86,7 @@ public class AttestationGossipManagerTest {
   public void onNewAttestation_noMatchingAssignment() {
     // Setup committee assignment
     final int committeeIndex = 2;
-    attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
+    attestationGossipManager.subscribeToSubnetId(committeeIndex);
 
     // Post new attestation
     final Attestation attestation = dataStructureUtil.randomAttestation();
@@ -102,10 +101,10 @@ public class AttestationGossipManagerTest {
     // Setup committee assignment
     final int committeeIndex = 2;
     final int dismissedIndex = 3;
-    attestationGossipManager.subscribeToCommitteeTopic(committeeIndex);
+    attestationGossipManager.subscribeToSubnetId(committeeIndex);
 
     // Unassign
-    attestationGossipManager.unsubscribeFromCommitteeTopic(dismissedIndex);
+    attestationGossipManager.unsubscribeFromSubnetId(dismissedIndex);
 
     // Attestation for dismissed assignment should be ignored
     final Attestation attestation = dataStructureUtil.randomAttestation();

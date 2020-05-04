@@ -20,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler.INVALID_STEP;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
@@ -36,7 +37,6 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRang
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -264,7 +264,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
             UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
         listener);
 
-    verify(listener).completeWithError(RpcException.INVALID_STEP);
+    verify(listener).completeWithError(INVALID_STEP);
     verifyNoMoreInteractions(listener);
     verifyNoMoreInteractions(combinedChainDataClient);
   }

@@ -3,7 +3,7 @@ dependencies {
     implementation 'com.google.guava:guava'
     implementation project(':util')
     implementation project(':events')
-    implementation(group: 'org.quartz-scheduler', name: 'quartz') {
+    implementation('org.quartz-scheduler:quartz') {
         exclude group: 'com.mchange'
     }
 }

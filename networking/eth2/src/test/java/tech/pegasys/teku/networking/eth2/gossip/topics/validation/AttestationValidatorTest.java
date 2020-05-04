@@ -265,8 +265,8 @@ class AttestationValidatorTest {
   public void shouldRejectAttestationsSentOnTheWrongSubnet() {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
-    final UnsignedLong expectedSubnetId = CommitteeUtil.getSubnetId(attestation);
-    assertThat(validator.validate(attestation, expectedSubnetId.plus(ONE))).isEqualTo(INVALID);
+    final int expectedSubnetId = CommitteeUtil.getSubnetId(attestation);
+    assertThat(validator.validate(attestation, expectedSubnetId + 1)).isEqualTo(INVALID);
     assertThat(validator.validate(attestation, expectedSubnetId)).isEqualTo(VALID);
   }
 

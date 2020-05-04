@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -34,7 +35,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-public class BeaconBlocksByRangeIntegrationTest {
+public abstract class BeaconBlocksByRangeIntegrationTest {
 
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private Eth2Peer peer1;
@@ -44,12 +45,15 @@ public class BeaconBlocksByRangeIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
+    final RpcEncoding rpcEncoding = getEncoding();
     recentChainData1 = MemoryOnlyRecentChainData.create(eventBus1);
     beaconChainUtil = BeaconChainUtil.create(1, recentChainData1);
     beaconChainUtil.initializeStorage();
+
     final Eth2Network network1 =
         networkFactory
             .builder()
+            .rpcEncoding(rpcEncoding)
             .eventBus(eventBus1)
             .recentChainData(recentChainData1)
             .startNetwork();
@@ -57,9 +61,16 @@ public class BeaconBlocksByRangeIntegrationTest {
     final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(new EventBus());
     BeaconChainUtil.create(1, recentChainData2).initializeStorage();
     final Eth2Network network2 =
-        networkFactory.builder().peer(network1).recentChainData(recentChainData2).startNetwork();
+        networkFactory
+            .builder()
+            .rpcEncoding(rpcEncoding)
+            .peer(network1)
+            .recentChainData(recentChainData2)
+            .startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
   }
+
+  protected abstract RpcEncoding getEncoding();
 
   @AfterEach
   public void tearDown() {
@@ -172,5 +183,23 @@ public class BeaconBlocksByRangeIntegrationTest {
         peer1.requestBlocksByRange(
             UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add));
     return blocks;
+  }
+
+  public static class BeaconBlocksByRangeIntegrationTest_ssz
+      extends BeaconBlocksByRangeIntegrationTest {
+
+    @Override
+    protected RpcEncoding getEncoding() {
+      return RpcEncoding.SSZ;
+    }
+  }
+
+  public static class BeaconBlocksByRangeIntegrationTest_sszSnappy
+      extends BeaconBlocksByRangeIntegrationTest {
+
+    @Override
+    protected RpcEncoding getEncoding() {
+      return RpcEncoding.SSZ_SNAPPY;
+    }
   }
 }

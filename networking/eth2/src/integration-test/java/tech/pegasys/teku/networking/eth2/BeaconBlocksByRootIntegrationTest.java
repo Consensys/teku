@@ -32,6 +32,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -40,7 +41,7 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-public class BeaconBlocksByRootIntegrationTest {
+public abstract class BeaconBlocksByRootIntegrationTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
@@ -50,13 +51,23 @@ public class BeaconBlocksByRootIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
+    final RpcEncoding rpcEncoding = getEncoding();
+
     storageClient1 = MemoryOnlyRecentChainData.create(eventBus1);
     BeaconChainUtil.create(0, storageClient1).initializeStorage();
     final Eth2Network network1 =
-        networkFactory.builder().eventBus(eventBus1).recentChainData(storageClient1).startNetwork();
-    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
+        networkFactory
+            .builder()
+            .rpcEncoding(rpcEncoding)
+            .eventBus(eventBus1)
+            .recentChainData(storageClient1)
+            .startNetwork();
+    final Eth2Network network2 =
+        networkFactory.builder().rpcEncoding(rpcEncoding).peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
   }
+
+  protected abstract RpcEncoding getEncoding();
 
   @AfterEach
   public void tearDown() {
@@ -177,5 +188,22 @@ public class BeaconBlocksByRootIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(peer1.requestBlocksByRoot(blockRoots, blocks::add));
     return blocks;
+  }
+
+  public static class BeaconBlocksByRootIntegrationTest_ssz
+      extends BeaconBlocksByRootIntegrationTest {
+
+    @Override
+    protected RpcEncoding getEncoding() {
+      return RpcEncoding.SSZ;
+    }
+  }
+
+  public static class BeaconBlocksByRootIntegrationTest_sszSnappy
+      extends BeaconBlocksByRootIntegrationTest {
+    @Override
+    protected RpcEncoding getEncoding() {
+      return RpcEncoding.SSZ_SNAPPY;
+    }
   }
 }

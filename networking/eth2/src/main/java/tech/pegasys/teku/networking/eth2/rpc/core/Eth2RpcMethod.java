@@ -81,8 +81,12 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
     return rpcEncoder.encodeRequest(request);
   }
 
-  public RequestRpcDecoder<TRequest> createRequestDecoder() {
-    return new RequestRpcDecoder<>(requestType, encoding);
+  public RpcRequestDecoder<TRequest> createRequestDecoder() {
+    return new RpcRequestDecoder<>(requestType, encoding);
+  }
+
+  public RpcResponseDecoder<TResponse> createResponseDecoder() {
+    return new RpcResponseDecoder<>(responseType, encoding);
   }
 
   @Override

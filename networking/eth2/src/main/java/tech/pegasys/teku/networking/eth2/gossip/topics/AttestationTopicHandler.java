@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import static java.lang.StrictMath.toIntExact;
-
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -27,13 +24,13 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResu
 
 public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
-  private final UnsignedLong subnetId;
+  private final int subnetId;
   private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
       final EventBus eventBus,
       final AttestationValidator attestationValidator,
-      final UnsignedLong subnetId,
+      final int subnetId,
       final ForkInfo forkInfo) {
     super(eventBus, forkInfo);
     this.attestationValidator = attestationValidator;
@@ -42,7 +39,7 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
   @Override
   public String getTopicName() {
-    return "committee_index" + toIntExact(subnetId.longValue()) + "_beacon_attestation";
+    return "committee_index" + subnetId + "_beacon_attestation";
   }
 
   @Override

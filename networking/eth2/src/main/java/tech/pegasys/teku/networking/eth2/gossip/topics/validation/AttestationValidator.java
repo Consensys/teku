@@ -54,8 +54,7 @@ public class AttestationValidator {
     this.recentChainData = recentChainData;
   }
 
-  public ValidationResult validate(
-      final Attestation attestation, final UnsignedLong receivedOnSubnetId) {
+  public ValidationResult validate(final Attestation attestation, final int receivedOnSubnetId) {
     ValidationResult validationResult = singleAttestationChecks(attestation, receivedOnSubnetId);
     if (validationResult != VALID) {
       return validationResult;
@@ -79,9 +78,9 @@ public class AttestationValidator {
   }
 
   private ValidationResult singleAttestationChecks(
-      final Attestation attestation, final UnsignedLong receivedOnSubnetId) {
+      final Attestation attestation, final int receivedOnSubnetId) {
     // The attestation's committee index (attestation.data.index) is for the correct subnet.
-    if (!CommitteeUtil.getSubnetId(attestation).equals(receivedOnSubnetId)) {
+    if (CommitteeUtil.getSubnetId(attestation) != receivedOnSubnetId) {
       return INVALID;
     }
 

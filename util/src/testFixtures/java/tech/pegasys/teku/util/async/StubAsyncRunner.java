@@ -64,11 +64,28 @@ public class StubAsyncRunner implements AsyncRunner {
     executeRepeatedly(maxRuns, false);
   }
 
-  private void executeRepeatedly(final int maxRuns, final boolean shouldFinish) {
+  public void waitForExactly(final int count) throws InterruptedException {
+    int runs = 0;
+    int iterations = 0;
+    while (runs < count) {
+      runs += executeRepeatedly(count - runs, false);
+      iterations += 1;
+      if (iterations > 100) {
+        throw new IllegalStateException("Too many iterations");
+      }
+      if (runs < count) {
+        Thread.sleep(100);
+      }
+    }
+  }
+
+  private int executeRepeatedly(final int maxRuns, final boolean shouldFinish) {
+    int iterations = 0;
     for (int i = 0; i < maxRuns; i++) {
       if (countDelayedActions() == 0) {
-        return;
+        return iterations;
       }
+      iterations += 1;
       executeQueuedActions();
     }
 
@@ -78,6 +95,7 @@ public class StubAsyncRunner implements AsyncRunner {
               + countDelayedActions()
               + " actions remain unexecuted.");
     }
+    return iterations;
   }
 
   public boolean hasDelayedActions() {

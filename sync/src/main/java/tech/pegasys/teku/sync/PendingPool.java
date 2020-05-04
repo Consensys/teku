@@ -14,7 +14,6 @@
 package tech.pegasys.teku.sync;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,7 +43,6 @@ public class PendingPool<T> extends Service
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final EventBus eventBus;
   private static final UnsignedLong DEFAULT_FUTURE_SLOT_TOLERANCE = UnsignedLong.valueOf(2);
   private static final UnsignedLong DEFAULT_HISTORICAL_SLOT_TOLERANCE =
       UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH * 10);
@@ -70,13 +68,11 @@ public class PendingPool<T> extends Service
   private volatile UnsignedLong latestFinalizedSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
   PendingPool(
-      final EventBus eventBus,
       final UnsignedLong historicalSlotTolerance,
       final UnsignedLong futureSlotTolerance,
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UnsignedLong> targetSlotFunction) {
-    this.eventBus = eventBus;
     this.historicalSlotTolerance = historicalSlotTolerance;
     this.futureSlotTolerance = futureSlotTolerance;
     this.hashTreeRootFunction = hashTreeRootFunction;
@@ -84,17 +80,13 @@ public class PendingPool<T> extends Service
     this.targetSlotFunction = targetSlotFunction;
   }
 
-  public static PendingPool<SignedBeaconBlock> createForBlocks(final EventBus eventBus) {
-    return createForBlocks(
-        eventBus, DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
+  public static PendingPool<SignedBeaconBlock> createForBlocks() {
+    return createForBlocks(DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
   }
 
   static PendingPool<SignedBeaconBlock> createForBlocks(
-      final EventBus eventBus,
-      final UnsignedLong historicalBlockTolerance,
-      final UnsignedLong futureBlockTolerance) {
+      final UnsignedLong historicalBlockTolerance, final UnsignedLong futureBlockTolerance) {
     return new PendingPool<>(
-        eventBus,
         historicalBlockTolerance,
         futureBlockTolerance,
         block -> block.getMessage().hash_tree_root(),
@@ -102,9 +94,8 @@ public class PendingPool<T> extends Service
         SignedBeaconBlock::getSlot);
   }
 
-  public static PendingPool<DelayableAttestation> createForAttestations(final EventBus eventBus) {
+  public static PendingPool<DelayableAttestation> createForAttestations() {
     return new PendingPool<>(
-        eventBus,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         DEFAULT_FUTURE_SLOT_TOLERANCE,
         DelayableAttestation::hash_tree_root,
@@ -114,7 +105,6 @@ public class PendingPool<T> extends Service
 
   @Override
   protected SafeFuture<?> doStart() {
-    eventBus.register(this);
     return SafeFuture.completedFuture(null);
   }
 

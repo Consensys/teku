@@ -19,10 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -106,7 +104,7 @@ public class SafeFutureTest {
   @Test
   public void ofWithSupplier_propagatesExceptionFromSupplier() {
     final RuntimeException error = new RuntimeException("whoops");
-    final Supplier<CompletionStage<Void>> futureSupplier =
+    final ExceptionThrowingFutureSupplier<Void> futureSupplier =
         () -> {
           throw error;
         };
@@ -474,7 +472,7 @@ public class SafeFutureTest {
 
   @Test
   public void fromRunnable_propagatesExceptionalResult() {
-    final RuntimeException error = new RuntimeException("whoops");
+    final Exception error = new Exception("whoops");
     final SafeFuture<Void> future =
         SafeFuture.fromRunnable(
             () -> {

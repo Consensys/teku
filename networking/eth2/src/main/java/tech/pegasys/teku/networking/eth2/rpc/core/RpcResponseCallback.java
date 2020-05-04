@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStream.StreamClosedException;
 
 class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
@@ -40,7 +41,14 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   @Override
   public void completeWithError(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessage());
-    rpcStream.writeBytes(rpcEncoder.encodeErrorResponse(error)).reportExceptions();
+    try {
+      rpcStream.writeBytes(rpcEncoder.encodeErrorResponse(error)).reportExceptions();
+    } catch (StreamClosedException e) {
+      LOG.debug(
+          "Unable to send error message ({}) to peer, rpc stream already closed: {}",
+          error,
+          rpcStream);
+    }
     rpcStream.closeWriteStream().reportExceptions();
   }
 }

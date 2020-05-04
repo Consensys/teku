@@ -43,7 +43,7 @@ public class SimpleOffsetSszEncoder<T> implements RpcPayloadEncoder<T> {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Failed to parse network message: " + message, e);
       }
-      throw RpcException.MALFORMED_REQUEST_ERROR;
+      throw RpcException.DESERIALIZATION_FAILED;
     }
   }
 }

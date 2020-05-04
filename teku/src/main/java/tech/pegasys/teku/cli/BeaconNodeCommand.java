@@ -53,6 +53,7 @@ import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.cli.LogTypeConverter;
 import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -155,13 +156,18 @@ public class BeaconNodeCommand implements Callable<Integer> {
     metricCategoryConverter.addCategories(StandardMetricCategory.class);
   }
 
+  private CommandLine registerConverters(final CommandLine commandLine) {
+    return commandLine
+        .registerConverter(MetricCategory.class, metricCategoryConverter)
+        .registerConverter(Eth1Address.class, Eth1Address::fromHexString);
+  }
+
   private CommandLine getConfigFileCommandLine(final ConfigFileCommand configFileCommand) {
-    return new CommandLine(configFileCommand)
-        .registerConverter(MetricCategory.class, metricCategoryConverter);
+    return registerConverters(new CommandLine(configFileCommand));
   }
 
   private CommandLine getCommandLine() {
-    return new CommandLine(this).registerConverter(MetricCategory.class, metricCategoryConverter);
+    return registerConverters(new CommandLine(this));
   }
 
   public int parse(final String[] args) {
@@ -288,6 +294,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setP2pPeerLowerBound(p2POptions.getP2pLowerBound())
         .setP2pPeerUpperBound(p2POptions.getP2pUpperBound())
         .setP2pStaticPeers(p2POptions.getP2pStaticPeers())
+        .setP2pSnappyEnabled(p2POptions.isP2pSnappyEnabled())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())

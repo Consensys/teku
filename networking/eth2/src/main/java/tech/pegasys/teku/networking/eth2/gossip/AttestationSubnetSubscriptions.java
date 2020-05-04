@@ -13,16 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
-
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import tech.pegasys.teku.networking.eth2.gossip.topics.AttestationTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -35,8 +29,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final AttestationValidator attestationValidator;
   private final EventBus eventBus;
 
-  private final Map<UnsignedLong, Set<UnsignedLong>> subnetIdToCommittees = new HashMap<>();
-  private final Map<UnsignedLong, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
+  private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
   public AttestationSubnetSubscriptions(
       final GossipNetwork gossipNetwork,
@@ -49,36 +42,22 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     this.eventBus = eventBus;
   }
 
-  public synchronized Optional<TopicChannel> getChannel(final UnsignedLong committeeIndex) {
-    final UnsignedLong subnetId = committeeIndexToSubnetId(committeeIndex);
+  public synchronized Optional<TopicChannel> getChannel(final int subnetId) {
     return Optional.ofNullable(subnetIdToTopicChannel.get(subnetId));
   }
 
-  public synchronized void subscribeToCommitteeTopic(final UnsignedLong committeeIndex) {
-    final UnsignedLong subnetId = committeeIndexToSubnetId(committeeIndex);
-    final Set<UnsignedLong> subscribedCommittees =
-        subnetIdToCommittees.computeIfAbsent(subnetId, __ -> new HashSet<>());
-    subscribedCommittees.add(committeeIndex);
+  public synchronized void subscribeToSubnetId(final int subnetId) {
     subnetIdToTopicChannel.computeIfAbsent(subnetId, this::createChannelForSubnetId);
   }
 
-  public synchronized void unsubscribeFromCommitteeTopic(final UnsignedLong committeeIndex) {
-    final UnsignedLong subnetId = committeeIndexToSubnetId(committeeIndex);
-    final Set<UnsignedLong> committees =
-        subnetIdToCommittees.getOrDefault(subnetId, Collections.emptySet());
-    committees.remove(committeeIndex);
-    if (!committees.isEmpty()) {
-      // We still have some subscribers, don't actually unsubscribe
-      return;
-    }
-    subnetIdToCommittees.remove(subnetId);
+  public synchronized void unsubscribeFromSubnetId(final int subnetId) {
     final TopicChannel topicChannel = subnetIdToTopicChannel.remove(subnetId);
     if (topicChannel != null) {
       topicChannel.close();
     }
   }
 
-  private TopicChannel createChannelForSubnetId(final UnsignedLong subnetId) {
+  private TopicChannel createChannelForSubnetId(final int subnetId) {
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(
             eventBus,
@@ -92,7 +71,6 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   public synchronized void close() {
     // Close gossip channels
     subnetIdToTopicChannel.values().forEach(TopicChannel::close);
-    subnetIdToCommittees.clear();
     subnetIdToTopicChannel.clear();
   }
 }

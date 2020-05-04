@@ -55,7 +55,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -309,11 +308,11 @@ public final class EpochProcessorUtil {
     UnsignedLong total_balance = get_total_active_balance(state);
 
     int list_size = state.getValidators().size();
-    List<UnsignedLong> rewards = Arrays.asList(new UnsignedLong[list_size]);
-    List<UnsignedLong> penalties = Arrays.asList(new UnsignedLong[list_size]);
+    List<UnsignedLong> rewards = new ArrayList<>(list_size);
+    List<UnsignedLong> penalties = new ArrayList<>(list_size);
     for (int i = 0; i < list_size; i++) {
-      rewards.set(i, UnsignedLong.ZERO);
-      penalties.set(i, UnsignedLong.ZERO);
+      rewards.add(UnsignedLong.ZERO);
+      penalties.add(UnsignedLong.ZERO);
     }
 
     Map<Integer, UnsignedLong> eligible_validator_base_rewards =
@@ -355,9 +354,9 @@ public final class EpochProcessorUtil {
           UnsignedLong increment = EFFECTIVE_BALANCE_INCREMENT;
           final UnsignedLong reward_numerator =
               index_base_reward.getValue().times(attesting_balance.dividedBy(increment));
-          rewards.set(index, reward_numerator.dividedBy(total_balance.dividedBy(increment)));
+          add(rewards, index, reward_numerator.dividedBy(total_balance.dividedBy(increment)));
         } else {
-          penalties.set(index, penalties.get(index).plus(index_base_reward.getValue()));
+          add(penalties, index, index_base_reward.getValue());
         }
       }
     }
@@ -395,19 +394,13 @@ public final class EpochProcessorUtil {
                           base_reward_func
                               .apply(index)
                               .dividedBy(UnsignedLong.valueOf(PROPOSER_REWARD_QUOTIENT));
-                      rewards.set(
-                          attestation.getProposer_index().intValue(),
-                          rewards
-                              .get(attestation.getProposer_index().intValue())
-                              .plus(proposer_reward));
+                      add(rewards, attestation.getProposer_index().intValue(), proposer_reward);
                       UnsignedLong max_attester_reward =
                           base_reward_func.apply(index).minus(proposer_reward);
-                      rewards.set(
+                      add(
+                          rewards,
                           index,
-                          rewards
-                              .get(index)
-                              .plus(
-                                  max_attester_reward.dividedBy(attestation.getInclusion_delay())));
+                          max_attester_reward.dividedBy(attestation.getInclusion_delay()));
                     }));
 
     // Inactivity penalty
@@ -419,29 +412,29 @@ public final class EpochProcessorUtil {
       for (Entry<Integer, UnsignedLong> index_base_reward :
           eligible_validator_base_rewards.entrySet()) {
         int index = index_base_reward.getKey();
-        penalties.set(
+        add(
+            penalties,
             index,
-            penalties
-                .get(index)
-                .plus(
-                    UnsignedLong.valueOf(BASE_REWARDS_PER_EPOCH)
-                        .times(index_base_reward.getValue())));
+            UnsignedLong.valueOf(BASE_REWARDS_PER_EPOCH).times(index_base_reward.getValue()));
         if (!matching_target_attesting_indices.contains(index)) {
-          penalties.set(
+          add(
+              penalties,
               index,
-              penalties
+              state
+                  .getValidators()
                   .get(index)
-                  .plus(
-                      state
-                          .getValidators()
-                          .get(index)
-                          .getEffective_balance()
-                          .times(finality_delay)
-                          .dividedBy(UnsignedLong.valueOf(INACTIVITY_PENALTY_QUOTIENT))));
+                  .getEffective_balance()
+                  .times(finality_delay)
+                  .dividedBy(UnsignedLong.valueOf(INACTIVITY_PENALTY_QUOTIENT)));
         }
       }
     }
     return new ImmutablePair<>(rewards, penalties);
+  }
+
+  private static void add(final List<UnsignedLong> list, int index, UnsignedLong amount) {
+    final UnsignedLong current = list.get(index);
+    list.set(index, current.plus(amount));
   }
 
   /**

@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SUCCESS_RESPONSE_CODE;
+
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
 public final class RpcEncoder {
-  public static final byte SUCCESS_RESPONSE_CODE = 0;
   private final RpcEncoding encoding;
 
   public RpcEncoder(final RpcEncoding encoding) {
@@ -31,15 +32,15 @@ public final class RpcEncoder {
    * @return the encoded RPC message
    */
   public <T> Bytes encodeRequest(T request) {
-    return encoding.encode(request);
+    return encoding.encodePayload(request);
   }
 
   public <T> Bytes encodeSuccessfulResponse(T response) {
-    return Bytes.concatenate(Bytes.of(SUCCESS_RESPONSE_CODE), encoding.encode(response));
+    return Bytes.concatenate(Bytes.of(SUCCESS_RESPONSE_CODE), encoding.encodePayload(response));
   }
 
   public Bytes encodeErrorResponse(RpcException error) {
     return Bytes.concatenate(
-        Bytes.of(error.getResponseCode()), encoding.encode(error.getErrorMessage()));
+        Bytes.of(error.getResponseCode()), encoding.encodePayload(error.getErrorMessage()));
   }
 }

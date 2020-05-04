@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -42,9 +43,14 @@ public class Eth2PeerManagerTest {
   private final PeerValidatorFactory peerValidatorFactory = (peer, status) -> peerChainValidator;
   private final SafeFuture<Boolean> peerValidationResult = new SafeFuture<>();
 
+  private final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(
-          combinedChainDataClient, storageClient, new NoOpMetricsSystem(), peerValidatorFactory);
+          combinedChainDataClient,
+          storageClient,
+          new NoOpMetricsSystem(),
+          peerValidatorFactory,
+          rpcEncoding);
 
   @BeforeEach
   public void setup() {

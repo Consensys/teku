@@ -44,6 +44,7 @@ public class TekuConfiguration {
   private final int p2pPeerLowerBound;
   private final int p2pPeerUpperBound;
   private final List<String> p2pStaticPeers;
+  private final boolean p2pSnappyEnabled;
 
   // Interop
   private final Integer interopGenesisTime;
@@ -63,7 +64,7 @@ public class TekuConfiguration {
 
   private final boolean eth1Enabled;
   // Deposit
-  private final String eth1DepositContractAddress;
+  private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
 
   // Logging
@@ -115,6 +116,7 @@ public class TekuConfiguration {
       final int p2pPeerLowerBound,
       final int p2pPeerUpperBound,
       final List<String> p2pStaticPeers,
+      final boolean p2pSnappyEnabled,
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
@@ -128,7 +130,7 @@ public class TekuConfiguration {
       final String validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
       final boolean eth1Enabled,
-      final String eth1DepositContractAddress,
+      final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
@@ -164,6 +166,7 @@ public class TekuConfiguration {
     this.p2pPeerLowerBound = p2pPeerLowerBound;
     this.p2pPeerUpperBound = p2pPeerUpperBound;
     this.p2pStaticPeers = p2pStaticPeers;
+    this.p2pSnappyEnabled = p2pSnappyEnabled;
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
@@ -257,6 +260,10 @@ public class TekuConfiguration {
     return p2pStaticPeers;
   }
 
+  public boolean isP2pSnappyEnabled() {
+    return p2pSnappyEnabled;
+  }
+
   public Integer getInteropGenesisTime() {
     if (interopGenesisTime == 0) {
       return Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
@@ -326,7 +333,7 @@ public class TekuConfiguration {
     return eth1Enabled;
   }
 
-  public String getEth1DepositContractAddress() {
+  public Eth1Address getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
   }
 

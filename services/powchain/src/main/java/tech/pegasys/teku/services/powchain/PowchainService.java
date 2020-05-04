@@ -51,7 +51,7 @@ public class PowchainService extends Service {
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(
-            eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress());
+            eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress().toHexString());
 
     DepositObjectsFactory depositsObjectFactory =
         new DepositObjectsFactory(
