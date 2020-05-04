@@ -133,13 +133,13 @@ downloadLicenses {
   ]
 
   licenses = [
-      (group('artemis'))            : apache,
-      (group('artemis.ethereum'))   : apache,
-      (group('artemis.services'))   : apache,
-      (group('artemis.consensus'))  : apache,
-      (group('artemis.data'))       : apache,
-      (group('artemis.validator'))  : apache,
-      (group('artemis.networking')) : apache,
+      (group('teku'))            : apache,
+      (group('teku.ethereum'))   : apache,
+      (group('teku.services'))   : apache,
+      (group('teku.consensus'))  : apache,
+      (group('teku.data'))       : apache,
+      (group('teku.validator'))  : apache,
+      (group('teku.networking')) : apache,
 
       // https://checkerframework.org/manual/#license
       // The more permissive MIT License applies to code that you might want
@@ -161,7 +161,7 @@ downloadLicenses {
       //Explicitly declare EPL 2.0 for jnr-poxix - it is simultaneously licensed under 3 licenses.
       'com.github.jnr:jnr-posix:3.0.33': epl2_0,
       'com.github.jnr:jnr-posix:3.0.47': epl2_0,
-      //JMH-Core is licensed under GPLv2 with the Classpath Exception, which allows us to link it and license the derived work under our license. 
+      //JMH-Core is licensed under GPLv2 with the Classpath Exception, which allows us to link it and license the derived work under our license.
       'org.openjdk.jmh:jmh-core:1.21': apache,
       (group('io.libp2p')): apache,
   ]
