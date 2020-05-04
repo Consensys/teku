@@ -48,7 +48,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
     processHead();
   }
 
-  public Bytes32 processHead() {
+  public synchronized Bytes32 processHead() {
     Store.Transaction transaction = recentChainData.startStoreTransaction();
     Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(transaction);
     transaction.commit(() -> {}, "Failed to persist validator vote changes.");
@@ -57,7 +57,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
     return headBlockRoot;
   }
 
-  public BlockImportResult onBlock(final SignedBeaconBlock block) {
+  public synchronized BlockImportResult onBlock(final SignedBeaconBlock block) {
     Store.Transaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult result = on_block(transaction, block, stateTransition);
 
