@@ -295,7 +295,7 @@ jobs:
       - persist_to_workspace:
           root: ~/project
           paths:
-            - $JSON_SPEC_FILE
+            - ./
 
   publishAPIDoc:
     executor: node_executor
