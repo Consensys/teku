@@ -196,10 +196,10 @@ public class GossipMessageHandlerIntegrationTest {
 
     node1
         .network()
-        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
+        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
     node2
         .network()
-        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
+        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
 
     waitForTopicRegistration();
 
@@ -239,10 +239,10 @@ public class GossipMessageHandlerIntegrationTest {
 
     node1
         .network()
-        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
+        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
     node2
         .network()
-        .subscribeToAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
+        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
 
     waitForTopicRegistration();
 
@@ -254,10 +254,10 @@ public class GossipMessageHandlerIntegrationTest {
 
     node1
         .network()
-        .unsubscribeFromAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
+        .unsubscribeFromAttestationSubnetId(validAttestation.getData().getIndex().intValue());
     node2
         .network()
-        .unsubscribeFromAttestationCommitteeTopic(validAttestation.getData().getIndex().intValue());
+        .unsubscribeFromAttestationSubnetId(validAttestation.getData().getIndex().intValue());
 
     waitForTopicDeregistration();
 

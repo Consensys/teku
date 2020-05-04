@@ -20,10 +20,10 @@ import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 public class NoOpEth2Network extends MockP2PNetwork<Eth2Peer> implements Eth2Network {
 
   @Override
-  public void subscribeToAttestationCommitteeTopic(final int committeeIndex) {}
+  public void subscribeToAttestationSubnetId(final int subnetId) {}
 
   @Override
-  public void unsubscribeFromAttestationCommitteeTopic(final int committeeIndex) {}
+  public void unsubscribeFromAttestationSubnetId(final int subnetId) {}
 
   @Override
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {}
