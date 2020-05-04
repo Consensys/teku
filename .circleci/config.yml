@@ -408,7 +408,7 @@ workflows:
       #            - referenceTests
       #            - docker
       - extractAPISpec
-      - publishAPIDoc
+      - publishAPIDoc:
           requires:
             - extractAPISpec
 #          filters:
