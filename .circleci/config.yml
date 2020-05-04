@@ -283,14 +283,9 @@ jobs:
       - run:
           name: Extract OpenAPI JSON
           command: |
-            JSON_SPEC_FILE="latest.json"
-            if [ "${CIRCLE_TAG}" != "" ];
-            then
-              JSON_SPEC_FILE="${CIRCLE_TAG}.json"
-            fi
             build/install/teku/bin/teku --rest-api-docs-enabled=true &
             TEKU_PID=$!
-            wget -O "${JSON_SPEC_FILE}" http://localhost:5051/swagger-docs
+            wget -O openapi.json http://localhost:5051/swagger-docs
             kill $TEKU_PID
       - persist_to_workspace:
           root: ~/project
@@ -316,45 +311,31 @@ jobs:
           command: |
             readonly BRANCH='gh-pages-test-do-not-remove-yet'
             git checkout "$BRANCH" || git checkout -b "$BRANCH"
-            ls -la .
-            ls -la /tmp/project
-#      - restore_cache:
-#          keys:
-#            - deps-{{ checksum "package.json" }}
-#      - run:
-#          name: Install dependencies
-#          command: |
-#            npm install
-#      - save_cache:
-#          paths:
-#            - ./node_modules
-#          key: deps-{{ checksum "package.json" }}
-#      - run:
-#          name: Run markdown link checker
-#          command: |
-#            npm run test:links
-#      - run:
-#          name: Generate API doc site files
-#          command: |
-#            ./gradlew --no-daemon --parallel updateAPIVersionFile
-#      - run:
-#          name: Deploy to GitHub Pages
-#          command: |
-#            readonly BRANCH='gh-pages-test-do-not-remove-yet'
-#
-#            JSON_SPEC_FILE="latest.json"
-#            if [ "${CIRCLE_TAG}" != "" ];
-#            then
-#              JSON_SPEC_FILE="${CIRCLE_TAG}.json"
-#            fi
-#
-#            git checkout "$BRANCH" || git checkout -b "$BRANCH"
-#            # pull might fail if the branch was just created
-#            git pull || true
-#
-#            git add "${JSON_SPEC_FILE}"
-#            git commit -m "[skip ci] update Teku REST API OpenAPI JSON definition"
-#            git push origin "$BRANCH"
+            # pull might fail if the branch was just created
+            git pull || true
+      - restore_cache:
+          keys:
+            - deps-{{ checksum "package.json" }}
+      - run:
+          name: Install dependencies
+          command: |
+            npm install
+      - save_cache:
+          paths:
+            - ./node_modules
+          key: deps-{{ checksum "package.json" }}
+      - run:
+          name: Generate API doc site files
+          command: |
+            npm run generate-versions -- --spec=/tmp/project/openapi.json --tag=${CIRCLE_TAG}
+      - deploy:
+          name: Commit and push to GitHub Pages branch
+          command: |
+            readonly BRANCH='gh-pages-test-do-not-remove-yet'
+
+            git add
+            git commit -m "[skip ci] update Teku REST API OpenAPI JSON definition"
+            git push origin "$BRANCH"
 
 workflows:
   version: 2
