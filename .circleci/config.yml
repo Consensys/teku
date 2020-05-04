@@ -333,7 +333,7 @@ jobs:
           command: |
             readonly BRANCH='gh-pages-test-do-not-remove-yet'
 
-            git add
+            git add .
             git commit -m "[skip ci] update Teku REST API OpenAPI JSON definition"
             git push origin "$BRANCH"
 
