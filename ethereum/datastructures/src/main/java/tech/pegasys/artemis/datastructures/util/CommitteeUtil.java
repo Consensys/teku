@@ -276,11 +276,15 @@ public class CommitteeUtil {
     return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo) == 0;
   }
 
-  public static UnsignedLong getSubnetId(final Attestation attestation) {
+  public static int getSubnetId(final Attestation attestation) {
     return committeeIndexToSubnetId(attestation.getData().getIndex());
   }
 
-  public static UnsignedLong committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
-    return committeeIndex.mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT));
+  public static int committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
+    return committeeIndexToSubnetId(toIntExact(committeeIndex.longValue()));
+  }
+
+  public static int committeeIndexToSubnetId(final int committeeIndex) {
+    return committeeIndex % ATTESTATION_SUBNET_COUNT;
   }
 }

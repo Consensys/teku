@@ -13,9 +13,10 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip;
 
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,23 +40,23 @@ public class AttestationGossipManager {
 
   @Subscribe
   public void onNewAttestation(final Attestation attestation) {
-    final UnsignedLong committeeIndex = attestation.getData().getIndex();
+    final int subnetId = committeeIndexToSubnetId(attestation.getData().getIndex());
     subnetSubscriptions
-        .getChannel(committeeIndex)
+        .getChannel(subnetId)
         .ifPresentOrElse(
             channel -> channel.gossip(SimpleOffsetSerializer.serialize(attestation)),
             () ->
                 LOG.trace(
-                    "Ignoring attestation for committee {}, which does not correspond to any currently assigned committee.",
-                    committeeIndex));
+                    "Ignoring attestation for subnet id {}, which does not correspond to any currently assigned subnet ids.",
+                    subnetId));
   }
 
-  public void subscribeToCommitteeTopic(final int committeeIndex) {
-    subnetSubscriptions.subscribeToCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
+  public void subscribeToSubnetId(final int subnetId) {
+    subnetSubscriptions.subscribeToSubnetId(subnetId);
   }
 
-  public void unsubscribeFromCommitteeTopic(final int committeeIndex) {
-    subnetSubscriptions.unsubscribeFromCommitteeTopic(UnsignedLong.valueOf(committeeIndex));
+  public void unsubscribeFromSubnetId(final int subnetId) {
+    subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
   }
 
   public void shutdown() {
