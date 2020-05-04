@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.logging;
 
-import tech.pegasys.artemis.util.config.LoggingDestination;
+import tech.pegasys.teku.util.config.LoggingDestination;
 
 public class LoggingConfiguration {
 
