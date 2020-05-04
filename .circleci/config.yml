@@ -276,6 +276,8 @@ jobs:
     executor: medium_executor
     steps:
       - prepare
+      - attach_workspace:
+          at: ~/project
       - run:
           name: Build runnable Teku binaries
           command: |
@@ -341,60 +343,65 @@ workflows:
   version: 2
   circleci:
     jobs:
-      #      - assemble
-      #      - spotless
-      #      - referenceTests:
-      #          requires:
-      #            - assemble
-      #            - spotless
-      #      - unitTests:
-      #          requires:
-      #            - assemble
-      #            - spotless
-      #      - integrationTests:
-      #          requires:
-      #            - assemble
-      #            - spotless
-      #      - acceptanceTests:
-      #          requires:
-      #            - assemble
-      #            - spotless
-      #      - docker:
-      #          requires:
-      #            - assemble
-      #            - unitTests
-      #            - spotless
-      #      - publish:
-      #          filters:
-      #            branches:
-      #              only:
-      #                - master
-      #                - /^release-.*/
-      #          requires:
-      #            - unitTests
-      #            - integrationTests
-      #            - acceptanceTests
-      #            - referenceTests
-      #            - docker
-      #      - publishDocker:
-      #          filters:
-      #            branches:
-      #              only:
-      #                - master
-      #                - /^release-.*/
-      #          requires:
-      #            - unitTests
-      #            - integrationTests
-      #            - acceptanceTests
-      #            - referenceTests
-      #            - docker
-      - extractAPISpec
+      - assemble
+      - spotless
+      - referenceTests:
+          requires:
+            - assemble
+            - spotless
+      - unitTests:
+          requires:
+            - assemble
+            - spotless
+      - integrationTests:
+          requires:
+            - assemble
+            - spotless
+      - acceptanceTests:
+          requires:
+            - assemble
+            - spotless
+      - docker:
+          requires:
+            - assemble
+            - unitTests
+            - spotless
+      - publish:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+      - publishDocker:
+          filters:
+            branches:
+              only:
+                - master
+                - /^release-.*/
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+      - extractAPISpec:
+          requires:
+            - assemble
+          filters:
+            branches:
+              only: master
       - publishAPIDoc:
           requires:
             - extractAPISpec
-#          filters:
-#            branches:
-#              only: master
+          filters:
+            branches:
+              only: master
 
   nightly:
     triggers:
