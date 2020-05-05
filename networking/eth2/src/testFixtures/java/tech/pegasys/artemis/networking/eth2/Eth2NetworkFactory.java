@@ -173,7 +173,6 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    // TODO - set this in tests
     public Eth2P2PNetworkBuilder gossipEncoding(final GossipEncoding gossipEncoding) {
       checkNotNull(gossipEncoding);
       this.gossipEncoding = gossipEncoding;
