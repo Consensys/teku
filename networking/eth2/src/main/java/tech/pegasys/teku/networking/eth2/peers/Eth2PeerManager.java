@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
@@ -98,7 +100,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
           .sendStatus()
           .finish(
               () -> LOG.trace("Sent status to {}", peer.getId()),
-              (err) -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err));
+              RootCauseExceptionHandler.builder()
+                  .addCatch(
+                      RpcException.class,
+                      err -> LOG.trace("Status message rejected by {}: {}", peer.getId(), err))
+                  .defaultCatch(
+                      err -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err)));
     }
     eth2Peer.subscribeInitialStatus(
         (status) ->
