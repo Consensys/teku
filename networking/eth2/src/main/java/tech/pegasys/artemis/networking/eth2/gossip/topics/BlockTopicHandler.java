@@ -14,11 +14,9 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
@@ -28,8 +26,11 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   private final BlockValidator blockValidator;
 
   public BlockTopicHandler(
-      final EventBus eventBus, final BlockValidator blockValidator, final ForkInfo forkInfo) {
-    super(eventBus, forkInfo);
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
+      final BlockValidator blockValidator,
+      final EventBus eventBus) {
+    super(gossipEncoding, forkInfo, eventBus);
     this.blockValidator = blockValidator;
   }
 
@@ -44,8 +45,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   }
 
   @Override
-  protected SignedBeaconBlock deserialize(final Bytes bytes) throws SSZException {
-    return SimpleOffsetSerializer.deserialize(bytes, SignedBeaconBlock.class);
+  protected Class<SignedBeaconBlock> getValueType() {
+    return SignedBeaconBlock.class;
   }
 
   @Override

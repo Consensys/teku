@@ -30,20 +30,24 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.DecodingException;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 import tech.pegasys.artemis.ssz.SSZTypes.Bytes4;
 import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class Eth2TopicHandlerTest {
   private static final String TOPIC = "testing";
+  public static final String ENCODING_NAME = "mock_encoding";
 
+  private final GossipEncoding gossipEncoding = new MockGossipEncoding();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Bytes message = Bytes.fromHexString("0x01");
 
   private final Attestation deserialized = dataStructureUtil.randomAttestation();
-  private Supplier<Attestation> deserializer = Suppliers.ofInstance(deserialized);
+  private Decoder<Attestation> deserializer = () -> deserialized;
   private Supplier<ValidationResult> validator = Suppliers.ofInstance(ValidationResult.VALID);
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
 
@@ -106,8 +110,11 @@ public class Eth2TopicHandlerTest {
   }
 
   @Test
-  public void handleMessage_whenDeserializeReturnsNull() {
-    deserializer = () -> null;
+  public void handleMessage_whenDecodingFails() {
+    deserializer =
+        () -> {
+          throw new DecodingException("whoops");
+        };
     final boolean result = topicHandler.handleMessage(message);
 
     assertThat(result).isEqualTo(false);
@@ -132,18 +139,18 @@ public class Eth2TopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     MockTopicHandler topicHandler = new MockTopicHandler(eventBus, forkInfo);
-    assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/testing/ssz");
+    assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/testing/mock_encoding");
   }
 
   private class MockTopicHandler extends Eth2TopicHandler<Attestation> {
 
     protected MockTopicHandler(final EventBus eventBus, final ForkInfo forkInfo) {
-      super(eventBus, forkInfo);
+      super(gossipEncoding, forkInfo, eventBus);
     }
 
     @Override
-    protected Attestation deserialize(final Bytes bytes) throws SSZException {
-      return deserializer.get();
+    protected Class<Attestation> getValueType() {
+      return Attestation.class;
     }
 
     @Override
@@ -155,5 +162,27 @@ public class Eth2TopicHandlerTest {
     public String getTopicName() {
       return TOPIC;
     }
+  }
+
+  private class MockGossipEncoding implements GossipEncoding {
+    @Override
+    public String getName() {
+      return ENCODING_NAME;
+    }
+
+    @Override
+    public <T> Bytes encode(final T value) {
+      return message;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T decode(final Bytes data, final Class<T> valueType) throws DecodingException {
+      return (T) deserializer.decode();
+    }
+  }
+
+  private interface Decoder<T> {
+    T decode() throws DecodingException;
   }
 }

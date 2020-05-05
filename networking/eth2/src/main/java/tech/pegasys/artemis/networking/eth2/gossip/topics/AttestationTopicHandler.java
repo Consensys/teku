@@ -17,11 +17,9 @@ import static java.lang.StrictMath.toIntExact;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
@@ -31,11 +29,12 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
-      final EventBus eventBus,
-      final AttestationValidator attestationValidator,
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
       final UnsignedLong subnetId,
-      final ForkInfo forkInfo) {
-    super(eventBus, forkInfo);
+      final AttestationValidator attestationValidator,
+      final EventBus eventBus) {
+    super(gossipEncoding, forkInfo, eventBus);
     this.attestationValidator = attestationValidator;
     this.subnetId = subnetId;
   }
@@ -46,8 +45,8 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   }
 
   @Override
-  protected Attestation deserialize(final Bytes bytes) throws SSZException {
-    return SimpleOffsetSerializer.deserialize(bytes, Attestation.class);
+  protected Class<Attestation> getValueType() {
+    return Attestation.class;
   }
 
   @Override

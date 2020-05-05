@@ -20,18 +20,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.GossipEncoding;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final EventBus eventBus;
+  private final GossipEncoding gossipEncoding;
   private final AttestationSubnetSubscriptions subnetSubscriptions;
+  private final EventBus eventBus;
+
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttestationGossipManager(
-      final EventBus eventBus,
-      final AttestationSubnetSubscriptions attestationSubnetSubscriptions) {
+      final GossipEncoding gossipEncoding,
+      final AttestationSubnetSubscriptions attestationSubnetSubscriptions,
+      final EventBus eventBus) {
+    this.gossipEncoding = gossipEncoding;
     subnetSubscriptions = attestationSubnetSubscriptions;
     this.eventBus = eventBus;
     eventBus.register(this);
@@ -43,7 +47,7 @@ public class AttestationGossipManager {
     subnetSubscriptions
         .getChannel(committeeIndex)
         .ifPresentOrElse(
-            channel -> channel.gossip(SimpleOffsetSerializer.serialize(attestation)),
+            channel -> channel.gossip(gossipEncoding.encode(attestation)),
             () ->
                 LOG.trace(
                     "Ignoring attestation for committee {}, which does not correspond to any currently assigned committee.",

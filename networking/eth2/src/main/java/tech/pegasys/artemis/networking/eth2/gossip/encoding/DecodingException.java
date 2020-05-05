@@ -18,4 +18,8 @@ public class DecodingException extends Exception {
   public DecodingException(final String message, final Throwable cause) {
     super(message, cause);
   }
+
+  public DecodingException(final String message) {
+    super(message);
+  }
 }

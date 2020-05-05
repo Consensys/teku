@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AggregateTopicHandler;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
@@ -38,6 +38,7 @@ public class AggregateGossipManagerTest {
   private final SignedAggregateAndProofValidator validator =
       mock(SignedAggregateAndProofValidator.class);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
+  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @BeforeEach
@@ -46,13 +47,13 @@ public class AggregateGossipManagerTest {
         .when(gossipNetwork)
         .subscribe(contains(AggregateTopicHandler.TOPIC_NAME), any());
     new AggregateGossipManager(
-        gossipNetwork, eventBus, validator, dataStructureUtil.randomForkInfo());
+        gossipNetwork, gossipEncoding, dataStructureUtil.randomForkInfo(), validator, eventBus);
   }
 
   @Test
   public void onNewAggregate() {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
-    final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
+    final Bytes serialized = gossipEncoding.encode(aggregate);
 
     eventBus.post(aggregate);
     verify(topicChannel).gossip(serialized);

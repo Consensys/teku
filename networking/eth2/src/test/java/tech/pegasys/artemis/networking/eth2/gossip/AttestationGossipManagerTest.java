@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
@@ -45,6 +45,7 @@ public class AttestationGossipManagerTest {
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
+  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
   private AttestationSubnetSubscriptions attestationSubnetSubscriptions;
   private AttestationGossipManager attestationGossipManager;
@@ -55,9 +56,9 @@ public class AttestationGossipManagerTest {
     doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
     attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            gossipNetwork, recentChainData, attestationValidator, eventBus);
+            gossipNetwork, gossipEncoding, attestationValidator, recentChainData, eventBus);
     attestationGossipManager =
-        new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
+        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions, eventBus);
   }
 
   @Test
@@ -69,7 +70,7 @@ public class AttestationGossipManagerTest {
     // Post new attestation
     final Attestation attestation = dataStructureUtil.randomAttestation();
     setCommitteeIndex(attestation, committeeIndex);
-    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
+    final Bytes serialized = gossipEncoding.encode(attestation);
     eventBus.post(attestation);
 
     verify(topicChannel).gossip(serialized);
@@ -77,7 +78,7 @@ public class AttestationGossipManagerTest {
     // We should process attestations for different committees on the same subnet
     final Attestation attestation2 = dataStructureUtil.randomAttestation();
     setCommitteeIndex(attestation2, committeeIndex + ATTESTATION_SUBNET_COUNT);
-    final Bytes serialized2 = SimpleOffsetSerializer.serialize(attestation2);
+    final Bytes serialized2 = gossipEncoding.encode(attestation2);
     eventBus.post(attestation2);
 
     verify(topicChannel).gossip(serialized2);
@@ -110,14 +111,14 @@ public class AttestationGossipManagerTest {
     // Attestation for dismissed assignment should be ignored
     final Attestation attestation = dataStructureUtil.randomAttestation();
     setCommitteeIndex(attestation, dismissedIndex);
-    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
+    final Bytes serialized = gossipEncoding.encode(attestation);
     eventBus.post(attestation);
     verify(topicChannel, never()).gossip(serialized);
 
     // Attestation for remaining assignment should be processed
     final Attestation attestation2 = dataStructureUtil.randomAttestation();
     setCommitteeIndex(attestation2, committeeIndex);
-    final Bytes serialized2 = SimpleOffsetSerializer.serialize(attestation2);
+    final Bytes serialized2 = gossipEncoding.encode(attestation2);
     eventBus.post(attestation2);
     verify(topicChannel).gossip(serialized2);
   }

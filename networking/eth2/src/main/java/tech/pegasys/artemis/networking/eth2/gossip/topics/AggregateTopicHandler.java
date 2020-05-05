@@ -14,11 +14,9 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.artemis.datastructures.state.ForkInfo;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.ValidationResult;
 
@@ -27,10 +25,11 @@ public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndPr
   private final SignedAggregateAndProofValidator validator;
 
   public AggregateTopicHandler(
-      final EventBus eventBus,
+      final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final SignedAggregateAndProofValidator validator) {
-    super(eventBus, forkInfo);
+      final SignedAggregateAndProofValidator validator,
+      final EventBus eventBus) {
+    super(gossipEncoding, forkInfo, eventBus);
     this.validator = validator;
   }
 
@@ -40,8 +39,8 @@ public class AggregateTopicHandler extends Eth2TopicHandler<SignedAggregateAndPr
   }
 
   @Override
-  protected SignedAggregateAndProof deserialize(final Bytes bytes) throws SSZException {
-    return SimpleOffsetSerializer.deserialize(bytes, SignedAggregateAndProof.class);
+  protected Class<SignedAggregateAndProof> getValueType() {
+    return SignedAggregateAndProof.class;
   }
 
   @Override

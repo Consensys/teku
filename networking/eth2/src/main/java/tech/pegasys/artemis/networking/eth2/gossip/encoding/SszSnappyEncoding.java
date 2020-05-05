@@ -41,7 +41,11 @@ class SszSnappyEncoding implements GossipEncoding {
   public <T> T decode(Bytes data, Class<T> valueType) throws DecodingException {
     try {
       final Bytes uncompressed = snappyCompressor.uncompress(data);
-      return sszEncoding.decode(uncompressed, valueType);
+      final T result = sszEncoding.decode(uncompressed, valueType);
+      if (result == null) {
+        throw new DecodingException("Unable to decode value");
+      }
+      return result;
     } catch (CompressionException e) {
       throw new DecodingException("Failed to uncompress message", e);
     }

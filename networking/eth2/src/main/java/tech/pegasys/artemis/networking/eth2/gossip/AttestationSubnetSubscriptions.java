@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import tech.pegasys.artemis.datastructures.state.ForkInfo;
+import tech.pegasys.artemis.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.AttestationTopicHandler;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
@@ -31,8 +33,9 @@ import tech.pegasys.artemis.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipNetwork gossipNetwork;
-  private final RecentChainData recentChainData;
+  private final GossipEncoding gossipEncoding;
   private final AttestationValidator attestationValidator;
+  private final RecentChainData recentChainData;
   private final EventBus eventBus;
 
   private final Map<UnsignedLong, Set<UnsignedLong>> subnetIdToCommittees = new HashMap<>();
@@ -40,10 +43,12 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
 
   public AttestationSubnetSubscriptions(
       final GossipNetwork gossipNetwork,
-      final RecentChainData recentChainData,
+      final GossipEncoding gossipEncoding,
       final AttestationValidator attestationValidator,
+      final RecentChainData recentChainData,
       final EventBus eventBus) {
     this.gossipNetwork = gossipNetwork;
+    this.gossipEncoding = gossipEncoding;
     this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
     this.eventBus = eventBus;
@@ -79,12 +84,10 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   }
 
   private TopicChannel createChannelForSubnetId(final UnsignedLong subnetId) {
+    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(
-            eventBus,
-            attestationValidator,
-            subnetId,
-            recentChainData.getCurrentForkInfo().orElseThrow());
+            gossipEncoding, forkInfo, subnetId, attestationValidator, eventBus);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
