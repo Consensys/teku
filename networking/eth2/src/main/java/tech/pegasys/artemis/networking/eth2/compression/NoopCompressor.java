@@ -26,7 +26,7 @@ public class NoopCompressor implements Compressor {
   }
 
   @Override
-  public Bytes uncompress(final Bytes data, final int uncompressedPayloadSize) {
+  public Bytes uncompress(final Bytes data) {
     return data;
   }
 

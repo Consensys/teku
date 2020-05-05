@@ -32,7 +32,7 @@ public class NoopCompressorTest {
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
 
     final Bytes compressed = compressor.compress(serializedState);
-    final Bytes uncompressed = compressor.uncompress(compressed, serializedState.size());
+    final Bytes uncompressed = compressor.uncompress(compressed);
     assertThat(uncompressed).isEqualTo(serializedState);
   }
 }

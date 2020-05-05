@@ -49,7 +49,7 @@ public class SnappyCompressorTest {
     final Bytes compressed = compressor.compress(serializedState);
     assertThat(compressed).isNotEqualTo(serializedState);
 
-    final Bytes uncompressed = compressor.uncompress(compressed, serializedState.size());
+    final Bytes uncompressed = compressor.uncompress(compressed);
     assertThat(uncompressed).isEqualTo(serializedState);
   }
 
@@ -59,7 +59,7 @@ public class SnappyCompressorTest {
     final Bytes serializedState =
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
 
-    assertThatThrownBy(() -> compressor.uncompress(serializedState, serializedState.size()))
+    assertThatThrownBy(() -> compressor.uncompress(serializedState))
         .isInstanceOf(CompressionException.class);
   }
 
