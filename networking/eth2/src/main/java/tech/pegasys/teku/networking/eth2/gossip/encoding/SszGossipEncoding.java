@@ -34,7 +34,11 @@ class SszGossipEncoding implements GossipEncoding {
   @Override
   public <T> T decode(final Bytes data, final Class<T> valueType) throws DecodingException {
     try {
-      return SimpleOffsetSerializer.deserialize(data, valueType);
+      final T result = SimpleOffsetSerializer.deserialize(data, valueType);
+      if (result == null) {
+        throw new DecodingException("Unable to decode value");
+      }
+      return result;
     } catch (SSZException e) {
       throw new DecodingException("Failed to deserialize value", e);
     } catch (Exception e) {

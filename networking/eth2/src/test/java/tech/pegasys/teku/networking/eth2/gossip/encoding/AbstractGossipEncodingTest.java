@@ -63,6 +63,12 @@ public abstract class AbstractGossipEncodingTest {
   }
 
   @Test
+  public void decode_emptyValue() {
+    assertThatThrownBy(() -> encoding.decode(Bytes.EMPTY, BeaconStateImpl.class))
+        .isInstanceOf(DecodingException.class);
+  }
+
+  @Test
   public void decode_invalidData() {
     final Bytes data = Bytes.fromHexString("0xB1AB1A");
     assertThatThrownBy(() -> encoding.decode(data, BeaconStateImpl.class))
