@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.util.config.Constants.BYTES_PER_LENGTH_OFFSET;
 
 import com.google.common.primitives.UnsignedLong;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.tuweni.bytes.Bytes;
@@ -195,9 +197,26 @@ public class SimpleOffsetSerializer {
     if (!isPrimitive(classInfo)) {
       return SSZ.decode(
           bytes,
-          reader -> deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size()));
+          reader -> {
+            final T result =
+                deserializeContainerErrorWrapper(classInfo, reader, bytePointer, bytes.size());
+            assertAllDataRead(reader);
+            return result;
+          });
     } else {
-      return SSZ.decode(bytes, reader -> (T) deserializePrimitive(classInfo, reader, bytePointer));
+      return SSZ.decode(
+          bytes,
+          reader -> {
+            final T result = (T) deserializePrimitive(classInfo, reader, bytePointer);
+            assertAllDataRead(reader);
+            return result;
+          });
+    }
+  }
+
+  private static void assertAllDataRead(SSZReader reader) {
+    if (!reader.isComplete()) {
+      throw new IllegalStateException("Unread data detected.");
     }
   }
 
@@ -219,7 +238,7 @@ public class SimpleOffsetSerializer {
       Class<T> classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
       throws InstantiationException, IllegalAccessException, InvocationTargetException {
     int currentObjectStartByte = bytesPointer.intValue();
-    ReflectionInformation reflectionInformation = classReflectionInfo.get(classInfo);
+    ReflectionInformation reflectionInformation = getRequiredReflectionInfo(classInfo);
     List<Integer> offsets = new ArrayList<>();
     List<Integer> variableFieldIndices = new ArrayList<>();
 
@@ -430,11 +449,23 @@ public class SimpleOffsetSerializer {
     for (int i = 0; i < numElements; i++) {
       if (isPrimitive(classInfo)) {
         newList.add(deserializePrimitive(classInfo, reader, bytePointer));
-      } else if (isContainer(classInfo) && !classReflectionInfo.get(classInfo).isVariable()) {
+      } else if (isContainer(classInfo) && !getRequiredReflectionInfo(classInfo).isVariable()) {
         newList.add(deserializeFixedContainer(classInfo, reader, bytePointer));
       }
     }
     return SSZVector.createMutable(newList, classInfo);
+  }
+
+  private static ReflectionInformation getRequiredReflectionInfo(Class classInfo) {
+    final ReflectionInformation reflectionInfo = classReflectionInfo.get(classInfo);
+    checkArgument(
+        reflectionInfo != null,
+        "Unable to find reflection information for class " + classInfo.getSimpleName());
+    return reflectionInfo;
+  }
+
+  private static Optional<ReflectionInformation> getOptionalReflectionInfo(Class classInfo) {
+    return Optional.ofNullable(classReflectionInfo.get(classInfo));
   }
 
   private static Object deserializePrimitive(
@@ -456,11 +487,12 @@ public class SimpleOffsetSerializer {
       case "BLSPublicKey":
         bytePointer.add(48);
         return BLSPublicKey.fromBytes(reader.readFixedBytes(48));
+      case "Boolean":
       case "boolean":
         bytePointer.add(1);
         return reader.readBoolean();
       default:
-        return new Object();
+        throw new IllegalArgumentException("Unable to deserialize " + classInfo.getSimpleName());
     }
   }
 
@@ -472,10 +504,10 @@ public class SimpleOffsetSerializer {
   private static boolean isVariable(Class classInfo) {
     if (classInfo == SSZList.class || classInfo == Bitlist.class) {
       return true;
-    } else if (classReflectionInfo.get(classInfo) != null) {
-      return classReflectionInfo.get(classInfo).isVariable();
     } else {
-      return false;
+      return getOptionalReflectionInfo(classInfo)
+          .map(ReflectionInformation::isVariable)
+          .orElse(false);
     }
   }
 
