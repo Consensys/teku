@@ -14,8 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -27,7 +26,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 
 public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> {
 
-  private static final Logger LOG = LogManager.getLogger();
   private final LabelledMetric<Counter> goodbyeCounter;
 
   public GoodbyeMessageHandler(final MetricsSystem metricsSystem) {
@@ -41,12 +39,11 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
 
   @Override
   public void onIncomingMessage(
-      final Eth2Peer peer,
+      final Optional<Eth2Peer> peer,
       final GoodbyeMessage message,
       final ResponseCallback<GoodbyeMessage> callback) {
-    LOG.trace("Peer {} said goodbye.", peer.getId());
     goodbyeCounter.labels(labelForReason(message.getReason())).inc();
-    peer.disconnectImmediately();
+    peer.ifPresent(Eth2Peer::disconnectImmediately);
     callback.completeSuccessfully();
   }
 

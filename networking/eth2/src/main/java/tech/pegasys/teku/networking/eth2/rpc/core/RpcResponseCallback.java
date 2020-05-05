@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream.StreamClosedException;
 
@@ -39,7 +40,7 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   }
 
   @Override
-  public void completeWithError(final RpcException error) {
+  public void completeWithErrorResponse(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessage());
     try {
       rpcStream.writeBytes(rpcEncoder.encodeErrorResponse(error)).reportExceptions();
@@ -50,5 +51,16 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
           rpcStream);
     }
     rpcStream.closeWriteStream().reportExceptions();
+  }
+
+  @Override
+  public void completeWithUnexpectedError(final Throwable error) {
+    if (error instanceof PeerDisconnectedException) {
+      LOG.trace("Not sending RPC response as peer has already disconnected");
+      // But close the stream just to be completely sure we don't leak any resources.
+      rpcStream.close().reportExceptions();
+    } else {
+      completeWithErrorResponse(RpcException.SERVER_ERROR);
+    }
   }
 }
