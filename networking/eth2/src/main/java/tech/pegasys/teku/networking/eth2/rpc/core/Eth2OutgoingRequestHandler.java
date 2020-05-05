@@ -107,6 +107,8 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       }
 
       completeRequest(rpcStream);
+    } catch (final RpcException e) {
+      cancelRequest(rpcStream, e);
     } catch (final Throwable t) {
       LOG.error("Encountered error while processing response", t);
       cancelRequest(rpcStream, t);
@@ -161,7 +163,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       return;
     }
 
-    LOG.debug("Cancel request: {}", error.getMessage());
+    LOG.trace("Cancel request: {}", error.getMessage());
     rpcStream.close().reportExceptions();
     responseProcessor.finishProcessing().always(() -> responseStream.completeWithError(error));
   }
