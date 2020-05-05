@@ -18,10 +18,11 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
-import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 
-public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, StatusMessage> {
+public class StatusMessageHandler
+    extends PeerRequiredLocalMessageHandler<StatusMessage, StatusMessage> {
   private static final Logger LOG = LogManager.getLogger();
   private final StatusMessageFactory statusMessageFactory;
 
@@ -34,7 +35,7 @@ public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, 
       final Eth2Peer peer,
       final StatusMessage message,
       final ResponseCallback<StatusMessage> callback) {
-    LOG.trace("Peer {} sent status.", peer.getId());
+    LOG.trace("Peer {} sent status {}", peer.getId(), message);
     final PeerStatus status = PeerStatus.fromStatusMessage(message);
     peer.updateStatus(status);
     callback.respond(statusMessageFactory.createStatusMessage());

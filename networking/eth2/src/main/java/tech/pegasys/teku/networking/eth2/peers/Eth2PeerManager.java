@@ -162,8 +162,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
    * @return the peer corresponding to this node id.
    */
   @Override
-  public Eth2Peer getConnectedPeer(NodeId nodeId) {
-    return connectedPeerMap.get(nodeId);
+  public Optional<Eth2Peer> getConnectedPeer(NodeId nodeId) {
+    return Optional.ofNullable(connectedPeerMap.get(nodeId));
   }
 
   public Optional<Eth2Peer> getPeer(NodeId peerId) {
