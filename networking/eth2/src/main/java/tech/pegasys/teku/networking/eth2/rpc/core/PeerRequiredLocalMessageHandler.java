@@ -27,7 +27,8 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
     maybePeer.ifPresentOrElse(
         peer -> onIncomingMessage(peer, message, callback),
         () -> {
-          LOG.trace("Ignoring message of type {} from disconnected peer", message.getClass());
+          LOG.trace(
+              "Ignoring message of type {} because peer has disconnected", message.getClass());
           callback.completeWithError(
               new RpcException(RpcResponseStatus.SERVER_ERROR_CODE, "Peer disconnected"));
         });
