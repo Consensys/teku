@@ -61,7 +61,7 @@ public class BeaconBlocksByRangeMessageHandler
         message.getCount(),
         message.getStep());
     if (message.getStep().compareTo(ONE) < 0) {
-      callback.completeWithError(INVALID_STEP);
+      callback.completeWithErrorResponse(INVALID_STEP);
       return;
     }
     sendMatchingBlocks(message, callback)
@@ -71,10 +71,10 @@ public class BeaconBlocksByRangeMessageHandler
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
-                callback.completeWithError((RpcException) rootCause);
+                callback.completeWithErrorResponse((RpcException) rootCause);
               } else {
                 LOG.error("Failed to process blocks by range request", error);
-                callback.completeWithError(RpcException.SERVER_ERROR);
+                callback.completeWithUnexpectedError(error);
               }
             });
   }

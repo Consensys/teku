@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 
 public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMessageHandler<I, O> {
   private static final Logger LOG = LogManager.getLogger();
@@ -29,8 +30,7 @@ public abstract class PeerRequiredLocalMessageHandler<I, O> implements LocalMess
         () -> {
           LOG.trace(
               "Ignoring message of type {} because peer has disconnected", message.getClass());
-          callback.completeWithError(
-              new RpcException(RpcResponseStatus.SERVER_ERROR_CODE, "Peer disconnected"));
+          callback.completeWithUnexpectedError(new PeerDisconnectedException());
         });
   }
 
