@@ -19,7 +19,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
@@ -31,13 +33,33 @@ public abstract class AbstractGossipEncodingTest {
   protected abstract GossipEncoding createEncoding();
 
   @Test
-  public void roundTrip_state() throws DecodingException {
-    final BeaconState state = dataStructureUtil.randomBeaconState(1);
+  public void roundTrip_aggregate() throws DecodingException {
+    final SignedAggregateAndProof original = dataStructureUtil.randomSignedAggregateAndProof();
 
-    final Bytes encoded = encoding.encode(state);
-    final BeaconState decoded = encoding.decode(encoded, BeaconStateImpl.class);
+    final Bytes encoded = encoding.encode(original);
+    final SignedAggregateAndProof decoded = encoding.decode(encoded, SignedAggregateAndProof.class);
 
-    assertThat(decoded).isEqualTo(state);
+    assertThat(decoded).isEqualTo(original);
+  }
+
+  @Test
+  public void roundTrip_attestation() throws DecodingException {
+    final Attestation original = dataStructureUtil.randomAttestation();
+
+    final Bytes encoded = encoding.encode(original);
+    final Attestation decoded = encoding.decode(encoded, Attestation.class);
+
+    assertThat(decoded).isEqualTo(original);
+  }
+
+  @Test
+  public void roundTrip_block() throws DecodingException {
+    final SignedBeaconBlock original = dataStructureUtil.randomSignedBeaconBlock(1);
+
+    final Bytes encoded = encoding.encode(original);
+    final SignedBeaconBlock decoded = encoding.decode(encoded, SignedBeaconBlock.class);
+
+    assertThat(decoded).isEqualTo(original);
   }
 
   @Test
