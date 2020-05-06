@@ -121,11 +121,6 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             });
   }
 
-  @Override
-  public NetworkConfig getConfig() {
-    return p2pNetwork.getConfig();
-  }
-
   public void addStaticPeer(final String peerAddress) {
     connectionManager.addStaticPeer(p2pNetwork.createPeerAddress(peerAddress));
   }

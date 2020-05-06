@@ -90,7 +90,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
-  private int listenPort;
+  private final int listenPort;
 
   public LibP2PNetwork(
       final NetworkConfig config,
@@ -219,10 +219,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     }
   }
 
-  public static String getAdvertisedAddrString(final NetworkConfig config) {
-    return getAdvertisedAddr(config).toString();
-  }
-
   @Override
   public String getNodeAddress() {
     return advertisedAddr + "/p2p/" + nodeId.toBase58();
@@ -282,7 +278,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public int getListenPort() {
     return listenPort;
-  };
+  }
 
   @Override
   public void stop() {
@@ -291,11 +287,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
     reportExceptions(host.stop());
-  }
-
-  @Override
-  public NetworkConfig getConfig() {
-    return this.config;
   }
 
   @Override

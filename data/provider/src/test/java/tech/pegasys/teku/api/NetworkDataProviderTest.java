@@ -18,18 +18,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class NetworkDataProviderTest {
+
   @SuppressWarnings("unchecked")
-  private P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
+  private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
 
   @Test
   void getPeerCount_shouldReturnTotalPeers() {
@@ -52,50 +50,12 @@ public class NetworkDataProviderTest {
   }
 
   @Test
-  void getListeningAddresses_shouldReturnAdvertisedIp() {
+  void getListeningAddresses_shouldReturnAddressFromNetwork() {
     final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final String ipAddress = "1.1.1.1";
-    final int port = 7;
-    final NetworkConfig networkConfig = mock(NetworkConfig.class);
-    final List<String> expected = List.of(String.format("/ip4/%s/tcp/%d", ipAddress, port));
+    final String nodeAddress = "/some/libp2p/addr";
 
-    when(p2pNetwork.getConfig()).thenReturn(networkConfig);
-    when(networkConfig.getAdvertisedIp()).thenReturn(ipAddress);
-    when(networkConfig.getAdvertisedPort()).thenReturn(port);
+    when(p2pNetwork.getNodeAddress()).thenReturn(nodeAddress);
 
-    assertThat(network.getListeningAddresses()).isEqualTo(expected);
-  }
-
-  @Test
-  void getListeningAddresses_shouldReturnHostAddressIfNoAdvertisedIp() throws UnknownHostException {
-    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final String hostAddress = InetAddress.getLocalHost().getHostAddress();
-    final String interfaceAddress = "1.1.1.1";
-    final int port = 7;
-    final NetworkConfig networkConfig = mock(NetworkConfig.class);
-    final List<String> expected = List.of(String.format("/ip4/%s/tcp/%d", hostAddress, port));
-
-    when(p2pNetwork.getConfig()).thenReturn(networkConfig);
-    when(networkConfig.getAdvertisedIp()).thenReturn(interfaceAddress);
-    when(networkConfig.getNetworkInterface()).thenReturn(interfaceAddress);
-    when(networkConfig.getAdvertisedPort()).thenReturn(port);
-
-    assertThat(network.getListeningAddresses()).isEqualTo(expected);
-  }
-
-  @Test
-  void getListeningAddresses_shouldReturnInterfaceAddressIfNoSpecifiedIp() {
-    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final String interfaceAddress = "0.0.0.0";
-    final int port = 7;
-    final NetworkConfig networkConfig = mock(NetworkConfig.class);
-    final List<String> expected = List.of(String.format("/ip4/%s/tcp/%d", interfaceAddress, port));
-
-    when(p2pNetwork.getConfig()).thenReturn(networkConfig);
-    when(networkConfig.getAdvertisedIp()).thenReturn(interfaceAddress);
-    when(networkConfig.getNetworkInterface()).thenReturn(interfaceAddress);
-    when(networkConfig.getAdvertisedPort()).thenReturn(port);
-
-    assertThat(network.getListeningAddresses()).isEqualTo(expected);
+    assertThat(network.getListeningAddresses()).isEqualTo(List.of(nodeAddress));
   }
 }
