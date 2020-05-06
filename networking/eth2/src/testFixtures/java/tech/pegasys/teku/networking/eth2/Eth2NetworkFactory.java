@@ -25,6 +25,8 @@ import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -148,9 +150,9 @@ public class Eth2NetworkFactory {
       return new NetworkConfig(
           KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
           "127.0.0.1",
-          "127.0.0.1",
+          Optional.empty(),
           port,
-          port,
+          OptionalInt.empty(),
           peerAddresses,
           false,
           emptyList(),

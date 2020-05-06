@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -98,11 +97,6 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   /** Stops the P2P network layer. */
   @Override
   public void stop() {}
-
-  @Override
-  public NetworkConfig getConfig() {
-    throw new UnsupportedOperationException();
-  }
 
   @Override
   public SafeFuture<?> start() {
