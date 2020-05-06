@@ -16,7 +16,6 @@ package tech.pegasys.teku.api;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -82,6 +81,6 @@ public class NetworkDataProvider {
   }
 
   public List<String> getListeningAddresses() {
-    return List.of(LibP2PNetwork.getAdvertisedAddrString(p2pNetwork.getConfig()));
+    return List.of(p2pNetwork.getNodeAddress());
   }
 }
