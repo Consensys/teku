@@ -29,14 +29,14 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeMessageHandler
-    implements LocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {
+    extends PeerRequiredLocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
 
   @VisibleForTesting
@@ -61,7 +61,7 @@ public class BeaconBlocksByRangeMessageHandler
         message.getCount(),
         message.getStep());
     if (message.getStep().compareTo(ONE) < 0) {
-      callback.completeWithError(INVALID_STEP);
+      callback.completeWithErrorResponse(INVALID_STEP);
       return;
     }
     sendMatchingBlocks(message, callback)
@@ -71,10 +71,10 @@ public class BeaconBlocksByRangeMessageHandler
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
-                callback.completeWithError((RpcException) rootCause);
+                callback.completeWithErrorResponse((RpcException) rootCause);
               } else {
                 LOG.error("Failed to process blocks by range request", error);
-                callback.completeWithError(RpcException.SERVER_ERROR);
+                callback.completeWithUnexpectedError(error);
               }
             });
   }

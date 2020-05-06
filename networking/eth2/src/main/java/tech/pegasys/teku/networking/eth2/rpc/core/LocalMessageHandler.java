@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public interface LocalMessageHandler<I, O> {
-  void onIncomingMessage(Eth2Peer peer, I message, ResponseCallback<O> callback);
+  void onIncomingMessage(Optional<Eth2Peer> peer, I message, ResponseCallback<O> callback);
 }
