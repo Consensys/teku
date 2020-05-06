@@ -21,7 +21,6 @@ import static tech.pegasys.teku.util.config.Constants.RANDOM_SUBNETS_PER_VALIDAT
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Random;
@@ -29,29 +28,28 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.artemis.validator.api.SubnetSubscription;
+import tech.pegasys.teku.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class StableSubnetSubscriber {
 
   private final ValidatorApiChannel validatorApiChannel;
-  private final Map<BLSPublicKey, Validator> validators;
   private final Set<Integer> availableSubnetIndices =
       IntStream.range(0, ATTESTATION_SUBNET_COUNT).boxed().collect(Collectors.toSet());
   private final NavigableSet<SubnetSubscription> subnetSubscriptions =
       new TreeSet<>(Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot));
   private final Random rand = new Random();
 
-  public StableSubnetSubscriber(
-      ValidatorApiChannel validatorApiChannel, Map<BLSPublicKey, Validator> validators) {
+  private volatile int validatorCount;
+
+  public StableSubnetSubscriber(ValidatorApiChannel validatorApiChannel, int validatorCount) {
     this.validatorApiChannel = validatorApiChannel;
-    this.validators = validators;
+    this.validatorCount = validatorCount;
     onSlot(UnsignedLong.ZERO);
   }
 
   public void onSlot(UnsignedLong slot) {
-    boolean updated = adjustNumberOfSubscriptionsToNumberOfValidators(slot);
+    boolean updated = adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount);
 
     // Iterate through current subscriptions to replace the ones that have expired
     final Iterator<SubnetSubscription> iterator = subnetSubscriptions.iterator();
@@ -74,15 +72,20 @@ public class StableSubnetSubscriber {
     }
   }
 
+  public void updateValidatorCount(final int validatorCount) {
+    this.validatorCount = validatorCount;
+  }
+
   /**
    * Adjusts the number of subscriptions to the number of validators. Returns true if there was any
    * change made to the number of subscribed subnets.
    */
-  private boolean adjustNumberOfSubscriptionsToNumberOfValidators(UnsignedLong currentSlot) {
+  private boolean adjustNumberOfSubscriptionsToNumberOfValidators(
+      UnsignedLong currentSlot, int validatorCount) {
     boolean updated = false;
 
     int totalNumberOfSubscriptions =
-        min(ATTESTATION_SUBNET_COUNT, RANDOM_SUBNETS_PER_VALIDATOR * validators.size());
+        min(ATTESTATION_SUBNET_COUNT, RANDOM_SUBNETS_PER_VALIDATOR * validatorCount);
 
     while (subnetSubscriptions.size() != totalNumberOfSubscriptions) {
       if (subnetSubscriptions.size() < totalNumberOfSubscriptions) {

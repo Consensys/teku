@@ -48,7 +48,7 @@ public class ValidatorClientService extends Service {
     final RetryingDutyLoader dutyLoader =
         createDutyLoader(validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, validators);
+        new StableSubnetSubscriber(validatorApiChannel, validators.size());
     final DutyScheduler dutyScheduler = new DutyScheduler(dutyLoader, stableSubnetSubscriber);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);

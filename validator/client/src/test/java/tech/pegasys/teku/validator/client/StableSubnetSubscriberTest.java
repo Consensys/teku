@@ -21,29 +21,20 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.artemis.validator.api.SubnetSubscription;
+import tech.pegasys.teku.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class StableSubnetSubscriberTest {
-  private final Map<BLSPublicKey, Validator> validators =
-      new HashMap<>(
-          Map.of(
-              BLSPublicKey.random(0), mock(Validator.class),
-              BLSPublicKey.random(1), mock(Validator.class)));
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private StableSubnetSubscriber stableSubnetSubscriber;
 
   @BeforeEach
   void setUp() {
-
-    stableSubnetSubscriber = new StableSubnetSubscriber(validatorApiChannel, validators);
+    stableSubnetSubscriber = new StableSubnetSubscriber(validatorApiChannel, 2);
   }
 
   @Test
@@ -57,7 +48,7 @@ public class StableSubnetSubscriberTest {
     verify(validatorApiChannel)
         .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
 
-    validators.remove(BLSPublicKey.random(0));
+    stableSubnetSubscriber.updateValidatorCount(1);
 
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
@@ -70,7 +61,7 @@ public class StableSubnetSubscriberTest {
     verify(validatorApiChannel)
         .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
 
-    validators.put(BLSPublicKey.random(2), mock(Validator.class));
+    stableSubnetSubscriber.updateValidatorCount(3);
 
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
@@ -84,8 +75,7 @@ public class StableSubnetSubscriberTest {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
     StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(
-            validatorApiChannel, Map.of(BLSPublicKey.random(0), mock(Validator.class)));
+        new StableSubnetSubscriber(validatorApiChannel, 1);
 
     ArgumentCaptor<Set<SubnetSubscription>> firstSubscriptionUpdate =
         ArgumentCaptor.forClass(Set.class);
