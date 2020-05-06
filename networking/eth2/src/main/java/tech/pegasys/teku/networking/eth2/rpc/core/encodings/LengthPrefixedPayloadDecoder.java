@@ -23,11 +23,11 @@ import java.io.InputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.compression.Compressor;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.CompressionException;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.PayloadLargerThanExpectedException;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.PayloadSmallerThanExpectedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
 class LengthPrefixedPayloadDecoder<T> {
   private static final Logger LOG = LogManager.getLogger();

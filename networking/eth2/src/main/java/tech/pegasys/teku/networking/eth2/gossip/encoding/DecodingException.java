@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.compression.exceptions;
+package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
-public class CompressionException extends Exception {
+public class DecodingException extends Exception {
 
-  public CompressionException(final String message, final Throwable cause) {
+  public DecodingException(final String message, final Throwable cause) {
     super(message, cause);
   }
 
-  public CompressionException(final String message) {
+  public DecodingException(final String message) {
     super(message);
   }
 }
