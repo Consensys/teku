@@ -31,7 +31,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
@@ -76,7 +76,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
             recentChainData,
             new NoOpMetricsSystem(),
             new StatusMessageFactory(recentChainData),
-            new MetadataMessageFactory(),
+            new MetadataMessagesFactory(),
             getRpcEncoding());
 
     reqHandler = createRequestHandler(beaconChainMethods);

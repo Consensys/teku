@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
@@ -41,6 +41,7 @@ import tech.pegasys.teku.util.events.Subscribers;
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final StatusMessageFactory statusMessageFactory;
+  private final MetadataMessagesFactory metadataMessagesFactory;
 
   private final Subscribers<PeerConnectedSubscriber<Eth2Peer>> connectSubscribers =
       Subscribers.create(true);
@@ -57,8 +58,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding) {
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
-    MetadataMessageFactory metadataMessageFactory = new MetadataMessageFactory();
-    attestationSubnetService.subscribeToUpdates(metadataMessageFactory);
+    metadataMessagesFactory = new MetadataMessagesFactory();
+    attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
@@ -68,7 +69,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             storageClient,
             metricsSystem,
             statusMessageFactory,
-            metadataMessageFactory,
+            metadataMessagesFactory,
             rpcEncoding);
   }
 
@@ -92,7 +93,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   @Override
   public void onConnect(final Peer peer) {
-    Eth2Peer eth2Peer = new Eth2Peer(peer, rpcMethods, statusMessageFactory);
+    Eth2Peer eth2Peer =
+        new Eth2Peer(peer, rpcMethods, statusMessageFactory, metadataMessagesFactory);
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), eth2Peer) == null;
     if (!wasAdded) {
       LOG.warn("Duplicate peer connection detected. Ignoring peer.");

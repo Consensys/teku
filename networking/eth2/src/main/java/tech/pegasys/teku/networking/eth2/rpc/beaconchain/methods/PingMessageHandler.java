@@ -13,23 +13,29 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 
-public class MetadataMessageHandler implements LocalMessageHandler<EmptyMessage, MetadataMessage> {
+public class PingMessageHandler implements LocalMessageHandler<PingMessage, PingMessage> {
+  private static final Logger LOG = LogManager.getLogger();
   private final MetadataMessagesFactory metadataMessagesFactory;
 
-  public MetadataMessageHandler(MetadataMessagesFactory metadataMessagesFactory) {
+  public PingMessageHandler(MetadataMessagesFactory metadataMessagesFactory) {
     this.metadataMessagesFactory = metadataMessagesFactory;
   }
 
   @Override
   public void onIncomingMessage(
-      Eth2Peer peer, EmptyMessage message, ResponseCallback<MetadataMessage> callback) {
-    callback.respond(metadataMessagesFactory.createMetadataMessage());
+      final Eth2Peer peer,
+      final PingMessage message,
+      final ResponseCallback<PingMessage> callback) {
+    LOG.trace("Peer {} sent status.", peer.getId());
+    peer.updateMetadataSeqNumber(message.getSeqNumber());
+    callback.respond(metadataMessagesFactory.createPingMessage());
     callback.completeSuccessfully();
   }
 }

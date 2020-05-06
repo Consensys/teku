@@ -17,10 +17,11 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.config.Constants;
 
-public class MetadataMessageFactory implements Consumer<Iterable<Integer>> {
+public class MetadataMessagesFactory implements Consumer<Iterable<Integer>> {
 
   private final AtomicLong seqNumberGenerator = new AtomicLong();
   private volatile MetadataMessage currentMessage = MetadataMessage.createDefault();
@@ -33,7 +34,11 @@ public class MetadataMessageFactory implements Consumer<Iterable<Integer>> {
             new Bitvector(subnetIds, Constants.ATTESTATION_SUBNET_COUNT));
   }
 
-  public MetadataMessage createMessage() {
+  public MetadataMessage createMetadataMessage() {
     return currentMessage;
+  }
+
+  public PingMessage createPingMessage() {
+    return new PingMessage(currentMessage.getSeqNumber());
   }
 }

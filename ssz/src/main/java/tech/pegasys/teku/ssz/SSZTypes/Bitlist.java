@@ -57,6 +57,10 @@ public class Bitlist {
     return data.get(i);
   }
 
+  public int getBitCount() {
+    return data.cardinality();
+  }
+
   public boolean intersects(Bitlist other) {
     return data.intersects(other.data);
   }

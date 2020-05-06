@@ -15,26 +15,29 @@ package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
+import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
-public class GetMetadataIntegrationTest {
+public class PingIntegrationTest {
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private Eth2Network network1;
   private Eth2Network network2;
   private Eth2Peer peer1;
+  private Eth2Peer peer2;
 
   @BeforeEach
   public void setUp() throws Exception {
     network1 = networkFactory.builder().startNetwork();
     network2 = networkFactory.builder().peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
+    peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
   }
 
   @AfterEach
@@ -43,20 +46,26 @@ public class GetMetadataIntegrationTest {
   }
 
   @Test
-  public void testCorrectMetadataSent() throws Exception {
+  public void testPingUpdatesMetadata() throws Exception {
+    Optional<Bitvector> attNets1_0 = peer1.getRemoteAttestationSubnets();
+    Optional<Bitvector> attNets2_0 = peer2.getRemoteAttestationSubnets();
+
+    assertThat(attNets1_0.isEmpty() || attNets1_0.get().getBitCount() == 0);
+    assertThat(attNets2_0.isEmpty() || attNets2_0.get().getBitCount() == 0);
+
     MetadataMessage md1 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
     MetadataMessage md2 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
 
-    assertThat(md1.getSeqNumber()).isEqualTo(md2.getSeqNumber());
-    assertThat(md1.getAttnets().getSize()).isEqualTo(Constants.ATTESTATION_SUBNET_COUNT);
-    assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
-    network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
+    UnsignedLong ping1_0 = peer1.sendPing().get(10, TimeUnit.SECONDS);
+    UnsignedLong ping2_0 = peer2.sendPing().get(10, TimeUnit.SECONDS);
 
-    MetadataMessage md3 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
-    assertThat(md3.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
-    assertThat(md3.getAttnets().getBitCount()).isEqualTo(3);
-    assertThat(md3.getAttnets().getBit(0)).isTrue();
-    assertThat(md3.getAttnets().getBit(1)).isTrue();
-    assertThat(md3.getAttnets().getBit(8)).isTrue();
+    assertThat(ping1_0).isEqualTo(md1.getSeqNumber());
+    assertThat(ping2_0).isEqualTo(md2.getSeqNumber());
+
+    UnsignedLong ping1_1 = peer1.sendPing().get(10, TimeUnit.SECONDS);
+    UnsignedLong ping2_1 = peer2.sendPing().get(10, TimeUnit.SECONDS);
+
+    assertThat(ping1_1).isEqualTo(md1.getSeqNumber());
+    assertThat(ping2_1).isEqualTo(md2.getSeqNumber());
   }
 }

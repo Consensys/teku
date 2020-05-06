@@ -58,6 +58,10 @@ public class Bitvector {
     data.clear(i);
   }
 
+  public int getBitCount() {
+    return data.cardinality();
+  }
+
   public boolean getBit(int i) {
     checkElementIndex(i, size);
     return data.get(i);
