@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import org.apache.tuweni.bytes.Bytes;
 
 class SszSnappyEncoding implements GossipEncoding {
-  private static final String NAME = "snappy_ssz";
+  private static final String NAME = "ssz_snappy";
   private final SnappyBlockCompressor snappyCompressor;
   private final GossipEncoding sszEncoding;
 
