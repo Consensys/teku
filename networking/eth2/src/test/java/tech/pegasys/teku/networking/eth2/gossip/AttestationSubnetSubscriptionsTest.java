@@ -27,6 +27,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -36,6 +37,7 @@ public class AttestationSubnetSubscriptionsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private AttestationSubnetSubscriptions subnetSubscriptions;
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
+  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final EventBus eventBus = mock(EventBus.class);
 
   @BeforeEach
@@ -45,7 +47,11 @@ public class AttestationSubnetSubscriptionsTest {
         .thenReturn(Optional.of(dataStructureUtil.randomForkInfo()));
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            gossipNetwork, recentChainData, mock(AttestationValidator.class), eventBus);
+            gossipNetwork,
+            gossipEncoding,
+            mock(AttestationValidator.class),
+            recentChainData,
+            eventBus);
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));
   }

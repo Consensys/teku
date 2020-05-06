@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -43,6 +43,7 @@ public class BlockGossipManagerTest {
   private final BlockValidator blockValidator =
       new BlockValidator(recentChainData, new StateTransition());
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
+  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @BeforeEach
@@ -51,14 +52,18 @@ public class BlockGossipManagerTest {
         .when(gossipNetwork)
         .subscribe(contains(BlockTopicHandler.TOPIC_NAME), any());
     new BlockGossipManager(
-        gossipNetwork, eventBus, blockValidator, dataStructureUtil.randomForkInfo());
+        gossipNetwork,
+        gossipEncoding,
+        dataStructureUtil.randomForkInfo(),
+        blockValidator,
+        eventBus);
   }
 
   @Test
   public void onBlockProposed() {
     // Should gossip new blocks received from event bus
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    Bytes serialized = SimpleOffsetSerializer.serialize(block);
+    Bytes serialized = gossipEncoding.encode(block);
     eventBus.post(new ProposedBlockEvent(block));
 
     verify(topicChannel).gossip(serialized);
