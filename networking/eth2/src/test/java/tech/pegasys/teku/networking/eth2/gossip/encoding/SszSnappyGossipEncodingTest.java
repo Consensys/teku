@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core;
+package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
-import java.util.Optional;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+public class SszSnappyGossipEncodingTest extends AbstractGossipEncodingTest {
 
-public interface LocalMessageHandler<I, O> {
-  void onIncomingMessage(Optional<Eth2Peer> peer, I message, ResponseCallback<O> callback);
+  @Override
+  protected GossipEncoding createEncoding() {
+    return GossipEncoding.SSZ_SNAPPY;
+  }
 }
