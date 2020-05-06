@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.compression;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.compression.exceptions.CompressionException;
@@ -31,9 +33,19 @@ public interface Compressor {
    * Returns the uncompressed data.
    *
    * @param data The data to uncompress.
+   * @param uncompressedPayloadSize The expected size of the uncompressed payload
    * @return The uncompressed data.
    */
-  Bytes uncompress(final Bytes data) throws CompressionException;
+  default Bytes uncompress(final Bytes data, final int uncompressedPayloadSize)
+      throws CompressionException {
+    try (final InputStream byteStream = new ByteArrayInputStream(data.toArrayUnsafe())) {
+      // Read everything
+      return uncompress(byteStream, uncompressedPayloadSize);
+    } catch (IOException e) {
+      throw new RuntimeException(
+          "Unexpected error encountered while preparing to uncompress bytes", e);
+    }
+  }
 
   /**
    * Uncompress a value expected to be {@code uncompressedPayloadSize} bytes.

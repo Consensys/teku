@@ -14,12 +14,10 @@
 package tech.pegasys.teku.networking.eth2.compression;
 
 import com.google.common.io.ByteStreams;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.SnappyFramedInputStream;
 import org.xerial.snappy.SnappyFramedOutputStream;
@@ -48,20 +46,36 @@ public class SnappyCompressor implements Compressor {
   }
 
   @Override
-  public Bytes uncompress(final Bytes data) throws CompressionException {
-    try (final InputStream byteStream = new ByteArrayInputStream(data.toArrayUnsafe())) {
-      // Read everything
-      return uncompress(byteStream, OptionalInt.empty());
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "Unexpected error encountered while preparing to uncompress bytes", e);
-    }
-  }
-
-  @Override
   public Bytes uncompress(final InputStream input, final int uncompressedPayloadSize)
       throws CompressionException {
-    return uncompress(input, OptionalInt.of(uncompressedPayloadSize));
+    // This is a bit of a hack - but we don't want to close the underlying stream when
+    // we close the SnappyFramedInputStream
+    final UncloseableInputStream unclosableStream = new UncloseableInputStream(input);
+    // Limit the max number of bytes we're allowed to read
+    final InputStream limitedStream =
+        ByteStreams.limit(unclosableStream, getMaxCompressedLength(uncompressedPayloadSize));
+
+    try (final InputStream snappyIn = new SnappyFramedInputStream(limitedStream)) {
+      final Bytes uncompressed = Bytes.wrap(snappyIn.readNBytes(uncompressedPayloadSize));
+
+      // Validate payload is of expected size
+      if (uncompressed.size() < uncompressedPayloadSize) {
+        throw new PayloadSmallerThanExpectedException(
+            String.format(
+                "Expected %d bytes but only uncompressed %d bytes",
+                uncompressedPayloadSize, uncompressed.size()));
+      }
+      if (snappyIn.available() > 0) {
+        throw new PayloadLargerThanExpectedException(
+            String.format(
+                "Expected %d bytes, but at least %d extra bytes are appended",
+                uncompressedPayloadSize, snappyIn.available()));
+      }
+
+      return uncompressed;
+    } catch (IOException e) {
+      throw new CompressionException("Unable to uncompress data", e);
+    }
   }
 
   @Override
@@ -70,43 +84,6 @@ public class SnappyCompressor implements Compressor {
     // See:
     // https://github.com/google/snappy/blob/537f4ad6240e586970fe554614542e9717df7902/snappy.cc#L98
     return 32 + uncompressedLength + uncompressedLength / 6;
-  }
-
-  private Bytes uncompress(final InputStream input, OptionalInt uncompressedPayloadSize)
-      throws CompressionException {
-    // This is a bit of a hack - but we don't want to close the underlying stream when
-    // we close the SnappyFramedInputStream
-    InputStream srcStream = new UncloseableInputStream(input);
-
-    if (uncompressedPayloadSize.isPresent()) {
-      // Limit the max number of bytes we're allowed to read if we know the payload size
-      final int maxCompressedBytes = getMaxCompressedLength(uncompressedPayloadSize.getAsInt());
-      srcStream = ByteStreams.limit(srcStream, maxCompressedBytes);
-    }
-
-    final int maxBytesToRead = uncompressedPayloadSize.orElse(Integer.MAX_VALUE);
-    try (final InputStream snappyIn = new SnappyFramedInputStream(srcStream)) {
-      final Bytes uncompressed = Bytes.wrap(snappyIn.readNBytes(maxBytesToRead));
-
-      // Validate payload is of expected size
-      final boolean validateSize = uncompressedPayloadSize.isPresent();
-      if (validateSize && uncompressed.size() < uncompressedPayloadSize.getAsInt()) {
-        throw new PayloadSmallerThanExpectedException(
-            String.format(
-                "Expected %d bytes but only uncompressed %d bytes",
-                uncompressedPayloadSize.getAsInt(), uncompressed.size()));
-      }
-      if (validateSize && snappyIn.available() > 0) {
-        throw new PayloadLargerThanExpectedException(
-            String.format(
-                "Expected %d bytes, but at least %d extra bytes are appended",
-                uncompressedPayloadSize.getAsInt(), snappyIn.available()));
-      }
-
-      return uncompressed;
-    } catch (IOException e) {
-      throw new CompressionException("Unable to uncompress data", e);
-    }
   }
 
   private static class UncloseableInputStream extends DelegatingInputStream {
