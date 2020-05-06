@@ -121,7 +121,7 @@ public class StableSubnetSubscriber {
   private void unsubscribeFromRandomSubnet() {
     SubnetSubscription subnetSubscription =
         getRandomSetElement(subnetSubscriptions)
-            .orElseThrow(() -> new IllegalStateException("No subnetId found to unsubscribe from."));
+            .orElseThrow(() -> new IllegalStateException("No subnet subscription found to unsubscribe from."));
 
     subnetSubscriptions.remove(subnetSubscription);
     availableSubnetIndices.add(subnetSubscription.getSubnetId());
