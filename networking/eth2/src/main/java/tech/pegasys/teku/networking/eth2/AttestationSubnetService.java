@@ -27,11 +27,12 @@ import tech.pegasys.teku.util.events.Subscribers;
 public class AttestationSubnetService {
   private final Subscribers<Consumer<Iterable<Integer>>> subscribers = Subscribers.create(true);
   private Iterable<Integer> currentSubscriptions = Collections.emptyList();
-  private final ExecutorService publisherExecutor = Executors.newSingleThreadExecutor(
-      new ThreadFactoryBuilder()
-          .setDaemon(true)
-          .setNameFormat("AttestationSubnetServicePublisherThread")
-          .build());
+  private final ExecutorService publisherExecutor =
+      Executors.newSingleThreadExecutor(
+          new ThreadFactoryBuilder()
+              .setDaemon(true)
+              .setNameFormat("AttestationSubnetServicePublisherThread")
+              .build());
 
   public synchronized void updateSubscriptions(final Iterable<Integer> subnetIndices) {
     publisherExecutor.execute(() -> subscribers.deliver(Consumer::accept, subnetIndices));
