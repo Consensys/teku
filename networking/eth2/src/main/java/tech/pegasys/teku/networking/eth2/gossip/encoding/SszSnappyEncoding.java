@@ -14,15 +14,14 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.compression.Compressor;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.CompressionException;
 
 class SszSnappyEncoding implements GossipEncoding {
   private static final String NAME = "snappy_ssz";
-  private final Compressor snappyCompressor;
+  private final SnappyBlockCompressor snappyCompressor;
   private final GossipEncoding sszEncoding;
 
-  public SszSnappyEncoding(final GossipEncoding sszEncoding, final Compressor snappyCompressor) {
+  public SszSnappyEncoding(
+      final GossipEncoding sszEncoding, final SnappyBlockCompressor snappyCompressor) {
     this.snappyCompressor = snappyCompressor;
     this.sszEncoding = sszEncoding;
   }
@@ -39,11 +38,7 @@ class SszSnappyEncoding implements GossipEncoding {
 
   @Override
   public <T> T decode(Bytes data, Class<T> valueType) throws DecodingException {
-    try {
-      final Bytes uncompressed = snappyCompressor.uncompress(data);
-      return sszEncoding.decode(uncompressed, valueType);
-    } catch (CompressionException e) {
-      throw new DecodingException("Failed to uncompress message", e);
-    }
+    final Bytes uncompressed = snappyCompressor.uncompress(data);
+    return sszEncoding.decode(uncompressed, valueType);
   }
 }

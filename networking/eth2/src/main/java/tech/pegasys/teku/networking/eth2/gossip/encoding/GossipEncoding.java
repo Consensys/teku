@@ -14,12 +14,11 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.compression.SnappyCompressor;
 
 public interface GossipEncoding {
 
   GossipEncoding SSZ = new SszGossipEncoding();
-  GossipEncoding SSZ_SNAPPY = new SszSnappyEncoding(SSZ, new SnappyCompressor());
+  GossipEncoding SSZ_SNAPPY = new SszSnappyEncoding(SSZ, new SnappyBlockCompressor());
 
   /**
    * Get the name of the encoding. This is the name included as part of gossip topic strings.

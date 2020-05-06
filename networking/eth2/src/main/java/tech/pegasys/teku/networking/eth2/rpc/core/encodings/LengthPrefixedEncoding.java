@@ -15,8 +15,8 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 
 /**
  * Represents an rpc payload encoding where the header consists of a single protobuf varint holding
