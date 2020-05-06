@@ -108,8 +108,8 @@ allprojects {
         include '**/*.java'
         exclude '**/.gradle/**'
         exclude 'web3j'
-        //Excluding tech.pegasys.artemis.datastructures due to preferred formatting overwritten by plugin in getConstantsAsString.
-        exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
+        //Excluding tech.pegasys.teku.datastructures due to preferred formatting overwritten by plugin in getConstantsAsString.
+        exclude '**/src/main/java/tech/pegasys/teku/Constants.java'
         exclude '**/proto'
       }
 
@@ -162,7 +162,7 @@ allprojects {
    * The properties passed are:
    * - 'test.ethereum.include': allows to run a single Ethereum reference tests. For instance,
    *   running a single general state test can be done with:
-   *    ./gradlew :ethereum:tech.pegasys.artemis.ethereum.vm:test -Dtest.single=GeneralStateTest -Dtest.ethereum.include=callcodecallcallcode_101-Frontier
+   *    ./gradlew :ethereum:tech.pegasys.teku.ethereum.vm:test -Dtest.single=GeneralStateTest -Dtest.ethereum.include=callcodecallcallcode_101-Frontier
    *   The meaning being that will be run only the tests for which the value passed as "include"
    *   (which can be a java pattern) matches parts of the test name. Knowing that tests names for
    *   reference tests are of the form:
@@ -173,7 +173,7 @@ allprojects {
    *   multiple variant of that test are run. The variant is a simple number.
    * - 'test.ethereum.state.eip': for general state tests, allows to only run tests for the
    *   milestone specified by this value. So for instance,
-   *    ./gradlew :ethereum:tech.pegasys.artemis.ethereum.vm:test -Dtest.single=GeneralStateTest -Dtest.ethereum.state.eip=Frontier
+   *    ./gradlew :ethereum:tech.pegasys.teku.ethereum.vm:test -Dtest.single=GeneralStateTest -Dtest.ethereum.state.eip=Frontier
    *   only run general state tests for Frontier. Note that this behavior could be achieved as well
    *   with the 'include' option above since it is a pattern, but this is a slightly more convenient
    *   option.
@@ -278,7 +278,7 @@ distZip {
 
 application {
   applicationName = "teku"
-  mainClassName = "tech.pegasys.artemis.Artemis"
+  mainClassName = "tech.pegasys.teku.Teku"
   applicationDefaultJvmArgs = [
       "-Djava.library.path=TEKU_HOME/native",
       "-Dvertx.disableFileCPResolving=true",
@@ -448,7 +448,7 @@ subprojects {
   def jarName = project.name
   def parent = project.parent
   while (parent != null) {
-    if (parent != rootProject || jarName != 'artemis') {
+    if (parent != rootProject || jarName != 'teku') {
       jarName = parent.name + '-' + jarName
     }
     parent = parent.parent
@@ -499,7 +499,7 @@ subprojects {
     group = "verification"
     description = "Runs the Teku acceptance tests"
 
-    systemProperty "artemis.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
+    systemProperty "teku.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
   }
@@ -527,16 +527,16 @@ run {
   if(project.hasProperty('generateFlow')){
     def flowJVMArgs = [
       "-javaagent:${userHome}/.flow/resources/javaagent.jar",
-      "-Dflow.agent.include=tech.pegasys.artemis,tech.pegasys.artemis.services.beaconchain,tech.pegasys.artemis.statetransition,tech.pegasys.artemis.statetransition.util",
-      "-Dflow.agent.exclude=tech.pegasys.artemis.datastructures.state,tech.pegasys.artemis.datastructures.blocks,tech.pegasys.artemis.datastructures.operations,tech.pegasys.artemis.datastructures.util.bitwise,tech.pegasys.artemis.util.hashtree,tech.pegasys.artemis.util.alogger,tech.pegasys.artemis.storage,tech.pegasys.artemis.util.bls,tech.pegasys.artemis.util.mikuli,tech.pegasys.artemis.networking.p2p,tech.pegasys.artemis.validator.coordinator",
+      "-Dflow.agent.include=tech.pegasys.teku,tech.pegasys.teku.services.beaconchain,tech.pegasys.teku.statetransition,tech.pegasys.teku.statetransition.util",
+      "-Dflow.agent.exclude=tech.pegasys.teku.datastructures.state,tech.pegasys.teku.datastructures.blocks,tech.pegasys.teku.datastructures.operations,tech.pegasys.teku.datastructures.util.bitwise,tech.pegasys.teku.util.hashtree,tech.pegasys.teku.util.alogger,tech.pegasys.teku.storage,tech.pegasys.teku.util.bls,tech.pegasys.teku.util.mikuli,tech.pegasys.teku.networking.p2p,tech.pegasys.teku.validator.coordinator",
       "-Dflow.agent.autostart",
-      "-Dflow.agent.execution-name=artemis"
+      "-Dflow.agent.execution-name=teku"
       ]
    applicationDefaultJvmArgs.addAll(flowJVMArgs)
   }
-  args project.hasProperty("artemis.run.args") ? project.property("artemis.run.args").toString().split("\\s+") : []
+  args project.hasProperty("teku.run.args") ? project.property("teku.run.args").toString().split("\\s+") : []
   doFirst {
-    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('TEKU_HOME', "$buildDir/artemis")}
+    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('TEKU_HOME', "$buildDir/teku")}
   }
 }
 
@@ -548,7 +548,7 @@ startScripts {
 }
 
 dependencies {
-  compile project(':artemis')
+  compile project(':teku')
   errorprone 'com.google.errorprone:error_prone_core'
 }
 
