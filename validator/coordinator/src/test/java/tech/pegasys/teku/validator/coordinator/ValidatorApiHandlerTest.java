@@ -108,6 +108,17 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void getDuties_shouldReturnEmptyWhenNoPublicKeysSpecified() {
+    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
+
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
+        validatorApiHandler.getDuties(EPOCH, emptyList());
+    final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get()).isEmpty();
+  }
+
+  @Test
   public void getDuties_shouldReturnDutiesForUnknownValidator() {
     when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));

@@ -106,6 +106,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
+    if (publicKeys.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
     final UnsignedLong slot =
         compute_start_slot_at_epoch(
             epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
