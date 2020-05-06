@@ -64,7 +64,7 @@ class RecentChainDataTest {
     assertThat(preGenesisStorageClient.getGenesisTime()).isEqualTo(INITIAL_STATE.getGenesis_time());
     assertThat(preGenesisStorageClient.getBestSlot())
         .isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
-    assertThat(preGenesisStorageClient.getBestBlockRootState()).hasValue(INITIAL_STATE);
+    assertThat(preGenesisStorageClient.getBestState()).hasValue(INITIAL_STATE);
     assertThat(preGenesisStorageClient.getStore()).isNotNull();
   }
 

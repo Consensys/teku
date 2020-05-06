@@ -38,7 +38,7 @@ public class GetForkIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
   public void shouldReturnNoContentIfBestBlockStateIsMissing() throws Exception {
     final Store store = mock(Store.class);
     when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBestBlockRootState()).thenReturn(Optional.empty());
+    when(recentChainData.getBestState()).thenReturn(Optional.empty());
 
     final Response response = get();
     assertNoContent(response);
