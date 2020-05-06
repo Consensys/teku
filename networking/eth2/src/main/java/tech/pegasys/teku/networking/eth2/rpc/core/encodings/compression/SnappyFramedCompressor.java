@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.compression;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
 import com.google.common.io.ByteStreams;
 import java.io.ByteArrayOutputStream;
@@ -21,12 +21,13 @@ import java.io.OutputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.SnappyFramedInputStream;
 import org.xerial.snappy.SnappyFramedOutputStream;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.CompressionException;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.PayloadLargerThanExpectedException;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.PayloadSmallerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 import tech.pegasys.teku.util.iostreams.DelegatingInputStream;
 
-public class SnappyCompressor implements Compressor {
+/** Implements snappy compression using the "framed" / streaming format. */
+public class SnappyFramedCompressor implements Compressor {
   // The max uncompressed bytes that will be packed into a single frame
   // See:
   // https://github.com/google/snappy/blob/251d935d5096da77c4fef26ea41b019430da5572/framing_format.txt#L104-L106

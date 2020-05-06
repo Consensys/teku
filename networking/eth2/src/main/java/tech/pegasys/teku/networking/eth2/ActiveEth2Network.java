@@ -23,6 +23,7 @@ import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
@@ -44,6 +45,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final EventBus eventBus;
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
+  private final GossipEncoding gossipEncoding;
 
   private BlockGossipManager blockGossipManager;
   private AttestationGossipManager attestationGossipManager;
@@ -53,12 +55,14 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final DiscoveryNetwork<?> discoveryNetwork,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData,
+      final GossipEncoding gossipEncoding) {
     super(discoveryNetwork);
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
+    this.gossipEncoding = gossipEncoding;
   }
 
   @Override
@@ -83,13 +87,15 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            discoveryNetwork, recentChainData, attestationValidator, eventBus);
+            discoveryNetwork, gossipEncoding, attestationValidator, recentChainData, eventBus);
     blockGossipManager =
-        new BlockGossipManager(discoveryNetwork, eventBus, blockValidator, forkInfo);
+        new BlockGossipManager(
+            discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
     attestationGossipManager =
-        new AttestationGossipManager(eventBus, attestationSubnetSubscriptions);
+        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions, eventBus);
     aggregateGossipManager =
-        new AggregateGossipManager(discoveryNetwork, eventBus, aggregateValidator, forkInfo);
+        new AggregateGossipManager(
+            discoveryNetwork, gossipEncoding, forkInfo, aggregateValidator, eventBus);
   }
 
   @Override

@@ -23,24 +23,26 @@ import com.google.common.eventbus.EventBus;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
+  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final SignedAggregateAndProofValidator validator =
       mock(SignedAggregateAndProofValidator.class);
   private final AggregateTopicHandler topicHandler =
-      new AggregateTopicHandler(eventBus, dataStructureUtil.randomForkInfo(), validator);
+      new AggregateTopicHandler(
+          gossipEncoding, dataStructureUtil.randomForkInfo(), validator, eventBus);
 
   @Test
   public void handleMessage_validAggregate() {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     when(validator.validate(aggregate)).thenReturn(ValidationResult.VALID);
 
-    final boolean result = topicHandler.handleMessage(SimpleOffsetSerializer.serialize(aggregate));
+    final boolean result = topicHandler.handleMessage(gossipEncoding.encode(aggregate));
     assertThat(result).isTrue();
     verify(eventBus).post(aggregate);
   }
@@ -50,7 +52,7 @@ public class AggregateTopicHandlerTest {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     when(validator.validate(aggregate)).thenReturn(ValidationResult.SAVED_FOR_FUTURE);
 
-    final boolean result = topicHandler.handleMessage(SimpleOffsetSerializer.serialize(aggregate));
+    final boolean result = topicHandler.handleMessage(gossipEncoding.encode(aggregate));
     assertThat(result).isFalse();
     verify(eventBus).post(aggregate);
   }
@@ -60,7 +62,7 @@ public class AggregateTopicHandlerTest {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     when(validator.validate(aggregate)).thenReturn(ValidationResult.INVALID);
 
-    final boolean result = topicHandler.handleMessage(SimpleOffsetSerializer.serialize(aggregate));
+    final boolean result = topicHandler.handleMessage(gossipEncoding.encode(aggregate));
     assertThat(result).isFalse();
     verify(eventBus, never()).post(aggregate);
   }
