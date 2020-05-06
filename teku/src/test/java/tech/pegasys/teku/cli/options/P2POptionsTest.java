@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -26,7 +27,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldReadFromConfigurationFile() {
     final TekuConfiguration config = getTekuConfigurationFromFile("P2POptions_config.yaml");
 
-    assertThat(config.getP2pAdvertisedIp()).isEqualTo("127.200.0.1");
+    assertThat(config.getP2pAdvertisedIp()).isEqualTo(Optional.of("127.200.0.1"));
     assertThat(config.getP2pInterface()).isEqualTo("127.100.0.1");
     assertThat(config.isP2pEnabled()).isTrue();
     assertThat(config.isP2pDiscoveryEnabled()).isTrue();
@@ -104,5 +105,30 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
     assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+  }
+
+  @Test
+  public void advertisedIp_shouldDefaultToEmpty() {
+    assertThat(getTekuConfigurationFromArguments().getP2pAdvertisedIp()).isEmpty();
+  }
+
+  @Test
+  public void advertisedIp_shouldAcceptValue() {
+    final String ip = "10.0.1.200";
+    assertThat(getTekuConfigurationFromArguments("--p2p-advertised-ip", ip).getP2pAdvertisedIp())
+        .contains(ip);
+  }
+
+  @Test
+  public void advertisedPort_shouldDefaultToEmpty() {
+    assertThat(getTekuConfigurationFromArguments().getP2pAdvertisedPort()).isEmpty();
+  }
+
+  @Test
+  public void advertisedPort_shouldAcceptValue() {
+    assertThat(
+            getTekuConfigurationFromArguments("--p2p-advertised-port", "8056")
+                .getP2pAdvertisedPort())
+        .hasValue(8056);
   }
 }

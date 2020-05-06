@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
@@ -61,7 +60,7 @@ public class NetworkDataProviderTest {
     final List<String> expected = List.of(String.format("/ip4/%s/tcp/%d", ipAddress, port));
 
     when(p2pNetwork.getConfig()).thenReturn(networkConfig);
-    when(networkConfig.getAdvertisedIp()).thenReturn(Optional.of(ipAddress));
+    when(networkConfig.getAdvertisedIp()).thenReturn(ipAddress);
     when(networkConfig.getAdvertisedPort()).thenReturn(port);
 
     assertThat(network.getListeningAddresses()).isEqualTo(expected);
@@ -77,7 +76,7 @@ public class NetworkDataProviderTest {
     final List<String> expected = List.of(String.format("/ip4/%s/tcp/%d", hostAddress, port));
 
     when(p2pNetwork.getConfig()).thenReturn(networkConfig);
-    when(networkConfig.getAdvertisedIp()).thenReturn(Optional.empty());
+    when(networkConfig.getAdvertisedIp()).thenReturn(interfaceAddress);
     when(networkConfig.getNetworkInterface()).thenReturn(interfaceAddress);
     when(networkConfig.getAdvertisedPort()).thenReturn(port);
 
@@ -93,7 +92,7 @@ public class NetworkDataProviderTest {
     final List<String> expected = List.of(String.format("/ip4/%s/tcp/%d", interfaceAddress, port));
 
     when(p2pNetwork.getConfig()).thenReturn(networkConfig);
-    when(networkConfig.getAdvertisedIp()).thenReturn(Optional.empty());
+    when(networkConfig.getAdvertisedIp()).thenReturn(interfaceAddress);
     when(networkConfig.getNetworkInterface()).thenReturn(interfaceAddress);
     when(networkConfig.getAdvertisedPort()).thenReturn(port);
 

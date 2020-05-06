@@ -206,10 +206,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private static Multiaddr getAdvertisedAddr(NetworkConfig config) {
     try {
       String ip;
-      if (config.getAdvertisedIp().isPresent()) {
-        ip = config.getAdvertisedIp().get();
-      } else if (NetworkUtility.isUnspecifiedAddress(config.getNetworkInterface())) {
-        ip = config.getNetworkInterface();
+      if (!NetworkUtility.isUnspecifiedAddress(config.getAdvertisedIp())) {
+        ip = config.getAdvertisedIp();
       } else {
         ip = InetAddress.getLocalHost().getHostAddress();
       }
