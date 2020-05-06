@@ -16,8 +16,8 @@ package tech.pegasys.teku.validator.api;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -44,7 +44,7 @@ public interface ValidatorApiChannel {
 
   void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UnsignedLong aggregationSlot);
 
-  void updateRandomSubnetSubscriptions(Map<Integer, UnsignedLong> subnetIdToUnsubscriptionSlot);
+  void updatePersistentSubnetSubscriptions(Set<SubnetSubscription> subnetSubscriptions);
 
   void sendSignedAttestation(Attestation attestation);
 

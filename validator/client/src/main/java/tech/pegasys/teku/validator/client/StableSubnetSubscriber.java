@@ -19,15 +19,18 @@ import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_RANDOM_SUBNET_S
 import static tech.pegasys.teku.util.config.Constants.RANDOM_SUBNETS_PER_VALIDATOR;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.artemis.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class StableSubnetSubscriber {
@@ -36,7 +39,8 @@ public class StableSubnetSubscriber {
   private final Map<BLSPublicKey, Validator> validators;
   private final Set<Integer> availableSubnetIndices =
       IntStream.range(0, ATTESTATION_SUBNET_COUNT).boxed().collect(Collectors.toSet());
-  private final Map<Integer, UnsignedLong> subnetIdToUnsubscriptionSlot = new HashMap<>();
+  private final NavigableSet<SubnetSubscription> subnetSubscriptions =
+      new TreeSet<>(Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot));
   private final Random rand = new Random();
 
   public StableSubnetSubscriber(
@@ -50,16 +54,15 @@ public class StableSubnetSubscriber {
     boolean updated = adjustNumberOfSubscriptionsToNumberOfValidators(slot);
 
     // Iterate through current subscriptions to replace the ones that have expired
-    final Iterator<Map.Entry<Integer, UnsignedLong>> iterator =
-        subnetIdToUnsubscriptionSlot.entrySet().iterator();
+    final Iterator<SubnetSubscription> iterator = subnetSubscriptions.iterator();
     while (iterator.hasNext()) {
-      final Map.Entry<Integer, UnsignedLong> entry = iterator.next();
-      if (entry.getValue().compareTo(slot) > 0) {
-        continue;
+      final SubnetSubscription subnetSubscription = iterator.next();
+      if (subnetSubscription.getUnsubscriptionSlot().compareTo(slot) > 0) {
+        break;
       }
 
       iterator.remove();
-      int subnetId = entry.getKey();
+      int subnetId = subnetSubscription.getSubnetId();
       availableSubnetIndices.add(subnetId);
       subscribeToNewRandomSubnet(slot);
       updated = true;
@@ -67,7 +70,7 @@ public class StableSubnetSubscriber {
 
     // If any update was made to the subscriptions pass the new subscription set to BeaconNode
     if (updated) {
-      validatorApiChannel.updateRandomSubnetSubscriptions(subnetIdToUnsubscriptionSlot);
+      validatorApiChannel.updatePersistentSubnetSubscriptions(subnetSubscriptions);
     }
   }
 
@@ -81,8 +84,8 @@ public class StableSubnetSubscriber {
     int totalNumberOfSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, RANDOM_SUBNETS_PER_VALIDATOR * validators.size());
 
-    while (subnetIdToUnsubscriptionSlot.size() != totalNumberOfSubscriptions) {
-      if (subnetIdToUnsubscriptionSlot.size() < totalNumberOfSubscriptions) {
+    while (subnetSubscriptions.size() != totalNumberOfSubscriptions) {
+      if (subnetSubscriptions.size() < totalNumberOfSubscriptions) {
         subscribeToNewRandomSubnet(currentSlot);
       } else {
         unsubscribeFromRandomSubnet();
@@ -103,7 +106,8 @@ public class StableSubnetSubscriber {
             .orElseThrow(() -> new IllegalStateException("No available subnetId found"));
 
     availableSubnetIndices.remove(newSubnetId);
-    subnetIdToUnsubscriptionSlot.put(newSubnetId, getRandomUnsubscriptionSlot(currentSlot));
+    subnetSubscriptions.add(
+        new SubnetSubscription(newSubnetId, getRandomUnsubscriptionSlot(currentSlot)));
   }
 
   /**
@@ -112,11 +116,12 @@ public class StableSubnetSubscriber {
    * @return
    */
   private void unsubscribeFromRandomSubnet() {
-    int subnetId =
-        getRandomSetElement(subnetIdToUnsubscriptionSlot.keySet())
+    SubnetSubscription subnetSubscription =
+        getRandomSetElement(subnetSubscriptions)
             .orElseThrow(() -> new IllegalStateException("No subnetId found to unsubscribe from."));
-    subnetIdToUnsubscriptionSlot.remove(subnetId);
-    availableSubnetIndices.add(subnetId);
+
+    subnetSubscriptions.remove(subnetSubscription);
+    availableSubnetIndices.add(subnetSubscription.getSubnetId());
   }
 
   private Optional<Integer> getRandomAvailableSubnetId() {
