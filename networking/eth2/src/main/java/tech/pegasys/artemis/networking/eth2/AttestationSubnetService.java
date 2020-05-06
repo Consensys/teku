@@ -13,7 +13,10 @@
 
 package tech.pegasys.artemis.networking.eth2;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import tech.pegasys.artemis.util.events.Subscribers;
 
@@ -23,15 +26,20 @@ import tech.pegasys.artemis.util.events.Subscribers;
  */
 public class AttestationSubnetService {
   private final Subscribers<Consumer<Iterable<Integer>>> subscribers = Subscribers.create(true);
-  private volatile Iterable<Integer> currentSubscriptions = Collections.emptyList();
+  private Iterable<Integer> currentSubscriptions = Collections.emptyList();
+  private final ExecutorService publisherExecutor = Executors.newSingleThreadExecutor(
+      new ThreadFactoryBuilder()
+          .setDaemon(true)
+          .setNameFormat("AttestationSubnetServicePublisherThread")
+          .build());
 
-  public void updateSubscriptions(final Iterable<Integer> subnetIndices) {
-    subscribers.deliver(Consumer::accept, subnetIndices);
+  public synchronized void updateSubscriptions(final Iterable<Integer> subnetIndices) {
+    publisherExecutor.execute(() -> subscribers.deliver(Consumer::accept, subnetIndices));
     currentSubscriptions = subnetIndices;
   }
 
-  public long subscribeToUpdates(Consumer<Iterable<Integer>> observer) {
-    observer.accept(currentSubscriptions);
+  public synchronized long subscribeToUpdates(Consumer<Iterable<Integer>> observer) {
+    publisherExecutor.execute(() -> observer.accept(currentSubscriptions));
     return subscribers.subscribe(observer);
   }
 
