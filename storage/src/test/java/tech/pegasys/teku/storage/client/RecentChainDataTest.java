@@ -83,6 +83,41 @@ class RecentChainDataTest {
   }
 
   @Test
+  public void updateBestBlock_validUpdate() throws Exception {
+    final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
+    saveBlock(storageClient, bestBlock);
+
+    storageClient.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
+    assertThat(storageClient.getBestBlockAndState()).contains(bestBlock.toUnsigned());
+  }
+
+  @Test
+  public void updateBestBlock_blockIsMissing() throws Exception {
+    final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
+    saveState(storageClient, bestBlock.getRoot(), bestBlock.getState());
+
+    storageClient.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
+    assertThat(storageClient.getBestBlockAndState()).contains(genesis.toUnsigned());
+  }
+
+  @Test
+  public void updateBestBlock_stateIsMissing() throws Exception {
+    final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
+    saveBlock(storageClient, bestBlock.getBlock());
+
+    storageClient.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
+    assertThat(storageClient.getBestBlockAndState()).contains(genesis.toUnsigned());
+  }
+
+  @Test
+  public void updateBestBlock_blockAndStateAreMissing() throws Exception {
+    final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
+
+    storageClient.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
+    assertThat(storageClient.getBestBlockAndState()).contains(genesis.toUnsigned());
+  }
+
+  @Test
   public void getBlockBySlot_returnEmptyWhenStoreNotSet() {
     assertThat(preGenesisStorageClient.getBlockBySlot(UnsignedLong.ZERO)).isEmpty();
   }
@@ -411,6 +446,19 @@ class RecentChainDataTest {
     final Transaction tx = recentChainData.startStoreTransaction();
     tx.putBlock(block.getRoot(), block.getBlock());
     tx.putBlockState(block.getRoot(), block.getState());
+    tx.commit().reportExceptions();
+  }
+
+  private void saveBlock(final RecentChainData recentChainData, final SignedBeaconBlock block) {
+    final Transaction tx = recentChainData.startStoreTransaction();
+    tx.putBlock(block.getRoot(), block);
+    tx.commit().reportExceptions();
+  }
+
+  private void saveState(
+      final RecentChainData recentChainData, final Bytes32 blockRoot, final BeaconState state) {
+    final Transaction tx = recentChainData.startStoreTransaction();
+    tx.putBlockState(blockRoot, state);
     tx.commit().reportExceptions();
   }
 }

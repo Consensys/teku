@@ -140,6 +140,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             slot,
             root,
             newBestBlock == null ? "block" : "state");
+        return;
       }
       final SignedBlockAndState newChainHead = new SignedBlockAndState(newBestBlock, newBestState);
 
