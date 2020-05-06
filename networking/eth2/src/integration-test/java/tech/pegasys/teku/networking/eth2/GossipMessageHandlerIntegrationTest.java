@@ -24,14 +24,20 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.util.Waiter;
 
@@ -45,20 +51,22 @@ public class GossipMessageHandlerIntegrationTest {
     networkFactory.stopAll();
   }
 
-  @Test
-  public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getNetworkBuilders")
+  public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers(
+      final String testName, Consumer<Eth2P2PNetworkBuilder> networkBuilder) throws Exception {
     final UnsignedLong blockSlot = UnsignedLong.valueOf(2L);
 
     // Setup network 1
-    NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
+    NodeManager node1 = createNodeManager(networkBuilder);
     node1.chainUtil().setSlot(blockSlot);
 
     // Setup network 2
-    NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
+    NodeManager node2 = createNodeManager(networkBuilder);
     node2.chainUtil().setSlot(blockSlot);
 
     // Setup network 3
-    NodeManager node3 = NodeManager.create(networkFactory, validatorKeys);
+    NodeManager node3 = createNodeManager(networkBuilder);
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
@@ -90,20 +98,22 @@ public class GossipMessageHandlerIntegrationTest {
         });
   }
 
-  @Test
-  public void shouldNotGossipInvalidBlocks() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getNetworkBuilders")
+  public void shouldNotGossipInvalidBlocks(
+      final String testName, Consumer<Eth2P2PNetworkBuilder> networkBuilder) throws Exception {
     final UnsignedLong blockSlot = UnsignedLong.valueOf(2L);
 
     // Setup network 1
-    NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
+    NodeManager node1 = createNodeManager(networkBuilder);
     node1.chainUtil().setSlot(blockSlot);
 
     // Setup network 2
-    NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
+    NodeManager node2 = createNodeManager(networkBuilder);
     node2.chainUtil().setSlot(blockSlot);
 
     // Setup network 3
-    NodeManager node3 = NodeManager.create(networkFactory, validatorKeys);
+    NodeManager node3 = createNodeManager(networkBuilder);
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
@@ -134,14 +144,16 @@ public class GossipMessageHandlerIntegrationTest {
     ensureConditionRemainsMet(() -> assertThat(network3Blocks.getBlocks()).isEmpty(), 10000);
   }
 
-  @Test
-  public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getNetworkBuilders")
+  public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet(
+      final String testName, Consumer<Eth2P2PNetworkBuilder> networkBuilder) throws Exception {
     // Setup network 1
-    final NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
+    final NodeManager node1 = createNodeManager(networkBuilder);
     final Eth2Network network1 = node1.network();
 
     // Setup network 2
-    final NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
+    final NodeManager node2 = createNodeManager(networkBuilder);
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
@@ -166,14 +178,16 @@ public class GossipMessageHandlerIntegrationTest {
     ensureConditionRemainsMet(() -> assertThat(network2Attestations.getAttestations()).isEmpty());
   }
 
-  @Test
-  public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getNetworkBuilders")
+  public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet(
+      final String testName, Consumer<Eth2P2PNetworkBuilder> networkBuilder) throws Exception {
     // Setup network 1
-    final NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
+    final NodeManager node1 = createNodeManager(networkBuilder);
     final Eth2Network network1 = node1.network();
 
     // Setup network 2
-    final NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
+    final NodeManager node2 = createNodeManager(networkBuilder);
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
@@ -209,14 +223,16 @@ public class GossipMessageHandlerIntegrationTest {
         () -> assertThat(network2Attestations.getAttestations()).containsExactly(validAttestation));
   }
 
-  @Test
-  public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getNetworkBuilders")
+  public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic(
+      final String testName, Consumer<Eth2P2PNetworkBuilder> networkBuilder) throws Exception {
     // Setup network 1
-    final NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
+    final NodeManager node1 = createNodeManager(networkBuilder);
     final Eth2Network network1 = node1.network();
 
     // Setup network 2
-    final NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
+    final NodeManager node2 = createNodeManager(networkBuilder);
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
@@ -267,6 +283,21 @@ public class GossipMessageHandlerIntegrationTest {
 
     ensureConditionRemainsMet(
         () -> assertThat(network2AttestationsAfterDeregistration.getAttestations()).isEmpty());
+  }
+
+  private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)
+      throws Exception {
+    return NodeManager.create(networkFactory, validatorKeys, networkBuilder);
+  }
+
+  public static Stream<Arguments> getNetworkBuilders() {
+    final List<GossipEncoding> encodings = List.of(GossipEncoding.SSZ, GossipEncoding.SSZ_SNAPPY);
+    return encodings.stream()
+        .map(
+            e -> {
+              final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(e);
+              return Arguments.of("gossipEncoding: " + e.getName(), networkBuilder);
+            });
   }
 
   private static class AttestationCollector {

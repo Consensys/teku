@@ -33,7 +33,7 @@ import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -43,13 +43,18 @@ public class AttestationTopicHandlerTest {
 
   private static final int SUBNET_ID = 1;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
   private final AttestationTopicHandler topicHandler =
       new AttestationTopicHandler(
-          eventBus, attestationValidator, SUBNET_ID, dataStructureUtil.randomForkInfo());
+          gossipEncoding,
+          dataStructureUtil.randomForkInfo(),
+          SUBNET_ID,
+          attestationValidator,
+          eventBus);
 
   @BeforeEach
   public void setup() {
@@ -62,7 +67,7 @@ public class AttestationTopicHandlerTest {
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(VALID);
-    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
+    final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(true);
@@ -75,7 +80,7 @@ public class AttestationTopicHandlerTest {
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(INVALID);
-    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
+    final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
@@ -88,7 +93,7 @@ public class AttestationTopicHandlerTest {
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVED_FOR_FUTURE);
-    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
+    final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);

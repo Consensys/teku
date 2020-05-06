@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.compression.exceptions;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions;
 
 public class PayloadLargerThanExpectedException extends CompressionException {
 
