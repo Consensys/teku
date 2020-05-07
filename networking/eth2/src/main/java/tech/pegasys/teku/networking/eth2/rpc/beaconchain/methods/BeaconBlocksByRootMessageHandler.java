@@ -17,12 +17,12 @@ import org.apache.logging.log4j.LogManager;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BeaconBlocksByRootMessageHandler
-    implements LocalMessageHandler<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> {
+    extends PeerRequiredLocalMessageHandler<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
 
   private final RecentChainData storageClient;

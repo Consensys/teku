@@ -23,6 +23,7 @@ import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -125,9 +126,9 @@ class DiscoveryNetworkTest {
             new NetworkConfig(
                 null,
                 "127.0.0.1",
-                "127.0.0.1",
+                Optional.empty(),
                 0,
-                0,
+                OptionalInt.empty(),
                 Collections.emptyList(),
                 false,
                 Collections.emptyList(),

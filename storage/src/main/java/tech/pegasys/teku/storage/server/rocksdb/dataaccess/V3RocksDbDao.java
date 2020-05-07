@@ -217,6 +217,12 @@ public class V3RocksDbDao implements RocksDbDao {
           "Only {} hot states produced for {} hot blocks.  Some hot blocks must be incompatible with the latest finalized block.",
           hotStates.size(),
           hotBlocksByRoot.size());
+
+      Transaction transaction = db.startTransaction();
+      hotBlocksByRoot.keySet().stream()
+          .filter(signedBeaconBlock -> !hotStates.containsKey(signedBeaconBlock))
+          .forEach(blockRoot -> transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot));
+      transaction.commit();
     }
   }
 

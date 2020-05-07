@@ -19,6 +19,8 @@ import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -77,9 +79,9 @@ public class DiscoveryNetworkFactory {
             new NetworkConfig(
                 KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
                 "127.0.0.1",
-                "127.0.0.1",
+                Optional.empty(),
                 port,
-                port,
+                OptionalInt.empty(),
                 staticPeers,
                 true,
                 bootnodes,

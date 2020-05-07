@@ -37,15 +37,23 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   public static DiscoveryService create(
-      final Bytes privateKey, final String address, final int port, final List<String> bootnodes) {
+      final Bytes privateKey,
+      final String listenAddress,
+      final int listenPort,
+      final String advertisedAddress,
+      final int advertisedPort,
+      final List<String> bootnodes) {
     final DiscoverySystem discoveryManager =
         new DiscoverySystemBuilder()
+            .listen(listenAddress, listenPort)
             .privateKey(privateKey)
             .bootnodes(bootnodes.toArray(new String[0]))
             .localNodeRecord(
-                new NodeRecordBuilder().privateKey(privateKey).address(address, port).build())
+                new NodeRecordBuilder()
+                    .privateKey(privateKey)
+                    .address(advertisedAddress, advertisedPort)
+                    .build())
             .build();
-
     return new DiscV5Service(discoveryManager);
   }
 
