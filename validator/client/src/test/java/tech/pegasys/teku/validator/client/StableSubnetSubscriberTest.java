@@ -26,6 +26,7 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -36,6 +37,7 @@ public class StableSubnetSubscriberTest {
   @BeforeEach
   void setUp() {
     stableSubnetSubscriber = new StableSubnetSubscriber(validatorApiChannel, 2);
+    stableSubnetSubscriber.onSlot(valueOf(0));
   }
 
   @Test
@@ -69,6 +71,59 @@ public class StableSubnetSubscriberTest {
     verify(validatorApiChannel, times(2))
         .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 3));
   }
+
+  @Test
+  void shouldSubscribeToAllSubnetsWhenNecessary() {
+    // Attestation Subnet Count is 64
+    verify(validatorApiChannel)
+            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+
+    // with 66 validators, we'll have to subscribe to all subnets
+    stableSubnetSubscriber.updateValidatorCount(66);
+
+    stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
+
+    verify(validatorApiChannel, times(2))
+            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
+  }
+
+  @Test
+  void shouldSubscribeToAllSubnetsEvenIfValidatorNumberIsDecreased() {
+    // Attestation Subnet Count is 64
+    verify(validatorApiChannel)
+            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+
+    stableSubnetSubscriber.updateValidatorCount(72);
+    stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
+
+    verify(validatorApiChannel, times(2))
+            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
+
+    stableSubnetSubscriber.updateValidatorCount(65);
+    stableSubnetSubscriber.onSlot(valueOf(2));
+
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  void shouldUnsubscribeFromAllSubnetsWhenValidatorCountGoesToZero() {
+    // Attestation Subnet Count is 64
+    verify(validatorApiChannel)
+            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+
+    stableSubnetSubscriber.updateValidatorCount(72);
+    stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
+
+    verify(validatorApiChannel, times(2))
+            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
+
+    stableSubnetSubscriber.updateValidatorCount(0);
+    stableSubnetSubscriber.onSlot(valueOf(2));
+
+    verify(validatorApiChannel, times(3))
+            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 0));
+  }
+
 
   @Test
   @SuppressWarnings("unchecked")
