@@ -397,15 +397,15 @@ workflows:
             - docker
       - extractAPISpec:
           requires:
-            - assemble
-#TODO use master and a real tag pattern once tested on PR
+            - publish
+#TODO use master once tested on PR
           filters:
             branches:
               only: publish_openapi_to_gh-pages
       - publishAPIDoc:
           requires:
             - extractAPISpec
-#TODO use master and a real tag pattern once tested on PR
+#TODO use master once tested on PR
           filters:
             branches:
               only: publish_openapi_to_gh-pages
