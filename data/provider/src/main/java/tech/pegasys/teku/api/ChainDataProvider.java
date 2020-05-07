@@ -77,7 +77,7 @@ public class ChainDataProvider {
     }
 
     tech.pegasys.teku.datastructures.state.BeaconState bestBlockRootState =
-        recentChainData.getBestBlockRootState().orElseThrow(ChainDataUnavailableException::new);
+        recentChainData.getBestState().orElseThrow(ChainDataUnavailableException::new);
     return new Fork(bestBlockRootState.getFork());
   }
 
