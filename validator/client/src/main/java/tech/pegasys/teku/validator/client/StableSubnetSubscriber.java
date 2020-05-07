@@ -17,16 +17,17 @@ import static java.lang.Integer.min;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION;
 import static tech.pegasys.teku.util.config.Constants.RANDOM_SUBNETS_PER_VALIDATOR;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -34,8 +35,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public class StableSubnetSubscriber {
 
   private final ValidatorApiChannel validatorApiChannel;
-  private final Set<Integer> availableSubnetIndices =
-      IntStream.range(0, ATTESTATION_SUBNET_COUNT).boxed().collect(Collectors.toSet());
+  private final Set<Integer> availableSubnetIndices = new HashSet<>();
   private final NavigableSet<SubnetSubscription> subnetSubscriptions =
       new TreeSet<>(
           Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
@@ -49,6 +49,7 @@ public class StableSubnetSubscriber {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorCount = validatorCount;
     this.random = random;
+    IntStream.range(0, ATTESTATION_SUBNET_COUNT).forEach(availableSubnetIndices::add);
   }
 
   public void onSlot(UnsignedLong slot) {
@@ -138,11 +139,13 @@ public class StableSubnetSubscriber {
   }
 
   private UnsignedLong getRandomUnsubscriptionSlot(UnsignedLong currentSlot) {
-    return currentSlot.plus(UnsignedLong.valueOf(getRandomSubscriptionLength()));
+    return currentSlot.plus(getRandomSubscriptionLength());
   }
 
-  private int getRandomSubscriptionLength() {
-    return EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
-        + random.nextInt(EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION);
+  private UnsignedLong getRandomSubscriptionLength() {
+    return UnsignedLong.valueOf(
+        (EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
+                + random.nextInt(EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION))
+            * SLOTS_PER_EPOCH);
   }
 }
