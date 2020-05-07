@@ -401,7 +401,7 @@ workflows:
               only: master
       - publishAPIDoc:
           requires:
-            - extractAPISpecs
+            - extractAPISpec
           filters:
             branches:
               only: master
