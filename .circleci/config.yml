@@ -336,8 +336,8 @@ jobs:
             readonly BRANCH='gh-pages'
 
             git add .
-            git commit -m "[skip ci] automated CI update of JSON specs and version files" \
-                       -m "Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
+            git commit -m "Automated CI update of JSON specs and version files" \
+                       -m "[skip ci] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
                        -m "Spec built from ${CIRCLE_PROJECT_REPONAME} at ${CIRCLE_REPOSITORY_URL}" \
                        -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
             git push origin "$BRANCH"
