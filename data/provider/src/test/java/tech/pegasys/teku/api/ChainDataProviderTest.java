@@ -419,7 +419,7 @@ public class ChainDataProviderTest {
     ChainDataProvider provider =
         new ChainDataProvider(mockRecentChainData, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockRecentChainData.getBestBlockRootState()).thenReturn(Optional.empty());
+    when(mockRecentChainData.getBestState()).thenReturn(Optional.empty());
     assertThatThrownBy(provider::getFork).isInstanceOf(ChainDataUnavailableException.class);
   }
 
@@ -428,7 +428,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(mockRecentChainData, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockRecentChainData.getBestBlockRootState()).thenReturn(Optional.of(beaconStateInternal));
+    when(mockRecentChainData.getBestState()).thenReturn(Optional.of(beaconStateInternal));
     final Fork result = provider.getFork();
     verify(mockCombinedChainDataClient).isStoreAvailable();
     assertThat(result).isEqualToComparingFieldByField(beaconState.fork);

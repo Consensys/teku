@@ -186,7 +186,7 @@ public class ChainBuilder {
         new MockStartBeaconStateGenerator()
             .createInitialBeaconState(UnsignedLong.ZERO, initialDepositData);
 
-    // Generage genesis block
+    // Generate genesis block
     BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
     final SignedBeaconBlock signedBlock = new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 

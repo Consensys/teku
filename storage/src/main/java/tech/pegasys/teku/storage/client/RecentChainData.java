@@ -26,6 +26,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -55,11 +57,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
 
   private volatile Store store;
-  private volatile Optional<Bytes32> bestBlockRoot =
-      Optional.empty(); // block chosen by lmd ghost to build and attest on
-  private volatile UnsignedLong bestSlot =
-      UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
-  // Time
+  private volatile Optional<SignedBlockAndState> chainHead = Optional.empty();
   private volatile UnsignedLong genesisTime;
 
   RecentChainData(
@@ -106,6 +104,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return this.store == null;
   }
 
+  /**
+   * Returns true if the best block / chainhead has not yet been set.
+   *
+   * @return true if the best block is unknown, false otherwise.
+   */
+  public boolean isPreForkChoice() {
+    return chainHead.isEmpty();
+  }
+
   boolean setStore(Store store) {
     if (!storeInitialized.compareAndSet(false, true)) {
       return false;
@@ -133,17 +140,32 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
-    final Optional<Bytes32> originalBestRoot = bestBlockRoot;
-    final UnsignedLong originalBestSlot = bestSlot;
-    this.bestBlockRoot = Optional.of(root);
-    this.bestSlot = slot;
-    bestBlockInitialized.complete(null);
+    synchronized (this) {
+      final SignedBeaconBlock newBestBlock = store.getSignedBlock(root);
+      final BeaconState newBestState = store.getBlockState(root);
+      if (newBestBlock == null || newBestState == null) {
+        LOG.warn(
+            "Unable to update best block (slot={}, root={}). Corresponding {} unavailable",
+            slot,
+            root,
+            newBestBlock == null ? "block" : "state");
+        return;
+      }
+      final SignedBlockAndState newChainHead = new SignedBlockAndState(newBestBlock, newBestState);
 
-    if (originalBestRoot
-        .map(original -> hasReorgedFrom(original, originalBestSlot))
-        .orElse(false)) {
-      reorgEventChannel.reorgOccurred(root, bestSlot);
+      final Optional<Bytes32> originalBestRoot = chainHead.map(SignedBlockAndState::getRoot);
+      final UnsignedLong originalBestSlot =
+          chainHead.map(SignedBlockAndState::getSlot).orElse(UnsignedLong.ZERO);
+
+      this.chainHead = Optional.of(newChainHead);
+      if (originalBestRoot
+          .map(original -> hasReorgedFrom(original, originalBestSlot))
+          .orElse(false)) {
+        reorgEventChannel.reorgOccurred(root, newChainHead.getSlot());
+      }
     }
+
+    bestBlockInitialized.complete(null);
   }
 
   private boolean hasReorgedFrom(
@@ -169,7 +191,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<ForkInfo> getCurrentForkInfo() {
-    return getBestBlockRoot().map(store::getBlockState).map(BeaconState::getForkInfo);
+    return getBestState().map(BeaconState::getForkInfo);
   }
 
   public Optional<Fork> getNextFork() {
@@ -183,7 +205,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @return
    */
   public Optional<Bytes32> getBestBlockRoot() {
-    return this.bestBlockRoot;
+    return chainHead.map(SignedBlockAndState::getRoot);
   }
 
   /**
@@ -192,16 +214,16 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @return The best block along with its corresponding state.
    */
   public Optional<BeaconBlockAndState> getBestBlockAndState() {
-    if (isPreGenesis()) {
-      return Optional.empty();
-    }
+    return chainHead.map(SignedBlockAndState::toUnsigned);
+  }
 
-    return bestBlockRoot.map(
-        (bestRoot) -> {
-          BeaconBlock block = getStore().getBlock(bestRoot);
-          BeaconState state = getStore().getBlockState(bestRoot);
-          return new BeaconBlockAndState(block, state);
-        });
+  /**
+   * If available, return the best block.
+   *
+   * @return The best block.
+   */
+  public Optional<SignedBeaconBlock> getBestBlock() {
+    return chainHead.map(SignedBlockAndState::getBlock);
   }
 
   /**
@@ -209,8 +231,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    *
    * @return
    */
-  public Optional<BeaconState> getBestBlockRootState() {
-    return bestBlockRoot.map(root -> this.store.getBlockState(root));
+  public Optional<BeaconState> getBestState() {
+    return chainHead.map(SignedBlockAndState::getState);
   }
 
   /**
@@ -219,7 +241,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @return
    */
   public UnsignedLong getBestSlot() {
-    return this.bestSlot;
+    return chainHead.map(SignedBlockAndState::getSlot).orElse(UnsignedLong.ZERO);
   }
 
   @Subscribe
@@ -280,21 +302,18 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
-    if (store == null || bestBlockRoot.isEmpty()) {
+    if (store == null || chainHead.isEmpty()) {
       LOG.trace("No block root at slot {} because store or best block root is not set", slot);
       return Optional.empty();
     }
-    if (bestSlot.compareTo(slot) <= 0) {
+
+    final SignedBlockAndState bestBlock = chainHead.get();
+    if (bestBlock.getSlot().compareTo(slot) <= 0) {
       LOG.trace("Block root at slot {} is at or after the current best slot root", slot);
-      return bestBlockRoot;
+      return Optional.of(bestBlock.getRoot());
     }
 
-    final BeaconState bestState = store.getBlockState(bestBlockRoot.get());
-    if (bestState == null) {
-      LOG.trace("No block root at slot {} because best state is not available", slot);
-      return Optional.empty();
-    }
-
+    final BeaconState bestState = bestBlock.getState();
     if (!BeaconStateUtil.isBlockRootAvailableFromState(bestState, slot)) {
       LOG.trace("No block root at slot {} because slot is not within historical root", slot);
       return Optional.empty();
