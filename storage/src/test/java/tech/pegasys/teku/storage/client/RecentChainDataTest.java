@@ -223,6 +223,13 @@ class RecentChainDataTest {
   }
 
   @Test
+  public void getStateInEffectAtSlot_returnHeadState() throws Exception {
+    final SignedBlockAndState bestBlock = addNewBestBlock(storageClient);
+    assertThat(storageClient.getStateInEffectAtSlot(bestBlock.getSlot()))
+        .contains(bestBlock.getState());
+  }
+
+  @Test
   public void isIncludedInBestState_falseWhenNoStoreSet() {
     assertThat(preGenesisStorageClient.isIncludedInBestState(genesisBlockRoot)).isFalse();
   }
