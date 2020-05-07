@@ -53,6 +53,12 @@ public class Bitvector {
     data.set(i);
   }
 
+  public void setBits(int... indexes) {
+    for (int i : indexes) {
+      setBit(i);
+    }
+  }
+
   public void clearBit(int i) {
     checkElementIndex(i, size);
     data.clear(i);

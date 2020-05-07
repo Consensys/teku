@@ -52,6 +52,12 @@ public class Bitlist {
     data.set(i);
   }
 
+  public void setBits(int... indexes) {
+    for (int i : indexes) {
+      setBit(i);
+    }
+  }
+
   public boolean getBit(int i) {
     checkElementIndex(i, size);
     return data.get(i);
