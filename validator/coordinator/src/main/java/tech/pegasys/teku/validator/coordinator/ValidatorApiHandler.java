@@ -44,6 +44,7 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
@@ -63,7 +64,6 @@ import tech.pegasys.teku.util.async.ExceptionThrowingFunction;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
-import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 

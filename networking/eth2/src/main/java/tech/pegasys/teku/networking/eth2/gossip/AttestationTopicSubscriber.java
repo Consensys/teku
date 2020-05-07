@@ -14,19 +14,15 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.all;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-
 import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -58,8 +54,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     for (SubnetSubscription subnetSubscription : newSubscriptions) {
       int subnetId = subnetSubscription.getSubnetId();
       UnsignedLong existingUnsubscriptionSlot =
-              Optional.ofNullable(persistentSubscriptions.get(subnetId))
-              .orElse(ZERO);
+          Optional.ofNullable(persistentSubscriptions.get(subnetId)).orElse(ZERO);
 
       if (existingUnsubscriptionSlot.equals(ZERO)) {
         shouldUpdateENR = true;
@@ -69,9 +64,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
       }
 
       persistentSubscriptions.put(
-              subnetId,
-              max(existingUnsubscriptionSlot, subnetSubscription.getUnsubscriptionSlot())
-      );
+          subnetId, max(existingUnsubscriptionSlot, subnetSubscription.getUnsubscriptionSlot()));
     }
 
     if (shouldUpdateENR) {
@@ -89,9 +82,9 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     for (int subnetId : allSubnetIds) {
 
       Optional<UnsignedLong> shortTermUnsubscriptionSlot =
-              Optional.ofNullable(shortTermSubscriptions.get(subnetId));
+          Optional.ofNullable(shortTermSubscriptions.get(subnetId));
       Optional<UnsignedLong> persistentUnsubscriptionSlot =
-              Optional.ofNullable(persistentSubscriptions.get(subnetId));
+          Optional.ofNullable(persistentSubscriptions.get(subnetId));
 
       if (shortTermUnsubscriptionSlot.isPresent() && persistentUnsubscriptionSlot.isPresent()) {
         if (slot.compareTo(persistentUnsubscriptionSlot.get()) > 0) {
@@ -103,8 +96,8 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
           shortTermSubscriptions.remove(subnetId);
         }
 
-        if (slot.compareTo(persistentUnsubscriptionSlot.get()) > 0 &&
-                slot.compareTo(shortTermUnsubscriptionSlot.get()) > 0) {
+        if (slot.compareTo(persistentUnsubscriptionSlot.get()) > 0
+            && slot.compareTo(shortTermUnsubscriptionSlot.get()) > 0) {
           eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
         }
 
@@ -112,9 +105,9 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
 
         if (slot.compareTo(shortTermUnsubscriptionSlot.get()) > 0) {
           shortTermSubscriptions.remove(subnetId);
-         eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
+          eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
         }
-        
+
       } else if (persistentUnsubscriptionSlot.isPresent()) {
 
         if (slot.compareTo(persistentUnsubscriptionSlot.get()) > 0) {
@@ -122,7 +115,6 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
           persistentSubscriptions.remove(subnetId);
           shouldUpdateENR = true;
         }
-
       }
     }
 
