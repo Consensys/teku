@@ -211,7 +211,7 @@ public class CombinedChainDataClient {
   }
 
   public boolean isStoreAvailable() {
-    return recentChainData != null && !recentChainData.isPreGenesis();
+    return recentChainData != null && recentChainData.getStore() != null;
   }
 
   public List<CommitteeAssignment> getCommitteesFromState(

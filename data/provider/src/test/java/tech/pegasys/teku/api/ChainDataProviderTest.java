@@ -282,6 +282,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
     final SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
+    verify(storageClient).getStore();
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
