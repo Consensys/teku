@@ -338,7 +338,7 @@ jobs:
             readonly BRANCH='gh-pages-test-do-not-remove-yet'
 
             git add .
-            git commit -m "[skip ci] update Teku REST API OpenAPI JSON definition"
+            git commit -m "[skip ci] automated CI update of JSON specs and version files"
             git push origin "$BRANCH"
 
 workflows:
