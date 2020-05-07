@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -20,10 +21,16 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 
 public class StatusMessageHandler
     extends PeerRequiredLocalMessageHandler<StatusMessage, StatusMessage> {
   private static final Logger LOG = LogManager.getLogger();
+
+  static final RpcException NODE_NOT_READY =
+      new RpcException(
+          RpcResponseStatus.SERVER_ERROR_CODE, "Node is initializing, status unavailable.");
   private final StatusMessageFactory statusMessageFactory;
 
   public StatusMessageHandler(final StatusMessageFactory statusMessageFactory) {
@@ -38,7 +45,15 @@ public class StatusMessageHandler
     LOG.trace("Peer {} sent status {}", peer.getId(), message);
     final PeerStatus status = PeerStatus.fromStatusMessage(message);
     peer.updateStatus(status);
-    callback.respond(statusMessageFactory.createStatusMessage());
-    callback.completeSuccessfully();
+
+    final Optional<StatusMessage> localStatus = statusMessageFactory.createStatusMessage();
+    if (localStatus.isPresent()) {
+      callback.respond(localStatus.get());
+      callback.completeSuccessfully();
+    } else {
+      LOG.warn(
+          "Node is not ready to receive p2p traffic. Responding to incoming status message with an error.");
+      callback.completeWithErrorResponse(NODE_NOT_READY);
+    }
   }
 }

@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class BeaconChainMetricsTest {
@@ -47,6 +49,8 @@ class BeaconChainMetricsTest {
   private final NodeSlot nodeSlot = new NodeSlot(NODE_SLOT_VALUE);
 
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final RecentChainData preGenesisChainData =
+      MemoryOnlyRecentChainData.create(mock(EventBus.class));
 
   @Test
   void getLongFromRoot_shouldParseNegativeOne() {
@@ -129,12 +133,10 @@ class BeaconChainMetricsTest {
 
   @Test
   void getFinalizedRootValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
-    when(recentChainData.isPreGenesis()).thenReturn(true);
-    when(recentChainData.getBestBlockAndState()).thenCallRealMethod();
+    assertThat(preGenesisChainData.isPreGenesis()).isTrue(); // Sanity check
+    BeaconChainMetrics metrics = new BeaconChainMetrics(preGenesisChainData, nodeSlot);
 
     assertThat(0L).isEqualTo(metrics.getFinalizedRootValue());
-    verify(recentChainData).isPreGenesis();
   }
 
   @Test
@@ -150,12 +152,10 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedEpochValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
-    when(recentChainData.isPreGenesis()).thenReturn(true);
-    when(recentChainData.getBestBlockAndState()).thenCallRealMethod();
+    assertThat(preGenesisChainData.isPreGenesis()).isTrue(); // Sanity check
+    BeaconChainMetrics metrics = new BeaconChainMetrics(preGenesisChainData, nodeSlot);
 
     assertThat(0L).isEqualTo(metrics.getPreviousJustifiedEpochValue());
-    verify(recentChainData).isPreGenesis();
   }
 
   @Test
@@ -172,12 +172,10 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedRootValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
-    when(recentChainData.isPreGenesis()).thenReturn(true);
-    when(recentChainData.getBestBlockAndState()).thenCallRealMethod();
+    assertThat(preGenesisChainData.isPreGenesis()).isTrue(); // Sanity check
+    BeaconChainMetrics metrics = new BeaconChainMetrics(preGenesisChainData, nodeSlot);
 
     assertThat(0L).isEqualTo(metrics.getPreviousJustifiedRootValue());
-    verify(recentChainData).isPreGenesis();
   }
 
   @Test
@@ -193,12 +191,10 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedRootValue_shouldReturnNotSetWhenStoreNotPresent() {
-    BeaconChainMetrics metrics = new BeaconChainMetrics(recentChainData, nodeSlot);
-    when(recentChainData.isPreGenesis()).thenReturn(true);
-    when(recentChainData.getBestBlockAndState()).thenCallRealMethod();
+    assertThat(preGenesisChainData.isPreGenesis()).isTrue(); // Sanity check
+    BeaconChainMetrics metrics = new BeaconChainMetrics(preGenesisChainData, nodeSlot);
 
     assertThat(0L).isEqualTo(metrics.getJustifiedRootValue());
-    verify(recentChainData).isPreGenesis();
   }
 
   @Test
