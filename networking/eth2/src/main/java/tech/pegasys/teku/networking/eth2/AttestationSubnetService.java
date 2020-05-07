@@ -13,38 +13,25 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.util.Collections;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import tech.pegasys.teku.util.events.Subscribers;
+import tech.pegasys.teku.util.events.ObservableValue;
 
 /**
  * Service tracks long term attestation subnet subscriptions and notifies subscribers on their
  * changes
  */
 public class AttestationSubnetService {
-  private final Subscribers<Consumer<Iterable<Integer>>> subscribers = Subscribers.create(true);
-  private Iterable<Integer> currentSubscriptions = Collections.emptyList();
-  private final ExecutorService publisherExecutor =
-      Executors.newSingleThreadExecutor(
-          new ThreadFactoryBuilder()
-              .setDaemon(true)
-              .setNameFormat("AttestationSubnetServicePublisherThread")
-              .build());
+  ObservableValue<Iterable<Integer>> attSubnetSubscriptions = new ObservableValue<>(true);
 
   public synchronized void updateSubscriptions(final Iterable<Integer> subnetIndices) {
-    publisherExecutor.execute(() -> subscribers.deliver(Consumer::accept, subnetIndices));
-    currentSubscriptions = subnetIndices;
+    attSubnetSubscriptions.set(subnetIndices);
   }
 
   public synchronized long subscribeToUpdates(Consumer<Iterable<Integer>> observer) {
-    publisherExecutor.execute(() -> observer.accept(currentSubscriptions));
-    return subscribers.subscribe(observer);
+    return attSubnetSubscriptions.subscribe(observer);
   }
 
   public void unsubscribe(long subscriptionId) {
-    subscribers.unsubscribe(subscriptionId);
+    attSubnetSubscriptions.unsubscribe(subscriptionId);
   }
 }
