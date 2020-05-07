@@ -218,7 +218,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void updatePersistentSubnetSubscriptions(Set<SubnetSubscription> subnetSubscriptions) {
+  public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
     // To be implemented in another PR.
   }
 

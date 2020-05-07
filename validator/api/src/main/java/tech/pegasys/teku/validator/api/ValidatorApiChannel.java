@@ -44,7 +44,7 @@ public interface ValidatorApiChannel {
 
   void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UnsignedLong aggregationSlot);
 
-  void updatePersistentSubnetSubscriptions(Set<SubnetSubscription> subnetSubscriptions);
+  void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
   void sendSignedAttestation(Attestation attestation);
 

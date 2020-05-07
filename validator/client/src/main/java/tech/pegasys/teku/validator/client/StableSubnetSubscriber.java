@@ -68,7 +68,7 @@ public class StableSubnetSubscriber {
     // Adjust the number of subscriptions
     // If any update was made to the subscriptions pass the new subscription set to BeaconNode
     if (adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount)) {
-      validatorApiChannel.updatePersistentSubnetSubscriptions(subnetSubscriptions);
+      validatorApiChannel.subscribeToPersistentSubnets(subnetSubscriptions);
     }
   }
 

@@ -45,40 +45,40 @@ public class StableSubnetSubscriberTest {
   @Test
   void shouldCreateEnoughSubscriptionsAtStart() {
     verify(validatorApiChannel)
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 2));
   }
 
   @Test
   void shouldLowerNumberOfSubscriptionsWhenNumberOfValidatorsDecrease() {
     verify(validatorApiChannel)
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 2));
 
     stableSubnetSubscriber.updateValidatorCount(1);
 
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
     verify(validatorApiChannel, times(2))
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 1));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 1));
   }
 
   @Test
   void shouldIncreaseNumberOfSubscriptionsWhenNumberOfValidatorsIncrease() {
     verify(validatorApiChannel)
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 2));
 
     stableSubnetSubscriber.updateValidatorCount(3);
 
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
     verify(validatorApiChannel, times(2))
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 3));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 3));
   }
 
   @Test
   void shouldSubscribeToAllSubnetsWhenNecessary() {
     // Attestation Subnet Count is 64
     verify(validatorApiChannel)
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 2));
 
     // with 66 validators, we'll have to subscribe to all subnets
     stableSubnetSubscriber.updateValidatorCount(66);
@@ -86,7 +86,7 @@ public class StableSubnetSubscriberTest {
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
     verify(validatorApiChannel, times(2))
-        .updatePersistentSubnetSubscriptions(
+        .subscribeToPersistentSubnets(
             argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
   }
 
@@ -94,13 +94,13 @@ public class StableSubnetSubscriberTest {
   void shouldSubscribeToAllSubnetsEvenIfValidatorNumberIsDecreased() {
     // Attestation Subnet Count is 64
     verify(validatorApiChannel)
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 2));
 
     stableSubnetSubscriber.updateValidatorCount(72);
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
     verify(validatorApiChannel, times(2))
-        .updatePersistentSubnetSubscriptions(
+        .subscribeToPersistentSubnets(
             argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
 
     stableSubnetSubscriber.updateValidatorCount(65);
@@ -113,20 +113,20 @@ public class StableSubnetSubscriberTest {
   void shouldUnsubscribeFromAllSubnetsWhenValidatorCountGoesToZero() {
     // Attestation Subnet Count is 64
     verify(validatorApiChannel)
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 2));
 
     stableSubnetSubscriber.updateValidatorCount(72);
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
     verify(validatorApiChannel, times(2))
-        .updatePersistentSubnetSubscriptions(
+        .subscribeToPersistentSubnets(
             argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
 
     stableSubnetSubscriber.updateValidatorCount(0);
     stableSubnetSubscriber.onSlot(valueOf(2));
 
     verify(validatorApiChannel, times(3))
-        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 0));
+        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 0));
   }
 
   @Test
@@ -147,7 +147,7 @@ public class StableSubnetSubscriberTest {
         ArgumentCaptor.forClass(Set.class);
 
     verify(validatorApiChannel)
-        .updatePersistentSubnetSubscriptions(firstSubscriptionUpdate.capture());
+        .subscribeToPersistentSubnets(firstSubscriptionUpdate.capture());
 
     assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
     assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
@@ -161,7 +161,7 @@ public class StableSubnetSubscriberTest {
     stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot);
 
     verify(validatorApiChannel, times(2))
-        .updatePersistentSubnetSubscriptions(secondSubscriptionUpdate.capture());
+        .subscribeToPersistentSubnets(secondSubscriptionUpdate.capture());
 
     UnsignedLong secondUnsubscriptionSlot =
         secondSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
