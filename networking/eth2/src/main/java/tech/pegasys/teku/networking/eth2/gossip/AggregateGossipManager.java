@@ -19,32 +19,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.AggregateTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 
 public class AggregateGossipManager {
-  private final EventBus eventBus;
+  private final GossipEncoding gossipEncoding;
   private final TopicChannel channel;
+  private final EventBus eventBus;
+
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AggregateGossipManager(
       final GossipNetwork gossipNetwork,
-      final EventBus eventBus,
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
       final SignedAggregateAndProofValidator validator,
-      final ForkInfo forkInfo) {
+      final EventBus eventBus) {
+    this.gossipEncoding = gossipEncoding;
+
     final AggregateTopicHandler aggregateTopicHandler =
-        new AggregateTopicHandler(eventBus, forkInfo, validator);
+        new AggregateTopicHandler(gossipEncoding, forkInfo, validator, eventBus);
+    this.channel = gossipNetwork.subscribe(aggregateTopicHandler.getTopic(), aggregateTopicHandler);
+
     this.eventBus = eventBus;
-    channel = gossipNetwork.subscribe(aggregateTopicHandler.getTopic(), aggregateTopicHandler);
     eventBus.register(this);
   }
 
   @Subscribe
   public void onNewAggregate(final SignedAggregateAndProof aggregateAndProof) {
-    final Bytes data = SimpleOffsetSerializer.serialize(aggregateAndProof);
+    final Bytes data = gossipEncoding.encode(aggregateAndProof);
     channel.gossip(data);
   }
 

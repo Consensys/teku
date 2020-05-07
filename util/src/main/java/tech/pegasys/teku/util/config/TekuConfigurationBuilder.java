@@ -15,10 +15,11 @@ package tech.pegasys.teku.util.config;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Supplier;
 
 public class TekuConfigurationBuilder {
-  private static boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
+  private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
   private String constants;
   private Integer startupTargetPeerCount;
   private Integer startupTimeoutSeconds;
@@ -27,8 +28,8 @@ public class TekuConfigurationBuilder {
   private int p2pPort;
   private boolean p2pDiscoveryEnabled;
   private List<String> p2pDiscoveryBootnodes;
-  private String p2pAdvertisedIp;
-  private int p2pAdvertisedPort;
+  private Optional<String> p2pAdvertisedIp = Optional.empty();
+  private OptionalInt p2pAdvertisedPort = OptionalInt.empty();
   private String p2pPrivateKeyFile;
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
@@ -112,12 +113,12 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pAdvertisedIp(final String p2pAdvertisedIp) {
+  public TekuConfigurationBuilder setP2pAdvertisedIp(final Optional<String> p2pAdvertisedIp) {
     this.p2pAdvertisedIp = p2pAdvertisedIp;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pAdvertisedPort(final int p2pAdvertisedPort) {
+  public TekuConfigurationBuilder setP2pAdvertisedPort(final OptionalInt p2pAdvertisedPort) {
     this.p2pAdvertisedPort = p2pAdvertisedPort;
     return this;
   }

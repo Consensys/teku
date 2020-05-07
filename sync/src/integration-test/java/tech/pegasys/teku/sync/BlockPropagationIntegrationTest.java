@@ -28,6 +28,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.util.Waiter;
@@ -42,20 +43,25 @@ public class BlockPropagationIntegrationTest {
     networkFactory.stopAll();
   }
 
-  public static Stream<Arguments> getEncodings() {
-    final List<RpcEncoding> encodings = List.of(RpcEncoding.SSZ, RpcEncoding.SSZ_SNAPPY);
-    return encodings.stream().map(e -> Arguments.of(e.getName(), e));
+  public static Stream<Arguments> getEncodingArguments() {
+    return Stream.of(
+        Arguments.of("encoding: ssz", RpcEncoding.SSZ, GossipEncoding.SSZ),
+        Arguments.of("encoding: ssz_snappy", RpcEncoding.SSZ_SNAPPY, GossipEncoding.SSZ_SNAPPY));
   }
 
-  @ParameterizedTest(name = "encoding: {0}")
-  @MethodSource("getEncodings")
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getEncodingArguments")
   public void shouldFetchUnknownAncestorsOfPropagatedBlock(
-      final String encodingName, final RpcEncoding encoding) throws Exception {
+      final String testName, final RpcEncoding encoding, final GossipEncoding gossipEncoding)
+      throws Exception {
     UnsignedLong currentSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
     // Setup node 1
     SyncingNodeManager node1 =
-        SyncingNodeManager.create(networkFactory, validatorKeys, c -> c.rpcEncoding(encoding));
+        SyncingNodeManager.create(
+            networkFactory,
+            validatorKeys,
+            c -> c.rpcEncoding(encoding).gossipEncoding(gossipEncoding));
     node1.chainUtil().setSlot(currentSlot);
 
     // Add some blocks to node1, which node 2 will need to fetch
@@ -68,7 +74,10 @@ public class BlockPropagationIntegrationTest {
 
     // Setup node 2
     SyncingNodeManager node2 =
-        SyncingNodeManager.create(networkFactory, validatorKeys, c -> c.rpcEncoding(encoding));
+        SyncingNodeManager.create(
+            networkFactory,
+            validatorKeys,
+            c -> c.rpcEncoding(encoding).gossipEncoding(gossipEncoding));
 
     // Connect networks
     Waiter.waitFor(node1.connect(node2));

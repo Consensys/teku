@@ -17,10 +17,14 @@ import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.pubsub.gossip.Gossip;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 
 public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gossip.GossipNetwork {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Gossip gossip;
   private final PubsubPublisherApi publisher;
 
@@ -31,6 +35,7 @@ public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gos
 
   @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
+    LOG.trace("Subscribe to topic: {}", topic);
     final Topic libP2PTopic = new Topic(topic);
     final GossipHandler gossipHandler = new GossipHandler(libP2PTopic, publisher, topicHandler);
     PubsubSubscription subscription = gossip.subscribe(gossipHandler, libP2PTopic);

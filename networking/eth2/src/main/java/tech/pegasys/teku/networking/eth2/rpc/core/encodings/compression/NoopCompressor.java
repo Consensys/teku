@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.compression;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
 import java.io.IOException;
 import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.CompressionException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 
 public class NoopCompressor implements Compressor {
 

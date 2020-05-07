@@ -15,6 +15,8 @@ package tech.pegasys.teku.cli.options;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import picocli.CommandLine.Option;
 
 public class P2POptions {
@@ -62,14 +64,14 @@ public class P2POptions {
       paramLabel = "<NETWORK>",
       description = "Peer to peer advertised ip",
       arity = "1")
-  private String p2pAdvertisedIp = "127.0.0.1";
+  private String p2pAdvertisedIp;
 
   @Option(
       names = {"--p2p-advertised-port"},
       paramLabel = "<INTEGER>",
       description = "Peer to peer advertised port",
       arity = "1")
-  private int p2pAdvertisedPort = p2pPort;
+  private Integer p2pAdvertisedPort;
 
   @Option(
       names = {"--p2p-private-key-file"},
@@ -127,12 +129,12 @@ public class P2POptions {
     return p2pDiscoveryBootnodes;
   }
 
-  public String getP2pAdvertisedIp() {
-    return p2pAdvertisedIp;
+  public Optional<String> getP2pAdvertisedIp() {
+    return Optional.ofNullable(p2pAdvertisedIp);
   }
 
-  public int getP2pAdvertisedPort() {
-    return p2pAdvertisedPort;
+  public OptionalInt getP2pAdvertisedPort() {
+    return p2pAdvertisedPort == null ? OptionalInt.empty() : OptionalInt.of(p2pAdvertisedPort);
   }
 
   public String getP2pPrivateKeyFile() {
