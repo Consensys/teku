@@ -395,17 +395,21 @@ workflows:
       - extractAPISpec:
           requires:
             - assemble
-#TODO uncomment once tested on PR
-#          filters:
-#            branches:
-#              only: master
+#TODO use master and a real tag pattern once tested on PR
+          filters:
+            branches:
+              only: publish_openapi_to_gh-pages
+            tags:
+              only: gh-tag-test
       - publishAPIDoc:
           requires:
             - extractAPISpec
-#TODO uncomment once tested on PR
-#          filters:
-#            branches:
-#              only: master
+#TODO use master and a real tag pattern once tested on PR
+          filters:
+            branches:
+              only: publish_openapi_to_gh-pages
+            tags:
+              only: gh-tag-test
 
 #  nightly:
 #    triggers:
