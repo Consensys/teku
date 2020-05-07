@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Map;
+import java.util.Random;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -48,7 +49,7 @@ public class ValidatorClientService extends Service {
     final RetryingDutyLoader dutyLoader =
         createDutyLoader(validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, validators.size());
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
     final DutyScheduler dutyScheduler = new DutyScheduler(dutyLoader, stableSubnetSubscriber);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);

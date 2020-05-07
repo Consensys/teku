@@ -20,8 +20,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Random;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +38,7 @@ public class StableSubnetSubscriberTest {
 
   @BeforeEach
   void setUp() {
-    stableSubnetSubscriber = new StableSubnetSubscriber(validatorApiChannel, 2);
+    stableSubnetSubscriber = new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
     stableSubnetSubscriber.onSlot(valueOf(0));
   }
 
@@ -76,7 +78,7 @@ public class StableSubnetSubscriberTest {
   void shouldSubscribeToAllSubnetsWhenNecessary() {
     // Attestation Subnet Count is 64
     verify(validatorApiChannel)
-            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
 
     // with 66 validators, we'll have to subscribe to all subnets
     stableSubnetSubscriber.updateValidatorCount(66);
@@ -84,20 +86,22 @@ public class StableSubnetSubscriberTest {
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
     verify(validatorApiChannel, times(2))
-            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
+        .updatePersistentSubnetSubscriptions(
+            argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
   }
 
   @Test
   void shouldSubscribeToAllSubnetsEvenIfValidatorNumberIsDecreased() {
     // Attestation Subnet Count is 64
     verify(validatorApiChannel)
-            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
 
     stableSubnetSubscriber.updateValidatorCount(72);
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
     verify(validatorApiChannel, times(2))
-            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
+        .updatePersistentSubnetSubscriptions(
+            argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
 
     stableSubnetSubscriber.updateValidatorCount(65);
     stableSubnetSubscriber.onSlot(valueOf(2));
@@ -109,29 +113,31 @@ public class StableSubnetSubscriberTest {
   void shouldUnsubscribeFromAllSubnetsWhenValidatorCountGoesToZero() {
     // Attestation Subnet Count is 64
     verify(validatorApiChannel)
-            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
+        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 2));
 
     stableSubnetSubscriber.updateValidatorCount(72);
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
     verify(validatorApiChannel, times(2))
-            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
+        .updatePersistentSubnetSubscriptions(
+            argThat(arg -> arg.size() == Constants.ATTESTATION_SUBNET_COUNT));
 
     stableSubnetSubscriber.updateValidatorCount(0);
     stableSubnetSubscriber.onSlot(valueOf(2));
 
     verify(validatorApiChannel, times(3))
-            .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 0));
+        .updatePersistentSubnetSubscriptions(argThat(arg -> arg.size() == 0));
   }
-
 
   @Test
   @SuppressWarnings("unchecked")
   void shouldReplaceExpiredSubscriptionsWithNewOnes() {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+    Random mockRandom = mock(Random.class);
+    when(mockRandom.nextInt(2)).thenReturn(10);
 
     StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, 2);
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
 
     stableSubnetSubscriber.onSlot(valueOf(0));
 
@@ -143,6 +149,7 @@ public class StableSubnetSubscriberTest {
     verify(validatorApiChannel)
         .updatePersistentSubnetSubscriptions(firstSubscriptionUpdate.capture());
 
+    assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
     assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
 
     UnsignedLong firstUnsubscriptionSlot =

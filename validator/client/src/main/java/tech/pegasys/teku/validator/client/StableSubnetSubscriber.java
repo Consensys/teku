@@ -38,15 +38,17 @@ public class StableSubnetSubscriber {
       IntStream.range(0, ATTESTATION_SUBNET_COUNT).boxed().collect(Collectors.toSet());
   private final NavigableSet<SubnetSubscription> subnetSubscriptions =
       new TreeSet<>(
-              Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
+          Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
               .thenComparing(SubnetSubscription::getSubnetId));
-  private final Random rand = new Random();
+  private final Random random;
 
   private volatile int validatorCount;
 
-  public StableSubnetSubscriber(ValidatorApiChannel validatorApiChannel, int validatorCount) {
+  public StableSubnetSubscriber(
+      ValidatorApiChannel validatorApiChannel, Random random, int validatorCount) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorCount = validatorCount;
+    this.random = random;
   }
 
   public void onSlot(UnsignedLong slot) {
@@ -132,7 +134,7 @@ public class StableSubnetSubscriber {
   }
 
   private <T> Optional<T> getRandomSetElement(Set<T> set) {
-    return set.stream().skip(rand.nextInt(set.size())).findFirst();
+    return set.stream().skip(random.nextInt(set.size())).findFirst();
   }
 
   private UnsignedLong getRandomUnsubscriptionSlot(UnsignedLong currentSlot) {
@@ -141,6 +143,6 @@ public class StableSubnetSubscriber {
 
   private int getRandomSubscriptionLength() {
     return EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
-        + rand.nextInt(EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION);
+        + random.nextInt(EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION);
   }
 }
