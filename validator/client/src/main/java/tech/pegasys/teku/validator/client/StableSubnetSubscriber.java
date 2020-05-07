@@ -47,7 +47,6 @@ public class StableSubnetSubscriber {
   public StableSubnetSubscriber(ValidatorApiChannel validatorApiChannel, int validatorCount) {
     this.validatorApiChannel = validatorApiChannel;
     this.validatorCount = validatorCount;
-    onSlot(UnsignedLong.ZERO);
   }
 
   public void onSlot(UnsignedLong slot) {
