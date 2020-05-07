@@ -50,8 +50,8 @@ public class PingIntegrationTest {
     Optional<Bitvector> attNets1_0 = peer1.getRemoteAttestationSubnets();
     Optional<Bitvector> attNets2_0 = peer2.getRemoteAttestationSubnets();
 
-    assertThat(attNets1_0.isEmpty() || attNets1_0.get().getBitCount() == 0);
-    assertThat(attNets2_0.isEmpty() || attNets2_0.get().getBitCount() == 0);
+    assertThat(attNets1_0.isEmpty() || attNets1_0.get().getBitCount() == 0).isTrue();
+    assertThat(attNets2_0.isEmpty() || attNets2_0.get().getBitCount() == 0).isTrue();
 
     MetadataMessage md1 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
     MetadataMessage md2 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
