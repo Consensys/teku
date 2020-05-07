@@ -22,23 +22,34 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
-public class DiscoveryPeerToMultiaddrConverter {
+public class MultiaddrUtil {
 
-  public static Multiaddr convertToMultiAddr(final DiscoveryPeer peer) {
-    final InetSocketAddress address = peer.getNodeAddress();
-    final LibP2PNodeId nodeId = getNodeId(peer);
+  public static Multiaddr fromDiscoveryPeer(final DiscoveryPeer peer) {
+    return addPeerId(fromInetSocketAddress(peer.getNodeAddress()), getNodeId(peer));
+  }
+
+  public static Multiaddr fromInetSocketAddress(final InetSocketAddress address) {
     final String addrString =
         String.format(
-            "/%s/%s/tcp/%d/p2p/%s",
+            "/%s/%s/tcp/%d",
             protocol(address.getAddress()),
             address.getAddress().getHostAddress(),
-            address.getPort(),
-            nodeId);
+            address.getPort());
     return Multiaddr.fromString(addrString);
   }
 
-  public static LibP2PNodeId getNodeId(final DiscoveryPeer peer) {
+  public static Multiaddr fromInetSocketAddress(
+      final InetSocketAddress address, final NodeId nodeId) {
+    return addPeerId(fromInetSocketAddress(address), nodeId);
+  }
+
+  private static Multiaddr addPeerId(final Multiaddr addr, final NodeId nodeId) {
+    return new Multiaddr(addr, Multiaddr.fromString("/p2p/" + nodeId.toBase58()));
+  }
+
+  private static LibP2PNodeId getNodeId(final DiscoveryPeer peer) {
     final PubKey pubKey = unmarshalSecp256k1PublicKey(peer.getPublicKey().toArrayUnsafe());
     return new LibP2PNodeId(PeerId.fromPubKey(pubKey));
   }
