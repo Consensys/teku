@@ -311,8 +311,7 @@ jobs:
       - run:
           name: Chechout GitHub Pages branch
           command: |
-            # TODO UPDATE to 'gh-pages' once tested on this branch and before merge of this PR on master
-            readonly BRANCH='gh-pages-test-do-not-remove-yet'
+            readonly BRANCH='gh-pages'
             git checkout "$BRANCH" || git checkout -b "$BRANCH"
             # pull might fail if the branch was just created
             git pull || true
@@ -334,8 +333,7 @@ jobs:
       - deploy:
           name: Commit and push to GitHub Pages branch
           command: |
-            # TODO UPDATE to 'gh-pages' once tested on this branch and before merge of this PR on master
-            readonly BRANCH='gh-pages-test-do-not-remove-yet'
+            readonly BRANCH='gh-pages'
 
             git add .
             git commit -m "[skip ci] automated CI update of JSON specs and version files" \
@@ -398,17 +396,15 @@ workflows:
       - extractAPISpec:
           requires:
             - publish
-#TODO use master once tested on PR
           filters:
             branches:
-              only: publish_openapi_to_gh-pages
+              only: master
       - publishAPIDoc:
           requires:
-            - extractAPISpec
-#TODO use master once tested on PR
+            - extractAPISpecs
           filters:
             branches:
-              only: publish_openapi_to_gh-pages
+              only: master
 
 #  nightly:
 #    triggers:
