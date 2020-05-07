@@ -186,7 +186,7 @@ public class BeaconChainUtil {
         "Must have >1 validator in order to create a block from an invalid proposer.");
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconBlock bestBlock = recentChainData.getStore().getBlock(bestBlockRoot);
-    final BeaconState preState = recentChainData.getBestBlockRootState().orElseThrow();
+    final BeaconState preState = recentChainData.getBestState().orElseThrow();
     checkArgument(bestBlock.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
 
     final int correctProposerIndex = blockCreator.getProposerIndexForSlot(preState, slot);
