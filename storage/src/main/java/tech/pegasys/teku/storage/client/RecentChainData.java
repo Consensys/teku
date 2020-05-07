@@ -104,6 +104,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return this.store == null;
   }
 
+  /**
+   * Returns true if the best block / chainhead has not yet been set.
+   *
+   * @return true if the best block is unknown, false otherwise.
+   */
+  public boolean isPreForkChoice() {
+    return chainHead.isEmpty();
+  }
+
   boolean setStore(Store store) {
     if (!storeInitialized.compareAndSet(false, true)) {
       return false;
@@ -206,6 +215,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    */
   public Optional<BeaconBlockAndState> getBestBlockAndState() {
     return chainHead.map(SignedBlockAndState::toUnsigned);
+  }
+
+  /**
+   * If available, return the best block.
+   *
+   * @return The best block.
+   */
+  public Optional<SignedBeaconBlock> getBestBlock() {
+    return chainHead.map(SignedBlockAndState::getBlock);
   }
 
   /**
