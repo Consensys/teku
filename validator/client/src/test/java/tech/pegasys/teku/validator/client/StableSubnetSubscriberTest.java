@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -75,7 +76,9 @@ public class StableSubnetSubscriberTest {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
     StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, 1);
+        new StableSubnetSubscriber(validatorApiChannel, 2);
+
+    stableSubnetSubscriber.onSlot(valueOf(0));
 
     ArgumentCaptor<Set<SubnetSubscription>> firstSubscriptionUpdate =
         ArgumentCaptor.forClass(Set.class);
@@ -85,7 +88,7 @@ public class StableSubnetSubscriberTest {
     verify(validatorApiChannel)
         .updatePersistentSubnetSubscriptions(firstSubscriptionUpdate.capture());
 
-    assertThat(firstSubscriptionUpdate.getValue()).hasSize(1);
+    assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
 
     UnsignedLong firstUnsubscriptionSlot =
         firstSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();

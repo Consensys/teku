@@ -50,9 +50,7 @@ public class StableSubnetSubscriber {
   }
 
   public void onSlot(UnsignedLong slot) {
-    boolean updated = adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount);
-
-    // Iterate through current subscriptions to replace the ones that have expired
+    // Iterate through current subscriptions to remove the ones that have expired
     final Iterator<SubnetSubscription> iterator = subnetSubscriptions.iterator();
     while (iterator.hasNext()) {
       final SubnetSubscription subnetSubscription = iterator.next();
@@ -63,12 +61,11 @@ public class StableSubnetSubscriber {
       iterator.remove();
       int subnetId = subnetSubscription.getSubnetId();
       availableSubnetIndices.add(subnetId);
-      subscribeToNewRandomSubnet(slot);
-      updated = true;
     }
 
+    // Adjust the number of subscriptions
     // If any update was made to the subscriptions pass the new subscription set to BeaconNode
-    if (updated) {
+    if (adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount)) {
       validatorApiChannel.updatePersistentSubnetSubscriptions(subnetSubscriptions);
     }
   }
