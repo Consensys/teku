@@ -14,13 +14,19 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.valueOf;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 
 class AttestationTopicSubscriberTest {
@@ -92,28 +98,50 @@ class AttestationTopicSubscriberTest {
   }
 
   @Test
-  public void shouldSubscribeToNewSubnetsAndUpdateENR_forRandomsSubscriptions() {
-    Map<Integer, UnsignedLong> randomSubnetSubscriptions =
-        Map.of(
-            1, UnsignedLong.valueOf(20),
-            2, UnsignedLong.valueOf(15));
-    subscriber.subscribeToPersistentSubnets(randomSubnetSubscriptions);
+  public void shouldSubscribeToNewSubnetsAndUpdateENR_forPersistentSubscriptions() {
+    Set<SubnetSubscription> subnetSubscriptions =
+            Set.of(
+                    new SubnetSubscription(1, UnsignedLong.valueOf(20)),
+                    new SubnetSubscription(2, UnsignedLong.valueOf(15)));
+    subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
     verify(eth2Network)
-        .setLongTermAttestationSubnetSubscriptions(randomSubnetSubscriptions.keySet());
+        .setLongTermAttestationSubnetSubscriptions(
+                subnetSubscriptions.stream().map(SubnetSubscription::getSubnetId).collect(Collectors.toSet())
+        );
 
     verify(eth2Network).subscribeToAttestationSubnetId(1);
     verify(eth2Network).subscribeToAttestationSubnetId(2);
   }
 
   @Test
-  public void shouldExtendSubscriptionPeriod_forRandomSubscriptions() {
+  public void shouldUpdateENRWhenNewSubnetIsSubscribedDueToPersistentSubscriptions() {
+    UnsignedLong someSlot = valueOf(15);
+    Set<SubnetSubscription> subnetSubscriptions =
+            Set.of(
+                    new SubnetSubscription(3, someSlot));
+
+    subscriber.subscribeToCommitteeForAggregation(1, someSlot);
+    subscriber.subscribeToCommitteeForAggregation(2, someSlot);
+    subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
+    verify(eth2Network)
+            .setLongTermAttestationSubnetSubscriptions(
+                    subnetSubscriptions.stream().map(SubnetSubscription::getSubnetId).collect(Collectors.toSet())
+            );
+
+    verify(eth2Network).subscribeToAttestationSubnetId(1);
+    verify(eth2Network).subscribeToAttestationSubnetId(2);
+    verify(eth2Network).subscribeToAttestationSubnetId(3);
+  }
+
+  @Test
+  public void shouldExtendSubscriptionPeriod_forPersistentSubscriptions() {
     final int subnetId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
-    Map<Integer, UnsignedLong> randomSubnetSubscriptions = Map.of(subnetId, secondSlot);
+    Set<SubnetSubscription> subnetSubscriptions = Set.of(new SubnetSubscription(subnetId, secondSlot));
 
     subscriber.subscribeToCommitteeForAggregation(subnetId, firstSlot);
-    subscriber.subscribeToPersistentSubnets(randomSubnetSubscriptions);
+    subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
     subscriber.onSlot(firstSlot.plus(ONE));
     verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
@@ -123,13 +151,13 @@ class AttestationTopicSubscriberTest {
   }
 
   @Test
-  public void shouldPreserveLaterSubscription_forRandomSubscriptions() {
+  public void shouldPreserveLaterSubscription_forPersistentSubscriptions() {
     final int subnetId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
-    Map<Integer, UnsignedLong> randomSubnetSubscriptions = Map.of(subnetId, firstSlot);
+    Set<SubnetSubscription> subnetSubscriptions = Set.of(new SubnetSubscription(subnetId, firstSlot));
     subscriber.subscribeToCommitteeForAggregation(subnetId, secondSlot);
-    subscriber.subscribeToPersistentSubnets(randomSubnetSubscriptions);
+    subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
     subscriber.onSlot(firstSlot.plus(ONE));
     verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
