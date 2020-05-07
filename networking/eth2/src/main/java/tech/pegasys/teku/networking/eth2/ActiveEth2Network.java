@@ -32,7 +32,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
-import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -107,11 +106,6 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
     super.stop();
-  }
-
-  @Override
-  public NetworkConfig getConfig() {
-    return discoveryNetwork.getConfig();
   }
 
   @Override

@@ -27,6 +27,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
@@ -88,6 +89,8 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
               Bytes.wrap(p2pConfig.getPrivateKey().raw()),
               p2pConfig.getNetworkInterface(),
               p2pConfig.getListenPort(),
+              p2pConfig.getAdvertisedIp(),
+              p2pConfig.getAdvertisedPort(),
               p2pConfig.getBootnodes());
     } else {
       discoveryService = new NoOpDiscoveryService();
@@ -98,7 +101,8 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   @Override
   public SafeFuture<?> start() {
     return SafeFuture.allOfFailFast(p2pNetwork.start(), discoveryService.start())
-        .thenCompose(__ -> connectionManager.start());
+        .thenCompose(__ -> connectionManager.start())
+        .thenRun(() -> getEnr().ifPresent(StatusLogger.STATUS_LOG::listeningForDiscv5));
   }
 
   @Override
@@ -115,11 +119,6 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
               p2pNetwork.stop();
               discoveryService.stop().reportExceptions();
             });
-  }
-
-  @Override
-  public NetworkConfig getConfig() {
-    return p2pNetwork.getConfig();
   }
 
   public void addStaticPeer(final String peerAddress) {

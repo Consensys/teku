@@ -18,6 +18,7 @@ import static com.google.common.net.InetAddresses.isInetAddress;
 import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 
 public class NetworkConfig {
@@ -26,7 +27,7 @@ public class NetworkConfig {
   private final String networkInterface;
   private final Optional<String> advertisedIp;
   private final int listenPort;
-  private final int advertisedPort;
+  private final OptionalInt advertisedPort;
   private final List<String> staticPeers;
   private final boolean isDiscoveryEnabled;
   private final List<String> bootnodes;
@@ -37,9 +38,9 @@ public class NetworkConfig {
   public NetworkConfig(
       final PrivKey privateKey,
       final String networkInterface,
-      final String advertisedIp,
+      final Optional<String> advertisedIp,
       final int listenPort,
-      final int advertisedPort,
+      final OptionalInt advertisedPort,
       final List<String> staticPeers,
       final boolean isDiscoveryEnabled,
       final List<String> bootnodes,
@@ -61,9 +62,9 @@ public class NetworkConfig {
   public NetworkConfig(
       final PrivKey privateKey,
       final String networkInterface,
-      final String advertisedIp,
+      final Optional<String> advertisedIp,
       final int listenPort,
-      final int advertisedPort,
+      final OptionalInt advertisedPort,
       final List<String> staticPeers,
       final boolean isDiscoveryEnabled,
       final List<String> bootnodes,
@@ -74,12 +75,9 @@ public class NetworkConfig {
     this.privateKey = privateKey;
     this.networkInterface = networkInterface;
 
-    if (advertisedIp.trim().isEmpty()) {
-      this.advertisedIp = Optional.empty();
-    } else if (!isInetAddress(advertisedIp)) {
+    this.advertisedIp = advertisedIp.filter(ip -> !ip.isBlank());
+    if (this.advertisedIp.map(ip -> !isInetAddress(ip)).orElse(false)) {
       throw new IllegalArgumentException("Advertised ip is set incorrectly.");
-    } else {
-      this.advertisedIp = Optional.of(advertisedIp);
     }
 
     this.listenPort = listenPort;
@@ -100,8 +98,8 @@ public class NetworkConfig {
     return networkInterface;
   }
 
-  public Optional<String> getAdvertisedIp() {
-    return advertisedIp;
+  public String getAdvertisedIp() {
+    return advertisedIp.orElse(networkInterface);
   }
 
   public int getListenPort() {
@@ -109,7 +107,7 @@ public class NetworkConfig {
   }
 
   public int getAdvertisedPort() {
-    return advertisedPort;
+    return advertisedPort.orElse(listenPort);
   }
 
   public List<String> getStaticPeers() {
