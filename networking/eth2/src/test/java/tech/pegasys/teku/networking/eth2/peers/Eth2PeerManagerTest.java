@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
@@ -164,7 +165,11 @@ public class Eth2PeerManagerTest {
 
   private Eth2Peer createEth2Peer(final Peer peer) {
     final Eth2Peer eth2Peer =
-        new Eth2Peer(peer, peerManager.getBeaconChainMethods(), statusMessageFactory);
+        new Eth2Peer(
+            peer,
+            peerManager.getBeaconChainMethods(),
+            statusMessageFactory,
+            new MetadataMessagesFactory());
     when(peer.idMatches(eth2Peer)).thenReturn(true);
     return eth2Peer;
   }
