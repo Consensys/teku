@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.util.events;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -39,7 +40,7 @@ public class ObservableValueTest {
       }
     }
 
-    List<Listener> listeners = new Vector<>();
+    List<Listener> listeners = Collections.synchronizedList(new ArrayList<>());
     int threadCnt = 64;
     CountDownLatch startLatch = new CountDownLatch(threadCnt);
     CountDownLatch stopLatch = new CountDownLatch(threadCnt);
