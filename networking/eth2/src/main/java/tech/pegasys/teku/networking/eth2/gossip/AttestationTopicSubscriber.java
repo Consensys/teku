@@ -111,6 +111,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
       } else if (shortTermUnsubscriptionSlot.isPresent()) {
 
         if (slot.compareTo(shortTermUnsubscriptionSlot.get()) > 0) {
+          shortTermSubscriptions.remove(subnetId);
          eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
         }
         
@@ -118,6 +119,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
 
         if (slot.compareTo(persistentUnsubscriptionSlot.get()) > 0) {
           eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
+          persistentSubscriptions.remove(subnetId);
           shouldUpdateENR = true;
         }
 
