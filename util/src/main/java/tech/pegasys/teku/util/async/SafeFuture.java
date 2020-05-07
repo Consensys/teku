@@ -192,6 +192,19 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
+   * Completes the {@code target} exceptionally if and only if this future is completed
+   * exceptionally
+   */
+  public void propagateExceptionTo(final SafeFuture<?> target) {
+    whenComplete(
+        (r, t) -> {
+          if (t != null) {
+            target.completeExceptionally(t);
+          }
+        });
+  }
+
+  /**
    * Run final logic on success or error
    *
    * @param onFinished Task to run when future completes successfully or exceptionally
