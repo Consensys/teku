@@ -680,6 +680,12 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
+  protected void assertBlocksUnavailable(final Collection<Bytes32> roots) {
+    for (Bytes32 root : roots) {
+      assertThat(database.getSignedBlock(root)).isEmpty();
+    }
+  }
+
   protected void assertLatestUpdateResultContains(
       final Set<Bytes32> blockRoots, final Set<Checkpoint> checkpoints) {
     final StorageUpdateResult latestResult = getLatestUpdateResult();

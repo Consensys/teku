@@ -19,6 +19,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
@@ -38,8 +40,8 @@ public class TekuConfiguration {
   private final int p2pPort;
   private final boolean p2pDiscoveryEnabled;
   private final List<String> p2pDiscoveryBootnodes;
-  private final String p2pAdvertisedIp;
-  private final int p2pAdvertisedPort;
+  private final Optional<String> p2pAdvertisedIp;
+  private final OptionalInt p2pAdvertisedPort;
   private final String p2pPrivateKeyFile;
   private final int p2pPeerLowerBound;
   private final int p2pPeerUpperBound;
@@ -110,8 +112,8 @@ public class TekuConfiguration {
       final int p2pPort,
       final boolean p2pDiscoveryEnabled,
       final List<String> p2pDiscoveryBootnodes,
-      final String p2pAdvertisedIp,
-      final int p2pAdvertisedPort,
+      final Optional<String> p2pAdvertisedIp,
+      final OptionalInt p2pAdvertisedPort,
       final String p2pPrivateKeyFile,
       final int p2pPeerLowerBound,
       final int p2pPeerUpperBound,
@@ -236,11 +238,11 @@ public class TekuConfiguration {
     return p2pDiscoveryBootnodes;
   }
 
-  public String getP2pAdvertisedIp() {
+  public Optional<String> getP2pAdvertisedIp() {
     return p2pAdvertisedIp;
   }
 
-  public int getP2pAdvertisedPort() {
+  public OptionalInt getP2pAdvertisedPort() {
     return p2pAdvertisedPort;
   }
 
