@@ -37,7 +37,9 @@ public class StableSubnetSubscriber {
   private final Set<Integer> availableSubnetIndices =
       IntStream.range(0, ATTESTATION_SUBNET_COUNT).boxed().collect(Collectors.toSet());
   private final NavigableSet<SubnetSubscription> subnetSubscriptions =
-      new TreeSet<>(Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot));
+      new TreeSet<>(
+              Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
+              .thenComparing(SubnetSubscription::getSubnetId));
   private final Random rand = new Random();
 
   private volatile int validatorCount;
