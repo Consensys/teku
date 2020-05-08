@@ -14,8 +14,10 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.primitives.UnsignedLong;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,11 +37,16 @@ import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
+  private static final Duration PING_INTERVAL = Duration.ofSeconds(10);
+
+  private final AsyncRunner asyncRunner;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
 
@@ -51,12 +58,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final PeerValidatorFactory peerValidatorFactory;
 
   Eth2PeerManager(
+      final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
       final PeerValidatorFactory peerValidatorFactory,
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding) {
+    this.asyncRunner = asyncRunner;
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
     metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
@@ -74,6 +83,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   public static Eth2PeerManager create(
+      final AsyncRunner asyncRunner,
       final RecentChainData storageClient,
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
@@ -83,6 +93,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         (peer, status) ->
             PeerChainValidator.create(storageClient, historicalChainData, peer, status);
     return new Eth2PeerManager(
+        asyncRunner,
         new CombinedChainDataClient(storageClient, historicalChainData),
         storageClient,
         metricsSystem,
@@ -121,6 +132,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                         connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
                       }
                     }));
+
+    SafeFuture<Void> pingTask =
+        asyncRunner.runWithFixedDelay(
+            eth2Peer::sendPing,
+            PING_INTERVAL.toMillis(),
+            TimeUnit.MILLISECONDS,
+            t -> LOG.debug("Exception executing ping", t));
+    peer.subscribeDisconnect(() -> pingTask.cancel(false));
   }
 
   private UnsignedLong convertToEth2DisconnectReason(final DisconnectReason reason) {

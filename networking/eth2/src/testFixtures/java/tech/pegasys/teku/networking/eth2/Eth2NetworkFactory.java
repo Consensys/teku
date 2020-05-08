@@ -121,7 +121,8 @@ public class Eth2NetworkFactory {
                 historicalChainData,
                 METRICS_SYSTEM,
                 attestationSubnetService,
-                rpcEncoding);
+                rpcEncoding,
+                asyncRunner);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);

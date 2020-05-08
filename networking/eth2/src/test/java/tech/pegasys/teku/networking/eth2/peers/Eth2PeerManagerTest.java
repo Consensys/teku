@@ -48,6 +48,7 @@ public class Eth2PeerManagerTest {
   private final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(
+          asyncRunner,
           combinedChainDataClient,
           storageClient,
           new NoOpMetricsSystem(),

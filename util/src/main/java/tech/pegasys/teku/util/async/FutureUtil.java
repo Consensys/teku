@@ -47,6 +47,5 @@ public class FutureUtil {
             delayAmount,
             delayUnit);
     future.propagateExceptionTo(task);
-
   }
 }

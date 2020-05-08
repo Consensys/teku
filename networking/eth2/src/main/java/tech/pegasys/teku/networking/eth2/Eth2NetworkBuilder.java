@@ -31,6 +31,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.TimeProvider;
 
@@ -45,6 +46,7 @@ public class Eth2NetworkBuilder {
   private List<RpcMethod> rpcMethods = new ArrayList<>();
   private List<PeerHandler> peerHandlers = new ArrayList<>();
   private TimeProvider timeProvider;
+  private AsyncRunner asyncRunner;
 
   private Eth2NetworkBuilder() {}
 
@@ -65,7 +67,8 @@ public class Eth2NetworkBuilder {
             historicalChainData,
             metricsSystem,
             attestationSubnetService,
-            rpcEncoding);
+            rpcEncoding,
+            asyncRunner);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -149,6 +152,12 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder peerHandler(final PeerHandler peerHandler) {
     checkNotNull(peerHandler);
     peerHandlers.add(peerHandler);
+    return this;
+  }
+
+  public Eth2NetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+    checkNotNull(asyncRunner);
+    this.asyncRunner = asyncRunner;
     return this;
   }
 }

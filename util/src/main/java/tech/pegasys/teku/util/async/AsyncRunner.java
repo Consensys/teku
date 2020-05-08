@@ -46,8 +46,8 @@ public interface AsyncRunner {
    * Future will immediately be exceptionally completed with {@link
    * java.util.concurrent.CancellationException}
    *
-   * If the {@code runnable} throws exception at any iteration then the returned Future would
-   * be completed exceptionally and the task will not be executed any more
+   * <p>If the {@code runnable} throws exception at any iteration then the returned Future would be
+   * completed exceptionally and the task will not be executed any more
    */
   default SafeFuture<Void> runWithFixedDelay(
       ExceptionThrowingRunnable runnable, long delayAmount, TimeUnit delayUnit) {
@@ -65,8 +65,8 @@ public interface AsyncRunner {
    * Future will immediately be exceptionally completed with {@link
    * java.util.concurrent.CancellationException}
    *
-   * Whenever the {@code runnable} throws exception it is notified to the {@code exceptionHandler}
-   * and the task recurring executions are not interrupted
+   * <p>Whenever the {@code runnable} throws exception it is notified to the {@code
+   * exceptionHandler} and the task recurring executions are not interrupted
    */
   default SafeFuture<Void> runWithFixedDelay(
       ExceptionThrowingRunnable runnable,
