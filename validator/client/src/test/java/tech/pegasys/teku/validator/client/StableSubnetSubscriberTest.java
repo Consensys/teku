@@ -128,20 +128,10 @@ public class StableSubnetSubscriberTest {
   void shouldReplaceExpiredSubscriptionsWithNewOnes() {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     Random mockRandom = mock(Random.class);
-
-    // set random subscription length to 10
-    Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 5;
-    Constants.SLOTS_PER_EPOCH = 2;
-    when(mockRandom.nextInt(Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION)).thenReturn(0);
-
-    // return subnet Ids 0 and 1
-    when(mockRandom.nextInt(Constants.ATTESTATION_SUBNET_COUNT)).thenReturn(0);
-    when(mockRandom.nextInt(Constants.ATTESTATION_SUBNET_COUNT - 1)).thenReturn(0);
-    when(mockRandom.nextInt(Constants.ATTESTATION_SUBNET_COUNT - 2)).thenReturn(0);
-    when(mockRandom.nextInt(Constants.ATTESTATION_SUBNET_COUNT - 3)).thenReturn(0);
+    when(mockRandom.nextInt(2)).thenReturn(10);
 
     StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, mockRandom, 2);
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
 
     stableSubnetSubscriber.onSlot(valueOf(0));
 
@@ -153,22 +143,24 @@ public class StableSubnetSubscriberTest {
     verify(validatorApiChannel).subscribeToPersistentSubnets(firstSubscriptionUpdate.capture());
 
     assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
-    assertThat(firstSubscriptionUpdate.getValue())
-        .containsExactlyInAnyOrder(
-            new SubnetSubscription(0, valueOf(10)), new SubnetSubscription(1, valueOf(10)));
+    assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
 
-    stableSubnetSubscriber.onSlot(valueOf(9));
+    UnsignedLong firstUnsubscriptionSlot =
+        firstSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
+
+    stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot.minus(UnsignedLong.ONE));
 
     verifyNoMoreInteractions(validatorApiChannel);
-
-    stableSubnetSubscriber.onSlot(valueOf(10));
+    stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot);
 
     verify(validatorApiChannel, times(2))
         .subscribeToPersistentSubnets(secondSubscriptionUpdate.capture());
 
-    assertThat(secondSubscriptionUpdate.getValue()).hasSize(2);
-    assertThat(secondSubscriptionUpdate.getValue())
-        .containsExactlyInAnyOrder(
-            new SubnetSubscription(0, valueOf(20)), new SubnetSubscription(1, valueOf(20)));
+    UnsignedLong secondUnsubscriptionSlot =
+        secondSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
+
+    assertThat(firstUnsubscriptionSlot).isNotEqualByComparingTo(secondUnsubscriptionSlot);
+    // Can only verify unsubscription slot have changed and not the subnet id,
+    // since subnet id can randomly be chosen the same
   }
 }
