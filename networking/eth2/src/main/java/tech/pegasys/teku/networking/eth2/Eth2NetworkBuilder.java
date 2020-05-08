@@ -64,12 +64,12 @@ public class Eth2NetworkBuilder {
         eth2Config.isSnappyCompressionEnabled() ? RpcEncoding.SSZ_SNAPPY : RpcEncoding.SSZ;
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
+            asyncRunner,
             recentChainData,
             historicalChainData,
             metricsSystem,
             attestationSubnetService,
-            rpcEncoding,
-            asyncRunner);
+            rpcEncoding);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);

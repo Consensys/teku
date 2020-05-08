@@ -50,6 +50,8 @@ import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.Waiter;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
@@ -73,6 +75,7 @@ public class Eth2NetworkFactory {
   public class Eth2P2PNetworkBuilder {
 
     protected List<Eth2Network> peers = new ArrayList<>();
+    protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
@@ -121,12 +124,12 @@ public class Eth2NetworkFactory {
         final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
+                asyncRunner,
                 recentChainData,
                 historicalChainData,
                 METRICS_SYSTEM,
                 attestationSubnetService,
-                rpcEncoding,
-                asyncRunner);
+                rpcEncoding);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
@@ -174,6 +177,9 @@ public class Eth2NetworkFactory {
       if (eventBus == null) {
         eventBus = new EventBus();
       }
+      if (asyncRunner == null) {
+        asyncRunner = DelayedExecutorAsyncRunner.create();
+      }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
         BeaconChainUtil.create(0, recentChainData).initializeStorage();
@@ -218,6 +224,12 @@ public class Eth2NetworkFactory {
     public Eth2P2PNetworkBuilder peerHandler(final PeerHandler peerHandler) {
       checkNotNull(peerHandler);
       peerHandlers.add(peerHandler);
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+      checkNotNull(asyncRunner);
+      this.asyncRunner = asyncRunner;
       return this;
     }
   }

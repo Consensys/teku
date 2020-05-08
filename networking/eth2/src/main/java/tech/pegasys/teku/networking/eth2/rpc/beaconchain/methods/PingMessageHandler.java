@@ -17,10 +17,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 
-public class PingMessageHandler implements LocalMessageHandler<PingMessage, PingMessage> {
+public class PingMessageHandler extends PeerRequiredLocalMessageHandler<PingMessage, PingMessage> {
   private static final Logger LOG = LogManager.getLogger();
   private final MetadataMessagesFactory metadataMessagesFactory;
 
@@ -33,7 +33,7 @@ public class PingMessageHandler implements LocalMessageHandler<PingMessage, Ping
       final Eth2Peer peer,
       final PingMessage message,
       final ResponseCallback<PingMessage> callback) {
-    LOG.trace("Peer {} sent status.", peer.getId());
+    LOG.trace("Peer {} sent ping.", peer.getId());
     peer.updateMetadataSeqNumber(message.getSeqNumber());
     callback.respond(metadataMessagesFactory.createPingMessage());
     callback.completeSuccessfully();
