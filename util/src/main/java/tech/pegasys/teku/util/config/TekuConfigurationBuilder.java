@@ -63,6 +63,7 @@ public class TekuConfigurationBuilder {
   private int metricsPort;
   private String metricsInterface;
   private List<String> metricsCategories;
+  private List<String> metricsHostWhitelist;
   private String dataPath;
   private StateStorageMode dataStorageMode;
   private int restApiPort;
@@ -304,6 +305,12 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setMetricsHostWhitelist(
+      final List<String> metricsHostWhitelist) {
+    this.metricsHostWhitelist = metricsHostWhitelist;
+    return this;
+  }
+
   public TekuConfigurationBuilder setDataPath(final String dataPath) {
     this.dataPath = dataPath;
     return this;
@@ -401,6 +408,7 @@ public class TekuConfigurationBuilder {
         metricsPort,
         metricsInterface,
         metricsCategories,
+        metricsHostWhitelist,
         dataPath,
         dataStorageMode,
         restApiPort,
