@@ -227,6 +227,19 @@ public final class DataStructureUtil {
     return new SignedBeaconBlock(beaconBlock, randomSignature());
   }
 
+  public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, BeaconState state) {
+    return randomSignedBeaconBlock(UnsignedLong.valueOf(slotNum), state);
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlock(UnsignedLong slotNum, BeaconState state) {
+    final BeaconBlockBody body = randomBeaconBlockBody();
+    final Bytes32 stateRoot = state.hash_tree_root();
+
+    final BeaconBlock block =
+        new BeaconBlock(slotNum, randomUnsignedLong(), randomBytes32(), stateRoot, body);
+    return new SignedBeaconBlock(block, randomSignature());
+  }
+
   public BeaconBlock randomBeaconBlock(long slotNum) {
     return randomBeaconBlock(UnsignedLong.valueOf(slotNum));
   }

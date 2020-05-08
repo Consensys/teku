@@ -14,11 +14,15 @@
 package tech.pegasys.teku.datastructures.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 
 class SimpleOffsetSerializerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -40,4 +44,66 @@ class SimpleOffsetSerializerTest {
     final BLSSignature result = SimpleOffsetSerializer.deserialize(data, BLSSignature.class);
     assertThat(result).isEqualTo(original);
   }
+
+  @Test
+  public void decode_boolean() {
+    final Bytes data = Bytes.fromHexString("0x01");
+    final Boolean decoded = SimpleOffsetSerializer.deserialize(data, boolean.class);
+    assertThat(decoded).isTrue();
+  }
+
+  @Test
+  public void decode_Boolean() {
+    final Bytes data = Bytes.fromHexString("0x01");
+    final Boolean decoded = SimpleOffsetSerializer.deserialize(data, Boolean.class);
+    assertThat(decoded).isTrue();
+  }
+
+  @Test
+  public void deserialize_toInvalidClass() {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
+
+    final Bytes encoded = SimpleOffsetSerializer.serialize(block);
+    assertThatThrownBy(() -> SimpleOffsetSerializer.deserialize(encoded, RandomClass.class))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Unable to deserialize RandomClass");
+  }
+
+  @Test
+  public void deserialize_toInvalidPrimitive() {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
+
+    final Bytes encoded = SimpleOffsetSerializer.serialize(block);
+    assertThatThrownBy(() -> SimpleOffsetSerializer.deserialize(encoded, boolean.class))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Unread data detected");
+  }
+
+  @Test
+  public void deserialize_extraDataAppended() {
+    final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
+    final Bytes extraData = Bytes.fromHexString("0x00");
+
+    final Bytes checkpointData = SimpleOffsetSerializer.serialize(checkpoint);
+    final Bytes encoded = Bytes.concatenate(checkpointData, extraData);
+    assertThatThrownBy(() -> SimpleOffsetSerializer.deserialize(encoded, Checkpoint.class))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Unread data detected");
+  }
+
+  @Test
+  public void decode_toUnregisteredContainerType() {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(1);
+
+    final Bytes encoded = SimpleOffsetSerializer.serialize(block);
+    assertThatThrownBy(
+            () -> SimpleOffsetSerializer.deserialize(encoded, UnregisteredContainer.class))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Unable to find reflection information for class UnregisteredContainer");
+  }
+
+  private static class UnregisteredContainer implements SSZContainer {}
+
+  private static class RandomClass {}
 }

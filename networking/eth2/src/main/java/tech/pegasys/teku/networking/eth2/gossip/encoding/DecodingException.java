@@ -11,11 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.compression.exceptions;
+package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
-public class PayloadLargerThanExpectedException extends CompressionException {
+public class DecodingException extends Exception {
 
-  public PayloadLargerThanExpectedException(final String message) {
+  public DecodingException(final String message, final Throwable cause) {
+    super(message, cause);
+  }
+
+  public DecodingException(final String message) {
     super(message);
   }
 }

@@ -20,6 +20,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,7 +85,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
     lenient().when(rpcStream.close()).thenReturn(SafeFuture.COMPLETE);
     lenient().when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
     lenient().when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.COMPLETE);
-    lenient().when(peerLookup.getConnectedPeer(nodeId)).thenReturn(peer);
+    lenient().when(peerLookup.getConnectedPeer(nodeId)).thenReturn(Optional.of(peer));
 
     // Setup thread to process input
     startProcessingInput();

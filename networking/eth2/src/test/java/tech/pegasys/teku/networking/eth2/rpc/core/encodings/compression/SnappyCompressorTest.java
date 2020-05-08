@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.compression;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.networking.eth2.compression.SnappyCompressor.MAX_FRAME_CONTENT_SIZE;
+import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.SnappyFramedCompressor.MAX_FRAME_CONTENT_SIZE;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -26,9 +26,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.CompressionException;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.PayloadLargerThanExpectedException;
-import tech.pegasys.teku.networking.eth2.compression.exceptions.PayloadSmallerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
 public class SnappyCompressorTest {
   // The static snappy header taken from the Snappy library
@@ -38,7 +38,7 @@ public class SnappyCompressorTest {
       Bytes.wrap(new byte[] {(byte) 0xff, 0x06, 0x00, 0x00, 0x73, 0x4e, 0x61, 0x50, 0x70, 0x59});
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Compressor compressor = new SnappyCompressor();
+  private final Compressor compressor = new SnappyFramedCompressor();
 
   @Test
   public void roundTrip() throws Exception {

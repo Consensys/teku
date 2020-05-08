@@ -264,7 +264,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
             UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
         listener);
 
-    verify(listener).completeWithError(INVALID_STEP);
+    verify(listener).completeWithErrorResponse(INVALID_STEP);
     verifyNoMoreInteractions(listener);
     verifyNoMoreInteractions(combinedChainDataClient);
   }

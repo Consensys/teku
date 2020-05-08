@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -76,8 +77,15 @@ public class Eth2NetworkBuilder {
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network = buildNetwork();
 
+    final GossipEncoding gossipEncoding =
+        eth2Config.isSnappyCompressionEnabled() ? GossipEncoding.SSZ_SNAPPY : GossipEncoding.SSZ;
     return new ActiveEth2Network(
-        network, eth2PeerManager, eventBus, recentChainData, attestationSubnetService);
+        network,
+        eth2PeerManager,
+        eventBus,
+        recentChainData,
+        gossipEncoding,
+        attestationSubnetService);
   }
 
   protected DiscoveryNetwork<?> buildNetwork() {

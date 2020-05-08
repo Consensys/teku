@@ -30,6 +30,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -116,7 +117,14 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<PeerStatus> sendStatus() {
-    return requestSingleItem(rpcMethods.status(), statusMessageFactory.createStatusMessage())
+    final Optional<StatusMessage> statusMessage = statusMessageFactory.createStatusMessage();
+    if (statusMessage.isEmpty()) {
+      final Exception error =
+          new IllegalStateException("Unable to generate local status message.  Node is not ready.");
+      return SafeFuture.failedFuture(error);
+    }
+
+    return requestSingleItem(rpcMethods.status(), statusMessage.get())
         .thenApply(PeerStatus::fromStatusMessage)
         .thenPeek(this::updateStatus);
   }

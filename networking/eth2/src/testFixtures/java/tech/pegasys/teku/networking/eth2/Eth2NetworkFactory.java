@@ -25,12 +25,15 @@ import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -75,6 +78,7 @@ public class Eth2NetworkFactory {
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
+    protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -138,7 +142,12 @@ public class Eth2NetworkFactory {
                 config);
 
         return new ActiveEth2Network(
-            network, eth2PeerManager, eventBus, recentChainData, attestationSubnetService);
+            network,
+            eth2PeerManager,
+            eventBus,
+            recentChainData,
+            gossipEncoding,
+            attestationSubnetService);
       }
     }
 
@@ -152,9 +161,9 @@ public class Eth2NetworkFactory {
       return new NetworkConfig(
           KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
           "127.0.0.1",
-          "127.0.0.1",
+          Optional.empty(),
           port,
-          port,
+          OptionalInt.empty(),
           peerAddresses,
           false,
           emptyList(),
@@ -172,7 +181,14 @@ public class Eth2NetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
+      checkNotNull(rpcEncoding);
       this.rpcEncoding = rpcEncoding;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipEncoding(final GossipEncoding gossipEncoding) {
+      checkNotNull(gossipEncoding);
+      this.gossipEncoding = gossipEncoding;
       return this;
     }
 

@@ -11,11 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.compression.exceptions;
+package tech.pegasys.teku.util.events;
 
-public class PayloadSmallerThanExpectedException extends CompressionException {
+@FunctionalInterface
+public interface ValueObserver<C> {
 
-  public PayloadSmallerThanExpectedException(final String message) {
-    super(message);
-  }
+  void onValueChanged(C newValue);
 }

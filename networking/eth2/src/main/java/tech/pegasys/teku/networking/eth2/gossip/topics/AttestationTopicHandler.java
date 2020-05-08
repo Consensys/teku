@@ -14,11 +14,9 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
 
@@ -28,11 +26,12 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   private final AttestationValidator attestationValidator;
 
   public AttestationTopicHandler(
-      final EventBus eventBus,
-      final AttestationValidator attestationValidator,
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
       final int subnetId,
-      final ForkInfo forkInfo) {
-    super(eventBus, forkInfo);
+      final AttestationValidator attestationValidator,
+      final EventBus eventBus) {
+    super(gossipEncoding, forkInfo, eventBus);
     this.attestationValidator = attestationValidator;
     this.subnetId = subnetId;
   }
@@ -43,8 +42,8 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
   }
 
   @Override
-  protected Attestation deserialize(final Bytes bytes) throws SSZException {
-    return SimpleOffsetSerializer.deserialize(bytes, Attestation.class);
+  protected Class<Attestation> getValueType() {
+    return Attestation.class;
   }
 
   @Override

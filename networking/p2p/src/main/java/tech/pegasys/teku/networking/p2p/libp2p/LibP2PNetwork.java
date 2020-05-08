@@ -41,6 +41,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,6 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.network.NetworkUtility;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
@@ -90,7 +90,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
-  private int listenPort;
+  private final int listenPort;
 
   public LibP2PNetwork(
       final NetworkConfig config,
@@ -102,7 +102,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
     this.config = config;
 
-    advertisedAddr = getAdvertisedAddr(config);
+    advertisedAddr = getAdvertisedAddr(config, nodeId);
     this.listenPort = config.getListenPort();
 
     // Setup gossip
@@ -121,7 +121,9 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     // set false for Prysm compatibility
     // TODO remove when all clients adjust the same Noise spec
     NoiseXXSecureChannel.setRustInteroperability(false);
-
+    final Multiaddr listenAddr =
+        MultiaddrUtil.fromInetSocketAddress(
+            new InetSocketAddress(config.getNetworkInterface(), config.getListenPort()));
     host =
         BuilderJKt.hostJ(
             Defaults.None,
@@ -131,9 +133,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getSecureChannels().add(NoiseXXSecureChannel::new);
               b.getSecureChannels().add(SecIoSecureChannel::new); // to be removed later
               b.getMuxers().add(MplexStreamMuxer::new);
-              b.getNetwork()
-                  .listen(
-                      "/ip4/" + config.getNetworkInterface() + "/tcp/" + config.getListenPort());
+
+              b.getNetwork().listen(listenAddr.toString());
 
               b.getProtocols().addAll(getDefaultProtocols());
               b.getProtocols().addAll(rpcHandlers.values());
@@ -203,31 +204,27 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             });
   }
 
-  private static Multiaddr getAdvertisedAddr(NetworkConfig config) {
+  private Multiaddr getAdvertisedAddr(NetworkConfig config, final NodeId nodeId) {
     try {
-      String ip;
-      if (config.getAdvertisedIp().isPresent()) {
-        ip = config.getAdvertisedIp().get();
-      } else if (NetworkUtility.isUnspecifiedAddress(config.getNetworkInterface())) {
-        ip = config.getNetworkInterface();
+      final InetSocketAddress advertisedAddress =
+          new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort());
+      final InetSocketAddress resolvedAddress;
+      if (advertisedAddress.getAddress().isAnyLocalAddress()) {
+        resolvedAddress =
+            new InetSocketAddress(InetAddress.getLocalHost(), advertisedAddress.getPort());
       } else {
-        ip = InetAddress.getLocalHost().getHostAddress();
+        resolvedAddress = advertisedAddress;
       }
-
-      return new Multiaddr("/ip4/" + ip + "/tcp/" + config.getAdvertisedPort());
+      return MultiaddrUtil.fromInetSocketAddress(resolvedAddress, nodeId);
     } catch (UnknownHostException err) {
       throw new RuntimeException(
           "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
     }
   }
 
-  public static String getAdvertisedAddrString(final NetworkConfig config) {
-    return getAdvertisedAddr(config).toString();
-  }
-
   @Override
   public String getNodeAddress() {
-    return advertisedAddr + "/p2p/" + nodeId.toBase58();
+    return advertisedAddr.toString();
   }
 
   @Override
@@ -284,7 +281,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public int getListenPort() {
     return listenPort;
-  };
+  }
 
   @Override
   public void stop() {
@@ -293,11 +290,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
     reportExceptions(host.stop());
-  }
-
-  @Override
-  public NetworkConfig getConfig() {
-    return this.config;
   }
 
   @Override

@@ -161,7 +161,7 @@ public class Eth2PeerManagerTest {
 
   private void setInitialPeerStatus(final Eth2Peer peer) {
     final PeerStatus status = statusFactory.random();
-    peerManager.getConnectedPeer(peer.getId()).updateStatus(status);
+    peerManager.getConnectedPeer(peer.getId()).orElseThrow().updateStatus(status);
   }
 
   private Eth2Peer createEth2Peer(final Peer peer) {
