@@ -196,12 +196,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * exceptionally
    */
   public void propagateExceptionTo(final SafeFuture<?> target) {
-    whenComplete(
-        (r, t) -> {
-          if (t != null) {
-            target.completeExceptionally(t);
-          }
-        });
+    finish(() -> {}, target::completeExceptionally);
   }
 
   /**
