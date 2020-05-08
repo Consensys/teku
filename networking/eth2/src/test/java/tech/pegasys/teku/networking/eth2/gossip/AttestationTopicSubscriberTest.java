@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -100,12 +99,10 @@ class AttestationTopicSubscriberTest {
         Set.of(
             new SubnetSubscription(1, UnsignedLong.valueOf(20)),
             new SubnetSubscription(2, UnsignedLong.valueOf(15)));
+
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
-    verify(eth2Network)
-        .setLongTermAttestationSubnetSubscriptions(
-            subnetSubscriptions.stream()
-                .map(SubnetSubscription::getSubnetId)
-                .collect(Collectors.toSet()));
+
+    verify(eth2Network).setLongTermAttestationSubnetSubscriptions(Set.of(1, 2));
 
     verify(eth2Network).subscribeToAttestationSubnetId(1);
     verify(eth2Network).subscribeToAttestationSubnetId(2);
@@ -114,20 +111,19 @@ class AttestationTopicSubscriberTest {
   @Test
   public void shouldUpdateENRWhenNewSubnetIsSubscribedDueToPersistentSubscriptions() {
     UnsignedLong someSlot = valueOf(15);
-    Set<SubnetSubscription> subnetSubscriptions = Set.of(new SubnetSubscription(3, someSlot));
+    Set<SubnetSubscription> subnetSubscription = Set.of(new SubnetSubscription(2, someSlot));
 
     subscriber.subscribeToCommitteeForAggregation(1, someSlot);
     subscriber.subscribeToCommitteeForAggregation(2, someSlot);
-    subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
-    verify(eth2Network)
-        .setLongTermAttestationSubnetSubscriptions(
-            subnetSubscriptions.stream()
-                .map(SubnetSubscription::getSubnetId)
-                .collect(Collectors.toSet()));
 
     verify(eth2Network).subscribeToAttestationSubnetId(1);
     verify(eth2Network).subscribeToAttestationSubnetId(2);
-    verify(eth2Network).subscribeToAttestationSubnetId(3);
+
+    subscriber.subscribeToPersistentSubnets(subnetSubscription);
+
+    verify(eth2Network).setLongTermAttestationSubnetSubscriptions(Set.of(2));
+
+    verify(eth2Network).subscribeToAttestationSubnetId(2);
   }
 
   @Test
