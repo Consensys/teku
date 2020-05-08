@@ -57,7 +57,8 @@ public class Eth2PeerManagerTest {
           new NoOpMetricsSystem(),
           peerValidatorFactory,
           new AttestationSubnetService(),
-          rpcEncoding, eth2RpcPingInterval);
+          rpcEncoding,
+          eth2RpcPingInterval);
 
   @BeforeEach
   public void setup() {

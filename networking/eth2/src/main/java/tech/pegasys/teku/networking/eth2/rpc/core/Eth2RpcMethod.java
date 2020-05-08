@@ -127,8 +127,6 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
 
   @Override
   public String toString() {
-    return "Eth2RpcMethod{" +
-        "id='" + methodMultistreamId + '\'' +
-        '}';
+    return "Eth2RpcMethod{" + "id='" + methodMultistreamId + '\'' + '}';
   }
 }

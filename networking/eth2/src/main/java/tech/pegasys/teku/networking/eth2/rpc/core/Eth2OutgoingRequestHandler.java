@@ -208,8 +208,6 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
 
   @Override
   public String toString() {
-    return "Eth2OutgoingRequestHandler{" +
-        "method=" + method +
-        '}';
+    return "Eth2OutgoingRequestHandler{" + "method=" + method + '}';
   }
 }
