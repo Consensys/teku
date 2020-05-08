@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.util.Waiter.waitFor;
 
 import com.google.common.primitives.UnsignedLong;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -35,10 +35,10 @@ public class PingIntegrationTest {
   private Eth2Peer peer1;
   private Eth2Peer peer2;
 
-  @BeforeEach
-  public void setUp() throws Exception {
-    network1 = networkFactory.builder().startNetwork();
-    network2 = networkFactory.builder().peer(network1).startNetwork();
+  public void setUp(Duration pingInterval) throws Exception {
+    network1 = networkFactory.builder().eth2RpcPingInterval(pingInterval).startNetwork();
+    network2 =
+        networkFactory.builder().eth2RpcPingInterval(pingInterval).peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
   }
@@ -49,7 +49,18 @@ public class PingIntegrationTest {
   }
 
   @Test
+  public void testPingSimple() throws Exception {
+    setUp(Duration.ofDays(1));
+
+    long s = System.currentTimeMillis();
+    peer1.sendPing().get(10, TimeUnit.SECONDS);
+    // response received in 10 seconds
+  }
+
+  @Test
   public void testPingUpdatesMetadata() throws Exception {
+    setUp(Duration.ofDays(1));
+
     Optional<Bitvector> attNets1_0 = peer1.getRemoteAttestationSubnets();
     Optional<Bitvector> attNets2_0 = peer2.getRemoteAttestationSubnets();
 
@@ -91,5 +102,17 @@ public class PingIntegrationTest {
     expectedBitvector2.setBits(2, 4);
 
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector2));
+  }
+
+  @Test
+  public void testPingPeriodically() throws Exception {
+    setUp(Duration.ofMillis(100));
+
+    network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
+    Bitvector expectedBitvector1 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT);
+    expectedBitvector1.setBits(0, 1, 8);
+
+    // detecting that ping was automatically sent via updated att subnets of the remote peer
+    waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));
   }
 }
