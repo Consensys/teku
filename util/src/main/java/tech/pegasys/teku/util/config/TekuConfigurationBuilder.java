@@ -305,8 +305,7 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setMetricsHostWhitelist(
-      final List<String> metricsHostWhitelist) {
+  public TekuConfigurationBuilder setMetricsHostWhitelist(final List<String> metricsHostWhitelist) {
     this.metricsHostWhitelist = metricsHostWhitelist;
     return this;
   }
