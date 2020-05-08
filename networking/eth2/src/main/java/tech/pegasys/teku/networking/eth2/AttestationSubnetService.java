@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import java.util.function.Consumer;
 import tech.pegasys.teku.util.events.ObservableValue;
+import tech.pegasys.teku.util.events.ValueObserver;
 
 /**
  * Service tracks long term attestation subnet subscriptions and notifies subscribers on their
@@ -27,7 +27,7 @@ public class AttestationSubnetService {
     attSubnetSubscriptions.set(subnetIndices);
   }
 
-  public synchronized long subscribeToUpdates(Consumer<Iterable<Integer>> observer) {
+  public synchronized long subscribeToUpdates(ValueObserver<Iterable<Integer>> observer) {
     return attSubnetSubscriptions.subscribe(observer);
   }
 

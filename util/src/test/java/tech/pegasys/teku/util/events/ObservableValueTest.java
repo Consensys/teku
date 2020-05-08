@@ -18,9 +18,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class ObservableValueTest {
@@ -28,15 +28,15 @@ public class ObservableValueTest {
   @Test
   public void testConcurrentSubscribersNotifications() throws InterruptedException {
     ObservableValue<Integer> observableValue = new ObservableValue<>(false);
-    class Listener implements Consumer<Integer> {
+    class Listener implements ValueObserver<Integer> {
       int val;
 
       @Override
-      public void accept(Integer integer) {
-        if (val == -2 || integer <= val) {
-          throw new RuntimeException();
+      public void onValueChanged(Integer newValue) {
+        if (newValue <= val) {
+          Assertions.fail("newValue <= val: " + newValue + " <= " + val);
         }
-        val = integer;
+        val = newValue;
       }
     }
 
@@ -68,7 +68,6 @@ public class ObservableValueTest {
     threads.forEach(Thread::interrupt);
     stopLatch.await(5, TimeUnit.SECONDS);
 
-    System.out.println("Listeners: " + listeners.size());
     for (Listener listener : listeners) {
       if (listener.val != 777) {
         throw new RuntimeException();

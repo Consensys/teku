@@ -17,7 +17,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -25,10 +24,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A value holder class which notifies subscribers on value updates
  *
- * <p>The key feature of this class is that upon subscription a new subscriber is always notified on
- * the current value (if the value exist) and this is performed in a thread-safe manner such that
- * {@link #set(Object)} and {@link #subscribe(Consumer)} methods can be safely called from different
- * threads
+ * <p>The key feature of this class is that upon subscription a new {@link ValueObserver} is always
+ * notified of the current value (if the value exists) and this is performed in a thread-safe manner
+ * such that {@link #set(Object)} and {@link #subscribe(ValueObserver)} methods can be safely called
+ * from different threads
  *
  * <p>All subscribers are guaranteed:
  *
@@ -46,15 +45,15 @@ public class ObservableValue<C> {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final class Subscription<C> {
-    private final Consumer<C> subscriber;
+    private final ValueObserver<C> subscriber;
     private final long subscriptionId;
 
-    public Subscription(Consumer<C> subscriber, long subscriptionId) {
+    public Subscription(ValueObserver<C> subscriber, long subscriptionId) {
       this.subscriber = subscriber;
       this.subscriptionId = subscriptionId;
     }
 
-    public Consumer<C> getSubscriber() {
+    public ValueObserver<C> getSubscriber() {
       return subscriber;
     }
 
@@ -85,7 +84,7 @@ public class ObservableValue<C> {
    *
    * @return subscription ID to be used for {@link #unsubscribe(long)}
    */
-  public synchronized long subscribe(Consumer<C> subscriber) {
+  public synchronized long subscribe(ValueObserver<C> subscriber) {
     Subscription<C> subscription = new Subscription<>(subscriber, idCounter++);
     subscriptions.add(subscription);
     if (curValue != null) {
@@ -97,7 +96,7 @@ public class ObservableValue<C> {
   /**
    * Cancels previously created subscription
    *
-   * @param subscriptionId ID return by the {@link #subscribe(Consumer)} method
+   * @param subscriptionId ID return by the {@link #subscribe(ValueObserver)} method
    */
   public synchronized void unsubscribe(long subscriptionId) {
     subscriptions.removeIf(s -> s.getSubscriptionId() == subscriptionId);
@@ -120,7 +119,7 @@ public class ObservableValue<C> {
 
   private void notify(Subscription<C> subscription, C value) {
     try {
-      subscription.getSubscriber().accept(value);
+      subscription.getSubscriber().onValueChanged(value);
     } catch (Throwable throwable) {
       if (suppressCallbackExceptions) {
         LOG.error("Error in callback: ", throwable);
