@@ -45,23 +45,27 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final RecentChainData recentChainData;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final GossipEncoding gossipEncoding;
+  private final AttestationSubnetService attestationSubnetService;
 
   private BlockGossipManager blockGossipManager;
   private AttestationGossipManager attestationGossipManager;
   private AggregateGossipManager aggregateGossipManager;
+  private long discoveryNetworkAttestationSubnetsSubscription;
 
   public ActiveEth2Network(
       final DiscoveryNetwork<?> discoveryNetwork,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
       final RecentChainData recentChainData,
-      final GossipEncoding gossipEncoding) {
+      final GossipEncoding gossipEncoding,
+      final AttestationSubnetService attestationSubnetService) {
     super(discoveryNetwork);
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
     this.gossipEncoding = gossipEncoding;
+    this.attestationSubnetService = attestationSubnetService;
   }
 
   @Override
@@ -95,6 +99,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     aggregateGossipManager =
         new AggregateGossipManager(
             discoveryNetwork, gossipEncoding, forkInfo, aggregateValidator, eventBus);
+    discoveryNetworkAttestationSubnetsSubscription =
+        attestationSubnetService.subscribeToUpdates(
+            discoveryNetwork::setLongTermAttestationSubnetSubscriptions);
   }
 
   @Override
@@ -105,6 +112,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
+    attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
     super.stop();
   }
 
@@ -159,6 +167,6 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
-    discoveryNetwork.setLongTermAttestationSubnetSubscriptions(subnetIndices);
+    attestationSubnetService.updateSubscriptions(subnetIndices);
   }
 }
