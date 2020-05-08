@@ -17,20 +17,16 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -48,11 +44,10 @@ public class StableSubnetSubscriberTest {
   void shouldCreateEnoughSubscriptionsAtStart() {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     StableSubnetSubscriber stableSubnetSubscriber =
-            new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
 
     stableSubnetSubscriber.onSlot(ZERO);
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions =
-            ArgumentCaptor.forClass(Set.class);
+    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
 
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
     assertThat(subnetSubcriptions.getValue()).hasSize(2);
@@ -64,9 +59,8 @@ public class StableSubnetSubscriberTest {
   void shouldNotNotifyAnyChangeWhenNumberOfValidatorsDecrease() {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     StableSubnetSubscriber stableSubnetSubscriber =
-            new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions =
-            ArgumentCaptor.forClass(Set.class);
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
+    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
 
     stableSubnetSubscriber.onSlot(ZERO);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
@@ -84,7 +78,7 @@ public class StableSubnetSubscriberTest {
   void shouldIncreaseNumberOfSubscriptionsWhenNumberOfValidatorsIncrease() {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     StableSubnetSubscriber stableSubnetSubscriber =
-            new StableSubnetSubscriber(validatorApiChannel, new Random(), 0);
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), 0);
 
     stableSubnetSubscriber.onSlot(ZERO);
     verifyNoInteractions(validatorApiChannel);
@@ -93,8 +87,7 @@ public class StableSubnetSubscriberTest {
 
     stableSubnetSubscriber.onSlot(ONE);
 
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions =
-            ArgumentCaptor.forClass(Set.class);
+    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
 
     assertThat(subnetSubcriptions.getValue()).hasSize(3);
@@ -105,13 +98,13 @@ public class StableSubnetSubscriberTest {
   void shouldSubscribeToAllSubnetsWhenNecessary() {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     StableSubnetSubscriber stableSubnetSubscriber =
-            new StableSubnetSubscriber(validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT + 2);
+        new StableSubnetSubscriber(
+            validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT + 2);
 
     UnsignedLong slot = valueOf(15);
     stableSubnetSubscriber.onSlot(slot);
 
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions =
-            ArgumentCaptor.forClass(Set.class);
+    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
     assertThat(subnetSubcriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
     assertSubnetsAreDistinct(subnetSubcriptions.getValue());
@@ -122,12 +115,12 @@ public class StableSubnetSubscriberTest {
   void shouldStaySubscribedToAllSubnetsEvenIfValidatorNumberIsDecreased() {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     StableSubnetSubscriber stableSubnetSubscriber =
-            new StableSubnetSubscriber(validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT + 8);
+        new StableSubnetSubscriber(
+            validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT + 8);
 
     stableSubnetSubscriber.onSlot(ZERO);
 
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions =
-            ArgumentCaptor.forClass(Set.class);
+    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
     assertSubnetsAreDistinct(subnetSubcriptions.getValue());
     assertThat(subnetSubcriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
@@ -177,18 +170,26 @@ public class StableSubnetSubscriberTest {
     // since subnet id can randomly be chosen the same
   }
 
-  private void assertUnsubscribeSlotsAreInBound(Set<SubnetSubscription> subnetSubscriptions,
-                                                UnsignedLong currentSlot) {
-    UnsignedLong lowerBound = currentSlot.plus(valueOf(Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
-    UnsignedLong upperBound = currentSlot.plus(valueOf(2 *Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
-    subnetSubscriptions.forEach(subnetSubscription -> {
-      assertThat(subnetSubscription.getUnsubscriptionSlot())
-              .isBetween(lowerBound, upperBound);
-            });
+  private void assertUnsubscribeSlotsAreInBound(
+      Set<SubnetSubscription> subnetSubscriptions, UnsignedLong currentSlot) {
+    UnsignedLong lowerBound =
+        currentSlot.plus(
+            valueOf(Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
+    UnsignedLong upperBound =
+        currentSlot.plus(
+            valueOf(
+                2 * Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
+    subnetSubscriptions.forEach(
+        subnetSubscription -> {
+          assertThat(subnetSubscription.getUnsubscriptionSlot()).isBetween(lowerBound, upperBound);
+        });
   }
 
   private void assertSubnetsAreDistinct(Set<SubnetSubscription> subnetSubscriptions) {
-    Set<Integer> subnetIds = subnetSubscriptions.stream().map(SubnetSubscription::getSubnetId).collect(Collectors.toSet());
+    Set<Integer> subnetIds =
+        subnetSubscriptions.stream()
+            .map(SubnetSubscription::getSubnetId)
+            .collect(Collectors.toSet());
     assertThat(subnetSubscriptions).hasSameSizeAs(subnetIds);
   }
 }
