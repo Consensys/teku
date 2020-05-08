@@ -20,16 +20,17 @@ import static tech.pegasys.teku.datastructures.util.CommitteeUtil.committeeIndex
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.Set;
 import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
-  private final Map<Integer, UnsignedLong> shortTermSubscriptions = new HashMap<>();
-  private final Map<Integer, UnsignedLong> persistentSubscriptions = new HashMap<>();
+  private final Map<Integer, UnsignedLong> allSubscriptions = new HashMap<>();
+  private final Set<Integer> persistentSubnetIdSet = new HashSet<>();
   private final Eth2Network eth2Network;
 
   public AttestationTopicSubscriber(final Eth2Network eth2Network) {
@@ -39,12 +40,11 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   public synchronized void subscribeToCommitteeForAggregation(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
     final int subnetId = committeeIndexToSubnetId(committeeIndex);
-    final UnsignedLong currentUnsubscriptionSlot =
-        shortTermSubscriptions.getOrDefault(subnetId, ZERO);
+    final UnsignedLong currentUnsubscriptionSlot = allSubscriptions.getOrDefault(subnetId, ZERO);
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2Network.subscribeToAttestationSubnetId(subnetId);
     }
-    shortTermSubscriptions.put(subnetId, max(currentUnsubscriptionSlot, aggregationSlot));
+    allSubscriptions.put(subnetId, max(currentUnsubscriptionSlot, aggregationSlot));
   }
 
   public synchronized void subscribeToPersistentSubnets(
@@ -53,73 +53,49 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
 
     for (SubnetSubscription subnetSubscription : newSubscriptions) {
       int subnetId = subnetSubscription.getSubnetId();
-      UnsignedLong existingUnsubscriptionSlot =
-          Optional.ofNullable(persistentSubscriptions.get(subnetId)).orElse(ZERO);
-
-      if (existingUnsubscriptionSlot.equals(ZERO)) {
+      if (!persistentSubnetIdSet.contains(subnetId)) {
+        persistentSubnetIdSet.add(subnetId);
         shouldUpdateENR = true;
-        if (!shortTermSubscriptions.containsKey(subnetId)) {
-          eth2Network.subscribeToAttestationSubnetId(subnetId);
-        }
       }
 
-      persistentSubscriptions.put(
+      UnsignedLong existingUnsubscriptionSlot =
+          allSubscriptions.computeIfAbsent(
+              subnetId,
+              (key) -> {
+                eth2Network.subscribeToAttestationSubnetId(subnetId);
+                return ZERO;
+              });
+
+      allSubscriptions.put(
           subnetId, max(existingUnsubscriptionSlot, subnetSubscription.getUnsubscriptionSlot()));
     }
 
     if (shouldUpdateENR) {
-      eth2Network.setLongTermAttestationSubnetSubscriptions(persistentSubscriptions.keySet());
+      eth2Network.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
     }
   }
 
   @Override
   public synchronized void onSlot(final UnsignedLong slot) {
     boolean shouldUpdateENR = false;
-    final Set<Integer> allSubnetIds = new HashSet<>();
-    allSubnetIds.addAll(shortTermSubscriptions.keySet());
-    allSubnetIds.addAll(persistentSubscriptions.keySet());
 
-    for (int subnetId : allSubnetIds) {
+    final Iterator<Entry<Integer, UnsignedLong>> iterator = allSubscriptions.entrySet().iterator();
+    while (iterator.hasNext()) {
+      final Entry<Integer, UnsignedLong> entry = iterator.next();
+      if (entry.getValue().compareTo(slot) < 0) {
+        iterator.remove();
+        int subnetId = entry.getKey();
+        eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
 
-      Optional<UnsignedLong> shortTermUnsubscriptionSlot =
-          Optional.ofNullable(shortTermSubscriptions.get(subnetId));
-      Optional<UnsignedLong> persistentUnsubscriptionSlot =
-          Optional.ofNullable(persistentSubscriptions.get(subnetId));
-
-      if (shortTermUnsubscriptionSlot.isPresent() && persistentUnsubscriptionSlot.isPresent()) {
-        if (slot.compareTo(persistentUnsubscriptionSlot.get()) > 0) {
-          shouldUpdateENR = true;
-          persistentSubscriptions.remove(subnetId);
-        }
-
-        if (slot.compareTo(shortTermUnsubscriptionSlot.get()) > 0) {
-          shortTermSubscriptions.remove(subnetId);
-        }
-
-        if (slot.compareTo(persistentUnsubscriptionSlot.get()) > 0
-            && slot.compareTo(shortTermUnsubscriptionSlot.get()) > 0) {
-          eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
-        }
-
-      } else if (shortTermUnsubscriptionSlot.isPresent()) {
-
-        if (slot.compareTo(shortTermUnsubscriptionSlot.get()) > 0) {
-          shortTermSubscriptions.remove(subnetId);
-          eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
-        }
-
-      } else if (persistentUnsubscriptionSlot.isPresent()) {
-
-        if (slot.compareTo(persistentUnsubscriptionSlot.get()) > 0) {
-          eth2Network.unsubscribeFromAttestationSubnetId(subnetId);
-          persistentSubscriptions.remove(subnetId);
+        if (persistentSubnetIdSet.contains(subnetId)) {
+          persistentSubnetIdSet.remove(subnetId);
           shouldUpdateENR = true;
         }
       }
     }
 
     if (shouldUpdateENR) {
-      eth2Network.setLongTermAttestationSubnetSubscriptions(persistentSubscriptions.keySet());
+      eth2Network.setLongTermAttestationSubnetSubscriptions(persistentSubnetIdSet);
     }
   }
 }
