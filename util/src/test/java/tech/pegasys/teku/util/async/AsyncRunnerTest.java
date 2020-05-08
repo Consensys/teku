@@ -31,10 +31,10 @@ public class AsyncRunnerTest {
         runner.runWithFixedDelay(counter::incrementAndGet, 100, TimeUnit.MILLISECONDS);
     waitFor(() -> assertThat(counter).hasValueGreaterThan(3));
     task.cancel(false);
-    Thread.sleep(100); // task may be running during the cancel() call
     int cnt1 = counter.get();
     Thread.sleep(500);
-    assertThat(counter).hasValue(cnt1);
+    // 1 task may be completing during the cancel() call
+    assertThat(counter).hasValueLessThanOrEqualTo(cnt1 + 1);
   }
 
   @Test
