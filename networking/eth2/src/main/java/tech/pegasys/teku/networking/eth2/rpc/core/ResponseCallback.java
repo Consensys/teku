@@ -18,5 +18,7 @@ public interface ResponseCallback<T> {
 
   void completeSuccessfully();
 
-  void completeWithError(RpcException error);
+  void completeWithErrorResponse(RpcException error);
+
+  void completeWithUnexpectedError(Throwable error);
 }

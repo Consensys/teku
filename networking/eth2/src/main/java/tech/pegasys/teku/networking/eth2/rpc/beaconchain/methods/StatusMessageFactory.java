@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.Optional;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class StatusMessageFactory {
@@ -27,20 +28,21 @@ public class StatusMessageFactory {
     this.recentChainData = recentChainData;
   }
 
-  public StatusMessage createStatusMessage() {
-    if (recentChainData.isPreGenesis()) {
-      return StatusMessage.createPreGenesisStatus();
+  public Optional<StatusMessage> createStatusMessage() {
+    if (recentChainData.isPreForkChoice()) {
+      // We don't have chainhead information, so we can't generate an accurate status message
+      return Optional.empty();
     }
-
+    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
-    final Bytes32 finalizedRoot = finalizedCheckpoint.getRoot();
-    final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
+    final SignedBeaconBlock chainHead = recentChainData.getBestBlock().orElseThrow();
 
-    return new StatusMessage(
-        recentChainData.getCurrentForkInfo().orElseThrow().getForkDigest(),
-        finalizedRoot,
-        finalizedEpoch,
-        recentChainData.getBestBlockRoot().orElse(Bytes32.ZERO),
-        recentChainData.getBestSlot());
+    return Optional.of(
+        new StatusMessage(
+            forkInfo.getForkDigest(),
+            finalizedCheckpoint.getRoot(),
+            finalizedCheckpoint.getEpoch(),
+            chainHead.getRoot(),
+            chainHead.getSlot()));
   }
 }

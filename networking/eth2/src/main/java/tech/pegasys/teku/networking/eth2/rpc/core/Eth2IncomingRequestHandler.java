@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
@@ -65,22 +66,22 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
     final ResponseCallback<TResponse> callback = new RpcResponseCallback<>(rpcStream, rpcEncoder);
     try {
       final TRequest request = requestDecoder.decodeRequest(input);
-      final Eth2Peer peer = peerLookup.getConnectedPeer(nodeId);
+      Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
       handleRequest(peer, request, callback);
     } catch (final RpcException e) {
       requestHandled.set(true);
-      callback.completeWithError(e);
+      callback.completeWithErrorResponse(e);
     }
   }
 
   private void handleRequest(
-      Eth2Peer peer, TRequest request, ResponseCallback<TResponse> callback) {
+      Optional<Eth2Peer> peer, TRequest request, ResponseCallback<TResponse> callback) {
     try {
       requestHandled.set(true);
       localMessageHandler.onIncomingMessage(peer, request, callback);
     } catch (final Throwable t) {
       LOG.error("Unhandled error while processing request " + method.getMultistreamId(), t);
-      callback.completeWithError(RpcException.SERVER_ERROR);
+      callback.completeWithUnexpectedError(t);
     }
   }
 

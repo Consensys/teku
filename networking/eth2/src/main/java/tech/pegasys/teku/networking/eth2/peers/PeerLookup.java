@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.util.Optional;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public interface PeerLookup {
-  Eth2Peer getConnectedPeer(NodeId nodeId);
+  Optional<Eth2Peer> getConnectedPeer(NodeId nodeId);
 }

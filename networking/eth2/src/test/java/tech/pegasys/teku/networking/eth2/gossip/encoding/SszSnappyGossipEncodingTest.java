@@ -11,13 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.network;
+package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
-public class NetworkUtility {
-  public static final String INADDR_ANY = "0.0.0.0";
-  public static final String INADDR6_ANY = "0:0:0:0:0:0:0:0";
+public class SszSnappyGossipEncodingTest extends AbstractGossipEncodingTest {
 
-  public static boolean isUnspecifiedAddress(final String ipAddress) {
-    return INADDR_ANY.equals(ipAddress) || INADDR6_ANY.equals(ipAddress);
+  @Override
+  protected GossipEncoding createEncoding() {
+    return GossipEncoding.SSZ_SNAPPY;
   }
 }

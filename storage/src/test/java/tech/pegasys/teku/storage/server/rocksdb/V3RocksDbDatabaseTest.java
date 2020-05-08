@@ -91,7 +91,11 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
     // Fork states should be unavailable
     final List<Bytes32> unavailableBlockRoots =
-        forkChain.streamBlocksAndStates(7, 9).map(b -> b.getRoot()).collect(Collectors.toList());
+        forkChain
+            .streamBlocksAndStates(7, 9)
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toList());
     assertStatesUnavailable(unavailableBlockRoots);
+    assertBlocksUnavailable(unavailableBlockRoots);
   }
 }

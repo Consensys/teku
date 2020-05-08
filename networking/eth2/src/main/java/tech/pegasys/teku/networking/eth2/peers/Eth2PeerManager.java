@@ -26,6 +26,7 @@ import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
@@ -106,7 +108,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
           .sendStatus()
           .finish(
               () -> LOG.trace("Sent status to {}", peer.getId()),
-              (err) -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err));
+              RootCauseExceptionHandler.builder()
+                  .addCatch(
+                      RpcException.class,
+                      err -> LOG.trace("Status message rejected by {}: {}", peer.getId(), err))
+                  .defaultCatch(
+                      err -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err)));
     }
     eth2Peer.subscribeInitialStatus(
         (status) ->
@@ -170,8 +177,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
    * @return the peer corresponding to this node id.
    */
   @Override
-  public Eth2Peer getConnectedPeer(NodeId nodeId) {
-    return connectedPeerMap.get(nodeId);
+  public Optional<Eth2Peer> getConnectedPeer(NodeId nodeId) {
+    return Optional.ofNullable(connectedPeerMap.get(nodeId));
   }
 
   public Optional<Eth2Peer> getPeer(NodeId peerId) {

@@ -17,8 +17,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler.NODE_NOT_READY;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,21 +59,26 @@ class StatusMessageHandlerTest {
 
   @BeforeEach
   public void setUp() {
-    when(statusMessageFactory.createStatusMessage()).thenReturn(LOCAL_STATUS);
+    when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.of(LOCAL_STATUS));
   }
 
   @Test
-  public void shouldRegisterStatusMessageWithPeer() {
+  public void shouldReturnLocalStatus() {
+    when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.of(LOCAL_STATUS));
     handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
 
     verify(peer).updateStatus(PEER_STATUS);
-  }
-
-  @Test
-  public void shouldReturnLocalStatusMessage() {
-    handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
     verify(callback).respond(LOCAL_STATUS);
     verify(callback).completeSuccessfully();
     verifyNoMoreInteractions(callback);
+  }
+
+  @Test
+  public void shouldRespondWithErrorIfStatusUnavailable() {
+    when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.empty());
+    handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
+
+    verify(peer).updateStatus(PEER_STATUS);
+    verify(callback).completeWithErrorResponse(NODE_NOT_READY);
   }
 }

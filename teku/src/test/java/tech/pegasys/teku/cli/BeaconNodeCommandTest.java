@@ -29,6 +29,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -224,7 +226,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setEth1Endpoint(null)
         .setMetricsCategories(
             DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
-        .setP2pAdvertisedPort(30303)
+        .setP2pAdvertisedPort(OptionalInt.empty())
         .setP2pDiscoveryEnabled(true)
         .setP2pInterface("0.0.0.0")
         .setP2pPort(30303)
@@ -253,8 +255,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPort(1234)
         .setP2pDiscoveryEnabled(false)
         .setP2pDiscoveryBootnodes(Collections.emptyList())
-        .setP2pAdvertisedPort(9000)
-        .setP2pAdvertisedIp("127.0.0.1")
+        .setP2pAdvertisedPort(OptionalInt.of(9000))
+        .setP2pAdvertisedIp(Optional.empty())
         .setP2pPrivateKeyFile("path/to/file")
         .setP2pPeerLowerBound(20)
         .setP2pPeerUpperBound(30)
