@@ -17,12 +17,15 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.networking.discovery.SubnetSubscription;
+import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 
 class AttestationTopicSubscriberTest {
@@ -127,7 +130,7 @@ class AttestationTopicSubscriberTest {
   }
 
   @Test
-  public void shouldExtendSubscriptionPeriod_forPersistentSubscriptions() {
+  public void shouldExtendSubscription_forPersistentSubscriptions() {
     final int subnetId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
@@ -159,5 +162,30 @@ class AttestationTopicSubscriberTest {
 
     subscriber.onSlot(secondSlot.plus(ONE));
     verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+  }
+
+  @Test
+  public void shouldExtendSubscription_forSameSubnetWithDifferentUnsubscribeSlot() {
+    final int subnetId = 3;
+    final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
+    final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
+
+    Set<SubnetSubscription> subnetSubscriptions1 =
+        Set.of(new SubnetSubscription(subnetId, firstSlot));
+    subscriber.subscribeToPersistentSubnets(subnetSubscriptions1);
+
+    verify(eth2Network).subscribeToAttestationSubnetId(subnetId);
+    verify(eth2Network).setLongTermAttestationSubnetSubscriptions(Set.of(subnetId));
+
+    Set<SubnetSubscription> subnetSubscriptions2 =
+        Set.of(new SubnetSubscription(subnetId, secondSlot));
+    subscriber.subscribeToPersistentSubnets(subnetSubscriptions2);
+
+    verifyNoMoreInteractions(eth2Network);
+
+    subscriber.onSlot(secondSlot.plus(ONE));
+
+    verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2Network, times(2)).setLongTermAttestationSubnetSubscriptions(Collections.emptySet());
   }
 }

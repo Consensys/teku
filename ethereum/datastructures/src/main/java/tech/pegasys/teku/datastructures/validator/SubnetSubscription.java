@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.networking.discovery;
+package tech.pegasys.teku.datastructures.validator;
 
 import com.google.common.primitives.UnsignedLong;
 
