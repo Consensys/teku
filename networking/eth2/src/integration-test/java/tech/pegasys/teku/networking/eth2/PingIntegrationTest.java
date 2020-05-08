@@ -52,7 +52,6 @@ public class PingIntegrationTest {
   public void testPingSimple() throws Exception {
     setUp(Duration.ofDays(1));
 
-    long s = System.currentTimeMillis();
     peer1.sendPing().get(10, TimeUnit.SECONDS);
     // response received in 10 seconds
   }
