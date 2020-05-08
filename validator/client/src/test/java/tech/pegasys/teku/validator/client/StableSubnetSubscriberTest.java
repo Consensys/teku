@@ -34,6 +34,7 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
+@SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
   @BeforeEach
   void setUp() {
@@ -132,7 +133,6 @@ public class StableSubnetSubscriberTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
   void shouldReplaceExpiredSubscriptionsWithNewOnes() {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
