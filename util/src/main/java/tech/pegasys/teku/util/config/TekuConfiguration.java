@@ -88,6 +88,7 @@ public class TekuConfiguration {
   private final int metricsPort;
   private final String metricsInterface;
   private final List<String> metricsCategories;
+  private final List<String> metricsHostWhitelist;
 
   // Database
   private final String dataPath;
@@ -148,6 +149,7 @@ public class TekuConfiguration {
       final int metricsPort,
       final String metricsInterface,
       final List<String> metricsCategories,
+      final List<String> metricsHostWhitelist,
       final String dataPath,
       final StateStorageMode dataStorageMode,
       final int restApiPort,
@@ -198,6 +200,7 @@ public class TekuConfiguration {
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
     this.metricsCategories = metricsCategories;
+    this.metricsHostWhitelist = metricsHostWhitelist;
     this.dataPath = dataPath;
     this.dataStorageMode = dataStorageMode;
     this.restApiPort = restApiPort;
@@ -397,6 +400,10 @@ public class TekuConfiguration {
 
   public List<String> getMetricsCategories() {
     return metricsCategories;
+  }
+
+  public List<String> getMetricsHostWhitelist() {
+    return metricsHostWhitelist;
   }
 
   public String getDataPath() {
