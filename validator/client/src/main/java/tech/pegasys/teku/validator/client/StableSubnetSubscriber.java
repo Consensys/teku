@@ -67,7 +67,7 @@ public class StableSubnetSubscriber {
     }
 
     // Adjust the number of subscriptions
-    // If any update was made to the subscriptions pass the new subscription set to BeaconNode
+    // If number of subscriptions increased, pass the new subscription set to BeaconNode
     if (adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount)) {
       validatorApiChannel.subscribeToPersistentSubnets(subnetSubscriptions);
     }
@@ -91,10 +91,10 @@ public class StableSubnetSubscriber {
     while (subnetSubscriptions.size() != totalNumberOfSubscriptions) {
       if (subnetSubscriptions.size() < totalNumberOfSubscriptions) {
         subscribeToNewRandomSubnet(currentSlot);
+        updated = true;
       } else {
         unsubscribeFromRandomSubnet();
       }
-      updated = true;
     }
     return updated;
   }

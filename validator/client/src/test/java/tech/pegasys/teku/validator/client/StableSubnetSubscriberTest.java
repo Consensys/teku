@@ -48,15 +48,14 @@ public class StableSubnetSubscriberTest {
   }
 
   @Test
-  void shouldLowerNumberOfSubscriptionsWhenNumberOfValidatorsDecrease() {
+  void shouldNotNotifyAnyChangeWhenNumberOfValidatorsDecrease() {
     verify(validatorApiChannel).subscribeToPersistentSubnets(argThat(arg -> arg.size() == 2));
 
     stableSubnetSubscriber.updateValidatorCount(1);
 
     stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
 
-    verify(validatorApiChannel, times(2))
-        .subscribeToPersistentSubnets(argThat(arg -> arg.size() == 1));
+    verifyNoMoreInteractions(validatorApiChannel);
   }
 
   @Test
