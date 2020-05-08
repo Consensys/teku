@@ -31,6 +31,14 @@ public interface ReadOnlyStore {
 
   Checkpoint getFinalizedCheckpoint();
 
+  /**
+   * Return the slot of the latest finalized block. This slot may be at or prior to the epoch
+   * boundary slot which this block finalizes.
+   *
+   * @return the slot of the latest finalized block.
+   */
+  UnsignedLong getLatestFinalizedBlockSlot();
+
   Checkpoint getBestJustifiedCheckpoint();
 
   BeaconBlock getBlock(Bytes32 blockRoot);

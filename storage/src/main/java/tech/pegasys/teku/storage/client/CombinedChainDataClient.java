@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
@@ -105,7 +106,7 @@ public class CombinedChainDataClient {
       LOG.trace("Block root at slot {} is the specified head block root", slot);
       return getBlockByBlockRoot(headBlockRoot);
     }
-    if (isFinalized(slot)) {
+    if (!isRecentData(slot)) {
       LOG.trace("Block at slot {} is in a finalized epoch. Retrieving from historical data", slot);
       return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
     }
@@ -169,7 +170,7 @@ public class CombinedChainDataClient {
    * @return the State at slot
    */
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
-    if (!isFinalized(slot)) {
+    if (isRecentData(slot)) {
       final Optional<BeaconState> recentState = recentChainData.getStateInEffectAtSlot(slot);
       if (recentState.isPresent()) {
         LOG.trace("State at slot {} was from recent chain data", slot);
@@ -266,5 +267,14 @@ public class CombinedChainDataClient {
     return getBlockFromStore(blockRoot)
         .map(value -> SafeFuture.completedFuture(Optional.of(value)))
         .orElseGet(() -> historicalChainData.getBlockByBlockRoot(blockRoot));
+  }
+
+  private boolean isRecentData(final UnsignedLong slot) {
+    checkNotNull(slot);
+    if (recentChainData.isPreGenesis()) {
+      return false;
+    }
+    final UnsignedLong finalizedSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
+    return slot.compareTo(finalizedSlot) >= 0;
   }
 }
