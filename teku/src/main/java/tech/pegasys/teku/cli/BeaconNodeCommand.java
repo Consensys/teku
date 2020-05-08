@@ -16,7 +16,6 @@ package tech.pegasys.teku.cli;
 import com.google.common.base.Throwables;
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -326,7 +325,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
-        .setMetricsHostWhitelist(new ArrayList<>(metricsOptions.getMetricsHostWhitelist()))
+        .setMetricsHostWhitelist(metricsOptions.getMetricsHostWhitelist())
         .setDataPath(dataOptions.getDataPath())
         .setDataStorageMode(dataOptions.getDataStorageMode())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())
