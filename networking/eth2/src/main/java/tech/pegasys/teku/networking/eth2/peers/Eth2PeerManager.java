@@ -22,7 +22,9 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -54,8 +56,11 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
       final PeerValidatorFactory peerValidatorFactory,
+      final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding) {
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
+    MetadataMessageFactory metadataMessageFactory = new MetadataMessageFactory();
+    attestationSubnetService.subscribeToUpdates(metadataMessageFactory);
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
@@ -65,6 +70,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             storageClient,
             metricsSystem,
             statusMessageFactory,
+            metadataMessageFactory,
             rpcEncoding);
   }
 
@@ -72,6 +78,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RecentChainData storageClient,
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
+      final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
@@ -81,6 +88,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         storageClient,
         metricsSystem,
         peerValidatorFactory,
+        attestationSubnetService,
         rpcEncoding);
   }
 
