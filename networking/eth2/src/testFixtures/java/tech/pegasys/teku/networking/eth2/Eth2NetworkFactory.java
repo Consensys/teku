@@ -118,9 +118,14 @@ public class Eth2NetworkFactory {
       {
         // Setup eth2 handlers
         final StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
+        final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
-                recentChainData, historicalChainData, METRICS_SYSTEM, rpcEncoding);
+                recentChainData,
+                historicalChainData,
+                METRICS_SYSTEM,
+                attestationSubnetService,
+                rpcEncoding);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
@@ -136,7 +141,12 @@ public class Eth2NetworkFactory {
                 config);
 
         return new ActiveEth2Network(
-            network, eth2PeerManager, eventBus, recentChainData, gossipEncoding);
+            network,
+            eth2PeerManager,
+            eventBus,
+            recentChainData,
+            gossipEncoding,
+            attestationSubnetService);
       }
     }
 
