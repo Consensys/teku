@@ -99,10 +99,6 @@ public class Bitlist {
     data.or(other.data);
   }
 
-  public int countSetBits() {
-    return data.cardinality();
-  }
-
   public long getMaxSize() {
     return maxSize;
   }
