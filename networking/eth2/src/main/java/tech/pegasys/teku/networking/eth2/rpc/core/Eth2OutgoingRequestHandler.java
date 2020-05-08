@@ -205,4 +205,11 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   public ResponseStreamImpl<TResponse> getResponseStream() {
     return responseStream;
   }
+
+  @Override
+  public String toString() {
+    return "Eth2OutgoingRequestHandler{" +
+        "method=" + method +
+        '}';
+  }
 }
