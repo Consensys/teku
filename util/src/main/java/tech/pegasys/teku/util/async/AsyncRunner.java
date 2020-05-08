@@ -14,6 +14,7 @@
 package tech.pegasys.teku.util.async;
 
 import com.google.common.base.Preconditions;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -53,7 +54,7 @@ public interface AsyncRunner {
       ExceptionThrowingRunnable runnable, long delayAmount, TimeUnit delayUnit) {
 
     SafeFuture<Void> task = new SafeFuture<>();
-    FutureUtil.runWithFixedDelay(this, runnable, task, delayAmount, delayUnit, null);
+    FutureUtil.runWithFixedDelay(this, runnable, task, delayAmount, delayUnit, Optional.empty());
     return task;
   }
 
@@ -77,7 +78,8 @@ public interface AsyncRunner {
     Preconditions.checkNotNull(exceptionHandler);
 
     SafeFuture<Void> task = new SafeFuture<>();
-    FutureUtil.runWithFixedDelay(this, runnable, task, delayAmount, delayUnit, exceptionHandler);
+    FutureUtil.runWithFixedDelay(
+        this, runnable, task, delayAmount, delayUnit, Optional.of(exceptionHandler));
     return task;
   }
 }
