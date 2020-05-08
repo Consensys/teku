@@ -35,4 +35,18 @@ public interface Schema {
               }
             });
   }
+
+  static Stream<RocksDbVariable<?>> streamVariables(Class<? extends Schema> schema) {
+    return Arrays.stream(schema.getDeclaredFields())
+        .filter(f -> (f.getModifiers() & Modifier.STATIC) > 0)
+        .filter(f -> f.getType() == RocksDbVariable.class)
+        .map(
+            f -> {
+              try {
+                return (RocksDbVariable<?>) f.get(null);
+              } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+              }
+            });
+  }
 }

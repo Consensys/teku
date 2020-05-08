@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -29,12 +30,12 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class ChainStorageServer implements StorageUpdateChannel, StorageQueryChannel {
   private final EventBus eventBus;
-  private final VersionedDatabaseFactory databaseFactory;
+  private final DatabaseFactory databaseFactory;
 
   private volatile Database database;
   private volatile Optional<Store> cachedStore = Optional.empty();
 
-  private ChainStorageServer(EventBus eventBus, final VersionedDatabaseFactory dbFactory) {
+  private ChainStorageServer(EventBus eventBus, final DatabaseFactory dbFactory) {
     this.eventBus = eventBus;
     this.databaseFactory = dbFactory;
   }
