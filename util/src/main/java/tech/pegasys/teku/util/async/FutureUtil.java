@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.util.async;
 
+import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -26,7 +27,7 @@ public class FutureUtil {
       SafeFuture<Void> task,
       long delayAmount,
       TimeUnit delayUnit,
-      Consumer<Throwable> exceptionHandler) {
+      Optional<Consumer<Throwable>> exceptionHandler) {
 
     SafeFuture<Void> future =
         runner.runAfterDelay(
@@ -35,8 +36,8 @@ public class FutureUtil {
                 try {
                   runnable.run();
                 } catch (Throwable throwable) {
-                  if (exceptionHandler != null) {
-                    exceptionHandler.accept(throwable);
+                  if (exceptionHandler.isPresent()) {
+                    exceptionHandler.get().accept(throwable);
                   } else {
                     throw throwable;
                   }
