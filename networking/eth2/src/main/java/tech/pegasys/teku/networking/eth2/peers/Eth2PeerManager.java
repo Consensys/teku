@@ -140,6 +140,9 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                       }
                     }));
 
+
+    // the returned future never completes (until cancelled explicitly)
+    @SuppressWarnings("FutureReturnValueIgnored")
     SafeFuture<Void> pingTask =
         asyncRunner.runWithFixedDelay(
             eth2Peer::sendPing,
