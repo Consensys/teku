@@ -25,20 +25,46 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
-class DiscoveryPeerToMultiaddrConverterTest {
+class MultiaddrUtilTest {
   private static final Bytes PUB_KEY =
       Bytes.fromHexString("0x0330FC08314CDD799C1687FFC998249A0342105B9AF300A922F56040DF6E28741C");
   public static final String PEER_ID = "16Uiu2HAmFxCpRh2nZevFR3KGXJ3jhpixMYFSuawqKZyZYHrYoiK5";
   private static final NodeId NODE_ID = new LibP2PNodeId(PeerId.fromBase58(PEER_ID));
 
   @Test
-  public void shouldConvertIpV4Peer() throws Exception {
+  public void fromInetSocketAddress_shouldConvertIpV4Peer() throws Exception {
+    final byte[] ipAddress = {123, 34, 58, 22};
+    final int port = 5883;
+    final InetSocketAddress address =
+        new InetSocketAddress(InetAddress.getByAddress(ipAddress), port);
+    final Multiaddr result = MultiaddrUtil.fromInetSocketAddress(address);
+    assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/"));
+    assertThat(result.getComponent(Protocol.IP4)).isEqualTo(ipAddress);
+    assertThat(result.getComponent(Protocol.TCP)).isEqualTo(Protocol.TCP.addressToBytes("5883"));
+    assertThat(result.getComponent(Protocol.P2P)).isNull();
+  }
+
+  @Test
+  public void fromInetSocketAddress_shouldConvertIpV6Peer() throws Exception {
+    final byte[] ipAddress = Bytes.fromHexString("0x33000004500007800000001200000001").toArray();
+    final int port = 5883;
+    final InetSocketAddress address =
+        new InetSocketAddress(InetAddress.getByAddress(ipAddress), port);
+    final Multiaddr result = MultiaddrUtil.fromInetSocketAddress(address);
+    assertThat(result).isEqualTo(Multiaddr.fromString("/ip6/3300:4:5000:780:0:12:0:1/tcp/5883/"));
+    assertThat(result.getComponent(Protocol.IP6)).isEqualTo(ipAddress);
+    assertThat(result.getComponent(Protocol.TCP)).isEqualTo(Protocol.TCP.addressToBytes("5883"));
+    assertThat(result.getComponent(Protocol.P2P)).isNull();
+  }
+
+  @Test
+  public void fromDiscoveryPeer_shouldConvertIpV4Peer() throws Exception {
     final byte[] ipAddress = {123, 34, 58, 22};
     final int port = 5883;
     final DiscoveryPeer peer =
         new DiscoveryPeer(
             PUB_KEY, new InetSocketAddress(InetAddress.getByAddress(ipAddress), port));
-    final Multiaddr result = DiscoveryPeerToMultiaddrConverter.convertToMultiAddr(peer);
+    final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/p2p/" + PEER_ID));
     assertThat(result.getComponent(Protocol.IP4)).isEqualTo(ipAddress);
     assertThat(result.getComponent(Protocol.TCP)).isEqualTo(Protocol.TCP.addressToBytes("5883"));
@@ -46,13 +72,13 @@ class DiscoveryPeerToMultiaddrConverterTest {
   }
 
   @Test
-  public void shouldConvertIpV6Peer() throws Exception {
+  public void fromDiscoveryPeer_shouldConvertIpV6Peer() throws Exception {
     final byte[] ipAddress = Bytes.fromHexString("0x33000004500007800000001200000001").toArray();
     final int port = 5883;
     final DiscoveryPeer peer =
         new DiscoveryPeer(
             PUB_KEY, new InetSocketAddress(InetAddress.getByAddress(ipAddress), port));
-    final Multiaddr result = DiscoveryPeerToMultiaddrConverter.convertToMultiAddr(peer);
+    final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result)
         .isEqualTo(Multiaddr.fromString("/ip6/3300:4:5000:780:0:12:0:1/tcp/5883/p2p/" + PEER_ID));
     assertThat(result.getComponent(Protocol.IP6)).isEqualTo(ipAddress);
@@ -61,7 +87,7 @@ class DiscoveryPeerToMultiaddrConverterTest {
   }
 
   @Test
-  public void shouldConvertRealPeer() throws Exception {
+  public void fromDiscoveryPeer_shouldConvertRealPeer() throws Exception {
     final DiscoveryPeer peer =
         new DiscoveryPeer(
             Bytes.fromHexString(
@@ -70,7 +96,6 @@ class DiscoveryPeerToMultiaddrConverterTest {
     final Multiaddr expectedMultiAddr =
         Multiaddr.fromString(
             "/ip4/127.0.0.1/tcp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");
-    assertThat(DiscoveryPeerToMultiaddrConverter.convertToMultiAddr(peer))
-        .isEqualTo(expectedMultiAddr);
+    assertThat(MultiaddrUtil.fromDiscoveryPeer(peer)).isEqualTo(expectedMultiAddr);
   }
 }

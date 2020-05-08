@@ -53,7 +53,6 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.teku.util.file.FileUtil;
-import tech.pegasys.teku.util.network.NetworkUtility;
 
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -305,7 +304,7 @@ public class TekuNode extends Node {
       configMap.put("p2p-discovery-enabled", false);
       configMap.put("p2p-port", P2P_PORT);
       configMap.put("p2p-advertised-port", P2P_PORT);
-      configMap.put("p2p-interface", NetworkUtility.INADDR_ANY);
+      configMap.put("p2p-interface", "0.0.0.0");
       configMap.put("Xinterop-genesis-time", 0);
       configMap.put("Xinterop-owned-validator-start-index", 0);
       configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
