@@ -23,6 +23,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
+import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -58,7 +59,7 @@ public class Eth2PeerManagerTest {
           peerValidatorFactory,
           new AttestationSubnetService(),
           rpcEncoding,
-          eth2RpcPingInterval);
+          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL);
 
   @BeforeEach
   public void setup() {
