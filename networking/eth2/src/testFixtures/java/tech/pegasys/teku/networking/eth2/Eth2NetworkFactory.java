@@ -22,6 +22,7 @@ import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -40,9 +41,11 @@ import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.teku.networking.p2p.network.GossipConfig;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -82,6 +85,7 @@ public class Eth2NetworkFactory {
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    protected Duration eth2RpcPingInterval;
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -129,7 +133,8 @@ public class Eth2NetworkFactory {
                 historicalChainData,
                 METRICS_SYSTEM,
                 attestationSubnetService,
-                rpcEncoding);
+                rpcEncoding,
+                eth2RpcPingInterval);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
@@ -170,7 +175,9 @@ public class Eth2NetworkFactory {
           peerAddresses,
           false,
           emptyList(),
-          new TargetPeerRange(20, 30));
+          new TargetPeerRange(20, 30),
+          GossipConfig.DEFAULT_CONFIG,
+          new WireLogsConfig(false, false, true, false));
     }
 
     private void setDefaults() {
@@ -179,6 +186,9 @@ public class Eth2NetworkFactory {
       }
       if (asyncRunner == null) {
         asyncRunner = DelayedExecutorAsyncRunner.create();
+      }
+      if (eth2RpcPingInterval == null) {
+        eth2RpcPingInterval = Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;
       }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
@@ -230,6 +240,12 @@ public class Eth2NetworkFactory {
     public Eth2P2PNetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
       checkNotNull(asyncRunner);
       this.asyncRunner = asyncRunner;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder eth2RpcPingInterval(Duration eth2RpcPingInterval) {
+      checkNotNull(eth2RpcPingInterval);
+      this.eth2RpcPingInterval = eth2RpcPingInterval;
       return this;
     }
   }

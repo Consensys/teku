@@ -46,7 +46,6 @@ import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
-  private static final Duration PING_INTERVAL = Duration.ofSeconds(10);
 
   private final AsyncRunner asyncRunner;
   private final StatusMessageFactory statusMessageFactory;
@@ -58,6 +57,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   private final BeaconChainMethods rpcMethods;
   private final PeerValidatorFactory peerValidatorFactory;
+  private final Duration eth2RpcPingInterval;
 
   Eth2PeerManager(
       final AsyncRunner asyncRunner,
@@ -66,7 +66,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final MetricsSystem metricsSystem,
       final PeerValidatorFactory peerValidatorFactory,
       final AttestationSubnetService attestationSubnetService,
-      final RpcEncoding rpcEncoding) {
+      final RpcEncoding rpcEncoding,
+      Duration eth2RpcPingInterval) {
     this.asyncRunner = asyncRunner;
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
     metadataMessagesFactory = new MetadataMessagesFactory();
@@ -82,6 +83,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             statusMessageFactory,
             metadataMessagesFactory,
             rpcEncoding);
+    this.eth2RpcPingInterval = eth2RpcPingInterval;
   }
 
   public static Eth2PeerManager create(
@@ -90,7 +92,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
       final AttestationSubnetService attestationSubnetService,
-      final RpcEncoding rpcEncoding) {
+      final RpcEncoding rpcEncoding,
+      Duration eth2RpcPingInterval) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
             PeerChainValidator.create(storageClient, historicalChainData, peer, status);
@@ -101,7 +104,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         metricsSystem,
         peerValidatorFactory,
         attestationSubnetService,
-        rpcEncoding);
+        rpcEncoding,
+        eth2RpcPingInterval);
   }
 
   @Override
@@ -146,7 +150,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     SafeFuture<Void> pingTask =
         asyncRunner.runWithFixedDelay(
             eth2Peer::sendPing,
-            PING_INTERVAL.toMillis(),
+            eth2RpcPingInterval.toMillis(),
             TimeUnit.MILLISECONDS,
             t -> LOG.debug("Exception executing ping", t));
     peer.subscribeDisconnect(() -> pingTask.cancel(false));
