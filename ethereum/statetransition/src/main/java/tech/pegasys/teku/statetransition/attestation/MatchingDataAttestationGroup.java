@@ -61,7 +61,7 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
   public void add(final Attestation attestation) {
     attestationsByValidatorCount
         .computeIfAbsent(
-            attestation.getAggregation_bits().countSetBits(), count -> new LinkedHashSet<>())
+            attestation.getAggregation_bits().getBitCount(), count -> new LinkedHashSet<>())
         .add(attestation);
   }
 

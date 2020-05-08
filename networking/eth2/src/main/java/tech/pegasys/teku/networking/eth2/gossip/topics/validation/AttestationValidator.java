@@ -86,7 +86,7 @@ public class AttestationValidator {
 
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
-    if (attestation.getAggregation_bits().countSetBits() != 1) {
+    if (attestation.getAggregation_bits().getBitCount() != 1) {
       return INVALID;
     }
 
