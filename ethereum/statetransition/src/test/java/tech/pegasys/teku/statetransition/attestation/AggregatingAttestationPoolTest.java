@@ -18,6 +18,8 @@ import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -88,7 +90,7 @@ class AggregatingAttestationPoolTest {
   public void getAttestationsForBlock_shouldNotIncludeAttestationsFromBeforePreviousEpoch() {
     addAttestationFromValidators(randomAttestationDataToIncludeInBlock(SLOT.minus(ONE)), 1);
 
-    final UnsignedLong twoEpochs = UnsignedLong.valueOf(2 * Constants.SLOTS_PER_EPOCH);
+    final UnsignedLong twoEpochs = UnsignedLong.valueOf(2 * SLOTS_PER_EPOCH);
     assertThat(aggregatingPool.getAttestationsForBlock(SLOT.plus(twoEpochs))).isEmpty();
   }
 
@@ -121,10 +123,31 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 5);
     // Won't be included because of the 2 attestation limit.
-    addAttestationFromValidators(attestationData, 2, 6);
+    addAttestationFromValidators(attestationData, 2);
 
     assertThat(aggregatingPool.getAttestationsForBlock(SLOT))
         .containsExactly(attestation1, attestation2);
+  }
+
+  @Test
+  public void onSlot_shouldPruneAttestationsMoreThanTwoEpochsBehindCurrentSlot() {
+    final AttestationData pruneAttestationData = randomAttestationDataToIncludeInBlock();
+    final AttestationData preserveAttestationData =
+        randomAttestationDataToIncludeInBlock(SLOT.plus(ONE));
+    addAttestationFromValidators(pruneAttestationData, 1);
+    final Attestation preserveAttestation =
+        addAttestationFromValidators(preserveAttestationData, 2);
+
+    aggregatingPool.onSlot(
+        pruneAttestationData
+            .getSlot()
+            .plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS))
+            .plus(ONE));
+
+    assertThat(
+            aggregatingPool.getAttestationsForBlock(
+                preserveAttestation.getData().getSlot().plus(ONE)))
+        .containsOnly(preserveAttestation);
   }
 
   private Attestation addAttestationFromValidators(
