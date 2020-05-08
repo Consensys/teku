@@ -111,7 +111,6 @@ allprojects {
         //Excluding tech.pegasys.teku.datastructures due to preferred formatting overwritten by plugin in getConstantsAsString.
         exclude '**/src/main/java/tech/pegasys/teku/Constants.java'
         exclude '**/proto'
-        exclude '**/resources'
       }
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
