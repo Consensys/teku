@@ -13,10 +13,18 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
 import com.google.common.primitives.UnsignedLong;
-import java.util.LinkedHashMap;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
@@ -24,6 +32,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 /**
  * Maintains a pool of attestations. Attestations can be retrieved either for inclusion in a block
@@ -31,17 +40,35 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
  * cases the returned attestations are aggregated to maximise the number of validators that can be
  * included.
  */
-public class AggregatingAttestationPool {
+public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
-      new LinkedHashMap<>();
+      new HashMap<>();
+  private final NavigableMap<UnsignedLong, Set<Bytes>> dataHashBySlot = new TreeMap<>();
 
   public synchronized void add(final Attestation attestation) {
+    final Bytes32 dataHash = attestation.getData().hash_tree_root();
     attestationGroupByDataHash
-        .computeIfAbsent(
-            attestation.getData().hash_tree_root(),
-            key -> new MatchingDataAttestationGroup(attestation.getData()))
+        .computeIfAbsent(dataHash, key -> new MatchingDataAttestationGroup(attestation.getData()))
         .add(attestation);
+
+    dataHashBySlot
+        .computeIfAbsent(attestation.getData().getSlot(), slot -> new HashSet<>())
+        .add(dataHash);
+  }
+
+  @Override
+  public synchronized void onSlot(final UnsignedLong slot) {
+    final UnsignedLong attestationRetentionSlots =
+        UnsignedLong.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS);
+    if (slot.compareTo(attestationRetentionSlots) <= 0) {
+      return;
+    }
+    final UnsignedLong firstValidAttestationSlot = slot.minus(attestationRetentionSlots);
+    final Collection<Set<Bytes>> dataHashesToRemove =
+        dataHashBySlot.headMap(firstValidAttestationSlot, false).values();
+    dataHashesToRemove.stream().flatMap(Set::stream).forEach(attestationGroupByDataHash::remove);
+    dataHashesToRemove.clear();
   }
 
   public synchronized void remove(final Attestation attestation) {
@@ -53,6 +80,17 @@ public class AggregatingAttestationPool {
     attestations.remove(attestation);
     if (attestations.isEmpty()) {
       attestationGroupByDataHash.remove(dataRoot);
+      removeFromSlotMappings(attestation.getData().getSlot(), dataRoot);
+    }
+  }
+
+  private void removeFromSlotMappings(final UnsignedLong slot, final Bytes32 dataRoot) {
+    final Set<Bytes> dataHashesForSlot = dataHashBySlot.get(slot);
+    if (dataHashesForSlot != null) {
+      dataHashesForSlot.remove(dataRoot);
+      if (dataHashesForSlot.isEmpty()) {
+        dataHashBySlot.remove(slot);
+      }
     }
   }
 

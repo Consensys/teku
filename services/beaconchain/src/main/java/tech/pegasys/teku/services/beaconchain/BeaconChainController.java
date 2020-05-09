@@ -378,6 +378,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool = new AggregatingAttestationPool();
+    eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
   }
 
   public void initRestAPI() {
@@ -512,6 +513,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.forkChoice.processHead();
     EVENT_LOG.syncEvent(
         nodeSlot.getValue(), recentChainData.getBestSlot(), p2pNetwork.getPeerCount());
+    slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
     nodeSlot.inc();
   }
 }

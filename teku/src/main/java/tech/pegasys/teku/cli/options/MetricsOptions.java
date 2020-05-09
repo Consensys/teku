@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import com.google.common.collect.ImmutableSet;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -61,6 +62,15 @@ public class MetricsOptions {
       arity = "0..*")
   private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
 
+  @Option(
+      names = {"--metrics-host-whitelist"},
+      paramLabel = "<hostname>",
+      description =
+          "Comma separated list of hostnames to whitelist for access, or * to accept any host",
+      split = ",",
+      arity = "0..*")
+  private final List<String> metricsHostWhitelist = Arrays.asList("127.0.0.1", "localhost");
+
   public boolean isMetricsEnabled() {
     return metricsEnabled;
   }
@@ -75,5 +85,9 @@ public class MetricsOptions {
 
   public List<String> getMetricsCategories() {
     return metricsCategories.stream().map(Object::toString).collect(Collectors.toList());
+  }
+
+  public List<String> getMetricsHostWhitelist() {
+    return metricsHostWhitelist;
   }
 }
