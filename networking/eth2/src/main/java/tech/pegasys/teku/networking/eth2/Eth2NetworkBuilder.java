@@ -57,10 +57,16 @@ public class Eth2NetworkBuilder {
     validate();
 
     // Setup eth2 handlers
+    final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
     final RpcEncoding rpcEncoding =
         eth2Config.isSnappyCompressionEnabled() ? RpcEncoding.SSZ_SNAPPY : RpcEncoding.SSZ;
     final Eth2PeerManager eth2PeerManager =
-        Eth2PeerManager.create(recentChainData, historicalChainData, metricsSystem, rpcEncoding);
+        Eth2PeerManager.create(
+            recentChainData,
+            historicalChainData,
+            metricsSystem,
+            attestationSubnetService,
+            rpcEncoding);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -71,7 +77,12 @@ public class Eth2NetworkBuilder {
     final GossipEncoding gossipEncoding =
         eth2Config.isSnappyCompressionEnabled() ? GossipEncoding.SSZ_SNAPPY : GossipEncoding.SSZ;
     return new ActiveEth2Network(
-        network, eth2PeerManager, eventBus, recentChainData, gossipEncoding);
+        network,
+        eth2PeerManager,
+        eventBus,
+        recentChainData,
+        gossipEncoding,
+        attestationSubnetService);
   }
 
   protected DiscoveryNetwork<?> buildNetwork() {

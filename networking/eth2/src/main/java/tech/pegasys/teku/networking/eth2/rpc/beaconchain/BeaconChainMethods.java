@@ -20,12 +20,16 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRootMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.GoodbyeMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
@@ -42,6 +46,7 @@ public class BeaconChainMethods {
       "/eth2/beacon_chain/req/beacon_blocks_by_root/1";
   private static final String BEACON_BLOCKS_BY_RANGE =
       "/eth2/beacon_chain/req/beacon_blocks_by_range/1";
+  private static final String GET_METADATA = "/eth2/beacon_chain/req/metadata/1";
 
   private final Eth2RpcMethod<StatusMessage, StatusMessage> status;
   private final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye;
@@ -49,6 +54,7 @@ public class BeaconChainMethods {
       beaconBlocksByRoot;
   private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       beaconBlocksByRange;
+  private final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata;
 
   private final Collection<Eth2RpcMethod<?, ?>> allMethods;
 
@@ -56,13 +62,14 @@ public class BeaconChainMethods {
       final Eth2RpcMethod<StatusMessage, StatusMessage> status,
       final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye,
       final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> beaconBlocksByRoot,
-      final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
-          beaconBlocksByRange) {
+      final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> beaconBlocksByRange,
+      final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata) {
     this.status = status;
     this.goodBye = goodBye;
     this.beaconBlocksByRoot = beaconBlocksByRoot;
     this.beaconBlocksByRange = beaconBlocksByRange;
-    allMethods = List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange);
+    this.getMetadata = getMetadata;
+    allMethods = List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange, getMetadata);
   }
 
   public static BeaconChainMethods create(
@@ -72,12 +79,14 @@ public class BeaconChainMethods {
       final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory,
+      final MetadataMessageFactory metadataMessageFactory,
       final RpcEncoding rpcEncoding) {
     return new BeaconChainMethods(
         createStatus(asyncRunner, statusMessageFactory, peerLookup, rpcEncoding),
         createGoodBye(asyncRunner, metricsSystem, peerLookup, rpcEncoding),
         createBeaconBlocksByRoot(asyncRunner, recentChainData, peerLookup, rpcEncoding),
-        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding));
+        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding),
+        createMetadata(asyncRunner, metadataMessageFactory, peerLookup, rpcEncoding));
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
@@ -153,6 +162,23 @@ public class BeaconChainMethods {
         peerLookup);
   }
 
+  private static Eth2RpcMethod<EmptyMessage, MetadataMessage> createMetadata(
+      final AsyncRunner asyncRunner,
+      final MetadataMessageFactory metadataMessageFactory,
+      final PeerLookup peerLookup,
+      final RpcEncoding rpcEncoding) {
+    MetadataMessageHandler messageHandler = new MetadataMessageHandler(metadataMessageFactory);
+    return new Eth2RpcMethod<EmptyMessage, MetadataMessage>(
+        asyncRunner,
+        GET_METADATA,
+        rpcEncoding,
+        EmptyMessage.class,
+        MetadataMessage.class,
+        true,
+        messageHandler,
+        peerLookup);
+  }
+
   public Collection<RpcMethod> all() {
     return Collections.unmodifiableCollection(allMethods);
   }
@@ -171,5 +197,9 @@ public class BeaconChainMethods {
 
   public Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> beaconBlocksByRange() {
     return beaconBlocksByRange;
+  }
+
+  public Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata() {
+    return getMetadata;
   }
 }

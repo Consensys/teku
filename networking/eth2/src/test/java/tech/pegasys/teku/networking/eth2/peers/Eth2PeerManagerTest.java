@@ -22,6 +22,7 @@ import java.util.List;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -50,6 +51,7 @@ public class Eth2PeerManagerTest {
           storageClient,
           new NoOpMetricsSystem(),
           peerValidatorFactory,
+          new AttestationSubnetService(),
           rpcEncoding);
 
   @BeforeEach
