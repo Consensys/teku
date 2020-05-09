@@ -131,7 +131,7 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void onSlot_shouldPruneAttestationsMoreThanTwoEpochsBehindCurrentSlot() {
-    final AttestationData pruneAttestationData = randomAttestationDataToIncludeInBlock();
+    final AttestationData pruneAttestationData = randomAttestationDataToIncludeInBlock(SLOT);
     final AttestationData preserveAttestationData =
         randomAttestationDataToIncludeInBlock(SLOT.plus(ONE));
     addAttestationFromValidators(pruneAttestationData, 1);
@@ -141,8 +141,7 @@ class AggregatingAttestationPoolTest {
     aggregatingPool.onSlot(
         pruneAttestationData
             .getSlot()
-            .plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS))
-            .plus(ONE));
+            .plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS)));
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(
