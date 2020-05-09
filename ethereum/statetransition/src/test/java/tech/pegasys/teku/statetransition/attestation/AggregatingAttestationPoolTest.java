@@ -141,7 +141,8 @@ class AggregatingAttestationPoolTest {
     aggregatingPool.onSlot(
         pruneAttestationData
             .getSlot()
-            .plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS)));
+            .plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS))
+            .plus(ONE));
 
     assertThat(
             aggregatingPool.getAttestationsForBlock(
