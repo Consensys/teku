@@ -27,6 +27,7 @@ import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Eth1Address;
 
 public class DepositTransactionSender {
   // Increase the poll rate for tx receipts but keep the default 10 min timeout.
@@ -36,10 +37,12 @@ public class DepositTransactionSender {
   private final DepositContract depositContract;
 
   public DepositTransactionSender(
-      final Web3j web3j, final String depositContractAddress, final Credentials eth1Credentials) {
+      final Web3j web3j,
+      final Eth1Address depositContractAddress,
+      final Credentials eth1Credentials) {
     this.depositContract =
         DepositContract.load(
-            depositContractAddress,
+            depositContractAddress.toHexString(),
             web3j,
             new FastRawTransactionManager(
                 web3j,

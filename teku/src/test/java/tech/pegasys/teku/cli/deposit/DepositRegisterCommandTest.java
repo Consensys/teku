@@ -40,7 +40,6 @@ import tech.pegasys.signers.bls.keystore.model.SCryptParam;
 import tech.pegasys.teku.cli.deposit.DepositRegisterCommand.ValidatorKeyOptions;
 import tech.pegasys.teku.cli.deposit.DepositRegisterCommand.ValidatorKeyStoreOptions;
 import tech.pegasys.teku.cli.deposit.DepositRegisterCommand.ValidatorPasswordOptions;
-import tech.pegasys.teku.services.powchain.DepositTransactionSender;
 
 class DepositRegisterCommandTest {
   private static final Consumer<Integer> shutdownFunction = status -> {};
@@ -62,19 +61,18 @@ class DepositRegisterCommandTest {
       KeyStore.encrypt(BLS_PRIVATE_KEY, BLS_PUB_KEY, PASSWORD, "", KDF_PARAM, CIPHER);
   private CommonParams commonParams;
   private CommandLine.Model.CommandSpec commandSpec;
-  private DepositTransactionSender depositTransactionSender;
+  private RegisterAction registerAction;
 
   @BeforeEach
   void setUp() {
     commonParams = mock(CommonParams.class);
     commandSpec = mock(CommandLine.Model.CommandSpec.class);
     final CommandLine commandLine = mock(CommandLine.class);
-    depositTransactionSender = mock(DepositTransactionSender.class);
+    registerAction = mock(RegisterAction.class);
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
-    when(commonParams.createTransactionSender()).thenReturn(depositTransactionSender);
-    when(depositTransactionSender.sendDepositTransaction(any(), any(), any()))
-        .thenReturn(completedFuture(null));
+    when(commonParams.createRegisterAction()).thenReturn(registerAction);
+    when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
   @Test
@@ -94,7 +92,7 @@ class DepositRegisterCommandTest {
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
-    verify(depositTransactionSender).sendDepositTransaction(any(), any(), any());
+    verify(registerAction).sendDeposit(any(), any());
   }
 
   @Test
@@ -111,7 +109,7 @@ class DepositRegisterCommandTest {
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
-    verify(depositTransactionSender).sendDepositTransaction(any(), any(), any());
+    verify(registerAction).sendDeposit(any(), any());
   }
 
   private ValidatorKeyOptions buildValidatorKeyOptionsWithPasswordFile(
