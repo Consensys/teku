@@ -23,6 +23,7 @@ dependencies {
   api 'com.google.guava:guava'
 
   implementation 'com.google.code.gson:gson'
+  implementation 'com.squareup.okhttp3:okhttp'
   implementation 'info.picocli:picocli'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
@@ -41,7 +42,6 @@ dependencies {
 
   testImplementation testFixtures(project(':util'))
 
-  testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'org.awaitility:awaitility'
 
   test {
