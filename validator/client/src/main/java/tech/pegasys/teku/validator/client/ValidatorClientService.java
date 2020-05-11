@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Map;
+import java.util.Random;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -43,8 +44,13 @@ public class ValidatorClientService extends Service {
         ValidatorLoader.initializeValidators(config.getConfig());
     final EventChannels eventChannels = config.getEventChannels();
     final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
-    final RetryingDutyLoader dutyLoader = createDutyLoader(config, asyncRunner, validators);
-    final DutyScheduler dutyScheduler = new DutyScheduler(dutyLoader);
+    final ValidatorApiChannel validatorApiChannel =
+        config.getEventChannels().getPublisher(ValidatorApiChannel.class);
+    final RetryingDutyLoader dutyLoader =
+        createDutyLoader(validatorApiChannel, asyncRunner, validators);
+    final StableSubnetSubscriber stableSubnetSubscriber =
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
+    final DutyScheduler dutyScheduler = new DutyScheduler(dutyLoader, stableSubnetSubscriber);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 
@@ -52,11 +58,9 @@ public class ValidatorClientService extends Service {
   }
 
   private static RetryingDutyLoader createDutyLoader(
-      final ServiceConfig config,
+      final ValidatorApiChannel validatorApiChannel,
       final AsyncRunner asyncRunner,
       final Map<BLSPublicKey, Validator> validators) {
-    final ValidatorApiChannel validatorApiChannel =
-        config.getEventChannels().getPublisher(ValidatorApiChannel.class);
     final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
         new ValidatorDutyFactory(forkProvider, validatorApiChannel);
