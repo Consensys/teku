@@ -29,7 +29,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class StableSubnetSubscriber {
@@ -67,8 +67,10 @@ public class StableSubnetSubscriber {
     }
 
     // Adjust the number of subscriptions
-    // If number of subscriptions increased, pass the new subscription set to BeaconNode
-    if (adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount)) {
+    // If there are new subscriptions, pass the new subscription set to BeaconNode
+    Set<SubnetSubscription> newSubnetSubscriptions =
+        adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount);
+    if (!newSubnetSubscriptions.isEmpty()) {
       validatorApiChannel.subscribeToPersistentSubnets(subnetSubscriptions);
     }
   }
@@ -78,40 +80,44 @@ public class StableSubnetSubscriber {
   }
 
   /**
-   * Adjusts the number of subscriptions to the number of validators. Returns true if there was any
-   * change made to the number of subscribed subnets.
+   * Adjusts the number of subscriptions to the number of validators. Returns the set of new
+   * subscriptions that were added, if there were no new subscriptions, or if there were
+   * unsubscriptions, it returns an empty set.
    */
-  private boolean adjustNumberOfSubscriptionsToNumberOfValidators(
+  private Set<SubnetSubscription> adjustNumberOfSubscriptionsToNumberOfValidators(
       UnsignedLong currentSlot, int validatorCount) {
-    boolean updated = false;
 
     int totalNumberOfSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, RANDOM_SUBNETS_PER_VALIDATOR * validatorCount);
 
+    Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
+
     while (subnetSubscriptions.size() != totalNumberOfSubscriptions) {
       if (subnetSubscriptions.size() < totalNumberOfSubscriptions) {
-        subscribeToNewRandomSubnet(currentSlot);
-        updated = true;
+        newSubnetSubscriptions.add(subscribeToNewRandomSubnet(currentSlot));
       } else {
         unsubscribeFromRandomSubnet();
       }
     }
-    return updated;
+    return newSubnetSubscriptions;
   }
 
   /**
-   * Subscribes to a new random subnetId, if any subnetID is available.
+   * Subscribes to a new random subnetId, if any subnetID is available. Returns the new
+   * SubnetSubscription object.
    *
    * @param currentSlot
    */
-  private void subscribeToNewRandomSubnet(UnsignedLong currentSlot) {
+  private SubnetSubscription subscribeToNewRandomSubnet(UnsignedLong currentSlot) {
     int newSubnetId =
         getRandomAvailableSubnetId()
             .orElseThrow(() -> new IllegalStateException("No available subnetId found"));
 
     availableSubnetIndices.remove(newSubnetId);
-    subnetSubscriptions.add(
-        new SubnetSubscription(newSubnetId, getRandomUnsubscriptionSlot(currentSlot)));
+    SubnetSubscription subnetSubscription =
+        new SubnetSubscription(newSubnetId, getRandomUnsubscriptionSlot(currentSlot));
+    subnetSubscriptions.add(subnetSubscription);
+    return subnetSubscription;
   }
 
   /**

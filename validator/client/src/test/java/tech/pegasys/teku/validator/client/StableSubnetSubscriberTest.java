@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 @SuppressWarnings("unchecked")
@@ -168,6 +168,22 @@ public class StableSubnetSubscriberTest {
     assertThat(firstUnsubscriptionSlot).isNotEqualByComparingTo(secondUnsubscriptionSlot);
     // Can only verify unsubscription slot have changed and not the subnet id,
     // since subnet id can randomly be chosen the same
+  }
+
+  @Test
+  void shouldGenerateLargeNumberOfSubscriptionsAndCheckTheyreAllCorrect() {
+    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+    StableSubnetSubscriber stableSubnetSubscriber =
+        new StableSubnetSubscriber(
+            validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT);
+
+    stableSubnetSubscriber.onSlot(ZERO);
+
+    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
+    verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
+    assertSubnetsAreDistinct(subnetSubcriptions.getValue());
+    assertUnsubscribeSlotsAreInBound(subnetSubcriptions.getValue(), ZERO);
+    assertThat(subnetSubcriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
   }
 
   private void assertUnsubscribeSlotsAreInBound(
