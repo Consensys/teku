@@ -89,19 +89,20 @@ public class EventLogger {
   }
 
   public void unprocessedAttestation(final Bytes32 beaconBlockRoot) {
-    info("New Attestation with block root:  " + beaconBlockRoot + " detected.", Color.GREEN);
+    debug("New Attestation with block root:  " + beaconBlockRoot + " detected.", Color.GREEN);
   }
 
   public void aggregateAndProof(final Bytes32 beaconBlockRoot) {
-    log.debug(
-        print(
-            "New AggregateAndProof with block root:  " + beaconBlockRoot + " detected.",
-            Color.BLUE));
+    debug("New AggregateAndProof with block root:  " + beaconBlockRoot + " detected.", Color.BLUE);
   }
 
   public void unprocessedBlock(final Bytes32 stateRoot) {
-    info(
+    debug(
         "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
+  }
+
+  private void debug(final String message, final Color color) {
+    log.debug(print(message, color));
   }
 
   private void info(final String message, final Color color) {
