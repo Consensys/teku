@@ -41,6 +41,7 @@ public class RegisterAction implements AutoCloseable {
   private final Eth1Address contractAddress;
   private final boolean displayConfirmation;
   private final UnsignedLong amount;
+  private final DepositTransactionSender sender;
   private OkHttpClient httpClient;
   private ScheduledExecutorService executorService;
   private Web3j web3j;
@@ -60,6 +61,7 @@ public class RegisterAction implements AutoCloseable {
     this.amount = amount;
     this.shutdownFunction = shutdownFunction;
     this.consoleAdapter = consoleAdapter;
+    this.sender = createTransactionSender();
   }
 
   private DepositTransactionSender createTransactionSender() {
@@ -109,7 +111,6 @@ public class RegisterAction implements AutoCloseable {
 
   public SafeFuture<TransactionReceipt> sendDeposit(
       final BLSKeyPair validatorKey, final BLSPublicKey withdrawalKey) {
-    final DepositTransactionSender sender = createTransactionSender();
     return sender.sendDepositTransaction(validatorKey, withdrawalKey, amount);
   }
 }

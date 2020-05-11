@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -149,7 +150,7 @@ public class TekuNode extends Node {
     waitFor(
         () ->
             assertThat(fetchChainHead().get().finalized_epoch).isNotEqualTo(startingFinalizedEpoch),
-        540);
+        9, TimeUnit.MINUTES);
   }
 
   public void waitUntilInSyncWith(final TekuNode targetNode) {
@@ -162,7 +163,7 @@ public class TekuNode extends Node {
           assertThat(targetBeaconHead).isPresent();
           assertThat(beaconHead).isEqualTo(targetBeaconHead);
         },
-        300);
+        5, TimeUnit.MINUTES);
   }
 
   private BeaconHead waitForBeaconHead() {
