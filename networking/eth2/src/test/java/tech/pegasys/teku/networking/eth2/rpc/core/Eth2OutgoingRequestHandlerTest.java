@@ -89,9 +89,11 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
     asyncRequestRunner.waitForExactly(1);
     timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
+    assertThat(finishedProcessingFuture).isCompletedWithValue(null);
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(3);
-    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isCompletedWithValue(null));
   }
 
   @Test
@@ -117,9 +119,11 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
     asyncRequestRunner.waitForExactly(1);
     timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
+    assertThat(finishedProcessingFuture).isCompletedExceptionally();
     verify(rpcStream, atLeastOnce()).close();
     assertThat(blocks.size()).isEqualTo(maxChunks - 1);
-    assertThat(finishedProcessingFuture).isCompletedExceptionally();
     assertThatThrownBy(finishedProcessingFuture::get).hasRootCause(error);
   }
 
@@ -135,6 +139,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
     asyncRequestRunner.waitForExactly(1);
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(1);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
@@ -159,6 +164,8 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
     asyncRequestRunner.waitForExactly(maxChunks);
     timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(3);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
