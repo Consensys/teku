@@ -11,13 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.network;
+package tech.pegasys.teku.util.events;
 
-public class NetworkUtility {
-  public static final String INADDR_ANY = "0.0.0.0";
-  public static final String INADDR6_ANY = "0:0:0:0:0:0:0:0";
+@FunctionalInterface
+public interface ValueObserver<C> {
 
-  public static boolean isUnspecifiedAddress(final String ipAddress) {
-    return INADDR_ANY.equals(ipAddress) || INADDR6_ANY.equals(ipAddress);
-  }
+  void onValueChanged(C newValue);
 }

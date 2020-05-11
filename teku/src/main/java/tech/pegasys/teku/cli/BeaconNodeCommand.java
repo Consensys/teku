@@ -325,6 +325,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
+        .setMetricsHostWhitelist(metricsOptions.getMetricsHostWhitelist())
         .setDataPath(dataOptions.getDataPath())
         .setDataStorageMode(dataOptions.getDataStorageMode())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())

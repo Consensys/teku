@@ -72,6 +72,7 @@ public class MetricsEndpoint {
         .port(tekuConfig.getMetricsPort())
         .host(tekuConfig.getMetricsInterface())
         .metricCategories(getEnabledMetricCategories(tekuConfig))
+        .hostsWhitelist(tekuConfig.getMetricsHostWhitelist())
         .build();
   }
 

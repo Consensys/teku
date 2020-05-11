@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
@@ -60,8 +59,7 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
    */
   public void add(final Attestation attestation) {
     attestationsByValidatorCount
-        .computeIfAbsent(
-            attestation.getAggregation_bits().countSetBits(), count -> new LinkedHashSet<>())
+        .computeIfAbsent(attestation.getAggregation_bits().countSetBits(), count -> new HashSet<>())
         .add(attestation);
   }
 

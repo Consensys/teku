@@ -36,7 +36,7 @@ public class MultiaddrPeerAddress extends PeerAddress {
   }
 
   public static MultiaddrPeerAddress fromDiscoveryPeer(final DiscoveryPeer discoveryPeer) {
-    final Multiaddr multiaddr = DiscoveryPeerToMultiaddrConverter.convertToMultiAddr(discoveryPeer);
+    final Multiaddr multiaddr = MultiaddrUtil.fromDiscoveryPeer(discoveryPeer);
     return fromMultiaddr(multiaddr);
   }
 
