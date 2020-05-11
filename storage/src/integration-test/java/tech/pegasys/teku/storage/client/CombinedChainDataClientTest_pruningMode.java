@@ -40,7 +40,7 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
     // Setup chain with finalized block
     chainUpdater.initializeGenesis();
     final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
-    final SignedBlockAndState blockAtEpoch = chainUpdater.advanceChain(finalizedSlot);
+    chainUpdater.advanceChain(finalizedSlot);
     final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
     chainUpdater.addNewBestBlock();
 
