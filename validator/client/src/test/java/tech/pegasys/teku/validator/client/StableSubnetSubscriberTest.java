@@ -170,6 +170,22 @@ public class StableSubnetSubscriberTest {
     // since subnet id can randomly be chosen the same
   }
 
+  @Test
+  void shouldGenerateLargeNumberOfSubscriptionsAndCheckTheyreAllCorrect() {
+    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+    StableSubnetSubscriber stableSubnetSubscriber =
+        new StableSubnetSubscriber(
+            validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT);
+
+    stableSubnetSubscriber.onSlot(ZERO);
+
+    ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
+    verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
+    assertSubnetsAreDistinct(subnetSubcriptions.getValue());
+    assertUnsubscribeSlotsAreInBound(subnetSubcriptions.getValue(), ZERO);
+    assertThat(subnetSubcriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
+  }
+
   private void assertUnsubscribeSlotsAreInBound(
       Set<SubnetSubscription> subnetSubscriptions, UnsignedLong currentSlot) {
     UnsignedLong lowerBound =
