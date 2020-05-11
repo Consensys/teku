@@ -59,7 +59,7 @@ public class EventLogger {
       final UnsignedLong nodeSlot, final UnsignedLong bestSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
-            "Sync Event *** Current slot: %s, Head block: %s, Connected peers: %d",
+            "Sync Event *** Current slot: %s, Head slot: %s, Connected peers: %d",
             nodeSlot, bestSlot.toString(), numPeers);
     info(syncEventLog, Color.WHITE);
   }
@@ -93,7 +93,10 @@ public class EventLogger {
   }
 
   public void aggregateAndProof(final Bytes32 beaconBlockRoot) {
-    info("New AggregateAndProof with block root:  " + beaconBlockRoot + " detected.", Color.BLUE);
+    log.debug(
+        print(
+            "New AggregateAndProof with block root:  " + beaconBlockRoot + " detected.",
+            Color.BLUE));
   }
 
   public void unprocessedBlock(final Bytes32 stateRoot) {
