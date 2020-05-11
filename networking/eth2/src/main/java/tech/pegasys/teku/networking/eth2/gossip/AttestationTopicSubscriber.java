@@ -54,10 +54,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
 
     for (SubnetSubscription subnetSubscription : newSubscriptions) {
       int subnetId = subnetSubscription.getSubnetId();
-      if (!persistentSubnetIdSet.contains(subnetId)) {
-        persistentSubnetIdSet.add(subnetId);
-        shouldUpdateENR = true;
-      }
+      shouldUpdateENR = persistentSubnetIdSet.add(subnetId) || shouldUpdateENR;
 
       UnsignedLong existingUnsubscriptionSlot =
           subnetIdToUnsubscribeSlot.computeIfAbsent(
