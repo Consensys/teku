@@ -22,6 +22,8 @@ dependencies {
   testFixturesApi project(':storage')
   testFixturesApi project(':ethereum:datastructures')
 
+  testFixturesImplementation testFixtures(project(':ethereum:core'))
+  testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
 }
