@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -62,6 +63,7 @@ import tech.pegasys.teku.util.async.ExceptionThrowingFunction;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 
@@ -209,9 +211,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(
+  public void subscribeToBeaconCommitteeForAggregation(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
-    attestationTopicSubscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
+    attestationTopicSubscriptions.subscribeToCommitteeForAggregation(
+        committeeIndex, aggregationSlot);
+  }
+
+  @Override
+  public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
+    // To be implemented in another PR.
   }
 
   @Override
