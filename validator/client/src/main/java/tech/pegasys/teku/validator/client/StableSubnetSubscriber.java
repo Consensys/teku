@@ -29,7 +29,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.validator.api.SubnetSubscription;
+import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class StableSubnetSubscriber {
@@ -71,7 +71,7 @@ public class StableSubnetSubscriber {
     Set<SubnetSubscription> newSubnetSubscriptions =
         adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount);
     if (!newSubnetSubscriptions.isEmpty()) {
-      validatorApiChannel.subscribeToPersistentSubnets(subnetSubscriptions);
+      validatorApiChannel.subscribeToPersistentSubnets(newSubnetSubscriptions);
     }
   }
 
