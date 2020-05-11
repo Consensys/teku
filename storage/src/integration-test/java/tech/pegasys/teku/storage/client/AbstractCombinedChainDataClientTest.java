@@ -33,20 +33,35 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   protected InMemoryStorageSystem storageSystem;
   protected ChainUpdater chainUpdater;
+  protected CombinedChainDataClient client;
 
   @BeforeEach
   public void setup() {
     storageSystem = createStorageSystem();
     chainUpdater =
         new ChainUpdater(storageSystem.recentChainData(), ChainBuilder.create(VALIDATOR_KEYS));
+    client = storageSystem.combinedChainDataClient();
   }
 
   protected abstract InMemoryStorageSystem createStorageSystem();
 
   @Test
-  public void getStateAtSlot_shouldRetrieveLatestFinalizedState() {
-    final CombinedChainDataClient client = storageSystem.combinedChainDataClient();
+  public void getStateAtSlot_preGenesis() {
+    assertThat(client.getLatestStateAtSlot(UnsignedLong.ZERO))
+        .isCompletedWithValue(Optional.empty());
+  }
 
+  @Test
+  public void getStateAtSlot_genesis() {
+    final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
+    assertThat(client.getLatestStateAtSlot(genesis.getSlot()))
+        .isCompletedWithValue(Optional.of(genesis.getState()));
+    assertThat(client.getLatestStateAtSlot(genesis.getSlot().plus(UnsignedLong.ONE)))
+        .isCompletedWithValue(Optional.of(genesis.getState()));
+  }
+
+  @Test
+  public void getStateAtSlot_shouldRetrieveLatestFinalizedState() {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -59,14 +74,12 @@ public abstract class AbstractCombinedChainDataClientTest {
     // Sanity check
     assertThat(blockAtEpoch).isEqualTo(finalizedBlock);
 
-    assertThat(client.getStateAtSlot(finalizedSlot))
+    assertThat(client.getLatestStateAtSlot(finalizedSlot))
         .isCompletedWithValue(Optional.of(blockAtEpoch.getState()));
   }
 
   @Test
   public void getStateAtSlot_shouldRetrieveHeadState() {
-    final CombinedChainDataClient client = storageSystem.combinedChainDataClient();
-
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -75,14 +88,12 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.finalizeEpoch(finalizedEpoch);
     final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
 
-    assertThat(client.getStateAtSlot(bestBlock.getSlot()))
+    assertThat(client.getLatestStateAtSlot(bestBlock.getSlot()))
         .isCompletedWithValue(Optional.of(bestBlock.getState()));
   }
 
   @Test
   public void getStateAtSlot_shouldRetrieveRecentState() {
-    final CombinedChainDataClient client = storageSystem.combinedChainDataClient();
-
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -94,7 +105,25 @@ public abstract class AbstractCombinedChainDataClientTest {
     // Sanity check
     assertThat(recentBlock.getSlot()).isLessThan(bestBlock.getSlot());
 
-    assertThat(client.getStateAtSlot(recentBlock.getSlot()))
+    assertThat(client.getLatestStateAtSlot(recentBlock.getSlot()))
+        .isCompletedWithValue(Optional.of(recentBlock.getState()));
+  }
+
+  @Test
+  public void getStateAtSlot_shouldRetrieveRecentStateInEffectAtSkippedSlot() {
+    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
+    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+
+    chainUpdater.initializeGenesis();
+    chainUpdater.advanceChain(finalizedSlot);
+    chainUpdater.finalizeEpoch(finalizedEpoch);
+    final SignedBlockAndState recentBlock = chainUpdater.advanceChain();
+    final UnsignedLong skippedSlot = recentBlock.getSlot().plus(UnsignedLong.ONE);
+    final SignedBlockAndState bestBlock =
+        chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
+    chainUpdater.updateBestBlock(bestBlock);
+
+    assertThat(client.getLatestStateAtSlot(skippedSlot))
         .isCompletedWithValue(Optional.of(recentBlock.getState()));
   }
 }

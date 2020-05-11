@@ -164,12 +164,12 @@ public class CombinedChainDataClient {
   }
 
   /**
-   * Returns the state at the given slot on the current canonical chain.
+   * Returns the latest state at the given slot on the current canonical chain.
    *
    * @param slot the slot to get the state for
    * @return the State at slot
    */
-  public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<BeaconState>> getLatestStateAtSlot(final UnsignedLong slot) {
     if (isRecentData(slot)) {
       final Optional<BeaconState> recentState = recentChainData.getStateInEffectAtSlot(slot);
       if (recentState.isPresent()) {

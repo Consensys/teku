@@ -99,7 +99,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<List<ValidatorDuties>>> duties =
@@ -109,7 +109,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldReturnEmptyWhenNoPublicKeysSpecified() {
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
 
     final SafeFuture<Optional<List<ValidatorDuties>>> result =
@@ -120,7 +120,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldReturnDutiesForUnknownValidator() {
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
@@ -133,7 +133,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldReturnDutiesForKnownValidator() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
 
     final int validatorIndex = 3;
@@ -150,7 +150,8 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldNotIncludeBlockProductionDutyForGenesisSlot() {
     final BeaconState state = createStateWithActiveValidators(ZERO);
-    when(chainDataClient.getStateAtSlot(ZERO)).thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getLatestStateAtSlot(ZERO))
+        .thenReturn(completedFuture(Optional.of(state)));
 
     final List<BLSPublicKey> allValidatorKeys =
         state.getValidators().stream().map(Validator::getPubkey).collect(Collectors.toList());
@@ -167,7 +168,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldReturnDutiesForMixOfKnownAndUnknownValidators() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
@@ -196,12 +197,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldUseGenesisStateForFirstEpoch() {
-    when(chainDataClient.getStateAtSlot(any())).thenReturn(new SafeFuture<>());
+    when(chainDataClient.getLatestStateAtSlot(any())).thenReturn(new SafeFuture<>());
     validatorApiHandler
         .getDuties(ZERO, List.of(dataStructureUtil.randomPublicKey()))
         .reportExceptions();
 
-    verify(chainDataClient).getStateAtSlot(ZERO);
+    verify(chainDataClient).getLatestStateAtSlot(ZERO);
   }
 
   @Test

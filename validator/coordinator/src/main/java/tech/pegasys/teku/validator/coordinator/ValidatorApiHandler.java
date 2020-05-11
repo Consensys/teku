@@ -114,7 +114,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
     LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
-        .getStateAtSlot(slot)
+        .getLatestStateAtSlot(slot)
         .thenApply(
             optionalState ->
                 optionalState

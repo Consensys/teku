@@ -32,8 +32,6 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
 
   @Test
   public void getStateAtSlot_shouldReturnEmptyResponseForHistoricalState() {
-    final CombinedChainDataClient client = storageSystem.combinedChainDataClient();
-
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -47,7 +45,7 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
     // Sanity check
     assertThat(historicalBlock.getSlot()).isLessThan(finalizedBlock.getSlot());
 
-    assertThat(client.getStateAtSlot(historicalBlock.getSlot()))
+    assertThat(client.getLatestStateAtSlot(historicalBlock.getSlot()))
         .isCompletedWithValue(Optional.empty());
   }
 }

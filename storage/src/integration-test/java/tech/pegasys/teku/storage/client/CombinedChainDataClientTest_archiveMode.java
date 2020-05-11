@@ -31,8 +31,6 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
 
   @Test
   public void getStateAtSlot_shouldRetrieveHistoricalState() {
-    final CombinedChainDataClient client = storageSystem.combinedChainDataClient();
-
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -46,7 +44,28 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
     // Sanity check
     assertThat(historicalBlock.getSlot()).isLessThan(finalizedBlock.getSlot());
 
-    assertThat(client.getStateAtSlot(historicalBlock.getSlot()))
+    assertThat(client.getLatestStateAtSlot(historicalBlock.getSlot()))
+        .isCompletedWithValue(Optional.of(historicalBlock.getState()));
+  }
+
+  @Test
+  public void getStateAtSlot_shouldRetrieveHistoricalStateInEffectAtSkippedSlot() {
+    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
+    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+
+    // Setup chain with finalized block
+    chainUpdater.initializeGenesis();
+    final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
+    final UnsignedLong skippedSlot = historicalBlock.getSlot().plus(UnsignedLong.ONE);
+    chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
+    chainUpdater.advanceChain(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
+    chainUpdater.addNewBestBlock();
+
+    // Sanity check
+    assertThat(skippedSlot).isLessThan(finalizedBlock.getSlot());
+
+    assertThat(client.getLatestStateAtSlot(skippedSlot))
         .isCompletedWithValue(Optional.of(historicalBlock.getState()));
   }
 }
