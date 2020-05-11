@@ -199,12 +199,11 @@ jobs:
       - capture_test_results
 
   compatibilityTests:
-    executor: machine_executor
+    executor: large_executor
     steps:
       - prepare
       - attach_workspace:
           at: ~/project
-      - install_java
       - run:
           name: CompatibilityTests
           no_output_timeout: 20m
