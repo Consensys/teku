@@ -38,7 +38,7 @@ executors:
 
   machine_executor:
     machine:
-      image: ubuntu-1604:201903-01 #Ubuntu 16.04, docker 18.09.3, docker-compose 1.23.1
+      image: ubuntu-1604:202004-01 #Ubuntu 16.04, docker 18.09.3, docker-compose 1.23.1
       docker_layer_caching: true
     working_directory: ~/project
 
