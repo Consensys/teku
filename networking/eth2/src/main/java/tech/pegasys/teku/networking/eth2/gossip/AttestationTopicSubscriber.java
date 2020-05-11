@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
-  private final Map<Integer, UnsignedLong> allSubscriptions = new HashMap<>();
+  private final Map<Integer, UnsignedLong> subnetIdToUnsubscribeSlot = new HashMap<>();
   private final Set<Integer> persistentSubnetIdSet = new HashSet<>();
   private final Eth2Network eth2Network;
 
@@ -40,11 +40,12 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   public synchronized void subscribeToCommitteeForAggregation(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
     final int subnetId = committeeIndexToSubnetId(committeeIndex);
-    final UnsignedLong currentUnsubscriptionSlot = allSubscriptions.getOrDefault(subnetId, ZERO);
+    final UnsignedLong currentUnsubscriptionSlot =
+        subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2Network.subscribeToAttestationSubnetId(subnetId);
     }
-    allSubscriptions.put(subnetId, max(currentUnsubscriptionSlot, aggregationSlot));
+    subnetIdToUnsubscribeSlot.put(subnetId, max(currentUnsubscriptionSlot, aggregationSlot));
   }
 
   public synchronized void subscribeToPersistentSubnets(
@@ -59,14 +60,14 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
       }
 
       UnsignedLong existingUnsubscriptionSlot =
-          allSubscriptions.computeIfAbsent(
+          subnetIdToUnsubscribeSlot.computeIfAbsent(
               subnetId,
               (key) -> {
                 eth2Network.subscribeToAttestationSubnetId(subnetId);
                 return ZERO;
               });
 
-      allSubscriptions.put(
+      subnetIdToUnsubscribeSlot.put(
           subnetId, max(existingUnsubscriptionSlot, subnetSubscription.getUnsubscriptionSlot()));
     }
 
@@ -79,7 +80,8 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   public synchronized void onSlot(final UnsignedLong slot) {
     boolean shouldUpdateENR = false;
 
-    final Iterator<Entry<Integer, UnsignedLong>> iterator = allSubscriptions.entrySet().iterator();
+    final Iterator<Entry<Integer, UnsignedLong>> iterator =
+        subnetIdToUnsubscribeSlot.entrySet().iterator();
     while (iterator.hasNext()) {
       final Entry<Integer, UnsignedLong> entry = iterator.next();
       if (entry.getValue().compareTo(slot) < 0) {
