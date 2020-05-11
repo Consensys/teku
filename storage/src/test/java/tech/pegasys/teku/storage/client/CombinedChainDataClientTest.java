@@ -41,6 +41,11 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
+/**
+ * @deprecated - These tests should probably all be integration tests. See {@link
+ *     AbstractCombinedChainDataClientTest}
+ */
+@Deprecated
 class CombinedChainDataClientTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -393,47 +398,6 @@ class CombinedChainDataClientTest {
 
     assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
     assertThat(client.getBlockBySlot(slotParam).get()).isNotNull().isEmpty();
-  }
-
-  @Test
-  public void getStateAtSlot_shouldRetrieveLatestFinalizedState() {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(finalizedEpoch));
-
-    final UnsignedLong targetSlot = finalizedSlot;
-    final BeaconState state = dataStructureUtil.randomBeaconState(targetSlot);
-    when(historicalChainData.getLatestFinalizedStateAtSlot(targetSlot))
-        .thenReturn(completedFuture(Optional.of(state)));
-
-    assertThat(client.getStateAtSlot(targetSlot)).isCompletedWithValue(Optional.of(state));
-  }
-
-  @Test
-  public void getStateAtSlot_shouldRetrieveHistoricalState() {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(finalizedEpoch));
-
-    final UnsignedLong targetSlot = finalizedSlot.minus(UnsignedLong.ONE);
-    final BeaconState state = dataStructureUtil.randomBeaconState(targetSlot);
-    when(historicalChainData.getLatestFinalizedStateAtSlot(targetSlot))
-        .thenReturn(completedFuture(Optional.of(state)));
-
-    assertThat(client.getStateAtSlot(targetSlot)).isCompletedWithValue(Optional.of(state));
-  }
-
-  @Test
-  public void getStateAtSlot_shouldRetrieveRecentState() {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(finalizedEpoch));
-
-    final UnsignedLong targetSlot = finalizedSlot.plus(UnsignedLong.ONE);
-    final BeaconState state = dataStructureUtil.randomBeaconState(targetSlot);
-    when(recentChainData.getStateInEffectAtSlot(targetSlot)).thenReturn(Optional.of(state));
-
-    assertThat(client.getStateAtSlot(targetSlot)).isCompletedWithValue(Optional.of(state));
   }
 
   private SignedBeaconBlock block(final UnsignedLong slot) {
