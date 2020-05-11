@@ -91,7 +91,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     timeoutRunner.executeUntilDone();
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(3);
-    assertThat(finishedProcessingFuture).isCompletedWithValue(null);
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isCompletedWithValue(null));
   }
 
   @Test
@@ -167,7 +167,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
   }
 
   @Test
-  public void disconnectsIfInitialBytesAreNotReceivedInTime() throws Exception {
+  public void disconnectsIfInitialBytesAreNotReceivedInTime() {
     sendInitialPayload();
     verify(rpcStream).closeWriteStream();
     verify(rpcStream, never()).close();
