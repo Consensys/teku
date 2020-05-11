@@ -42,47 +42,47 @@ public class EventLogger {
 
   public void epochEvent(
       final UnsignedLong currentEpoch,
-      final UnsignedLong justifiedEpoch,
-      final UnsignedLong finalizedEpoch,
+      final UnsignedLong justifiedCheckpoint,
+      final UnsignedLong finalizedCheckpoint,
       final Bytes32 finalizedRoot) {
     final String epochEventLog =
         String.format(
-            "Epoch Event *** Current epoch: %s, Justified epoch: %s, Finalized epoch: %s, Finalized root: %s",
+            "Epoch Event *** Epoch: %s, Justified checkpoint: %s, Finalized checkpoint: %s, Finalized root: %s",
             currentEpoch.toString(),
-            justifiedEpoch.toString(),
-            finalizedEpoch.toString(),
+            justifiedCheckpoint.toString(),
+            finalizedCheckpoint.toString(),
             shortenHash(finalizedRoot.toHexString()));
     info(epochEventLog, Color.YELLOW);
   }
 
   public void syncEvent(
-      final UnsignedLong nodeSlot, final UnsignedLong bestSlot, final int numPeers) {
+      final UnsignedLong nodeSlot, final UnsignedLong headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
             "Sync Event *** Current slot: %s, Head slot: %s, Connected peers: %d",
-            nodeSlot, bestSlot.toString(), numPeers);
+            nodeSlot, headSlot.toString(), numPeers);
     info(syncEventLog, Color.WHITE);
   }
 
   public void slotEvent(
       final UnsignedLong nodeSlot,
-      final UnsignedLong bestBlock,
+      final UnsignedLong headSlot,
       final Bytes32 bestBlockRoot,
       final UnsignedLong nodeEpoch,
-      final UnsignedLong finalizedEpoch,
+      final UnsignedLong finalizedCheckpoint,
       final Bytes32 finalizedRoot,
       final int numPeers) {
-    String blockRoot = " x ... empty";
-    if (nodeSlot.equals(bestBlock)) {
+    String blockRoot = "   ... empty";
+    if (nodeSlot.equals(headSlot)) {
       blockRoot = shortenHash(bestBlockRoot.toHexString());
     }
     final String slotEventLog =
         String.format(
-            "Slot Event *** Slot: %s, Block: %s, Epoch: %s, Finalized Epoch: %s, Finalized Root: %s, Peers: %d",
+            "Slot Event *** Slot: %s, Block: %s, Epoch: %s, Finalized checkpoint: %s, Finalized root: %s, Peers: %d",
             nodeSlot.toString(),
             blockRoot,
             nodeEpoch.toString(),
-            finalizedEpoch.toString(),
+            finalizedCheckpoint.toString(),
             shortenHash(finalizedRoot.toHexString()),
             numPeers);
     info(slotEventLog, Color.WHITE);
