@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,7 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -150,7 +150,8 @@ public class TekuNode extends Node {
     waitFor(
         () ->
             assertThat(fetchChainHead().get().finalized_epoch).isNotEqualTo(startingFinalizedEpoch),
-        9, TimeUnit.MINUTES);
+        9,
+        MINUTES);
   }
 
   public void waitUntilInSyncWith(final TekuNode targetNode) {
@@ -163,7 +164,8 @@ public class TekuNode extends Node {
           assertThat(targetBeaconHead).isPresent();
           assertThat(beaconHead).isEqualTo(targetBeaconHead);
         },
-        5, TimeUnit.MINUTES);
+        5,
+        MINUTES);
   }
 
   private BeaconHead waitForBeaconHead() {
