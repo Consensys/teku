@@ -142,6 +142,7 @@ public class Constants {
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
   public static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   public static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
+  public static final int ATTESTATION_RETENTION_EPOCHS = 2;
 
   // Teku Validator Client Specific
   public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec

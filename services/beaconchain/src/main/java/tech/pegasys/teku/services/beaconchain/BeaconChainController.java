@@ -278,7 +278,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             depositProvider,
             eth1DataCache);
-    final AttestationTopicSubscriber attestationTopicSubscriptions =
+    final AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(p2pNetwork);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
@@ -287,10 +287,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             stateTransition,
             blockFactory,
             attestationPool,
-            attestationTopicSubscriptions,
+            attestationTopicSubscriber,
             eventBus);
     eventChannels
-        .subscribe(SlotEventsChannel.class, attestationTopicSubscriptions)
+        .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(ValidatorApiChannel.class, validatorApiHandler);
   }
 
@@ -379,6 +379,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool = new AggregatingAttestationPool();
+    eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
   }
 
   public void initRestAPI() {
@@ -513,6 +514,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.forkChoice.processHead();
     EVENT_LOG.syncEvent(
         nodeSlot.getValue(), recentChainData.getBestSlot(), p2pNetwork.getPeerCount());
+    slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
     nodeSlot.inc();
   }
 }

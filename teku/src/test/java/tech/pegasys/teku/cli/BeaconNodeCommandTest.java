@@ -28,6 +28,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -182,6 +183,22 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
   }
 
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"Off", "Fatal", "WaRN", "InfO", "DebUG", "trACE", "all"})
+  public void loglevel_shouldAcceptValuesMixedCase(String level) {
+    final String[] args = {"--logging", level};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level.toUpperCase());
+  }
+
+  @Test
+  public void logLevel_shouldRejectInvalidValues() {
+    final String[] args = {"--logging", "invalid"};
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("'invalid' is not a valid log level. Supported values are");
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -275,6 +292,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setMetricsInterface("127.0.0.1")
         .setMetricsCategories(
             Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
+        .setMetricsHostWhitelist(List.of("127.0.0.1", "localhost"))
         .setLogColorEnabled(true)
         .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
