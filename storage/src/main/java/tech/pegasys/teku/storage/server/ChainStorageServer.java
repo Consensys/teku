@@ -44,6 +44,11 @@ public class ChainStorageServer implements StorageUpdateChannel, StorageQueryCha
     return new ChainStorageServer(eventBus, new VersionedDatabaseFactory(config));
   }
 
+  @VisibleForTesting
+  public static ChainStorageServer create(EventBus eventBus, DatabaseFactory dbFactory) {
+    return new ChainStorageServer(eventBus, dbFactory);
+  }
+
   public void start() {
     this.database = databaseFactory.createDatabase();
     eventBus.register(this);
