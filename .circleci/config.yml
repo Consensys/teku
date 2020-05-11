@@ -36,6 +36,12 @@ executors:
       JAVA_TOOL_OPTIONS: -Xmx3g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
+  machine_executor:
+    machine:
+      image: ubuntu-1604:201903-01 #Ubuntu 16.04, docker 18.09.3, docker-compose 1.23.1
+      docker_layer_caching: true
+    working_directory: ~/project
+
 commands:
   prepare:
     description: "Prepare"
@@ -47,6 +53,16 @@ commands:
             - deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
             - deps-{{ checksum "build.gradle" }}
             - deps-
+  install_java:
+    description: "Install Java"
+    steps:
+      - run:
+          name: Install Packages - Java 11
+          command: |
+            sudo add-apt-repository -y ppa:openjdk-r/ppa
+            sudo apt update
+            sudo apt install -y openjdk-11-jdk
+            sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
   capture_test_results:
     description: "Capture test results"
     steps:
@@ -139,13 +155,12 @@ jobs:
 
   acceptanceTests:
     parallelism: 1
-    executor: large_executor
+    executor: machine_executor
     steps:
       - prepare
       - attach_workspace:
           at: ~/project
-      - setup_remote_docker:
-          docker_layer_caching: true
+      - install_java
       - run:
           name: AcceptanceTests
           command: |
@@ -199,11 +214,12 @@ jobs:
       - capture_test_results
 
   compatibilityTests:
-    executor: large_executor
+    executor: machine_executor
     steps:
       - prepare
       - attach_workspace:
           at: ~/project
+      - install_java
       - run:
           name: CompatibilityTests
           no_output_timeout: 20m
