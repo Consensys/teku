@@ -65,7 +65,9 @@ public class GetCommittees extends AbstractHandler implements Handler {
       },
       description = "Returns committee assignments for each slot in a specified epoch.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Committee.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = Committee.class, isArray = true)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Missing a query parameter"),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
