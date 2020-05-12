@@ -37,7 +37,6 @@ import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.cli.deposit.DepositGenerateCommand.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.deposit.DepositGenerateCommand.WithdrawalPasswordOptions;
-import tech.pegasys.teku.services.powchain.DepositTransactionSender;
 
 class DepositGenerateCommandTest {
   private static final int VALIDATORS_COUNT = 2;
@@ -57,15 +56,14 @@ class DepositGenerateCommandTest {
     commonParams = mock(CommonParams.class);
     commandSpec = mock(CommandSpec.class);
     final CommandLine commandLine = mock(CommandLine.class);
-    final DepositTransactionSender depositTransactionSender = mock(DepositTransactionSender.class);
+    final RegisterAction registerAction = mock(RegisterAction.class);
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
     when(consoleAdapter.isConsoleAvailable()).thenReturn(true);
     when(consoleAdapter.readPassword(anyString(), any()))
         .thenReturn(EXPECTED_PASSWORD.toCharArray());
-    when(commonParams.createTransactionSender()).thenReturn(depositTransactionSender);
-    when(depositTransactionSender.sendDepositTransaction(any(), any(), any()))
-        .thenReturn(completedFuture(null));
+    when(commonParams.createRegisterAction()).thenReturn(registerAction);
+    when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
   @Test
@@ -197,8 +195,8 @@ class DepositGenerateCommandTest {
     assertThat(subDirectories).hasSize(VALIDATORS_COUNT);
     Arrays.stream(subDirectories).forEach(file -> assertThat(file).isDirectory());
 
-    for (int i = 0; i < subDirectories.length; i++) {
-      assertKeyStoreFilesExist(subDirectories[i].toPath());
+    for (final File subDirectory : subDirectories) {
+      assertKeyStoreFilesExist(subDirectory.toPath());
     }
   }
 
