@@ -22,11 +22,11 @@ dependencies {
 
   testImplementation testFixtures(project(':storage'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':data:metrics'))
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
-  implementation 'org.hyperledger.besu:plugin-api'
 }

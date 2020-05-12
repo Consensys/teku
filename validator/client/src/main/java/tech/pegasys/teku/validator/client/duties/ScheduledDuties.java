@@ -109,4 +109,10 @@ public class ScheduledDuties {
       final NavigableMap<UnsignedLong, ? extends Duty> duties, final UnsignedLong slot) {
     duties.subMap(UnsignedLong.ZERO, slot).clear();
   }
+
+  public int countDuties() {
+    return blockProductionDuties.size()
+        + attestationProductionDuties.size()
+        + aggregationDuties.size();
+  }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Map;
 import java.util.Random;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
+import tech.pegasys.teku.validator.client.metrics.MetricRecordingValidatorApiChannel;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
@@ -43,14 +45,17 @@ public class ValidatorClientService extends Service {
     final Map<BLSPublicKey, Validator> validators =
         ValidatorLoader.initializeValidators(config.getConfig());
     final EventChannels eventChannels = config.getEventChannels();
+    final MetricsSystem metricsSystem = config.getMetricsSystem();
     final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
     final ValidatorApiChannel validatorApiChannel =
-        config.getEventChannels().getPublisher(ValidatorApiChannel.class);
+        new MetricRecordingValidatorApiChannel(
+            metricsSystem, config.getEventChannels().getPublisher(ValidatorApiChannel.class));
     final RetryingDutyLoader dutyLoader =
-        createDutyLoader(validatorApiChannel, asyncRunner, validators);
+        createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =
         new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
-    final DutyScheduler dutyScheduler = new DutyScheduler(dutyLoader, stableSubnetSubscriber);
+    final DutyScheduler dutyScheduler =
+        new DutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 
@@ -58,6 +63,7 @@ public class ValidatorClientService extends Service {
   }
 
   private static RetryingDutyLoader createDutyLoader(
+      final MetricsSystem metricsSystem,
       final ValidatorApiChannel validatorApiChannel,
       final AsyncRunner asyncRunner,
       final Map<BLSPublicKey, Validator> validators) {
@@ -67,6 +73,7 @@ public class ValidatorClientService extends Service {
     return new RetryingDutyLoader(
         asyncRunner,
         new ValidatorApiDutyLoader(
+            metricsSystem,
             validatorApiChannel,
             forkProvider,
             () -> new ScheduledDuties(validatorDutyFactory),
