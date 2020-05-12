@@ -26,7 +26,7 @@ import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 public class StubMetricsSystem implements MetricsSystem {
 
   private Map<MetricCategory, Map<String, StubCounter>> counters = new ConcurrentHashMap<>();
-  private Map<MetricCategory, Map<String, StubGauge>> guages = new ConcurrentHashMap<>();
+  private Map<MetricCategory, Map<String, StubGauge>> gauges = new ConcurrentHashMap<>();
 
   @Override
   public LabelledMetric<Counter> createLabelledCounter(
@@ -47,7 +47,7 @@ public class StubMetricsSystem implements MetricsSystem {
       final DoubleSupplier valueSupplier) {
     final StubGauge guage = new StubGauge(category, name, help, valueSupplier);
     final Map<String, StubGauge> gaugesInCategory =
-        guages.computeIfAbsent(category, key -> new ConcurrentHashMap<>());
+        gauges.computeIfAbsent(category, key -> new ConcurrentHashMap<>());
 
     if (gaugesInCategory.putIfAbsent(name, guage) != null) {
       throw new IllegalArgumentException("Attempting to create two gauges with the same name");
@@ -64,7 +64,7 @@ public class StubMetricsSystem implements MetricsSystem {
   }
 
   public StubGauge getGauge(final MetricCategory category, final String name) {
-    return Optional.ofNullable(guages.get(category))
+    return Optional.ofNullable(gauges.get(category))
         .map(categoryGauges -> categoryGauges.get(name))
         .orElseThrow(() -> new IllegalArgumentException("Unknown guage: " + category + " " + name));
   }

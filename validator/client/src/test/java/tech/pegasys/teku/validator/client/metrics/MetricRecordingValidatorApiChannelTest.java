@@ -151,7 +151,7 @@ class MetricRecordingValidatorApiChannelTest {
             ValidatorApiChannel::getForkInfo,
             MetricRecordingValidatorApiChannel.FORK_REQUESTS_COUNTER_NAME,
             dataStructureUtil.randomForkInfo()),
-        MetricRecordingValidatorApiChannelTest.requestDataTest(
+        requestDataTest(
             "getDuties",
             channel -> channel.getDuties(slot, Collections.emptyList()),
             MetricRecordingValidatorApiChannel.DUTIES_REQUESTS_COUNTER_NAME,
