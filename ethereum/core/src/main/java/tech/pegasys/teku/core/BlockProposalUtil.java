@@ -22,8 +22,10 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
@@ -42,17 +44,24 @@ public class BlockProposalUtil {
       final BeaconState preState,
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
+      final Bytes32 graffiti,
       final SSZList<Attestation> attestations,
-      final SSZList<ProposerSlashing> slashings,
-      final SSZList<Deposit> deposits)
+      final SSZList<ProposerSlashing> proposerSlashings,
+      final SSZList<AttesterSlashing> attesterSlashings,
+      final SSZList<Deposit> deposits,
+      final SSZList<SignedVoluntaryExit> voluntaryExits)
       throws StateTransitionException {
     // Create block body
-    BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
-    beaconBlockBody.setEth1_data(eth1Data);
-    beaconBlockBody.setDeposits(deposits);
-    beaconBlockBody.setAttestations(attestations);
-    beaconBlockBody.setProposer_slashings(slashings);
-    beaconBlockBody.setRandao_reveal(randaoReveal);
+    BeaconBlockBody beaconBlockBody =
+        new BeaconBlockBody(
+            randaoReveal,
+            eth1Data,
+            graffiti,
+            proposerSlashings,
+            attesterSlashings,
+            attestations,
+            deposits,
+            voluntaryExits);
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
