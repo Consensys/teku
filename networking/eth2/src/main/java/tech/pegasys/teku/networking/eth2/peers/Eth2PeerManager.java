@@ -42,6 +42,7 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
@@ -57,7 +58,9 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   private final BeaconChainMethods rpcMethods;
   private final PeerValidatorFactory peerValidatorFactory;
+
   private final Duration eth2RpcPingInterval;
+  private final Duration eth2StatusUpdateInterval;
 
   Eth2PeerManager(
       final AsyncRunner asyncRunner,
@@ -67,7 +70,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final PeerValidatorFactory peerValidatorFactory,
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding,
-      Duration eth2RpcPingInterval) {
+      Duration eth2RpcPingInterval,
+      Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
     metadataMessagesFactory = new MetadataMessagesFactory();
@@ -84,6 +88,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             metadataMessagesFactory,
             rpcEncoding);
     this.eth2RpcPingInterval = eth2RpcPingInterval;
+    this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
   }
 
   public static Eth2PeerManager create(
@@ -93,7 +98,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final MetricsSystem metricsSystem,
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding,
-      Duration eth2RpcPingInterval) {
+      Duration eth2RpcPingInterval,
+      Duration eth2StatusUpdateInterval) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
             PeerChainValidator.create(storageClient, historicalChainData, peer, status);
@@ -105,7 +111,49 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         peerValidatorFactory,
         attestationSubnetService,
         rpcEncoding,
-        eth2RpcPingInterval);
+        eth2RpcPingInterval,
+        eth2StatusUpdateInterval);
+  }
+
+  private void setUpPeriodicTasksForPeer(Eth2Peer peer) {
+    SafeFuture<Void> periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
+    SafeFuture<Void> periodicPingTask = periodicallyPingPeer(peer);
+    peer.subscribeDisconnect(() -> periodicStatusUpdateTask.cancel(false));
+    peer.subscribeDisconnect(() -> periodicPingTask.cancel(false));
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  SafeFuture<Void> periodicallyUpdatePeerStatus(Eth2Peer peer) {
+    return asyncRunner
+        .runWithFixedDelay(
+            peer::sendStatus,
+            eth2StatusUpdateInterval.getSeconds(),
+            TimeUnit.SECONDS,
+            (err) -> LOG.debug("Exception updating peer status.", err))
+        .exceptionallyCompose(
+            (err) -> {
+              LOG.warn("Retrying setting up periodic update of peer status.", err);
+              return asyncRunner
+                  .getDelayedFuture(Constants.NETWORKING_FAILURE_REPEAT_INTERVAL, TimeUnit.SECONDS)
+                  .thenCompose(__ -> periodicallyUpdatePeerStatus(peer));
+            });
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  SafeFuture<Void> periodicallyPingPeer(Eth2Peer peer) {
+    return asyncRunner
+        .runWithFixedDelay(
+            peer::sendPing,
+            eth2RpcPingInterval.toMillis(),
+            TimeUnit.MILLISECONDS,
+            err -> LOG.debug("Exception executing ping", err))
+        .exceptionallyCompose(
+            (err) -> {
+              LOG.warn("Retrying setting up periodic update of ping.", err);
+              return asyncRunner
+                  .getDelayedFuture(Constants.NETWORKING_FAILURE_REPEAT_INTERVAL, TimeUnit.SECONDS)
+                  .thenCompose(__ -> periodicallyPingPeer(peer));
+            });
   }
 
   @Override
@@ -132,6 +180,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                   .defaultCatch(
                       err -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err)));
     }
+
     eth2Peer.subscribeInitialStatus(
         (status) ->
             peerValidatorFactory
@@ -141,18 +190,9 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     peerIsValid -> {
                       if (peerIsValid) {
                         connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
+                        setUpPeriodicTasksForPeer(eth2Peer);
                       }
                     }));
-
-    // the returned future never completes (until cancelled explicitly)
-    @SuppressWarnings("FutureReturnValueIgnored")
-    SafeFuture<Void> pingTask =
-        asyncRunner.runWithFixedDelay(
-            eth2Peer::sendPing,
-            eth2RpcPingInterval.toMillis(),
-            TimeUnit.MILLISECONDS,
-            t -> LOG.debug("Exception executing ping", t));
-    peer.subscribeDisconnect(() -> pingTask.cancel(false));
   }
 
   private UnsignedLong convertToEth2DisconnectReason(final DisconnectReason reason) {

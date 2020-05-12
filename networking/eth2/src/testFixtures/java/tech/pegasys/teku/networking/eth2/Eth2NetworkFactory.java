@@ -86,6 +86,7 @@ public class Eth2NetworkFactory {
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     protected Duration eth2RpcPingInterval;
+    protected Duration eth2StatusUpdateInterval;
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -134,7 +135,8 @@ public class Eth2NetworkFactory {
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 rpcEncoding,
-                eth2RpcPingInterval);
+                eth2RpcPingInterval,
+                eth2StatusUpdateInterval);
         final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
@@ -246,6 +248,12 @@ public class Eth2NetworkFactory {
     public Eth2P2PNetworkBuilder eth2RpcPingInterval(Duration eth2RpcPingInterval) {
       checkNotNull(eth2RpcPingInterval);
       this.eth2RpcPingInterval = eth2RpcPingInterval;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder eth2StatusUpdateInterval(Duration eth2StatusUpdateInterval) {
+      checkNotNull(eth2StatusUpdateInterval);
+      this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
       return this;
     }
   }

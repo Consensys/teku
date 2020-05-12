@@ -39,6 +39,7 @@ import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2NetworkBuilder {
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
+  public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
 
   private NetworkConfig config;
   private Eth2Config eth2Config;
@@ -51,6 +52,7 @@ public class Eth2NetworkBuilder {
   private TimeProvider timeProvider;
   private AsyncRunner asyncRunner;
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
+  private Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
 
   private Eth2NetworkBuilder() {}
 
@@ -73,7 +75,8 @@ public class Eth2NetworkBuilder {
             metricsSystem,
             attestationSubnetService,
             rpcEncoding,
-            eth2RpcPingInterval);
+            eth2RpcPingInterval,
+            eth2StatusUpdateInterval);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
