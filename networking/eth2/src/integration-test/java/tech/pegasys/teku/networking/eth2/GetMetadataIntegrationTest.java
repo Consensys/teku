@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,20 +49,12 @@ public class GetMetadataIntegrationTest {
 
     assertThat(md1.getSeqNumber()).isEqualTo(md2.getSeqNumber());
     assertThat(md1.getAttnets().getSize()).isEqualTo(Constants.ATTESTATION_SUBNET_COUNT);
-    assertThat(
-            IntStream.range(0, Constants.ATTESTATION_SUBNET_COUNT)
-                .map(i -> md1.getAttnets().getBit(i) ? 1 : 0)
-                .sum())
-        .isEqualTo(0);
+    assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
     network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
 
     MetadataMessage md3 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
     assertThat(md3.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
-    assertThat(
-            IntStream.range(0, Constants.ATTESTATION_SUBNET_COUNT)
-                .map(i -> md3.getAttnets().getBit(i) ? 1 : 0)
-                .sum())
-        .isEqualTo(3);
+    assertThat(md3.getAttnets().getBitCount()).isEqualTo(3);
     assertThat(md3.getAttnets().getBit(0)).isTrue();
     assertThat(md3.getAttnets().getBit(1)).isTrue();
     assertThat(md3.getAttnets().getBit(8)).isTrue();
