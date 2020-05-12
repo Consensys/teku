@@ -20,6 +20,7 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Validat
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -172,7 +174,7 @@ class AttestationValidatorTest {
   }
 
   @Test
-  public void shouldRejectAttestationForSameValidatorAndSlot() throws Exception {
+  public void shouldRejectAttestationForSameValidatorAndTargetEpoch() throws Exception {
     final BeaconBlockAndState genesis = recentChainData.getBestBlockAndState().orElseThrow();
     beaconChainUtil.createAndImportBlockAtSlot(ONE);
 
@@ -188,7 +190,8 @@ class AttestationValidatorTest {
             .orElseThrow();
 
     // Sanity check
-    assertThat(attestation1.getData().getSlot()).isEqualTo(attestation2.getData().getSlot());
+    assertThat(attestation1.getData().getTarget().getEpoch())
+        .isEqualTo(attestation2.getData().getTarget().getEpoch());
     assertThat(attestation1.getAggregation_bits()).isEqualTo(attestation2.getAggregation_bits());
 
     assertThat(validate(attestation1)).isEqualTo(VALID);
@@ -196,9 +199,10 @@ class AttestationValidatorTest {
   }
 
   @Test
-  public void shouldAcceptAttestationForSameValidatorButDifferentSlot() throws Exception {
+  public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() throws Exception {
     final BeaconBlockAndState genesis = recentChainData.getBestBlockAndState().orElseThrow();
-    beaconChainUtil.createAndImportBlockAtSlot(ONE);
+    final SignedBeaconBlock nextEpochBlock =
+        beaconChainUtil.createAndImportBlockAtSlot(UnsignedLong.valueOf(SLOTS_PER_EPOCH + 1));
 
     // Slot 0 attestation
     final Attestation attestation1 = attestationGenerator.validAttestation(genesis);
@@ -206,13 +210,15 @@ class AttestationValidatorTest {
     // Slot 1 attestation from the same validator
     final Attestation attestation2 =
         attestationGenerator
-            .streamAttestations(genesis, ONE)
+            .streamAttestations(
+                recentChainData.getBestBlockAndState().orElseThrow(), nextEpochBlock.getSlot())
             .filter(attestation -> hasSameValidators(attestation1, attestation))
             .findFirst()
             .orElseThrow();
 
     // Sanity check
-    assertThat(attestation1.getData().getSlot()).isNotEqualTo(attestation2.getData().getSlot());
+    assertThat(attestation1.getData().getTarget().getEpoch())
+        .isNotEqualTo(attestation2.getData().getTarget().getEpoch());
     assertThat(attestation1.getAggregation_bits()).isEqualTo(attestation2.getAggregation_bits());
 
     assertThat(validate(attestation1)).isEqualTo(VALID);
