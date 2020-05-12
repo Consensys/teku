@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.eventbus.EventBus;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -32,10 +33,12 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2NetworkBuilder {
+  public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
 
   private NetworkConfig config;
   private Eth2Config eth2Config;
@@ -46,6 +49,8 @@ public class Eth2NetworkBuilder {
   private List<RpcMethod> rpcMethods = new ArrayList<>();
   private List<PeerHandler> peerHandlers = new ArrayList<>();
   private TimeProvider timeProvider;
+  private AsyncRunner asyncRunner;
+  private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
 
   private Eth2NetworkBuilder() {}
 
@@ -62,11 +67,13 @@ public class Eth2NetworkBuilder {
         eth2Config.isSnappyCompressionEnabled() ? RpcEncoding.SSZ_SNAPPY : RpcEncoding.SSZ;
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
+            asyncRunner,
             recentChainData,
             historicalChainData,
             metricsSystem,
             attestationSubnetService,
-            rpcEncoding);
+            rpcEncoding,
+            eth2RpcPingInterval);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -157,6 +164,18 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder peerHandler(final PeerHandler peerHandler) {
     checkNotNull(peerHandler);
     peerHandlers.add(peerHandler);
+    return this;
+  }
+
+  public Eth2NetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+    checkNotNull(asyncRunner);
+    this.asyncRunner = asyncRunner;
+    return this;
+  }
+
+  public Eth2NetworkBuilder eth2RpcPingInterval(Duration eth2RpcPingInterval) {
+    checkNotNull(eth2RpcPingInterval);
+    this.eth2RpcPingInterval = eth2RpcPingInterval;
     return this;
   }
 }

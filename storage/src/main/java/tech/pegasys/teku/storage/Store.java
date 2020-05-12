@@ -160,6 +160,16 @@ public class Store implements ReadOnlyStore {
   }
 
   @Override
+  public UnsignedLong getLatestFinalizedBlockSlot() {
+    readLock.lock();
+    try {
+      return blocks.get(finalized_checkpoint.getRoot()).getSlot();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public Checkpoint getBestJustifiedCheckpoint() {
     readLock.lock();
     try {
@@ -407,6 +417,11 @@ public class Store implements ReadOnlyStore {
     @Override
     public Checkpoint getFinalizedCheckpoint() {
       return finalized_checkpoint.orElseGet(Store.this::getFinalizedCheckpoint);
+    }
+
+    @Override
+    public UnsignedLong getLatestFinalizedBlockSlot() {
+      return getBlock(getFinalizedCheckpoint().getRoot()).getSlot();
     }
 
     @Override
