@@ -355,6 +355,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
+              .asyncRunner(asyncRunner)
               .build();
     }
   }

@@ -23,17 +23,22 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
+import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class Eth2PeerManagerTest {
 
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();;;
   private final PeerStatusFactory statusFactory = PeerStatusFactory.create(1L);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -47,12 +52,14 @@ public class Eth2PeerManagerTest {
   private final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(
+          asyncRunner,
           combinedChainDataClient,
           storageClient,
           new NoOpMetricsSystem(),
           peerValidatorFactory,
           new AttestationSubnetService(),
-          rpcEncoding);
+          rpcEncoding,
+          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL);
 
   @BeforeEach
   public void setup() {
@@ -164,7 +171,11 @@ public class Eth2PeerManagerTest {
 
   private Eth2Peer createEth2Peer(final Peer peer) {
     final Eth2Peer eth2Peer =
-        new Eth2Peer(peer, peerManager.getBeaconChainMethods(), statusMessageFactory);
+        new Eth2Peer(
+            peer,
+            peerManager.getBeaconChainMethods(),
+            statusMessageFactory,
+            new MetadataMessagesFactory());
     when(peer.idMatches(eth2Peer)).thenReturn(true);
     return eth2Peer;
   }
