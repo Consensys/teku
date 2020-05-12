@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -223,6 +224,13 @@ class RecentChainDataTest {
   }
 
   @Test
+  public void getStateInEffectAtSlot_returnHeadState() throws Exception {
+    final SignedBlockAndState bestBlock = addNewBestBlock(storageClient);
+    assertThat(storageClient.getStateInEffectAtSlot(bestBlock.getSlot()))
+        .contains(bestBlock.getState());
+  }
+
+  @Test
   public void isIncludedInBestState_falseWhenNoStoreSet() {
     assertThat(preGenesisStorageClient.isIncludedInBestState(genesisBlockRoot)).isFalse();
   }
@@ -409,6 +417,35 @@ class RecentChainDataTest {
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     verify(reorgEventChannel)
         .reorgOccurred(latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
+  }
+
+  @Test
+  public void getLatestFinalizedBlockSlot_genesis() {
+    assertThat(storageClient.getStore().getLatestFinalizedBlockSlot()).isEqualTo(genesis.getSlot());
+  }
+
+  @Test
+  public void getLatestFinalizedBlockSlot_postGenesisFinalizedBlockOutsideOfEpochBoundary()
+      throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
+    final UnsignedLong epochBoundarySlot = compute_start_slot_at_epoch(epoch);
+    final UnsignedLong finalizedBlockSlot = epochBoundarySlot.minus(UnsignedLong.ONE);
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(finalizedBlockSlot);
+    saveBlock(storageClient, finalizedBlock);
+
+    // Start tx to update finalized checkpoint
+    final Transaction tx = storageClient.startStoreTransaction();
+    // Initially finalized slot should match store
+    assertThat(tx.getLatestFinalizedBlockSlot()).isEqualTo(genesis.getSlot());
+    // Update checkpoint and check finalized slot accessors
+    tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()));
+    assertThat(tx.getLatestFinalizedBlockSlot()).isEqualTo(finalizedBlockSlot);
+    assertThat(storageClient.getStore().getLatestFinalizedBlockSlot()).isEqualTo(genesis.getSlot());
+    // Commit tx
+    tx.commit().reportExceptions();
+
+    assertThat(storageClient.getStore().getLatestFinalizedBlockSlot())
+        .isEqualTo(finalizedBlockSlot);
   }
 
   private void importBlocksAndStates(final ChainBuilder... chainBuilders) {
