@@ -40,7 +40,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
@@ -50,7 +50,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
-    versionProvider = VersionProvider.class,
+    versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
@@ -64,7 +64,7 @@ public class TransitionCommand implements Runnable {
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
       abbreviateSynopsis = true,
-      versionProvider = VersionProvider.class,
+      versionProvider = PicoCliVersionProvider.class,
       synopsisHeading = "%n",
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
@@ -93,7 +93,7 @@ public class TransitionCommand implements Runnable {
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
       abbreviateSynopsis = true,
-      versionProvider = VersionProvider.class,
+      versionProvider = PicoCliVersionProvider.class,
       synopsisHeading = "%n",
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
