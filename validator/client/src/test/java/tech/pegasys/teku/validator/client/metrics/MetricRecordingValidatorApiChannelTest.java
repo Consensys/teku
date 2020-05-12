@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.metrics;
 
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,15 +46,17 @@ class MetricRecordingValidatorApiChannelTest {
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
-  @SuppressWarnings("ReturnValueIgnored")
   public void shouldRecordSuccessfulRequestForData(
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
       final String counterName,
       final Object value) {
-    when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(Optional.of(value)));
+    final Optional<Object> response = Optional.of(value);
+    when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(response));
 
-    method.apply(apiChannel);
+    final SafeFuture<Optional<Object>> result = method.apply(apiChannel);
+
+    assertThat(result).isCompletedWithValue(response);
 
     assertThat(getCounterValue(counterName, RequestOutcome.SUCCESS)).isEqualTo(1);
     assertThat(getCounterValue(counterName, RequestOutcome.ERROR)).isZero();
@@ -62,15 +65,17 @@ class MetricRecordingValidatorApiChannelTest {
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
-  @SuppressWarnings("ReturnValueIgnored")
   public void shouldRecordFailedRequestForData(
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
       final String counterName,
       final Object value) {
-    when(method.apply(delegate)).thenReturn(SafeFuture.failedFuture(new RuntimeException("Nope")));
+    final RuntimeException exception = new RuntimeException("Nope");
+    when(method.apply(delegate)).thenReturn(SafeFuture.failedFuture(exception));
 
-    method.apply(apiChannel);
+    final SafeFuture<Optional<Object>> result = method.apply(apiChannel);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::join).hasRootCause(exception);
 
     assertThat(getCounterValue(counterName, RequestOutcome.ERROR)).isEqualTo(1);
     assertThat(getCounterValue(counterName, RequestOutcome.SUCCESS)).isZero();
@@ -79,7 +84,6 @@ class MetricRecordingValidatorApiChannelTest {
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
-  @SuppressWarnings("ReturnValueIgnored")
   public void shouldRecordRequestForDataWhenDataUnavailable(
       final String name,
       final Function<ValidatorApiChannel, SafeFuture<Optional<Object>>> method,
@@ -87,7 +91,8 @@ class MetricRecordingValidatorApiChannelTest {
       final Object value) {
     when(method.apply(delegate)).thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    method.apply(apiChannel);
+    final SafeFuture<Optional<Object>> result = method.apply(apiChannel);
+    assertThat(result).isCompletedWithValue(Optional.empty());
 
     assertThat(getCounterValue(counterName, RequestOutcome.DATA_UNAVAILABLE)).isEqualTo(1);
     assertThat(getCounterValue(counterName, RequestOutcome.SUCCESS)).isZero();
