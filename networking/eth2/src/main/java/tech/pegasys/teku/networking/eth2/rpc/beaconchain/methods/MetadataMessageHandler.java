@@ -21,16 +21,16 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 
 public class MetadataMessageHandler
     extends PeerRequiredLocalMessageHandler<EmptyMessage, MetadataMessage> {
-  private final MetadataMessageFactory metadataMessageFactory;
+  private final MetadataMessagesFactory metadataMessagesFactory;
 
-  public MetadataMessageHandler(MetadataMessageFactory metadataMessageFactory) {
-    this.metadataMessageFactory = metadataMessageFactory;
+  public MetadataMessageHandler(MetadataMessagesFactory metadataMessagesFactory) {
+    this.metadataMessagesFactory = metadataMessagesFactory;
   }
 
   @Override
   public void onIncomingMessage(
       Eth2Peer peer, EmptyMessage message, ResponseCallback<MetadataMessage> callback) {
-    callback.respond(metadataMessageFactory.createMessage());
+    callback.respond(metadataMessagesFactory.createMetadataMessage());
     callback.completeSuccessfully();
   }
 }

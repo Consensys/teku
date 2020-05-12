@@ -24,12 +24,26 @@ public interface Schema {
 
   static Stream<RocksDbColumn<?, ?>> streamColumns(Class<? extends Schema> schema) {
     return Arrays.stream(schema.getDeclaredFields())
-        .filter(f -> (f.getModifiers() & Modifier.STATIC) > 0)
+        .filter(f -> Modifier.isStatic(f.getModifiers()))
         .filter(f -> f.getType() == RocksDbColumn.class)
         .map(
             f -> {
               try {
                 return (RocksDbColumn<?, ?>) f.get(null);
+              } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+              }
+            });
+  }
+
+  static Stream<RocksDbVariable<?>> streamVariables(Class<? extends Schema> schema) {
+    return Arrays.stream(schema.getDeclaredFields())
+        .filter(f -> Modifier.isStatic(f.getModifiers()))
+        .filter(f -> f.getType() == RocksDbVariable.class)
+        .map(
+            f -> {
+              try {
+                return (RocksDbVariable<?>) f.get(null);
               } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
               }

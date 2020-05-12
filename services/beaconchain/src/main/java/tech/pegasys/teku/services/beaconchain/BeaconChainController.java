@@ -85,6 +85,7 @@ import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.sync.util.NoopSyncService;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
@@ -277,7 +278,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             stateTransition,
             attestationPool,
             depositProvider,
-            eth1DataCache);
+            eth1DataCache,
+            VersionProvider.getDefaultGraffiti());
     final AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(p2pNetwork);
     final ValidatorApiHandler validatorApiHandler =
@@ -355,6 +357,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
+              .asyncRunner(asyncRunner)
               .build();
     }
   }

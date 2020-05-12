@@ -124,4 +124,9 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
       final int maximumResponseChunks) {
     return new Eth2OutgoingRequestHandler<>(asyncRunner, asyncRunner, this, maximumResponseChunks);
   }
+
+  @Override
+  public String toString() {
+    return "Eth2RpcMethod{" + "id='" + methodMultistreamId + '\'' + '}';
+  }
 }

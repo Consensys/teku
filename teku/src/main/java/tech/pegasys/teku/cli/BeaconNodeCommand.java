@@ -52,7 +52,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.cli.LogTypeConverter;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
@@ -72,7 +72,7 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
     abbreviateSynopsis = true,
     description = "Run the Teku beacon chain client and validator",
     mixinStandardHelpOptions = true,
-    versionProvider = VersionProvider.class,
+    versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",

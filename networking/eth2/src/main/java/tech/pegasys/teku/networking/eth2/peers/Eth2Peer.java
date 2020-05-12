@@ -28,9 +28,11 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRoot
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
@@ -39,12 +41,16 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream.ResponseListene
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
+  private final MetadataMessagesFactory metadataMessagesFactory;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
+  private volatile Optional<UnsignedLong> remoteMetadataSeqNumber = Optional.empty();
+  private volatile Optional<Bitvector> remoteAttSubnets = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private AtomicBoolean chainValidated = new AtomicBoolean(false);
   private AtomicInteger outstandingRequests = new AtomicInteger(0);
@@ -52,15 +58,30 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   public Eth2Peer(
       final Peer peer,
       final BeaconChainMethods rpcMethods,
-      final StatusMessageFactory statusMessageFactory) {
+      final StatusMessageFactory statusMessageFactory,
+      final MetadataMessagesFactory metadataMessagesFactory) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
+    this.metadataMessagesFactory = metadataMessagesFactory;
   }
 
   public void updateStatus(final PeerStatus status) {
     remoteStatus = Optional.of(status);
     initialStatus.complete(status);
+  }
+
+  public void updateMetadataSeqNumber(final UnsignedLong seqNumber) {
+    Optional<UnsignedLong> curValue = this.remoteMetadataSeqNumber;
+    remoteMetadataSeqNumber = Optional.of(seqNumber);
+    if (curValue.isEmpty() || seqNumber.compareTo(curValue.get()) > 0) {
+      requestMetadata().finish(this::updateMetadata);
+    }
+  }
+
+  private void updateMetadata(final MetadataMessage metadataMessage) {
+    remoteMetadataSeqNumber = Optional.of(metadataMessage.getSeqNumber());
+    remoteAttSubnets = Optional.of(metadataMessage.getAttnets());
   }
 
   public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
@@ -69,6 +90,10 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public PeerStatus getStatus() {
     return remoteStatus.orElseThrow();
+  }
+
+  public Optional<Bitvector> getRemoteAttestationSubnets() {
+    return remoteAttSubnets;
   }
 
   public UnsignedLong finalizedEpoch() {
@@ -143,6 +168,12 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public SafeFuture<MetadataMessage> requestMetadata() {
     return requestSingleItem(rpcMethods.getMetadata(), new EmptyMessage());
+  }
+
+  public SafeFuture<UnsignedLong> sendPing() {
+    return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
+        .thenApply(PingMessage::getSeqNumber)
+        .thenPeek(this::updateMetadataSeqNumber);
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> sendMessage(

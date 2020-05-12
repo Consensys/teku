@@ -16,7 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static java.lang.Boolean.FALSE;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
@@ -25,7 +25,6 @@ import tech.pegasys.teku.util.Waiter;
 public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final String ENCRYPTED_KEYSTORE_ENABLED = FALSE.toString();
-  private static final UnsignedLong MINIMUM_REQUIRED_GWEI = UnsignedLong.valueOf(32_000_000_000L);
 
   public TekuDepositSender(final Network network) {
     super(network, TekuNode.TEKU_DOCKER_IMAGE, LOG);
@@ -35,10 +34,10 @@ public class TekuDepositSender extends Node {
     container.setCommand(
         "validator",
         "generate",
+        "--network",
+        "minimal",
         "--Xconfirm-enabled",
         "false",
-        "--deposit-amount-gwei",
-        MINIMUM_REQUIRED_GWEI.toString(),
         "--encrypted-keystore-enabled",
         ENCRYPTED_KEYSTORE_ENABLED,
         "--eth1-deposit-contract-address",
@@ -52,7 +51,8 @@ public class TekuDepositSender extends Node {
     final StringBuilder validatorKeys = new StringBuilder();
     container.withLogConsumer(outputFrame -> validatorKeys.append(outputFrame.getUtf8String()));
     container.start();
-    Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse());
+    // Deposit sender waits for up to 2 minutes for all transactions to process
+    Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse(), 2, TimeUnit.MINUTES);
     container.stop();
     return validatorKeys.toString();
   }
