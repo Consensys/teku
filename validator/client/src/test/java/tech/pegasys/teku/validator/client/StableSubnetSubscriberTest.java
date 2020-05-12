@@ -137,7 +137,7 @@ public class StableSubnetSubscriberTest {
     ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
     StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), 1);
 
     stableSubnetSubscriber.onSlot(valueOf(0));
 
@@ -148,8 +148,7 @@ public class StableSubnetSubscriberTest {
 
     verify(validatorApiChannel).subscribeToPersistentSubnets(firstSubscriptionUpdate.capture());
 
-    assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
-    assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
+    assertThat(firstSubscriptionUpdate.getValue()).hasSize(1);
 
     UnsignedLong firstUnsubscriptionSlot =
         firstSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
