@@ -9,7 +9,5 @@ dependencies {
     implementation 'org.hyperledger.besu.internal:metrics-core'
     implementation 'org.hyperledger.besu:plugin-api'
 
-    test {
-        testLogging.showStandardStreams = true
-    }
+    testFixturesImplementation 'org.hyperledger.besu:plugin-api'
 }
