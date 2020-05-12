@@ -35,7 +35,7 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
     name = "register",
@@ -44,7 +44,7 @@ import tech.pegasys.teku.util.cli.VersionProvider;
     mixinStandardHelpOptions = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
-    versionProvider = VersionProvider.class,
+    versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",

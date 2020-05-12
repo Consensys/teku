@@ -17,7 +17,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import tech.pegasys.teku.cli.deposit.DepositGenerateCommand;
 import tech.pegasys.teku.cli.deposit.DepositRegisterCommand;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
     name = "validator",
@@ -26,7 +26,7 @@ import tech.pegasys.teku.util.cli.VersionProvider;
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     subcommands = {DepositGenerateCommand.class, DepositRegisterCommand.class},
-    versionProvider = VersionProvider.class,
+    versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
