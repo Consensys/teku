@@ -32,7 +32,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
-public class RocksDbInstance implements AutoCloseable {
+public class RocksDbInstance implements RocksDbAccessor {
 
   private final TransactionDB db;
   private final ColumnFamilyHandle defaultHandle;
@@ -52,6 +52,7 @@ public class RocksDbInstance implements AutoCloseable {
     this.resources = resources;
   }
 
+  @Override
   public <T> Optional<T> get(RocksDbVariable<T> variable) {
     assertOpen();
     try {
@@ -62,11 +63,13 @@ public class RocksDbInstance implements AutoCloseable {
     }
   }
 
+  @Override
   public <T> T getOrThrow(RocksDbVariable<T> variable) {
     assertOpen();
     return get(variable).orElseThrow();
   }
 
+  @Override
   public <K, V> Optional<V> get(RocksDbColumn<K, V> column, K key) {
     assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -79,20 +82,13 @@ public class RocksDbInstance implements AutoCloseable {
     }
   }
 
+  @Override
   public <K, V> Map<K, V> getAll(RocksDbColumn<K, V> column) {
     assertOpen();
     return stream(column).collect(Collectors.toMap(ColumnEntry::getKey, ColumnEntry::getValue));
   }
 
-  /**
-   * Returns the last entry with a key less than or equal to the given key.
-   *
-   * @param column The column we want to query
-   * @param key The requested key
-   * @param <K> The key type of the column
-   * @param <V> The value type of the column
-   * @return The last entry with a key less than or equal to the given {@code key}
-   */
+  @Override
   public <K, V> Optional<ColumnEntry<K, V>> getFloorEntry(RocksDbColumn<K, V> column, final K key) {
     assertOpen();
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
@@ -102,14 +98,7 @@ public class RocksDbInstance implements AutoCloseable {
     }
   }
 
-  /**
-   * Returns the last entry in the given column.
-   *
-   * @param column The column we want to query
-   * @param <K> The key type of the column
-   * @param <V> The value type of the column
-   * @return The last entry in this column - the entry with the greatest key value
-   */
+  @Override
   public <K, V> Optional<ColumnEntry<K, V>> getLastEntry(RocksDbColumn<K, V> column) {
     assertOpen();
     try (final Stream<ColumnEntry<K, V>> stream =
@@ -118,12 +107,14 @@ public class RocksDbInstance implements AutoCloseable {
     }
   }
 
+  @Override
   public <K, V> Stream<ColumnEntry<K, V>> stream(RocksDbColumn<K, V> column) {
     assertOpen();
     return stream(column, RocksIterator::seekToFirst);
   }
 
-  public Transaction startTransaction() {
+  @Override
+  public RocksDbTransaction startTransaction() {
     assertOpen();
     return new Transaction(db, defaultHandle, columnHandles);
   }
@@ -151,7 +142,7 @@ public class RocksDbInstance implements AutoCloseable {
     }
   }
 
-  public static class Transaction implements AutoCloseable {
+  public static class Transaction implements RocksDbTransaction {
     private final ColumnFamilyHandle defaultHandle;
     private final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles;
     private final org.rocksdb.Transaction rocksDbTx;
@@ -169,6 +160,7 @@ public class RocksDbInstance implements AutoCloseable {
       this.rocksDbTx = db.beginTransaction(writeOptions);
     }
 
+    @Override
     public <T> void put(RocksDbVariable<T> variable, T value) {
       assertOpen();
       final byte[] serialized = variable.getSerializer().serialize(value);
@@ -179,6 +171,7 @@ public class RocksDbInstance implements AutoCloseable {
       }
     }
 
+    @Override
     public <K, V> void put(RocksDbColumn<K, V> column, K key, V value) {
       assertOpen();
       final byte[] keyBytes = column.getKeySerializer().serialize(key);
@@ -191,6 +184,7 @@ public class RocksDbInstance implements AutoCloseable {
       }
     }
 
+    @Override
     public <K, V> void put(RocksDbColumn<K, V> column, Map<K, V> data) {
       assertOpen();
       final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -205,6 +199,7 @@ public class RocksDbInstance implements AutoCloseable {
       }
     }
 
+    @Override
     public <K, V> void delete(RocksDbColumn<K, V> column, K key) {
       assertOpen();
       final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -215,6 +210,7 @@ public class RocksDbInstance implements AutoCloseable {
       }
     }
 
+    @Override
     public void commit() {
       assertOpen();
       try {
@@ -226,6 +222,7 @@ public class RocksDbInstance implements AutoCloseable {
       }
     }
 
+    @Override
     public void rollback() {
       assertOpen();
       try {

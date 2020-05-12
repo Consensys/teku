@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -40,6 +41,11 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
+/**
+ * @deprecated - These tests should probably all be integration tests. See {@link
+ *     AbstractCombinedChainDataClientTest}
+ */
+@Deprecated
 class CombinedChainDataClientTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -52,7 +58,7 @@ class CombinedChainDataClientTest {
   @BeforeEach
   public void setUp() {
     when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(UnsignedLong.ZERO));
   }
 
   @Test
@@ -73,7 +79,7 @@ class CombinedChainDataClientTest {
   public void getBlockAtSlotExact_returnEmptyWhenHeadRootUnknownAndSlotFinalized() {
     final UnsignedLong slot = UnsignedLong.ONE;
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(null);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(10));
 
     assertThat(client.getBlockAtSlotExact(slot, Bytes32.ZERO))
         .isCompletedWithValue(Optional.empty());
@@ -84,7 +90,7 @@ class CombinedChainDataClientTest {
     final UnsignedLong slot = UnsignedLong.ONE;
     final SignedBeaconBlock block = block(slot);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(10));
     when(historicalChainData.getLatestFinalizedBlockAtSlot(slot))
         .thenReturn(completedFuture(Optional.of(block)));
 
@@ -97,7 +103,7 @@ class CombinedChainDataClientTest {
     final UnsignedLong slot = UnsignedLong.ONE;
     final SignedBeaconBlock block = block(UnsignedLong.ZERO);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(10));
     when(historicalChainData.getLatestFinalizedBlockAtSlot(slot))
         .thenReturn(completedFuture(Optional.of(block)));
 
@@ -110,7 +116,7 @@ class CombinedChainDataClientTest {
     final UnsignedLong slot = UnsignedLong.ONE;
     final SignedBeaconBlock block = block(UnsignedLong.ZERO);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(10));
     when(historicalChainData.getLatestFinalizedBlockAtSlot(slot))
         .thenReturn(completedFuture(Optional.of(block)));
 
@@ -264,7 +270,7 @@ class CombinedChainDataClientTest {
     final Exception error = new RuntimeException("Nope");
 
     // Work with finalized data, it's easier to test the logic we're interested in.
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(500));
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(500));
     when(store.getBlockState(headBlockRoot))
         .thenReturn(beaconState(requestedSlot.plus(UnsignedLong.ONE)));
     when(historicalChainData.getLatestFinalizedBlockAtSlot(requestedSlot))
@@ -284,7 +290,7 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot);
 
     // Work with finalized data, it's easier to test the logic we're interested in.
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(500));
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(500));
     when(store.getBlockState(headBlockRoot))
         .thenReturn(beaconState(requestedSlot.plus(UnsignedLong.ONE)));
     when(historicalChainData.getLatestFinalizedBlockAtSlot(requestedSlot))
@@ -307,7 +313,7 @@ class CombinedChainDataClientTest {
     final Exception error = new RuntimeException("Nope");
 
     // Work with finalized data, it's easier to test the logic we're interested in.
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(500));
+    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(500));
     when(store.getBlockState(headBlockRoot))
         .thenReturn(beaconState(requestedSlot.plus(UnsignedLong.ONE)));
     when(historicalChainData.getLatestFinalizedBlockAtSlot(requestedSlot))
@@ -394,21 +400,19 @@ class CombinedChainDataClientTest {
     assertThat(client.getBlockBySlot(slotParam).get()).isNotNull().isEmpty();
   }
 
-  @Test
-  public void getStateAtSlot_shouldUseRecentStoreForGenesisSlotDuringFirstEpoch() {
-    final BeaconState state = dataStructureUtil.randomBeaconState(UnsignedLong.ZERO);
-    final Bytes32 headBlockRoot = state.hash_tree_root();
-    when(store.getBlockState(headBlockRoot)).thenReturn(state);
-
-    assertThat(client.getStateAtSlot(state.getSlot(), headBlockRoot))
-        .isCompletedWithValue(Optional.of(state));
-  }
-
   private SignedBeaconBlock block(final UnsignedLong slot) {
     return dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
   }
 
   private BeaconState beaconState(final UnsignedLong slot) {
     return dataStructureUtil.randomBeaconState(slot);
+  }
+
+  private UnsignedLong slotAtEpoch(final long epoch) {
+    return slotAtEpoch(UnsignedLong.valueOf(epoch));
+  }
+
+  private UnsignedLong slotAtEpoch(final UnsignedLong epoch) {
+    return compute_start_slot_at_epoch(epoch);
   }
 }

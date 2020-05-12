@@ -48,7 +48,7 @@ public interface SSZContainer {
   static List<Field> listFields(Class<?> clazz) {
     List<Field> ret =
         Arrays.stream(clazz.getDeclaredFields())
-            .filter(f -> (f.getModifiers() & Modifier.STATIC) > 0)
+            .filter(f -> Modifier.isStatic(f.getModifiers()))
             .filter(f -> f.getType() == Field.class)
             .map(
                 f -> {

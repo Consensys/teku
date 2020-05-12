@@ -26,7 +26,7 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
-public class VersionedDatabaseFactory {
+public class VersionedDatabaseFactory implements DatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   @VisibleForTesting static final String DB_PATH = "db";
@@ -44,6 +44,7 @@ public class VersionedDatabaseFactory {
     this.stateStorageMode = config.getDataStorageMode();
   }
 
+  @Override
   public Database createDatabase() {
     LOG.info("Data directory set to: {}", dataDirectory.getAbsolutePath());
     validateDataPaths();
