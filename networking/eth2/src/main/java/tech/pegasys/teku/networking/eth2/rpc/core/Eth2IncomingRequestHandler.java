@@ -105,4 +105,9 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   boolean hasRequestBeenReceived() {
     return requestHandled.get();
   }
+
+  @Override
+  public String toString() {
+    return "Eth2IncomingRequestHandler{" + "method=" + method + '}';
+  }
 }

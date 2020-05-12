@@ -105,7 +105,7 @@ class BitlistTest {
 
   @Test
   void countSetBits() {
-    assertThat(create(1, 2, 6, 7, 9).countSetBits()).isEqualTo(5);
+    assertThat(create(1, 2, 6, 7, 9).getBitCount()).isEqualTo(5);
   }
 
   @Test
