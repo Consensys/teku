@@ -185,6 +185,8 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         //  garbage collection rather than immediately copying these bytes
         final Bytes bytes = Bytes.wrapByteBuf(msg);
         outputStream.write(bytes.toArray());
+        // TODO temporary workaround for BC-419
+        outputStream.flush();
       } catch (IOException e) {
         // We should only hit this if the connected input pipe has been closed,
         // which means we're done processing this stream of data

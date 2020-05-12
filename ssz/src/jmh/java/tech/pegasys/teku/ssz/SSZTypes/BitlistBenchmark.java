@@ -58,7 +58,7 @@ public class BitlistBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void countSetBits(Blackhole bh) {
-    bh.consume(MANY_BITS_SET.countSetBits());
+    bh.consume(MANY_BITS_SET.getBitCount());
   }
 
   private static Bitlist createBitlist(final int... setBits) {
