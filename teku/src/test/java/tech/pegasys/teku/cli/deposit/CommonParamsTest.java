@@ -18,11 +18,13 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.web3j.crypto.CipherException;
@@ -32,23 +34,29 @@ import org.web3j.crypto.WalletUtils;
 import org.web3j.utils.Numeric;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
+import tech.pegasys.teku.util.config.Constants;
 
 class CommonParamsTest {
   private static final String ETH1_PRIVATE_KEY =
       "8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63";
   private static final ECKeyPair EXPECTED_EC_KEYPAIR =
       ECKeyPair.create(Numeric.toBigInt(ETH1_PRIVATE_KEY));
+  private static final IntConsumer SHUTDOWN_FUNCTION = status -> {};
   private static final String PASSWORD = "test123";
   private CommandSpec commandSpec = mock(CommandSpec.class);
-  private static final Consumer<Integer> shutdownFunction = status -> {};
   private ConsoleAdapter consoleAdapter = mock(ConsoleAdapter.class);
+
+  @AfterEach
+  public void tearDown() {
+    Constants.setConstants("minimal");
+  }
 
   @Test
   void eth1PrivateKeyReturnsCredential() {
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.eth1PrivateKey = ETH1_PRIVATE_KEY;
     final CommonParams commonParams =
-        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
     final Credentials eth1Credentials = commonParams.getEth1Credentials();
     assertThat(eth1Credentials.getEcKeyPair()).isEqualTo(EXPECTED_EC_KEYPAIR);
   }
@@ -73,7 +81,7 @@ class CommonParamsTest {
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
     final CommonParams commonParams =
-        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
     final Credentials eth1Credentials = commonParams.getEth1Credentials();
     assertThat(eth1Credentials.getEcKeyPair()).isEqualTo(EXPECTED_EC_KEYPAIR);
   }
@@ -89,11 +97,11 @@ class CommonParamsTest {
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
     final CommonParams commonParams =
-        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(() -> commonParams.getEth1Credentials())
+        .isThrownBy(commonParams::getEth1Credentials)
         .withMessage("Error: File not found: " + keystoreOptions.eth1KeystoreFile);
   }
 
@@ -111,11 +119,11 @@ class CommonParamsTest {
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
     final CommonParams commonParams =
-        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(() -> commonParams.getEth1Credentials())
+        .isThrownBy(commonParams::getEth1Credentials)
         .withMessage(
             "Error: Unable to decrypt Eth1 keystore [%s] : Wallet version is not supported",
             keystoreOptions.eth1KeystoreFile);
@@ -134,13 +142,25 @@ class CommonParamsTest {
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
     final CommonParams commonParams =
-        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
-        .isThrownBy(() -> commonParams.getEth1Credentials())
+        .isThrownBy(commonParams::getEth1Credentials)
         .withMessageStartingWith(
             "Error: Unexpected IO Error while reading Eth1 keystore [%s] : Unrecognized token ",
             keystoreOptions.eth1KeystoreFile);
+  }
+
+  @Test
+  public void shouldUseMaxEffectiveBalanceAsDefaultAmount() {
+    Constants.MAX_EFFECTIVE_BALANCE = 12345678;
+    final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
+    eth1PrivateKeyOptions.eth1PrivateKey = ETH1_PRIVATE_KEY;
+    final CommonParams commonParams =
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
+
+    assertThat(commonParams.getAmount())
+        .isEqualTo(UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
   }
 }

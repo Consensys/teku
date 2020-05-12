@@ -53,9 +53,10 @@ public abstract class Node {
     cleanupTemporaryDirectories();
   }
 
-  protected void waitFor(final Waiter.Condition condition, final int timeoutSeconds) {
+  protected void waitFor(
+      final Waiter.Condition condition, final int timeoutAmount, final TimeUnit timeoutUnit) {
     try {
-      Waiter.waitFor(condition, TimeUnit.SECONDS, timeoutSeconds);
+      Waiter.waitFor(condition, timeoutAmount, timeoutUnit);
     } catch (final Throwable t) {
       fail(t.getMessage() + " Logs: " + container.getLogs(), t);
     }
@@ -63,7 +64,7 @@ public abstract class Node {
 
   protected void waitFor(final Waiter.Condition condition) {
     try {
-      Waiter.waitFor(condition);
+      Waiter.waitFor(condition, 1, TimeUnit.MINUTES);
     } catch (final Throwable t) {
       fail(t.getMessage() + " Logs: " + container.getLogs(), t);
     }

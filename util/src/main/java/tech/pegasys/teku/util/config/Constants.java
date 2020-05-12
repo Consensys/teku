@@ -176,7 +176,7 @@ public class Constants {
 
   private static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class, name -> name + ".yaml", "mainnet", "minimal")
+            Constants.class, name -> name + ".yaml", "mainnet", "minimal", "schlesi")
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }
