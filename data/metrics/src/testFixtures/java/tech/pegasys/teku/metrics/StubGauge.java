@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,29 +13,23 @@
 
 package tech.pegasys.teku.metrics;
 
-import java.util.Optional;
+import java.util.function.DoubleSupplier;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-public enum TekuMetricCategory implements MetricCategory {
-  BEACON("beacon"),
-  EVENTBUS("eventbus"),
-  LIBP2P("libp2p"),
-  NETWORK("network"),
-  VALIDATOR("validator");
+public class StubGauge extends StubMetric {
 
-  private final String name;
+  private final DoubleSupplier supplier;
 
-  TekuMetricCategory(final String name) {
-    this.name = name;
+  protected StubGauge(
+      final MetricCategory category,
+      final String name,
+      final String help,
+      final DoubleSupplier supplier) {
+    super(category, name, help);
+    this.supplier = supplier;
   }
 
-  @Override
-  public String getName() {
-    return name;
-  }
-
-  @Override
-  public Optional<String> getApplicationPrefix() {
-    return Optional.empty();
+  public double getValue() {
+    return supplier.getAsDouble();
   }
 }

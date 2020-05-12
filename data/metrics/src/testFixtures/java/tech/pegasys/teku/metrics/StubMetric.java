@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,29 +13,28 @@
 
 package tech.pegasys.teku.metrics;
 
-import java.util.Optional;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-public enum TekuMetricCategory implements MetricCategory {
-  BEACON("beacon"),
-  EVENTBUS("eventbus"),
-  LIBP2P("libp2p"),
-  NETWORK("network"),
-  VALIDATOR("validator");
-
+abstract class StubMetric {
+  private final MetricCategory category;
   private final String name;
+  private final String help;
 
-  TekuMetricCategory(final String name) {
+  protected StubMetric(final MetricCategory category, final String name, final String help) {
+    this.category = category;
     this.name = name;
+    this.help = help;
   }
 
-  @Override
+  public MetricCategory getCategory() {
+    return category;
+  }
+
   public String getName() {
     return name;
   }
 
-  @Override
-  public Optional<String> getApplicationPrefix() {
-    return Optional.empty();
+  public String getHelp() {
+    return help;
   }
 }
