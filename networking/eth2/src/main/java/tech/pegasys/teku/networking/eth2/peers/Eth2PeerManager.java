@@ -116,12 +116,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   @Override
   public void onConnect(final Peer peer) {
     Eth2Peer eth2Peer =
-        new Eth2Peer(
-            peer,
-            rpcMethods,
-            statusMessageFactory,
-            metadataMessagesFactory,
-            eth2RpcOutstandingPingThreshold);
+        new Eth2Peer(peer, rpcMethods, statusMessageFactory, metadataMessagesFactory);
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), eth2Peer) == null;
     if (!wasAdded) {
       LOG.warn("Duplicate peer connection detected. Ignoring peer.");
@@ -158,11 +153,23 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     @SuppressWarnings("FutureReturnValueIgnored")
     SafeFuture<Void> pingTask =
         asyncRunner.runWithFixedDelay(
-            eth2Peer::sendPing,
+            () -> sendPeriodicPing(eth2Peer),
             eth2RpcPingInterval.toMillis(),
             TimeUnit.MILLISECONDS,
             t -> LOG.debug("Exception executing ping", t));
     peer.subscribeDisconnect(() -> pingTask.cancel(false));
+  }
+
+  void sendPeriodicPing(Eth2Peer peer) {
+    if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
+      LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
+      peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+    } else {
+      peer.sendPing()
+          .finish(
+              i -> LOG.trace("Periodic ping returned {} from {}", i, peer.getId()),
+              t -> LOG.debug("Ping request failed for peer {}", peer.getId(), t));
+    }
   }
 
   private UnsignedLong convertToEth2DisconnectReason(final DisconnectReason reason) {

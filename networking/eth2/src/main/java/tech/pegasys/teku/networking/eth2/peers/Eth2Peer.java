@@ -43,7 +43,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream.ResponseListene
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
-import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -60,19 +59,16 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private final AtomicBoolean chainValidated = new AtomicBoolean(false);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger outstandingPings = new AtomicInteger();
-  private final int outstandingPingsThreshold;
 
   public Eth2Peer(
       final Peer peer,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
-      final MetadataMessagesFactory metadataMessagesFactory,
-      final int outstandingPingsThreshold) {
+      final MetadataMessagesFactory metadataMessagesFactory) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
-    this.outstandingPingsThreshold = outstandingPingsThreshold;
   }
 
   public void updateStatus(final PeerStatus status) {
@@ -180,16 +176,15 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<UnsignedLong> sendPing() {
-    if (outstandingPings.getAndIncrement() >= outstandingPingsThreshold) {
-      LOG.debug("Disconnecting the peer {} due to PING timeout.", getId());
-      disconnectImmediately();
-      return SafeFuture.failedFuture(new PeerDisconnectedException());
-    } else {
-      return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
-          .thenApply(PingMessage::getSeqNumber)
-          .thenPeek(__ -> outstandingPings.set(0))
-          .thenPeek(this::updateMetadataSeqNumber);
-    }
+    outstandingPings.getAndIncrement();
+    return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
+        .thenApply(PingMessage::getSeqNumber)
+        .thenPeek(__ -> outstandingPings.set(0))
+        .thenPeek(this::updateMetadataSeqNumber);
+  }
+
+  public int getOutstandingPings() {
+    return outstandingPings.get();
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> sendMessage(
