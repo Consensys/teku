@@ -192,6 +192,9 @@ public class Eth2NetworkFactory {
       if (eth2RpcPingInterval == null) {
         eth2RpcPingInterval = Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;
       }
+      if (eth2StatusUpdateInterval == null) {
+        eth2StatusUpdateInterval = Eth2NetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+      }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
         BeaconChainUtil.create(0, recentChainData).initializeStorage();
