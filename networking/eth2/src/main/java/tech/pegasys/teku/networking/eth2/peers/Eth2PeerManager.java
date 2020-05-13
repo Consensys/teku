@@ -118,20 +118,24 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private void setUpPeriodicTasksForPeer(Eth2Peer peer) {
     SafeFuture<Void> periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
     SafeFuture<Void> periodicPingTask = periodicallyPingPeer(peer);
-    peer.subscribeDisconnect(() -> periodicStatusUpdateTask.cancel(false));
-    peer.subscribeDisconnect(() -> periodicPingTask.cancel(false));
+    peer.subscribeDisconnect(() -> {
+      periodicStatusUpdateTask.cancel(false);
+      periodicPingTask.cancel(false);
+    });
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   SafeFuture<Void> periodicallyUpdatePeerStatus(Eth2Peer peer) {
     return asyncRunner
         .runWithFixedDelay(
-            peer::sendStatus,
+                () -> peer.sendStatus().finish(
+                        () -> LOG.trace("Updated status for peer {}", peer),
+                        err -> LOG.debug("Exception updating status for peer {}", peer, err)
+                ),
             eth2StatusUpdateInterval.getSeconds(),
             TimeUnit.SECONDS,
-            (err) -> LOG.debug("Exception updating peer status.", err))
+            err -> LOG.debug("Exception setting up peer status updates.", err))
         .exceptionallyCompose(
-            (err) -> {
+            err -> {
               LOG.warn("Retrying setting up periodic update of peer status.", err);
               return asyncRunner
                   .getDelayedFuture(Constants.NETWORKING_FAILURE_REPEAT_INTERVAL, TimeUnit.SECONDS)
@@ -139,21 +143,23 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             });
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   SafeFuture<Void> periodicallyPingPeer(Eth2Peer peer) {
     return asyncRunner
-        .runWithFixedDelay(
-            peer::sendPing,
-            eth2RpcPingInterval.toMillis(),
-            TimeUnit.MILLISECONDS,
-            err -> LOG.debug("Exception executing ping", err))
-        .exceptionallyCompose(
-            (err) -> {
-              LOG.warn("Retrying setting up periodic update of ping.", err);
-              return asyncRunner
-                  .getDelayedFuture(Constants.NETWORKING_FAILURE_REPEAT_INTERVAL, TimeUnit.SECONDS)
-                  .thenCompose(__ -> periodicallyPingPeer(peer));
-            });
+            .runWithFixedDelay(
+                    () -> peer.sendPing().finish(
+                            () -> LOG.trace("Pinged peer {}", peer),
+                            err -> LOG.debug("Exception pinging peer {}", peer, err)
+                    ),
+                    eth2RpcPingInterval.toMillis(),
+                    TimeUnit.MILLISECONDS,
+                    err -> LOG.debug("Exception setting up ping", err))
+            .exceptionallyCompose(
+                    err -> {
+                      LOG.warn("Retrying setting up periodic update of ping.", err);
+                      return asyncRunner
+                              .getDelayedFuture(Constants.NETWORKING_FAILURE_REPEAT_INTERVAL, TimeUnit.SECONDS)
+                              .thenCompose(__ -> periodicallyPingPeer(peer));
+                    });
   }
 
   @Override

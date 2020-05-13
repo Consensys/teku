@@ -137,7 +137,7 @@ public class PeerStatusIntegrationTest {
   @MethodSource("getEncodings")
   public void shouldUpdatePeerStatusPeriodically(
       final String encodingName, final RpcEncoding encoding) throws Exception {
-    Duration statusUpdateInterval = Duration.ofSeconds(1);
+    Duration statusUpdateInterval = Duration.ofMillis(100);
     final Eth2Network network1 =
         networkFactory
             .builder()
