@@ -59,7 +59,8 @@ public class Eth2PeerManagerTest {
           peerValidatorFactory,
           new AttestationSubnetService(),
           rpcEncoding,
-          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL);
+          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL,
+          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD);
 
   @BeforeEach
   public void setup() {
@@ -175,7 +176,8 @@ public class Eth2PeerManagerTest {
             peer,
             peerManager.getBeaconChainMethods(),
             statusMessageFactory,
-            new MetadataMessagesFactory());
+            new MetadataMessagesFactory(),
+            Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD);
     when(peer.idMatches(eth2Peer)).thenReturn(true);
     return eth2Peer;
   }
