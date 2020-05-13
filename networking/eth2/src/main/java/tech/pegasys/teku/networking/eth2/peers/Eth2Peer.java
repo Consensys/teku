@@ -20,8 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -47,8 +45,6 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
