@@ -39,6 +39,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.Cancellable;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -116,16 +117,16 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   private void setUpPeriodicTasksForPeer(Eth2Peer peer) {
-    SafeFuture<Void> periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
-    SafeFuture<Void> periodicPingTask = periodicallyPingPeer(peer);
+    Cancellable periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
+    Cancellable periodicPingTask = periodicallyPingPeer(peer);
     peer.subscribeDisconnect(
         () -> {
-          periodicStatusUpdateTask.cancel(false);
-          periodicPingTask.cancel(false);
+          periodicStatusUpdateTask.cancel();
+          periodicPingTask.cancel();
         });
   }
 
-  SafeFuture<Void> periodicallyUpdatePeerStatus(Eth2Peer peer) {
+  Cancellable periodicallyUpdatePeerStatus(Eth2Peer peer) {
     return asyncRunner
         .runWithFixedDelay(
             () ->
@@ -135,17 +136,10 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                         err -> LOG.debug("Exception updating status for peer {}", peer, err)),
             eth2StatusUpdateInterval.getSeconds(),
             TimeUnit.SECONDS,
-            err -> LOG.debug("Exception setting up peer status updates.", err))
-        .exceptionallyCompose(
-            err -> {
-              LOG.warn("Retrying setting up periodic update of peer status.", err);
-              return asyncRunner
-                  .getDelayedFuture(Constants.NETWORKING_FAILURE_REPEAT_INTERVAL, TimeUnit.SECONDS)
-                  .thenCompose(__ -> periodicallyUpdatePeerStatus(peer));
-            });
+            err -> LOG.debug("Exception calling runnable for updating peer status.", err));
   }
 
-  SafeFuture<Void> periodicallyPingPeer(Eth2Peer peer) {
+  Cancellable periodicallyPingPeer(Eth2Peer peer) {
     return asyncRunner
         .runWithFixedDelay(
             () ->
@@ -155,14 +149,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                         err -> LOG.debug("Exception pinging peer {}", peer, err)),
             eth2RpcPingInterval.toMillis(),
             TimeUnit.MILLISECONDS,
-            err -> LOG.debug("Exception setting up ping", err))
-        .exceptionallyCompose(
-            err -> {
-              LOG.warn("Retrying setting up periodic update of ping.", err);
-              return asyncRunner
-                  .getDelayedFuture(Constants.NETWORKING_FAILURE_REPEAT_INTERVAL, TimeUnit.SECONDS)
-                  .thenCompose(__ -> periodicallyPingPeer(peer));
-            });
+            err -> LOG.debug("Exception calling runnable for pinging peer", err));
   }
 
   @Override
