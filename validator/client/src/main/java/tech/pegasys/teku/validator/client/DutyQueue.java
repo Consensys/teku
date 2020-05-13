@@ -29,7 +29,7 @@ class DutyQueue {
   private static final Logger LOG = LogManager.getLogger();
 
   private final SafeFuture<ScheduledDuties> futureDuties;
-  private List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
+  private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
   private Optional<ScheduledDuties> duties = Optional.empty();
 
   DutyQueue(final SafeFuture<ScheduledDuties> futureDuties) {
@@ -53,6 +53,10 @@ class DutyQueue {
 
   public void onAttestationAggregationDue(final UnsignedLong slot) {
     execute(duties -> duties.performAggregation(slot));
+  }
+
+  public int countDuties() {
+    return duties.map(ScheduledDuties::countDuties).orElse(0);
   }
 
   public synchronized void cancel() {

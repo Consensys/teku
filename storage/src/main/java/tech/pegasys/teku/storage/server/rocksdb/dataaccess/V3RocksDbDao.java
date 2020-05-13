@@ -41,21 +41,21 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance.Transaction;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 
 public class V3RocksDbDao implements RocksDbDao {
   private static final Logger LOG = LogManager.getLogger();
 
   // Persistent data
-  private final RocksDbInstance db;
+  private final RocksDbAccessor db;
   // In-memory data
   private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache =
       new ConcurrentSkipListMap<>();
   private final Map<Bytes32, BeaconState> hotStates = new ConcurrentHashMap<>();
 
-  public V3RocksDbDao(final RocksDbInstance db) {
+  public V3RocksDbDao(final RocksDbAccessor db) {
     this.db = db;
     initialize();
   }
@@ -218,7 +218,7 @@ public class V3RocksDbDao implements RocksDbDao {
           hotStates.size(),
           hotBlocksByRoot.size());
 
-      Transaction transaction = db.startTransaction();
+      RocksDbTransaction transaction = db.startTransaction();
       hotBlocksByRoot.keySet().stream()
           .filter(signedBeaconBlock -> !hotStates.containsKey(signedBeaconBlock))
           .forEach(blockRoot -> transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot));
@@ -243,7 +243,7 @@ public class V3RocksDbDao implements RocksDbDao {
 
   private static class V3Updater implements Updater {
 
-    private final Transaction transaction;
+    private final RocksDbTransaction transaction;
     private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache;
     private final Map<Bytes32, BeaconState> hotStates;
 
@@ -257,7 +257,7 @@ public class V3RocksDbDao implements RocksDbDao {
     private final Set<Bytes32> deletedStates = new HashSet<>();
 
     V3Updater(
-        final RocksDbInstance db,
+        final RocksDbAccessor db,
         final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache,
         final Map<Bytes32, BeaconState> hotStates) {
       this.transaction = db.startTransaction();

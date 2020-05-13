@@ -20,9 +20,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
@@ -36,6 +38,7 @@ class ValidatorApiDutyLoader implements DutyLoader {
   private final Map<BLSPublicKey, Validator> validators;
 
   ValidatorApiDutyLoader(
+      final MetricsSystem metricsSystem,
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
       final Supplier<ScheduledDuties> scheduledDutiesFactory,
@@ -44,6 +47,11 @@ class ValidatorApiDutyLoader implements DutyLoader {
     this.forkProvider = forkProvider;
     this.scheduledDutiesFactory = scheduledDutiesFactory;
     this.validators = validators;
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.VALIDATOR,
+        "local_validator_count",
+        "Current number of valdiators running in this validator client",
+        this.validators::size);
   }
 
   @Override

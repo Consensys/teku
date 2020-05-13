@@ -40,7 +40,7 @@ import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.crypto.SecureRandomProvider;
 
 @Command(
@@ -50,7 +50,7 @@ import tech.pegasys.teku.util.crypto.SecureRandomProvider;
     mixinStandardHelpOptions = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
-    versionProvider = VersionProvider.class,
+    versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
