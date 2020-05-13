@@ -14,7 +14,6 @@
 package tech.pegasys.teku.util.async;
 
 import com.google.common.base.Preconditions;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -42,34 +41,13 @@ public interface AsyncRunner {
   /**
    * Schedules the recurrent task which will be repeatedly executed with the specified delay.
    *
-   * <p>The returned {@code Future} can be used to cancel the task. Note that {@link
-   * SafeFuture#cancel(boolean)} doesn't interrupt already running task. When cancelled the returned
-   * Future will immediately be exceptionally completed with {@link
-   * java.util.concurrent.CancellationException}
-   *
-   * <p>If the {@code runnable} throws exception at any iteration then the returned Future would be
-   * completed exceptionally and the task will not be executed any more
-   */
-  default SafeFuture<Void> runWithFixedDelay(
-      ExceptionThrowingRunnable runnable, long delayAmount, TimeUnit delayUnit) {
-
-    SafeFuture<Void> task = new SafeFuture<>();
-    FutureUtil.runWithFixedDelay(this, runnable, task, delayAmount, delayUnit, Optional.empty());
-    return task;
-  }
-
-  /**
-   * Schedules the recurrent task which will be repeatedly executed with the specified delay.
-   *
-   * <p>The returned {@code Future} can be used to cancel the task. Note that {@link
-   * SafeFuture#cancel(boolean)} doesn't interrupt already running task. When cancelled the returned
-   * Future will immediately be exceptionally completed with {@link
-   * java.util.concurrent.CancellationException}
+   * <p>The returned instance can be used to cancel the task. Note that {@link Cancellable#cancel()}
+   * doesn't interrupt already running task.
    *
    * <p>Whenever the {@code runnable} throws exception it is notified to the {@code
    * exceptionHandler} and the task recurring executions are not interrupted
    */
-  default SafeFuture<Void> runWithFixedDelay(
+  default Cancellable runWithFixedDelay(
       ExceptionThrowingRunnable runnable,
       long delayAmount,
       TimeUnit delayUnit,
@@ -77,9 +55,9 @@ public interface AsyncRunner {
 
     Preconditions.checkNotNull(exceptionHandler);
 
-    SafeFuture<Void> task = new SafeFuture<>();
+    Cancellable cancellable = FutureUtil.createCancellable();
     FutureUtil.runWithFixedDelay(
-        this, runnable, task, delayAmount, delayUnit, Optional.of(exceptionHandler));
-    return task;
+        this, runnable, cancellable, delayAmount, delayUnit, exceptionHandler);
+    return cancellable;
   }
 }
