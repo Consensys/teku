@@ -448,6 +448,64 @@ class RecentChainDataTest {
         .isEqualTo(finalizedBlockSlot);
   }
 
+  @Test
+  public void getBlockAndState_withBlockAndStateAvailable() throws Exception {
+    final SignedBlockAndState block = advanceChain(storageClient);
+    assertThat(storageClient.getStore().getBlockAndState(block.getRoot())).contains(block);
+  }
+
+  @Test
+  public void getBlockAndState_withBlockUnavailable() throws Exception {
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+    saveState(storageClient, block.getRoot(), block.getState());
+    assertThat(storageClient.getStore().getBlockAndState(block.getRoot())).isEmpty();
+  }
+
+  @Test
+  public void getBlockAndState_withStateUnavailable() throws Exception {
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+    saveBlock(storageClient, block.getBlock());
+    assertThat(storageClient.getStore().getBlockAndState(block.getRoot())).isEmpty();
+  }
+
+  @Test
+  public void getBlockAndState_withinTxFromUnderlyingStore() throws Exception {
+    final SignedBlockAndState block = advanceChain(storageClient);
+    final Transaction tx = storageClient.startStoreTransaction();
+    assertThat(tx.getBlockAndState(block.getRoot())).contains(block);
+  }
+
+  @Test
+  public void getBlockAndState_withinTxFromUpdates() throws Exception {
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+
+    final Transaction tx = storageClient.startStoreTransaction();
+    tx.putBlock(block.getRoot(), block.getBlock());
+    tx.putBlockState(block.getRoot(), block.getState());
+
+    assertThat(tx.getBlockAndState(block.getRoot())).contains(block);
+  }
+
+  @Test
+  public void getBlockAndState_withinTxFromUpdatesWithMissingBlock() throws Exception {
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+
+    final Transaction tx = storageClient.startStoreTransaction();
+    tx.putBlockState(block.getRoot(), block.getState());
+
+    assertThat(tx.getBlockAndState(block.getRoot())).isEmpty();
+  }
+
+  @Test
+  public void getBlockAndState_withinTxFromUpdatesWithMissingState() throws Exception {
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+
+    final Transaction tx = storageClient.startStoreTransaction();
+    tx.putBlock(block.getRoot(), block.getBlock());
+
+    assertThat(tx.getBlockAndState(block.getRoot())).isEmpty();
+  }
+
   private void importBlocksAndStates(final ChainBuilder... chainBuilders) {
     final Transaction transaction = preGenesisStorageClient.startStoreTransaction();
     Stream.of(chainBuilders)
@@ -475,8 +533,11 @@ class RecentChainDataTest {
     storageClient.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
   }
 
-  private void advanceChain(final RecentChainData recentChainData) throws StateTransitionException {
-    saveBlock(recentChainData, chainBuilder.generateNextBlock());
+  private SignedBlockAndState advanceChain(final RecentChainData recentChainData)
+      throws StateTransitionException {
+    final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock();
+    saveBlock(recentChainData, nextBlock);
+    return nextBlock;
   }
 
   private void saveBlock(final RecentChainData recentChainData, final SignedBlockAndState block) {
