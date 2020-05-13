@@ -42,8 +42,6 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.Cancellable;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
@@ -127,29 +125,27 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   Cancellable periodicallyUpdatePeerStatus(Eth2Peer peer) {
-    return asyncRunner
-        .runWithFixedDelay(
-            () ->
-                peer.sendStatus()
-                    .finish(
-                        () -> LOG.trace("Updated status for peer {}", peer),
-                        err -> LOG.debug("Exception updating status for peer {}", peer, err)),
-            eth2StatusUpdateInterval.getSeconds(),
-            TimeUnit.SECONDS,
-            err -> LOG.debug("Exception calling runnable for updating peer status.", err));
+    return asyncRunner.runWithFixedDelay(
+        () ->
+            peer.sendStatus()
+                .finish(
+                    () -> LOG.trace("Updated status for peer {}", peer),
+                    err -> LOG.debug("Exception updating status for peer {}", peer, err)),
+        eth2StatusUpdateInterval.getSeconds(),
+        TimeUnit.SECONDS,
+        err -> LOG.debug("Exception calling runnable for updating peer status.", err));
   }
 
   Cancellable periodicallyPingPeer(Eth2Peer peer) {
-    return asyncRunner
-        .runWithFixedDelay(
-            () ->
-                peer.sendPing()
-                    .finish(
-                        () -> LOG.trace("Pinged peer {}", peer),
-                        err -> LOG.debug("Exception pinging peer {}", peer, err)),
-            eth2RpcPingInterval.toMillis(),
-            TimeUnit.MILLISECONDS,
-            err -> LOG.debug("Exception calling runnable for pinging peer", err));
+    return asyncRunner.runWithFixedDelay(
+        () ->
+            peer.sendPing()
+                .finish(
+                    () -> LOG.trace("Pinged peer {}", peer),
+                    err -> LOG.debug("Exception pinging peer {}", peer, err)),
+        eth2RpcPingInterval.toMillis(),
+        TimeUnit.MILLISECONDS,
+        err -> LOG.debug("Exception calling runnable for pinging peer", err));
   }
 
   @Override
