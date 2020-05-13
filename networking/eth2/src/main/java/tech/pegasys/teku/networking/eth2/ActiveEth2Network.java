@@ -169,4 +169,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
     attestationSubnetService.updateSubscriptions(subnetIndices);
   }
+
+  Eth2PeerManager getPeerManager() {
+    return peerManager;
+  }
 }

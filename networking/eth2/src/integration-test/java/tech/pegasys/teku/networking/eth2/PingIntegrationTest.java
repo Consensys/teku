@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.util.Waiter.waitFor;
 
 import com.google.common.primitives.UnsignedLong;
@@ -27,6 +26,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManagerAccess;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -140,40 +141,16 @@ public class PingIntegrationTest {
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
 
-    assertThatThrownBy(() -> peer1.sendPing().get(5, TimeUnit.SECONDS)).isNotNull();
+    Eth2PeerManagerAccess.invokeSendPeriodicPing(getPeerManager(network2), peer1);
     assertThat(peer1.isConnected()).isTrue();
-    assertThatThrownBy(() -> peer1.sendPing().get(5, TimeUnit.SECONDS)).isNotNull();
+    Eth2PeerManagerAccess.invokeSendPeriodicPing(getPeerManager(network2), peer1);
     assertThat(peer1.isConnected()).isTrue();
     // the 3rd ping attempt should disconnect the peer since there are 2 unanswered PING requests
-    assertThatThrownBy(() -> peer1.sendPing().get(5, TimeUnit.SECONDS)).isNotNull();
+    Eth2PeerManagerAccess.invokeSendPeriodicPing(getPeerManager(network2), peer1);
     waitFor(() -> assertThat(peer1.isConnected()).isFalse());
   }
 
-  @Test
-  public void testAutomaticPingTimeout() throws Exception {
-    // PING is send automatically each 100ms.
-    // The peer should be finally disconnected as it doesn't answer
-    Duration pingPeriod = Duration.ofMillis(100);
-    network1 =
-        networkFactory
-            .builder()
-            .eth2RpcPingInterval(pingPeriod)
-            .eth2RpcOutstandingPingThreshold(2)
-            // remove PING method
-            .rpcMethodsModifier(m -> Stream.of(m).filter(t -> !t.getId().contains("/ping")))
-            .startNetwork();
-    network2 =
-        networkFactory
-            .builder()
-            .eth2RpcPingInterval(pingPeriod)
-            .eth2RpcOutstandingPingThreshold(2)
-            .peer(network1)
-            .startNetwork();
-
-    peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
-    peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
-
-    waitFor(() -> assertThat(peer1.isConnected()).isFalse());
-    waitFor(() -> assertThat(peer2.isConnected()).isFalse());
+  private Eth2PeerManager getPeerManager(Eth2Network eth2Network) {
+    return ((ActiveEth2Network) eth2Network).getPeerManager();
   }
 }
