@@ -58,6 +58,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final BeaconChainMethods rpcMethods;
   private final PeerValidatorFactory peerValidatorFactory;
   private final Duration eth2RpcPingInterval;
+  private final int eth2RpcOutstandingPingThreshold;
 
   Eth2PeerManager(
       final AsyncRunner asyncRunner,
@@ -67,7 +68,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final PeerValidatorFactory peerValidatorFactory,
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding,
-      Duration eth2RpcPingInterval) {
+      final Duration eth2RpcPingInterval,
+      final int eth2RpcOutstandingPingThreshold) {
     this.asyncRunner = asyncRunner;
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
     metadataMessagesFactory = new MetadataMessagesFactory();
@@ -84,6 +86,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             metadataMessagesFactory,
             rpcEncoding);
     this.eth2RpcPingInterval = eth2RpcPingInterval;
+    this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
   }
 
   public static Eth2PeerManager create(
@@ -93,7 +96,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final MetricsSystem metricsSystem,
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding,
-      Duration eth2RpcPingInterval) {
+      final Duration eth2RpcPingInterval,
+      final int eth2RpcOutstandingPingThreshold) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
             PeerChainValidator.create(storageClient, historicalChainData, peer, status);
@@ -105,13 +109,19 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         peerValidatorFactory,
         attestationSubnetService,
         rpcEncoding,
-        eth2RpcPingInterval);
+        eth2RpcPingInterval,
+        eth2RpcOutstandingPingThreshold);
   }
 
   @Override
   public void onConnect(final Peer peer) {
     Eth2Peer eth2Peer =
-        new Eth2Peer(peer, rpcMethods, statusMessageFactory, metadataMessagesFactory);
+        new Eth2Peer(
+            peer,
+            rpcMethods,
+            statusMessageFactory,
+            metadataMessagesFactory,
+            eth2RpcOutstandingPingThreshold);
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), eth2Peer) == null;
     if (!wasAdded) {
       LOG.warn("Duplicate peer connection detected. Ignoring peer.");

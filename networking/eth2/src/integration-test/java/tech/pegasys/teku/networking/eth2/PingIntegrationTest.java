@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.util.Waiter.waitFor;
 
 import com.google.common.primitives.UnsignedLong;
@@ -21,6 +22,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
@@ -113,5 +115,65 @@ public class PingIntegrationTest {
 
     // detecting that ping was automatically sent via updated att subnets of the remote peer
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));
+  }
+
+  @Test
+  public void testManualPingTimeout() throws Exception {
+    // sending PING manually to check eth2RpcOutstandingPingThreshold works correctly
+    Duration pingPeriod = Duration.ofDays(1);
+    network1 =
+        networkFactory
+            .builder()
+            .eth2RpcPingInterval(pingPeriod)
+            .eth2RpcOutstandingPingThreshold(2)
+            // remove PING method
+            .rpcMethodsModifier(m -> Stream.of(m).filter(t -> !t.getId().contains("/ping")))
+            .startNetwork();
+    network2 =
+        networkFactory
+            .builder()
+            .eth2RpcPingInterval(pingPeriod)
+            .eth2RpcOutstandingPingThreshold(2)
+            .peer(network1)
+            .startNetwork();
+
+    peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
+    peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
+
+    assertThatThrownBy(() -> peer1.sendPing().get(5, TimeUnit.SECONDS)).isNotNull();
+    assertThat(peer1.isConnected()).isTrue();
+    assertThatThrownBy(() -> peer1.sendPing().get(5, TimeUnit.SECONDS)).isNotNull();
+    assertThat(peer1.isConnected()).isTrue();
+    // the 3rd ping attempt should disconnect the peer since there are 2 unanswered PING requests
+    assertThatThrownBy(() -> peer1.sendPing().get(5, TimeUnit.SECONDS)).isNotNull();
+    waitFor(() -> assertThat(peer1.isConnected()).isFalse());
+  }
+
+  @Test
+  public void testAutomaticPingTimeout() throws Exception {
+    // PING is send automatically each 100ms.
+    // The peer should be finally disconnected as it doesn't answer
+    Duration pingPeriod = Duration.ofMillis(100);
+    network1 =
+        networkFactory
+            .builder()
+            .eth2RpcPingInterval(pingPeriod)
+            .eth2RpcOutstandingPingThreshold(2)
+            // remove PING method
+            .rpcMethodsModifier(m -> Stream.of(m).filter(t -> !t.getId().contains("/ping")))
+            .startNetwork();
+    network2 =
+        networkFactory
+            .builder()
+            .eth2RpcPingInterval(pingPeriod)
+            .eth2RpcOutstandingPingThreshold(2)
+            .peer(network1)
+            .startNetwork();
+
+    peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
+    peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
+
+    waitFor(() -> assertThat(peer1.isConnected()).isFalse());
+    waitFor(() -> assertThat(peer2.isConnected()).isFalse());
   }
 }

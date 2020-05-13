@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -41,10 +43,13 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream.ResponseListene
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -52,18 +57,22 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private volatile Optional<UnsignedLong> remoteMetadataSeqNumber = Optional.empty();
   private volatile Optional<Bitvector> remoteAttSubnets = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
-  private AtomicBoolean chainValidated = new AtomicBoolean(false);
-  private AtomicInteger outstandingRequests = new AtomicInteger(0);
+  private final AtomicBoolean chainValidated = new AtomicBoolean(false);
+  private final AtomicInteger outstandingRequests = new AtomicInteger(0);
+  private final AtomicInteger outstandingPings = new AtomicInteger();
+  private final int outstandingPingsThreshold;
 
   public Eth2Peer(
       final Peer peer,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
-      final MetadataMessagesFactory metadataMessagesFactory) {
+      final MetadataMessagesFactory metadataMessagesFactory,
+      final int outstandingPingsThreshold) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
+    this.outstandingPingsThreshold = outstandingPingsThreshold;
   }
 
   public void updateStatus(final PeerStatus status) {
@@ -171,9 +180,16 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<UnsignedLong> sendPing() {
-    return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
-        .thenApply(PingMessage::getSeqNumber)
-        .thenPeek(this::updateMetadataSeqNumber);
+    if (outstandingPings.getAndIncrement() >= outstandingPingsThreshold) {
+      LOG.debug("Disconnecting the peer {} due to PING timeout.", getId());
+      disconnectImmediately();
+      return SafeFuture.failedFuture(new PeerDisconnectedException());
+    } else {
+      return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
+          .thenApply(PingMessage::getSeqNumber)
+          .thenPeek(__ -> outstandingPings.set(0))
+          .thenPeek(this::updateMetadataSeqNumber);
+    }
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> sendMessage(
