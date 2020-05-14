@@ -89,6 +89,7 @@ public class Eth2NetworkFactory {
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     protected Duration eth2RpcPingInterval;
     protected Integer eth2RpcOutstandingPingThreshold;
+    protected Duration eth2StatusUpdateInterval;
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -138,7 +139,8 @@ public class Eth2NetworkFactory {
                 attestationSubnetService,
                 rpcEncoding,
                 eth2RpcPingInterval,
-                eth2RpcOutstandingPingThreshold);
+                eth2RpcOutstandingPingThreshold,
+                eth2StatusUpdateInterval);
 
         List<RpcMethod> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
@@ -201,6 +203,9 @@ public class Eth2NetworkFactory {
       }
       if (eth2RpcPingInterval == null) {
         eth2RpcPingInterval = Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;
+      }
+      if (eth2StatusUpdateInterval == null) {
+        eth2StatusUpdateInterval = Eth2NetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
       }
       if (eth2RpcOutstandingPingThreshold == null) {
         eth2RpcOutstandingPingThreshold =
@@ -270,6 +275,12 @@ public class Eth2NetworkFactory {
         int eth2RpcOutstandingPingThreshold) {
       checkArgument(eth2RpcOutstandingPingThreshold > 0);
       this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder eth2StatusUpdateInterval(Duration eth2StatusUpdateInterval) {
+      checkNotNull(eth2StatusUpdateInterval);
+      this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
       return this;
     }
   }
