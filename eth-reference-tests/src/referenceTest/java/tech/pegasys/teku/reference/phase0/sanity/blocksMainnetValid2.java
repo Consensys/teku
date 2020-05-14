@@ -39,7 +39,6 @@ public class blocksMainnetValid2 extends TestSuite {
     "sanityEmptyEpochTransitionSetup",
     "sanityHistoricalBatchSetup",
     "sanityProposerSlashingSetup",
-    "sanitySameSlotBlockTransitionSetup",
     "sanitySkippedSlotsSetup",
     "sanityVoluntaryExitSetup",
   })
@@ -74,13 +73,6 @@ public class blocksMainnetValid2 extends TestSuite {
   static Stream<Arguments> sanityProposerSlashingSetup() throws Exception {
     Path configPath = Paths.get("mainnet", "phase0");
     Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/proposer_slashing");
-    return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @MustBeClosed
-  static Stream<Arguments> sanitySameSlotBlockTransitionSetup() throws Exception {
-    Path configPath = Paths.get("mainnet", "phase0");
-    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/same_slot_block_transition");
     return sanityMultiBlockSetup(path, configPath);
   }
 

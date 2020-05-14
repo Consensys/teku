@@ -47,7 +47,6 @@ public class blocksMinimal extends TestSuite {
     "sanityEmptyEpochTransitionSetup",
     "sanityHistoricalBatchSetup",
     "sanityProposerSlashingSetup",
-    "sanitySameSlotBlockTransitionSetup",
     "sanitySkippedSlotsSetup",
     "sanityVoluntaryExitSetup",
   })
@@ -129,13 +128,6 @@ public class blocksMinimal extends TestSuite {
   }
 
   @MustBeClosed
-  static Stream<Arguments> sanitySameSlotBlockTransitionSetup() throws Exception {
-    Path configPath = Paths.get("minimal", "phase0");
-    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/same_slot_block_transition");
-    return sanityMultiBlockSetup(path, configPath);
-  }
-
-  @MustBeClosed
   static Stream<Arguments> sanitySkippedSlotsSetup() throws Exception {
     Path configPath = Paths.get("minimal", "phase0");
     Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/skipped_slots");
@@ -153,7 +145,8 @@ public class blocksMinimal extends TestSuite {
   @MethodSource({
     "sanityInvalidStateRootSetup",
     "sanityExpectedDepositInBlockSetup",
-    "sanityPrevSlotBlockTransitionSetup"
+    "sanityPrevSlotBlockTransitionSetup",
+    "sanitySameSlotBlockTransitionSetup"
   })
   void sanityProcessBlockInvalid(BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
     StateTransition stateTransition = new StateTransition();
@@ -182,6 +175,13 @@ public class blocksMinimal extends TestSuite {
   static Stream<Arguments> sanityPrevSlotBlockTransitionSetup() throws Exception {
     Path configPath = Paths.get("minimal", "phase0");
     Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/prev_slot_block_transition");
+    return sanityMultiBlockSetupInvalid(path, configPath);
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> sanitySameSlotBlockTransitionSetup() throws Exception {
+    Path configPath = Paths.get("minimal", "phase0");
+    Path path = Paths.get("/minimal/phase0/sanity/blocks/pyspec_tests/same_slot_block_transition");
     return sanityMultiBlockSetupInvalid(path, configPath);
   }
 }

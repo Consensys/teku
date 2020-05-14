@@ -235,6 +235,9 @@ public class ForkChoiceUtil {
     if (preState == null) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
+    if (preState.getSlot().compareTo(block.getSlot()) >= 0) {
+      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
+    }
     if (blockIsFromFuture(block, store)) {
       return Optional.of(BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE);
     }

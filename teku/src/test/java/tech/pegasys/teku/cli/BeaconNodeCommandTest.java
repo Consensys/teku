@@ -246,7 +246,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pAdvertisedPort(OptionalInt.empty())
         .setP2pDiscoveryEnabled(true)
         .setP2pInterface("0.0.0.0")
-        .setP2pPort(30303)
+        .setP2pPort(9000)
         .setP2pPrivateKeyFile(null)
         .setInteropEnabled(false)
         .setInteropGenesisTime(0)
