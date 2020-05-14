@@ -38,7 +38,8 @@ public class blocksMainnetInvalid extends TestSuite {
   @MethodSource({
     "sanityInvalidStateRootSetup",
     "sanityExpectedDepositInBlockSetup",
-    "sanityPrevSlotBlockTransitionSetup"
+    "sanityPrevSlotBlockTransitionSetup",
+    "sanitySameSlotBlockTransitionSetup"
   })
   void sanityProcessBlockInvalid(BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
     StateTransition stateTransition = new StateTransition();
@@ -66,6 +67,13 @@ public class blocksMainnetInvalid extends TestSuite {
   static Stream<Arguments> sanityPrevSlotBlockTransitionSetup() throws Exception {
     Path configPath = Paths.get("mainnet", "phase0");
     Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/prev_slot_block_transition");
+    return sanityMultiBlockSetupInvalid(path, configPath);
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> sanitySameSlotBlockTransitionSetup() throws Exception {
+    Path configPath = Paths.get("mainnet", "phase0");
+    Path path = Paths.get("/mainnet/phase0/sanity/blocks/pyspec_tests/same_slot_block_transition");
     return sanityMultiBlockSetupInvalid(path, configPath);
   }
 }

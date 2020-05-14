@@ -34,6 +34,8 @@ import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -198,6 +200,37 @@ public class BlockImporterTest {
     // DOES_NOT_DESCEND_FROM_LATEST_FINALIZED error
     final BlockImportResult result = blockImporter.importBlock(blocks.get(1));
     assertSuccessfulResult(result);
+  }
+
+  @Test
+  public void importBlock_parentBlockFromSameSlot() throws Exception {
+    // First import a valid block at slot 1
+    final SignedBeaconBlock block = otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE);
+    localChain.setSlot(block.getSlot());
+    assertSuccessfulResult(blockImporter.importBlock(block));
+
+    // Now create an alternate block 1 with the real block one as the parent block
+    final BeaconBlock invalidAncestryUnsignedBlock =
+        new BeaconBlock(
+            block.getSlot(),
+            block.getMessage().getProposer_index(),
+            block.getMessage().hash_tree_root(),
+            block.getMessage().getState_root(),
+            block.getMessage().getBody());
+    final Signer signer =
+        new Signer(localChain.getSigner(block.getMessage().getProposer_index().intValue()));
+    final SignedBeaconBlock invalidAncestryBlock =
+        new SignedBeaconBlock(
+            invalidAncestryUnsignedBlock,
+            signer
+                .signBlock(
+                    invalidAncestryUnsignedBlock, otherStorage.getCurrentForkInfo().orElseThrow())
+                .join());
+
+    final BlockImportResult result = blockImporter.importBlock(invalidAncestryBlock);
+    assertThat(result.isSuccessful()).isFalse();
+    assertThat(result.getFailureReason())
+        .isEqualTo(BlockImportResult.FAILED_INVALID_ANCESTRY.getFailureReason());
   }
 
   private void assertSuccessfulResult(final BlockImportResult result) {
