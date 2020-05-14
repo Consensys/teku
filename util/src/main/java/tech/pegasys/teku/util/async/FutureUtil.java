@@ -13,40 +13,59 @@
 
 package tech.pegasys.teku.util.async;
 
-import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class FutureUtil {
+  private static final Logger LOG = LogManager.getLogger();
+
   public static <T> void ignoreFuture(final Future<T> future) {}
 
   static void runWithFixedDelay(
       AsyncRunner runner,
       ExceptionThrowingRunnable runnable,
-      SafeFuture<Void> task,
+      Cancellable task,
       long delayAmount,
       TimeUnit delayUnit,
-      Optional<Consumer<Throwable>> exceptionHandler) {
+      Consumer<Throwable> exceptionHandler) {
 
-    SafeFuture<Void> future =
-        runner.runAfterDelay(
+    runner
+        .runAfterDelay(
             () -> {
               if (!task.isCancelled()) {
                 try {
                   runnable.run();
                 } catch (Throwable throwable) {
-                  if (exceptionHandler.isPresent()) {
-                    exceptionHandler.get().accept(throwable);
-                  } else {
-                    throw throwable;
+                  try {
+                    exceptionHandler.accept(throwable);
+                  } catch (Exception e) {
+                    LOG.warn("Exception in exception handler", e);
                   }
                 }
                 runWithFixedDelay(runner, runnable, task, delayAmount, delayUnit, exceptionHandler);
               }
             },
             delayAmount,
-            delayUnit);
-    future.propagateExceptionTo(task);
+            delayUnit)
+        .finish(() -> {}, exceptionHandler);
+  }
+
+  static Cancellable createCancellable() {
+    return new Cancellable() {
+      private boolean cancelled;
+
+      @Override
+      public void cancel() {
+        cancelled = true;
+      }
+
+      @Override
+      public boolean isCancelled() {
+        return cancelled;
+      }
+    };
   }
 }

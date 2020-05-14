@@ -27,10 +27,10 @@ public class AsyncRunnerTest {
   public void testRecurrentTaskCancel() throws Exception {
     AsyncRunner runner = DelayedExecutorAsyncRunner.create();
     AtomicInteger counter = new AtomicInteger();
-    SafeFuture<Void> task =
-        runner.runWithFixedDelay(counter::incrementAndGet, 100, TimeUnit.MILLISECONDS);
+    Cancellable task =
+        runner.runWithFixedDelay(counter::incrementAndGet, 100, TimeUnit.MILLISECONDS, t -> {});
     waitFor(() -> assertThat(counter).hasValueGreaterThan(3));
-    task.cancel(false);
+    task.cancel();
     int cnt1 = counter.get();
     Thread.sleep(500);
     // 1 task may be completing during the cancel() call
@@ -38,33 +38,11 @@ public class AsyncRunnerTest {
   }
 
   @Test
-  public void testRecurrentTaskException() throws Exception {
-    AsyncRunner runner = DelayedExecutorAsyncRunner.create();
-    AtomicInteger counter = new AtomicInteger();
-    SafeFuture<Void> task =
-        runner.runWithFixedDelay(
-            () -> {
-              if (counter.incrementAndGet() == 3) {
-                throw new RuntimeException("Ups");
-              }
-            },
-            100,
-            TimeUnit.MILLISECONDS);
-    waitFor(() -> assertThat(counter).hasValue(3));
-    assertThat(task).hasFailedWithThrowableThat().hasMessageContaining("Ups");
-
-    // check the task is no more executed
-    int cnt1 = counter.get();
-    Thread.sleep(500);
-    assertThat(counter).hasValue(cnt1);
-  }
-
-  @Test
   public void testRecurrentTaskExceptionHandler() {
     AsyncRunner runner = DelayedExecutorAsyncRunner.create();
     AtomicInteger counter = new AtomicInteger();
     AtomicReference<Throwable> exception = new AtomicReference<>();
-    SafeFuture<Void> task =
+    Cancellable task =
         runner.runWithFixedDelay(
             () -> {
               if (counter.incrementAndGet() == 3) {
@@ -76,8 +54,6 @@ public class AsyncRunnerTest {
             exception::set);
     waitFor(() -> assertThat(counter).hasValueGreaterThan(3));
     assertThat(exception.get()).hasMessageContaining("Ups");
-    assertThat(task).isNotCompleted();
-
-    task.cancel(false);
+    task.cancel();
   }
 }
