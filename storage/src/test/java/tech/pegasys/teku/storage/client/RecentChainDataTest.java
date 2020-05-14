@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.client;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.eventbus.EventBus;
@@ -516,6 +517,112 @@ class RecentChainDataTest {
     assertThat(tx.getBlockAndState(block.getRoot())).isEmpty();
   }
 
+  @Test
+  public void getBlockRootBySlot_forOutOfRangeSlot() throws Exception {
+    final UnsignedLong historicalRoots = UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
+    final UnsignedLong targetSlot = UnsignedLong.valueOf(10);
+    final UnsignedLong finalizedBlockSlot = targetSlot.plus(historicalRoots).plus(UnsignedLong.ONE);
+    final UnsignedLong finalizedEpoch =
+        compute_epoch_at_slot(finalizedBlockSlot).plus(UnsignedLong.ONE);
+
+    // Add a block within the finalized range
+    final SignedBlockAndState historicalBlock = chainBuilder.generateBlockAtSlot(targetSlot);
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(finalizedBlockSlot);
+    saveBlock(storageClient, historicalBlock);
+    finalizeBlock(storageClient, finalizedEpoch, finalizedBlock);
+    advanceBestBlock(storageClient);
+
+    assertThat(storageClient.getBlockRootBySlot(targetSlot)).isEmpty();
+  }
+
+  @Test
+  public void getBlockRootBySlot_forHistoricalSlotInRange() throws Exception {
+    final UnsignedLong historicalRoots = UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
+    final UnsignedLong targetSlot = UnsignedLong.valueOf(10);
+    final UnsignedLong finalizedBlockSlot = targetSlot.plus(historicalRoots);
+    final UnsignedLong finalizedEpoch =
+        compute_epoch_at_slot(finalizedBlockSlot).plus(UnsignedLong.ONE);
+
+    // Add a block within the finalized range
+    final SignedBlockAndState historicalBlock = chainBuilder.generateBlockAtSlot(targetSlot);
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(finalizedBlockSlot);
+    saveBlock(storageClient, historicalBlock);
+    finalizeBlock(storageClient, finalizedEpoch, finalizedBlock);
+    advanceBestBlock(storageClient);
+
+    assertThat(storageClient.getBlockRootBySlot(targetSlot)).contains(historicalBlock.getRoot());
+  }
+
+  @Test
+  public void getBlockRootBySlot_forBestBlock() throws Exception {
+    final SignedBlockAndState bestBlock = advanceBestBlock(storageClient);
+
+    assertThat(storageClient.getBlockRootBySlot(bestBlock.getSlot())).contains(bestBlock.getRoot());
+  }
+
+  @Test
+  public void getBlockRootBySlot_forBlockPriorToBestBlock() throws Exception {
+    final SignedBlockAndState targetBlock = advanceBestBlock(storageClient);
+    advanceBestBlock(storageClient);
+
+    assertThat(storageClient.getBlockRootBySlot(targetBlock.getSlot()))
+        .contains(targetBlock.getRoot());
+  }
+
+  @Test
+  public void getBlockRootBySlot_queryEntireChain() throws Exception {
+    final UnsignedLong historicalRoots = UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
+
+    // Build a chain that spans multiple increments of SLOTS_PER_HISTORICAL_ROOT
+    final int skipBlocks = 3;
+    final UnsignedLong skipBlocksLong = UnsignedLong.valueOf(skipBlocks);
+    final UnsignedLong oldestAvailableSlot = UnsignedLong.valueOf(10);
+    final UnsignedLong finalizedBlockSlot = oldestAvailableSlot.plus(historicalRoots);
+    final UnsignedLong finalizedEpoch =
+        compute_epoch_at_slot(finalizedBlockSlot).plus(UnsignedLong.ONE);
+    final UnsignedLong recentSlot =
+        compute_start_slot_at_epoch(finalizedEpoch).plus(UnsignedLong.ONE);
+    final UnsignedLong chainHeight =
+        historicalRoots
+            .times(UnsignedLong.valueOf(2))
+            .plus(recentSlot)
+            .plus(UnsignedLong.valueOf(5));
+    // Build historical blocks
+    final SignedBlockAndState finalizedBlock;
+    while (true) {
+      if (chainBuilder.getLatestSlot().plus(skipBlocksLong).compareTo(finalizedBlockSlot) >= 0) {
+        // Add our target finalized block
+        finalizedBlock = chainBuilder.generateBlockAtSlot(finalizedBlockSlot);
+        saveBlock(storageClient, finalizedBlock);
+        break;
+      }
+      final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock(skipBlocks);
+      saveBlock(storageClient, nextBlock);
+    }
+    // Build recent blocks
+    SignedBlockAndState bestBlock = null;
+    while (chainBuilder.getLatestSlot().compareTo(chainHeight) < 0) {
+      bestBlock = chainBuilder.generateNextBlock(skipBlocks);
+      saveBlock(storageClient, bestBlock);
+    }
+    // Update best block and finalized state
+    updateBestBlock(storageClient, bestBlock);
+    finalizeBlock(storageClient, finalizedEpoch, finalizedBlock);
+
+    // Check slots that should be unavailable
+    for (int i = 0; i < oldestAvailableSlot.intValue(); i++) {
+      final UnsignedLong targetSlot = UnsignedLong.valueOf(i);
+      assertThat(storageClient.getBlockRootBySlot(targetSlot)).isEmpty();
+    }
+    // Check slots that should be available
+    for (int i = oldestAvailableSlot.intValue(); i <= bestBlock.getSlot().intValue(); i++) {
+      final UnsignedLong targetSlot = UnsignedLong.valueOf(i);
+      final SignedBlockAndState expectedResult =
+          chainBuilder.getLatestBlockAndStateAtSlot(targetSlot);
+      assertThat(storageClient.getBlockRootBySlot(targetSlot)).contains(expectedResult.getRoot());
+    }
+  }
+
   private void importBlocksAndStates(final ChainBuilder... chainBuilders) {
     final Transaction transaction = preGenesisStorageClient.startStoreTransaction();
     Stream.of(chainBuilders)
@@ -541,6 +648,24 @@ class RecentChainDataTest {
     saveBlock(recentChainData, bestBlock);
 
     storageClient.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
+  }
+
+  private SignedBlockAndState advanceBestBlock(final RecentChainData recentChainData)
+      throws StateTransitionException {
+    final SignedBlockAndState nextBlock = advanceChain(recentChainData);
+    updateBestBlock(recentChainData, nextBlock);
+    return nextBlock;
+  }
+
+  private void finalizeBlock(
+      RecentChainData recentChainData,
+      final UnsignedLong epoch,
+      final SignedBlockAndState finalizedBlock) {
+    saveBlock(recentChainData, finalizedBlock);
+
+    final Transaction tx = recentChainData.startStoreTransaction();
+    tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()));
+    tx.commit().reportExceptions();
   }
 
   private SignedBlockAndState advanceChain(final RecentChainData recentChainData)
