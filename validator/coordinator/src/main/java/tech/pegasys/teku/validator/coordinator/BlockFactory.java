@@ -66,8 +66,14 @@ public class BlockFactory {
       final BLSSignature randaoReveal)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
 
-    // Process empty slots up to the new slot
-    BeaconState newState = stateTransition.process_slots(previousState, newSlot);
+    // Process empty slots up to the one before the new block slot
+    final UnsignedLong slotBeforeBlock = newSlot.minus(UnsignedLong.ONE);
+    BeaconState blockPreState;
+    if (previousState.getSlot().equals(slotBeforeBlock)) {
+      blockPreState = previousState;
+    } else {
+      blockPreState = stateTransition.process_slots(previousState, slotBeforeBlock);
+    }
 
     // Collect attestations to include
     SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(newSlot);
@@ -82,17 +88,17 @@ public class BlockFactory {
         BeaconBlockBodyLists.createVoluntaryExits();
 
     // Collect deposits
-    final SSZList<Deposit> deposits = depositProvider.getDeposits(newState);
+    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState);
 
-    Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
+    Eth1Data eth1Data = eth1DataCache.get_eth1_vote(blockPreState);
     final Bytes32 parentRoot = previousBlock.hash_tree_root();
 
     return blockCreator
         .createNewUnsignedBlock(
             newSlot,
-            get_beacon_proposer_index(newState, newSlot),
+            get_beacon_proposer_index(blockPreState, newSlot),
             randaoReveal,
-            newState,
+            blockPreState,
             parentRoot,
             eth1Data,
             graffiti,
