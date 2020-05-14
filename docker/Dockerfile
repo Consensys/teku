@@ -1,7 +1,9 @@
 FROM openjdk:11.0.2-jre-slim-stretch
 
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
-    chown teku:teku /opt/teku
+    chown teku:teku /opt/teku && \
+    mkdir /artifacts && \
+    chown teku:teku /artifacts
 
 USER teku
 WORKDIR /opt/teku
