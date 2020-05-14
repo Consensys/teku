@@ -199,12 +199,7 @@ public class CombinedChainDataClient {
   }
 
   public Optional<BeaconState> getHeadStateFromStore() {
-    final Store store = getStore();
-    if (store == null) {
-      LOG.trace("No state at head because the store is not set");
-      return Optional.empty();
-    }
-    return getBestBlockRoot().map(store::getBlockState);
+    return recentChainData.getBestState();
   }
 
   public Optional<Bytes32> getBestBlockRoot() {
