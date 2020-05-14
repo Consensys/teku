@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.time.Duration;
 import java.util.Optional;
@@ -160,6 +161,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     peer.subscribeDisconnect(() -> pingTask.cancel(false));
   }
 
+  @VisibleForTesting
   void sendPeriodicPing(Eth2Peer peer) {
     if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
