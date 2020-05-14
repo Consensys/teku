@@ -183,7 +183,8 @@ public class Eth2NetworkBuilder {
     return this;
   }
 
-  public Eth2NetworkBuilder eth2RpcOutstandingPingThreshold(final int eth2RpcOutstandingPingThreshold) {
+  public Eth2NetworkBuilder eth2RpcOutstandingPingThreshold(
+      final int eth2RpcOutstandingPingThreshold) {
     checkArgument(eth2RpcOutstandingPingThreshold > 0);
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     return this;
