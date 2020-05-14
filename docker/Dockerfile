@@ -1,7 +1,13 @@
 FROM openjdk:11.0.2-jre-slim-stretch
 
+RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
+    chown teku:teku /opt/teku
+
+USER teku
+WORKDIR /opt/teku
+
 # copy application (with libraries inside)
-COPY teku /opt/teku/
+COPY --chown=teku:teku teku /opt/teku/
 
 # List Exposed Ports
 EXPOSE 8008 8084 8545 30303 30303/udp
