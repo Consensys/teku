@@ -171,19 +171,19 @@ public class Eth2NetworkBuilder {
     return this;
   }
 
-  public Eth2NetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+  public Eth2NetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
     checkNotNull(asyncRunner);
     this.asyncRunner = asyncRunner;
     return this;
   }
 
-  public Eth2NetworkBuilder eth2RpcPingInterval(Duration eth2RpcPingInterval) {
+  public Eth2NetworkBuilder eth2RpcPingInterval(final Duration eth2RpcPingInterval) {
     checkNotNull(eth2RpcPingInterval);
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     return this;
   }
 
-  public Eth2NetworkBuilder eth2RpcOutstandingPingThreshold(int eth2RpcOutstandingPingThreshold) {
+  public Eth2NetworkBuilder eth2RpcOutstandingPingThreshold(final int eth2RpcOutstandingPingThreshold) {
     checkArgument(eth2RpcOutstandingPingThreshold > 0);
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     return this;
