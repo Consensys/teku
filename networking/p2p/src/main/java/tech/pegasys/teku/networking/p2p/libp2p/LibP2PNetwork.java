@@ -295,8 +295,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       return;
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
-    executorService.shutdownNow();
     reportExceptions(host.stop());
+    executorService.shutdownNow();
   }
 
   @Override
