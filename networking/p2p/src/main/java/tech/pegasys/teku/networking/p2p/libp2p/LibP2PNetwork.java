@@ -17,6 +17,7 @@ import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.util.async.SafeFuture.reportExceptions;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
@@ -48,6 +49,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -89,7 +92,10 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
-  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+  private final ExecutorService executorService =
+      Executors.newCachedThreadPool(
+          new ThreadFactoryBuilder().setNameFormat(getClass().getSimpleName() + "-%d").build());
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create(executorService);
   private final int listenPort;
 
   public LibP2PNetwork(
@@ -289,6 +295,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       return;
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
+    executorService.shutdownNow();
     reportExceptions(host.stop());
   }
 
