@@ -60,7 +60,7 @@ public class BeaconChainMethodsTest {
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
-  final MetadataMessageFactory metadataMessageFactory = new MetadataMessageFactory();
+  final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
 
   @ParameterizedTest(name = "encoding: {0}")
   @MethodSource("getEncodings")
@@ -107,7 +107,7 @@ public class BeaconChainMethodsTest {
         recentChainData,
         metricsSystem,
         statusMessageFactory,
-        metadataMessageFactory,
+        metadataMessagesFactory,
         rpcEncoding);
   }
 }

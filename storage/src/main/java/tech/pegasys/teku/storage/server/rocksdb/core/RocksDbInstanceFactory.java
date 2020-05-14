@@ -40,7 +40,7 @@ public class RocksDbInstanceFactory {
     RocksDbUtil.loadNativeLibrary();
   }
 
-  public static RocksDbInstance create(
+  public static RocksDbAccessor create(
       final RocksDbConfiguration configuration, final Class<? extends Schema> schema)
       throws DatabaseStorageException {
     // Track resouces that need to be closed

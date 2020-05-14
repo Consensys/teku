@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage;
 
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
@@ -95,7 +97,9 @@ public class Store implements ReadOnlyStore {
     checkpoint_states.put(anchorCheckpoint, anchorState);
 
     return new Store(
-        anchorState.getGenesis_time(),
+        anchorState
+            .getGenesis_time()
+            .plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(anchorState.getSlot())),
         anchorState.getGenesis_time(),
         anchorCheckpoint,
         anchorCheckpoint,
@@ -150,6 +154,16 @@ public class Store implements ReadOnlyStore {
     readLock.lock();
     try {
       return finalized_checkpoint;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public UnsignedLong getLatestFinalizedBlockSlot() {
+    readLock.lock();
+    try {
+      return blocks.get(finalized_checkpoint.getRoot()).getSlot();
     } finally {
       readLock.unlock();
     }
@@ -403,6 +417,11 @@ public class Store implements ReadOnlyStore {
     @Override
     public Checkpoint getFinalizedCheckpoint() {
       return finalized_checkpoint.orElseGet(Store.this::getFinalizedCheckpoint);
+    }
+
+    @Override
+    public UnsignedLong getLatestFinalizedBlockSlot() {
+      return getBlock(getFinalizedCheckpoint().getRoot()).getSlot();
     }
 
     @Override

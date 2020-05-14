@@ -29,12 +29,11 @@ public class BeaconChainMetrics {
   private final RecentChainData recentChainData;
   private volatile NodeSlot nodeSlot;
 
-  public BeaconChainMetrics(final RecentChainData recentChainData, NodeSlot nodeSlot) {
+  public BeaconChainMetrics(
+      final RecentChainData recentChainData, NodeSlot nodeSlot, final MetricsSystem metricsSystem) {
     this.recentChainData = recentChainData;
     this.nodeSlot = nodeSlot;
-  }
 
-  public void initialize(final MetricsSystem metricsSystem) {
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
         "epoch",
@@ -94,18 +93,18 @@ public class BeaconChainMetrics {
     return root.getLong(24, ByteOrder.LITTLE_ENDIAN);
   }
 
-  long getCurrentSlotValue() {
+  private long getCurrentSlotValue() {
     return nodeSlot.longValue();
   }
 
-  long getHeadSlotValue() {
+  private long getHeadSlotValue() {
     if (recentChainData.isPreGenesis()) {
       return NOT_SET;
     }
     return recentChainData.getBestSlot().longValue();
   }
 
-  long getFinalizedRootValue() {
+  private long getFinalizedRootValue() {
     Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
     if (maybeBlockAndState.isPresent()) {
       Bytes32 root = maybeBlockAndState.get().getState().getFinalized_checkpoint().getRoot();
@@ -114,7 +113,7 @@ public class BeaconChainMetrics {
     return 0L;
   }
 
-  long getPreviousJustifiedRootValue() {
+  private long getPreviousJustifiedRootValue() {
     Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
     if (maybeBlockAndState.isPresent()) {
       Bytes32 root =
@@ -124,7 +123,7 @@ public class BeaconChainMetrics {
     return 0L;
   }
 
-  long getJustifiedRootValue() {
+  private long getJustifiedRootValue() {
     Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
     if (maybeBlockAndState.isPresent()) {
       Bytes32 root =
@@ -134,7 +133,7 @@ public class BeaconChainMetrics {
     return 0L;
   }
 
-  long getHeadRootValue() {
+  private long getHeadRootValue() {
     if (recentChainData.isPreGenesis()) {
       return NOT_SET;
     }
@@ -142,21 +141,21 @@ public class BeaconChainMetrics {
     return maybeBlockRoot.map(BeaconChainMetrics::getLongFromRoot).orElse(0L);
   }
 
-  long getFinalizedEpochValue() {
+  private long getFinalizedEpochValue() {
     if (recentChainData.isPreGenesis()) {
       return NOT_SET;
     }
     return recentChainData.getFinalizedEpoch().longValue();
   }
 
-  long getJustifiedEpochValue() {
+  private long getJustifiedEpochValue() {
     if (recentChainData.isPreGenesis()) {
       return NOT_SET;
     }
     return recentChainData.getBestJustifiedEpoch().longValue();
   }
 
-  long getPreviousJustifiedEpochValue() {
+  private long getPreviousJustifiedEpochValue() {
     Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
     return maybeBlockAndState
         .map(
@@ -169,7 +168,7 @@ public class BeaconChainMetrics {
         .orElse(0L);
   }
 
-  long getCurrentEpochValue() {
+  private long getCurrentEpochValue() {
     return compute_epoch_at_slot(nodeSlot.getValue()).longValue();
   }
 }

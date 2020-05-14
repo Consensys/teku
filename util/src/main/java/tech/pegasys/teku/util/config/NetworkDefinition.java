@@ -47,7 +47,7 @@ public class NetworkDefinition {
           .put(
               "schlesi",
               builder()
-                  .constants("https://github.com/goerli/schlesi/raw/master/teku/chain.yaml")
+                  .constants("schlesi")
                   .snappyCompressionEnabled(true)
                   .initialState("https://github.com/goerli/schlesi/raw/master/teku/genesis.ssz")
                   .discoveryBootnodes(

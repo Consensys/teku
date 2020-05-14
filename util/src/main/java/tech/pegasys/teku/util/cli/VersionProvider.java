@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.util.cli;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
-import picocli.CommandLine;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class VersionProvider implements CommandLine.IVersionProvider {
+public class VersionProvider {
   public static final String ENV_XDG_DATA_HOME = "XDG_DATA_HOME";
   public static final String ENV_LOCALAPPDATA = "LOCALAPPDATA";
   public static final String ENV_HOME = "HOME";
@@ -27,14 +29,19 @@ public class VersionProvider implements CommandLine.IVersionProvider {
   public static final String VERSION =
       CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION + "/" + detectOS() + "/" + detectJvm();
 
-  @Override
-  public String[] getVersion() {
-    return new String[] {VERSION};
-  }
-
   private static String getImplementationVersion() {
     final String version = VersionProvider.class.getPackage().getImplementationVersion();
     return version != null ? version : "<Unknown>";
+  }
+
+  public static Bytes32 getDefaultGraffiti() {
+    final String graffitiVersionString = CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION;
+    final Bytes versionBytes = Bytes.wrap(graffitiVersionString.getBytes(StandardCharsets.UTF_8));
+    if (versionBytes.size() <= Bytes32.SIZE) {
+      return Bytes32.rightPad(versionBytes);
+    } else {
+      return Bytes32.wrap(versionBytes.slice(0, Bytes32.SIZE));
+    }
   }
 
   private static String detectOS() {
