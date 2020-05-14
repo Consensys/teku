@@ -570,6 +570,14 @@ class RecentChainDataTest {
   }
 
   @Test
+  public void getBlockRootBySlot_forSlotAfterBestBlock() throws Exception {
+    final SignedBlockAndState bestBlock = advanceBestBlock(storageClient);
+
+    final UnsignedLong targetSlot = bestBlock.getSlot().plus(UnsignedLong.ONE);
+    assertThat(storageClient.getBlockRootBySlot(targetSlot)).contains(bestBlock.getRoot());
+  }
+
+  @Test
   public void getBlockRootBySlot_queryEntireChain() throws Exception {
     final UnsignedLong historicalRoots = UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
 
