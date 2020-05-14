@@ -59,6 +59,7 @@ public class Eth2PeerManagerTest {
           new AttestationSubnetService(),
           rpcEncoding,
           Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL,
+          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,
           Eth2NetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL);
 
   @BeforeEach

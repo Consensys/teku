@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.time.Duration;
 import java.util.Optional;
@@ -59,6 +60,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final PeerValidatorFactory peerValidatorFactory;
 
   private final Duration eth2RpcPingInterval;
+  private final int eth2RpcOutstandingPingThreshold;
+
   private final Duration eth2StatusUpdateInterval;
 
   Eth2PeerManager(
@@ -69,7 +72,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final PeerValidatorFactory peerValidatorFactory,
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding,
-      Duration eth2RpcPingInterval,
+      final Duration eth2RpcPingInterval,
+      final int eth2RpcOutstandingPingThreshold,
       Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
@@ -87,6 +91,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             metadataMessagesFactory,
             rpcEncoding);
     this.eth2RpcPingInterval = eth2RpcPingInterval;
+    this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
   }
 
@@ -97,7 +102,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final MetricsSystem metricsSystem,
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding,
-      Duration eth2RpcPingInterval,
+      final Duration eth2RpcPingInterval,
+      final int eth2RpcOutstandingPingThreshold,
       Duration eth2StatusUpdateInterval) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
@@ -111,6 +117,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         attestationSubnetService,
         rpcEncoding,
         eth2RpcPingInterval,
+        eth2RpcOutstandingPingThreshold,
         eth2StatusUpdateInterval);
   }
 
@@ -138,11 +145,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   Cancellable periodicallyPingPeer(Eth2Peer peer) {
     return asyncRunner.runWithFixedDelay(
-        () ->
-            peer.sendPing()
-                .finish(
-                    () -> LOG.trace("Pinged peer {}", peer),
-                    err -> LOG.debug("Exception pinging peer {}", peer, err)),
+        () -> sendPeriodicPing(peer),
         eth2RpcPingInterval.toMillis(),
         TimeUnit.MILLISECONDS,
         err -> LOG.debug("Exception calling runnable for pinging peer", err));
@@ -185,6 +188,19 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                         setUpPeriodicTasksForPeer(eth2Peer);
                       }
                     }));
+  }
+
+  @VisibleForTesting
+  void sendPeriodicPing(Eth2Peer peer) {
+    if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
+      LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
+      peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+    } else {
+      peer.sendPing()
+          .finish(
+              i -> LOG.trace("Periodic ping returned {} from {}", i, peer.getId()),
+              t -> LOG.debug("Ping request failed for peer {}", peer.getId(), t));
+    }
   }
 
   private UnsignedLong convertToEth2DisconnectReason(final DisconnectReason reason) {

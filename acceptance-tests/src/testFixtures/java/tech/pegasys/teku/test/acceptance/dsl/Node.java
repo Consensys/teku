@@ -13,36 +13,30 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static com.google.common.io.Files.createTempDir;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.Logger;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import tech.pegasys.teku.util.Waiter;
-import tech.pegasys.teku.util.file.FileUtil;
 
 public abstract class Node {
   private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();
-  protected final GenericContainer<?> container;
+  protected final NodeContainer container;
   protected final String nodeAlias;
-  private final List<File> tempDirectories = new ArrayList<>();
 
   public Node(final Network network, final String dockerImageName, final Logger log) {
     this.nodeAlias =
         getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
     this.container =
-        new GenericContainer<>(dockerImageName)
+        new NodeContainer(dockerImageName)
             .withNetwork(network)
             .withNetworkAliases(nodeAlias)
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));
@@ -50,7 +44,6 @@ public abstract class Node {
 
   public void stop() {
     container.stop();
-    cleanupTemporaryDirectories();
   }
 
   protected void waitFor(
@@ -84,15 +77,5 @@ public abstract class Node {
     } catch (final IOException e) {
       throw new RuntimeException("Failed to copy directory from " + nodeAlias, e);
     }
-  }
-
-  protected File createTempDirectory() {
-    File tmpDir = createTempDir();
-    tempDirectories.add(tmpDir);
-    return tmpDir;
-  }
-
-  private void cleanupTemporaryDirectories() {
-    FileUtil.recursivelyDeleteDirectories(tempDirectories);
   }
 }

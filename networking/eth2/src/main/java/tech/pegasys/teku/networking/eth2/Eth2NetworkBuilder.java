@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -39,6 +40,7 @@ import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2NetworkBuilder {
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
+  public static final int DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD = 2;
   public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
 
   private NetworkConfig config;
@@ -52,6 +54,7 @@ public class Eth2NetworkBuilder {
   private TimeProvider timeProvider;
   private AsyncRunner asyncRunner;
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
+  private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
   private Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
 
   private Eth2NetworkBuilder() {}
@@ -76,6 +79,7 @@ public class Eth2NetworkBuilder {
             attestationSubnetService,
             rpcEncoding,
             eth2RpcPingInterval,
+            eth2RpcOutstandingPingThreshold,
             eth2StatusUpdateInterval);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
@@ -170,15 +174,22 @@ public class Eth2NetworkBuilder {
     return this;
   }
 
-  public Eth2NetworkBuilder asyncRunner(AsyncRunner asyncRunner) {
+  public Eth2NetworkBuilder asyncRunner(final AsyncRunner asyncRunner) {
     checkNotNull(asyncRunner);
     this.asyncRunner = asyncRunner;
     return this;
   }
 
-  public Eth2NetworkBuilder eth2RpcPingInterval(Duration eth2RpcPingInterval) {
+  public Eth2NetworkBuilder eth2RpcPingInterval(final Duration eth2RpcPingInterval) {
     checkNotNull(eth2RpcPingInterval);
     this.eth2RpcPingInterval = eth2RpcPingInterval;
+    return this;
+  }
+
+  public Eth2NetworkBuilder eth2RpcOutstandingPingThreshold(
+      final int eth2RpcOutstandingPingThreshold) {
+    checkArgument(eth2RpcOutstandingPingThreshold > 0);
+    this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     return this;
   }
 }

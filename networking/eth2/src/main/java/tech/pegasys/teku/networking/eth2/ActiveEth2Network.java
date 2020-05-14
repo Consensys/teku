@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -168,5 +169,10 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
     attestationSubnetService.updateSubscriptions(subnetIndices);
+  }
+
+  @VisibleForTesting
+  Eth2PeerManager getPeerManager() {
+    return peerManager;
   }
 }

@@ -41,7 +41,7 @@ public class P2POptions {
       paramLabel = "<INTEGER>",
       description = "Peer to peer port",
       arity = "1")
-  private int p2pPort = 30303;
+  private int p2pPort = 9000;
 
   @Option(
       names = {"--p2p-discovery-enabled"},
