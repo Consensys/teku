@@ -41,6 +41,7 @@ import tech.pegasys.teku.util.time.TimeProvider;
 public class Eth2NetworkBuilder {
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
   public static final int DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD = 2;
+  public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
 
   private NetworkConfig config;
   private Eth2Config eth2Config;
@@ -54,6 +55,7 @@ public class Eth2NetworkBuilder {
   private AsyncRunner asyncRunner;
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
+  private Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
 
   private Eth2NetworkBuilder() {}
 
@@ -77,7 +79,8 @@ public class Eth2NetworkBuilder {
             attestationSubnetService,
             rpcEncoding,
             eth2RpcPingInterval,
-            eth2RpcOutstandingPingThreshold);
+            eth2RpcOutstandingPingThreshold,
+            eth2StatusUpdateInterval);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
