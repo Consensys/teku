@@ -307,27 +307,44 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
-    checkNotNull(slot);
-    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    if (store == null || chainHead.isEmpty() || slot.compareTo(genesisSlot) < 0) {
+    if (store == null || chainHead.isEmpty() || isHistoricalBlockRootAtSlotUnavailable(slot)) {
       return Optional.empty();
     }
+    return getBlockRootBySlot(slot, chainHead.get());
+  }
 
-    // Short-circuit if the queried slot is too old
+  public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot, final Bytes32 headRoot) {
+    if (store == null || isHistoricalBlockRootAtSlotUnavailable(slot)) {
+      return Optional.empty();
+    }
+    return store.getBlockAndState(headRoot).flatMap(head -> getBlockRootBySlot(slot, head));
+  }
+
+  private boolean isHistoricalBlockRootAtSlotUnavailable(final UnsignedLong slot) {
+    // If slot is prior to genesis, it is not available
+    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    if (slot.compareTo(genesisSlot) < 0) {
+      return true;
+    }
+
+    // If slot is out of range of the latest finalized block, it is unavailable
     final UnsignedLong slotsPerHistoricalRoot = UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT);
     final UnsignedLong oldestAvailableState = store.getLatestFinalizedBlockSlot();
     final UnsignedLong oldestAvailableRoot =
         oldestAvailableState.compareTo(slotsPerHistoricalRoot) >= 0
             ? oldestAvailableState.minus(slotsPerHistoricalRoot)
             : UnsignedLong.ZERO;
-    if (slot.compareTo(oldestAvailableRoot) < 0) {
-      // Slot is too old, we don't have access to the root
-      return Optional.empty();
-    }
+    return slot.compareTo(oldestAvailableRoot) < 0;
+  }
 
+  private Optional<Bytes32> getBlockRootBySlot(
+      final UnsignedLong slot, final SignedBlockAndState headBlock) {
+    checkNotNull(slot);
+    final UnsignedLong slotsPerHistoricalRoot = UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT);
     // Since older blocks are pruned - query the newest queryable slot where possible
     final UnsignedLong youngestQueryableSlot = slot.plus(slotsPerHistoricalRoot);
-    SignedBlockAndState currentBlock = chainHead.get();
+
+    SignedBlockAndState currentBlock = headBlock;
     while (currentBlock != null) {
       if (currentBlock.getSlot().compareTo(slot) <= 0) {
         // The current block is less than or equal to the target slot, so it must be the block in

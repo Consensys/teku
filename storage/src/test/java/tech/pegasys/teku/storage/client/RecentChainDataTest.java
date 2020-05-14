@@ -631,6 +631,55 @@ class RecentChainDataTest {
     }
   }
 
+  @Test
+  public void getBlockRootBySlotWithHeadRoot_forSlotAfterHeadRoot() throws Exception {
+    final SignedBlockAndState targetBlock = advanceBestBlock(storageClient);
+    final SignedBlockAndState bestBlock = advanceBestBlock(storageClient);
+
+    assertThat(storageClient.getBlockRootBySlot(bestBlock.getSlot(), targetBlock.getRoot()))
+        .contains(targetBlock.getRoot());
+  }
+
+  @Test
+  public void getBlockRootBySlotWithHeadRoot_forUnknownHeadRoot() throws Exception {
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+    final SignedBlockAndState bestBlock = advanceBestBlock(storageClient);
+
+    assertThat(storageClient.getBlockRootBySlot(bestBlock.getSlot(), headRoot)).isEmpty();
+  }
+
+  @Test
+  public void getBlockRootBySlotWithHeadRoot_withForkRoot() throws Exception {
+    // Build small chain
+    for (int i = 0; i < 5; i++) {
+      advanceChain(storageClient);
+    }
+
+    // Split the chain
+    final ChainBuilder fork = chainBuilder.fork();
+    final UnsignedLong chainSplitSlot = chainBuilder.getLatestSlot();
+    for (int i = 0; i < 5; i++) {
+      final UnsignedLong canonicalBlockSlot = chainSplitSlot.plus(UnsignedLong.valueOf(i * 2 + 2));
+      final UnsignedLong forkSlot = chainSplitSlot.plus(UnsignedLong.valueOf(i * 2 + 1));
+      updateBestBlock(storageClient, chainBuilder.generateBlockAtSlot(canonicalBlockSlot));
+      saveBlock(storageClient, fork.generateBlockAtSlot(forkSlot));
+    }
+
+    final Bytes32 headRoot = fork.getLatestBlockAndState().getRoot();
+    for (int i = 0; i < fork.getLatestSlot().intValue(); i++) {
+      //
+      final UnsignedLong targetSlot = UnsignedLong.valueOf(i);
+      final SignedBlockAndState expectedBlock = fork.getLatestBlockAndStateAtSlot(targetSlot);
+      if (targetSlot.compareTo(chainSplitSlot) > 0) {
+        // Sanity check that fork differs from main chain
+        assertThat(expectedBlock)
+            .isNotEqualTo(chainBuilder.getLatestBlockAndStateAtSlot(targetSlot));
+      }
+      assertThat(storageClient.getBlockRootBySlot(targetSlot, headRoot))
+          .contains(expectedBlock.getRoot());
+    }
+  }
+
   private void importBlocksAndStates(final ChainBuilder... chainBuilders) {
     final Transaction transaction = preGenesisStorageClient.startStoreTransaction();
     Stream.of(chainBuilders)
