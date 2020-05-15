@@ -168,7 +168,6 @@ class DiscoveryNetworkTest {
 
   @Test
   public void setForkInfoAtInitialization() {
-    assertThat(discoveryNetwork.getEnr().isPresent()).isTrue();
     final EnrForkId enrForkId =
         new EnrForkId(
             compute_fork_digest(GENESIS_FORK_VERSION, Bytes32.ZERO),
