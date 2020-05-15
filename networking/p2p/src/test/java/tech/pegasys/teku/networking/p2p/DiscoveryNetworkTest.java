@@ -19,11 +19,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
 import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -88,7 +91,7 @@ class DiscoveryNetworkTest {
     discoveryNetwork.stop();
 
     verify(connectionManager).stop();
-    verifyNoInteractions(p2pNetwork, discoveryService);
+    verifyNoInteractions(p2pNetwork);
 
     connectionStop.complete(null);
     verify(p2pNetwork).stop();
@@ -104,7 +107,7 @@ class DiscoveryNetworkTest {
     discoveryNetwork.stop();
 
     verify(connectionManager).stop();
-    verifyNoInteractions(p2pNetwork, discoveryService);
+    verifyNoInteractions(p2pNetwork);
 
     connectionStop.completeExceptionally(new RuntimeException("Nope"));
     verify(p2pNetwork).stop();
@@ -161,5 +164,17 @@ class DiscoveryNetworkTest {
             currentForkInfo.getForkDigest(), nextFork.getCurrent_version(), nextFork.getEpoch());
     verify(discoveryService)
         .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(expectedEnrForkId));
+  }
+
+  @Test
+  public void setForkInfoAtInitialization() {
+    assertThat(discoveryNetwork.getEnr().isPresent()).isTrue();
+    final EnrForkId enrForkId =
+        new EnrForkId(
+            compute_fork_digest(GENESIS_FORK_VERSION, Bytes32.ZERO),
+            GENESIS_FORK_VERSION,
+            FAR_FUTURE_EPOCH);
+    verify(discoveryService)
+        .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(enrForkId));
   }
 }

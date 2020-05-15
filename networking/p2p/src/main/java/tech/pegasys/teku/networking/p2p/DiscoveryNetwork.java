@@ -14,8 +14,10 @@
 package tech.pegasys.teku.networking.p2p;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -23,6 +25,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -61,6 +64,12 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     this.p2pNetwork = p2pNetwork;
     this.discoveryService = discoveryService;
     this.connectionManager = connectionManager;
+    initialize();
+  }
+
+  public void initialize() {
+    setBootNodeForkInfo();
+    getEnr().ifPresent(StatusLogger.STATUS_LOG::listeningForDiscv5);
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
@@ -134,6 +143,16 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     discoveryService.updateCustomENRField(
         ATTESTATION_SUBNET_ENR_FIELD,
         new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
+  }
+
+  public void setBootNodeForkInfo() {
+    final EnrForkId enrForkId =
+        new EnrForkId(
+            compute_fork_digest(GENESIS_FORK_VERSION, Bytes32.ZERO),
+            GENESIS_FORK_VERSION,
+            FAR_FUTURE_EPOCH);
+    discoveryService.updateCustomENRField(
+        ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
   }
 
   public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
