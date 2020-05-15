@@ -52,8 +52,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private volatile Optional<UnsignedLong> remoteMetadataSeqNumber = Optional.empty();
   private volatile Optional<Bitvector> remoteAttSubnets = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
-  private AtomicBoolean chainValidated = new AtomicBoolean(false);
-  private AtomicInteger outstandingRequests = new AtomicInteger(0);
+  private final AtomicBoolean chainValidated = new AtomicBoolean(false);
+  private final AtomicInteger outstandingRequests = new AtomicInteger(0);
+  private final AtomicInteger outstandingPings = new AtomicInteger();
 
   public Eth2Peer(
       final Peer peer,
@@ -171,9 +172,15 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<UnsignedLong> sendPing() {
+    outstandingPings.getAndIncrement();
     return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
         .thenApply(PingMessage::getSeqNumber)
+        .thenPeek(__ -> outstandingPings.set(0))
         .thenPeek(this::updateMetadataSeqNumber);
+  }
+
+  public int getOutstandingPings() {
+    return outstandingPings.get();
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> sendMessage(
