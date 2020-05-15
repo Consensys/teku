@@ -313,9 +313,12 @@ jobs:
           name: Chechout GitHub Pages branch
           command: |
             readonly BRANCH='gh-pages'
-            git checkout "$BRANCH" || git checkout -b "$BRANCH"
-            # pull might fail if the branch was just created
-            git pull || true
+            if [ git branch | grep -q "$BRANCH" ]; then
+              git checkout "$BRANCH"
+              git pull
+            else
+              git checkout -b "$BRANCH"
+            fi
       - restore_cache:
           keys:
             - deps-{{ checksum "package.json" }}
