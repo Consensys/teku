@@ -19,13 +19,20 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.InMemoryStorageSystem;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class AbstractCombinedChainDataClientTest {
 
@@ -45,23 +52,50 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   protected abstract InMemoryStorageSystem createStorageSystem();
 
-  @Test
-  public void getStateAtSlot_preGenesis() {
-    assertThat(client.getLatestStateAtSlot(UnsignedLong.ZERO))
-        .isCompletedWithValue(Optional.empty());
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void getStateAtSlot_preGenesis(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
+    final UnsignedLong querySlot = UnsignedLong.ZERO;
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, Optional.empty());
+
+    assertThat(result).isCompletedWithValue(expected);
   }
 
-  @Test
-  public void getStateAtSlot_genesis() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void getStateAtSlot_atGenesis_genesisSlot(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
-    assertThat(client.getLatestStateAtSlot(genesis.getSlot()))
-        .isCompletedWithValue(Optional.of(genesis.getState()));
-    assertThat(client.getLatestStateAtSlot(genesis.getSlot().plus(UnsignedLong.ONE)))
-        .isCompletedWithValue(Optional.of(genesis.getState()));
+    final UnsignedLong querySlot = genesis.getSlot();
+
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, Optional.of(genesis));
+
+    assertThat(result).isCompletedWithValue(expected);
   }
 
-  @Test
-  public void getStateAtSlot_shouldRetrieveLatestFinalizedState() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void getStateAtSlot_atGenesis_postGenesisSlot(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
+    final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
+    final UnsignedLong querySlot = genesis.getSlot().plus(UnsignedLong.ONE);
+
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, Optional.of(genesis));
+
+    assertThat(result).isCompletedWithValue(expected);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void getStateAtSlot_shouldRetrieveLatestFinalizedState(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -74,12 +108,19 @@ public abstract class AbstractCombinedChainDataClientTest {
     // Sanity check
     assertThat(blockAtEpoch).isEqualTo(finalizedBlock);
 
-    assertThat(client.getLatestStateAtSlot(finalizedSlot))
-        .isCompletedWithValue(Optional.of(blockAtEpoch.getState()));
+    final UnsignedLong querySlot = finalizedSlot;
+    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(blockAtEpoch);
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
+
+    assertThat(result).isCompletedWithValue(expected);
   }
 
-  @Test
-  public void getStateAtSlot_shouldRetrieveHeadState() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void getStateAtSlot_shouldRetrieveHeadState(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -88,12 +129,19 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.finalizeEpoch(finalizedEpoch);
     final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
 
-    assertThat(client.getLatestStateAtSlot(bestBlock.getSlot()))
-        .isCompletedWithValue(Optional.of(bestBlock.getState()));
+    final UnsignedLong querySlot = bestBlock.getSlot();
+    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(bestBlock);
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
+
+    assertThat(result).isCompletedWithValue(expected);
   }
 
-  @Test
-  public void getStateAtSlot_shouldRetrieveRecentState() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void getStateAtSlot_shouldRetrieveRecentState(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -105,12 +153,19 @@ public abstract class AbstractCombinedChainDataClientTest {
     // Sanity check
     assertThat(recentBlock.getSlot()).isLessThan(bestBlock.getSlot());
 
-    assertThat(client.getLatestStateAtSlot(recentBlock.getSlot()))
-        .isCompletedWithValue(Optional.of(recentBlock.getState()));
+    final UnsignedLong querySlot = recentBlock.getSlot();
+    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(recentBlock);
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
+
+    assertThat(result).isCompletedWithValue(expected);
   }
 
-  @Test
-  public void getStateAtSlot_shouldRetrieveRecentStateInEffectAtSkippedSlot() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void getStateAtSlot_shouldRetrieveRecentStateInEffectAtSkippedSlot(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -123,7 +178,82 @@ public abstract class AbstractCombinedChainDataClientTest {
         chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
     chainUpdater.updateBestBlock(bestBlock);
 
-    assertThat(client.getLatestStateAtSlot(skippedSlot))
-        .isCompletedWithValue(Optional.of(recentBlock.getState()));
+    final UnsignedLong querySlot = skippedSlot;
+    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(recentBlock);
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
+
+    assertThat(result).isCompletedWithValue(expected);
+  }
+
+  public static Stream<Arguments> getQueryBySlotParameters() {
+    return Stream.of(
+        Arguments.of("getLatestStateAtSlot", new GetLatestStateAtSlotTestCase()),
+        Arguments.of("getBlockAtSlot", new GetBlockAtSlotExactTestCase()),
+        Arguments.of(
+            "getBlockAndStateInEffectAtSlot", new GetBlockAndStateInEffectAtSlotTestCase()));
+  }
+
+  public static Stream<Arguments> getStateBySlotParameters() {
+    return Stream.of(
+        Arguments.of("getLatestStateAtSlot", new GetLatestStateAtSlotTestCase()),
+        Arguments.of(
+            "getBlockAndStateInEffectAtSlot", new GetBlockAndStateInEffectAtSlotTestCase()));
+  }
+
+  protected interface QueryBySlotTestCase<TResult> {
+    SafeFuture<Optional<TResult>> executeQueryBySlot(
+        final CombinedChainDataClient client, final UnsignedLong slot);
+
+    Optional<TResult> mapEffectiveBlockAtSlotToExpectedResult(
+        final UnsignedLong slot, Optional<SignedBlockAndState> effectiveBlockAtSlot);
+  }
+
+  private static class GetLatestStateAtSlotTestCase implements QueryBySlotTestCase<BeaconState> {
+
+    @Override
+    public SafeFuture<Optional<BeaconState>> executeQueryBySlot(
+        final CombinedChainDataClient client, final UnsignedLong slot) {
+      return client.getLatestStateAtSlot(slot);
+    }
+
+    @Override
+    public Optional<BeaconState> mapEffectiveBlockAtSlotToExpectedResult(
+        final UnsignedLong slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
+      return effectiveBlockAtSlot.map(SignedBlockAndState::getState);
+    }
+  }
+
+  private static class GetBlockAtSlotExactTestCase
+      implements QueryBySlotTestCase<SignedBeaconBlock> {
+    @Override
+    public SafeFuture<Optional<SignedBeaconBlock>> executeQueryBySlot(
+        final CombinedChainDataClient client, final UnsignedLong slot) {
+      return client.getBlockAtSlotExact(slot);
+    }
+
+    @Override
+    public Optional<SignedBeaconBlock> mapEffectiveBlockAtSlotToExpectedResult(
+        final UnsignedLong slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
+      return effectiveBlockAtSlot
+          .filter(b -> b.getSlot().equals(slot))
+          .map(SignedBlockAndState::getBlock);
+    }
+  }
+
+  private static class GetBlockAndStateInEffectAtSlotTestCase
+      implements QueryBySlotTestCase<BeaconBlockAndState> {
+    @Override
+    public SafeFuture<Optional<BeaconBlockAndState>> executeQueryBySlot(
+        final CombinedChainDataClient client, final UnsignedLong slot) {
+      return client.getBlockAndStateInEffectAtSlot(slot);
+    }
+
+    @Override
+    public Optional<BeaconBlockAndState> mapEffectiveBlockAtSlotToExpectedResult(
+        final UnsignedLong slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
+      return effectiveBlockAtSlot.map(SignedBlockAndState::toUnsigned);
+    }
   }
 }

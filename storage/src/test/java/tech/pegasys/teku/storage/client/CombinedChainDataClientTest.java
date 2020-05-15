@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -25,7 +24,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,19 +107,6 @@ class CombinedChainDataClientTest {
 
     assertThat(client.getBlockAtSlotExact(slot, Bytes32.ZERO))
         .isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
-  public void getBlockInEffectAtSlot_returnPrecedingBlockWhenFinalizedSlotDidNotHaveABlock() {
-    final UnsignedLong slot = UnsignedLong.ONE;
-    final SignedBeaconBlock block = block(UnsignedLong.ZERO);
-    when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
-    when(store.getLatestFinalizedBlockSlot()).thenReturn(slotAtEpoch(10));
-    when(historicalChainData.getLatestFinalizedBlockAtSlot(slot))
-        .thenReturn(completedFuture(Optional.of(block)));
-
-    assertThat(client.getBlockInEffectAtSlot(slot, Bytes32.ZERO))
-        .isCompletedWithValue(Optional.of(block));
   }
 
   @Test
@@ -230,35 +215,11 @@ class CombinedChainDataClientTest {
   }
 
   @Test
-  public void getBlockInEffectAtSlot_returnPreviousBlockWhenSlotWasEmpty() {
-    // We've wrapped around a lot of times and are 5 slots into the next "loop"
-    final int historicalIndex = 5;
-    final UnsignedLong requestedSlot = UnsignedLong.valueOf(historicalIndex);
-    // Avoid the simple case where the requested slot is the head block slot
-    final UnsignedLong headSlot = requestedSlot.plus(UnsignedLong.ONE);
-
-    // Block is actually from the block before the requested slot
-    final SignedBeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
-    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
-    final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    // At the start of the chain, the slot number is the index into historical roots
-    final BeaconState bestState =
-        beaconState(headSlot)
-            .updated(state -> state.getBlock_roots().set(historicalIndex, blockRoot));
-    when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
-    when(store.getSignedBlock(blockRoot)).thenReturn(block);
-
-    assertThat(client.getBlockInEffectAtSlot(requestedSlot, headBlockRoot))
-        .isCompletedWithValue(Optional.of(block));
-  }
-
-  @Test
   public void getBlockAndStateInEffectAtSlot_returnEmptyWhenBlockIsUnavailable() {
     final UnsignedLong requestedSlot = UnsignedLong.valueOf(100);
-    final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
 
     final SafeFuture<Optional<BeaconBlockAndState>> result =
-        client.getBlockAndStateInEffectAtSlot(requestedSlot, headBlockRoot);
+        client.getBlockAndStateInEffectAtSlot(requestedSlot);
 
     assertThat(result).isCompletedWithValue(Optional.empty());
   }
@@ -276,7 +237,7 @@ class CombinedChainDataClientTest {
     when(historicalChainData.getLatestFinalizedBlockAtSlot(requestedSlot))
         .thenReturn(SafeFuture.failedFuture(error));
     final SafeFuture<Optional<BeaconBlockAndState>> result =
-        client.getBlockAndStateInEffectAtSlot(requestedSlot, headBlockRoot);
+        client.getBlockAndStateInEffectAtSlot(requestedSlot);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCause(error);
@@ -299,7 +260,7 @@ class CombinedChainDataClientTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<BeaconBlockAndState>> result =
-        client.getBlockAndStateInEffectAtSlot(requestedSlot, headBlockRoot);
+        client.getBlockAndStateInEffectAtSlot(requestedSlot);
 
     assertThat(result).isCompletedWithValue(Optional.empty());
   }
@@ -322,7 +283,7 @@ class CombinedChainDataClientTest {
         .thenReturn(SafeFuture.failedFuture(error));
 
     final SafeFuture<Optional<BeaconBlockAndState>> result =
-        client.getBlockAndStateInEffectAtSlot(requestedSlot, headBlockRoot);
+        client.getBlockAndStateInEffectAtSlot(requestedSlot);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::join).hasRootCause(error);
@@ -338,7 +299,7 @@ class CombinedChainDataClientTest {
     when(store.getSignedBlock(blockAndState.getRoot())).thenReturn(blockAndState.getBlock());
 
     final SafeFuture<Optional<BeaconBlockAndState>> result =
-        client.getBlockAndStateInEffectAtSlot(requestedSlot, blockAndState.getRoot());
+        client.getBlockAndStateInEffectAtSlot(requestedSlot);
 
     final BeaconBlockAndState expectedResult =
         new BeaconBlockAndState(blockAndState.getBlock().getMessage(), blockAndState.getState());
@@ -350,54 +311,6 @@ class CombinedChainDataClientTest {
     BeaconState state = dataStructureUtil.randomBeaconState();
     List<CommitteeAssignment> data = client.getCommitteesFromState(state, state.getSlot());
     assertThat(data.size()).isEqualTo(SLOTS_PER_EPOCH);
-  }
-
-  @Test
-  public void getBlockBySlot_blockByBlockRoot() throws ExecutionException, InterruptedException {
-    final UnsignedLong slotParam = UnsignedLong.ONE;
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlock(slotParam.longValue());
-
-    when(recentChainData.getBlockRootBySlot(any()))
-        .thenReturn(Optional.of(signedBeaconBlock.getParent_root()));
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
-    when(store.getSignedBlock(any())).thenReturn(signedBeaconBlock);
-
-    assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
-    assertThat(client.getBlockBySlot(slotParam).get())
-        .isNotNull()
-        .isPresent()
-        .isEqualTo(Optional.of(signedBeaconBlock));
-  }
-
-  @Test
-  public void getBlockBySlot_blockByBestBlockRoot()
-      throws ExecutionException, InterruptedException {
-    final UnsignedLong slotParam = UnsignedLong.ONE;
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlock(slotParam.longValue());
-
-    when(recentChainData.getBlockRootBySlot(any())).thenReturn(Optional.empty());
-    when(recentChainData.getBestBlockRoot())
-        .thenReturn(Optional.of(signedBeaconBlock.getParent_root()));
-    when(store.getBlockState(any())).thenReturn(beaconState(signedBeaconBlock.getSlot()));
-    when(store.getSignedBlock(any())).thenReturn(signedBeaconBlock);
-
-    assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
-    assertThat(client.getBlockBySlot(slotParam).get())
-        .isNotNull()
-        .isPresent()
-        .isEqualTo(Optional.of(signedBeaconBlock));
-  }
-
-  @Test
-  public void getBlockBySlot_noBlockFound() throws ExecutionException, InterruptedException {
-    final UnsignedLong slotParam = UnsignedLong.MAX_VALUE;
-    when(recentChainData.getBlockRootBySlot(any())).thenReturn(Optional.empty());
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
-
-    assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
-    assertThat(client.getBlockBySlot(slotParam).get()).isNotNull().isEmpty();
   }
 
   private SignedBeaconBlock block(final UnsignedLong slot) {

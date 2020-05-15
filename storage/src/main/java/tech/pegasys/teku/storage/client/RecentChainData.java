@@ -276,6 +276,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(store.getBlock(root));
   }
 
+  public Optional<SignedBeaconBlock> getSignedBlockByRoot(final Bytes32 root) {
+    if (store == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(store.getSignedBlock(root));
+  }
+
   public Optional<BeaconState> getBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return Optional.empty();

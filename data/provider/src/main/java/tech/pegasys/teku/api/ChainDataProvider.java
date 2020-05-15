@@ -15,6 +15,7 @@ package tech.pegasys.teku.api;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
+import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
@@ -82,8 +83,8 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<List<Committee>>> getCommitteesAtEpoch(final UnsignedLong epoch) {
-    if (!isStoreAvailable() || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+    if (!combinedChainDataClient.isChainDataFullyAvailable()) {
+      return chainUnavailable();
     }
     final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
     final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
@@ -95,10 +96,9 @@ public class ChainDataProvider {
         > 0) {
       return SafeFuture.completedFuture(Optional.empty());
     }
-    final Bytes32 bestRoot =
-        combinedChainDataClient.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
+
     return combinedChainDataClient
-        .getBlockAndStateInEffectAtSlot(startingSlot, bestRoot)
+        .getBlockAndStateInEffectAtSlot(startingSlot)
         .thenApply(
             maybeResult ->
                 maybeResult.map(
@@ -111,15 +111,15 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(final UnsignedLong slot) {
     if (!isStoreAvailable()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+      return chainUnavailable();
     }
     return combinedChainDataClient
-        .getBlockBySlot(slot)
+        .getBlockAtSlotExact(slot)
         .thenApply(block -> block.map(SignedBeaconBlock::new));
   }
 
   public boolean isStoreAvailable() {
-    return combinedChainDataClient != null && combinedChainDataClient.isStoreAvailable();
+    return combinedChainDataClient.isStoreAvailable();
   }
 
   public Optional<Bytes32> getBestBlockRoot() {
@@ -128,7 +128,7 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockParam) {
     if (!isStoreAvailable()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+      return chainUnavailable();
     }
     return combinedChainDataClient
         .getBlockByBlockRoot(blockParam)
@@ -137,7 +137,7 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
     if (!isStoreAvailable()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+      return chainUnavailable();
     }
     return combinedChainDataClient
         .getStateByBlockRoot(blockRoot)
@@ -147,33 +147,26 @@ public class ChainDataProvider {
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
     return SafeFuture.of(
         () -> {
-          if (!isStoreAvailable()) {
-            return SafeFuture.failedFuture(new ChainDataUnavailableException());
+          if (!combinedChainDataClient.isChainDataFullyAvailable()) {
+            return chainUnavailable();
           }
-          final Bytes32 bestRoot =
-              combinedChainDataClient
-                  .getBestBlockRoot()
-                  .orElseThrow(ChainDataUnavailableException::new);
+
           return combinedChainDataClient
-              .getBlockAndStateInEffectAtSlot(slot, bestRoot)
+              .getBlockAndStateInEffectAtSlot(slot)
               .thenApply(state -> state.map(BeaconState::new));
         });
   }
 
-  public SafeFuture<Optional<Bytes32>> getHashTreeRootAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<Bytes32>> getStateRootAtSlot(final UnsignedLong slot) {
+    if (!combinedChainDataClient.isChainDataFullyAvailable()) {
+      return chainUnavailable();
+    }
+
     return SafeFuture.of(
-        () -> {
-          if (!isStoreAvailable()) {
-            return SafeFuture.failedFuture(new ChainDataUnavailableException());
-          }
-          final Bytes32 headRoot =
-              combinedChainDataClient
-                  .getBestBlockRoot()
-                  .orElseThrow(ChainDataUnavailableException::new);
-          return combinedChainDataClient
-              .getBlockAtSlotExact(slot, headRoot)
-              .thenApply(block -> block.map(b -> b.getMessage().getState_root()));
-        });
+        () ->
+            combinedChainDataClient
+                .getBlockAtSlotExact(slot)
+                .thenApply(block -> block.map(b -> b.getMessage().getState_root())));
   }
 
   public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(
@@ -182,18 +175,19 @@ public class ChainDataProvider {
       // Short-circuit if we're not requesting anything
       return SafeFuture.completedFuture(Optional.of(BeaconValidators.emptySet()));
     }
+    if (!combinedChainDataClient.isChainDataFullyAvailable()) {
+      return chainUnavailable();
+    }
 
     return SafeFuture.of(
         () -> {
-          final Bytes32 bestBlockRoot =
-              recentChainData.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
           UnsignedLong slot =
               request.epoch == null
                   ? combinedChainDataClient.getBestSlot()
                   : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
 
           return combinedChainDataClient
-              .getBlockAndStateInEffectAtSlot(slot, bestBlockRoot)
+              .getBlockAndStateInEffectAtSlot(slot)
               .thenApply(
                   optionalState ->
                       optionalState.map(

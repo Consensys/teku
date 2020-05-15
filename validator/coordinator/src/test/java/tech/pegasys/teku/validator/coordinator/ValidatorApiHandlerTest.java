@@ -239,7 +239,7 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getBestSlot()).thenReturn(UnsignedLong.valueOf(24));
-    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE), blockRoot))
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(previousBlockAndState)));
     when(blockFactory.createUnsignedBlock(
             previousState, previousBlockAndState.getBlock(), newSlot, randaoReveal))
@@ -281,7 +281,7 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getBestSlot()).thenReturn(slot);
-    when(chainDataClient.getBlockAndStateInEffectAtSlot(slot, blockRoot))
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
 
     final int committeeIndex = 0;

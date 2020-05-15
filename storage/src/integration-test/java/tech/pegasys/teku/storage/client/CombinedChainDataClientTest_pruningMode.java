@@ -18,9 +18,11 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.storage.InMemoryStorageSystem;
+import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedChainDataClientTest {
@@ -30,8 +32,10 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
     return InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.PRUNE);
   }
 
-  @Test
-  public void getStateAtSlot_shouldReturnEmptyResponseForHistoricalState() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getStateBySlotParameters")
+  public <T> void getStateAtSlot_shouldReturnEmptyResponseForHistoricalState(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -45,7 +49,12 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
     // Sanity check
     assertThat(historicalBlock.getSlot()).isLessThan(finalizedBlock.getSlot());
 
-    assertThat(client.getLatestStateAtSlot(historicalBlock.getSlot()))
-        .isCompletedWithValue(Optional.empty());
+    final UnsignedLong querySlot = historicalBlock.getSlot();
+    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.empty();
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
+
+    assertThat(result).isCompletedWithValue(expected);
   }
 }

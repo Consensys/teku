@@ -121,7 +121,7 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.getCommitteesFromState(any(), any()))
         .thenReturn(committeeAssignments);
     when(mockRecentChainData.getBestSlot()).thenReturn(beaconStateInternal.getSlot());
-    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any(), any()))
+    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
     final SafeFuture<Optional<List<Committee>>> future =
         provider.getCommitteesAtEpoch(beaconStateInternal.getSlot());
@@ -201,7 +201,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBlockBySlot(ZERO))
+    when(mockCombinedChainDataClient.getBlockAtSlotExact(ZERO))
         .thenReturn(completedFuture(Optional.empty()));
     final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
     assertTrue(future.get().isEmpty());
@@ -216,9 +216,9 @@ public class ChainDataProviderTest {
         completedFuture(Optional.of(signedBeaconBlock));
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBlockBySlot(ZERO)).thenReturn(data);
+    when(mockCombinedChainDataClient.getBlockAtSlotExact(ZERO)).thenReturn(data);
     final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
-    verify(mockCombinedChainDataClient).getBlockBySlot(ZERO);
+    verify(mockCombinedChainDataClient).getBlockAtSlotExact(ZERO);
 
     final SignedBeaconBlock result = future.get().get();
     assertThat(result)
@@ -315,11 +315,10 @@ public class ChainDataProviderTest {
         new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(chainHead));
-    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(ZERO, chainHead))
-        .thenReturn(safeFuture);
+    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(ZERO)).thenReturn(safeFuture);
 
     final SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
-    verify(mockCombinedChainDataClient).getBlockAndStateInEffectAtSlot(ZERO, chainHead);
+    verify(mockCombinedChainDataClient).getBlockAndStateInEffectAtSlot(ZERO);
 
     final BeaconState result = future.get().get();
     assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);
@@ -363,8 +362,7 @@ public class ChainDataProviderTest {
     final ValidatorsRequest smallRequest =
         new ValidatorsRequest(compute_epoch_at_slot(beaconState.slot), List.of(BLSPubKey.empty()));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any(), any()))
-        .thenReturn(safeFuture);
+    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any())).thenReturn(safeFuture);
 
     final SafeFuture<Optional<BeaconValidators>> future =
         provider.getValidatorsByValidatorsRequest(smallRequest);
@@ -394,8 +392,7 @@ public class ChainDataProviderTest {
                 beaconState.validators.get(11).pubkey,
                 beaconState.validators.get(99).pubkey));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any(), any()))
-        .thenReturn(safeFuture);
+    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any())).thenReturn(safeFuture);
     final SafeFuture<Optional<BeaconValidators>> future =
         provider.getValidatorsByValidatorsRequest(validatorsRequest);
 
