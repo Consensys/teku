@@ -14,10 +14,12 @@
 package tech.pegasys.teku.networking.p2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -91,6 +93,9 @@ class DiscoveryNetworkTest {
     discoveryNetwork.stop();
 
     verify(connectionManager).stop();
+    verify(discoveryService).updateCustomENRField(any(), any());
+    verify(discoveryService).getEnr();
+    verifyNoMoreInteractions(discoveryService);
     verifyNoInteractions(p2pNetwork);
 
     connectionStop.complete(null);
@@ -107,6 +112,9 @@ class DiscoveryNetworkTest {
     discoveryNetwork.stop();
 
     verify(connectionManager).stop();
+    verify(discoveryService).updateCustomENRField(any(), any());
+    verify(discoveryService).getEnr();
+    verifyNoMoreInteractions(discoveryService);
     verifyNoInteractions(p2pNetwork);
 
     connectionStop.completeExceptionally(new RuntimeException("Nope"));
