@@ -56,13 +56,13 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
   }
 
   @Test
-  public void ShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive(
+  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive(
       @TempDir final Path tempDir) throws Exception {
     testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.ARCHIVE);
   }
 
   @Test
-  public void ShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune(
+  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune(
       @TempDir final Path tempDir) throws Exception {
     testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.PRUNE);
   }
@@ -120,7 +120,6 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     // Setup chains
     final ChainBuilder chain = ChainBuilder.create(VALIDATOR_KEYS);
     final SignedBlockAndState genesis = chain.generateGenesis();
-    // Primary chain's next block is at 7
     chain.generateBlocksUpToSlot(10);
 
     // Setup database
@@ -128,7 +127,6 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     store = Store.getForkChoiceStore(genesis.getState());
     database.storeGenesis(store);
 
-    // Finalize at slot 15, so all the blocks before 15 would need to be pruned.
     add(chain.streamBlocksAndStates().collect(Collectors.toSet()));
 
     // Close database and rebuild from disk
@@ -143,7 +141,6 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
         chain.streamBlocksAndStates(7, 10).collect(toList());
     assertHotBlocksAndStatesInclude(expectedHotBlocksAndStates);
 
-    // Old states should be unavailable
     final Map<Bytes32, BeaconState> historicalStates =
         chain
             .streamBlocksAndStates(0, 6)

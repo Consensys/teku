@@ -178,9 +178,7 @@ public class V3RocksDbDao implements RocksDbDao {
         initializeHotStatesAndBlocks(finalizedRoot.get(), finalizedState.get(), hotBlocksByRoot);
     LOG.info("Finished initializing hot states from hot blocks");
 
-    LOG.info("Adding hot roots to cache ordered by slots");
     initializeHotSlotsByCache(prunedHotBlocks.values());
-    LOG.info("Finished adding hot roots to cache ordered by slots");
   }
 
   private void initializeHotSlotsByCache(Collection<SignedBeaconBlock> blocks) {
