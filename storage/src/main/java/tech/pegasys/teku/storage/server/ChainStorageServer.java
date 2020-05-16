@@ -16,10 +16,16 @@ package tech.pegasys.teku.storage.server;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.api.Eth1DepositChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.StorageUpdate;
@@ -27,7 +33,9 @@ import tech.pegasys.teku.storage.events.StorageUpdateResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
-public class ChainStorageServer implements StorageUpdateChannel, StorageQueryChannel {
+public class ChainStorageServer
+    implements StorageUpdateChannel, StorageQueryChannel, Eth1DepositChannel {
+  private static final Logger LOG = LogManager.getLogger();
   private final EventBus eventBus;
   private final VersionedDatabaseFactory databaseFactory;
 
@@ -116,5 +124,19 @@ public class ChainStorageServer implements StorageUpdateChannel, StorageQueryCha
   @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(database.getState(blockRoot));
+  }
+
+  @Override
+  public void addEth1Deposit(final DepositWithIndex depositWithIndex) {
+    LOG.info("ChainStorageServer::addEth1Deposit " + depositWithIndex.getIndex().toString());
+    database.addEth1Deposit(depositWithIndex);
+  }
+
+  @Override
+  public void addEth1BlockData(final UnsignedLong timestamp, final Eth1BlockData eth1BlockData) {}
+
+  @Override
+  public void eth1DepositsFinalized(final UnsignedLong depositIndex) {
+    database.pruneEth1Deposits(depositIndex);
   }
 }

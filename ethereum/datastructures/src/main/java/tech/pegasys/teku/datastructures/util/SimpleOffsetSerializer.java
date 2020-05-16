@@ -36,6 +36,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
@@ -89,6 +90,7 @@ public class SimpleOffsetSerializer {
             BeaconBlockHeader.class,
             SignedBeaconBlockHeader.class,
             Eth1Data.class,
+            Eth1BlockData.class,
             Attestation.class,
             AttestationData.class,
             AttesterSlashing.class,

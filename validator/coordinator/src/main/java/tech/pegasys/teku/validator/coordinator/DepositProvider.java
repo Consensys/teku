@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.storage.api.Eth1DepositChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -43,12 +45,15 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
+  private final Eth1DepositChannel eth1DepositChannel;
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
 
   private NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
 
-  public DepositProvider(RecentChainData recentChainData) {
+  public DepositProvider(
+      final RecentChainData recentChainData, final Eth1DepositChannel eth1DepositChannel) {
     this.recentChainData = recentChainData;
+    this.eth1DepositChannel = eth1DepositChannel;
   }
 
   @Override
@@ -57,15 +62,18 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
         .map(DepositUtil::convertDepositEventToOperationDeposit)
         .forEach(
             deposit -> {
+              if (!recentChainData.isPreGenesis()) {
+                LOG.debug("About to process deposit: {}", deposit.getIndex());
+              }
+              eth1DepositChannel.addEth1Deposit(deposit);
               synchronized (DepositProvider.this) {
-                if (!recentChainData.isPreGenesis()) {
-                  LOG.debug("About to process deposit: {}", deposit.getIndex());
-                }
-
                 depositNavigableMap.put(deposit.getIndex(), deposit);
                 depositMerkleTree.add(deposit.getData().hash_tree_root());
               }
             });
+    eth1DepositChannel.addEth1BlockData(
+        event.getBlockTimestamp(),
+        new Eth1BlockData(UnsignedLong.valueOf(event.getDeposits().size()), lastDepositIndex, event.getBlockHash()));
   }
 
   @Override

@@ -39,6 +39,7 @@ import tech.pegasys.teku.datastructures.util.MerkleTree;
 import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.storage.api.Eth1DepositChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -50,6 +51,7 @@ public class DepositProviderTest {
   private RecentChainData recentChainData;
   private BeaconState beaconState;
   private MerkleTree depositMerkleTree;
+  private Eth1DepositChannel eth1DepositChannel = mock(Eth1DepositChannel.class);
 
   @BeforeEach
   void setUp() {
@@ -57,7 +59,7 @@ public class DepositProviderTest {
     beaconState = mock(BeaconState.class);
 
     depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
-    depositProvider = new DepositProvider(recentChainData);
+    depositProvider = new DepositProvider(recentChainData, eth1DepositChannel);
 
     createDepositEvents(40);
   }

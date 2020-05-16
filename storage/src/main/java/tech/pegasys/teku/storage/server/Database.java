@@ -16,7 +16,9 @@ package tech.pegasys.teku.storage.server;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
@@ -27,6 +29,25 @@ public interface Database extends AutoCloseable {
   void storeGenesis(Store store);
 
   StorageUpdateResult update(StorageUpdate event);
+
+  /**
+   * Add an eth1 deposit to the merkle tree and the pending deposits list
+   *
+   * @param depositWithIndex the deposit to add
+   * @return
+   */
+  StorageUpdateResult addEth1Deposit(final DepositWithIndex depositWithIndex);
+
+  StorageUpdateResult addEth1BlockData(
+      final UnsignedLong timestamp, final Eth1BlockData eth1BlockData);
+
+  /**
+   * purge the pending deposits list up to the specified index
+   *
+   * @param eth1DepositIndex the highest index to purge
+   * @return
+   */
+  StorageUpdateResult pruneEth1Deposits(UnsignedLong eth1DepositIndex);
 
   Optional<Store> createMemoryStore();
 

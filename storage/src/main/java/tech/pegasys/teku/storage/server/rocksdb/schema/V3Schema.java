@@ -15,6 +15,8 @@ package tech.pegasys.teku.storage.server.rocksdb.schema;
 
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.CHECKPOINT_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.DEPOSIT_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.ETH1_BLOCK_DATA_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_BLOCK_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.STATE_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UNSIGNED_LONG_SERIALIZER;
@@ -22,8 +24,10 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
@@ -42,6 +46,12 @@ public interface V3Schema extends Schema {
       RocksDbColumn.create(5, CHECKPOINT_SERIALIZER, STATE_SERIALIZER);
   RocksDbColumn<UnsignedLong, VoteTracker> VOTES =
       RocksDbColumn.create(6, UNSIGNED_LONG_SERIALIZER, VOTES_SERIALIZER);
+  RocksDbColumn<UnsignedLong, Bytes32> ETH1_DEPOSIT_HASHES =
+      RocksDbColumn.create(7, UNSIGNED_LONG_SERIALIZER, BYTES32_SERIALIZER);
+  RocksDbColumn<UnsignedLong, Deposit> ETH1_DEPOSIT_CACHE =
+      RocksDbColumn.create(8, UNSIGNED_LONG_SERIALIZER, DEPOSIT_SERIALIZER);
+  RocksDbColumn<UnsignedLong, Eth1BlockData> ETH1_BLOCK_METADATA =
+      RocksDbColumn.create(9, UNSIGNED_LONG_SERIALIZER, ETH1_BLOCK_DATA_SERIALIZER);
 
   // Variables
   RocksDbVariable<UnsignedLong> GENESIS_TIME = RocksDbVariable.create(1, UNSIGNED_LONG_SERIALIZER);

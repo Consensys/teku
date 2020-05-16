@@ -35,8 +35,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
+import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -346,6 +348,32 @@ public class V3RocksDbDao implements RocksDbDao {
     public void deleteCheckpointState(final Checkpoint checkpoint) {
       transaction.delete(V3Schema.CHECKPOINT_STATES, checkpoint);
     }
+
+    @Override
+    public void addEth1Deposit(final DepositWithIndex depositWithIndex) {
+      transaction.put(V3Schema.ETH1_DEPOSIT_CACHE, depositWithIndex.getIndex(), depositWithIndex);
+      transaction.put(
+          V3Schema.ETH1_DEPOSIT_HASHES,
+          depositWithIndex.getIndex(),
+          depositWithIndex.getData().hash_tree_root());
+      // FIXME remove comment
+      LOG.info("PJH: DEPOSIT " + depositWithIndex.getIndex());
+    }
+
+    @Override
+    public void addEth1BlockData(final UnsignedLong timestamp, final Eth1BlockData eth1BlockData) {
+      transaction.put(V3Schema.ETH1_BLOCK_METADATA, timestamp, eth1BlockData);
+      // FIXME remove comment
+      LOG.info("PJH: eth1 Block data" + timestamp.toString());
+    }
+
+    @Override
+    public void pruneEth1Deposits(final UnsignedLong depositIndex) {
+      // FIXME remove comment
+      LOG.info("PJH:   PRUNE " + depositIndex.toString());
+    }
+
+    // FIXME prune eth1 timestamp column
 
     @Override
     public Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot) {

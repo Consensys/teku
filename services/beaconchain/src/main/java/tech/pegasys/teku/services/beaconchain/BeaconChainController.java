@@ -65,6 +65,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.api.Eth1DepositChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -241,7 +242,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initDepositProvider() {
     LOG.debug("BeaconChainController.initDepositProvider()");
-    depositProvider = new DepositProvider(recentChainData);
+    depositProvider =
+        new DepositProvider(recentChainData, eventChannels.getPublisher(Eth1DepositChannel.class));
     eventChannels
         .subscribe(Eth1EventsChannel.class, depositProvider)
         .subscribe(FinalizedCheckpointChannel.class, depositProvider);

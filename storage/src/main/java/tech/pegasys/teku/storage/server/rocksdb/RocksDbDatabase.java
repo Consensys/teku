@@ -27,8 +27,10 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.Store;
@@ -102,6 +104,34 @@ public class RocksDbDatabase implements Database {
       return StorageUpdateResult.successfulWithNothingPruned();
     }
     return doUpdate(event);
+  }
+
+  @Override
+  public StorageUpdateResult addEth1Deposit(final DepositWithIndex depositWithIndex) {
+    try (final Updater updater = dao.updater()) {
+      updater.addEth1Deposit(depositWithIndex);
+      updater.commit();
+      return StorageUpdateResult.successfulWithNothingPruned();
+    }
+  }
+
+  @Override
+  public StorageUpdateResult addEth1BlockData(
+      final UnsignedLong timestamp, final Eth1BlockData eth1BlockData) {
+    try (final Updater updater = dao.updater()) {
+      updater.addEth1BlockData(timestamp, eth1BlockData);
+      updater.commit();
+      return StorageUpdateResult.successfulWithNothingPruned();
+    }
+  }
+
+  @Override
+  public StorageUpdateResult pruneEth1Deposits(final UnsignedLong eth1DepositIndex) {
+    try (final Updater updater = dao.updater()) {
+      updater.pruneEth1Deposits(eth1DepositIndex);
+      updater.commit();
+      return StorageUpdateResult.successfulWithNothingPruned();
+    }
   }
 
   @Override
