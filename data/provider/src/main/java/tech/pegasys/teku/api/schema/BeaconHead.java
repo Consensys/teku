@@ -13,15 +13,23 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class BeaconHead {
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong slot;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 block_root;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 state_root;
 
   @JsonCreator

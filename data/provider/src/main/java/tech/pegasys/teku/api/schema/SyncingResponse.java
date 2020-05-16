@@ -11,12 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.schema;
+package tech.pegasys.teku.api.schema;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import tech.pegasys.teku.sync.SyncStatus;
 import tech.pegasys.teku.sync.SyncingStatus;
 
 @JsonInclude(NON_NULL)
@@ -24,13 +23,13 @@ public class SyncingResponse {
   public final boolean is_syncing;
   public final SyncStatus sync_status;
 
-  public SyncingResponse(boolean syncing, SyncStatus sync_status) {
+  public SyncingResponse(final boolean syncing, final SyncStatus sync_status) {
     this.is_syncing = syncing;
     this.sync_status = sync_status;
   }
 
-  public SyncingResponse(SyncingStatus syncStatus) {
+  public SyncingResponse(final SyncingStatus syncStatus) {
     this.is_syncing = syncStatus.isSyncing();
-    this.sync_status = syncStatus.getSyncStatus();
+    this.sync_status = new SyncStatus(syncStatus.getSyncStatus());
   }
 }

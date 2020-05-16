@@ -34,7 +34,9 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.9.0'
 
-    dependency 'io.swagger.core.v3:swagger-core:2.1.1'
+    dependency 'io.swagger.core.v3:swagger-core:2.1.2'
+    dependency 'io.swagger.core.v3:swagger-models:2.1.2'
+    dependency 'io.swagger.core.v3:swagger-annotations:2.1.2'
     dependency 'org.webjars:swagger-ui:3.24.3'
     dependency 'io.github.classgraph:classgraph:4.8.34'
 
