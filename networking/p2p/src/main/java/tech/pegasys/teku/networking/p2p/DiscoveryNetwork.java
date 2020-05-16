@@ -69,7 +69,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   public void initialize() {
     setPreGenesisForkInfo();
-    getEnr().ifPresent(StatusLogger.STATUS_LOG::listeningForDiscv5);
+    getEnr().ifPresent(StatusLogger.STATUS_LOG::listeningForDiscv5PreGenesis);
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
