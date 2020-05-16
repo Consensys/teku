@@ -21,10 +21,13 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManagerAccess;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -113,5 +116,41 @@ public class PingIntegrationTest {
 
     // detecting that ping was automatically sent via updated att subnets of the remote peer
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));
+  }
+
+  @Test
+  public void testManualPingTimeout() throws Exception {
+    // sending PING manually to check eth2RpcOutstandingPingThreshold works correctly
+    Duration pingPeriod = Duration.ofDays(1);
+    network1 =
+        networkFactory
+            .builder()
+            .eth2RpcPingInterval(pingPeriod)
+            .eth2RpcOutstandingPingThreshold(2)
+            // remove PING method
+            .rpcMethodsModifier(m -> Stream.of(m).filter(t -> !t.getId().contains("/ping")))
+            .startNetwork();
+    network2 =
+        networkFactory
+            .builder()
+            .eth2RpcPingInterval(pingPeriod)
+            .eth2RpcOutstandingPingThreshold(2)
+            .peer(network1)
+            .startNetwork();
+
+    peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
+    peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
+
+    Eth2PeerManagerAccess.invokeSendPeriodicPing(getPeerManager(network2), peer1);
+    assertThat(peer1.isConnected()).isTrue();
+    Eth2PeerManagerAccess.invokeSendPeriodicPing(getPeerManager(network2), peer1);
+    assertThat(peer1.isConnected()).isTrue();
+    // the 3rd ping attempt should disconnect the peer since there are 2 unanswered PING requests
+    Eth2PeerManagerAccess.invokeSendPeriodicPing(getPeerManager(network2), peer1);
+    waitFor(() -> assertThat(peer1.isConnected()).isFalse());
+  }
+
+  private Eth2PeerManager getPeerManager(Eth2Network eth2Network) {
+    return ((ActiveEth2Network) eth2Network).getPeerManager();
   }
 }

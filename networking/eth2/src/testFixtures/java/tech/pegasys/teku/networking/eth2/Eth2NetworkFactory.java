@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -24,13 +25,14 @@ import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -81,11 +83,13 @@ public class Eth2NetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
-    protected List<RpcMethod> rpcMethods = new ArrayList<>();
+    protected Function<RpcMethod, Stream<RpcMethod>> rpcMethodsModifier = Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     protected Duration eth2RpcPingInterval;
+    protected Integer eth2RpcOutstandingPingThreshold;
+    protected Duration eth2StatusUpdateInterval;
 
     public Eth2Network startNetwork() throws Exception {
       setDefaults();
@@ -134,10 +138,16 @@ public class Eth2NetworkFactory {
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 rpcEncoding,
-                eth2RpcPingInterval);
-        final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
-        // Configure eth2 handlers
-        this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
+                eth2RpcPingInterval,
+                eth2RpcOutstandingPingThreshold,
+                eth2StatusUpdateInterval);
+
+        List<RpcMethod> rpcMethods =
+            eth2PeerManager.getBeaconChainMethods().all().stream()
+                .flatMap(rpcMethodsModifier)
+                .collect(toList());
+
+        this.peerHandler(eth2PeerManager);
 
         final ReputationManager reputationManager =
             new ReputationManager(
@@ -145,7 +155,11 @@ public class Eth2NetworkFactory {
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 new LibP2PNetwork(
-                    config, reputationManager, METRICS_SYSTEM, rpcMethods, peerHandlers),
+                    config,
+                    reputationManager,
+                    METRICS_SYSTEM,
+                    new ArrayList<>(rpcMethods),
+                    peerHandlers),
                 reputationManager,
                 config);
 
@@ -190,6 +204,13 @@ public class Eth2NetworkFactory {
       if (eth2RpcPingInterval == null) {
         eth2RpcPingInterval = Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;
       }
+      if (eth2StatusUpdateInterval == null) {
+        eth2StatusUpdateInterval = Eth2NetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+      }
+      if (eth2RpcOutstandingPingThreshold == null) {
+        eth2RpcOutstandingPingThreshold =
+            Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
+      }
       if (recentChainData == null) {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
         BeaconChainUtil.create(0, recentChainData).initializeStorage();
@@ -225,9 +246,10 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder rpcMethods(final Collection<RpcMethod> methods) {
-      checkNotNull(methods);
-      this.rpcMethods.addAll(methods);
+    public Eth2P2PNetworkBuilder rpcMethodsModifier(
+        Function<RpcMethod, Stream<RpcMethod>> rpcMethodsModifier) {
+      checkNotNull(rpcMethodsModifier);
+      this.rpcMethodsModifier = rpcMethodsModifier;
       return this;
     }
 
@@ -246,6 +268,19 @@ public class Eth2NetworkFactory {
     public Eth2P2PNetworkBuilder eth2RpcPingInterval(Duration eth2RpcPingInterval) {
       checkNotNull(eth2RpcPingInterval);
       this.eth2RpcPingInterval = eth2RpcPingInterval;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder eth2RpcOutstandingPingThreshold(
+        int eth2RpcOutstandingPingThreshold) {
+      checkArgument(eth2RpcOutstandingPingThreshold > 0);
+      this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder eth2StatusUpdateInterval(Duration eth2StatusUpdateInterval) {
+      checkNotNull(eth2StatusUpdateInterval);
+      this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
       return this;
     }
   }

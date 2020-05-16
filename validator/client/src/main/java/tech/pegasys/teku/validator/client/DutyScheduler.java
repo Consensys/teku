@@ -23,18 +23,28 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class DutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final DutyLoader epochDutiesScheduler;
   private final StableSubnetSubscriber stableSubnetSubscriber;
-  private NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
+  private final NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
 
   public DutyScheduler(
-      final DutyLoader epochDutiesScheduler, final StableSubnetSubscriber stableSubnetSubscriber) {
+      final MetricsSystem metricsSystem,
+      final DutyLoader epochDutiesScheduler,
+      final StableSubnetSubscriber stableSubnetSubscriber) {
     this.epochDutiesScheduler = epochDutiesScheduler;
     this.stableSubnetSubscriber = stableSubnetSubscriber;
+
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.VALIDATOR,
+        "scheduled_duties_current",
+        "Current number of pending duties that have been scheduled",
+        () -> dutiesByEpoch.values().stream().mapToInt(DutyQueue::countDuties).sum());
   }
 
   @Override

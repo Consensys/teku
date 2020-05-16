@@ -20,7 +20,8 @@ public enum TekuMetricCategory implements MetricCategory {
   BEACON("beacon"),
   EVENTBUS("eventbus"),
   LIBP2P("libp2p"),
-  NETWORK("network");
+  NETWORK("network"),
+  VALIDATOR("validator");
 
   private final String name;
 

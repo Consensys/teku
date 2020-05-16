@@ -32,13 +32,12 @@ import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class Eth2PeerManagerTest {
 
-  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();;;
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final PeerStatusFactory statusFactory = PeerStatusFactory.create(1L);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -59,7 +58,9 @@ public class Eth2PeerManagerTest {
           peerValidatorFactory,
           new AttestationSubnetService(),
           rpcEncoding,
-          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL);
+          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL,
+          Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,
+          Eth2NetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL);
 
   @BeforeEach
   public void setup() {
