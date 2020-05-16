@@ -68,7 +68,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void initialize() {
-    setBootNodeForkInfo();
+    setPreGenesisForkInfo();
     getEnr().ifPresent(StatusLogger.STATUS_LOG::listeningForDiscv5);
   }
 
@@ -145,7 +145,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
         new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
   }
 
-  public void setBootNodeForkInfo() {
+  public void setPreGenesisForkInfo() {
     final EnrForkId enrForkId =
         new EnrForkId(
             compute_fork_digest(GENESIS_FORK_VERSION, Bytes32.ZERO),
