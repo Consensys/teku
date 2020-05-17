@@ -13,15 +13,27 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class DepositData {
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
   public final BLSPubKey pubkey;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 withdrawal_credentials;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong amount;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
   public DepositData(tech.pegasys.teku.datastructures.operations.DepositData depositData) {

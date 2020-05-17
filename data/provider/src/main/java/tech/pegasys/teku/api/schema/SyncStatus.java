@@ -13,34 +13,37 @@
 
 package tech.pegasys.teku.api.schema;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 
-public class Committee {
+public class SyncStatus {
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong slot;
+  public final UnsignedLong startingSlot;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong index;
+  public final UnsignedLong currentSlot;
 
-  public final List<Integer> committee;
+  @Schema(type = "string", format = "uint64")
+  public final UnsignedLong highestSlot;
 
-  public Committee(tech.pegasys.teku.datastructures.state.CommitteeAssignment committeeAssignment) {
-    this.slot = committeeAssignment.getSlot();
-    this.index = committeeAssignment.getCommitteeIndex();
-    this.committee = committeeAssignment.getCommittee();
+  public SyncStatus(
+      final UnsignedLong startingSlot,
+      final UnsignedLong currentSlot,
+      final UnsignedLong highestSlot) {
+    this.startingSlot = startingSlot;
+    this.currentSlot = currentSlot;
+    this.highestSlot = highestSlot;
   }
 
-  @JsonCreator
-  public Committee(
-      @JsonProperty("slot") final UnsignedLong slot,
-      @JsonProperty("index") final UnsignedLong index,
-      @JsonProperty("committee") final List<Integer> committee) {
-    this.slot = slot;
-    this.index = index;
-    this.committee = committee;
+  public SyncStatus(final tech.pegasys.teku.sync.SyncStatus syncStatus) {
+    if (syncStatus != null) {
+      this.startingSlot = syncStatus.getStartingSlot();
+      this.currentSlot = syncStatus.getCurrentSlot();
+      this.highestSlot = syncStatus.getHighestSlot();
+    } else {
+      startingSlot = null;
+      currentSlot = null;
+      highestSlot = null;
+    }
   }
 }
