@@ -18,6 +18,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
@@ -28,10 +29,19 @@ public class Eth1BlockData implements SimpleOffsetSerializable, SSZContainer {
   private final UnsignedLong lastDepositIndex;
   private final Bytes32 blockHash;
 
-  public Eth1BlockData(final UnsignedLong depositCount, final UnsignedLong lastDepositIndex, final Bytes32 blockHash) {
+  public Eth1BlockData(
+      final UnsignedLong depositCount,
+      final UnsignedLong lastDepositIndex,
+      final Bytes32 blockHash) {
     this.lastDepositIndex = lastDepositIndex;
     this.blockHash = blockHash;
     this.depositCount = depositCount;
+  }
+
+  public Eth1BlockData(final DepositsFromBlockEvent event) {
+    this.depositCount = UnsignedLong.valueOf(event.getDeposits().size());
+    this.lastDepositIndex = event.getLastDepositIndex();
+    this.blockHash = event.getBlockHash();
   }
 
   public Bytes32 getBlockHash() {

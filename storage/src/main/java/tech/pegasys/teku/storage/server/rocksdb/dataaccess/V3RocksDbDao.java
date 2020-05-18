@@ -38,6 +38,7 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -135,6 +136,16 @@ public class V3RocksDbDao implements RocksDbDao {
   @Override
   public Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates() {
     return db.stream(V3Schema.CHECKPOINT_STATES);
+  }
+
+  @Override
+  public Stream<ColumnEntry<UnsignedLong, DepositData>> streamEth1DepositData() {
+    return db.stream(V3Schema.ETH1_DEPOSIT_CACHE);
+  }
+
+  @Override
+  public Stream<ColumnEntry<UnsignedLong, Eth1BlockData>> streamEth1BlockData() {
+    return db.stream(V3Schema.ETH1_BLOCK_METADATA);
   }
 
   @Override
@@ -351,29 +362,28 @@ public class V3RocksDbDao implements RocksDbDao {
 
     @Override
     public void addEth1Deposit(final DepositWithIndex depositWithIndex) {
-      transaction.put(V3Schema.ETH1_DEPOSIT_CACHE, depositWithIndex.getIndex(), depositWithIndex);
+      transaction.put(
+          V3Schema.ETH1_DEPOSIT_CACHE, depositWithIndex.getIndex(), depositWithIndex.getData());
       transaction.put(
           V3Schema.ETH1_DEPOSIT_HASHES,
           depositWithIndex.getIndex(),
           depositWithIndex.getData().hash_tree_root());
-      // FIXME remove comment
-      LOG.info("PJH: DEPOSIT " + depositWithIndex.getIndex());
+    }
+
+    @Override
+    public void deleteEth1DepositData(final UnsignedLong depositIndex) {
+      transaction.delete(V3Schema.ETH1_DEPOSIT_CACHE, depositIndex);
     }
 
     @Override
     public void addEth1BlockData(final UnsignedLong timestamp, final Eth1BlockData eth1BlockData) {
       transaction.put(V3Schema.ETH1_BLOCK_METADATA, timestamp, eth1BlockData);
-      // FIXME remove comment
-      LOG.info("PJH: eth1 Block data" + timestamp.toString());
     }
 
     @Override
-    public void pruneEth1Deposits(final UnsignedLong depositIndex) {
-      // FIXME remove comment
-      LOG.info("PJH:   PRUNE " + depositIndex.toString());
+    public void deleteEth1BlockData(final UnsignedLong timestamp) {
+      transaction.delete(V3Schema.ETH1_BLOCK_METADATA, timestamp);
     }
-
-    // FIXME prune eth1 timestamp column
 
     @Override
     public Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot) {

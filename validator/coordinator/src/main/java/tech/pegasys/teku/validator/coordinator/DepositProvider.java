@@ -65,15 +65,13 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
               if (!recentChainData.isPreGenesis()) {
                 LOG.debug("About to process deposit: {}", deposit.getIndex());
               }
-              eth1DepositChannel.addEth1Deposit(deposit);
               synchronized (DepositProvider.this) {
                 depositNavigableMap.put(deposit.getIndex(), deposit);
                 depositMerkleTree.add(deposit.getData().hash_tree_root());
               }
+              eth1DepositChannel.addEth1Deposit(deposit);
             });
-    eth1DepositChannel.addEth1BlockData(
-        event.getBlockTimestamp(),
-        new Eth1BlockData(UnsignedLong.valueOf(event.getDeposits().size()), lastDepositIndex, event.getBlockHash()));
+    eth1DepositChannel.addEth1BlockData(event.getBlockTimestamp(), new Eth1BlockData(event));
   }
 
   @Override
@@ -84,7 +82,9 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
             .orElseThrow(
                 () -> new IllegalArgumentException("Finalized Checkpoint state can not be found."));
 
-    depositNavigableMap.headMap(finalizedState.getEth1_deposit_index()).clear();
+    UnsignedLong finalizedDepositIndex = finalizedState.getEth1_deposit_index();
+    depositNavigableMap.headMap(finalizedDepositIndex).clear();
+    eth1DepositChannel.eth1DepositsFinalized(finalizedDepositIndex);
   }
 
   @Override

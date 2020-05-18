@@ -16,9 +16,6 @@ package tech.pegasys.teku.storage.server;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -35,7 +32,6 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class ChainStorageServer
     implements StorageUpdateChannel, StorageQueryChannel, Eth1DepositChannel {
-  private static final Logger LOG = LogManager.getLogger();
   private final EventBus eventBus;
   private final VersionedDatabaseFactory databaseFactory;
 
@@ -128,12 +124,13 @@ public class ChainStorageServer
 
   @Override
   public void addEth1Deposit(final DepositWithIndex depositWithIndex) {
-    LOG.info("ChainStorageServer::addEth1Deposit " + depositWithIndex.getIndex().toString());
     database.addEth1Deposit(depositWithIndex);
   }
 
   @Override
-  public void addEth1BlockData(final UnsignedLong timestamp, final Eth1BlockData eth1BlockData) {}
+  public void addEth1BlockData(final UnsignedLong timestamp, final Eth1BlockData eth1BlockData) {
+    database.addEth1BlockData(timestamp, eth1BlockData);
+  }
 
   @Override
   public void eth1DepositsFinalized(final UnsignedLong depositIndex) {

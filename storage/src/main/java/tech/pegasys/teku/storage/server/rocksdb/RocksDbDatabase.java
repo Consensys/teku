@@ -20,9 +20,11 @@ import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +32,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -127,11 +130,40 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public StorageUpdateResult pruneEth1Deposits(final UnsignedLong eth1DepositIndex) {
-    try (final Updater updater = dao.updater()) {
-      updater.pruneEth1Deposits(eth1DepositIndex);
-      updater.commit();
-      return StorageUpdateResult.successfulWithNothingPruned();
+    List<UnsignedLong> staleKeys;
+    List<UnsignedLong> staleTimestamps;
+    try (final Stream<ColumnEntry<UnsignedLong, DepositData>> stream =
+        dao.streamEth1DepositData()) {
+      staleKeys =
+          stream
+              .filter(e -> eth1DepositIndex.compareTo(e.getKey()) >= 0)
+              .map(ColumnEntry::getKey)
+              .collect(Collectors.toList());
     }
+    try (final Stream<ColumnEntry<UnsignedLong, Eth1BlockData>> stream =
+        dao.streamEth1BlockData()) {
+      staleTimestamps =
+          stream
+              .filter(e -> eth1DepositIndex.compareTo(e.getValue().getLastDepositIndex()) >= 0)
+              .map(ColumnEntry::getKey)
+              .collect(Collectors.toList());
+    }
+    try (final Updater updater = dao.updater()) {
+      boolean needCommit = false;
+      for (UnsignedLong key : staleKeys) {
+        updater.deleteEth1DepositData(key);
+        needCommit = true;
+      }
+      for (UnsignedLong key : staleTimestamps) {
+        updater.deleteEth1BlockData(key);
+        needCommit = true;
+      }
+      if (needCommit) {
+        updater.commit();
+      }
+    }
+
+    return StorageUpdateResult.successfulWithNothingPruned();
   }
 
   @Override

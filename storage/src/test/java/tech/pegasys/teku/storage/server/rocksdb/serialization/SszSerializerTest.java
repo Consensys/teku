@@ -15,12 +15,11 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -36,7 +35,8 @@ public class SszSerializerTest {
       new SszSerializer<>(BeaconStateImpl.class);
   private final SszSerializer<Checkpoint> checkpointSerializer =
       new SszSerializer<>(Checkpoint.class);
-  private final SszSerializer<Deposit> depositSszSerializer = new SszSerializer<>(Deposit.class);
+  private final SszSerializer<DepositData> depositSszSerializer =
+      new SszSerializer<>(DepositData.class);
   private final SszSerializer<Eth1BlockData> eth1DataSszSerializer =
       new SszSerializer<>(Eth1BlockData.class);
 
@@ -66,15 +66,19 @@ public class SszSerializerTest {
 
   @Test
   public void roundTrip_deposit() {
-    final Deposit value = dataStructureUtil.randomDeposit();
+    final DepositData value = dataStructureUtil.randomDeposit().getData();
     final byte[] bytes = depositSszSerializer.serialize(value);
-    final Deposit deserialized = depositSszSerializer.deserialize(bytes);
+    final DepositData deserialized = depositSszSerializer.deserialize(bytes);
     assertThat(deserialized).isEqualTo(value);
   }
 
   @Test
   public void roundTrip_eth1BlockData() {
-    final Eth1BlockData value = new Eth1BlockData(dataStructureUtil.randomUnsignedLong(), dataStructureUtil.randomUnsignedLong(), Bytes32.random());
+    final Eth1BlockData value =
+        new Eth1BlockData(
+            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomUnsignedLong(),
+            Bytes32.random());
     final byte[] bytes = eth1DataSszSerializer.serialize(value);
     final Eth1BlockData deserialized = eth1DataSszSerializer.deserialize(bytes);
     assertThat(deserialized).isEqualToComparingFieldByField(value);

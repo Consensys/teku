@@ -18,7 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -31,7 +31,7 @@ public interface RocksDbSerializer<T> {
   RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconStateImpl.class);
   RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.class);
   RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new SszSerializer<>(VoteTracker.class);
-  RocksDbSerializer<Deposit> DEPOSIT_SERIALIZER = new SszSerializer<>(Deposit.class);
+  RocksDbSerializer<DepositData> DEPOSIT_DATA_SERIALIZER = new SszSerializer<>(DepositData.class);
   RocksDbSerializer<Eth1BlockData> ETH1_BLOCK_DATA_SERIALIZER =
       new SszSerializer<>(Eth1BlockData.class);
 

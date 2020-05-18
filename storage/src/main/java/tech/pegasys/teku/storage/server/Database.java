@@ -38,6 +38,13 @@ public interface Database extends AutoCloseable {
    */
   StorageUpdateResult addEth1Deposit(final DepositWithIndex depositWithIndex);
 
+  /**
+   * Add block information about eth1 deposit, indexed by timestamp.
+   *
+   * @param timestamp
+   * @param eth1BlockData
+   * @return
+   */
   StorageUpdateResult addEth1BlockData(
       final UnsignedLong timestamp, final Eth1BlockData eth1BlockData);
 

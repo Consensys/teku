@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -64,6 +65,10 @@ public interface RocksDbDao extends AutoCloseable {
 
   Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates();
 
+  Stream<ColumnEntry<UnsignedLong, DepositData>> streamEth1DepositData();
+
+  Stream<ColumnEntry<UnsignedLong, Eth1BlockData>> streamEth1BlockData();
+
   Map<UnsignedLong, VoteTracker> getVotes();
 
   Updater updater();
@@ -104,7 +109,9 @@ public interface RocksDbDao extends AutoCloseable {
 
     void addEth1BlockData(final UnsignedLong timestamp, final Eth1BlockData eth1BlockData);
 
-    void pruneEth1Deposits(final UnsignedLong eth1Index);
+    void deleteEth1DepositData(final UnsignedLong eth1Index);
+
+    void deleteEth1BlockData(final UnsignedLong timestamp);
 
     /**
      * Prune hot blocks and associated states at slots less than the given slot. Blocks at the
