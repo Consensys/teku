@@ -158,7 +158,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
-    // Remove connection manager peer predicate that stopped the node from connecting to
+    // Remove the old fork info peer predicate
     enrFieldPeerPredicateId.ifPresent(connectionManager::removePeerPredicate);
 
     // If no future fork is planned, set next_fork_version = current_fork_version to signal this
