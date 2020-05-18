@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage;
 
 import com.google.common.eventbus.EventBus;
+import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -24,12 +25,19 @@ import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryStorageSystem {
+  private final EventBus eventBus;
+  private final TrackingReorgEventChannel reorgEventChannel;
+
   private final RecentChainData recentChainData;
   private final CombinedChainDataClient combinedChainDataClient;
 
   public InMemoryStorageSystem(
+      final EventBus eventBus,
+      final TrackingReorgEventChannel reorgEventChannel,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient) {
+    this.eventBus = eventBus;
+    this.reorgEventChannel = reorgEventChannel;
     this.recentChainData = recentChainData;
     this.combinedChainDataClient = combinedChainDataClient;
   }
@@ -42,9 +50,11 @@ public class InMemoryStorageSystem {
       final DatabaseFactory dbFactory = () -> database;
       final ChainStorageServer chainStorageServer = ChainStorageServer.create(eventBus, dbFactory);
 
+      final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
       final RecentChainData recentChainData =
           MemoryOnlyRecentChainData.builder()
               .eventBus(eventBus)
+              .reorgEventChannel(reorgEventChannel)
               .storageUpdateChannel(chainStorageServer)
               .build();
 
@@ -52,7 +62,8 @@ public class InMemoryStorageSystem {
           new CombinedChainDataClient(recentChainData, chainStorageServer);
 
       chainStorageServer.start();
-      return new InMemoryStorageSystem(recentChainData, combinedChainDataClient);
+      return new InMemoryStorageSystem(
+          eventBus, reorgEventChannel, recentChainData, combinedChainDataClient);
     } catch (Exception e) {
       throw new IllegalStateException("Unable to initialize storage system", e);
     }
@@ -64,5 +75,13 @@ public class InMemoryStorageSystem {
 
   public CombinedChainDataClient combinedChainDataClient() {
     return combinedChainDataClient;
+  }
+
+  public EventBus getEventBus() {
+    return eventBus;
+  }
+
+  public TrackingReorgEventChannel getReorgEventChannel() {
+    return reorgEventChannel;
   }
 }
