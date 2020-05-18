@@ -125,7 +125,7 @@ This document is adapted from the following sources:
 [CLA.md]: /CLA.md
 [oss watch benevolent dictator]: http://oss-watch.ac.uk/resources/benevolentdictatorgovernancemodel
 [kub community membership]: https://raw.githubusercontent.com/kubernetes/community/master/community-membership.md
-[code reviews]: /docs/code-reviews.md
+[code reviews]: /code-reviews.md
 [contributor guide]: /CONTRIBUTING.md
 [New contributors]: /CONTRIBUTING.md
 [two-factor authentication]: https://help.github.com/articles/about-two-factor-authentication
