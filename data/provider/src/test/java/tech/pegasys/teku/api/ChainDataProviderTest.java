@@ -153,20 +153,13 @@ public class ChainDataProviderTest {
   public void getBeaconHead_shouldReturnPopulatedBeaconHead() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    final BeaconHead head = provider.getBeaconHead();
+    final Optional<BeaconHead> optionalBeaconHead = provider.getBeaconHead();
+    assertThat(optionalBeaconHead.isPresent()).isTrue();
 
-    assertThat(head).isNotNull();
+    final BeaconHead head = optionalBeaconHead.get();
     assertEquals(blockRoot, head.block_root);
     assertEquals(beaconStateInternal.hash_tree_root(), head.state_root);
     assertEquals(recentChainData.getBestSlot(), head.slot);
-  }
-
-  @Test
-  public void getBeaconHead_shouldThrowIfHeadNotFound() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(mockRecentChainData, combinedChainDataClient);
-    when(mockRecentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
-    assertThatThrownBy(provider::getBeaconHead).isInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
