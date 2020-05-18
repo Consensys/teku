@@ -13,30 +13,52 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public class BeaconChainHead {
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong head_slot;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong head_epoch;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 head_block_root;
 
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong finalized_slot;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong finalized_epoch;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 finalized_block_root;
 
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong justified_slot;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong justified_epoch;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 justified_block_root;
 
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong previous_justified_slot;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong previous_justified_epoch;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 previous_justified_block_root;
 
   @JsonCreator
