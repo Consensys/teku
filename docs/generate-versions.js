@@ -4,7 +4,7 @@ const fs = require('fs');
 const args = require('minimist')(process.argv.slice(2));
 
 const TAG = args.tag;
-const SPEC = args.spec
+const SPEC = args.spec;
 
 const TARGET_SPEC = `${TAG == '' ? 'latest' : TAG}.json`;
 
