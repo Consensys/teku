@@ -43,6 +43,10 @@ public class StatusLogger {
     log.info("Listening for connections on: {}", address);
   }
 
+  public void listeningForDiscv5PreGenesis(final String enr) {
+    log.info("PreGenesis Local ENR: {}", enr);
+  }
+
   public void listeningForDiscv5(final String enr) {
     log.info("Local ENR: {}", enr);
   }

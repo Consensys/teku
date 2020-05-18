@@ -26,7 +26,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.beaconrestapi.schema.SyncingResponse;
+import tech.pegasys.teku.api.schema.SyncingResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetSyncing implements Handler {

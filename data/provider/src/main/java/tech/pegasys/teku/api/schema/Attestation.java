@@ -13,13 +13,21 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 public class Attestation {
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
   public final Bitlist aggregation_bits;
+
   public final AttestationData data;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
   public Attestation(tech.pegasys.teku.datastructures.operations.Attestation attestation) {

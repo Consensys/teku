@@ -23,7 +23,7 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.beaconrestapi.schema.SyncingResponse;
+import tech.pegasys.teku.api.schema.SyncingResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStatus;
