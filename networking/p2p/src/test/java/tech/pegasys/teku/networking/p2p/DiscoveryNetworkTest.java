@@ -25,11 +25,14 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -38,10 +41,12 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class DiscoveryNetworkTest {
@@ -172,6 +177,45 @@ class DiscoveryNetworkTest {
             currentForkInfo.getForkDigest(), nextFork.getCurrent_version(), nextFork.getEpoch());
     verify(discoveryService)
         .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(expectedEnrForkId));
+  }
+
+  @Test
+  public void setForkInfoShouldAddPredicateToConnectionManager() {
+    final ForkInfo currentForkInfo = dataStructureUtil.randomForkInfo();
+    discoveryNetwork.setForkInfo(currentForkInfo, Optional.empty());
+
+    final EnrForkId expectedEnrForkId =
+        new EnrForkId(
+            currentForkInfo.getForkDigest(),
+            currentForkInfo.getFork().getCurrent_version(),
+            FAR_FUTURE_EPOCH);
+    Bytes encodedForkId = SimpleOffsetSerializer.serialize(expectedEnrForkId);
+    verify(discoveryService).updateCustomENRField("eth2", encodedForkId);
+    ArgumentCaptor<ConnectionManager.PeerPredicate> peerPredicateArgumentCaptor =
+        ArgumentCaptor.forClass(ConnectionManager.PeerPredicate.class);
+    verify(connectionManager).addPeerPredicate(peerPredicateArgumentCaptor.capture());
+
+    DiscoveryPeer peer1 = mock(DiscoveryPeer.class);
+    when(peer1.getEnrForkId()).thenReturn(encodedForkId);
+    assertThat(peerPredicateArgumentCaptor.getValue().applyPeer(peer1)).isTrue();
+
+    DiscoveryPeer peer2 = mock(DiscoveryPeer.class);
+    final EnrForkId newEnrForkId1 =
+        new EnrForkId(
+            currentForkInfo.getForkDigest(), Bytes4.fromHexString("0xdeadbeef"), UnsignedLong.ZERO);
+    Bytes newEncodedForkId1 = SimpleOffsetSerializer.serialize(newEnrForkId1);
+    when(peer2.getEnrForkId()).thenReturn(newEncodedForkId1);
+    assertThat(peerPredicateArgumentCaptor.getValue().applyPeer(peer2)).isTrue();
+
+    DiscoveryPeer peer3 = mock(DiscoveryPeer.class);
+    final EnrForkId newEnrForkId2 =
+        new EnrForkId(
+            Bytes4.fromHexString("0xdeadbeef"),
+            Bytes4.fromHexString("0xdeadbeef"),
+            UnsignedLong.ZERO);
+    Bytes newEncodedForkId2 = SimpleOffsetSerializer.serialize(newEnrForkId2);
+    when(peer3.getEnrForkId()).thenReturn(newEncodedForkId2);
+    assertThat(peerPredicateArgumentCaptor.getValue().applyPeer(peer3)).isFalse();
   }
 
   @Test

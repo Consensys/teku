@@ -21,10 +21,13 @@ import org.apache.tuweni.bytes.Bytes;
 public class DiscoveryPeer {
   private final Bytes publicKey;
   private final InetSocketAddress nodeAddress;
+  private final Bytes enrForkId;
 
-  public DiscoveryPeer(final Bytes publicKey, final InetSocketAddress nodeAddress) {
+  public DiscoveryPeer(
+      final Bytes publicKey, final InetSocketAddress nodeAddress, final Bytes enrForkId) {
     this.publicKey = publicKey;
     this.nodeAddress = nodeAddress;
+    this.enrForkId = enrForkId;
   }
 
   public Bytes getPublicKey() {
@@ -33,6 +36,10 @@ public class DiscoveryPeer {
 
   public InetSocketAddress getNodeAddress() {
     return nodeAddress;
+  }
+
+  public Bytes getEnrForkId() {
+    return enrForkId;
   }
 
   @Override

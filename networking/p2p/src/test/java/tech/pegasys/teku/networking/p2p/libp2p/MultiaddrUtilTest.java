@@ -30,6 +30,7 @@ class MultiaddrUtilTest {
       Bytes.fromHexString("0x0330FC08314CDD799C1687FFC998249A0342105B9AF300A922F56040DF6E28741C");
   public static final String PEER_ID = "16Uiu2HAmFxCpRh2nZevFR3KGXJ3jhpixMYFSuawqKZyZYHrYoiK5";
   private static final NodeId NODE_ID = new LibP2PNodeId(PeerId.fromBase58(PEER_ID));
+  private static final Bytes ENR_FORK_ID = Bytes.EMPTY;
 
   @Test
   public void fromInetSocketAddress_shouldConvertIpV4Peer() throws Exception {
@@ -63,7 +64,7 @@ class MultiaddrUtilTest {
     final int port = 5883;
     final DiscoveryPeer peer =
         new DiscoveryPeer(
-            PUB_KEY, new InetSocketAddress(InetAddress.getByAddress(ipAddress), port));
+            PUB_KEY, new InetSocketAddress(InetAddress.getByAddress(ipAddress), port), ENR_FORK_ID);
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/p2p/" + PEER_ID));
     assertThat(result.getComponent(Protocol.IP4)).isEqualTo(ipAddress);
@@ -77,7 +78,7 @@ class MultiaddrUtilTest {
     final int port = 5883;
     final DiscoveryPeer peer =
         new DiscoveryPeer(
-            PUB_KEY, new InetSocketAddress(InetAddress.getByAddress(ipAddress), port));
+            PUB_KEY, new InetSocketAddress(InetAddress.getByAddress(ipAddress), port), ENR_FORK_ID);
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result)
         .isEqualTo(Multiaddr.fromString("/ip6/3300:4:5000:780:0:12:0:1/tcp/5883/p2p/" + PEER_ID));
@@ -92,7 +93,8 @@ class MultiaddrUtilTest {
         new DiscoveryPeer(
             Bytes.fromHexString(
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
-            new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000));
+            new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
+            ENR_FORK_ID);
     final Multiaddr expectedMultiAddr =
         Multiaddr.fromString(
             "/ip4/127.0.0.1/tcp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");

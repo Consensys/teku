@@ -56,6 +56,8 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private final DiscoveryService discoveryService;
   private final ConnectionManager connectionManager;
 
+  private Optional<Long> enrFieldPeerPredicateId = Optional.empty();
+
   DiscoveryNetwork(
       final P2PNetwork<P> p2pNetwork,
       final DiscoveryService discoveryService,
@@ -156,6 +158,9 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
+    // Remove connection manager peer predicate that stopped the node from connecting to
+    enrFieldPeerPredicateId.ifPresent(connectionManager::removePeerPredicate);
+
     // If no future fork is planned, set next_fork_version = current_fork_version to signal this
     final Bytes4 nextVersion =
         nextForkInfo
@@ -164,10 +169,21 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     // If no future fork is planned, set next_fork_epoch = FAR_FUTURE_EPOCH to signal this
     final UnsignedLong nextForkEpoch = nextForkInfo.map(Fork::getEpoch).orElse(FAR_FUTURE_EPOCH);
 
-    final EnrForkId enrForkId =
-        new EnrForkId(currentForkInfo.getForkDigest(), nextVersion, nextForkEpoch);
-    discoveryService.updateCustomENRField(
-        ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
+    final Bytes4 forkDigest = currentForkInfo.getForkDigest();
+    final EnrForkId enrForkId = new EnrForkId(forkDigest, nextVersion, nextForkEpoch);
+    final Bytes encodedEnrForkId = SimpleOffsetSerializer.serialize(enrForkId);
+
+    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, encodedEnrForkId);
+
+    long newPeerPredicateId =
+        connectionManager.addPeerPredicate(
+            peer ->
+                peer.getEnrForkId().equals(encodedEnrForkId)
+                    || SimpleOffsetSerializer.deserialize(peer.getEnrForkId(), EnrForkId.class)
+                        .getForkDigest()
+                        .equals(forkDigest));
+
+    enrFieldPeerPredicateId = Optional.of(newPeerPredicateId);
   }
 
   @Override

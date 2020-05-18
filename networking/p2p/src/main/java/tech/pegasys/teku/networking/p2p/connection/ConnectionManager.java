@@ -16,10 +16,14 @@ package tech.pegasys.teku.networking.p2p.connection;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -41,6 +45,7 @@ public class ConnectionManager extends Service {
   private final ReputationManager reputationManager;
 
   private volatile long peerConnectedSubscriptionId;
+  private final NewPeerFilter newPeerFilter = new NewPeerFilter();
 
   public ConnectionManager(
       final DiscoveryService discoveryService,
@@ -72,6 +77,7 @@ public class ConnectionManager extends Service {
     final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
     discoveryService
         .streamKnownPeers()
+        .filter(newPeerFilter::isPeerValid)
         .map(network::createPeerAddress)
         .filter(reputationManager::isConnectionInitiationAllowed)
         .filter(peerAddress -> !network.isConnected(peerAddress))
@@ -170,5 +176,38 @@ public class ConnectionManager extends Service {
                   RECONNECT_TIMEOUT.toMillis(),
                   TimeUnit.MILLISECONDS);
             });
+  }
+
+  public long addPeerPredicate(final PeerPredicate predicate) {
+    return newPeerFilter.addPeerPredicate(predicate);
+  }
+
+  public boolean removePeerPredicate(final long id) {
+    return newPeerFilter.removePeerPredicate(id);
+  }
+
+  public static class NewPeerFilter {
+    private final AtomicLong predicateId = new AtomicLong();
+    private final Map<Long, PeerPredicate> peerPredicates = new ConcurrentHashMap<>();
+
+    long addPeerPredicate(final PeerPredicate predicate) {
+      final long id = predicateId.getAndIncrement();
+      peerPredicates.put(id, predicate);
+      return id;
+    }
+
+    boolean removePeerPredicate(final long predicateId) {
+      return peerPredicates.remove(predicateId) != null;
+    }
+
+    boolean isPeerValid(DiscoveryPeer peer) {
+      return peerPredicates.values().stream()
+          .map(predicate -> predicate.applyPeer(peer))
+          .reduce(true, (a, b) -> a && b);
+    }
+  }
+
+  public interface PeerPredicate {
+    boolean applyPeer(DiscoveryPeer peer);
   }
 }
