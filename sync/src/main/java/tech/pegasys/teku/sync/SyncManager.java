@@ -14,6 +14,7 @@
 package tech.pegasys.teku.sync;
 
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -210,7 +211,10 @@ public class SyncManager extends Service {
     return network
         .streamPeers()
         .filter(this::isPeerSyncSuitable)
-        .max(Comparator.comparing(Eth2Peer::finalizedEpoch).thenComparing(p -> Math.random()));
+        .max(
+            Comparator.comparing(Eth2Peer::finalizedEpoch)
+                .thenComparing(peer -> peer.getStatus().getHeadSlot())
+                .thenComparing(p -> Math.random()));
   }
 
   private void onNewPeer(Eth2Peer peer) {
@@ -227,6 +231,13 @@ public class SyncManager extends Service {
         network.getPeerCount(),
         ourFinalizedEpoch.toString(10));
     return !peersWithSyncErrors.contains(peer.getId())
-        && peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0;
+        && (peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0
+            || isMoreThanAnEpochAhead(peer));
+  }
+
+  private boolean isMoreThanAnEpochAhead(final Eth2Peer peer) {
+    final UnsignedLong ourHeadSlot = storageClient.getBestSlot();
+    final UnsignedLong theirHeadSlot = peer.getStatus().getHeadSlot();
+    return theirHeadSlot.compareTo(ourHeadSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) > 0;
   }
 }
