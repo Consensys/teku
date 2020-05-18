@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
@@ -92,12 +93,12 @@ public class BeaconChainHead {
     this.previous_justified_block_root = previous_justified_block_root;
   }
 
-  public BeaconChainHead(final BeaconState beaconState) {
-    final BeaconBlockHeader latestBlockHeader =
-        new BeaconBlockHeader(beaconState.getLatest_block_header());
-    this.head_slot = latestBlockHeader.slot;
-    this.head_epoch = compute_epoch_at_slot(latestBlockHeader.slot);
-    this.head_block_root = latestBlockHeader.body_root;
+  public BeaconChainHead(final BeaconBlockAndState beaconBlockAndState) {
+    final BeaconState beaconState = beaconBlockAndState.getState();
+
+    this.head_slot = beaconBlockAndState.getSlot();
+    this.head_epoch = compute_epoch_at_slot(this.head_slot);
+    this.head_block_root = beaconBlockAndState.getRoot();
 
     final Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
     this.finalized_slot = finalizedCheckpoint.getEpochStartSlot();
