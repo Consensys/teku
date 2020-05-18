@@ -1,6 +1,4 @@
----
 version: 2.1
-
 executors:
   small_executor:
     docker:
@@ -43,10 +41,6 @@ executors:
       image: ubuntu-1604:201903-01 #Ubuntu 16.04, docker 18.09.3, docker-compose 1.23.1
       docker_layer_caching: true
     working_directory: ~/project
-
-  node_executor:
-    docker:
-      - image: circleci/node:12.9.0-stretch
 
 commands:
   prepare:
@@ -273,79 +267,6 @@ jobs:
             docker login --username "${DOCKER_USER}" --password "${DOCKER_PASSWORD}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
-  extractAPISpec:
-    executor: medium_executor
-    steps:
-      - prepare
-      - attach_workspace:
-          at: ~/project
-      - run:
-          name: Build runnable Teku binaries
-          command: |
-            ./gradlew --no-daemon --parallel installDist
-      - run:
-          name: Extract OpenAPI JSON
-          command: |
-            build/install/teku/bin/teku --network=schlesi --rest-api-docs-enabled=true &
-            TEKU_PID=$!
-            wget -O openapi.json http://localhost:5051/swagger-docs
-            kill $TEKU_PID
-      - persist_to_workspace:
-          root: ~/project
-          paths:
-            - ./
-
-  publishAPIDoc:
-    executor: node_executor
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /tmp/project
-      - add_ssh_keys:
-          fingerprints:
-            - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
-      - run:
-          name: Set Git user params
-          command: |
-            git config --global user.name $CIRCLE_USERNAME
-            git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
-      - run:
-          name: Chechout GitHub Pages branch
-          command: |
-            readonly BRANCH='gh-pages'
-            if [ git branch | grep -q "$BRANCH" ]; then
-              git checkout "$BRANCH"
-              git pull
-            else
-              git checkout -b "$BRANCH"
-            fi
-      - restore_cache:
-          keys:
-            - deps-{{ checksum "package.json" }}
-      - run:
-          name: Install dependencies
-          command: |
-            npm install
-      - save_cache:
-          paths:
-            - ./node_modules
-          key: deps-{{ checksum "package.json" }}
-      - run:
-          name: Generate API doc site files
-          command: |
-            npm run generate-versions -- --spec=/tmp/project/openapi.json --tag=${CIRCLE_TAG}
-      - deploy:
-          name: Commit and push to GitHub Pages branch
-          command: |
-            readonly BRANCH='gh-pages'
-
-            git add .
-            git commit -m "Automated CI update of JSON specs and version files" \
-                       -m "[skip ci] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
-                       -m "Spec built from ${CIRCLE_PROJECT_REPONAME} at ${CIRCLE_REPOSITORY_URL}" \
-                       -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
-            git push origin "$BRANCH"
-
 workflows:
   version: 2
   circleci:
@@ -397,19 +318,6 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-      - extractAPISpec:
-          requires:
-            - publish
-          filters:
-            branches:
-              only: master
-      - publishAPIDoc:
-          requires:
-            - extractAPISpec
-          filters:
-            branches:
-              only: master
-
 #  nightly:
 #    triggers:
 #      - schedule:
