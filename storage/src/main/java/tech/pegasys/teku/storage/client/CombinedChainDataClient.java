@@ -42,6 +42,9 @@ public class CombinedChainDataClient {
 
   private static final SafeFuture<Optional<BeaconState>> STATE_NOT_AVAILABLE =
       completedFuture(Optional.empty());
+  private static final SafeFuture<Optional<SignedBeaconBlock>> BLOCK_NOT_AVAILABLE =
+      completedFuture(Optional.empty());
+
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
 
@@ -87,6 +90,10 @@ public class CombinedChainDataClient {
    */
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(
       final UnsignedLong slot, Bytes32 headBlockRoot) {
+    if (!isStoreAvailable()) {
+      return BLOCK_NOT_AVAILABLE;
+    }
+
     // Try to pull root from recent data
     final Optional<Bytes32> recentRoot = recentChainData.getBlockRootBySlot(slot, headBlockRoot);
     if (recentRoot.isPresent()) {
@@ -100,6 +107,10 @@ public class CombinedChainDataClient {
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UnsignedLong slot) {
+    if (!isChainDataFullyAvailable()) {
+      return BLOCK_NOT_AVAILABLE;
+    }
+
     // Try to pull root from recent data
     final Optional<Bytes32> recentRoot = recentChainData.getBlockRootBySlot(slot);
     if (recentRoot.isPresent()) {
@@ -149,6 +160,10 @@ public class CombinedChainDataClient {
    * @return the State at slot
    */
   public SafeFuture<Optional<BeaconState>> getLatestStateAtSlot(final UnsignedLong slot) {
+    if (!isChainDataFullyAvailable()) {
+      return STATE_NOT_AVAILABLE;
+    }
+
     if (isRecentData(slot)) {
       final Optional<BeaconState> recentState = recentChainData.getStateInEffectAtSlot(slot);
       if (recentState.isPresent()) {

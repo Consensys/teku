@@ -21,20 +21,19 @@ import java.util.Optional;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.storage.InMemoryStorageSystem;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedChainDataClientTest {
 
   @Override
-  protected InMemoryStorageSystem createStorageSystem() {
-    return InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.PRUNE);
+  protected StateStorageMode getStorageMode() {
+    return StateStorageMode.PRUNE;
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getStateBySlotParameters")
-  public <T> void getStateAtSlot_shouldReturnEmptyResponseForHistoricalState(
+  public <T> void queryBySlot_shouldReturnEmptyResponseForHistoricalState(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);

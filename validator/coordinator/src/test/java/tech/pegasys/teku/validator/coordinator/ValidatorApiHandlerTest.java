@@ -217,17 +217,6 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedBlock_shouldReturnEmptyWhenBestBlockNotSet() {
-    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
-
-    final SafeFuture<Optional<BeaconBlock>> result =
-        validatorApiHandler.createUnsignedBlock(
-            UnsignedLong.ONE, dataStructureUtil.randomSignature());
-
-    assertThat(result).isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
   public void createUnsignedBlock_shouldCreateBlock() throws Exception {
     final UnsignedLong newSlot = UnsignedLong.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
@@ -259,16 +248,6 @@ class ValidatorApiHandlerTest {
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
-  }
-
-  @Test
-  public void createUnsignedAttestation_shouldReturnEmptyWhenBestBlockNotSet() {
-    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
-
-    final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(UnsignedLong.ONE, 3);
-
-    assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
   @Test
