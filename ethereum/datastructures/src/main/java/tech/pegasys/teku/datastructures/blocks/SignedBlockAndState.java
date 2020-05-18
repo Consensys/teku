@@ -52,4 +52,21 @@ public class SignedBlockAndState {
   public BeaconState getState() {
     return state;
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof SignedBlockAndState)) {
+      return false;
+    }
+    final SignedBlockAndState that = (SignedBlockAndState) o;
+    return Objects.equals(block, that.block) && Objects.equals(state, that.state);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(block, state);
+  }
 }
