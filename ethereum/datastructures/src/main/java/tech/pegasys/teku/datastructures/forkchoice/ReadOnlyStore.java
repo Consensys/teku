@@ -14,10 +14,12 @@
 package tech.pegasys.teku.datastructures.forkchoice;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
@@ -44,6 +46,8 @@ public interface ReadOnlyStore {
   BeaconBlock getBlock(Bytes32 blockRoot);
 
   SignedBeaconBlock getSignedBlock(Bytes32 blockRoot);
+
+  Optional<SignedBlockAndState> getBlockAndState(Bytes32 blockRoot);
 
   boolean containsBlock(Bytes32 blockRoot);
 

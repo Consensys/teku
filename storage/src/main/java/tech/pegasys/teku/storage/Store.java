@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -190,6 +191,21 @@ public class Store implements ReadOnlyStore {
     readLock.lock();
     try {
       return blocks.get(blockRoot);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
+    readLock.lock();
+    try {
+      final SignedBeaconBlock block = blocks.get(blockRoot);
+      final BeaconState state = block_states.get(blockRoot);
+      if (block == null || state == null) {
+        return Optional.empty();
+      }
+      return Optional.of(new SignedBlockAndState(block, state));
     } finally {
       readLock.unlock();
     }
@@ -438,6 +454,16 @@ public class Store implements ReadOnlyStore {
     @Override
     public SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
       return either(blockRoot, blocks::get, Store.this::getSignedBlock);
+    }
+
+    @Override
+    public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
+      final SignedBeaconBlock block = getSignedBlock(blockRoot);
+      final BeaconState state = getBlockState(blockRoot);
+      if (block == null || state == null) {
+        return Optional.empty();
+      }
+      return Optional.of(new SignedBlockAndState(block, state));
     }
 
     @Override
