@@ -232,10 +232,10 @@ public class SyncManager extends Service {
         ourFinalizedEpoch.toString(10));
     return !peersWithSyncErrors.contains(peer.getId())
         && (peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0
-            || isMoreThanAnEpochAhead(peer));
+            || isHeadMoreThanAnEpochAhead(peer));
   }
 
-  private boolean isMoreThanAnEpochAhead(final Eth2Peer peer) {
+  private boolean isHeadMoreThanAnEpochAhead(final Eth2Peer peer) {
     final UnsignedLong ourHeadSlot = storageClient.getBestSlot();
     final UnsignedLong theirHeadSlot = peer.getStatus().getHeadSlot();
     return theirHeadSlot.compareTo(ourHeadSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) > 0;
