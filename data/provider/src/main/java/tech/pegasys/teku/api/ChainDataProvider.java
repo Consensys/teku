@@ -211,6 +211,5 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
     return recentChainData.getBestBlockAndState().map(BeaconChainHead::new);
-    //    return combinedChainDataClient.getHeadStateFromStore().map(BeaconChainHead::new);
   }
 }
