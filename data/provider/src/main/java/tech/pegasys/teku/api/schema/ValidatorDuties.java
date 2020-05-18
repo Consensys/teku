@@ -13,16 +13,26 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
+
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 public class ValidatorDuties {
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
   public final BLSPubKey validator_pubkey;
+
   public final Integer aggregator_modulo;
   public final Integer validator_index;
   public final Integer attestation_committee_index;
   public final Integer attestation_committee_position;
+
+  @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UnsignedLong> block_proposal_slots;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong attestation_slot;
 
   public ValidatorDuties(
