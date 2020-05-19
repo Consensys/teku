@@ -362,7 +362,8 @@ public class TekuConfigurationBuilder {
     }
 
     if (eth1DepositContractAddress == null && eth1Endpoint != null) {
-      throw new InvalidConfigurationException("eth1-deposit-contract-address must be specified if eth1-endpoint is specified.");
+      throw new InvalidConfigurationException(
+          "eth1-deposit-contract-address must be specified if eth1-endpoint is specified.");
     }
 
     p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
