@@ -21,6 +21,7 @@ import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 
 public class BeaconHead {
   @Schema(type = "string", format = "uint64")
@@ -40,6 +41,12 @@ public class BeaconHead {
     this.slot = slot;
     this.block_root = block_root;
     this.state_root = state_root;
+  }
+
+  public BeaconHead(final BeaconBlockAndState beaconBlockAndState) {
+    this.slot = beaconBlockAndState.getSlot();
+    this.block_root = beaconBlockAndState.getRoot();
+    this.state_root = beaconBlockAndState.getState().hash_tree_root();
   }
 
   @Override
