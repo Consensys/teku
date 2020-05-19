@@ -105,8 +105,8 @@ public final class BlockProcessorUtil {
           block.getParent_root().equals(state.getLatest_block_header().hash_tree_root()),
           "process_block_header: Verify that the parent matches");
       checkArgument(
-          state.getLatest_block_header().getSlot().compareTo(block.getSlot()) < 0,
-          "Block must be after parent");
+          block.getSlot().compareTo(state.getLatest_block_header().getSlot()) > 0,
+          "process_block_header: Verify that the block is newer than latest block header");
 
       // Cache the current block as the new latest block
       state.setLatest_block_header(
