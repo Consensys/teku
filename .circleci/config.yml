@@ -385,8 +385,9 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-      - extractAPISpec #:
-          # requires:
+      - extractAPISpec:
+          requires:
+            - assemble
           #   - publish
           # filters:
           #   branches:
