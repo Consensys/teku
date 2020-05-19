@@ -24,40 +24,37 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.function.Executable;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.BlsSetting;
-import tech.pegasys.teku.reference.phase0.ExecutableFactory;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class SanityBlocksTestExecutableFactory implements ExecutableFactory {
+public class SanityBlocksTestExecutor implements TestExecutor {
 
   private static final String EXPECTED_STATE_FILENAME = "post.ssz";
 
   @Override
-  public Executable forTestDefinition(final TestDefinition testDefinition) {
-    return () -> {
-      final SanityBlocksMetaData metaData =
-          loadYaml(testDefinition, "meta.yaml", SanityBlocksMetaData.class);
-      final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
-      final List<SignedBeaconBlock> blocks =
-          IntStream.range(0, metaData.getBlocksCount())
-              .mapToObj(
-                  index ->
-                      loadSsz(testDefinition, "blocks_" + index + ".ssz", SignedBeaconBlock.class))
-              .collect(Collectors.toList());
+  public void runTest(final TestDefinition testDefinition) throws Exception {
+    final SanityBlocksMetaData metaData =
+        loadYaml(testDefinition, "meta.yaml", SanityBlocksMetaData.class);
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    final List<SignedBeaconBlock> blocks =
+        IntStream.range(0, metaData.getBlocksCount())
+            .mapToObj(
+                index ->
+                    loadSsz(testDefinition, "blocks_" + index + ".ssz", SignedBeaconBlock.class))
+            .collect(Collectors.toList());
 
-      if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILENAME).toFile().exists()) {
-        final BeaconState expectedState = loadStateFromSsz(testDefinition, EXPECTED_STATE_FILENAME);
-        assertThat(applyBlocks(metaData, preState, blocks)).isEqualTo(expectedState);
-      } else {
-        assertThatThrownBy(() -> applyBlocks(metaData, preState, blocks))
-            .isInstanceOf(StateTransitionException.class);
-      }
-    };
+    if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILENAME).toFile().exists()) {
+      final BeaconState expectedState = loadStateFromSsz(testDefinition, EXPECTED_STATE_FILENAME);
+      assertThat(applyBlocks(metaData, preState, blocks)).isEqualTo(expectedState);
+    } else {
+      assertThatThrownBy(() -> applyBlocks(metaData, preState, blocks))
+          .isInstanceOf(StateTransitionException.class);
+    }
   }
 
   private BeaconState applyBlocks(

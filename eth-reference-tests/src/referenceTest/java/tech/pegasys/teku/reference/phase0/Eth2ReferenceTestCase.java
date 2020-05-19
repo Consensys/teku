@@ -15,34 +15,33 @@ package tech.pegasys.teku.reference.phase0;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.function.Executable;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.bls.BlsTestExecutableFactory;
-import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutableFactory;
-import tech.pegasys.teku.reference.phase0.genesis.GenesisInitializationTestExecutableFactory;
-import tech.pegasys.teku.reference.phase0.genesis.GenesisValidityTestExecutableFactory;
-import tech.pegasys.teku.reference.phase0.operations.OperationsTestExecutableFactory;
-import tech.pegasys.teku.reference.phase0.sanity.SanityBlocksTestExecutableFactory;
-import tech.pegasys.teku.reference.phase0.sanity.SanitySlotsTestExecutableFactory;
-import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutableFactory;
-import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutableFactory;
+import tech.pegasys.teku.reference.phase0.bls.BlsTestExecutor;
+import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutor;
+import tech.pegasys.teku.reference.phase0.genesis.GenesisInitializationTestExecutor;
+import tech.pegasys.teku.reference.phase0.genesis.GenesisValidityTestExecutor;
+import tech.pegasys.teku.reference.phase0.operations.OperationsTestExecutor;
+import tech.pegasys.teku.reference.phase0.sanity.SanityBlocksTestExecutor;
+import tech.pegasys.teku.reference.phase0.sanity.SanitySlotsTestExecutor;
+import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
+import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
 import tech.pegasys.teku.util.config.Constants;
 
 public abstract class Eth2ReferenceTestCase {
 
-  private final ImmutableMap<String, ExecutableFactory> TEST_TYPES =
-      ImmutableMap.<String, ExecutableFactory>builder()
-          .putAll(SszTestExecutableFactory.SSZ_TEST_TYPES)
-          .putAll(BlsTestExecutableFactory.BLS_TEST_TYPES)
-          .putAll(EpochProcessingTestExecutableFactory.EPOCH_PROCESSING_TEST_TYPES)
-          .putAll(OperationsTestExecutableFactory.OPERATIONS_TEST_TYPES)
-          .put("shuffling", new ShufflingTestExecutableFactory())
-          .put("genesis/initialization", new GenesisInitializationTestExecutableFactory())
-          .put("genesis/validity", new GenesisValidityTestExecutableFactory())
-          .put("sanity/blocks", new SanityBlocksTestExecutableFactory())
-          .put("sanity/slots", new SanitySlotsTestExecutableFactory())
+  private final ImmutableMap<String, TestExecutor> TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .putAll(SszTestExecutor.SSZ_TEST_TYPES)
+          .putAll(BlsTestExecutor.BLS_TEST_TYPES)
+          .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
+          .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
+          .put("shuffling", new ShufflingTestExecutor())
+          .put("genesis/initialization", new GenesisInitializationTestExecutor())
+          .put("genesis/validity", new GenesisValidityTestExecutor())
+          .put("sanity/blocks", new SanityBlocksTestExecutor())
+          .put("sanity/slots", new SanitySlotsTestExecutor())
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
@@ -56,14 +55,14 @@ public abstract class Eth2ReferenceTestCase {
         SimpleOffsetSerializer.setConstants();
       }
     }
-    getExecutableFor(testDefinition).execute();
+    getExecutableFor(testDefinition).runTest(testDefinition);
   }
 
-  private Executable getExecutableFor(final TestDefinition testDefinition) {
-    final ExecutableFactory executableFactory = TEST_TYPES.get(testDefinition.getTestType());
-    if (executableFactory == null) {
-      return () -> Assertions.fail("Unsupported test type " + testDefinition.getTestType());
+  private TestExecutor getExecutableFor(final TestDefinition testDefinition) {
+    final TestExecutor testExecutor = TEST_TYPES.get(testDefinition.getTestType());
+    if (testExecutor == null) {
+      return Assertions.fail("Unsupported test type " + testDefinition.getTestType());
     }
-    return executableFactory.forTestDefinition(testDefinition);
+    return testExecutor;
   }
 }

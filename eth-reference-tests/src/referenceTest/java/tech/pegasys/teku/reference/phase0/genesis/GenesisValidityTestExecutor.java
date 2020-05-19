@@ -19,26 +19,23 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.google.common.primitives.UnsignedLong;
-import org.junit.jupiter.api.function.Executable;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.ExecutableFactory;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.util.config.Constants;
 
-public class GenesisValidityTestExecutableFactory implements ExecutableFactory {
+public class GenesisValidityTestExecutor implements TestExecutor {
 
   @Override
-  public Executable forTestDefinition(final TestDefinition testDefinition) {
-    return () -> {
-      final BeaconState state = loadStateFromSsz(testDefinition, "genesis.ssz");
-      final boolean expectedValidity = loadYaml(testDefinition, "is_valid.yaml", Boolean.class);
-      final int activeValidatorCount =
-          ValidatorsUtil.get_active_validator_indices(
-                  state, UnsignedLong.valueOf(Constants.GENESIS_EPOCH))
-              .size();
-      final boolean result = is_valid_genesis_state(state.getGenesis_time(), activeValidatorCount);
-      assertThat(result).isEqualTo(expectedValidity);
-    };
+  public void runTest(final TestDefinition testDefinition) throws Exception {
+    final BeaconState state = loadStateFromSsz(testDefinition, "genesis.ssz");
+    final boolean expectedValidity = loadYaml(testDefinition, "is_valid.yaml", Boolean.class);
+    final int activeValidatorCount =
+        ValidatorsUtil.get_active_validator_indices(
+                state, UnsignedLong.valueOf(Constants.GENESIS_EPOCH))
+            .size();
+    final boolean result = is_valid_genesis_state(state.getGenesis_time(), activeValidatorCount);
+    assertThat(result).isEqualTo(expectedValidity);
   }
 }

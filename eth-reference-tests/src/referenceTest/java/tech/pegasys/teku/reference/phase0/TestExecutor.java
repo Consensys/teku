@@ -13,17 +13,15 @@
 
 package tech.pegasys.teku.reference.phase0;
 
-import org.junit.jupiter.api.function.Executable;
 import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 
-public interface ExecutableFactory {
-  ExecutableFactory IGNORE_TESTS =
-      testDefinition ->
-          () -> {
-            throw new TestAbortedException(
-                "Test " + testDefinition.getDisplayName() + " has been ignored");
-          };
+public interface TestExecutor {
+  TestExecutor IGNORE_TESTS =
+      testDefinition -> {
+        throw new TestAbortedException(
+            "Test " + testDefinition.getDisplayName() + " has been ignored");
+      };
 
-  Executable forTestDefinition(TestDefinition testDefinition);
+  void runTest(TestDefinition testDefinition) throws Throwable;
 }

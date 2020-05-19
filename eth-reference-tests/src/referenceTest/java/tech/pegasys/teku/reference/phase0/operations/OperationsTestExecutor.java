@@ -19,7 +19,6 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.jupiter.api.function.Executable;
 import tech.pegasys.teku.core.BlockProcessorUtil;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -31,17 +30,17 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.ExecutableFactory;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public class OperationsTestExecutableFactory<T> implements ExecutableFactory {
+public class OperationsTestExecutor<T> implements TestExecutor {
 
   public static final String EXPECTED_STATE_FILE = "post.ssz";
-  public static ImmutableMap<String, ExecutableFactory> OPERATIONS_TEST_TYPES =
-      ImmutableMap.<String, ExecutableFactory>builder()
+  public static ImmutableMap<String, TestExecutor> OPERATIONS_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
           .put(
               "operations/attester_slashing",
-              new OperationsTestExecutableFactory<>(
+              new OperationsTestExecutor<>(
                   "attester_slashing.ssz",
                   AttesterSlashing.class,
                   (state, data) ->
@@ -49,7 +48,7 @@ public class OperationsTestExecutableFactory<T> implements ExecutableFactory {
                           state, SSZList.singleton(data))))
           .put(
               "operations/proposer_slashing",
-              new OperationsTestExecutableFactory<>(
+              new OperationsTestExecutor<>(
                   "proposer_slashing.ssz",
                   ProposerSlashing.class,
                   (state, data) ->
@@ -57,25 +56,25 @@ public class OperationsTestExecutableFactory<T> implements ExecutableFactory {
                           state, SSZList.singleton(data))))
           .put(
               "operations/block_header",
-              new OperationsTestExecutableFactory<>(
+              new OperationsTestExecutor<>(
                   "block.ssz", BeaconBlock.class, BlockProcessorUtil::process_block_header))
           .put(
               "operations/deposit",
-              new OperationsTestExecutableFactory<>(
+              new OperationsTestExecutor<>(
                   "deposit.ssz",
                   Deposit.class,
                   (state, data) ->
                       BlockProcessorUtil.process_deposits(state, SSZList.singleton(data))))
           .put(
               "operations/voluntary_exit",
-              new OperationsTestExecutableFactory<>(
+              new OperationsTestExecutor<>(
                   "voluntary_exit.ssz",
                   SignedVoluntaryExit.class,
                   (state, data) ->
                       BlockProcessorUtil.process_voluntary_exits(state, SSZList.singleton(data))))
           .put(
               "operations/attestation",
-              new OperationsTestExecutableFactory<>(
+              new OperationsTestExecutor<>(
                   "attestation.ssz",
                   Attestation.class,
                   (state, data) ->
@@ -86,7 +85,7 @@ public class OperationsTestExecutableFactory<T> implements ExecutableFactory {
   private final Class<T> dataType;
   private final StateOperation<T> operation;
 
-  public OperationsTestExecutableFactory(
+  public OperationsTestExecutor(
       final String dataFileName, final Class<T> dataType, final StateOperation<T> operation) {
     this.dataFileName = dataFileName;
     this.dataType = dataType;
@@ -94,16 +93,14 @@ public class OperationsTestExecutableFactory<T> implements ExecutableFactory {
   }
 
   @Override
-  public Executable forTestDefinition(final TestDefinition testDefinition) {
-    return () -> {
-      final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
-      final T data = loadSsz(testDefinition, dataFileName, dataType);
-      if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists()) {
-        assertOperationSuccessful(testDefinition, preState, data);
-      } else {
-        assertOperationInvalid(preState, data);
-      }
-    };
+  public void runTest(final TestDefinition testDefinition) throws Exception {
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    final T data = loadSsz(testDefinition, dataFileName, dataType);
+    if (testDefinition.getTestDirectory().resolve(EXPECTED_STATE_FILE).toFile().exists()) {
+      assertOperationSuccessful(testDefinition, preState, data);
+    } else {
+      assertOperationInvalid(preState, data);
+    }
   }
 
   private void assertOperationSuccessful(

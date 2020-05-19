@@ -25,29 +25,26 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.function.Executable;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.ExecutableFactory;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class ShufflingTestExecutableFactory implements ExecutableFactory {
+public class ShufflingTestExecutor implements TestExecutor {
 
   @Override
-  public Executable forTestDefinition(final TestDefinition testDefinition) {
-    return () -> {
-      final ShufflingData shufflingData =
-          ShufflingData.parse(testDefinition.getTestDirectory().resolve("mapping.yaml"));
-      final Bytes32 seed = Bytes32.fromHexString(shufflingData.getSeed());
-      IntStream.range(0, shufflingData.getCount())
-          .forEach(
-              index ->
-                  assertThat(compute_shuffled_index(index, shufflingData.getCount(), seed))
-                      .isEqualTo(shufflingData.getMapping(index)));
+  public void runTest(final TestDefinition testDefinition) throws Exception {
+    final ShufflingData shufflingData =
+        ShufflingData.parse(testDefinition.getTestDirectory().resolve("mapping.yaml"));
+    final Bytes32 seed = Bytes32.fromHexString(shufflingData.getSeed());
+    IntStream.range(0, shufflingData.getCount())
+        .forEach(
+            index ->
+                assertThat(compute_shuffled_index(index, shufflingData.getCount(), seed))
+                    .isEqualTo(shufflingData.getMapping(index)));
 
-      final int[] inputs = IntStream.range(0, shufflingData.getCount()).toArray();
-      CommitteeUtil.shuffle_list(inputs, seed);
-      assertThat(inputs).isEqualTo(shufflingData.getMapping());
-    };
+    final int[] inputs = IntStream.range(0, shufflingData.getCount()).toArray();
+    CommitteeUtil.shuffle_list(inputs, seed);
+    assertThat(inputs).isEqualTo(shufflingData.getMapping());
   }
 
   private static final class ShufflingData {

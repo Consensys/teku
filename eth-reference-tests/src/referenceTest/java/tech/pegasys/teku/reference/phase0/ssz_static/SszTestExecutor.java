@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.function.Executable;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -53,62 +52,48 @@ import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.ExecutableFactory;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.Merkleizable;
 
-public class SszTestExecutableFactory<T extends SimpleOffsetSerializable & Merkleizable>
-    implements ExecutableFactory {
+public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
+    implements TestExecutor {
   private final Class<T> clazz;
 
-  public static ImmutableMap<String, ExecutableFactory> SSZ_TEST_TYPES =
-      ImmutableMap.<String, ExecutableFactory>builder()
+  public static ImmutableMap<String, TestExecutor> SSZ_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
           // SSZ Static
-          .put(
-              "ssz_static/AggregateAndProof",
-              new SszTestExecutableFactory<>(AggregateAndProof.class))
-          .put("ssz_static/Attestation", new SszTestExecutableFactory<>(Attestation.class))
-          .put("ssz_static/AttestationData", new SszTestExecutableFactory<>(AttestationData.class))
-          .put(
-              "ssz_static/AttesterSlashing", new SszTestExecutableFactory<>(AttesterSlashing.class))
-          .put("ssz_static/BeaconBlock", new SszTestExecutableFactory<>(BeaconBlock.class))
-          .put("ssz_static/BeaconBlockBody", new SszTestExecutableFactory<>(BeaconBlockBody.class))
-          .put(
-              "ssz_static/BeaconBlockHeader",
-              new SszTestExecutableFactory<>(BeaconBlockHeader.class))
-          .put("ssz_static/BeaconState", new SszTestExecutableFactory<>(BeaconStateImpl.class))
-          .put("ssz_static/Checkpoint", new SszTestExecutableFactory<>(Checkpoint.class))
-          .put("ssz_static/Deposit", new SszTestExecutableFactory<>(Deposit.class))
-          .put("ssz_static/DepositData", new SszTestExecutableFactory<>(DepositData.class))
-          .put("ssz_static/DepositMessage", new SszTestExecutableFactory<>(DepositMessage.class))
+          .put("ssz_static/AggregateAndProof", new SszTestExecutor<>(AggregateAndProof.class))
+          .put("ssz_static/Attestation", new SszTestExecutor<>(Attestation.class))
+          .put("ssz_static/AttestationData", new SszTestExecutor<>(AttestationData.class))
+          .put("ssz_static/AttesterSlashing", new SszTestExecutor<>(AttesterSlashing.class))
+          .put("ssz_static/BeaconBlock", new SszTestExecutor<>(BeaconBlock.class))
+          .put("ssz_static/BeaconBlockBody", new SszTestExecutor<>(BeaconBlockBody.class))
+          .put("ssz_static/BeaconBlockHeader", new SszTestExecutor<>(BeaconBlockHeader.class))
+          .put("ssz_static/BeaconState", new SszTestExecutor<>(BeaconStateImpl.class))
+          .put("ssz_static/Checkpoint", new SszTestExecutor<>(Checkpoint.class))
+          .put("ssz_static/Deposit", new SszTestExecutor<>(Deposit.class))
+          .put("ssz_static/DepositData", new SszTestExecutor<>(DepositData.class))
+          .put("ssz_static/DepositMessage", new SszTestExecutor<>(DepositMessage.class))
           .put("ssz_static/Eth1Block", IGNORE_TESTS) // We don't have an Eth1Block structure
-          .put("ssz_static/Eth1Data", new SszTestExecutableFactory<>(Eth1Data.class))
-          .put("ssz_static/Fork", new SszTestExecutableFactory<>(Fork.class))
-          .put("ssz_static/ForkData", new SszTestExecutableFactory<>(ForkData.class))
-          .put("ssz_static/HistoricalBatch", new SszTestExecutableFactory<>(HistoricalBatch.class))
-          .put(
-              "ssz_static/IndexedAttestation",
-              new SszTestExecutableFactory<>(IndexedAttestation.class))
-          .put(
-              "ssz_static/PendingAttestation",
-              new SszTestExecutableFactory<>(PendingAttestation.class))
-          .put(
-              "ssz_static/ProposerSlashing", new SszTestExecutableFactory<>(ProposerSlashing.class))
+          .put("ssz_static/Eth1Data", new SszTestExecutor<>(Eth1Data.class))
+          .put("ssz_static/Fork", new SszTestExecutor<>(Fork.class))
+          .put("ssz_static/ForkData", new SszTestExecutor<>(ForkData.class))
+          .put("ssz_static/HistoricalBatch", new SszTestExecutor<>(HistoricalBatch.class))
+          .put("ssz_static/IndexedAttestation", new SszTestExecutor<>(IndexedAttestation.class))
+          .put("ssz_static/PendingAttestation", new SszTestExecutor<>(PendingAttestation.class))
+          .put("ssz_static/ProposerSlashing", new SszTestExecutor<>(ProposerSlashing.class))
           .put(
               "ssz_static/SignedAggregateAndProof",
-              new SszTestExecutableFactory<>(SignedAggregateAndProof.class))
-          .put(
-              "ssz_static/SignedBeaconBlock",
-              new SszTestExecutableFactory<>(SignedBeaconBlock.class))
+              new SszTestExecutor<>(SignedAggregateAndProof.class))
+          .put("ssz_static/SignedBeaconBlock", new SszTestExecutor<>(SignedBeaconBlock.class))
           .put(
               "ssz_static/SignedBeaconBlockHeader",
-              new SszTestExecutableFactory<>(SignedBeaconBlockHeader.class))
-          .put(
-              "ssz_static/SignedVoluntaryExit",
-              new SszTestExecutableFactory<>(SignedVoluntaryExit.class))
+              new SszTestExecutor<>(SignedBeaconBlockHeader.class))
+          .put("ssz_static/SignedVoluntaryExit", new SszTestExecutor<>(SignedVoluntaryExit.class))
           .put("ssz_static/SigningRoot", IGNORE_TESTS) // TODO: Should make this work
-          .put("ssz_static/Validator", new SszTestExecutableFactory<>(Validator.class))
-          .put("ssz_static/VoluntaryExit", new SszTestExecutableFactory<>(VoluntaryExit.class))
+          .put("ssz_static/Validator", new SszTestExecutor<>(Validator.class))
+          .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(VoluntaryExit.class))
 
           // SSZ Generic
           .put("ssz_generic/basic_vector", IGNORE_TESTS)
@@ -119,25 +104,22 @@ public class SszTestExecutableFactory<T extends SimpleOffsetSerializable & Merkl
           .put("ssz_generic/uints", IGNORE_TESTS)
           .build();
 
-  public SszTestExecutableFactory(final Class<T> clazz) {
+  public SszTestExecutor(final Class<T> clazz) {
     this.clazz = clazz;
   }
 
   @Override
-  public Executable forTestDefinition(final TestDefinition testDefinition) {
-    return () -> {
-      final Path testDirectory = testDefinition.getTestDirectory();
-      final Bytes inputData =
-          Bytes.wrap(Files.readAllBytes(testDirectory.resolve("serialized.ssz")));
-      final Bytes32 expectedRoot = loadExpectedRoot(testDirectory.resolve("roots.yaml"));
-      final T result = SimpleOffsetSerializer.deserialize(inputData, clazz);
+  public void runTest(final TestDefinition testDefinition) throws Exception {
+    final Path testDirectory = testDefinition.getTestDirectory();
+    final Bytes inputData = Bytes.wrap(Files.readAllBytes(testDirectory.resolve("serialized.ssz")));
+    final Bytes32 expectedRoot = loadExpectedRoot(testDirectory.resolve("roots.yaml"));
+    final T result = SimpleOffsetSerializer.deserialize(inputData, clazz);
 
-      // Deserialize
-      assertThat(result.hash_tree_root()).isEqualTo(expectedRoot);
+    // Deserialize
+    assertThat(result.hash_tree_root()).isEqualTo(expectedRoot);
 
-      // Serialize
-      assertThat(SimpleOffsetSerializer.serialize(result)).isEqualTo(inputData);
-    };
+    // Serialize
+    assertThat(SimpleOffsetSerializer.serialize(result)).isEqualTo(inputData);
   }
 
   private Bytes32 loadExpectedRoot(final Path rootsYaml) throws IOException {

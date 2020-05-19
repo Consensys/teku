@@ -27,32 +27,28 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.function.Executable;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.ExecutableFactory;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class GenesisInitializationTestExecutableFactory implements ExecutableFactory {
+public class GenesisInitializationTestExecutor implements TestExecutor {
 
   @Override
-  public Executable forTestDefinition(final TestDefinition testDefinition) {
-    return () -> {
-      final BeaconState expectedGenesisState = loadStateFromSsz(testDefinition, "state.ssz");
-      final UnsignedLong eth1Timestamp =
-          loadUnsignedLongFromYaml(testDefinition, "eth1_timestamp.yaml");
-      final Bytes32 eth1BlockHash = loadBytes32FromSsz(testDefinition, "eth1_block_hash.ssz");
-      final GenesisMetaData metaData = loadYaml(testDefinition, "meta.yaml", GenesisMetaData.class);
-      final List<Deposit> deposits =
-          IntStream.range(0, metaData.getDepositsCount())
-              .mapToObj(
-                  index -> loadSsz(testDefinition, "deposits_" + index + ".ssz", Deposit.class))
-              .collect(Collectors.toList());
+  public void runTest(final TestDefinition testDefinition) throws Exception {
+    final BeaconState expectedGenesisState = loadStateFromSsz(testDefinition, "state.ssz");
+    final UnsignedLong eth1Timestamp =
+        loadUnsignedLongFromYaml(testDefinition, "eth1_timestamp.yaml");
+    final Bytes32 eth1BlockHash = loadBytes32FromSsz(testDefinition, "eth1_block_hash.ssz");
+    final GenesisMetaData metaData = loadYaml(testDefinition, "meta.yaml", GenesisMetaData.class);
+    final List<Deposit> deposits =
+        IntStream.range(0, metaData.getDepositsCount())
+            .mapToObj(index -> loadSsz(testDefinition, "deposits_" + index + ".ssz", Deposit.class))
+            .collect(Collectors.toList());
 
-      final BeaconState result =
-          initialize_beacon_state_from_eth1(eth1BlockHash, eth1Timestamp, deposits);
-      assertThat(result).isEqualTo(expectedGenesisState);
-    };
+    final BeaconState result =
+        initialize_beacon_state_from_eth1(eth1BlockHash, eth1Timestamp, deposits);
+    assertThat(result).isEqualTo(expectedGenesisState);
   }
 
   private static class GenesisMetaData {

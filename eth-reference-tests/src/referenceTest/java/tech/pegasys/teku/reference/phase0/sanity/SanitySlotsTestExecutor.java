@@ -18,25 +18,22 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.google.common.primitives.UnsignedLong;
-import org.junit.jupiter.api.function.Executable;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.ExecutableFactory;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class SanitySlotsTestExecutableFactory implements ExecutableFactory {
+public class SanitySlotsTestExecutor implements TestExecutor {
 
   @Override
-  public Executable forTestDefinition(final TestDefinition testDefinition) {
-    return () -> {
-      final int numberOfSlots = loadYaml(testDefinition, "slots.yaml", Integer.class);
-      final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
-      final BeaconState expectedState = loadStateFromSsz(testDefinition, "post.ssz");
-      final StateTransition stateTransition = new StateTransition();
-      final UnsignedLong endSlot = preState.getSlot().plus(UnsignedLong.valueOf(numberOfSlots));
+  public void runTest(final TestDefinition testDefinition) throws Exception {
+    final int numberOfSlots = loadYaml(testDefinition, "slots.yaml", Integer.class);
+    final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
+    final BeaconState expectedState = loadStateFromSsz(testDefinition, "post.ssz");
+    final StateTransition stateTransition = new StateTransition();
+    final UnsignedLong endSlot = preState.getSlot().plus(UnsignedLong.valueOf(numberOfSlots));
 
-      final BeaconState result = stateTransition.process_slots(preState, endSlot);
-      assertThat(result).isEqualTo(expectedState);
-    };
+    final BeaconState result = stateTransition.process_slots(preState, endSlot);
+    assertThat(result).isEqualTo(expectedState);
   }
 }
