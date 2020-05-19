@@ -361,6 +361,10 @@ public class TekuConfigurationBuilder {
           getOrOptionalDefault(p2pSnappyEnabled, network::getSnappyCompressionEnabled);
     }
 
+    if (eth1DepositContractAddress == null) {
+      throw new InvalidConfigurationException("eth1-deposit-contract-address must be specified.");
+    }
+
     p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
     return new TekuConfiguration(
         constants,

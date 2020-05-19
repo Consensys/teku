@@ -44,6 +44,19 @@ import tech.pegasys.teku.util.config.TekuConfigurationBuilder;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
+  private final String eth1AddressString = "0x77f7bED277449F51505a4C54550B074030d989bC";
+  private final Eth1Address address = Eth1Address.fromHexString(eth1AddressString);
+
+  @Test
+  public void noOptionShouldDisplayErrorMessage() {
+    final String[] args = {};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("eth1-deposit");
+    assertThat(str).contains("must be specified");
+  }
+
   @Test
   public void unknownOptionShouldDisplayShortHelpMessage() {
     final String[] args = {"--hlp"};
@@ -80,9 +93,16 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void loadDefaultsWhenNoArgsArePassed() {
+  public void loadDefaultsWhenMinimalArgsArePassed() {
     // p2p-enabled default is "true" which require p2p-private-key-file to be non-null
-    final String[] args = {"--data-path", dataPath.toString(), "--p2p-enabled", "false"};
+    final String[] args = {
+      "--data-path",
+      dataPath.toString(),
+      "--p2p-enabled",
+      "false",
+      "--eth1-deposit-contract-address",
+      eth1AddressString
+    };
 
     beaconNodeCommand.parse(args);
 
@@ -144,7 +164,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             Map.of("TEKU_DATA_PATH", dataPath.toString(), "TEKU_P2P_ENABLED", "false"),
             startAction);
 
-    beaconNodeCommand.parse(new String[] {});
+    beaconNodeCommand.parse(new String[] {"--eth1-deposit-contract-address", eth1AddressString});
 
     assertTekuConfiguration(expectedDefaultConfigurationBuilder().build());
   }
@@ -171,14 +191,17 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void interopEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xinterop-enabled");
+        getTekuConfigurationFromArguments(
+            "--Xinterop-enabled", "--eth1-deposit-contract-address", eth1AddressString);
     assertThat(tekuConfiguration.isInteropEnabled()).isTrue();
   }
 
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"OFF", "FATAL", "WARN", "INFO", "DEBUG", "TRACE", "ALL"})
   public void loglevel_shouldAcceptValues(String level) {
-    final String[] args = {"--logging", level};
+    final String[] args = {
+      "--logging", level, "--eth1-deposit-contract-address", eth1AddressString
+    };
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
   }
@@ -186,14 +209,18 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"Off", "Fatal", "WaRN", "InfO", "DebUG", "trACE", "all"})
   public void loglevel_shouldAcceptValuesMixedCase(String level) {
-    final String[] args = {"--logging", level};
+    final String[] args = {
+      "--logging", level, "--eth1-deposit-contract-address", eth1AddressString
+    };
     beaconNodeCommand.parse(args);
     assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level.toUpperCase());
   }
 
   @Test
   public void logLevel_shouldRejectInvalidValues() {
-    final String[] args = {"--logging", "invalid"};
+    final String[] args = {
+      "--logging", "invalid", "--eth1-deposit-contract-address", eth1AddressString
+    };
     beaconNodeCommand.parse(args);
     String str = getCommandLineOutput();
     assertThat(str).contains("'invalid' is not a valid log level. Supported values are");
@@ -222,7 +249,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--initial-state", "",
       "--Xinterop-number-of-validators", "64",
       "--Xinterop-enabled", "true",
-      "--eth1-deposit-contract-address", "0x77f7bED277449F51505a4C54550B074030d989bC",
+      "--eth1-deposit-contract-address", eth1AddressString,
       "--eth1-endpoint", "http://localhost:8545",
       "--metrics-enabled", "false",
       "--metrics-port", "8008",
@@ -239,7 +266,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setEth1DepositContractAddress(null)
+        .setEth1DepositContractAddress(address)
         .setEth1Endpoint(null)
         .setMetricsCategories(
             DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
@@ -264,7 +291,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfigurationBuilder expectedConfigurationBuilder() {
-    Eth1Address address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
     return TekuConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
