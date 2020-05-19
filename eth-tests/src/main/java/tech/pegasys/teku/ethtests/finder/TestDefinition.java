@@ -50,7 +50,6 @@ public class TestDefinition {
   }
 
   public String getDisplayName() {
-    // TODO: Provide a more friendly name
     return toString();
   }
 
