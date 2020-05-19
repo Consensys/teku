@@ -15,14 +15,10 @@ package tech.pegasys.teku.reference.phase0.ssz_static;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -52,6 +48,7 @@ import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.Merkleizable;
@@ -112,7 +109,8 @@ public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final Path testDirectory = testDefinition.getTestDirectory();
     final Bytes inputData = Bytes.wrap(Files.readAllBytes(testDirectory.resolve("serialized.ssz")));
-    final Bytes32 expectedRoot = loadExpectedRoot(testDirectory.resolve("roots.yaml"));
+    final Bytes32 expectedRoot =
+        TestDataUtils.loadYaml(testDefinition, "roots.yaml", Roots.class).getRoot();
     final T result = SimpleOffsetSerializer.deserialize(inputData, clazz);
 
     // Deserialize
@@ -122,11 +120,12 @@ public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
     assertThat(SimpleOffsetSerializer.serialize(result)).isEqualTo(inputData);
   }
 
-  private Bytes32 loadExpectedRoot(final Path rootsYaml) throws IOException {
-    try (final InputStream in = Files.newInputStream(rootsYaml)) {
-      final Map<String, String> data =
-          new ObjectMapper(new YAMLFactory()).readerFor(Map.class).readValue(in);
-      return Bytes32.fromHexString(data.get("root"));
+  private static class Roots {
+    @JsonProperty(value = "root", required = true)
+    private String root;
+
+    public Bytes32 getRoot() {
+      return Bytes32.fromHexString(root);
     }
   }
 }
