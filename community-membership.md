@@ -71,7 +71,7 @@ Code approvers are members that have signed an ICLA and have been granted additi
 - Includes all of the responsibilities and privileges of a Member user
 - Approver status may be a precondition to accepting large code contributions
 - Demonstrate sound technical judgement
-- Responsible for project quality control via [code reviews]
+- Responsible for project quality control via code reviews
   - Focus on holistic acceptance of contribution such as dependencies with other features, backwards / forwards
     compatibility, API and flag definitions, etc
 - Expected to be responsive to review requests as per [community expectations]
@@ -125,7 +125,6 @@ This document is adapted from the following sources:
 [CLA.md]: /CLA.md
 [oss watch benevolent dictator]: http://oss-watch.ac.uk/resources/benevolentdictatorgovernancemodel
 [kub community membership]: https://raw.githubusercontent.com/kubernetes/community/master/community-membership.md
-[code reviews]: /docs/code-reviews.md
 [contributor guide]: /CONTRIBUTING.md
 [New contributors]: /CONTRIBUTING.md
 [two-factor authentication]: https://help.github.com/articles/about-two-factor-authentication
