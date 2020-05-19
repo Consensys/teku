@@ -25,7 +25,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class BlsSignTestType implements TestExecutor {
+public class BlsSignTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
@@ -44,10 +44,6 @@ public class BlsSignTestType implements TestExecutor {
     @JsonProperty(value = "output", required = true)
     private String output;
 
-    public BLSSignature getSignature() {
-      return input.getSignature();
-    }
-
     public BLSSignature getOutput() {
       return BlsTests.parseSignature(output);
     }
@@ -60,19 +56,12 @@ public class BlsSignTestType implements TestExecutor {
     @JsonProperty(value = "message", required = true)
     private String message;
 
-    @JsonProperty(value = "signature", required = true)
-    private String signature;
-
     public BLSSecretKey getPrivateKey() {
       return BLSSecretKey.fromBytes(Bytes.fromHexString(privateKey));
     }
 
     public Bytes getMessage() {
       return Bytes.fromHexString(message);
-    }
-
-    public BLSSignature getSignature() {
-      return BlsTests.parseSignature(signature);
     }
   }
 }

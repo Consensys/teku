@@ -22,11 +22,11 @@ public class BlsTests {
 
   public static ImmutableMap<String, TestExecutor> BLS_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
-          .put("bls/verify", new BlsVerifyTestType())
-          .put("bls/aggregate", new BlsAggregateTestType())
-          .put("bls/aggregate_verify", new BlsAggregateVerifyTestType())
-          .put("bls/sign", new BlsSignTestType())
-          .put("bls/fast_aggregate_verify", new BlsFastAggregateVerifyTestType())
+          .put("bls/verify", new BlsVerifyTestExecutor())
+          .put("bls/aggregate", new BlsAggregateTestExecutor())
+          .put("bls/aggregate_verify", new BlsAggregateVerifyTestExecutor())
+          .put("bls/sign", new BlsSignTestExecutor())
+          .put("bls/fast_aggregate_verify", new BlsFastAggregateVerifyTestExecutor())
           .build();
 
   public static BLSSignature parseSignature(final String value) {

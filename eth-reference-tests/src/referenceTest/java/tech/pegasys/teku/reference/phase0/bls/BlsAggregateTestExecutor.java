@@ -26,7 +26,7 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class BlsAggregateTestType implements TestExecutor {
+public class BlsAggregateTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {

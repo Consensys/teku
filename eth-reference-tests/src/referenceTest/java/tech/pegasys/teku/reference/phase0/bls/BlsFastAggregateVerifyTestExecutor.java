@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.reference.phase0.bls;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -27,17 +27,16 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class BlsAggregateVerifyTestType implements TestExecutor {
+public class BlsFastAggregateVerifyTestExecutor implements TestExecutor {
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final Data data = loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
-    final List<BLSPublicKey> publicKeys = data.getInputPublicKeys();
-    final List<Bytes> messages = data.getInputMessages();
-    final BLSSignature signature = data.getSignature();
+    final List<BLSPublicKey> publicKeys = data.input.getPublicKeys();
+    final Bytes message = data.input.getMessage();
+    final BLSSignature signature = data.input.getSignature();
     final boolean expectedResult = data.getOutput();
-
-    assertThat(BLS.aggregateVerify(publicKeys, messages, signature)).isEqualTo(expectedResult);
+    assertThat(BLS.fastAggregateVerify(publicKeys, message, signature)).isEqualTo(expectedResult);
   }
 
   private static class Data {
@@ -47,52 +46,34 @@ public class BlsAggregateVerifyTestType implements TestExecutor {
     @JsonProperty(value = "output", required = true)
     private boolean output;
 
-    public BLSSignature getSignature() {
-      return input.getSignature();
-    }
-
-    public List<BLSPublicKey> getInputPublicKeys() {
-      return input.getPairs().stream().map(Pair::getPublicKey).collect(Collectors.toList());
-    }
-
-    public List<Bytes> getInputMessages() {
-      return input.getPairs().stream().map(Pair::getMessage).collect(Collectors.toList());
-    }
-
     public boolean getOutput() {
       return output;
     }
   }
 
   private static class Input {
-    @JsonProperty(value = "pairs", required = true)
-    private List<Pair> pairs;
-
-    @JsonProperty(value = "signature", required = true)
-    private String signature;
-
-    public List<Pair> getPairs() {
-      return pairs;
-    }
-
-    public BLSSignature getSignature() {
-      return BlsTests.parseSignature(signature);
-    }
-  }
-
-  private static class Pair {
-    @JsonProperty(value = "pubkey", required = true)
-    private String publicKey;
+    @JsonProperty(value = "pubkeys", required = true)
+    private List<String> publicKeys;
 
     @JsonProperty(value = "message", required = true)
     private String message;
 
-    public BLSPublicKey getPublicKey() {
-      return BLSPublicKey.fromBytes(Bytes.fromHexString(publicKey));
+    @JsonProperty(value = "signature", required = true)
+    private String signature;
+
+    public List<BLSPublicKey> getPublicKeys() {
+      return publicKeys.stream()
+          .map(Bytes::fromHexString)
+          .map(BLSPublicKey::fromBytes)
+          .collect(toList());
     }
 
     public Bytes getMessage() {
       return Bytes.fromHexString(message);
+    }
+
+    public BLSSignature getSignature() {
+      return BlsTests.parseSignature(signature);
     }
   }
 }
