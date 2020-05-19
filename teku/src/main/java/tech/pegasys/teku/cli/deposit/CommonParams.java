@@ -13,26 +13,18 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Consumer;
-import okhttp3.ConnectionPool;
-import okhttp3.OkHttpClient;
+import java.util.Optional;
+import java.util.function.IntConsumer;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.protocol.http.HttpService;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Model.CommandSpec;
@@ -40,15 +32,21 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.services.powchain.DepositTransactionSender;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.Eth1Address;
+import tech.pegasys.teku.util.config.NetworkDefinition;
 
-public class CommonParams implements Closeable {
-  private final Consumer<Integer> shutdownFunction;
-  private final ConsoleAdapter consoleAdapter;
+public class CommonParams {
+
   @Spec private CommandSpec spec;
+
+  @Option(
+      names = {"-n", "--network"},
+      required = true,
+      paramLabel = "<NETWORK>",
+      description = "Represents which network to use.",
+      arity = "1")
+  private String network;
 
   @Option(
       names = {"--eth1-endpoint"},
@@ -59,20 +57,19 @@ public class CommonParams implements Closeable {
 
   @Option(
       names = {"--eth1-deposit-contract-address"},
-      required = true,
       paramLabel = "<ADDRESS>",
       description = "Address of the deposit contract")
-  private String contractAddress;
+  private Eth1Address contractAddress;
 
   @ArgGroup(exclusive = true, multiplicity = "1")
   private Eth1PrivateKeyOptions eth1PrivateKeyOptions;
 
   @Option(
       names = {"--deposit-amount-gwei"},
-      required = true,
       paramLabel = "<GWEI>",
       converter = UnsignedLongConverter.class,
-      description = "Deposit amount in Gwei")
+      description =
+          "Deposit amount in Gwei. Defaults to the amount required to activate a validator on the specified network.")
   private UnsignedLong amount;
 
   @Option(
@@ -82,9 +79,8 @@ public class CommonParams implements Closeable {
       hidden = true)
   private boolean displayConfirmation = true;
 
-  private OkHttpClient httpClient;
-  private ScheduledExecutorService executorService;
-  private Web3j web3j;
+  private final IntConsumer shutdownFunction;
+  private final ConsoleAdapter consoleAdapter;
 
   CommonParams() {
     this.shutdownFunction = System::exit;
@@ -95,62 +91,39 @@ public class CommonParams implements Closeable {
   public CommonParams(
       final CommandSpec commandSpec,
       final Eth1PrivateKeyOptions eth1PrivateKeyOptions,
-      final Consumer<Integer> shutdownFunction,
+      final IntConsumer shutdownFunction,
       final ConsoleAdapter consoleAdapter) {
     this.spec = commandSpec;
     this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
-    this.amount = UnsignedLong.valueOf(32_000_000_000L);
     this.shutdownFunction = shutdownFunction;
     this.consoleAdapter = consoleAdapter;
   }
 
-  public void displayConfirmation() {
-    if (!displayConfirmation || !consoleAdapter.isConsoleAvailable()) {
-      return;
-    }
-
-    // gwei to eth
-    final String eth =
-        new BigDecimal(amount.bigIntegerValue())
-            .divide(BigDecimal.TEN.pow(9), 9, RoundingMode.HALF_UP)
-            .toString();
-
-    final String reply =
-        consoleAdapter.readLine(
-            "You are about to submit a transaction of %s Eth. This is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
-            eth);
-    if ("y".equalsIgnoreCase(reply)) {
-      return;
-    }
-    System.out.println("Transaction cancelled.");
-    shutdownFunction.accept(0);
+  public RegisterAction createRegisterAction() {
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
+    Constants.setConstants(networkDefinition.getConstants());
+    return new RegisterAction(
+        eth1NodeUrl,
+        getEth1Credentials(),
+        getContractAddress(networkDefinition),
+        displayConfirmation,
+        getAmount(),
+        shutdownFunction,
+        consoleAdapter);
   }
 
-  public DepositTransactionSender createTransactionSender() {
-    httpClient = new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
-    executorService =
-        Executors.newScheduledThreadPool(
-            1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
-    web3j = Web3j.build(new HttpService(eth1NodeUrl, httpClient), 1000, executorService);
-    return new DepositTransactionSender(web3j, contractAddress, getEth1Credentials());
+  UnsignedLong getAmount() {
+    return Optional.ofNullable(this.amount).orElse(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
   }
 
-  @Override
-  public void close() {
-    if (web3j != null) {
-      web3j.shutdown();
-      httpClient.dispatcher().executorService().shutdownNow();
-      httpClient.connectionPool().evictAll();
-      executorService.shutdownNow();
-    }
-  }
-
-  public UnsignedLong getAmount() {
-    return amount;
-  }
-
-  public boolean isDisplayConfirmation() {
-    return displayConfirmation;
+  private Eth1Address getContractAddress(final NetworkDefinition networkDefinition) {
+    return Optional.ofNullable(this.contractAddress)
+        .or(networkDefinition::getEth1DepositContractAddress)
+        .orElseThrow(
+            () ->
+                new ParameterException(
+                    spec.commandLine(),
+                    "Selected network does not define a deposit contract address. Please specify one with --eth1-deposit-contract-address"));
   }
 
   Credentials getEth1Credentials() {
@@ -190,12 +163,8 @@ public class CommonParams implements Closeable {
     }
   }
 
-  static SafeFuture<TransactionReceipt> sendDeposit(
-      final DepositTransactionSender sender,
-      final BLSKeyPair validatorKey,
-      final BLSPublicKey withdrawalPublicKey,
-      final UnsignedLong amount) {
-    return sender.sendDepositTransaction(validatorKey, withdrawalPublicKey, amount);
+  public boolean shouldDisplayConfirmation() {
+    return displayConfirmation;
   }
 
   private static class UnsignedLongConverter implements CommandLine.ITypeConverter<UnsignedLong> {

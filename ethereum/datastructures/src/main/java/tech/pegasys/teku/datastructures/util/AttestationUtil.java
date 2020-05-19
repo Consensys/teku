@@ -149,11 +149,6 @@ public class AttestationUtil {
       BLSSignatureVerifier signatureVerifier) {
     SSZList<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
-    if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
-      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
-      return false;
-    }
-
     List<UnsignedLong> bit_0_indices_sorted =
         attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
     if (!attesting_indices.equals(bit_0_indices_sorted)) {

@@ -23,15 +23,28 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class DutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final DutyLoader epochDutiesScheduler;
-  private NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
+  private final StableSubnetSubscriber stableSubnetSubscriber;
+  private final NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
 
-  public DutyScheduler(final DutyLoader epochDutiesScheduler) {
+  public DutyScheduler(
+      final MetricsSystem metricsSystem,
+      final DutyLoader epochDutiesScheduler,
+      final StableSubnetSubscriber stableSubnetSubscriber) {
     this.epochDutiesScheduler = epochDutiesScheduler;
+    this.stableSubnetSubscriber = stableSubnetSubscriber;
+
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.VALIDATOR,
+        "scheduled_duties_current",
+        "Current number of pending duties that have been scheduled",
+        () -> dutiesByEpoch.values().stream().mapToInt(DutyQueue::countDuties).sum());
   }
 
   @Override
@@ -40,6 +53,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
     removePriorEpochs(epochNumber);
     dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
     dutiesByEpoch.computeIfAbsent(epochNumber.plus(ONE), this::requestDutiesForEpoch);
+    stableSubnetSubscriber.onSlot(slot);
   }
 
   @Override

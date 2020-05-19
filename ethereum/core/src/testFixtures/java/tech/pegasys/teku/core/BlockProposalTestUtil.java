@@ -71,9 +71,12 @@ public class BlockProposalTestUtil {
             state,
             parentBlockSigningRoot,
             eth1Data,
+            Bytes32.ZERO,
             attestations,
             slashings,
-            deposits);
+            BeaconBlockBodyLists.createAttesterSlashings(),
+            deposits,
+            BeaconBlockBodyLists.createVoluntaryExits());
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();

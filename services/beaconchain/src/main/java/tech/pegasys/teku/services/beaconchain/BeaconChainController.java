@@ -86,6 +86,7 @@ import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.sync.util.NoopSyncService;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
@@ -236,8 +237,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
-    final BeaconChainMetrics beaconChainMetrics = new BeaconChainMetrics(recentChainData, nodeSlot);
-    beaconChainMetrics.initialize(metricsSystem);
+    new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem);
   }
 
   public void initDepositProvider() {
@@ -279,8 +279,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             stateTransition,
             attestationPool,
             depositProvider,
-            eth1DataCache);
-    final AttestationTopicSubscriber attestationTopicSubscriptions =
+            eth1DataCache,
+            VersionProvider.getDefaultGraffiti());
+    final AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(p2pNetwork);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
@@ -289,10 +290,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             stateTransition,
             blockFactory,
             attestationPool,
-            attestationTopicSubscriptions,
+            attestationTopicSubscriber,
             eventBus);
     eventChannels
-        .subscribe(SlotEventsChannel.class, attestationTopicSubscriptions)
+        .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(ValidatorApiChannel.class, validatorApiHandler);
   }
 
@@ -357,6 +358,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
+              .asyncRunner(asyncRunner)
               .build();
     }
   }

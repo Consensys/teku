@@ -45,7 +45,7 @@ public class AttestationValidator {
   private static final UnsignedLong MAXIMUM_GOSSIP_CLOCK_DISPARITY =
       UnsignedLong.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
-  private final Set<ValidatorAndSlot> receivedValidAttestations =
+  private final Set<ValidatorAndTargetEpoch> receivedValidAttestations =
       ConcurrentLimitedSet.create(
           VALID_ATTESTATION_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final RecentChainData recentChainData;
@@ -71,7 +71,7 @@ public class AttestationValidator {
   private ValidationResult addAndCheckFirstValidAttestation(final Attestation attestation) {
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.
-    if (!receivedValidAttestations.add(getValidatorAndSlot(attestation))) {
+    if (!receivedValidAttestations.add(getValidatorAndTargetEpoch(attestation))) {
       return INVALID;
     }
     return VALID;
@@ -86,13 +86,13 @@ public class AttestationValidator {
 
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
-    if (attestation.getAggregation_bits().countSetBits() != 1) {
+    if (attestation.getAggregation_bits().getBitCount() != 1) {
       return INVALID;
     }
 
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.
-    if (receivedValidAttestations.contains(getValidatorAndSlot(attestation))) {
+    if (receivedValidAttestations.contains(getValidatorAndTargetEpoch(attestation))) {
       return INVALID;
     }
     return VALID;
@@ -138,9 +138,9 @@ public class AttestationValidator {
     return VALID;
   }
 
-  private ValidatorAndSlot getValidatorAndSlot(final Attestation attestation) {
-    return new ValidatorAndSlot(
-        attestation.getData().getSlot(),
+  private ValidatorAndTargetEpoch getValidatorAndTargetEpoch(final Attestation attestation) {
+    return new ValidatorAndTargetEpoch(
+        attestation.getData().getTarget().getEpoch(),
         attestation.getData().getIndex(),
         attestation.getAggregation_bits().streamAllSetBits().findFirst().orElseThrow());
   }
@@ -185,16 +185,18 @@ public class AttestationValidator {
     return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);
   }
 
-  private static class ValidatorAndSlot {
-    private final UnsignedLong slot;
+  private static class ValidatorAndTargetEpoch {
+    private final UnsignedLong targetEpoch;
     // Validator is identified via committee index and position to avoid resolving the actual
     // validator ID before checking for duplicates
     private final UnsignedLong committeeIndex;
     private final int committeePosition;
 
-    private ValidatorAndSlot(
-        final UnsignedLong slot, final UnsignedLong committeeIndex, final int committeePosition) {
-      this.slot = slot;
+    private ValidatorAndTargetEpoch(
+        final UnsignedLong targetEpoch,
+        final UnsignedLong committeeIndex,
+        final int committeePosition) {
+      this.targetEpoch = targetEpoch;
       this.committeeIndex = committeeIndex;
       this.committeePosition = committeePosition;
     }
@@ -207,15 +209,15 @@ public class AttestationValidator {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      final ValidatorAndSlot that = (ValidatorAndSlot) o;
+      final ValidatorAndTargetEpoch that = (ValidatorAndTargetEpoch) o;
       return committeePosition == that.committeePosition
-          && Objects.equals(slot, that.slot)
+          && Objects.equals(targetEpoch, that.targetEpoch)
           && Objects.equals(committeeIndex, that.committeeIndex);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(slot, committeeIndex, committeePosition);
+      return Objects.hash(targetEpoch, committeeIndex, committeePosition);
     }
   }
 }

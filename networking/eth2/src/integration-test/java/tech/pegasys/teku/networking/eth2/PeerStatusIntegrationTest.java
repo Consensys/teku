@@ -14,9 +14,11 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,7 +37,6 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.Waiter;
 
 public class PeerStatusIntegrationTest {
 
@@ -82,8 +83,8 @@ public class PeerStatusIntegrationTest {
             .recentChainData(recentChainData2)
             .startNetwork();
 
-    Waiter.waitFor(network1.connect(network1.createPeerAddress(network2.getNodeAddress())));
-    Waiter.waitFor(
+    waitFor(network1.connect(network1.createPeerAddress(network2.getNodeAddress())));
+    waitFor(
         () -> {
           assertThat(network1.getPeerCount()).isEqualTo(1);
           assertThat(network2.getPeerCount()).isEqualTo(1);
@@ -109,14 +110,14 @@ public class PeerStatusIntegrationTest {
             .startNetwork();
 
     final EventBus eventBus2 = new EventBus();
-    final RecentChainData storageClient2 = MemoryOnlyRecentChainData.create(eventBus2);
-    BeaconChainUtil.create(storageClient2, VALIDATOR_KEYS).initializeStorage();
+    final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(eventBus2);
+    BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
     final Eth2Network network2 =
         networkFactory
             .builder()
             .rpcEncoding(encoding)
             .eventBus(eventBus2)
-            .recentChainData(storageClient2)
+            .recentChainData(recentChainData2)
             .peer(network1)
             .startNetwork();
 
@@ -127,9 +128,48 @@ public class PeerStatusIntegrationTest {
     // Peer 1 advances
     beaconChainUtil1.createAndImportBlockAtSlot(10);
 
-    final PeerStatus updatedStatusData = Waiter.waitFor(network2ViewOfPeer1.sendStatus());
+    final PeerStatus updatedStatusData = waitFor(network2ViewOfPeer1.sendStatus());
     assertStatusMatchesStorage(recentChainData1, updatedStatusData);
     assertStatusMatchesStorage(recentChainData1, network2ViewOfPeer1.getStatus());
+  }
+
+  @ParameterizedTest(name = "encoding: {0}")
+  @MethodSource("getEncodings")
+  public void shouldUpdatePeerStatusPeriodically(
+      final String encodingName, final RpcEncoding encoding) throws Exception {
+    Duration statusUpdateInterval = Duration.ofSeconds(2);
+    final Eth2Network network1 =
+        networkFactory
+            .builder()
+            .rpcEncoding(encoding)
+            .eth2StatusUpdateInterval(statusUpdateInterval)
+            .recentChainData(recentChainData1)
+            .startNetwork();
+
+    final EventBus eventBus2 = new EventBus();
+    final RecentChainData recentChainData2 = MemoryOnlyRecentChainData.create(eventBus2);
+    BeaconChainUtil.create(recentChainData2, VALIDATOR_KEYS).initializeStorage();
+    final Eth2Network network2 =
+        networkFactory
+            .builder()
+            .rpcEncoding(encoding)
+            .eventBus(eventBus2)
+            .eth2StatusUpdateInterval(statusUpdateInterval)
+            .recentChainData(recentChainData2)
+            .peer(network1)
+            .startNetwork();
+
+    final Eth2Peer network2ViewOfPeer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
+
+    assertStatusMatchesStorage(recentChainData1, network2ViewOfPeer1.getStatus());
+
+    // Peer 1 advances
+    beaconChainUtil1.createAndImportBlockAtSlot(10);
+
+    waitFor(
+        () -> {
+          assertStatusMatchesStorage(recentChainData1, network2ViewOfPeer1.getStatus());
+        });
   }
 
   private void assertStatusMatchesStorage(

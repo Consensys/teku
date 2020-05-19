@@ -13,15 +13,24 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class AttestationData {
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong slot;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong index;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 beacon_block_root;
+
   public final Checkpoint source;
   public final Checkpoint target;
 

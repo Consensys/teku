@@ -39,9 +39,8 @@ import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.services.powchain.DepositTransactionSender;
 import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.crypto.SecureRandomProvider;
 
 @Command(
@@ -51,7 +50,7 @@ import tech.pegasys.teku.util.crypto.SecureRandomProvider;
     mixinStandardHelpOptions = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
-    versionProvider = VersionProvider.class,
+    versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
@@ -131,12 +130,9 @@ public class DepositGenerateCommand implements Runnable {
   public void run() {
     final KeysWriter keysWriter = getKeysWriter();
 
-    final CommonParams _params = params; // making it effective final as it gets injected by PicoCLI
-    _params.displayConfirmation();
-
     final SecureRandom srng = SecureRandomProvider.createSecureRandom();
-    try (_params) {
-      final DepositTransactionSender sender = params.createTransactionSender();
+    try (final RegisterAction registerAction = params.createRegisterAction()) {
+      registerAction.displayConfirmation(validatorCount);
       final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
       for (int i = 0; i < validatorCount; i++) {
         final BLSKeyPair validatorKey = BLSKeyPair.random(srng);
@@ -145,8 +141,7 @@ public class DepositGenerateCommand implements Runnable {
         keysWriter.writeKeys(validatorKey, withdrawalKey);
 
         final SafeFuture<TransactionReceipt> transactionReceiptSafeFuture =
-            CommonParams.sendDeposit(
-                sender, validatorKey, withdrawalKey.getPublicKey(), params.getAmount());
+            registerAction.sendDeposit(validatorKey, withdrawalKey.getPublicKey());
         futures.add(transactionReceiptSafeFuture);
       }
 
@@ -174,7 +169,7 @@ public class DepositGenerateCommand implements Runnable {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
       if (consoleAdapter.isConsoleAvailable()
           && isBlank(outputPath)
-          && params.isDisplayConfirmation()) {
+          && params.shouldDisplayConfirmation()) {
         SUB_COMMAND_LOG.display(
             "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
       }

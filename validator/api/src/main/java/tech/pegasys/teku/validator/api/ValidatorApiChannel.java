@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface ValidatorApiChannel {
@@ -41,7 +43,9 @@ public interface ValidatorApiChannel {
 
   SafeFuture<Optional<Attestation>> createAggregate(AttestationData attestationData);
 
-  void subscribeToBeaconCommittee(int committeeIndex, UnsignedLong aggregationSlot);
+  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UnsignedLong aggregationSlot);
+
+  void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 
   void sendSignedAttestation(Attestation attestation);
 

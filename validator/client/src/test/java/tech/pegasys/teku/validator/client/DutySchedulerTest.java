@@ -42,6 +42,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -67,20 +68,25 @@ class DutySchedulerTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
+  private final StableSubnetSubscriber stableSubnetSubscriber = mock(StableSubnetSubscriber.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final DutyScheduler dutyScheduler =
       new DutyScheduler(
+          metricsSystem,
           new RetryingDutyLoader(
               asyncRunner,
               new ValidatorApiDutyLoader(
+                  metricsSystem,
                   validatorApiChannel,
                   forkProvider,
                   () -> new ScheduledDuties(dutyFactory),
-                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
+                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
+          stableSubnetSubscriber);
 
   @BeforeEach
   public void setUp() {
@@ -211,15 +217,19 @@ class DutySchedulerTest {
   @Test
   public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
     final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     final ValidatorTimingChannel dutyScheduler =
         new DutyScheduler(
+            metricsSystem,
             new RetryingDutyLoader(
                 asyncRunner,
                 new ValidatorApiDutyLoader(
+                    metricsSystem,
                     validatorApiChannel,
                     forkProvider,
                     () -> scheduledDuties,
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
+                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
+            stableSubnetSubscriber);
     final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);

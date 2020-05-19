@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -33,18 +34,23 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 public class ChainStorageServer
     implements StorageUpdateChannel, StorageQueryChannel, Eth1DepositChannel {
   private final EventBus eventBus;
-  private final VersionedDatabaseFactory databaseFactory;
+  private final DatabaseFactory databaseFactory;
 
   private volatile Database database;
   private volatile Optional<Store> cachedStore = Optional.empty();
 
-  private ChainStorageServer(EventBus eventBus, final VersionedDatabaseFactory dbFactory) {
+  private ChainStorageServer(EventBus eventBus, final DatabaseFactory dbFactory) {
     this.eventBus = eventBus;
     this.databaseFactory = dbFactory;
   }
 
   public static ChainStorageServer create(EventBus eventBus, TekuConfiguration config) {
     return new ChainStorageServer(eventBus, new VersionedDatabaseFactory(config));
+  }
+
+  @VisibleForTesting
+  public static ChainStorageServer create(EventBus eventBus, DatabaseFactory dbFactory) {
+    return new ChainStorageServer(eventBus, dbFactory);
   }
 
   public void start() {
@@ -114,7 +120,7 @@ public class ChainStorageServer
   @Override
   public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot) {
     return SafeFuture.completedFuture(
-        database.getFinalizedRootAtSlot(slot).flatMap(database::getState));
+        database.getLatestFinalizedRootAtSlot(slot).flatMap(database::getState));
   }
 
   @Override

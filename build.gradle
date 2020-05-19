@@ -112,6 +112,7 @@ allprojects {
         exclude '**/src/main/java/tech/pegasys/teku/Constants.java'
         exclude '**/proto'
         exclude '**/resources'
+        exclude '**/src/*/generated'
       }
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
@@ -211,7 +212,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v0.11.1'
+def refTestVersion = 'v0.11.3'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -372,6 +373,7 @@ subprojects {
     }
     referenceTest {
       java {
+        srcDir file('src/referenceTest/generated')
         srcDir file('src/referenceTest/java')
       }
       resources.srcDir file('src/referenceTest/resources')

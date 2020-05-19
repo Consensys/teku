@@ -66,7 +66,7 @@ public class GetStateRoot implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = Bytes32.class),
+            content = @OpenApiContent(from = String.class),
             description = "The beacon chain `state_root`(`Bytes32`) for the specified slot."),
         @OpenApiResponse(
             status = RES_NOT_FOUND,

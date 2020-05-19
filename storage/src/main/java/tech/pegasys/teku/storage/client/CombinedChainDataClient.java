@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
@@ -107,7 +106,7 @@ public class CombinedChainDataClient {
       LOG.trace("Block root at slot {} is the specified head block root", slot);
       return getBlockByBlockRoot(headBlockRoot);
     }
-    if (isHistoricalData(slot)) {
+    if (!isRecentData(slot)) {
       LOG.trace("Block at slot {} is in a finalized epoch. Retrieving from historical data", slot);
       return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
     }
@@ -149,11 +148,6 @@ public class CombinedChainDataClient {
     return getBlockByBlockRoot(get_block_root_at_slot(state, slot));
   }
 
-  private boolean isHistoricalData(final UnsignedLong slot) {
-    final boolean finalizedPastFirstEpoch = !recentChainData.getFinalizedEpoch().equals(ZERO);
-    return finalizedPastFirstEpoch && isFinalized(slot);
-  }
-
   public boolean isFinalized(final UnsignedLong slot) {
     final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
@@ -170,44 +164,24 @@ public class CombinedChainDataClient {
   }
 
   /**
-   * Returns the state at the given slot on the current canonical chain.
+   * Returns the latest state at the given slot on the current canonical chain.
    *
    * @param slot the slot to get the state for
    * @return the State at slot
    */
-  public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
-    final Optional<Bytes32> headRoot = getBestBlockRoot();
-    return headRoot.map(root -> getStateAtSlot(slot, root)).orElse(STATE_NOT_AVAILABLE);
-  }
-
-  /**
-   * Returns the state on the chain specified by <code>headBlockRoot</code>.
-   *
-   * @param slot the slot to get the state for
-   * @return the State at slot
-   */
-  public SafeFuture<Optional<BeaconState>> getStateAtSlot(
-      final UnsignedLong slot, final Bytes32 headBlockRoot) {
-    checkNotNull(headBlockRoot);
-    final Store store = getStore();
-    if (store == null) {
-      LOG.trace("No state at slot {} because the store is not set", slot);
-      return STATE_NOT_AVAILABLE;
+  public SafeFuture<Optional<BeaconState>> getLatestStateAtSlot(final UnsignedLong slot) {
+    if (isRecentData(slot)) {
+      final Optional<BeaconState> recentState = recentChainData.getStateInEffectAtSlot(slot);
+      if (recentState.isPresent()) {
+        LOG.trace("State at slot {} was from recent chain data", slot);
+        return completedFuture(recentState);
+      }
     }
 
-    if (isHistoricalData(slot)) {
-      LOG.trace("Getting state at slot {} from historical chain data", slot);
-      return historicalChainData.getLatestFinalizedStateAtSlot(slot);
-    }
-
-    final BeaconState headState = store.getBlockState(headBlockRoot);
-    if (headState.getSlot().equals(slot)) {
-      LOG.trace("State at slot {} was the requested state", slot);
-      return completedFuture(Optional.of(headState));
-    }
-
-    LOG.trace("Getting state at slot {} from recent chain data", slot);
-    return completedFuture(recentChainData.getStateInEffectAtSlot(slot));
+    // Fall-through to historical query in case state has moved into historical range during
+    // processing
+    LOG.trace("Getting state at slot {} from historical chain data", slot);
+    return historicalChainData.getLatestFinalizedStateAtSlot(slot);
   }
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
@@ -225,12 +199,7 @@ public class CombinedChainDataClient {
   }
 
   public Optional<BeaconState> getHeadStateFromStore() {
-    final Store store = getStore();
-    if (store == null) {
-      LOG.trace("No state at head because the store is not set");
-      return Optional.empty();
-    }
-    return getBestBlockRoot().map(store::getBlockState);
+    return recentChainData.getBestState();
   }
 
   public Optional<Bytes32> getBestBlockRoot() {
@@ -238,7 +207,7 @@ public class CombinedChainDataClient {
   }
 
   public boolean isStoreAvailable() {
-    return recentChainData != null && getStore() != null;
+    return recentChainData != null && recentChainData.getStore() != null;
   }
 
   public List<CommitteeAssignment> getCommitteesFromState(
@@ -293,5 +262,14 @@ public class CombinedChainDataClient {
     return getBlockFromStore(blockRoot)
         .map(value -> SafeFuture.completedFuture(Optional.of(value)))
         .orElseGet(() -> historicalChainData.getBlockByBlockRoot(blockRoot));
+  }
+
+  private boolean isRecentData(final UnsignedLong slot) {
+    checkNotNull(slot);
+    if (recentChainData.isPreGenesis()) {
+      return false;
+    }
+    final UnsignedLong finalizedSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
+    return slot.compareTo(finalizedSlot) >= 0;
   }
 }

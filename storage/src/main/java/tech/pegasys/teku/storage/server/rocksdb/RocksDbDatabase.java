@@ -46,7 +46,7 @@ import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.StorageUpdateResult;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstanceFactory;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbDao.Updater;
@@ -63,7 +63,11 @@ public class RocksDbDatabase implements Database {
 
   public static Database createV3(
       final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
-    final RocksDbInstance db = RocksDbInstanceFactory.create(configuration, V3Schema.class);
+    final RocksDbAccessor db = RocksDbInstanceFactory.create(configuration, V3Schema.class);
+    return createV3(db, stateStorageMode);
+  }
+
+  static Database createV3(final RocksDbAccessor db, final StateStorageMode stateStorageMode) {
     final RocksDbDao dao = new V3RocksDbDao(db);
     return new RocksDbDatabase(dao, stateStorageMode);
   }

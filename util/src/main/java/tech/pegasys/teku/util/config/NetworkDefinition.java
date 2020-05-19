@@ -47,15 +47,25 @@ public class NetworkDefinition {
           .put(
               "schlesi",
               builder()
-                  .constants("https://github.com/goerli/schlesi/raw/master/teku/chain.yaml")
+                  .constants("schlesi")
                   .snappyCompressionEnabled(true)
-                  .initialState("https://github.com/goerli/schlesi/raw/master/teku/genesis.ssz")
+                  .initialState(
+                      "https://github.com/goerli/schlesi/raw/master/.trash/schlesi/teku/genesis.ssz")
                   .discoveryBootnodes(
                       "enr:-LK4QJ-6k6QytxOn7P9BdDZHXesHz3aaglpvo-VcTGc-rfr5H4DBzjQsjg6stZoy1H-p3yK21IISkJHe742QTVwRS_IEh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQINdLr6UY7y2CzshX4n_BbdYM1G40rpdEs84Mdoyv_ZyYN0Y3CCIyiDdWRwgiMo",
                       "enr:-LK4QFO0gKFieMiNrUystSk5Xt7DmIgusloLudv-gH8Krjw9SsUDZRk---H-3hwvL9rMfsMcZwU6L5ezK2d1_dG0UgECh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQPNb3TG-iN0aGTagN4peO0SEkWKklJOvloWL0He8pnB_4N0Y3CCJRyDdWRwgiUc",
                       "enr:-LK4QJS5Rn_kkA2MQpieVDUao5vkBj3kE15S_JJepGA9MNfndwHyfBWSjmAa5T_qvkGklrDiZXqlIAahXTm_eH_IXY8Ch2F0dG5ldHOIAAAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQOS1-hRSwsxLo2PH3RKtwWdjLdT1IMX2nqkQAlHs5E7LIN0Y3CCMsiDdWRwgi7g",
-                      "enr:-LK4QC08ftWworc3AQkYAtFSzUZpbSkRrgw74WrvKPFL3BbPBozhZx-gLHw8FeBzbi_0HDmZDWqZF-oF0b0W8Q8kHFELh2F0dG5ldHOIAQAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQJyLMVEG-_6ho3DR0iYvyEVbMyOJ4o2G-pIIEsNw80nn4N0Y3CCNLyDdWRwgjDU")
+                      "enr:-LK4QC08ftWworc3AQkYAtFSzUZpbSkRrgw74WrvKPFL3BbPBozhZx-gLHw8FeBzbi_0HDmZDWqZF-oF0b0W8Q8kHFELh2F0dG5ldHOIAQAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQJyLMVEG-_6ho3DR0iYvyEVbMyOJ4o2G-pIIEsNw80nn4N0Y3CCNLyDdWRwgjDU",
+                      "enr:-KG4QEKucvfLm_Hp8Erw1rVEGerBlDblJI54LNNHvzfCY-jCAHTaoHf0UF8HLB5HsbZtJhjJ83oWkQ0aMty7c26aZy8ChGV0aDKQmSXv1gAAAAD__________4JpZIJ2NIJpcIQzD0YHiXNlY3AyNTZrMaEDggHXPlO6yT4JkCgVMOJjilj4F0ogSlHuXjPJjsiWne2DdGNwgiMog3VkcIIjKA",
+                      "enr:-KG4QBUEkcqHGnHHCZLnWfSPBocBqP5SNClDHOR1KmlzaS-YN53w0xBspt-HCzk5-FZw_ZcYIdxQKrLp8VUSO2LPSDwChGV0aDKQmSXv1gAAAAD__________4JpZIJ2NIJpcIQzD0YHiXNlY3AyNTZrMaEDMcdoZ1TJBKATCJixtLTYxGmKbe7r3ckjvhg5OP5cILeDdGNwgiUcg3VkcIIlHA")
                   .eth1DepositContractAddress("0xA15554BF93a052669B511ae29EA21f3581677ac5")
+                  .build())
+          .put(
+              "witti",
+              builder()
+                  .constants("witti")
+                  .snappyCompressionEnabled(true)
+                  .eth1DepositContractAddress("0x6225f431644Ecf8A30b672D42b77c28297542b13")
                   .build())
           .build();
 

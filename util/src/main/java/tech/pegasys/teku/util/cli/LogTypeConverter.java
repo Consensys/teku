@@ -14,12 +14,13 @@
 package tech.pegasys.teku.util.cli;
 
 import org.apache.logging.log4j.Level;
+import picocli.CommandLine;
 import picocli.CommandLine.ITypeConverter;
 
 public class LogTypeConverter implements ITypeConverter<Level> {
   @Override
-  public Level convert(String value) throws Exception {
-    switch (value) {
+  public Level convert(String value) {
+    switch (value.toUpperCase()) {
       case "OFF":
         return Level.OFF;
       case "FATAL":
@@ -35,6 +36,9 @@ public class LogTypeConverter implements ITypeConverter<Level> {
       case "ALL":
         return Level.ALL;
     }
-    return Level.INFO;
+    throw (new CommandLine.TypeConversionException(
+        "'"
+            + value
+            + "' is not a valid log level. Supported values are [OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]"));
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,8 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -39,7 +39,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -52,7 +51,6 @@ import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
-import tech.pegasys.teku.util.file.FileUtil;
 
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -60,7 +58,7 @@ public class TekuNode extends Node {
   public static final String TEKU_DOCKER_IMAGE = "pegasyseng/teku:develop";
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.yaml";
-  protected static final String WORKING_DIRECTORY = "/artifacts/";
+  protected static final String WORKING_DIRECTORY = "/opt/teku/";
   private static final String DATA_PATH = WORKING_DIRECTORY + "data/";
   private static final int P2P_PORT = 9000;
   private static final ObjectMapper YAML_MAPPER =
@@ -81,7 +79,11 @@ public class TekuNode extends Node {
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
         .withExposedPorts(REST_API_PORT)
-        .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
+        .waitingFor(
+            new HttpWaitStrategy()
+                .forPort(REST_API_PORT)
+                .forPath("/network/peer_id")
+                .withStartupTimeout(Duration.ofMinutes(2)))
         .withCommand("--config-file", CONFIG_FILE_PATH);
   }
 
@@ -149,7 +151,8 @@ public class TekuNode extends Node {
     waitFor(
         () ->
             assertThat(fetchChainHead().get().finalized_epoch).isNotEqualTo(startingFinalizedEpoch),
-        540);
+        9,
+        MINUTES);
   }
 
   public void waitUntilInSyncWith(final TekuNode targetNode) {
@@ -162,7 +165,8 @@ public class TekuNode extends Node {
           assertThat(targetBeaconHead).isPresent();
           assertThat(beaconHead).isEqualTo(targetBeaconHead);
         },
-        300);
+        5,
+        MINUTES);
   }
 
   private BeaconHead waitForBeaconHead() {
@@ -223,28 +227,17 @@ public class TekuNode extends Node {
     File dbTar = File.createTempFile("database", ".tar");
     dbTar.deleteOnExit();
     copyDirectoryToTar(DATA_PATH, dbTar);
-    // Uncompress file to directory
-    File tmpDir = createTempDirectory();
-    FileUtil.unTar(dbTar, tmpDir);
-    return tmpDir;
+    return dbTar;
   }
 
   /**
    * Copies contents of the given directory into node's working directory.
    *
-   * @param sourceDirectory
+   * @param tarFile
    * @throws IOException
    */
-  public void copyContentsToWorkingDirectory(File sourceDirectory) throws IOException {
-    final Path directoryPath = sourceDirectory.toPath();
-    try (final Stream<Path> pathStream = Files.walk(directoryPath)) {
-      pathStream.forEach(
-          srcPath -> {
-            final Path relativePath = directoryPath.relativize(srcPath);
-            final Path destination = Paths.get(WORKING_DIRECTORY, relativePath.toString());
-            copyFileToContainer(srcPath.toFile(), destination.toAbsolutePath().toString());
-          });
-    }
+  public void copyContentsToWorkingDirectory(File tarFile) throws IOException {
+    container.withExpandedTarballToContainer(tarFile, WORKING_DIRECTORY);
   }
 
   public void copyFileToContainer(File file, String containerPath) {

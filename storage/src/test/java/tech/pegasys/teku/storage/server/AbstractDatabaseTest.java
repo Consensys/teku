@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -729,13 +730,15 @@ public abstract class AbstractDatabaseTest {
 
   protected void assertStatesUnavailable(final Collection<Bytes32> roots) {
     for (Bytes32 root : roots) {
-      assertThat(database.getState(root)).isEmpty();
+      Optional<BeaconState> bs = database.getState(root);
+      assertThat(bs).isEmpty();
     }
   }
 
   protected void assertBlocksUnavailable(final Collection<Bytes32> roots) {
     for (Bytes32 root : roots) {
-      assertThat(database.getSignedBlock(root)).isEmpty();
+      Optional<SignedBeaconBlock> bb = database.getSignedBlock(root);
+      assertThat(bb).isEmpty();
     }
   }
 
