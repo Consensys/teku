@@ -3,3 +3,6 @@ rest-api-port: 5055
 rest-api-docs-enabled: True
 rest-api-enabled: True
 rest-api-interface: "127.100.0.1"
+
+# mandatory eth1 options
+eth1-deposit-contract-address: "0x77f7bED277449F51505a4C54550B074030d989bC"

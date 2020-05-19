@@ -34,7 +34,9 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void eth1Enabled_shouldNotRequireAValue() {
-    final TekuConfiguration config = getTekuConfigurationFromArguments("--eth1-enabled");
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--eth1-enabled", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(config.isEth1Enabled()).isTrue();
   }
 }

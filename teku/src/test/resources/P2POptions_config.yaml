@@ -9,3 +9,6 @@ p2p-advertised-ip: "127.200.0.1"
 p2p-static-peers: "127.1.0.1,127.1.1.1"
 p2p-peer-lower-bound: 11
 p2p-peer-upper-bound: 12
+
+# mandatory eth1 options
+eth1-deposit-contract-address: "0x77f7bED277449F51505a4C54550B074030d989bC"

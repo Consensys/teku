@@ -35,6 +35,8 @@ public abstract class AbstractBeaconNodeCommandTest {
   protected final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
 
+  protected final String ETH1_ADDRESS_STRING = "0x77f7bED277449F51505a4C54550B074030d989bC";
+
   @SuppressWarnings("unchecked")
   final Consumer<TekuConfiguration> startAction = mock(Consumer.class);
 

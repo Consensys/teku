@@ -42,7 +42,8 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   public void logDestination_shouldHaveSensibleDefaultValue() {
     // This is important!
     // If it defaults to "both" or some other value custom log4j configs get overwritten
-    beaconNodeCommand.parse(new String[0]);
+    String[] args = {"--eth1-deposit-contract-address", ETH1_ADDRESS_STRING};
+    beaconNodeCommand.parse(args);
 
     final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
     assertThat(tekuConfiguration.getLogDestination()).isEqualTo(DEFAULT_BOTH);
@@ -51,28 +52,32 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void logDestination_shouldAcceptFileAsDestination() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "file");
+        getTekuConfigurationFromArguments(
+            "--log-destination", "file", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
   }
 
   @Test
   public void includeEvents_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-include-events-enabled");
+        getTekuConfigurationFromArguments(
+            "--log-include-events-enabled", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.isLogIncludeEventsEnabled()).isTrue();
   }
 
   @Test
   public void logDestination_shouldAcceptConsoleAsDestination() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "console");
+        getTekuConfigurationFromArguments(
+            "--log-destination", "console", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
   @Test
   public void logDestination_shouldAcceptBothAsDestination() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "both");
+        getTekuConfigurationFromArguments(
+            "--log-destination", "both", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
   }
 }

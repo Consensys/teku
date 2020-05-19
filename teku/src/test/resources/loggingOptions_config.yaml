@@ -8,3 +8,6 @@ Xlog-wire-cipher-enabled: True
 Xlog-wire-plain-enabled: True
 Xlog-wire-mux-enabled: True
 Xlog-wire-gossip-enabled: True
+
+# mandatory eth1 options
+eth1-deposit-contract-address: "0x77f7bED277449F51505a4C54550B074030d989bC"

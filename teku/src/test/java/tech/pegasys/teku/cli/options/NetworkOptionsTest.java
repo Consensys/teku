@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
@@ -37,7 +38,14 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void useDefaultsFromNetworkDefinition(final String networkName) {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
 
-    beaconNodeCommand.parse(new String[] {"--network", networkName});
+    if ("topaz".equals(networkName)) {
+      beaconNodeCommand.parse(new String[] {"--network", networkName});
+    } else {
+      beaconNodeCommand.parse(
+          new String[] {
+            "--network", networkName, "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING
+          });
+    }
     final TekuConfiguration config = getResultingTekuConfiguration();
     assertThat(config.getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
@@ -49,7 +57,10 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getStartupTimeoutSeconds())
         .isEqualTo(networkDefinition.getStartupTimeoutSeconds());
     assertThat(config.getEth1DepositContractAddress())
-        .isEqualTo(networkDefinition.getEth1DepositContractAddress().orElse(null));
+        .isEqualTo(
+            networkDefinition
+                .getEth1DepositContractAddress()
+                .orElse(Eth1Address.fromHexString(ETH1_ADDRESS_STRING)));
     assertThat(config.getEth1Endpoint())
         .isEqualTo(networkDefinition.getEth1Endpoint().orElse(null));
   }
@@ -65,7 +76,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void usingNetworkFromUrl() {
     String url = "https://some.site/with/config.yaml";
-    beaconNodeCommand.parse(new String[] {"--network", url});
+    beaconNodeCommand.parse(
+        new String[] {"--network", url, "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING});
 
     final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
     assertThat(tekuConfiguration.getConstants()).isEqualTo(url);
@@ -75,7 +87,11 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void useInitialState() {
     String initialState = "some-file-or-url";
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--initial-state", initialState);
+        getTekuConfigurationFromArguments(
+            "--initial-state",
+            initialState,
+            "--eth1-deposit-contract-address",
+            ETH1_ADDRESS_STRING);
     assertThat(config.getInitialState()).isEqualTo(initialState);
   }
 }

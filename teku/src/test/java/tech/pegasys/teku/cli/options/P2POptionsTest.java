@@ -40,20 +40,23 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--p2p-enabled");
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments(
+            "--p2p-enabled", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--p2p-discovery-enabled");
+        getTekuConfigurationFromArguments(
+            "--p2p-discovery-enabled", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void snappyCompressionDefaultValueIsSet() {
-    final String[] args = {};
+    final String[] args = {"--eth1-deposit-contract-address", ETH1_ADDRESS_STRING};
 
     beaconNodeCommand.parse(args);
 
@@ -63,7 +66,9 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void mainnetNetworkDefaultsSnappyCompressionOn() {
-    final String[] args = {"--network", "mainnet"};
+    final String[] args = {
+      "--network", "mainnet", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING
+    };
 
     beaconNodeCommand.parse(args);
 
@@ -73,7 +78,9 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void minimalNetworkDefaultsSnappyCompressionOff() {
-    final String[] args = {"--network", "minimal"};
+    final String[] args = {
+      "--network", "minimal", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING
+    };
 
     beaconNodeCommand.parse(args);
 
@@ -84,8 +91,12 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void overrideMainnetSnappyDefault() {
     final String[] args = {
-      "--network", "mainnet",
-      "--p2p-snappy-enabled", "false"
+      "--network",
+      "mainnet",
+      "--p2p-snappy-enabled",
+      "false",
+      "--eth1-deposit-contract-address",
+      ETH1_ADDRESS_STRING
     };
 
     beaconNodeCommand.parse(args);
@@ -97,8 +108,12 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void overrideMinimalSnappyDefault() {
     final String[] args = {
-      "--network", "minimal",
-      "--p2p-snappy-enabled", "true"
+      "--network",
+      "minimal",
+      "--p2p-snappy-enabled",
+      "true",
+      "--eth1-deposit-contract-address",
+      ETH1_ADDRESS_STRING
     };
 
     beaconNodeCommand.parse(args);
@@ -109,25 +124,43 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void advertisedIp_shouldDefaultToEmpty() {
-    assertThat(getTekuConfigurationFromArguments().getP2pAdvertisedIp()).isEmpty();
+    assertThat(
+            getTekuConfigurationFromArguments(
+                    "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING)
+                .getP2pAdvertisedIp())
+        .isEmpty();
   }
 
   @Test
   public void advertisedIp_shouldAcceptValue() {
     final String ip = "10.0.1.200";
-    assertThat(getTekuConfigurationFromArguments("--p2p-advertised-ip", ip).getP2pAdvertisedIp())
+    assertThat(
+            getTekuConfigurationFromArguments(
+                    "--p2p-advertised-ip",
+                    ip,
+                    "--eth1-deposit-contract-address",
+                    ETH1_ADDRESS_STRING)
+                .getP2pAdvertisedIp())
         .contains(ip);
   }
 
   @Test
   public void advertisedPort_shouldDefaultToEmpty() {
-    assertThat(getTekuConfigurationFromArguments().getP2pAdvertisedPort()).isEmpty();
+    assertThat(
+            getTekuConfigurationFromArguments(
+                    "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING)
+                .getP2pAdvertisedPort())
+        .isEmpty();
   }
 
   @Test
   public void advertisedPort_shouldAcceptValue() {
     assertThat(
-            getTekuConfigurationFromArguments("--p2p-advertised-port", "8056")
+            getTekuConfigurationFromArguments(
+                    "--p2p-advertised-port",
+                    "8056",
+                    "--eth1-deposit-contract-address",
+                    ETH1_ADDRESS_STRING)
                 .getP2pAdvertisedPort())
         .hasValue(8056);
   }

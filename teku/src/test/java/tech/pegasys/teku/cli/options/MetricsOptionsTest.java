@@ -37,7 +37,11 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @ValueSource(strings = {"BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"})
   public void metricsCategories_shouldAcceptValues(String category) {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--metrics-categories", category);
+        getTekuConfigurationFromArguments(
+            "--metrics-categories",
+            category,
+            "--eth1-deposit-contract-address",
+            ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getMetricsCategories()).isEqualTo(List.of(category));
   }
 
@@ -45,7 +49,10 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   public void metricsCategories_shouldAcceptMultipleValues() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments(
-            "--metrics-categories", "LIBP2P,NETWORK,EVENTBUS,PROCESS");
+            "--metrics-categories",
+            "LIBP2P,NETWORK,EVENTBUS,PROCESS",
+            "--eth1-deposit-contract-address",
+            ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getMetricsCategories())
         .isEqualTo(List.of("LIBP2P", "NETWORK", "EVENTBUS", "PROCESS"));
   }
@@ -53,34 +60,47 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void metricsEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--metrics-enabled");
+        getTekuConfigurationFromArguments(
+            "--metrics-enabled", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.isMetricsEnabled()).isTrue();
   }
 
   @Test
   public void metricsHostWhitelist_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--metrics-host-whitelist");
+        getTekuConfigurationFromArguments(
+            "--metrics-host-whitelist", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getMetricsHostWhitelist()).isEmpty();
   }
 
   @Test
   public void metricsHostWhitelist_shouldSupportWhitelistingMultipleHosts() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--metrics-host-whitelist", "my.host,their.host");
+        getTekuConfigurationFromArguments(
+            "--metrics-host-whitelist",
+            "my.host,their.host",
+            "--eth1-deposit-contract-address",
+            ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getMetricsHostWhitelist()).containsOnly("my.host", "their.host");
   }
 
   @Test
   public void metricsHostWhitelist_shouldSupportWhitelistingAllHosts() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--metrics-host-whitelist", "*");
+        getTekuConfigurationFromArguments(
+            "--metrics-host-whitelist",
+            "*",
+            "--eth1-deposit-contract-address",
+            ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getMetricsHostWhitelist()).containsOnly("*");
   }
 
   @Test
   public void metricsHostWhitelist_shouldDefaultToLocalhost() {
-    assertThat(getTekuConfigurationFromArguments().getMetricsHostWhitelist())
+    assertThat(
+            getTekuConfigurationFromArguments(
+                    "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING)
+                .getMetricsHostWhitelist())
         .containsOnly("localhost", "127.0.0.1");
   }
 }

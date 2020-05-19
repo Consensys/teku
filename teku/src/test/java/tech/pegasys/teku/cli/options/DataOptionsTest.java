@@ -35,21 +35,27 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataStorageMode_shouldAcceptPrune() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--data-storage-mode", "prune");
+        getTekuConfigurationFromArguments(
+            "--data-storage-mode", "prune", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptArchive() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--data-storage-mode", "archive");
+        getTekuConfigurationFromArguments(
+            "--data-storage-mode",
+            "archive",
+            "--eth1-deposit-contract-address",
+            ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
 
   @Test
   public void dataPath_shouldAcceptNonDefaultValues() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--data-path", TEST_PATH);
+        getTekuConfigurationFromArguments(
+            "--data-path", TEST_PATH, "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.getDataPath()).isEqualTo(TEST_PATH);
   }
 }

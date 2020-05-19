@@ -20,6 +20,7 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
+
   @Test
   public void shouldReadFromConfigurationFile() {
     final TekuConfiguration config =
@@ -34,14 +35,16 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void restApiDocsEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-docs-enabled");
+        getTekuConfigurationFromArguments(
+            "--rest-api-docs-enabled", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
   public void restApiEnabled_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-enabled");
+        getTekuConfigurationFromArguments(
+            "--rest-api-enabled", "--eth1-deposit-contract-address", ETH1_ADDRESS_STRING);
     assertThat(tekuConfiguration.isRestApiEnabled()).isTrue();
   }
 }
