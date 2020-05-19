@@ -21,6 +21,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -178,7 +180,7 @@ public class ConnectionManager extends Service {
             });
   }
 
-  public long addPeerPredicate(final PeerPredicate predicate) {
+  public long addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
     return newPeerFilter.addPeerPredicate(predicate);
   }
 
@@ -188,9 +190,9 @@ public class ConnectionManager extends Service {
 
   public static class NewPeerFilter {
     private final AtomicLong predicateId = new AtomicLong();
-    private final Map<Long, PeerPredicate> peerPredicates = new ConcurrentHashMap<>();
+    private final Map<Long, Predicate<DiscoveryPeer>> peerPredicates = new ConcurrentHashMap<>();
 
-    long addPeerPredicate(final PeerPredicate predicate) {
+    long addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
       final long id = predicateId.getAndIncrement();
       peerPredicates.put(id, predicate);
       return id;
@@ -202,12 +204,8 @@ public class ConnectionManager extends Service {
 
     boolean isPeerValid(DiscoveryPeer peer) {
       return peerPredicates.values().stream()
-          .map(predicate -> predicate.applyPeer(peer))
+          .map(predicate -> predicate.test(peer))
           .reduce(true, (a, b) -> a && b);
     }
-  }
-
-  public interface PeerPredicate {
-    boolean applyPeer(DiscoveryPeer peer);
   }
 }

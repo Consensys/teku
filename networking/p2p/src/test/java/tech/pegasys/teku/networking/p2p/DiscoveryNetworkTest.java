@@ -29,6 +29,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.function.Predicate;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -191,13 +193,13 @@ class DiscoveryNetworkTest {
             FAR_FUTURE_EPOCH);
     Bytes encodedForkId = SimpleOffsetSerializer.serialize(expectedEnrForkId);
     verify(discoveryService).updateCustomENRField("eth2", encodedForkId);
-    ArgumentCaptor<ConnectionManager.PeerPredicate> peerPredicateArgumentCaptor =
-        ArgumentCaptor.forClass(ConnectionManager.PeerPredicate.class);
+    ArgumentCaptor<Predicate<DiscoveryPeer>> peerPredicateArgumentCaptor =
+        ArgumentCaptor.forClass(Predicate.class);
     verify(connectionManager).addPeerPredicate(peerPredicateArgumentCaptor.capture());
 
     DiscoveryPeer peer1 = mock(DiscoveryPeer.class);
     when(peer1.getEnrForkId()).thenReturn(encodedForkId);
-    assertThat(peerPredicateArgumentCaptor.getValue().applyPeer(peer1)).isTrue();
+    assertThat(peerPredicateArgumentCaptor.getValue().test(peer1)).isTrue();
 
     DiscoveryPeer peer2 = mock(DiscoveryPeer.class);
     final EnrForkId newEnrForkId1 =
@@ -205,7 +207,7 @@ class DiscoveryNetworkTest {
             currentForkInfo.getForkDigest(), Bytes4.fromHexString("0xdeadbeef"), UnsignedLong.ZERO);
     Bytes newEncodedForkId1 = SimpleOffsetSerializer.serialize(newEnrForkId1);
     when(peer2.getEnrForkId()).thenReturn(newEncodedForkId1);
-    assertThat(peerPredicateArgumentCaptor.getValue().applyPeer(peer2)).isTrue();
+    assertThat(peerPredicateArgumentCaptor.getValue().test(peer2)).isTrue();
 
     DiscoveryPeer peer3 = mock(DiscoveryPeer.class);
     final EnrForkId newEnrForkId2 =
@@ -215,7 +217,7 @@ class DiscoveryNetworkTest {
             UnsignedLong.ZERO);
     Bytes newEncodedForkId2 = SimpleOffsetSerializer.serialize(newEnrForkId2);
     when(peer3.getEnrForkId()).thenReturn(newEncodedForkId2);
-    assertThat(peerPredicateArgumentCaptor.getValue().applyPeer(peer3)).isFalse();
+    assertThat(peerPredicateArgumentCaptor.getValue().test(peer3)).isFalse();
   }
 
   @Test
