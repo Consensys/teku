@@ -21,7 +21,6 @@ import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
-import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.teku.networking.p2p.discovery.noop.NoOpDiscoveryService;
@@ -77,14 +75,20 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
     // Set connection manager peer predicate so that we don't attempt to connect peers with
     // different fork digests
-    connectionManager.addPeerPredicate(peer -> enrForkId
-            .map(EnrForkId::getForkDigest)
-            .map(forkDigest ->
-                    SimpleOffsetSerializer.deserialize(peer.getEnrForkId(), EnrForkId.class)
-                            .getForkDigest()
-                            .equals(forkDigest))
-            .orElse(false)
-    );
+    connectionManager.addPeerPredicate(
+        peer ->
+            enrForkId
+                .map(EnrForkId::getForkDigest)
+                .flatMap(
+                    forkDigest ->
+                        peer.getEnrForkId()
+                            .map(
+                                peerEnrForkId ->
+                                    SimpleOffsetSerializer.deserialize(
+                                            peerEnrForkId, EnrForkId.class)
+                                        .getForkDigest()
+                                        .equals(forkDigest)))
+                .orElse(false));
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(

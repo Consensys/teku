@@ -20,6 +20,7 @@ import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multiformats.Protocol;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -30,7 +31,7 @@ class MultiaddrUtilTest {
       Bytes.fromHexString("0x0330FC08314CDD799C1687FFC998249A0342105B9AF300A922F56040DF6E28741C");
   public static final String PEER_ID = "16Uiu2HAmFxCpRh2nZevFR3KGXJ3jhpixMYFSuawqKZyZYHrYoiK5";
   private static final NodeId NODE_ID = new LibP2PNodeId(PeerId.fromBase58(PEER_ID));
-  private static final Bytes ENR_FORK_ID = Bytes.EMPTY;
+  private static final Optional<Bytes> ENR_FORK_ID = Optional.of(Bytes.EMPTY);
 
   @Test
   public void fromInetSocketAddress_shouldConvertIpV4Peer() throws Exception {

@@ -16,15 +16,16 @@ package tech.pegasys.teku.networking.p2p.discovery;
 import com.google.common.base.MoreObjects;
 import java.net.InetSocketAddress;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 
 public class DiscoveryPeer {
   private final Bytes publicKey;
   private final InetSocketAddress nodeAddress;
-  private final Bytes enrForkId;
+  private final Optional<Bytes> enrForkId;
 
   public DiscoveryPeer(
-      final Bytes publicKey, final InetSocketAddress nodeAddress, final Bytes enrForkId) {
+      final Bytes publicKey, final InetSocketAddress nodeAddress, final Optional<Bytes> enrForkId) {
     this.publicKey = publicKey;
     this.nodeAddress = nodeAddress;
     this.enrForkId = enrForkId;
@@ -38,7 +39,7 @@ public class DiscoveryPeer {
     return nodeAddress;
   }
 
-  public Bytes getEnrForkId() {
+  public Optional<Bytes> getEnrForkId() {
     return enrForkId;
   }
 

@@ -32,6 +32,6 @@ public class NodeRecordConverter {
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
         address,
-        ((Bytes) nodeRecord.get("eth2")));
+        Optional.ofNullable((Bytes) nodeRecord.get("eth2")));
   }
 }

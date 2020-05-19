@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,7 @@ import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 class ConnectionManagerTest {
 
-  private static final Bytes ENR_FORK_ID = Bytes.EMPTY;
+  private static final Optional<Bytes> ENR_FORK_ID = Optional.of(Bytes.EMPTY);
   private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
   private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
   private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));

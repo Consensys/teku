@@ -36,7 +36,7 @@ class NodeRecordConverterTest {
       Bytes.fromHexString("0x0295A5A50F083697FF8557F3C6FE0CDF8E8EC2141D15F19A5A45571ED9C38CE181");
   private static final Bytes IPV6_LOCALHOST =
       Bytes.fromHexString("0x00000000000000000000000000000001");
-  private static final Bytes ENR_FORK_ID = Bytes.EMPTY;
+  private static final Optional<Bytes> ENR_FORK_ID = Optional.of(Bytes.EMPTY);
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -50,7 +50,7 @@ class NodeRecordConverterTest {
             Bytes.fromHexString(
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
-            Bytes.EMPTY);
+            Optional.of(Bytes.EMPTY));
     assertThat(convertToDiscoveryPeer(nodeRecord)).contains(expectedPeer);
   }
 

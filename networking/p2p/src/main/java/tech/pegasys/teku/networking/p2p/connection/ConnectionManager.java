@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -203,9 +202,7 @@ public class ConnectionManager extends Service {
     }
 
     boolean isPeerValid(DiscoveryPeer peer) {
-      return peerPredicates.values().stream()
-          .map(predicate -> predicate.test(peer))
-          .reduce(true, (a, b) -> a && b);
+      return peerPredicates.values().stream().allMatch(predicate -> predicate.test(peer));
     }
   }
 }
