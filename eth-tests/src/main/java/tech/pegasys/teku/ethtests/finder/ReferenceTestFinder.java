@@ -29,10 +29,6 @@ public class ReferenceTestFinder {
       Path.of("src", "referenceTest", "resources", "eth2.0-spec-tests", "tests");
   public static final String PHASE_TEST_DIR = "phase0";
 
-  //  public static void main(String[] args) throws Exception {
-  //    findReferenceTests().forEach(System.out::println);
-  //  }
-
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {
     return findSpecDirectories().flatMap(ReferenceTestFinder::findTestTypes);
