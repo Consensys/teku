@@ -14,12 +14,14 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.NavigableMap;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1BlockData;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.MerkleTree;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.StorageUpdateResult;
@@ -55,6 +57,10 @@ public interface Database extends AutoCloseable {
    * @return
    */
   StorageUpdateResult pruneEth1Deposits(UnsignedLong eth1DepositIndex);
+
+  MerkleTree getMerkleTree();
+
+  NavigableMap<UnsignedLong, DepositWithIndex> getDepositNavigableMap();
 
   Optional<Store> createMemoryStore();
 

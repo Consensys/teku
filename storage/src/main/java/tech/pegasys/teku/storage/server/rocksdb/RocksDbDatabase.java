@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
+import static tech.pegasys.teku.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
@@ -22,8 +23,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +39,8 @@ import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.MerkleTree;
+import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.StorageUpdateResult;
@@ -164,6 +169,25 @@ public class RocksDbDatabase implements Database {
     }
 
     return StorageUpdateResult.successfulWithNothingPruned();
+  }
+
+  @Override
+  public MerkleTree getMerkleTree() {
+    MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
+    dao.streamDepositHashes().map(ColumnEntry::getValue).forEach(depositMerkleTree::add);
+    return depositMerkleTree;
+  }
+
+  @Override
+  public NavigableMap<UnsignedLong, DepositWithIndex> getDepositNavigableMap() {
+    NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
+    dao.streamEth1DepositData()
+        .forEach(
+            column ->
+                depositNavigableMap.put(
+                    column.getKey(),
+                    new DepositWithIndex(null, column.getValue(), column.getKey())));
+    return depositNavigableMap;
   }
 
   @Override

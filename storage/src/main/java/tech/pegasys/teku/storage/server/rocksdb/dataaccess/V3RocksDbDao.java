@@ -139,6 +139,11 @@ public class V3RocksDbDao implements RocksDbDao {
   }
 
   @Override
+  public Stream<ColumnEntry<UnsignedLong, Bytes32>> streamDepositHashes() {
+    return db.stream(V3Schema.ETH1_DEPOSIT_HASHES);
+  }
+
+  @Override
   public Stream<ColumnEntry<UnsignedLong, DepositData>> streamEth1DepositData() {
     return db.stream(V3Schema.ETH1_DEPOSIT_CACHE);
   }

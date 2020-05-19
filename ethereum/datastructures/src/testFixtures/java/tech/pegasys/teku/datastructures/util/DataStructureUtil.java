@@ -380,6 +380,13 @@ public final class DataStructureUtil {
         randomUnsignedLong().mod(UnsignedLong.valueOf(Constants.DEPOSIT_CONTRACT_TREE_DEPTH)));
   }
 
+  public DepositWithIndex randomDepositWithIndex(long depositIndex) {
+    return new DepositWithIndex(
+        SSZVector.createMutable(32, randomBytes32()),
+        randomDepositData(),
+        UnsignedLong.valueOf(depositIndex));
+  }
+
   public Deposit randomDepositWithoutIndex() {
     return new Deposit(
         SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()),

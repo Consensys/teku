@@ -65,6 +65,8 @@ public interface RocksDbDao extends AutoCloseable {
 
   Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates();
 
+  Stream<ColumnEntry<UnsignedLong, Bytes32>> streamDepositHashes();
+
   Stream<ColumnEntry<UnsignedLong, DepositData>> streamEth1DepositData();
 
   Stream<ColumnEntry<UnsignedLong, Eth1BlockData>> streamEth1BlockData();
