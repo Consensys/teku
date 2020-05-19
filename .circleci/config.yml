@@ -288,6 +288,8 @@ jobs:
             TEKU_PID=$!
             wget -O openapi.json http://localhost:5051/swagger-docs
             kill $TEKU_PID
+      - store_artifacts:
+          path: openapi.json
       - persist_to_workspace:
           root: ~/project
           paths:
@@ -327,7 +329,7 @@ jobs:
       - deploy:
           name: Commit and push doc changes
           command: |
-            git add docs/*
+            git add docs
             git commit -m "Automated update of JSON specs and version files" \
                        -m "[skip ci] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
                        -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
@@ -387,14 +389,12 @@ workflows:
             - docker
       - extractAPISpec:
           requires:
-            - assemble
+            - assemble #TODO only require publish when ok to merge
           #   - publish
-          # filters:
-          #   branches:
-          #     only: master
       - publishAPIDoc:
           requires:
             - extractAPISpec
+         #TODO activate filter when ok to merge
          # filters:
          #   branches:
          #     only: master
