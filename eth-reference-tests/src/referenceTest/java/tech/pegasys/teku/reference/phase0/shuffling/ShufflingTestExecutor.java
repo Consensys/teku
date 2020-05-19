@@ -15,15 +15,10 @@ package tech.pegasys.teku.reference.phase0.shuffling;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.compute_shuffled_index;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -38,7 +33,7 @@ public class ShufflingTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final ShufflingData shufflingData =
-        ShufflingData.parse(testDefinition.getTestDirectory().resolve("mapping.yaml"));
+        loadYaml(testDefinition, "mapping.yaml", ShufflingData.class);
     final Bytes32 seed = Bytes32.fromHexString(shufflingData.getSeed());
     IntStream.range(0, shufflingData.getCount())
         .forEach(
@@ -60,12 +55,6 @@ public class ShufflingTestExecutor implements TestExecutor {
 
     @JsonProperty(value = "mapping", required = true)
     private int[] mapping;
-
-    public static ShufflingData parse(final Path file) throws IOException {
-      try (final InputStream in = Files.newInputStream(file)) {
-        return new ObjectMapper(new YAMLFactory()).readerFor(ShufflingData.class).readValue(in);
-      }
-    }
 
     public String getSeed() {
       return seed;
