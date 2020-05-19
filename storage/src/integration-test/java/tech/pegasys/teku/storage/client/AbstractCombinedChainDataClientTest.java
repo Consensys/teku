@@ -318,6 +318,7 @@ public abstract class AbstractCombinedChainDataClientTest {
     return Stream.of(
         Arguments.of("getLatestStateAtSlot", new GetLatestStateAtSlotTestCase()),
         Arguments.of("getBlockAtSlotExact", new GetBlockAtSlotExactTestCase()),
+        Arguments.of("getBlockInEffectAtSlotTestCase", new GetBlockInEffectAtSlotTestCase()),
         Arguments.of(
             "getBlockAndStateInEffectAtSlot", new GetBlockAndStateInEffectAtSlotTestCase()));
   }
@@ -366,6 +367,21 @@ public abstract class AbstractCombinedChainDataClientTest {
       return effectiveBlockAtSlot
           .filter(b -> b.getSlot().equals(slot))
           .map(SignedBlockAndState::getBlock);
+    }
+  }
+
+  private static class GetBlockInEffectAtSlotTestCase
+      implements QueryBySlotTestCase<SignedBeaconBlock> {
+    @Override
+    public SafeFuture<Optional<SignedBeaconBlock>> executeQueryBySlot(
+        final CombinedChainDataClient client, final UnsignedLong slot) {
+      return client.getBlockInEffectAtSlot(slot);
+    }
+
+    @Override
+    public Optional<SignedBeaconBlock> mapEffectiveBlockAtSlotToExpectedResult(
+        final UnsignedLong slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
+      return effectiveBlockAtSlot.map(SignedBlockAndState::getBlock);
     }
   }
 

@@ -114,7 +114,7 @@ public class ChainDataProvider {
       return chainUnavailable();
     }
     return combinedChainDataClient
-        .getBlockAtSlotExact(slot)
+        .getBlockInEffectAtSlot(slot)
         .thenApply(block -> block.map(SignedBeaconBlock::new));
   }
 

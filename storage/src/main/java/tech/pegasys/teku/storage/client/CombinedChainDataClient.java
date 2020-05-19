@@ -106,7 +106,7 @@ public class CombinedChainDataClient {
     return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
   }
 
-  private SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UnsignedLong slot) {
     if (!isChainDataFullyAvailable()) {
       return BLOCK_NOT_AVAILABLE;
     }

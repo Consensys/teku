@@ -200,7 +200,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBlockAtSlotExact(ZERO))
+    when(mockCombinedChainDataClient.getBlockInEffectAtSlot(ZERO))
         .thenReturn(completedFuture(Optional.empty()));
     final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
     assertTrue(future.get().isEmpty());
@@ -215,9 +215,9 @@ public class ChainDataProviderTest {
         completedFuture(Optional.of(signedBeaconBlock));
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBlockAtSlotExact(ZERO)).thenReturn(data);
+    when(mockCombinedChainDataClient.getBlockInEffectAtSlot(ZERO)).thenReturn(data);
     final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
-    verify(mockCombinedChainDataClient).getBlockAtSlotExact(ZERO);
+    verify(mockCombinedChainDataClient).getBlockInEffectAtSlot(ZERO);
 
     final SignedBeaconBlock result = future.get().get();
     assertThat(result)
