@@ -125,4 +125,3 @@ We have a set of [coding conventions](https://wiki.hyperledger.org/display/BESU/
 [private@pegasys.tech]: mailto:private@pegasys.tech
 [Gitter]: https://gitter.im/PegaSysEng/teku
 [CLA.md]: /CLA.md
-[Code Reviews]: /docs/code-reviews.md
