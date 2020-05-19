@@ -55,8 +55,7 @@ public class CombinedChainDataClient {
   }
 
   /**
-   * Returns the block proposed for the requested slot on the chain identified by <code>
-   * headBlockRoot</code>. If the slot was empty, no block is returned.
+   * Returns the block proposed at the requested slot. If the slot is empty, no block is returned.
    *
    * @param slot the slot to get the block for
    * @return the block at the requested slot or empty if the slot was empty
@@ -100,9 +99,6 @@ public class CombinedChainDataClient {
       return getBlockByBlockRoot(recentRoot.get());
     }
 
-    // Fall-through to historical query in case state has moved into historical range during
-    // processing
-    // Make sure the head block root is canonical
     return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
   }
 
@@ -117,8 +113,6 @@ public class CombinedChainDataClient {
       return getBlockByBlockRoot(recentRoot.get());
     }
 
-    // Fall-through to historical query in case state has moved into historical range during
-    // processing
     return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
   }
 
@@ -154,7 +148,7 @@ public class CombinedChainDataClient {
   }
 
   /**
-   * Returns the latest state at the given slot on the current canonical chain.
+   * Returns the latest state at the given slot on the current chain.
    *
    * @param slot the slot to get the state for
    * @return the State at slot
