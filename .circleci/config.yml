@@ -81,6 +81,7 @@ commands:
             done
       - store_test_results:
           path: build/test-results
+
   capture_test_artifacts:
     description: "Capture test artifacts"
     steps:
@@ -107,7 +108,7 @@ jobs:
       - run:
           name: Assemble
           command: |
-            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compileReferenceTestJava compileCompatibilityTestJava assemble
+            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compileCompatibilityTestJava assemble
       - save_cache:
           name: Caching gradle dependencies
           key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
@@ -196,10 +197,14 @@ jobs:
               ./gradlew --no-daemon expandRefTests
             fi
       - run:
+          name: CompileReferenceTests
+          command: |
+            ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - run:
           name: ReferenceTests
           command: |
-            CLASSNAMES=$(circleci tests glob "**/src/referenceTest/java/**/*.java" \
-              | sed 's@.*/src/referenceTest/java/@@' \
+            CLASSNAMES=$(circleci tests glob "**/src/referenceTest/generated/**/*Test.java" \
+              | sed 's@.*/src/referenceTest/generated/@@' \
               | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
               | circleci tests split --split-by=timings --timings-type=classname)
