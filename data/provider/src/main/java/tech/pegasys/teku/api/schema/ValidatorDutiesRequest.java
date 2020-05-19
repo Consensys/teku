@@ -13,13 +13,21 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 public class ValidatorDutiesRequest {
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong epoch;
+
+  @ArraySchema(
+      schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48))
   public final List<BLSPubKey> pubkeys;
 
   @JsonCreator

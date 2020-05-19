@@ -13,15 +13,22 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 
 public class Deposit {
+  @ArraySchema(
+      schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
   public final List<Bytes32> proof;
+
   public final DepositData data;
 
   public Deposit(tech.pegasys.teku.datastructures.operations.Deposit deposit) {

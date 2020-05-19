@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import static tech.pegasys.teku.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.teku.util.config.Constants.MAX_ATTESTER_SLASHINGS;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
@@ -21,15 +23,21 @@ import static tech.pegasys.teku.util.config.Constants.MAX_VOLUNTARY_EXITS;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class BeaconBlockBody {
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature randao_reveal;
+
   public final Eth1Data eth1_data;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 graffiti;
+
   public final List<ProposerSlashing> proposer_slashings;
   public final List<AttesterSlashing> attester_slashings;
   public final List<Attestation> attestations;

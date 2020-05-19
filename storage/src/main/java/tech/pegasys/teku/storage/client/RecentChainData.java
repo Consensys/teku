@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
+import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.max;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -41,6 +45,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public abstract class RecentChainData implements StoreUpdateHandler {
@@ -302,24 +307,46 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
-    if (store == null || chainHead.isEmpty()) {
-      LOG.trace("No block root at slot {} because store or best block root is not set", slot);
+    checkNotNull(slot);
+    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    if (store == null || chainHead.isEmpty() || slot.compareTo(genesisSlot) < 0) {
       return Optional.empty();
     }
 
-    final SignedBlockAndState bestBlock = chainHead.get();
-    if (bestBlock.getSlot().compareTo(slot) <= 0) {
-      LOG.trace("Block root at slot {} is at or after the current best slot root", slot);
-      return Optional.of(bestBlock.getRoot());
-    }
-
-    final BeaconState bestState = bestBlock.getState();
-    if (!BeaconStateUtil.isBlockRootAvailableFromState(bestState, slot)) {
-      LOG.trace("No block root at slot {} because slot is not within historical root", slot);
+    // Short-circuit if the queried slot is too old
+    final UnsignedLong slotsPerHistoricalRoot = UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT);
+    final UnsignedLong oldestAvailableState = store.getLatestFinalizedBlockSlot();
+    final UnsignedLong oldestAvailableRoot =
+        oldestAvailableState.compareTo(slotsPerHistoricalRoot) >= 0
+            ? oldestAvailableState.minus(slotsPerHistoricalRoot)
+            : UnsignedLong.ZERO;
+    if (slot.compareTo(oldestAvailableRoot) < 0) {
+      // Slot is too old, we don't have access to the root
       return Optional.empty();
     }
 
-    return Optional.of(BeaconStateUtil.get_block_root_at_slot(bestState, slot));
+    // Since older blocks are pruned - query the newest queryable slot where possible
+    final UnsignedLong youngestQueryableSlot = slot.plus(slotsPerHistoricalRoot);
+    SignedBlockAndState currentBlock = chainHead.get();
+    while (currentBlock != null) {
+      if (currentBlock.getSlot().compareTo(slot) <= 0) {
+        // The current block is less than or equal to the target slot, so it must be the block in
+        // effect
+        return Optional.of(currentBlock.getRoot());
+      }
+      if (BeaconStateUtil.isBlockRootAvailableFromState(currentBlock.getState(), slot)) {
+        // The root is available from the current state
+        return Optional.of(BeaconStateUtil.get_block_root_at_slot(currentBlock.getState(), slot));
+      }
+
+      // Pull an older block to search
+      final UnsignedLong oldestQueryableSlot = currentBlock.getSlot().minus(slotsPerHistoricalRoot);
+      final UnsignedLong olderSlot = max(youngestQueryableSlot, oldestQueryableSlot);
+      final Bytes32 olderRoot = get_block_root_at_slot(currentBlock.getState(), olderSlot);
+      currentBlock = store.getBlockAndState(olderRoot).orElse(null);
+    }
+
+    return Optional.empty();
   }
 
   // TODO: These methods should not return zero if null. We should handle this better

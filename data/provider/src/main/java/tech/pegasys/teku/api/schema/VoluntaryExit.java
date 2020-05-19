@@ -16,9 +16,13 @@ package tech.pegasys.teku.api.schema;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public class VoluntaryExit {
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong epoch;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong validator_index;
 
   public VoluntaryExit(tech.pegasys.teku.datastructures.operations.VoluntaryExit voluntaryExit) {

@@ -48,7 +48,7 @@ public class GetGenesisTime implements Handler {
       tags = {TAG_NODE},
       description = "Returns the genesis time from the beacon node.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = UnsignedLong.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
