@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -79,10 +80,10 @@ class DiscoveryNetworkTest {
 
     verify(p2pNetwork).start();
     verify(discoveryService).start();
-    verifyNoInteractions(connectionManager);
+    verify(connectionManager, never()).start();
 
     p2pStart.complete(null);
-    verifyNoInteractions(connectionManager);
+    verify(connectionManager, never()).start();
 
     discoveryStart.complete(null);
     verify(connectionManager).start();
