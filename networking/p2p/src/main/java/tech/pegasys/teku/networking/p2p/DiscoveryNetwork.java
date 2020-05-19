@@ -172,6 +172,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             FAR_FUTURE_EPOCH);
     discoveryService.updateCustomENRField(
         ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
+    this.enrForkId = Optional.of(enrForkId);
   }
 
   public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
