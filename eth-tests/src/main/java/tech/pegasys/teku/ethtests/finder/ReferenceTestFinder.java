@@ -67,7 +67,10 @@ public class ReferenceTestFinder {
         .map(path -> path.resolve(TEST_PATH_FROM_MODULE))
         .filter(path -> path.toFile().exists())
         .findFirst()
-        .orElseThrow();
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unable to find the reference tests module. Try setting teku.ref-test-module.path system property and ensure you have run ./gradlew expandRefTests"));
   }
 
   static <I, O> Function<I, O> unchecked(final ExceptionThrowingFunction<I, O> function) {
