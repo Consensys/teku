@@ -312,7 +312,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new ForkChoiceAttestationProcessor(recentChainData, forkChoice);
     attestationManager =
         AttestationManager.create(
-            eventBus, pendingAttestations, futureAttestations, forkChoiceAttestationProcessor);
+            eventBus, pendingAttestations, futureAttestations, forkChoiceAttestationProcessor, (a) -> attestationPool.add(a));
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);

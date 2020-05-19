@@ -26,10 +26,11 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.teku.statetransition.events.attestation.ProcessedAggregateEvent;
-import tech.pegasys.teku.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.util.function.Consumer;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -40,42 +41,42 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   private final PendingPool<DelayableAttestation> pendingAttestations;
   private final FutureItems<DelayableAttestation> futureAttestations;
+  private final Consumer<Attestation> attestationPoolConsumer;
 
   AttestationManager(
       final EventBus eventBus,
       final ForkChoiceAttestationProcessor attestationProcessor,
       final PendingPool<DelayableAttestation> pendingAttestations,
-      final FutureItems<DelayableAttestation> futureAttestations) {
+      final FutureItems<DelayableAttestation> futureAttestations,
+      final Consumer<Attestation> attestationPoolConsumer) {
     this.eventBus = eventBus;
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
+    this.attestationPoolConsumer = attestationPoolConsumer;
   }
 
   public static AttestationManager create(
-      final EventBus eventBus,
-      final PendingPool<DelayableAttestation> pendingAttestations,
-      final FutureItems<DelayableAttestation> futureAttestations,
-      final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor) {
+          final EventBus eventBus,
+          final PendingPool<DelayableAttestation> pendingAttestations,
+          final FutureItems<DelayableAttestation> futureAttestations,
+          final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor,
+          final Consumer<Attestation> poolAttestationConsumer) {
     return new AttestationManager(
-        eventBus, forkChoiceAttestationProcessor, pendingAttestations, futureAttestations);
+        eventBus, forkChoiceAttestationProcessor, pendingAttestations, futureAttestations, poolAttestationConsumer);
   }
 
   @Subscribe
   @SuppressWarnings("unused")
   private void onGossipedAttestation(final Attestation attestation) {
-    processAttestation(
-        new DelayableAttestation(
-            attestation, () -> eventBus.post(new ProcessedAttestationEvent(attestation))));
+    processAttestation(new DelayableAttestation(attestation, attestationPoolConsumer));
   }
 
   @Subscribe
   @SuppressWarnings("unused")
   private void onAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     final Attestation aggregate = aggregateAndProof.getMessage().getAggregate();
-    processAttestation(
-        new DelayableAttestation(
-            aggregate, () -> eventBus.post(new ProcessedAggregateEvent(aggregate))));
+    processAttestation(new DelayableAttestation(aggregate, attestationPoolConsumer));
   }
 
   @Override

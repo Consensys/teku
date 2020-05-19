@@ -15,15 +15,17 @@ package tech.pegasys.teku.sync;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
+import java.util.function.Consumer;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 
 public class DelayableAttestation {
   private final Attestation attestation;
-  private final Runnable onSuccessfulProcessing;
+  private final Consumer<Attestation> onSuccessfulProcessing;
 
   public DelayableAttestation(
-      final Attestation attestation, final Runnable onSuccessfulProcessing) {
+      final Attestation attestation, final Consumer<Attestation> onSuccessfulProcessing) {
     this.attestation = attestation;
     this.onSuccessfulProcessing = onSuccessfulProcessing;
   }
@@ -33,7 +35,7 @@ public class DelayableAttestation {
   }
 
   void onAttestationProcessedSuccessfully() {
-    onSuccessfulProcessing.run();
+    onSuccessfulProcessing.accept(attestation);
   }
 
   public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
