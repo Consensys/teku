@@ -24,8 +24,10 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.teku.util.hashtree.Merkleizable;
 
-public class SignedBeaconBlockHeader implements SimpleOffsetSerializable, SSZContainer {
+public class SignedBeaconBlockHeader
+    implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
   private final BeaconBlockHeader message;
   private final BLSSignature signature;
 
@@ -72,6 +74,7 @@ public class SignedBeaconBlockHeader implements SimpleOffsetSerializable, SSZCon
     return Objects.hash(message, signature);
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
