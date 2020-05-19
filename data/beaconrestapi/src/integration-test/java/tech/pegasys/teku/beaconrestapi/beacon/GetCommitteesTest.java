@@ -28,16 +28,37 @@ import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetCommittees;
+import tech.pegasys.teku.core.ChainProperties;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  public static final UnsignedLong TWENTY = UnsignedLong.valueOf(20L);
-  public static final UnsignedLong TWO_HUNDRED = UnsignedLong.valueOf(200L);
+public class GetCommitteesTest extends AbstractDataBackedRestAPIIntegrationTest {
+
+  @Test
+  public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
+    startPreGenesisRestAPI();
+    final UnsignedLong epoch = UnsignedLong.ONE;
+
+    final Response response = getByEpoch(epoch.intValue());
+    assertNoContent(response);
+  }
+
+  @Test
+  public void shouldReturnNoContentIfHeadRootUnavailable() throws Exception {
+    startPreForkChoiceRestAPI();
+    final UnsignedLong epoch = UnsignedLong.ONE;
+
+    final Response response = getByEpoch(epoch.intValue());
+    assertNoContent(response);
+  }
 
   @Test
   void shouldGetCommitteesAtCurrentEpochWhenBlockIsMissing() throws Exception {
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
     final int EPOCH = 2;
-    withBlockDataAtSlot(NINE, TEN, TWENTY);
+    createBlocksAtSlotsAndMapToApiResult(9, 10, 20);
 
     List<Committee> result = getCommitteesByEpoch(EPOCH);
     assertThat(result.get(0).slot).isEqualTo(firstSlotInEpoch(EPOCH));
@@ -45,8 +66,9 @@ public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRest
 
   @Test
   void shouldGetCommitteesAtNextEpoch() throws Exception {
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
     final int EPOCH = 3;
-    withBlockDataAtSlot(NINE, TEN, TWENTY);
+    createBlocksAtSlotsAndMapToApiResult(9, 10, 20);
 
     List<Committee> result = getCommitteesByEpoch(EPOCH);
     assertThat(result.get(0).slot).isEqualTo(firstSlotInEpoch(EPOCH));
@@ -54,7 +76,8 @@ public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRest
 
   @Test
   void shouldGetCommitteesAtFutureEpoch() throws Exception {
-    withBlockDataAtSlot(NINE, TEN, TWENTY);
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
+    createBlocksAtSlotsAndMapToApiResult(9, 10, 20);
 
     // currently at epoch 2, epoch 3 will be available, but 4 will be missing,
     // as committees are only calculated for 1 future epoch
@@ -64,8 +87,9 @@ public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRest
 
   @Test
   void shouldGetCommitteesAtCurrentEpochWithBlockPresent() throws Exception {
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
     final int EPOCH = 1;
-    withBlockDataAtSlot(SEVEN, EIGHT, NINE, TEN);
+    createBlocksAtSlotsAndMapToApiResult(7, 8, 9, 10);
 
     List<Committee> result = getCommitteesByEpoch(EPOCH);
     assertThat(result.get(0).slot).isEqualTo(firstSlotInEpoch(EPOCH));
@@ -73,8 +97,9 @@ public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRest
 
   @Test
   void shouldGetCommitteesAtNextEpochWithBlockPresent() throws Exception {
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
     final int EPOCH = 2;
-    withBlockDataAtSlot(SEVEN, EIGHT, NINE, TEN);
+    createBlocksAtSlotsAndMapToApiResult(7, 8, 9, 10);
 
     List<Committee> result = getCommitteesByEpoch(EPOCH);
     assertThat(result.get(0).slot).isEqualTo(firstSlotInEpoch(EPOCH));
@@ -82,10 +107,17 @@ public class GetCommitteesWithDataIntegrationTest extends AbstractDataBackedRest
 
   @Test
   void shouldHandleMissingFinalizedEpoch() throws Exception {
-    withBlockDataAtSlot(EIGHT, TWENTY, TWO_HUNDRED);
-    withFinalizedChainAtEpoch(UnsignedLong.valueOf(10L));
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
+    final int targetSlot = 20;
+    final int finalizedSlot = 20 + Constants.SLOTS_PER_HISTORICAL_ROOT;
+    createBlocksAtSlots(targetSlot, finalizedSlot);
+    final UnsignedLong finalizedEpoch =
+        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
 
-    final Response response = getByEpoch(9);
+    final int targetEpoch = finalizedEpoch.minus(UnsignedLong.ONE).intValue();
+    final Response response = getByEpoch(targetEpoch);
     assertThat(response.code()).isEqualTo(SC_GONE);
   }
 

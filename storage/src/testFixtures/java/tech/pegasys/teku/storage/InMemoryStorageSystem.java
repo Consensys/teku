@@ -100,11 +100,11 @@ public class InMemoryStorageSystem {
     return combinedChainDataClient;
   }
 
-  public EventBus getEventBus() {
+  public EventBus eventBus() {
     return eventBus;
   }
 
-  public TrackingReorgEventChannel getReorgEventChannel() {
+  public TrackingReorgEventChannel reorgEventChannel() {
     return reorgEventChannel;
   }
 }

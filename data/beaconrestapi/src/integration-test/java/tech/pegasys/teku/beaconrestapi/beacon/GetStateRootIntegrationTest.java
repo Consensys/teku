@@ -13,34 +13,27 @@
 
 package tech.pegasys.teku.beaconrestapi.beacon;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetStateRoot;
-import tech.pegasys.teku.storage.Store;
 
-public class GetStateRootIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
+public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
-    when(recentChainData.getStore()).thenReturn(null);
+    startPreGenesisRestAPI();
 
     final Response response = getBySlot(1);
     assertNoContent(response);
   }
 
   @Test
-  public void shouldReturnNoContentIfHeadRootUnavailable_queryBySlot() throws Exception {
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
+  public void shouldReturnNoContentIfPreForkChoice_queryBySlot() throws Exception {
+    startPreForkChoiceRestAPI();
 
     final Response response = getBySlot(1);
     assertNoContent(response);

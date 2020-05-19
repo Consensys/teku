@@ -310,7 +310,7 @@ class RecentChainDataTest {
 
   @Test
   public void startStoreTransaction_doNotMutateFinalizedCheckpoint() {
-    final EventBus eventBus = preGenesisStorageSystem.getEventBus();
+    final EventBus eventBus = preGenesisStorageSystem.eventBus();
     final List<Checkpoint> checkpointEvents = EventSink.capture(eventBus, Checkpoint.class);
     preGenesisStorageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
     final Checkpoint originalCheckpoint =
@@ -329,7 +329,7 @@ class RecentChainDataTest {
   @Test
   public void updateBestBlock_noReorgEventWhenBestBlockFirstSet() {
     preGenesisStorageClient.initializeFromGenesis(genesisState);
-    assertThat(preGenesisStorageSystem.getReorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
   }
 
   @Test
@@ -337,7 +337,7 @@ class RecentChainDataTest {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(1));
     chainBuilder.generateGenesis();
     preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
-    assertThat(preGenesisStorageSystem.getReorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlocksUpToSlot(2);
     importBlocksAndStates(chainBuilder);
@@ -345,7 +345,7 @@ class RecentChainDataTest {
     final SignedBlockAndState latestBlockAndState = chainBuilder.getLatestBlockAndState();
     preGenesisStorageClient.updateBestBlock(
         latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(preGenesisStorageSystem.getReorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
   }
 
   @Test
@@ -353,7 +353,7 @@ class RecentChainDataTest {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     chainBuilder.generateGenesis();
     preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
-    assertThat(preGenesisStorageSystem.getReorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
 
@@ -375,15 +375,15 @@ class RecentChainDataTest {
     // Update to head block of original chain.
     preGenesisStorageClient.updateBestBlock(
         latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(preGenesisStorageSystem.getReorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     // Switch to fork.
     preGenesisStorageClient.updateBestBlock(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     // Check reorg event
-    assertThat(preGenesisStorageSystem.getReorgEventChannel().getReorgEvents().size()).isEqualTo(1);
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents().size()).isEqualTo(1);
     final ReorgEvent reorgEvent =
-        preGenesisStorageSystem.getReorgEventChannel().getReorgEvents().get(0);
+        preGenesisStorageSystem.reorgEventChannel().getReorgEvents().get(0);
     assertThat(reorgEvent.getBestBlockRoot()).isEqualTo(latestForkBlockAndState.getRoot());
     assertThat(reorgEvent.getBestSlot()).isEqualTo(latestForkBlockAndState.getSlot());
   }
@@ -393,7 +393,7 @@ class RecentChainDataTest {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     chainBuilder.generateGenesis();
     preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
-    assertThat(preGenesisStorageSystem.getReorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
 
@@ -418,14 +418,14 @@ class RecentChainDataTest {
     // Update to head block of original chain.
     preGenesisStorageClient.updateBestBlock(
         latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(preGenesisStorageSystem.getReorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     // Switch to fork.
     preGenesisStorageClient.updateBestBlock(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     // Check reorg event
     final ReorgEvent reorgEvent =
-        preGenesisStorageSystem.getReorgEventChannel().getReorgEvents().get(0);
+        preGenesisStorageSystem.reorgEventChannel().getReorgEvents().get(0);
     assertThat(reorgEvent.getBestBlockRoot()).isEqualTo(latestForkBlockAndState.getRoot());
     assertThat(reorgEvent.getBestSlot()).isEqualTo(latestForkBlockAndState.getSlot());
   }
