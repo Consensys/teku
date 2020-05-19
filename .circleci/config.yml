@@ -384,15 +384,15 @@ workflows:
       - extractAPISpec:
           requires:
             - publish
-      #          filters:
-      #            branches:
-      #              only: master
+          # filters:
+          #   branches:
+          #     only: master
       - publishAPIDoc:
           requires:
             - extractAPISpec
-#          filters:
-#            branches:
-#              only: master
+         # filters:
+         #   branches:
+         #     only: master
 #  nightly:
 #    triggers:
 #      - schedule:
