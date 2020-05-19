@@ -45,10 +45,6 @@ public class BlsVerifyTestExecutor implements TestExecutor {
     @JsonProperty(value = "output", required = true)
     private boolean output;
 
-    public BLSSignature getSignature() {
-      return input.getSignature();
-    }
-
     public boolean getOutput() {
       return output;
     }
