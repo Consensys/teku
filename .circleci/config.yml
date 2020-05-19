@@ -385,9 +385,9 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-      - extractAPISpec:
-          requires:
-            - publish
+      - extractAPISpec #:
+          # requires:
+          #   - publish
           # filters:
           #   branches:
           #     only: master
