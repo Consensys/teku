@@ -13,16 +13,23 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class IndexedAttestation {
+  @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UnsignedLong> attesting_indices;
+
   public final AttestationData data;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
 
   public IndexedAttestation(

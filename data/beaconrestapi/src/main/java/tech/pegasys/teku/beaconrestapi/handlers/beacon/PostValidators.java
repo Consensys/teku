@@ -35,6 +35,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.BeaconValidators;
+import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.api.schema.ValidatorWithIndex;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -93,7 +94,11 @@ public class PostValidators extends AbstractHandler implements Handler {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     } catch (JsonMappingException ex) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
+      Throwable cause = ex.getCause();
+      if (cause instanceof PublicKeyException) {
+        String msg = cause.getMessage();
+        ctx.result(jsonProvider.objectToJSON(new BadRequest("Public key is not valid: " + msg)));
+      }
       ctx.status(SC_BAD_REQUEST);
     }
   }

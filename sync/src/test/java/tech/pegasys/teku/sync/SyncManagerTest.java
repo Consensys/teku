@@ -42,8 +42,9 @@ public class SyncManagerTest {
 
   private static final long SUBSCRIPTION_ID = 3423;
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
-  private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(20);
   private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
+  private static final UnsignedLong PEER_HEAD_SLOT =
+      UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH * 5);
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
           new StatusMessage(
@@ -86,6 +87,7 @@ public class SyncManagerTest {
   void sync_noSuitablePeers() {
     // We're already in sync with the peer
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_STATUS.getFinalizedEpoch());
+    when(storageClient.getBestSlot()).thenReturn(PEER_STATUS.getHeadSlot());
     when(network.streamPeers()).thenReturn(Stream.of(peer));
     // Should be immediately completed as there is nothing to do.
     assertThat(syncManager.start()).isCompleted();
@@ -97,6 +99,31 @@ public class SyncManagerTest {
   @Test
   void sync_existingPeers() {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
+
+    final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
+
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    verify(peerSync).sync(peer);
+
+    // Signal the peer sync is complete
+    syncFuture.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+  }
+
+  @Test
+  void sync_existingPeerWithSameFinalizedEpochButMuchBetterHeadSlot() {
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_STATUS.getFinalizedEpoch());
+    when(storageClient.getBestSlot())
+        .thenReturn(
+            PEER_STATUS.getHeadSlot().minus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH + 1)));
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture);

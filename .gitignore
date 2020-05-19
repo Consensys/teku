@@ -55,3 +55,4 @@ eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
 
 
 /teku.db
+node_modules

@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -173,11 +174,31 @@ public class V3RocksDbDao implements RocksDbDao {
     }
 
     LOG.info("Initializing hot states from hot blocks");
-    initializeHotStates(finalizedRoot.get(), finalizedState.get(), hotBlocksByRoot);
+    final Map<Bytes32, SignedBeaconBlock> prunedHotBlocks =
+        initializeHotStatesAndBlocks(finalizedRoot.get(), finalizedState.get(), hotBlocksByRoot);
     LOG.info("Finished initializing hot states from hot blocks");
+
+    initializeHotSlotsByCache(prunedHotBlocks.values());
   }
 
-  private void initializeHotStates(
+  private void initializeHotSlotsByCache(Collection<SignedBeaconBlock> blocks) {
+    for (SignedBeaconBlock block : blocks) {
+      Set<Bytes32> blockRoots =
+          hotRootsBySlotCache.computeIfAbsent(
+              block.getSlot(), __ -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
+      blockRoots.add(block.getRoot());
+    }
+  }
+
+  /**
+   * At the end deletes block roots for which we can't generate state for and returns the mutated
+   * hotBlocksByRoots map
+   *
+   * @param finalizedRoot
+   * @param finalizedState
+   * @param hotBlocksByRoot
+   */
+  private Map<Bytes32, SignedBeaconBlock> initializeHotStatesAndBlocks(
       final Bytes32 finalizedRoot,
       final BeaconState finalizedState,
       final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot) {
@@ -219,11 +240,21 @@ public class V3RocksDbDao implements RocksDbDao {
           hotBlocksByRoot.size());
 
       RocksDbTransaction transaction = db.startTransaction();
-      hotBlocksByRoot.keySet().stream()
-          .filter(signedBeaconBlock -> !hotStates.containsKey(signedBeaconBlock))
-          .forEach(blockRoot -> transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot));
+      Set<Bytes32> blockRootsToDelete =
+          hotBlocksByRoot.keySet().stream()
+              .filter(blockRoot -> !hotStates.containsKey(blockRoot))
+              .collect(Collectors.toSet());
+
+      blockRootsToDelete.forEach(
+          blockRoot -> {
+            hotBlocksByRoot.remove(blockRoot);
+            transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot);
+          });
+
       transaction.commit();
     }
+
+    return hotBlocksByRoot;
   }
 
   private final Optional<BeaconState> processBlock(
@@ -302,7 +333,7 @@ public class V3RocksDbDao implements RocksDbDao {
 
     @Override
     public void addHotBlock(final SignedBeaconBlock block) {
-      final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+      final Bytes32 blockRoot = block.getRoot();
       transaction.put(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot, block);
       hotRootsBySlotAdditions
           .computeIfAbsent(block.getSlot(), key -> new HashSet<>())
@@ -311,7 +342,7 @@ public class V3RocksDbDao implements RocksDbDao {
 
     @Override
     public void addFinalizedBlock(final SignedBeaconBlock block) {
-      final Bytes32 root = block.getMessage().hash_tree_root();
+      final Bytes32 root = block.getRoot();
       transaction.put(V3Schema.FINALIZED_ROOTS_BY_SLOT, block.getSlot(), root);
       transaction.put(V3Schema.FINALIZED_BLOCKS_BY_ROOT, root, block);
     }
@@ -349,7 +380,8 @@ public class V3RocksDbDao implements RocksDbDao {
 
     @Override
     public Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot) {
-      final Map<UnsignedLong, Set<Bytes32>> toRemove = hotRootsBySlotAdditions.headMap(slot);
+      final Map<UnsignedLong, Set<Bytes32>> toRemove = new HashMap<>();
+      toRemove.putAll(hotRootsBySlotAdditions.headMap(slot));
       toRemove.putAll(hotRootsBySlotCache.headMap(slot));
 
       final Set<Bytes32> prunedRoots =
@@ -361,6 +393,7 @@ public class V3RocksDbDao implements RocksDbDao {
           transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, root);
         }
       }
+
       hotRootsBySlotAdditions.keySet().removeAll(toRemove.keySet());
       prunedSlots.addAll(toRemove.keySet());
 

@@ -13,12 +13,19 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class ValidatorBlockResult {
   private final int responseCode;
+
+  @Schema(type = "string")
   private final Optional<Throwable> failureReason;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   private final Optional<Bytes32> hash_tree_root;
 
   public ValidatorBlockResult(
