@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class VersionedDatabaseFactoryTest {
@@ -106,9 +107,13 @@ public class VersionedDatabaseFactoryTest {
 
   private TekuConfiguration createConfig(final Path dataPath) {
 
+    final String eth1AddressString = "0x77f7bED277449F51505a4C54550B074030d989bC";
+    final Eth1Address address = Eth1Address.fromHexString(eth1AddressString);
+
     return TekuConfiguration.builder()
         .setDataPath(dataPath.toAbsolutePath().toString())
         .setDataStorageMode(PRUNE)
+        .setEth1DepositContractAddress(address)
         .build();
   }
 }

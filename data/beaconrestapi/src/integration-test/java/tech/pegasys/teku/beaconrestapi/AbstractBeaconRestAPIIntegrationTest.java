@@ -38,13 +38,20 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
+  static final Eth1Address address =
+      Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
   static final TekuConfiguration config =
-      TekuConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
+      TekuConfiguration.builder()
+          .setRestApiPort(0)
+          .setRestApiDocsEnabled(false)
+          .setEth1DepositContractAddress(address)
+          .build();
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   protected final ObjectMapper objectMapper = new ObjectMapper();
