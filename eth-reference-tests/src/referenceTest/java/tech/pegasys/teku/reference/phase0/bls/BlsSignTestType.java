@@ -14,21 +14,65 @@
 package tech.pegasys.teku.reference.phase0.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.function.ThrowingConsumer;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class BlsSignTestType implements ThrowingConsumer<BlsTestData> {
+public class BlsSignTestType implements TestExecutor {
 
   @Override
-  public void accept(final BlsTestData blsTestData) throws Throwable {
-    final BLSSecretKey privateKey = blsTestData.getInputPrivateKey();
-    final Bytes message = blsTestData.getInputMessage();
-    final BLSSignature expectedResult = blsTestData.getOutputSignature();
+  public void runTest(final TestDefinition testDefinition) throws Throwable {
+    final Data data = loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
+    final BLSSecretKey privateKey = data.input.getPrivateKey();
+    final Bytes message = data.input.getMessage();
+    final BLSSignature expectedResult = data.getOutput();
 
     assertThat(BLS.sign(privateKey, message)).isEqualTo(expectedResult);
+  }
+
+  private static class Data {
+    @JsonProperty(value = "input", required = true)
+    private Input input;
+
+    @JsonProperty(value = "output", required = true)
+    private String output;
+
+    public BLSSignature getSignature() {
+      return input.getSignature();
+    }
+
+    public BLSSignature getOutput() {
+      return BlsTests.parseSignature(output);
+    }
+  }
+
+  private static class Input {
+    @JsonProperty(value = "privkey", required = true)
+    private String privateKey;
+
+    @JsonProperty(value = "message", required = true)
+    private String message;
+
+    @JsonProperty(value = "signature", required = true)
+    private String signature;
+
+    public BLSSecretKey getPrivateKey() {
+      return BLSSecretKey.fromBytes(Bytes.fromHexString(privateKey));
+    }
+
+    public Bytes getMessage() {
+      return Bytes.fromHexString(message);
+    }
+
+    public BLSSignature getSignature() {
+      return BlsTests.parseSignature(signature);
+    }
   }
 }

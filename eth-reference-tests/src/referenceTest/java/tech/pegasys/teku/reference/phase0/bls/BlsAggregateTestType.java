@@ -14,18 +14,41 @@
 package tech.pegasys.teku.reference.phase0.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
+import static tech.pegasys.teku.reference.phase0.bls.BlsTests.parseSignature;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import org.junit.jupiter.api.function.ThrowingConsumer;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.reference.phase0.TestDataUtils;
+import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class BlsAggregateTestType implements ThrowingConsumer<BlsTestData> {
+public class BlsAggregateTestType implements TestExecutor {
 
   @Override
-  public void accept(final BlsTestData blsTestData) throws Throwable {
-    final List<BLSSignature> signatures = blsTestData.getInputSignatures();
-    final BLSSignature expectedSignature = blsTestData.getOutputSignature();
+  public void runTest(final TestDefinition testDefinition) throws Throwable {
+    final Data data = TestDataUtils.loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
+    final List<BLSSignature> signatures = data.getInput();
+    final BLSSignature expectedSignature = data.getOutput();
     assertThat(BLS.aggregate(signatures)).isEqualTo(expectedSignature);
+  }
+
+  private static class Data {
+    @JsonProperty(value = "input", required = true)
+    private List<String> input;
+
+    @JsonProperty(value = "output", required = true)
+    private String output;
+
+    public List<BLSSignature> getInput() {
+      return input.stream().map(BlsTests::parseSignature).collect(Collectors.toList());
+    }
+
+    public BLSSignature getOutput() {
+      return parseSignature(output);
+    }
   }
 }

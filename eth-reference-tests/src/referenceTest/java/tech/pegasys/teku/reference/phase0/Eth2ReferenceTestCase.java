@@ -18,13 +18,11 @@ import org.junit.jupiter.api.Assertions;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.bls.BlsTestExecutor;
+import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutor;
-import tech.pegasys.teku.reference.phase0.genesis.GenesisInitializationTestExecutor;
-import tech.pegasys.teku.reference.phase0.genesis.GenesisValidityTestExecutor;
+import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
 import tech.pegasys.teku.reference.phase0.operations.OperationsTestExecutor;
-import tech.pegasys.teku.reference.phase0.sanity.SanityBlocksTestExecutor;
-import tech.pegasys.teku.reference.phase0.sanity.SanitySlotsTestExecutor;
+import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
 import tech.pegasys.teku.util.config.Constants;
@@ -34,19 +32,22 @@ public abstract class Eth2ReferenceTestCase {
   private final ImmutableMap<String, TestExecutor> TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(SszTestExecutor.SSZ_TEST_TYPES)
-          .putAll(BlsTestExecutor.BLS_TEST_TYPES)
+          .putAll(BlsTests.BLS_TEST_TYPES)
           .putAll(EpochProcessingTestExecutor.EPOCH_PROCESSING_TEST_TYPES)
           .putAll(OperationsTestExecutor.OPERATIONS_TEST_TYPES)
-          .put("shuffling", new ShufflingTestExecutor())
-          .put("genesis/initialization", new GenesisInitializationTestExecutor())
-          .put("genesis/validity", new GenesisValidityTestExecutor())
-          .put("sanity/blocks", new SanityBlocksTestExecutor())
-          .put("sanity/slots", new SanitySlotsTestExecutor())
+          .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
+          .putAll(GenesisTests.GENESIS_TEST_TYPES)
+          .putAll(SanityTests.SANITY_TEST_TYPES)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
-    if (!testDefinition.getSpec().equals("general")) {
-      Constants.setConstants(testDefinition.getSpec());
+    setConstants(testDefinition.getSpec());
+    getExecutorFor(testDefinition).runTest(testDefinition);
+  }
+
+  private void setConstants(final String spec) {
+    if (!spec.equals("general")) {
+      Constants.setConstants(spec);
       if (Constants.SLOTS_PER_HISTORICAL_ROOT
           != SimpleOffsetSerializer.classReflectionInfo
               .get(BeaconStateImpl.class)
@@ -55,10 +56,9 @@ public abstract class Eth2ReferenceTestCase {
         SimpleOffsetSerializer.setConstants();
       }
     }
-    getExecutableFor(testDefinition).runTest(testDefinition);
   }
 
-  private TestExecutor getExecutableFor(final TestDefinition testDefinition) {
+  private TestExecutor getExecutorFor(final TestDefinition testDefinition) {
     final TestExecutor testExecutor = TEST_TYPES.get(testDefinition.getTestType());
     if (testExecutor == null) {
       return Assertions.fail("Unsupported test type " + testDefinition.getTestType());

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.datastructures.util.CommitteeUtil.compute_shuffl
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -30,6 +31,9 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 
 public class ShufflingTestExecutor implements TestExecutor {
+
+  public static final ImmutableMap<String, TestExecutor> SHUFFLING_TEST_TYPES =
+      ImmutableMap.of("shuffling", new ShufflingTestExecutor());
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
