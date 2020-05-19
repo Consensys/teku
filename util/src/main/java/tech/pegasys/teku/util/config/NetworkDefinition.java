@@ -59,6 +59,13 @@ public class NetworkDefinition {
                       "enr:-KG4QBUEkcqHGnHHCZLnWfSPBocBqP5SNClDHOR1KmlzaS-YN53w0xBspt-HCzk5-FZw_ZcYIdxQKrLp8VUSO2LPSDwChGV0aDKQmSXv1gAAAAD__________4JpZIJ2NIJpcIQzD0YHiXNlY3AyNTZrMaEDMcdoZ1TJBKATCJixtLTYxGmKbe7r3ckjvhg5OP5cILeDdGNwgiUcg3VkcIIlHA")
                   .eth1DepositContractAddress("0xA15554BF93a052669B511ae29EA21f3581677ac5")
                   .build())
+          .put(
+              "witti",
+              builder()
+                  .constants("witti")
+                  .snappyCompressionEnabled(true)
+                  .eth1DepositContractAddress("0x6225f431644Ecf8A30b672D42b77c28297542b13")
+                  .build())
           .build();
 
   private final String constants;
