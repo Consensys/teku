@@ -112,6 +112,7 @@ allprojects {
         exclude '**/src/main/java/tech/pegasys/teku/Constants.java'
         exclude '**/proto'
         exclude '**/resources'
+        exclude '**/src/*/generated'
       }
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
@@ -372,6 +373,7 @@ subprojects {
     }
     referenceTest {
       java {
+        srcDir file('src/referenceTest/generated')
         srcDir file('src/referenceTest/java')
       }
       resources.srcDir file('src/referenceTest/resources')
