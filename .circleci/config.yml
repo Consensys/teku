@@ -284,7 +284,7 @@ jobs:
       - run:
           name: Extract OpenAPI JSON
           command: |
-            build/install/teku/bin/teku --network=schlesi --rest-api-docs-enabled=true &
+            build/install/teku/bin/teku --network=mainnet --Xinterop-enabled=true --rest-api-docs-enabled=true &
             TEKU_PID=$!
             wget -O openapi.json http://localhost:5051/swagger-docs
             kill $TEKU_PID
