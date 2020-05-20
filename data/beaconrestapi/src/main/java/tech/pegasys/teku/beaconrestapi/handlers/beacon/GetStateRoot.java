@@ -107,6 +107,6 @@ public class GetStateRoot implements Handler {
   }
 
   private SafeFuture<Optional<Bytes32>> queryBySlot(final UnsignedLong slot) {
-    return provider.getHashTreeRootAtSlot(slot);
+    return provider.getStateRootAtSlot(slot);
   }
 }

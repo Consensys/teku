@@ -22,15 +22,21 @@ import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Map;
 import okhttp3.Response;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 
 public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
+  @BeforeEach
+  public void setup() {
+    startRestAPIAtGenesis();
+  }
+
   @Test
   void shouldGetStateBySlot() throws Exception {
-    withBlockDataAtSlot(NINE, TEN);
+    createBlocksAtSlotsAndMapToApiResult(NINE, TEN);
 
     final Response response = getBySlot(TEN);
     final String responseBody = response.body().string();
@@ -41,7 +47,7 @@ public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
 
   @Test
   void shouldGetLastGoodStateBySlot() throws Exception {
-    withBlockDataAtSlot(SEVEN, NINE, TEN);
+    createBlocksAtSlotsAndMapToApiResult(SEVEN, NINE, TEN);
 
     final Response response = getBySlot(EIGHT);
     final String responseBody = response.body().string();
