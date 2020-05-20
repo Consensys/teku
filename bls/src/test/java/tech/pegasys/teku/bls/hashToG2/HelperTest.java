@@ -17,12 +17,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.teku.bls.hashToG2.Chains.h2Chain;
+import static tech.pegasys.teku.bls.hashToG2.Chains.mxChain;
 import static tech.pegasys.teku.bls.hashToG2.Helper.clear_h2;
+import static tech.pegasys.teku.bls.hashToG2.Helper.g2_map_to_infinity;
 import static tech.pegasys.teku.bls.hashToG2.Helper.hashToBase;
 import static tech.pegasys.teku.bls.hashToG2.Helper.iso3;
 import static tech.pegasys.teku.bls.hashToG2.Helper.mapToCurve;
 import static tech.pegasys.teku.bls.hashToG2.Util.bigFromHex;
 
+import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -180,6 +184,8 @@ class HelperTest {
 
   @Test
   void clearH2Test() {
+    // Check that the implementation of clear_h2() matches a known correct value for an arbitrary
+    // point
     JacobianPoint a =
         new JacobianPoint(
             new FP2Immutable(
@@ -206,23 +212,8 @@ class HelperTest {
   }
 
   @Test
-  void pointIsInG2() {
-    JacobianPoint a =
-        new JacobianPoint(
-            new FP2Immutable(
-                "0x16e8fe7af2c3366b444bf79673f540016ae13df03367f409e6e218b30db675f7186ab56809583f33e672edf61f812627",
-                "0x03920e2e7294fcd8a40dd98f1252061d72ec9f82b16732a2f573b509c53271fcef2eab796d58ba443def766269085fb4"),
-            new FP2Immutable(
-                "0x033fe28c591de8a46d2bbe8cd381c0b6a13bae7e0a8ca6a87c6a727c9cd52dbf7b882a4bba9123ee6ee480e34368ba1f",
-                "0x050a1ef21da10a01b75d187a5a6931c7e4c33794d7dc20d2c619ce00f9bfb0380a40d3cff0101ffac993e742798f9fff"),
-            new FP2Immutable(
-                "0x0f008a6b5637c0f7e5957c3c56ba616c5477f1dce08d6805f42dc495faed05ad046304ec7e2c7229694b82f6c886c6f8",
-                "0x00a0ede04aa5881555e0dc51a8db295b393cb349ea7be5547829b2f102191b2d06118e71a8a756db2316cf15a8378b72"));
-    assertTrue(Helper.isInG2(a));
-  }
-
-  @Test
-  void pointIsNotInG2() {
+  void clearH2TestCompare() {
+    // Check that the implementation of clear_h2() matches the slower method for an arbitrary point
     JacobianPoint a =
         new JacobianPoint(
             new FP2Immutable(
@@ -234,6 +225,73 @@ class HelperTest {
             new FP2Immutable(
                 "0x05594bb289f0ebfd8fa3f020c6e1eaf4c49b97d8ccaf3470a3a02da4b3e7104778105bd6c7e0caf97206c77a8b501d4d",
                 "0x0625151f905fad40eb0e2b9b0a46d9afe531256c6d5e39897a27d94700f037a761a741d11275180bd18e620289e02a16"));
-    assertFalse(Helper.isInG2(a));
+    assertEquals(clear_h2_slow(a), clear_h2(a));
+  }
+
+  @Test
+  void G2MapToInfinityTest() {
+    // The generator point of G2 is certainly in G2
+    JacobianPoint g2Generator = new JacobianPoint(ECP2.generator());
+    assertTrue(g2_map_to_infinity(g2Generator).isInfinity());
+  }
+
+  @Test
+  void pointIsInG2() {
+    JacobianPoint inG2 =
+        new JacobianPoint(
+            new FP2Immutable(
+                "0x16e8fe7af2c3366b444bf79673f540016ae13df03367f409e6e218b30db675f7186ab56809583f33e672edf61f812627",
+                "0x03920e2e7294fcd8a40dd98f1252061d72ec9f82b16732a2f573b509c53271fcef2eab796d58ba443def766269085fb4"),
+            new FP2Immutable(
+                "0x033fe28c591de8a46d2bbe8cd381c0b6a13bae7e0a8ca6a87c6a727c9cd52dbf7b882a4bba9123ee6ee480e34368ba1f",
+                "0x050a1ef21da10a01b75d187a5a6931c7e4c33794d7dc20d2c619ce00f9bfb0380a40d3cff0101ffac993e742798f9fff"),
+            new FP2Immutable(
+                "0x0f008a6b5637c0f7e5957c3c56ba616c5477f1dce08d6805f42dc495faed05ad046304ec7e2c7229694b82f6c886c6f8",
+                "0x00a0ede04aa5881555e0dc51a8db295b393cb349ea7be5547829b2f102191b2d06118e71a8a756db2316cf15a8378b72"));
+    assertTrue(Helper.isInG2(inG2));
+  }
+
+  @Test
+  void pointIsNotInG2() {
+    JacobianPoint notInG2 =
+        new JacobianPoint(
+            new FP2Immutable(
+                "0x0c8977fab5175ac2f09e5f39e29d016f11c094ef10f237d2a5e23f482d0bfb4466688527cd31685bfe481725c31462cc",
+                "0x0b305838069012861bb63501841c91bd5bc7e1359d44cd196681fb14c03e544c22205bced326d490eb886aaa3ed52918"),
+            new FP2Immutable(
+                "0x172cf997b3501882861c07e852fadbf5753eb8a3e1d2ce375e6aed07cf9c1b5ff1cbf1124c6e3b0cf4607c683eafd1a4",
+                "0x0d9dacf241a753d55cff6d45b568b716a2ad68ba29d23f92dea6e7cf6ed54e96cdac4a2b95213f93439b946ebc63349c"),
+            new FP2Immutable(
+                "0x05594bb289f0ebfd8fa3f020c6e1eaf4c49b97d8ccaf3470a3a02da4b3e7104778105bd6c7e0caf97206c77a8b501d4d",
+                "0x0625151f905fad40eb0e2b9b0a46d9afe531256c6d5e39897a27d94700f037a761a741d11275180bd18e620289e02a16"));
+    assertFalse(Helper.isInG2(notInG2));
+  }
+
+  /**
+   * Cofactor clearing - slow version: multiply by h_eff.
+   *
+   * <p>This is compatible with the version given in section 4.1 of Budroni and Pintore, "Efficient
+   * hash maps to G2 on BLS curves," ePrint 2017/419 https://eprint.iacr.org/2017/419 It is
+   * equivalent to multiplying by h_eff from
+   * https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-07#section-8.8.2
+   *
+   * @param p the point to be transformed to the G2 group
+   * @return a corresponding point in the G2 group
+   */
+  static JacobianPoint clear_h2_slow(JacobianPoint p) {
+    JacobianPoint work, work3;
+
+    // h2
+    work = h2Chain(p);
+    // 3 * h2
+    work3 = work.add(work.dbl());
+    // 3 * z * h2
+    work = mxChain(work3);
+    // 3 * z^2 * h2
+    work = mxChain(work);
+    // 3 * z^2 * h2 - 3 * h2 = 3 * (z^2 - 1) * h2
+    work = work.add(work3.neg());
+
+    return work;
   }
 }
