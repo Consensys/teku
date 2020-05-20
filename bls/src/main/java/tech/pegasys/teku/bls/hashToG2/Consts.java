@@ -120,4 +120,25 @@ class Consts {
   };
 
   static final FP2Immutable[][] map_coeffs = {XNUM, XDEN, YNUM, YDEN};
+
+  // Constants for Psi, the untwist-Frobenius-twist endomorphism
+  private static final FP iwscBase =
+      fpFromHex(
+          "0x0d0088f51cbff34d258dd3db21a5d66bb23ba5c279c2895fb39869507b587b120f55ffff58a9ffffdcff7fffffffd556");
+  private static final FP iwscBaseM1 =
+      fpFromHex(
+          "0x0d0088f51cbff34d258dd3db21a5d66bb23ba5c279c2895fb39869507b587b120f55ffff58a9ffffdcff7fffffffd555");
+  static final FP2Immutable iwsc = new FP2Immutable(iwscBase, iwscBaseM1);
+  static final FP k_qi_x =
+      fpFromHex(
+          "0x1a0111ea397fe699ec02408663d4de85aa0d857d89759ad4897d29650fb85f9b409427eb4f49fffd8bfd00000000aaad");
+  static final FP k_qi_y =
+      fpFromHex(
+          "0x06af0e0437ff400b6831e36d6bd17ffe48395dabc2d3435e77f76e17009241c5ee67992f72ec05f4c81084fbede3cc09");
+  static final FP2Immutable k_cx = new FP2Immutable(new FP(0), k_qi_x);
+  static final FP2Immutable k_cy =
+      new FP2Immutable(
+          fpFromHex(
+              "0x135203e60180a68ee2e9c448d77a2cd91c3dedd930b1cf60ef396489f61eb45e304466cf3e67fa0af1ee7b04121bdea2"),
+          k_qi_y);
 }

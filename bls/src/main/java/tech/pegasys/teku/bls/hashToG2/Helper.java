@@ -14,9 +14,12 @@
 package tech.pegasys.teku.bls.hashToG2;
 
 import static tech.pegasys.teku.bls.hashToG2.Chains.expChain;
-import static tech.pegasys.teku.bls.hashToG2.Chains.h2Chain;
 import static tech.pegasys.teku.bls.hashToG2.Chains.mxChain;
-import static tech.pegasys.teku.bls.hashToG2.Chains.qChain;
+import static tech.pegasys.teku.bls.hashToG2.Consts.iwsc;
+import static tech.pegasys.teku.bls.hashToG2.Consts.k_cx;
+import static tech.pegasys.teku.bls.hashToG2.Consts.k_cy;
+import static tech.pegasys.teku.bls.hashToG2.Consts.k_qi_x;
+import static tech.pegasys.teku.bls.hashToG2.Consts.k_qi_y;
 import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.teku.bls.hashToG2.IetfTools.HKDF_Expand;
 import static tech.pegasys.teku.bls.hashToG2.IetfTools.HKDF_Extract;
@@ -24,6 +27,7 @@ import static tech.pegasys.teku.bls.hashToG2.Util.os2ip_modP;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.FP;
+import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
 
 class Helper {
@@ -54,14 +58,25 @@ class Helper {
   /**
    * Tests whether the given point lies in the G2 group.
    *
-   * <p>Once the GLV patent has expired we can replace the qChain with the endomorphism here:
-   * https://eprint.iacr.org/2019/814.pdf
-   *
    * @param p a JacobianPoint
    * @return true if the point is in G2, false otherwise
    */
   static boolean isInG2(JacobianPoint p) {
-    return isOnCurve(p) && qChain(p).isInfinity();
+    return isOnCurve(p) && g2_map_to_infinity(p).isInfinity();
+  }
+
+  /**
+   * Apply a transformation that maps G2 elements, and only G2 elements, to infinity
+   *
+   * <p>Uses the technique from https://eprint.iacr.org/2019/814.pdf section 3.1
+   *
+   * @return
+   */
+  static JacobianPoint g2_map_to_infinity(JacobianPoint p) {
+    JacobianPoint psi1 = psi(p);
+    JacobianPoint psi2 = psi(psi1);
+    JacobianPoint psi3 = psi(psi2);
+    return mxChain(psi3).add(psi2).neg().add(p);
   }
 
   /**
@@ -226,37 +241,75 @@ class Helper {
     return new JacobianPoint(xx, yy, zz);
   }
 
+  // Shortcut Frobenius evaluation that avoids going all the way to Fq12
+  private static FP2Immutable qi_x(FP2Immutable x) {
+    FP a = new FP(x.getFp2().getA());
+    FP b = new FP(x.getFp2().getB());
+    a.mul(k_qi_x);
+    b.mul(k_qi_x);
+    b.neg();
+    return new FP2Immutable(new FP2(a, b));
+  }
+
+  // Shortcut Frobenius evaluation that avoids going all the way to Fq12
+  private static FP2Immutable qi_y(FP2Immutable y) {
+    FP y0 = new FP(y.getFp2().getA());
+    FP y1 = new FP(y.getFp2().getB());
+    FP a = new FP(y0);
+    FP b = new FP(y0);
+    a.add(y1);
+    a.mul(k_qi_y);
+    b.sub(y1);
+    b.mul(k_qi_y);
+    return new FP2Immutable(new FP2(a, b));
+  }
+
+  // The untwist-Frobenius-twist endomorphism
+  static JacobianPoint psi(JacobianPoint p) {
+    FP2Immutable x = new FP2Immutable(p.getX());
+    FP2Immutable y = new FP2Immutable(p.getY());
+    FP2Immutable z = new FP2Immutable(p.getZ());
+
+    FP2Immutable z2 = z.sqr();
+    FP2Immutable px = k_cx.mul(qi_x(iwsc.mul(x)));
+    FP2Immutable pz2 = qi_x(iwsc.mul(z2));
+    FP2Immutable py = k_cy.mul(qi_y(iwsc.mul(y)));
+    FP2Immutable pz3 = qi_y(iwsc.mul(z2).mul(z));
+
+    FP2Immutable zOut = pz2.mul(pz3);
+    FP2Immutable xOut = px.mul(pz3).mul(zOut);
+    FP2Immutable yOut = py.mul(pz2).mul(zOut.sqr());
+
+    return new JacobianPoint(xOut, yOut, zOut);
+  }
+
   /**
-   * Cofactor clearing.
+   * Cofactor clearing
    *
-   * <p>This is compatible with the version given in section 4.1 of Budroni and Pintore, "Efficient
-   * hash maps to G2 on BLS curves," ePrint 2017/419 https://eprint.iacr.org/2017/419 NOTE: this
-   * impl works for Jacobian projective coordinates without computing an inversion.
-   *
-   * <p>The current implementation is equivalent to multiplying by h_eff from
-   * https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-05#section-8.9.2 This is, in turn,
-   * equivalent to the more efficient method using the endomorphism described above. However, the
-   * endomorphism is protected in the US by patent 7110538 until the end of 2020. Once that patent
-   * has expired, the endomorphism can be implemented here. Commit
-   * 95335bd4b1db78bf06d6bf02c906f3973a2677f1 actually contains the endomorphism code, for
-   * reference.
+   * <p>Uses the version given in section 4.1 of Budroni and Pintore, "Efficient hash maps to G2 on
+   * BLS curves," ePrint 2017/419 https://eprint.iacr.org/2017/419 NOTE: this impl works for
+   * Jacobian projective coordinates without computing an inversion.
    *
    * @param p the point to be transformed to the G2 group
    * @return a corresponding point in the G2 group
    */
   static JacobianPoint clear_h2(JacobianPoint p) {
-    JacobianPoint work, work3;
-
-    // h2
-    work = h2Chain(p);
-    // 3 * h2
-    work3 = work.add(work.dbl());
-    // 3 * z * h2
-    work = mxChain(work3);
-    // 3 * z^2 * h2
+    // (-x + 1) P
+    JacobianPoint work = mxChain(p).add(p);
+    // -psi(P)
+    JacobianPoint minus_psi_p = psi(p).neg();
+    // (-x + 1) P - psi(P)
+    work = work.add(minus_psi_p);
+    // (x^2 - x) P + x psi(P)
     work = mxChain(work);
-    // 3 * z^2 * h2 - 3 * h2 = 3 * (z^2 - 1) * h2
-    work = work.add(work3.neg());
+    // (x^2 - x) P + (x - 1) psi(P)
+    work = work.add(minus_psi_p);
+    // (x^2 - x - 1) P + (x - 1) psi(P)
+    work = work.add(p.neg());
+    // psi(psi(2P))
+    JacobianPoint psi_psi_2p = psi(psi(p.dbl()));
+    // (x^2 - x - 1) P + (x - 1) psi(P) + psi(psi(2P))
+    work = work.add(psi_psi_2p);
 
     return work;
   }

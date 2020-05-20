@@ -14,11 +14,9 @@
 package tech.pegasys.teku.bls.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.bls.hashToG2.Chains.expChain;
 import static tech.pegasys.teku.bls.hashToG2.Chains.h2Chain;
 import static tech.pegasys.teku.bls.hashToG2.Chains.mxChain;
-import static tech.pegasys.teku.bls.hashToG2.Chains.qChain;
 import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.teku.bls.hashToG2.Util.bigFromHex;
 
@@ -142,12 +140,5 @@ class ChainsTest {
   @Test
   void h2ChainTest() {
     assertEquals(new JacobianPoint(scaleWithCofactor(a.toECP2())), h2Chain(a));
-  }
-
-  @Test
-  void qChainTest() {
-    // The generator point of G2
-    JacobianPoint g2Generator = new JacobianPoint(ECP2.generator());
-    assertTrue(qChain(g2Generator).isInfinity());
   }
 }
