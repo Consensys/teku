@@ -289,12 +289,22 @@ jobs:
       - run:
           name: Extract OpenAPI JSON
           command: |
-            build/install/teku/bin/teku --network=mainnet --Xinterop-enabled=true --rest-api-docs-enabled=true &
+            build/install/teku/bin/teku --network=mainnet --Xinterop-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
             TEKU_PID=$!
-            wget -O openapi.json http://localhost:5051/swagger-docs
+
+            EXIT_CODE=0
+            wget --timeout=30 --retry-connrefused --output-document=openapi.json http://localhost:5051/swagger-docs
+            if [ $? != 0 ]; then
+              rm openapi.json
+              EXIT_CODE=1
+            fi
+
             kill $TEKU_PID
+            exit $EXIT_CODE
       - store_artifacts:
           path: openapi.json
+      - store_artifacts:
+          path: teku_output.log
       - persist_to_workspace:
           root: ~/project
           paths:
