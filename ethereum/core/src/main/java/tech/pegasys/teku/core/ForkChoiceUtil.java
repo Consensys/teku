@@ -27,7 +27,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.CheckReturnValue;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -298,15 +297,17 @@ public class ForkChoiceUtil {
     Checkpoint target = attestation.getData().getTarget();
 
     return validateOnAttestation(store, attestation)
-            .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
-            .ifSuccessful(() -> validateAndApplyIndexedAttestation(store, attestation, target, forkChoiceStrategy));
-    }
+        .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
+        .ifSuccessful(
+            () ->
+                validateAndApplyIndexedAttestation(store, attestation, target, forkChoiceStrategy));
+  }
 
   private static AttestationProcessingResult validateAndApplyIndexedAttestation(
-          MutableStore store,
-          Attestation attestation,
-          Checkpoint target,
-          ForkChoiceStrategy forkChoiceStrategy) {
+      MutableStore store,
+      Attestation attestation,
+      Checkpoint target,
+      ForkChoiceStrategy forkChoiceStrategy) {
     BeaconState target_state = store.getCheckpointState(target);
 
     // Get state at the `target` to validate attestation and calculate the committees
@@ -390,7 +391,8 @@ public class ForkChoiceUtil {
             .getSlot()
             .compareTo(attestation.getData().getSlot())
         > 0) {
-      LOG.warn("on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
+      LOG.warn(
+          "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
       return AttestationProcessingResult.INVALID;
     }
 

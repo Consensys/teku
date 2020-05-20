@@ -25,4 +25,3 @@ public enum AttestationProcessingResult {
     return this == SUCCESSFUL ? nextStep.get() : this;
   }
 }
-

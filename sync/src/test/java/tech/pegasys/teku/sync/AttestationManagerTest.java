@@ -20,8 +20,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.AttestationProcessingResult.SAVED_FOR_FUTURE;
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.UNKNOWN_BLOCK;
 import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.core.results.AttestationProcessingResult.UNKNOWN_BLOCK;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -170,7 +170,7 @@ class AttestationManagerTest {
   public void shouldNotPublishProcessedAttestationEventWhenAttestationIsInvalid() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationProcessor.processAttestation(attestation))
-        .thenReturn(AttestationProcessingResult.invalid("Seems fishy"));
+        .thenReturn(AttestationProcessingResult.INVALID);
 
     eventBus.post(attestation);
 
@@ -185,7 +185,7 @@ class AttestationManagerTest {
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     final Attestation attestation = aggregateAndProof.getAggregate();
     when(attestationProcessor.processAttestation(attestation))
-        .thenReturn(AttestationProcessingResult.invalid("Seems fishy"));
+        .thenReturn(AttestationProcessingResult.INVALID);
 
     eventBus.post(attestation);
 

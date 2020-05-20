@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.sync;
 
+import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
@@ -30,8 +31,6 @@ import tech.pegasys.teku.statetransition.events.attestation.ProcessedAttestation
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -108,19 +107,22 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       case SUCCESSFUL:
         LOG.trace("Processed attestation {} successfully", delayableAttestation::hash_tree_root);
         delayableAttestation.onAttestationProcessedSuccessfully();
+        break;
       case UNKNOWN_BLOCK:
-        LOG.trace("Deferring attestation {} as require block is not yet present",
-                delayableAttestation::hash_tree_root);
+        LOG.trace(
+            "Deferring attestation {} as require block is not yet present",
+            delayableAttestation::hash_tree_root);
         pendingAttestations.add(delayableAttestation);
         break;
       case SAVED_FOR_FUTURE:
         LOG.trace(
-                "Deferring attestation {} until a future slot", delayableAttestation::hash_tree_root);
+            "Deferring attestation {} until a future slot", delayableAttestation::hash_tree_root);
         futureAttestations.add(delayableAttestation);
         break;
       case INVALID:
-        LOG.warn("Failed to process attestation.");
         break;
+      default:
+        throw new UnsupportedOperationException("AttestationProcessingResult is unrecognizable");
     }
   }
 
