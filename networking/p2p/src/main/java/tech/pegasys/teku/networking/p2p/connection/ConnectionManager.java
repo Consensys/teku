@@ -16,11 +16,8 @@ package tech.pegasys.teku.networking.p2p.connection;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -179,30 +176,19 @@ public class ConnectionManager extends Service {
             });
   }
 
-  public long addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
-    return newPeerFilter.addPeerPredicate(predicate);
-  }
-
-  public boolean removePeerPredicate(final long id) {
-    return newPeerFilter.removePeerPredicate(id);
+  public void addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
+    newPeerFilter.addPeerPredicate(predicate);
   }
 
   public static class NewPeerFilter {
-    private final AtomicLong predicateId = new AtomicLong();
-    private final Map<Long, Predicate<DiscoveryPeer>> peerPredicates = new ConcurrentHashMap<>();
+    private final Set<Predicate<DiscoveryPeer>> peerPredicates = new HashSet<>();
 
-    long addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
-      final long id = predicateId.getAndIncrement();
-      peerPredicates.put(id, predicate);
-      return id;
-    }
-
-    boolean removePeerPredicate(final long predicateId) {
-      return peerPredicates.remove(predicateId) != null;
+    void addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
+      peerPredicates.add(predicate);
     }
 
     boolean isPeerValid(DiscoveryPeer peer) {
-      return peerPredicates.values().stream().allMatch(predicate -> predicate.test(peer));
+      return peerPredicates.stream().allMatch(predicate -> predicate.test(peer));
     }
   }
 }

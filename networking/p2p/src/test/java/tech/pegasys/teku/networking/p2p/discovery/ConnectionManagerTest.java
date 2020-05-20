@@ -459,25 +459,6 @@ class ConnectionManagerTest {
     verify(network, never()).connect(PEER2);
   }
 
-  @Test
-  public void shouldRemovePeerPredicate() {
-    final ConnectionManager manager = createManager();
-    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
-    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    when(network.connect(PEER1)).thenReturn(SafeFuture.completedFuture(peer1));
-    when(network.connect(PEER2)).thenReturn(SafeFuture.completedFuture(peer2));
-    when(discoveryService.streamKnownPeers())
-        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
-
-    long predicateId = manager.addPeerPredicate((peer) -> !peer.equals(DISCOVERY_PEER2));
-    manager.removePeerPredicate(predicateId);
-
-    manager.start().join();
-
-    verify(network).connect(PEER1);
-    verify(network).connect(PEER2);
-  }
-
   private PeerConnectedSubscriber<Peer> getPeerConnectedSubscriber() {
     @SuppressWarnings("unchecked")
     final ArgumentCaptor<PeerConnectedSubscriber<Peer>> captor =

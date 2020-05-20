@@ -33,6 +33,7 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.teku.networking.p2p.discovery.noop.NoOpDiscoveryService;
@@ -75,20 +76,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
     // Set connection manager peer predicate so that we don't attempt to connect peers with
     // different fork digests
-    connectionManager.addPeerPredicate(
-        peer ->
-            enrForkId
-                .map(EnrForkId::getForkDigest)
-                .flatMap(
-                    forkDigest ->
-                        peer.getEnrForkId()
-                            .map(
-                                peerEnrForkId ->
-                                    SimpleOffsetSerializer.deserialize(
-                                            peerEnrForkId, EnrForkId.class)
-                                        .getForkDigest()
-                                        .equals(forkDigest)))
-                .orElse(false));
+    connectionManager.addPeerPredicate(this::dontConnectPeersWithDifferentForkDigests);
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
@@ -190,6 +178,20 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
     discoveryService.updateCustomENRField(ETH2_ENR_FIELD, encodedEnrForkId);
     this.enrForkId = Optional.of(enrForkId);
+  }
+
+  private boolean dontConnectPeersWithDifferentForkDigests(DiscoveryPeer peer) {
+    return enrForkId
+        .map(EnrForkId::getForkDigest)
+        .flatMap(
+            forkDigest ->
+                peer.getEnrForkId()
+                    .map(
+                        peerEnrForkId ->
+                            SimpleOffsetSerializer.deserialize(peerEnrForkId, EnrForkId.class)
+                                .getForkDigest()
+                                .equals(forkDigest)))
+        .orElse(false);
   }
 
   @Override
