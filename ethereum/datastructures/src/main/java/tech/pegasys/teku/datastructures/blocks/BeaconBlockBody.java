@@ -33,9 +33,10 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 /** A Beacon block body */
-public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
+public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 6;
@@ -183,6 +184,7 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     return voluntary_exits;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

@@ -8,11 +8,8 @@ dependencies {
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'org.apache.commons:commons-text'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
   implementation 'org.junit.jupiter:junit-jupiter-params'
-}
-
-test {
-  testLogging.showStandardStreams = true
 }

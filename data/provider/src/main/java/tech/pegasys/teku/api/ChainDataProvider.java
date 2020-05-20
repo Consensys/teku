@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -102,13 +103,13 @@ public class ChainDataProvider {
                             .collect(Collectors.toList())));
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<GetBlockResponse>> getBlockBySlot(final UnsignedLong slot) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
     }
     return combinedChainDataClient
         .getBlockInEffectAtSlot(slot)
-        .thenApply(block -> block.map(SignedBeaconBlock::new));
+        .thenApply(block -> block.map(GetBlockResponse::new));
   }
 
   public boolean isStoreAvailable() {
@@ -119,13 +120,13 @@ public class ChainDataProvider {
     return combinedChainDataClient.getBestBlockRoot();
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockParam) {
+  public SafeFuture<Optional<GetBlockResponse>> getBlockByBlockRoot(final Bytes32 blockParam) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
     }
     return combinedChainDataClient
         .getBlockByBlockRoot(blockParam)
-        .thenApply(block -> block.map(SignedBeaconBlock::new));
+        .thenApply(block -> block.map(GetBlockResponse::new));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {

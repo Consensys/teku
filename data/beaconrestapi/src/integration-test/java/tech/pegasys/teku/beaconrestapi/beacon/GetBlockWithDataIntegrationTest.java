@@ -26,6 +26,7 @@ import java.util.Map;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock;
@@ -42,10 +43,9 @@ public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
     final List<SignedBeaconBlock> blocks = createBlocksAtSlotsAndMapToApiResult(SIX, SEVEN, EIGHT);
     final Response response = getByEpoch(ONE);
     final String responseBody = response.body().string();
-    final SignedBeaconBlock result =
-        jsonProvider.jsonToObject(responseBody, SignedBeaconBlock.class);
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
 
-    assertThat(result).usingRecursiveComparison().isEqualTo(blocks.get(2));
+    assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(2));
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
@@ -54,10 +54,9 @@ public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
     final List<SignedBeaconBlock> blocks = createBlocksAtSlotsAndMapToApiResult(EIGHT, NINE);
     final Response response = getBySlot(EIGHT);
     final String responseBody = response.body().string();
-    final SignedBeaconBlock result =
-        jsonProvider.jsonToObject(responseBody, SignedBeaconBlock.class);
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
 
-    assertThat(result).usingRecursiveComparison().isEqualTo(blocks.get(0));
+    assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(0));
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
@@ -69,9 +68,8 @@ public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
 
     assertThat(response.code()).isEqualTo(SC_OK);
     final String responseBody = response.body().string();
-    final SignedBeaconBlock result =
-        jsonProvider.jsonToObject(responseBody, SignedBeaconBlock.class);
-    assertThat(result).usingRecursiveComparison().isEqualTo(blocks.get(1));
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
+    assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(1));
   }
 
   @Test
@@ -81,9 +79,8 @@ public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
 
     assertThat(response.code()).isEqualTo(SC_OK);
     final String responseBody = response.body().string();
-    final SignedBeaconBlock result =
-        jsonProvider.jsonToObject(responseBody, SignedBeaconBlock.class);
-    assertThat(result).usingRecursiveComparison().isEqualTo(blocks.get(1));
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
+    assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(1));
   }
 
   private Response getByEpoch(final UnsignedLong epoch) throws IOException {

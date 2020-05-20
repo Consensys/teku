@@ -42,6 +42,10 @@ executors:
       docker_layer_caching: true
     working_directory: ~/project
 
+  node_executor:
+    docker:
+      - image: circleci/node:12.9.0-stretch
+
 commands:
   prepare:
     description: "Prepare"
@@ -81,6 +85,7 @@ commands:
             done
       - store_test_results:
           path: build/test-results
+
   capture_test_artifacts:
     description: "Capture test artifacts"
     steps:
@@ -107,7 +112,7 @@ jobs:
       - run:
           name: Assemble
           command: |
-            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compileReferenceTestJava compileCompatibilityTestJava assemble
+            ./gradlew --no-daemon --parallel clean compileJava compileTestJava compileJmhJava compileIntegrationTestJava compileAcceptanceTestJava compileCompatibilityTestJava assemble
       - save_cache:
           name: Caching gradle dependencies
           key: deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
@@ -196,10 +201,14 @@ jobs:
               ./gradlew --no-daemon expandRefTests
             fi
       - run:
+          name: CompileReferenceTests
+          command: |
+            ./gradlew --no-daemon --parallel compileReferenceTestJava
+      - run:
           name: ReferenceTests
           command: |
-            CLASSNAMES=$(circleci tests glob "**/src/referenceTest/java/**/*.java" \
-              | sed 's@.*/src/referenceTest/java/@@' \
+            CLASSNAMES=$(circleci tests glob "**/src/referenceTest/generated/**/*Test.java" \
+              | sed 's@.*/src/referenceTest/generated/@@' \
               | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
               | circleci tests split --split-by=timings --timings-type=classname)
@@ -267,6 +276,81 @@ jobs:
             docker login --username "${DOCKER_USER}" --password "${DOCKER_PASSWORD}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
+  extractAPISpec:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Build runnable Teku binaries
+          command: |
+            ./gradlew --no-daemon --parallel installDist
+      - run:
+          name: Extract OpenAPI JSON
+          command: |
+            build/install/teku/bin/teku --network=mainnet --Xinterop-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
+            TEKU_PID=$!
+
+            EXIT_CODE=0
+            wget --timeout=30 --retry-connrefused --output-document=openapi.json http://localhost:5051/swagger-docs
+            if [ $? != 0 ]; then
+              rm openapi.json
+              EXIT_CODE=1
+            fi
+
+            kill $TEKU_PID
+            exit $EXIT_CODE
+      - store_artifacts:
+          path: openapi.json
+      - store_artifacts:
+          path: teku_output.log
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - ./
+
+  publishAPIDoc:
+    executor: node_executor
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      - add_ssh_keys:
+          fingerprints:
+            - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
+      - run:
+          name: Set Git user params
+          command: |
+            git config --global user.name $CIRCLE_USERNAME
+            git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
+      - restore_cache:
+          keys:
+            - deps-{{ checksum "./docs/package.json" }}
+      - run:
+          name: Install dependencies
+          working_directory: ./docs
+          command: |
+            npm install
+      - save_cache:
+          paths:
+            - ./docs/node_modules
+          key: deps-{{ checksum "./docs/package.json" }}
+      - run:
+          name: Generate API doc site files
+          working_directory: ./docs
+          command: |
+            npm run generate-versions -- --spec=../openapi.json --tag=${CIRCLE_TAG}
+      - deploy:
+          name: Commit and push doc changes
+          command: |
+            git add docs
+            git commit -m "Automated update of JSON specs and version files" \
+                       -m "[skip ci] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
+                       -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
+            git push --set-upstream origin ${CIRCLE_BRANCH}
+            git push origin
+
 workflows:
   version: 2
   circleci:
@@ -318,6 +402,15 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
+      - extractAPISpec:
+          requires:
+            - publish
+      # - publishAPIDoc:
+      #     requires:
+      #       - extractAPISpec
+      #     filters:
+      #       branches:
+      #         only: master
 #  nightly:
 #    triggers:
 #      - schedule:
