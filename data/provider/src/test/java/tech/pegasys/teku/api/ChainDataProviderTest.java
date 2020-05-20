@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -183,7 +184,7 @@ public class ChainDataProviderTest {
   public void getBlockBySlot_shouldThrowWhenStoreNotFound() {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
-    final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
+    final SafeFuture<Optional<GetBlockResponse>> future = provider.getBlockBySlot(ZERO);
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
@@ -196,7 +197,7 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.getBlockBySlot(ZERO))
         .thenReturn(completedFuture(Optional.empty()));
-    final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
+    final SafeFuture<Optional<GetBlockResponse>> future = provider.getBlockBySlot(ZERO);
     assertTrue(future.get().isEmpty());
   }
 
@@ -210,10 +211,10 @@ public class ChainDataProviderTest {
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.getBlockBySlot(ZERO)).thenReturn(data);
-    final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
+    final SafeFuture<Optional<GetBlockResponse>> future = provider.getBlockBySlot(ZERO);
     verify(mockCombinedChainDataClient).getBlockBySlot(ZERO);
 
-    final SignedBeaconBlock result = future.get().get();
+    final SignedBeaconBlock result = future.get().get().signedBeaconBlock;
     assertThat(result)
         .usingRecursiveComparison()
         .isEqualTo(new SignedBeaconBlock(signedBeaconBlock));
@@ -222,7 +223,7 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockByBlockRoot_shouldThrowWhenStoreNotFound() {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
-    final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
+    final SafeFuture<Optional<GetBlockResponse>> future = provider.getBlockByBlockRoot(blockRoot);
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
@@ -235,7 +236,7 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.getBlockByBlockRoot(blockRoot))
         .thenReturn(completedFuture(Optional.empty()));
-    final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
+    final SafeFuture<Optional<GetBlockResponse>> future = provider.getBlockByBlockRoot(blockRoot);
     assertTrue(future.get().isEmpty());
   }
 
@@ -249,10 +250,10 @@ public class ChainDataProviderTest {
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.getBlockByBlockRoot(blockRoot)).thenReturn(data);
-    final SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
+    final SafeFuture<Optional<GetBlockResponse>> future = provider.getBlockByBlockRoot(blockRoot);
     verify(mockCombinedChainDataClient).getBlockByBlockRoot(blockRoot);
 
-    final SignedBeaconBlock result = future.get().get();
+    final SignedBeaconBlock result = future.get().get().signedBeaconBlock;
     assertThat(result)
         .usingRecursiveComparison()
         .isEqualTo(new SignedBeaconBlock(signedBeaconBlock));
