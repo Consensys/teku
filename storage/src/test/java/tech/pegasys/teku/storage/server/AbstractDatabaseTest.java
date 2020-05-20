@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static java.util.Map.entry;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -48,9 +49,9 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.MerkleTree;
+import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.Store.Transaction;
-import tech.pegasys.teku.storage.api.TrackingEth1DepositChannel;
 import tech.pegasys.teku.storage.api.TrackingStorageUpdateChannel;
 import tech.pegasys.teku.storage.events.StorageUpdateResult;
 import tech.pegasys.teku.util.config.Constants;
@@ -75,7 +76,6 @@ public abstract class AbstractDatabaseTest {
 
   protected Database database;
   protected TrackingStorageUpdateChannel storageUpdateChannel;
-  protected TrackingEth1DepositChannel eth1DepositChannel;
 
   protected List<Database> databases = new ArrayList<>();
 
@@ -115,7 +115,6 @@ public abstract class AbstractDatabaseTest {
     database = createDatabase(storageMode);
     databases.add(database);
     storageUpdateChannel = new TrackingStorageUpdateChannel(database);
-    eth1DepositChannel = new TrackingEth1DepositChannel(database);
     return database;
   }
 
@@ -501,14 +500,13 @@ public abstract class AbstractDatabaseTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     DepositWithIndex firstDeposit = dataStructureUtil.randomDepositWithIndex(1L);
     DepositWithIndex secondDeposit = dataStructureUtil.randomDepositWithIndex(2L);
-    eth1DepositChannel.addEth1Deposit(firstDeposit);
-    eth1DepositChannel.addEth1Deposit(secondDeposit);
+    database.addEth1Deposit(firstDeposit);
+    database.addEth1Deposit(secondDeposit);
 
-    assertThat(eth1DepositChannel.getDeposits().get(0)).isEqualTo(firstDeposit);
-    assertThat(eth1DepositChannel.getDeposits().get(1)).isEqualTo(secondDeposit);
-    MerkleTree m = database.getMerkleTree();
-    assertThat(m.getProof(firstDeposit.getData().hash_tree_root())).isNotEmpty();
-    assertThat(m.getProof(secondDeposit.getData().hash_tree_root())).isNotEmpty();
+    MerkleTree expectedTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
+    expectedTree.add(firstDeposit.getData().hash_tree_root());
+    expectedTree.add(secondDeposit.getData().hash_tree_root());
+    assertThat(database.getMerkleTree().getRoot()).isEqualTo(expectedTree.getRoot());
   }
 
   @Test
@@ -516,31 +514,31 @@ public abstract class AbstractDatabaseTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     DepositWithIndex firstDeposit = dataStructureUtil.randomDepositWithIndex(1L);
     DepositWithIndex secondDeposit = dataStructureUtil.randomDepositWithIndex(2L);
-    eth1DepositChannel.addEth1Deposit(firstDeposit);
-    eth1DepositChannel.addEth1Deposit(secondDeposit);
+    database.addEth1Deposit(firstDeposit);
+    database.addEth1Deposit(secondDeposit);
 
     NavigableMap<UnsignedLong, DepositWithIndex> data = database.getDepositNavigableMap();
-    DepositWithIndex first = data.get(UnsignedLong.valueOf(1L));
-    assertThat(first.getData()).isEqualTo(firstDeposit.getData());
-    assertThat(first.getIndex()).isEqualTo(firstDeposit.getIndex());
-
-    DepositWithIndex second = data.get(UnsignedLong.valueOf(2L));
-    assertThat(second.getData()).isEqualTo(secondDeposit.getData());
-    assertThat(second.getIndex()).isEqualTo(secondDeposit.getIndex());
+    assertThat(data)
+        .containsExactly(
+            // Proofs are not stored in the database
+            entry(
+                UnsignedLong.valueOf(1),
+                new DepositWithIndex(firstDeposit.getData(), firstDeposit.getIndex())),
+            entry(
+                UnsignedLong.valueOf(2),
+                new DepositWithIndex(secondDeposit.getData(), secondDeposit.getIndex())));
   }
 
   @Test
   public void shouldPruneDepositNavigableMap() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    eth1DepositChannel.addEth1Deposit(dataStructureUtil.randomDepositWithIndex(1L));
-    eth1DepositChannel.addEth1Deposit(dataStructureUtil.randomDepositWithIndex(2L));
-    eth1DepositChannel.addEth1Deposit(dataStructureUtil.randomDepositWithIndex(3L));
-    eth1DepositChannel.eth1DepositsFinalized(UnsignedLong.valueOf(2L));
+    database.addEth1Deposit(dataStructureUtil.randomDepositWithIndex(1L));
+    database.addEth1Deposit(dataStructureUtil.randomDepositWithIndex(2L));
+    database.addEth1Deposit(dataStructureUtil.randomDepositWithIndex(3L));
+    database.pruneEth1Deposits(UnsignedLong.valueOf(2L));
 
     NavigableMap<UnsignedLong, DepositWithIndex> data = database.getDepositNavigableMap();
-    assertThat(data.get(UnsignedLong.valueOf(1L))).isNull();
-    assertThat(data.get(UnsignedLong.valueOf(2L))).isNull();
-    assertThat(data.get(UnsignedLong.valueOf(3L))).isNotNull();
+    assertThat(data).containsOnlyKeys(UnsignedLong.valueOf(3L));
   }
 
   public void testShouldRecordFinalizedBlocksAndStates(

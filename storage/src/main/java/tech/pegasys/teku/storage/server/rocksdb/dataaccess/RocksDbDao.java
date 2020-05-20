@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -63,12 +64,16 @@ public interface RocksDbDao extends AutoCloseable {
 
   Map<Checkpoint, BeaconState> getCheckpointStates();
 
+  @MustBeClosed
   Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates();
 
+  @MustBeClosed
   Stream<ColumnEntry<UnsignedLong, Bytes32>> streamDepositHashes();
 
+  @MustBeClosed
   Stream<ColumnEntry<UnsignedLong, DepositData>> streamEth1DepositData();
 
+  @MustBeClosed
   Stream<ColumnEntry<UnsignedLong, Eth1BlockData>> streamEth1BlockData();
 
   Map<UnsignedLong, VoteTracker> getVotes();

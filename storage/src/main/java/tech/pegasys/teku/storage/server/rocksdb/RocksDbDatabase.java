@@ -119,26 +119,23 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public StorageUpdateResult addEth1Deposit(final DepositWithIndex depositWithIndex) {
+  public void addEth1Deposit(final DepositWithIndex depositWithIndex) {
     try (final Updater updater = dao.updater()) {
       updater.addEth1Deposit(depositWithIndex);
       updater.commit();
-      return StorageUpdateResult.successfulWithNothingPruned();
     }
   }
 
   @Override
-  public StorageUpdateResult addEth1BlockData(
-      final UnsignedLong timestamp, final Eth1BlockData eth1BlockData) {
+  public void addEth1BlockData(final UnsignedLong timestamp, final Eth1BlockData eth1BlockData) {
     try (final Updater updater = dao.updater()) {
       updater.addEth1BlockData(timestamp, eth1BlockData);
       updater.commit();
-      return StorageUpdateResult.successfulWithNothingPruned();
     }
   }
 
   @Override
-  public StorageUpdateResult pruneEth1Deposits(final UnsignedLong eth1DepositIndex) {
+  public void pruneEth1Deposits(final UnsignedLong eth1DepositIndex) {
     List<UnsignedLong> staleKeys;
     List<UnsignedLong> staleTimestamps;
     try (final Stream<ColumnEntry<UnsignedLong, DepositData>> stream =
@@ -171,26 +168,27 @@ public class RocksDbDatabase implements Database {
         updater.commit();
       }
     }
-
-    return StorageUpdateResult.successfulWithNothingPruned();
   }
 
   @Override
   public MerkleTree getMerkleTree() {
     MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
-    dao.streamDepositHashes().map(ColumnEntry::getValue).forEach(depositMerkleTree::add);
+    try (Stream<ColumnEntry<UnsignedLong, Bytes32>> stream = dao.streamDepositHashes()) {
+      stream.map(ColumnEntry::getValue).forEach(depositMerkleTree::add);
+    }
     return depositMerkleTree;
   }
 
   @Override
   public NavigableMap<UnsignedLong, DepositWithIndex> getDepositNavigableMap() {
     NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
-    dao.streamEth1DepositData()
-        .forEach(
-            column ->
-                depositNavigableMap.put(
-                    column.getKey(),
-                    new DepositWithIndex(null, column.getValue(), column.getKey())));
+    try (final Stream<ColumnEntry<UnsignedLong, DepositData>> stream =
+        dao.streamEth1DepositData()) {
+      stream.forEach(
+          column ->
+              depositNavigableMap.put(
+                  column.getKey(), new DepositWithIndex(null, column.getValue(), column.getKey())));
+    }
     return depositNavigableMap;
   }
 

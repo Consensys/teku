@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -135,21 +136,25 @@ public class V3RocksDbDao implements RocksDbDao {
   }
 
   @Override
+  @MustBeClosed
   public Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates() {
     return db.stream(V3Schema.CHECKPOINT_STATES);
   }
 
   @Override
+  @MustBeClosed
   public Stream<ColumnEntry<UnsignedLong, Bytes32>> streamDepositHashes() {
     return db.stream(V3Schema.ETH1_DEPOSIT_HASHES);
   }
 
   @Override
+  @MustBeClosed
   public Stream<ColumnEntry<UnsignedLong, DepositData>> streamEth1DepositData() {
     return db.stream(V3Schema.ETH1_DEPOSIT_CACHE);
   }
 
   @Override
+  @MustBeClosed
   public Stream<ColumnEntry<UnsignedLong, Eth1BlockData>> streamEth1BlockData() {
     return db.stream(V3Schema.ETH1_BLOCK_METADATA);
   }

@@ -36,27 +36,23 @@ public interface Database extends AutoCloseable {
    * Add an eth1 deposit to the merkle tree and the pending deposits list
    *
    * @param depositWithIndex the deposit to add
-   * @return
    */
-  StorageUpdateResult addEth1Deposit(final DepositWithIndex depositWithIndex);
+  void addEth1Deposit(final DepositWithIndex depositWithIndex);
 
   /**
    * Add block information about eth1 deposit, indexed by timestamp.
    *
    * @param timestamp
    * @param eth1BlockData
-   * @return
    */
-  StorageUpdateResult addEth1BlockData(
-      final UnsignedLong timestamp, final Eth1BlockData eth1BlockData);
+  void addEth1BlockData(final UnsignedLong timestamp, final Eth1BlockData eth1BlockData);
 
   /**
    * purge the pending deposits list up to the specified index
    *
    * @param eth1DepositIndex the highest index to purge
-   * @return
    */
-  StorageUpdateResult pruneEth1Deposits(UnsignedLong eth1DepositIndex);
+  void pruneEth1Deposits(UnsignedLong eth1DepositIndex);
 
   MerkleTree getMerkleTree();
 
