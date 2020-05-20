@@ -41,6 +41,8 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
+/** @deprecated - use {@link AbstractDataBackedRestAPIIntegrationTest} */
+@Deprecated
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
   static final TekuConfiguration config =

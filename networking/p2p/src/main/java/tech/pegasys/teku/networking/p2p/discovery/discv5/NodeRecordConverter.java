@@ -29,6 +29,9 @@ public class NodeRecordConverter {
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
       final NodeRecord nodeRecord, final InetSocketAddress address) {
-    return new DiscoveryPeer(((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)), address);
+    return new DiscoveryPeer(
+        ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
+        address,
+        Optional.ofNullable((Bytes) nodeRecord.get("eth2")));
   }
 }

@@ -115,7 +115,7 @@ public class GetStateRootTest {
     GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));
     when(provider.isStoreAvailable()).thenReturn(true);
-    when(provider.getHashTreeRootAtSlot(slot))
+    when(provider.getStateRootAtSlot(slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateInternal.hash_tree_root())));
 
     handler.handle(context);
@@ -132,7 +132,7 @@ public class GetStateRootTest {
     UnsignedLong nonExistentSlot = UnsignedLong.valueOf(11223344);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(provider.getHashTreeRootAtSlot(nonExistentSlot))
+    when(provider.getStateRootAtSlot(nonExistentSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);

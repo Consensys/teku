@@ -137,7 +137,7 @@ public class Constants {
   public static final long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 100;
-  public static final long STORAGE_REQUEST_TIMEOUT = 3; // in sec
+  public static final long STORAGE_REQUEST_TIMEOUT = 5; // in sec
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
   public static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;

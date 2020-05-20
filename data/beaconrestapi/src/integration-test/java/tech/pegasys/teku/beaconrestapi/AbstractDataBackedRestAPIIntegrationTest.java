@@ -13,59 +13,97 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static org.mockito.ArgumentMatchers.any;
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import okhttp3.OkHttpClient;
-import org.junit.jupiter.api.BeforeEach;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
+import tech.pegasys.teku.storage.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.teku.storage.events.SuccessfulStorageUpdateResult;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.util.config.StateStorageMode;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
-public abstract class AbstractDataBackedRestAPIIntegrationTest
-    extends AbstractBeaconRestAPIIntegrationTest {
+public abstract class AbstractDataBackedRestAPIIntegrationTest {
+  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
+  private static final okhttp3.MediaType JSON =
+      okhttp3.MediaType.parse("application/json; charset=utf-8");
+  private static final TekuConfiguration config =
+      TekuConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
 
   protected static final UnsignedLong SIX = UnsignedLong.valueOf(6);
   protected static final UnsignedLong SEVEN = UnsignedLong.valueOf(7);
   protected static final UnsignedLong EIGHT = UnsignedLong.valueOf(8);
   protected static final UnsignedLong NINE = UnsignedLong.valueOf(9);
   protected static final UnsignedLong TEN = UnsignedLong.valueOf(10);
-  protected BeaconChainUtil beaconChainUtil;
+
+  // Mocks
+  protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
+  protected final SyncService syncService = mock(SyncService.class);
+  protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+
+  private InMemoryStorageSystem storageSystem;
+
+  protected RecentChainData recentChainData;
+  protected CombinedChainDataClient combinedChainDataClient;
+
+  // Update utils
+  private ChainBuilder chainBuilder;
+  private ChainUpdater chainUpdater;
+
   protected final JsonProvider jsonProvider = new JsonProvider();
   private BlockImporter blockImporter;
 
-  @Override
-  @BeforeEach
-  public void setup() {
-    final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-    final ForkChoice fockChoice = mock(ForkChoice.class);
-    when(storageUpdateChannel.onStorageUpdate(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
-    final EventBus eventBus = new EventBus();
-    recentChainData = MemoryOnlyRecentChainData.create(eventBus);
-    beaconChainUtil = BeaconChainUtil.create(16, recentChainData);
-    beaconChainUtil.initializeStorage();
-    historicalChainData = new StubStorageQueryChannel();
-    blockImporter = new BlockImporter(recentChainData, fockChoice, eventBus);
-    combinedChainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData);
+  protected DataProvider dataProvider;
+  protected BeaconRestApi beaconRestApi;
+
+  protected OkHttpClient client;
+  protected final ObjectMapper objectMapper = new ObjectMapper();
+
+  private void setupStorage(final StateStorageMode storageMode) {
+    setupStorage(InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode));
+  }
+
+  private void setupStorage(final InMemoryStorageSystem storageSystem) {
+    this.storageSystem = storageSystem;
+    recentChainData = storageSystem.recentChainData();
+    chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
+  }
+
+  private void setupAndStartRestAPI() {
+    blockImporter =
+        new BlockImporter(recentChainData, mock(ForkChoice.class), storageSystem.eventBus());
+    combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
             recentChainData,
@@ -79,19 +117,119 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
   }
 
-  public List<SignedBeaconBlock> withBlockDataAtSlot(UnsignedLong... slots) throws Exception {
-    final ArrayList<SignedBeaconBlock> results = new ArrayList<>();
+  protected void startPreForkChoiceRestAPI() {
+    // Initialize genesis
+    setupStorage(StateStorageMode.ARCHIVE);
+    chainUpdater.initializeGenesis();
+    // Restart storage system without running fork choice
+    storageSystem = storageSystem.restarted(StateStorageMode.ARCHIVE);
+    setupStorage(storageSystem);
+    // Start API
+    setupAndStartRestAPI();
+  }
+
+  protected void startPreGenesisRestAPI() {
+    setupStorage(StateStorageMode.ARCHIVE);
+    // Start API
+    setupAndStartRestAPI();
+  }
+
+  protected void startRestAPIAtGenesis() {
+    startRestAPIAtGenesis(StateStorageMode.ARCHIVE);
+  }
+
+  protected void startRestAPIAtGenesis(final StateStorageMode storageMode) {
+    // Initialize genesis
+    setupStorage(storageMode);
+    chainUpdater.initializeGenesis();
+    // Start API
+    setupAndStartRestAPI();
+  }
+
+  public List<SignedBlockAndState> createBlocksAtSlots(long... slots) {
+    final UnsignedLong[] unsignedSlots =
+        Arrays.stream(slots).mapToObj(UnsignedLong::valueOf).toArray(UnsignedLong[]::new);
+    return createBlocksAtSlots(unsignedSlots);
+  }
+
+  public ArrayList<SignedBlockAndState> createBlocksAtSlots(UnsignedLong... slots) {
+    final ArrayList<SignedBlockAndState> results = new ArrayList<>();
     for (UnsignedLong slot : slots) {
-      results.add(new SignedBeaconBlock(beaconChainUtil.createAndImportBlockAtSlot(slot)));
+      final SignedBlockAndState block = chainUpdater.advanceChain(slot);
+      chainUpdater.updateBestBlock(block);
+      results.add(block);
     }
     return results;
   }
 
-  public void withNoBlockDataAtSlots(UnsignedLong slot) {
-    beaconChainUtil.setSlot(slot);
+  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(long... slots) {
+    final UnsignedLong[] unsignedSlots =
+        Arrays.stream(slots).mapToObj(UnsignedLong::valueOf).toArray(UnsignedLong[]::new);
+    return createBlocksAtSlotsAndMapToApiResult(unsignedSlots);
   }
 
-  public void withFinalizedChainAtEpoch(UnsignedLong epoch) throws Exception {
-    beaconChainUtil.finalizeChainAtEpoch(epoch);
+  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(UnsignedLong... slots) {
+    return createBlocksAtSlots(slots).stream()
+        .map(SignedBlockAndState::getBlock)
+        .map(SignedBeaconBlock::new)
+        .collect(Collectors.toList());
+  }
+
+  public SignedBlockAndState finalizeChainAtEpoch(UnsignedLong epoch) {
+    return chainUpdater.finalizeEpoch(epoch);
+  }
+
+  protected void assertNoContent(final Response response) throws IOException {
+    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertGone(final Response response) throws IOException {
+    assertThat(response.code()).isEqualTo(SC_GONE);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertNotFound(final Response response) throws IOException {
+    assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertBodyEquals(final Response response, final String body) throws IOException {
+    assertThat(response.body().string()).isEqualTo(body);
+  }
+
+  protected Response getResponse(final String path) throws IOException {
+    final String url = "http://localhost:" + beaconRestApi.getListenPort();
+    final Request request = new Request.Builder().url(url + path).build();
+    return client.newCall(request).execute();
+  }
+
+  protected Response getResponse(final String route, Map<String, String> getParams)
+      throws IOException {
+    final String params =
+        getParams.entrySet().stream()
+            .map(e -> e.getKey() + "=" + e.getValue())
+            .collect(Collectors.joining("&"));
+    return getResponse(route + "?" + params);
+  }
+
+  protected Response post(final String route, final String postData) throws IOException {
+    System.out.println(postData);
+    final RequestBody body = RequestBody.create(JSON, postData);
+    final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
+    return client.newCall(request).execute();
+  }
+
+  protected String mapToJson(Map<String, Object> postParams) throws JsonProcessingException {
+    return objectMapper.writer().writeValueAsString(postParams);
+  }
+
+  private String getUrl() {
+    return "http://localhost:" + beaconRestApi.getListenPort();
+  }
+
+  @AfterEach
+  public void tearDown() {
+    beaconRestApi.stop();
   }
 }

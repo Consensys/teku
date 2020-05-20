@@ -18,8 +18,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -41,6 +43,7 @@ public class ConnectionManager extends Service {
   private final ReputationManager reputationManager;
 
   private volatile long peerConnectedSubscriptionId;
+  private final NewPeerFilter newPeerFilter = new NewPeerFilter();
 
   public ConnectionManager(
       final DiscoveryService discoveryService,
@@ -72,6 +75,7 @@ public class ConnectionManager extends Service {
     final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
     discoveryService
         .streamKnownPeers()
+        .filter(newPeerFilter::isPeerValid)
         .map(network::createPeerAddress)
         .filter(reputationManager::isConnectionInitiationAllowed)
         .filter(peerAddress -> !network.isConnected(peerAddress))
@@ -170,5 +174,21 @@ public class ConnectionManager extends Service {
                   RECONNECT_TIMEOUT.toMillis(),
                   TimeUnit.MILLISECONDS);
             });
+  }
+
+  public void addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
+    newPeerFilter.addPeerPredicate(predicate);
+  }
+
+  public static class NewPeerFilter {
+    private final Set<Predicate<DiscoveryPeer>> peerPredicates = new HashSet<>();
+
+    void addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
+      peerPredicates.add(predicate);
+    }
+
+    boolean isPeerValid(DiscoveryPeer peer) {
+      return peerPredicates.stream().allMatch(predicate -> predicate.test(peer));
+    }
   }
 }
