@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,18 +44,19 @@ import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 class ConnectionManagerTest {
 
+  private static final Optional<Bytes> ENR_FORK_ID = Optional.of(Bytes.EMPTY);
   private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
   private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
   private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));
   private static final PeerAddress PEER4 = new PeerAddress(new MockNodeId(4));
   private static final DiscoveryPeer DISCOVERY_PEER1 =
-      new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
+      new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1), ENR_FORK_ID);
   private static final DiscoveryPeer DISCOVERY_PEER2 =
-      new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
+      new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2), ENR_FORK_ID);
   private static final DiscoveryPeer DISCOVERY_PEER3 =
-      new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3));
+      new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3), ENR_FORK_ID);
   private static final DiscoveryPeer DISCOVERY_PEER4 =
-      new DiscoveryPeer(Bytes.of(4), new InetSocketAddress(4));
+      new DiscoveryPeer(Bytes.of(4), new InetSocketAddress(4), ENR_FORK_ID);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
@@ -404,6 +406,57 @@ class ConnectionManagerTest {
     // Should not disconnect static peers
     assertThat(peer2.isConnected()).isTrue();
     assertThat(peer1.isConnected()).isTrue();
+  }
+
+  @Test
+  public void shouldConnectPeersThatPassPeerFilter() {
+    final ConnectionManager manager = createManager();
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
+    when(network.connect(PEER1)).thenReturn(SafeFuture.completedFuture(peer1));
+    when(network.connect(PEER2)).thenReturn(SafeFuture.completedFuture(peer2));
+    when(discoveryService.streamKnownPeers())
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
+
+    manager.start().join();
+
+    verify(network).connect(PEER1);
+    verify(network).connect(PEER2);
+  }
+
+  @Test
+  public void shouldNotConnectPeersThatDontPassPeerFilter() {
+    final ConnectionManager manager = createManager();
+    manager.addPeerPredicate((peer) -> !peer.equals(DISCOVERY_PEER2));
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
+    when(network.connect(PEER1)).thenReturn(SafeFuture.completedFuture(peer1));
+    when(network.connect(PEER2)).thenReturn(SafeFuture.completedFuture(peer2));
+    when(discoveryService.streamKnownPeers())
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
+
+    manager.start().join();
+
+    verify(network).connect(PEER1);
+    verify(network, never()).connect(PEER2);
+  }
+
+  @Test
+  public void shouldApplyMultiplePeerPredicates() {
+    final ConnectionManager manager = createManager();
+    manager.addPeerPredicate((peer) -> !peer.equals(DISCOVERY_PEER2));
+    manager.addPeerPredicate((peer) -> !peer.equals(DISCOVERY_PEER1));
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
+    when(network.connect(PEER1)).thenReturn(SafeFuture.completedFuture(peer1));
+    when(network.connect(PEER2)).thenReturn(SafeFuture.completedFuture(peer2));
+    when(discoveryService.streamKnownPeers())
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
+
+    manager.start().join();
+
+    verify(network, never()).connect(PEER1);
+    verify(network, never()).connect(PEER2);
   }
 
   private PeerConnectedSubscriber<Peer> getPeerConnectedSubscriber() {

@@ -82,12 +82,12 @@ public class ChainBuilder {
   }
 
   public UnsignedLong getLatestSlot() {
-    asserChainIsNotEmpty();
+    assertChainIsNotEmpty();
     return getLatestBlockAndState().getBlock().getSlot();
   }
 
   public UnsignedLong getLatestEpoch() {
-    asserChainIsNotEmpty();
+    assertChainIsNotEmpty();
     final UnsignedLong slot = getLatestSlot();
     return compute_epoch_at_slot(slot);
   }
@@ -160,7 +160,7 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtEpochBoundary(final UnsignedLong epoch) {
-    asserChainIsNotEmpty();
+    assertChainIsNotEmpty();
     final UnsignedLong slot = compute_start_slot_at_epoch(epoch);
     return getLatestBlockAndStateAtSlot(slot);
   }
@@ -170,7 +170,7 @@ public class ChainBuilder {
   }
 
   public Checkpoint getCurrentCheckpointForEpoch(final UnsignedLong epoch) {
-    asserChainIsNotEmpty();
+    assertChainIsNotEmpty();
     final SignedBeaconBlock block = getLatestBlockAndStateAtEpochBoundary(epoch).getBlock();
     return new Checkpoint(epoch, block.getMessage().hash_tree_root());
   }
@@ -278,7 +278,7 @@ public class ChainBuilder {
         .flatMap(head -> attestationGenerator.streamAttestations(head, head.getSlot()));
   }
 
-  private void asserChainIsNotEmpty() {
+  private void assertChainIsNotEmpty() {
     checkState(!blocks.isEmpty(), "Unable to execute operation on empty chain");
   }
 

@@ -13,30 +13,28 @@
 
 package tech.pegasys.teku.beaconrestapi.beacon;
 
-import static com.google.common.primitives.UnsignedLong.ZERO;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.storage.Store;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.core.ChainProperties;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
+public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByRoot() throws Exception {
-    when(recentChainData.getStore()).thenReturn(null);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(ZERO);
+    startPreGenesisRestAPI();
 
     final Response response = getByRoot(Bytes32.ZERO);
     assertNoContent(response);
@@ -44,8 +42,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryBySlot() throws Exception {
-    when(recentChainData.getStore()).thenReturn(null);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(ZERO);
+    startPreGenesisRestAPI();
 
     final Response response = getBySlot(1);
     assertNoContent(response);
@@ -53,10 +50,7 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
 
   @Test
   public void shouldReturnNoContentIfHeadRootMissing_queryBySlot() throws Exception {
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(ZERO);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
+    startPreForkChoiceRestAPI();
 
     final Response response = getBySlot(1);
     assertNoContent(response);
@@ -64,35 +58,33 @@ public class GetStateIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
 
   @Test
   public void handleMissingFinalizedState_queryBySlot() throws Exception {
-    final int slot = 1;
-    final int finalizedEpoch = 2;
-    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
-    final SafeFuture<Optional<BeaconState>> emptyStateResult =
-        SafeFuture.completedFuture(Optional.empty());
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
 
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(finalizedEpoch));
-    when(historicalChainData.getLatestFinalizedStateAtSlot(UnsignedLong.valueOf(slot)))
-        .thenReturn(emptyStateResult);
+    final int targetSlot = 20;
+    final int finalizedSlot = 20 + Constants.SLOTS_PER_HISTORICAL_ROOT;
+    createBlocksAtSlots(targetSlot, finalizedSlot);
+    final UnsignedLong finalizedEpoch =
+        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
 
-    final Response response = getBySlot(slot);
+    final Response response = getBySlot(targetSlot);
     assertGone(response);
   }
 
   @Test
   public void handleMissingState_queryByRoot() throws Exception {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    final SafeFuture<Optional<BeaconState>> emptyStateResult =
-        SafeFuture.completedFuture(Optional.empty());
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
 
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBlockState(root)).thenReturn(Optional.empty());
-    when(historicalChainData.getFinalizedStateByBlockRoot(root)).thenReturn(emptyStateResult);
+    final int targetSlot = 20;
+    final int finalizedSlot = 21;
+    final List<SignedBlockAndState> blocks = createBlocksAtSlots(targetSlot, finalizedSlot);
+    final UnsignedLong finalizedEpoch =
+        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
 
-    final Response response = getByRoot(root);
+    final Response response = getByRoot(blocks.get(0).getRoot());
     assertNotFound(response);
   }
 
