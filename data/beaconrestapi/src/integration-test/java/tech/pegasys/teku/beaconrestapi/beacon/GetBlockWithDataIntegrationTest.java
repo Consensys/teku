@@ -70,8 +70,7 @@ public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
     final List<SignedBeaconBlock> blocks = withBlockDataAtSlot(SIX, SEVEN, TEN);
     final Response response = getBySlot(NINE);
     final String responseBody = response.body().string();
-    final GetBlockResponse result =
-        jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
 
     assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(1));
     assertThat(response.code()).isEqualTo(SC_OK);
