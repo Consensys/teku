@@ -26,6 +26,7 @@ import com.google.common.math.LongMath;
 import com.google.common.primitives.UnsignedLong;
 import java.math.RoundingMode;
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -201,7 +202,13 @@ public class Eth1DataManager implements TimeTickChannel {
             block -> {
               latestBlockReference.set(block);
               UnsignedLong middleBlockNumber = UnsignedLong.valueOf(block.getNumber());
-              postCacheEth1BlockEvent(middleBlockNumber, block).reportExceptions();
+              postCacheEth1BlockEvent(middleBlockNumber, block)
+                  .finish(
+                      () -> {},
+                      error ->
+                          LOG.error(
+                              "Unable to populate Eth1 cache for block " + middleBlockNumber,
+                              error));
               SafeFuture<Void> exploreUpResultFuture =
                   exploreBlocksInDirection(middleBlockNumber, true);
               SafeFuture<Void> exploreDownResultFuture =
@@ -322,19 +329,20 @@ public class Eth1DataManager implements TimeTickChannel {
   }
 
   private SafeFuture<Void> postCacheEth1BlockEvent(UnsignedLong blockNumber, EthBlock.Block block) {
-    SafeFuture<UnsignedLong> countFuture =
-        SafeFuture.of(depositContractAccessor.getDepositCount(blockNumber));
-    SafeFuture<Bytes32> rootFuture =
-        SafeFuture.of(depositContractAccessor.getDepositRoot(blockNumber));
+    SafeFuture<Optional<UnsignedLong>> countFuture =
+        depositContractAccessor.getDepositCount(blockNumber);
+    SafeFuture<Optional<Bytes32>> rootFuture = depositContractAccessor.getDepositRoot(blockNumber);
 
     return SafeFuture.allOf(countFuture, rootFuture)
         .thenRun(
             () -> {
-              Bytes32 root = rootFuture.getNow(null);
-              checkNotNull(root);
-
-              UnsignedLong count = countFuture.getNow(null);
-              checkNotNull(count);
+              Optional<Bytes32> root = rootFuture.getNow(Optional.empty());
+              Optional<UnsignedLong> count = countFuture.getNow(Optional.empty());
+              if (root.isEmpty() || count.isEmpty()) {
+                // We either have no historical data for this block or the contract didn't exist
+                LOG.warn("No historical data available for block {}", blockNumber);
+                return;
+              }
 
               Bytes32 eth1BlockHash = Bytes32.fromHexString(block.getHash());
               UnsignedLong eth1BlockTimestamp = UnsignedLong.valueOf(block.getTimestamp());
@@ -342,7 +350,7 @@ public class Eth1DataManager implements TimeTickChannel {
 
               eventBus.post(
                   new CacheEth1BlockEvent(
-                      eth1BlockNumber, eth1BlockHash, eth1BlockTimestamp, root, count));
+                      eth1BlockNumber, eth1BlockHash, eth1BlockTimestamp, root.get(), count.get()));
             });
   }
 
