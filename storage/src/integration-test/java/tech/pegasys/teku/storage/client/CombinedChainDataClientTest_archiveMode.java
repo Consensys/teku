@@ -18,19 +18,23 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.storage.InMemoryStorageSystem;
+import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedChainDataClientTest {
+
   @Override
-  protected InMemoryStorageSystem createStorageSystem() {
-    return InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
+  protected StateStorageMode getStorageMode() {
+    return StateStorageMode.ARCHIVE;
   }
 
-  @Test
-  public void getStateAtSlot_shouldRetrieveHistoricalState() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void queryBySlot_shouldRetrieveHistoricalState(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -44,12 +48,19 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
     // Sanity check
     assertThat(historicalBlock.getSlot()).isLessThan(finalizedBlock.getSlot());
 
-    assertThat(client.getLatestStateAtSlot(historicalBlock.getSlot()))
-        .isCompletedWithValue(Optional.of(historicalBlock.getState()));
+    final UnsignedLong querySlot = historicalBlock.getSlot();
+    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(historicalBlock);
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
+
+    assertThat(result).isCompletedWithValue(expected);
   }
 
-  @Test
-  public void getStateAtSlot_shouldRetrieveHistoricalStateInEffectAtSkippedSlot() {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getQueryBySlotParameters")
+  public <T> void queryBySlot_shouldRetrieveHistoricalStateInEffectAtSkippedSlot(
+      final String caseName, final QueryBySlotTestCase<T> testCase) {
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -65,7 +76,12 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
     // Sanity check
     assertThat(skippedSlot).isLessThan(finalizedBlock.getSlot());
 
-    assertThat(client.getLatestStateAtSlot(skippedSlot))
-        .isCompletedWithValue(Optional.of(historicalBlock.getState()));
+    final UnsignedLong querySlot = skippedSlot;
+    final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(historicalBlock);
+    final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
+    final Optional<T> expected =
+        testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
+
+    assertThat(result).isCompletedWithValue(expected);
   }
 }

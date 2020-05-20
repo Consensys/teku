@@ -13,73 +13,50 @@
 
 package tech.pegasys.teku.beaconrestapi.beacon;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Optional;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetValidators;
-import tech.pegasys.teku.storage.Store;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.core.ChainProperties;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
+public class GetValidatorsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_implicitlyQueryLatest() throws Exception {
-    when(recentChainData.getStore()).thenReturn(null);
+    startPreGenesisRestAPI();
 
     final Response response = getLatest();
     assertNoContent(response);
   }
 
   @Test
-  public void shouldReturnNoContentIfHeadRootMissing_implicitlyQueryLatest() throws Exception {
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
+  public void shouldReturnNoContentIfPreForkChoice_implicitlyQueryLatest() throws Exception {
+    startPreForkChoiceRestAPI();
 
     final Response response = getLatest();
     assertNoContent(response);
-  }
-
-  @Test
-  public void handleMissingState_implicitlyQueryLatest() throws Exception {
-    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
-
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(recentChainData.getBlockState(headRoot)).thenReturn(Optional.empty());
-    when(historicalChainData.getFinalizedStateByBlockRoot(headRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    final Response response = getLatest();
-    assertNotFound(response);
   }
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByEpoch() throws Exception {
-    when(recentChainData.getStore()).thenReturn(null);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    startPreGenesisRestAPI();
 
     final Response response = getByEpoch(1);
     assertNoContent(response);
   }
 
   @Test
-  public void shouldReturnNoContentIfHeadRootMissing_queryByEpoch() throws Exception {
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
+  public void shouldReturnNoContentIfPreForkChoice_queryByEpoch() throws Exception {
+    startPreForkChoiceRestAPI();
 
     final Response response = getByEpoch(1);
     assertNoContent(response);
@@ -87,18 +64,17 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
 
   @Test
   public void handleMissingFinalizedState_queryByEpoch() throws Exception {
-    final int epoch = 1;
-    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
+    final int outOfRangeSlot = 20;
+    final int finalizedSlot = 20 + Constants.SLOTS_PER_HISTORICAL_ROOT;
+    createBlocksAtSlots(outOfRangeSlot, finalizedSlot);
+    final UnsignedLong finalizedEpoch =
+        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
 
-    final Store store = mock(Store.class);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
-    when(historicalChainData.getLatestFinalizedStateAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    final Response response = getByEpoch(epoch);
+    final int targetEpoch = finalizedEpoch.minus(UnsignedLong.ONE).intValue();
+    final Response response = getByEpoch(targetEpoch);
     assertGone(response);
   }
 

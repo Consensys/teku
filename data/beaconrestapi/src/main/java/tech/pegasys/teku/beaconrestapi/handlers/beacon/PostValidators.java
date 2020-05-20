@@ -96,8 +96,9 @@ public class PostValidators extends AbstractHandler implements Handler {
     } catch (JsonMappingException ex) {
       Throwable cause = ex.getCause();
       if (cause instanceof PublicKeyException) {
-        String msg = cause.getMessage();
-        ctx.result(jsonProvider.objectToJSON(new BadRequest("Public key is not valid: " + msg)));
+        ctx.result(
+            jsonProvider.objectToJSON(
+                new BadRequest("Public key is not valid: " + ex.getMessage())));
       }
       ctx.status(SC_BAD_REQUEST);
     }

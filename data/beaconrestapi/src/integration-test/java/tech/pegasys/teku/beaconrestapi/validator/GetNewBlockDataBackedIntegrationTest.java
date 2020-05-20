@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Response;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -45,9 +47,15 @@ public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRest
       tech.pegasys.teku.bls.BLSSignature.random(1234);
   private BLSSignature signature = new BLSSignature(signatureInternal);
 
+  @BeforeEach
+  public void setup() {
+    startRestAPIAtGenesis();
+  }
+
   @Test
   void shouldProduceBlockForNextSlot() throws Exception {
-    withBlockDataAtSlot(SEVEN);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    createBlocksAtSlotsAndMapToApiResult(SEVEN);
     BeaconBlock block = dataStructureUtil.randomBeaconBlock(EIGHT);
     SafeFuture<Optional<BeaconBlock>> futureBlock = completedFuture(Optional.of(block));
 
@@ -59,7 +67,7 @@ public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRest
 
   @Test
   void shouldNotProduceBlockForFarFutureSlot() throws Exception {
-    withBlockDataAtSlot(SIX);
+    createBlocksAtSlotsAndMapToApiResult(SIX);
     Response response = getUnsignedBlock(SIX_HUNDRED);
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     BadRequest badRequest = jsonProvider.jsonToObject(response.body().string(), BadRequest.class);
@@ -69,7 +77,7 @@ public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRest
 
   @Test
   void shouldNotProduceBlockForHistoricSlot() throws Exception {
-    withBlockDataAtSlot(SEVEN);
+    createBlocksAtSlotsAndMapToApiResult(SEVEN);
     Response response = getUnsignedBlock(SIX);
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     BadRequest badRequest = jsonProvider.jsonToObject(response.body().string(), BadRequest.class);
