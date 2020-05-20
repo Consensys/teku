@@ -47,6 +47,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.schema.GetBlockResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetBlock implements Handler {
@@ -79,9 +80,7 @@ public class GetBlock implements Handler {
       description =
           "Returns the beacon chain block that matches the specified epoch, slot, or block root.",
       responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = SignedBeaconBlock.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = GetBlockResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
         @OpenApiResponse(status = RES_NOT_FOUND, description = "Specified block not found")
       })
@@ -131,7 +130,7 @@ public class GetBlock implements Handler {
     if (blockOptional.isPresent()) {
       SignedBeaconBlock signedBeaconBlock = blockOptional.get();
       ctx.header(Header.CACHE_CONTROL, getMaxAgeForSignedBlock(provider, signedBeaconBlock));
-      return jsonProvider.objectToJSON(signedBeaconBlock);
+      return jsonProvider.objectToJSON(new GetBlockResponse(signedBeaconBlock));
     } else {
       ctx.status(SC_NOT_FOUND);
       return null;

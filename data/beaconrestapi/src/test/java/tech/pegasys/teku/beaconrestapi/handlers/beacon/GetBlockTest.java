@@ -43,6 +43,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.beaconrestapi.schema.GetBlockResponse;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -106,12 +107,17 @@ public class GetBlockTest {
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockByBlockRoot(blockRoot)).thenReturn(providerData);
 
+    GetBlockResponse expectedResponse =
+        new GetBlockResponse(new SignedBeaconBlock(signedBeaconBlock));
+    assertThat(expectedResponse.root)
+        .isEqualTo(signedBeaconBlock.getMessage().hash_tree_root().toHexString().toLowerCase());
+
     handler.handle(context);
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> future = args.getValue();
     String data = future.get();
-    assertThat(data).isEqualTo(jsonProvider.objectToJSON(new SignedBeaconBlock(signedBeaconBlock)));
+    assertThat(data).isEqualTo(jsonProvider.objectToJSON(expectedResponse));
   }
 
   @Test
@@ -133,12 +139,17 @@ public class GetBlockTest {
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockBySlot(ONE)).thenReturn(providerData);
 
+    GetBlockResponse expectedResponse =
+        new GetBlockResponse(new SignedBeaconBlock(signedBeaconBlock));
+    assertThat(expectedResponse.root)
+        .isEqualTo(signedBeaconBlock.getMessage().hash_tree_root().toHexString().toLowerCase());
+
     handler.handle(context);
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> future = args.getValue();
     String data = future.get();
-    assertThat(data).isEqualTo(jsonProvider.objectToJSON(new SignedBeaconBlock(signedBeaconBlock)));
+    assertThat(data).isEqualTo(jsonProvider.objectToJSON(expectedResponse));
   }
 
   @Test
@@ -160,12 +171,16 @@ public class GetBlockTest {
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockBySlot(UnsignedLong.valueOf(8))).thenReturn(providerData);
 
+    GetBlockResponse expectedResponse =
+        new GetBlockResponse(new SignedBeaconBlock(signedBeaconBlock));
+    assertThat(expectedResponse.root)
+        .isEqualTo(signedBeaconBlock.getMessage().hash_tree_root().toHexString().toLowerCase());
     handler.handle(context);
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> future = args.getValue();
     String data = future.get();
-    assertThat(data).isEqualTo(jsonProvider.objectToJSON(new SignedBeaconBlock(signedBeaconBlock)));
+    assertThat(data).isEqualTo(jsonProvider.objectToJSON(expectedResponse));
   }
 
   @Test
