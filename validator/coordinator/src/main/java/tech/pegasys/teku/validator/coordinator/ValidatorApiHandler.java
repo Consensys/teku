@@ -34,7 +34,6 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.CommitteeAssignmentUtil;
@@ -149,18 +148,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private <T> SafeFuture<Optional<T>> createFromBlockAndState(
       final UnsignedLong maximumSlot,
       final ExceptionThrowingFunction<BeaconBlockAndState, T> creator) {
-    final Optional<Bytes32> headRoot = combinedChainDataClient.getBestBlockRoot();
-    if (headRoot.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    final UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
 
-    // We need to request the block on the canonical chain which is strictly before slot
-    // If slot is past the end of our canonical chain, we need the last block from our chain.
-    final UnsignedLong parentBlockSlot =
-        bestSlot.compareTo(maximumSlot) >= 0 ? maximumSlot : bestSlot;
     return combinedChainDataClient
-        .getBlockAndStateInEffectAtSlot(parentBlockSlot, headRoot.get())
+        .getBlockAndStateInEffectAtSlot(maximumSlot)
         .thenApplyChecked(
             maybeBlockAndState -> {
               if (maybeBlockAndState.isEmpty()) {

@@ -15,14 +15,17 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class InMemoryRocksDbDatabase {
+public class InMemoryRocksDbDatabaseFactory {
 
-  public static Database createEmptyV3(final StateStorageMode stateStorageMode) {
-    final RocksDbAccessor db = MockRocksDbInstance.createEmpty(V3Schema.class);
-    return RocksDbDatabase.createV3(db, stateStorageMode);
+  public static Database createV3(
+      final MockRocksDbInstance rocksDbInstance, final StateStorageMode storageMode) {
+    return RocksDbDatabase.createV3(rocksDbInstance, storageMode);
+  }
+
+  public static MockRocksDbInstance createEmptyV3RocksDbInstance() {
+    return MockRocksDbInstance.createEmpty(V3Schema.class);
   }
 }
