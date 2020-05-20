@@ -31,6 +31,8 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
+import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
+
 public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -101,29 +103,24 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     if (pendingAttestations.contains(delayableAttestation)) {
       return;
     }
-    final AttestationProcessingResult result =
-        attestationProcessor.processAttestation(delayableAttestation.getAttestation());
-    if (result.isSuccessful()) {
-      LOG.trace("Processed attestation {} successfully", delayableAttestation::hash_tree_root);
-      delayableAttestation.onAttestationProcessedSuccessfully();
-    } else {
-      switch (result.getFailureReason()) {
-        case UNKNOWN_BLOCK:
-          LOG.trace(
-              "Deferring attestation {} as require block is not yet present",
-              delayableAttestation::hash_tree_root);
-          pendingAttestations.add(delayableAttestation);
-          break;
-        case ATTESTATION_IS_NOT_FROM_PREVIOUS_SLOT:
-        case FOR_FUTURE_EPOCH:
-          LOG.trace(
-              "Deferring attestation {} until a future slot", delayableAttestation::hash_tree_root);
-          futureAttestations.add(delayableAttestation);
-          break;
-        default:
-          LOG.warn("Failed to process attestation: " + result.getFailureMessage());
-          break;
-      }
+
+    switch (attestationProcessor.processAttestation(delayableAttestation.getAttestation())) {
+      case SUCCESSFUL:
+        LOG.trace("Processed attestation {} successfully", delayableAttestation::hash_tree_root);
+        delayableAttestation.onAttestationProcessedSuccessfully();
+      case UNKNOWN_BLOCK:
+        LOG.trace("Deferring attestation {} as require block is not yet present",
+                delayableAttestation::hash_tree_root);
+        pendingAttestations.add(delayableAttestation);
+        break;
+      case SAVED_FOR_FUTURE:
+        LOG.trace(
+                "Deferring attestation {} until a future slot", delayableAttestation::hash_tree_root);
+        futureAttestations.add(delayableAttestation);
+        break;
+      case INVALID:
+        LOG.warn("Failed to process attestation.");
+        break;
     }
   }
 

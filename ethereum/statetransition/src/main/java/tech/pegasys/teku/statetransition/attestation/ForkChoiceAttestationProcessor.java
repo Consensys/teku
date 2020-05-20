@@ -33,7 +33,7 @@ public class ForkChoiceAttestationProcessor {
   public AttestationProcessingResult processAttestation(final Attestation attestation) {
     final Store.Transaction transaction = recentChainData.startStoreTransaction();
     final AttestationProcessingResult result = forkChoice.onAttestation(transaction, attestation);
-    if (result.isSuccessful()) {
+    if (result == AttestationProcessingResult.SUCCESSFUL) {
       transaction.commit(() -> {}, "Failed to persist attestation result");
     }
     return result;

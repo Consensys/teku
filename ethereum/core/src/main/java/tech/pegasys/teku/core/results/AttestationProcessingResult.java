@@ -14,94 +14,15 @@
 package tech.pegasys.teku.core.results;
 
 import java.util.function.Supplier;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 
-public interface AttestationProcessingResult {
-  AttestationProcessingResult SUCCESSFUL = new Successful();
-  AttestationProcessingResult FAILED_UNKNOWN_BLOCK = new Failure(FailureReason.UNKNOWN_BLOCK);
-  AttestationProcessingResult FAILED_NOT_FROM_PAST =
-      new Failure(FailureReason.ATTESTATION_IS_NOT_FROM_PREVIOUS_SLOT);
-  AttestationProcessingResult FAILED_FUTURE_EPOCH = new Failure(FailureReason.FOR_FUTURE_EPOCH);
+public enum AttestationProcessingResult {
+  SUCCESSFUL,
+  UNKNOWN_BLOCK,
+  SAVED_FOR_FUTURE,
+  INVALID;
 
-  static AttestationProcessingResult invalid(final String message) {
-    return new Failure(FailureReason.ATTESTATION_IS_INVALID, message);
-  }
-
-  static AttestationProcessingResult failedStateTransition(final SlotProcessingException cause) {
-    return new Failure(FailureReason.FAILED_STATE_TRANSITION, cause.getMessage());
-  }
-
-  static AttestationProcessingResult failedStateTransition(final EpochProcessingException cause) {
-    return new Failure(FailureReason.FAILED_STATE_TRANSITION, cause.getMessage());
-  }
-
-  boolean isSuccessful();
-
-  default AttestationProcessingResult ifSuccessful(Supplier<AttestationProcessingResult> nextStep) {
-    return isSuccessful() ? nextStep.get() : this;
-  }
-
-  /** @return If failed, returns a non-null failure reason, otherwise returns null. */
-  FailureReason getFailureReason();
-
-  /** @return If failed, returns a non-null failure message, otherwise returns null. */
-  String getFailureMessage();
-
-  enum FailureReason {
-    UNKNOWN_BLOCK,
-    ATTESTATION_IS_NOT_FROM_PREVIOUS_SLOT,
-    FOR_FUTURE_EPOCH,
-    FAILED_STATE_TRANSITION,
-    ATTESTATION_IS_INVALID
-  }
-
-  class Successful implements AttestationProcessingResult {
-
-    private Successful() {}
-
-    @Override
-    public boolean isSuccessful() {
-      return true;
-    }
-
-    @Override
-    public FailureReason getFailureReason() {
-      return null;
-    }
-
-    @Override
-    public String getFailureMessage() {
-      return null;
-    }
-  }
-
-  class Failure implements AttestationProcessingResult {
-    private final FailureReason failureReason;
-    private final String failureMessage;
-
-    private Failure(final FailureReason failureReason) {
-      this(failureReason, failureReason.name());
-    }
-
-    private Failure(final FailureReason failureReason, final String failureMessage) {
-      this.failureReason = failureReason;
-      this.failureMessage = failureMessage;
-    }
-
-    @Override
-    public boolean isSuccessful() {
-      return false;
-    }
-
-    @Override
-    public FailureReason getFailureReason() {
-      return failureReason;
-    }
-
-    @Override
-    public String getFailureMessage() {
-      return failureMessage;
-    }
+  public AttestationProcessingResult ifSuccessful(Supplier<AttestationProcessingResult> nextStep) {
+    return this == SUCCESSFUL ? nextStep.get() : this;
   }
 }
+
