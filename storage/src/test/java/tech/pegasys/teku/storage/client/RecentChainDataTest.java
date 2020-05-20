@@ -667,7 +667,6 @@ class RecentChainDataTest {
 
     final Bytes32 headRoot = fork.getLatestBlockAndState().getRoot();
     for (int i = 0; i < fork.getLatestSlot().intValue(); i++) {
-      //
       final UnsignedLong targetSlot = UnsignedLong.valueOf(i);
       final SignedBlockAndState expectedBlock = fork.getLatestBlockAndStateAtSlot(targetSlot);
       if (targetSlot.compareTo(chainSplitSlot) > 0) {
