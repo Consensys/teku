@@ -45,9 +45,8 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.beaconrestapi.schema.GetBlockResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetBlock implements Handler {
@@ -125,12 +124,13 @@ public class GetBlock implements Handler {
     }
   }
 
-  private String handleResponseContext(Context ctx, Optional<SignedBeaconBlock> blockOptional)
+  private String handleResponseContext(Context ctx, Optional<GetBlockResponse> blockOptional)
       throws JsonProcessingException {
     if (blockOptional.isPresent()) {
-      SignedBeaconBlock signedBeaconBlock = blockOptional.get();
-      ctx.header(Header.CACHE_CONTROL, getMaxAgeForSignedBlock(provider, signedBeaconBlock));
-      return jsonProvider.objectToJSON(new GetBlockResponse(signedBeaconBlock));
+      GetBlockResponse response = blockOptional.get();
+      ctx.header(
+          Header.CACHE_CONTROL, getMaxAgeForSignedBlock(provider, response.signedBeaconBlock));
+      return jsonProvider.objectToJSON(response);
     } else {
       ctx.status(SC_NOT_FOUND);
       return null;

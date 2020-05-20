@@ -11,8 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.schema;
+package tech.pegasys.teku.api.response;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 
@@ -23,14 +24,17 @@ public class GetBlockResponse {
 
   public final String root;
 
-  public GetBlockResponse(final SignedBeaconBlock signedBeaconBlock) {
+  public GetBlockResponse(
+      final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock signedBeaconBlock) {
+    this.signedBeaconBlock = new SignedBeaconBlock(signedBeaconBlock);
+    this.root = signedBeaconBlock.getMessage().hash_tree_root().toHexString().toLowerCase();
+  }
+
+  @JsonCreator
+  public GetBlockResponse(
+      @JsonProperty("root") final String root,
+      @JsonProperty("beacon_block") final SignedBeaconBlock signedBeaconBlock) {
+    this.root = root;
     this.signedBeaconBlock = signedBeaconBlock;
-    this.root =
-        signedBeaconBlock
-            .asInternalSignedBeaconBlock()
-            .getMessage()
-            .hash_tree_root()
-            .toHexString()
-            .toLowerCase();
   }
 }

@@ -41,9 +41,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.beaconrestapi.schema.GetBlockResponse;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -102,28 +101,23 @@ public class GetBlockTest {
   @Test
   public void shouldReturnBlockWhenQueryByRoot() throws Exception {
     final Map<String, List<String>> params = Map.of(ROOT, List.of(blockRoot.toHexString()));
-    SafeFuture<Optional<SignedBeaconBlock>> providerData =
-        completedFuture(Optional.of(new SignedBeaconBlock(signedBeaconBlock)));
+    SafeFuture<Optional<GetBlockResponse>> providerData =
+        completedFuture(Optional.of(new GetBlockResponse(signedBeaconBlock)));
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockByBlockRoot(blockRoot)).thenReturn(providerData);
-
-    GetBlockResponse expectedResponse =
-        new GetBlockResponse(new SignedBeaconBlock(signedBeaconBlock));
-    assertThat(expectedResponse.root)
-        .isEqualTo(signedBeaconBlock.getMessage().hash_tree_root().toHexString().toLowerCase());
 
     handler.handle(context);
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> future = args.getValue();
     String data = future.get();
-    assertThat(data).isEqualTo(jsonProvider.objectToJSON(expectedResponse));
+    assertThat(data).isEqualTo(jsonProvider.objectToJSON(providerData.get().get()));
   }
 
   @Test
   public void shouldReturnEmptyWhenQueryByRootNotFound() throws Exception {
     final Map<String, List<String>> params = Map.of(ROOT, List.of(blockRoot.toHexString()));
-    SafeFuture<Optional<SignedBeaconBlock>> providerData = completedFuture(Optional.empty());
+    SafeFuture<Optional<GetBlockResponse>> providerData = completedFuture(Optional.empty());
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockByBlockRoot(blockRoot)).thenReturn(providerData);
 
@@ -134,28 +128,23 @@ public class GetBlockTest {
   @Test
   public void shouldReturnBlockWhenQueryBySlot() throws Exception {
     final Map<String, List<String>> params = Map.of(SLOT, List.of(ONE.toString()));
-    SafeFuture<Optional<SignedBeaconBlock>> providerData =
-        completedFuture(Optional.of(new SignedBeaconBlock(signedBeaconBlock)));
+    SafeFuture<Optional<GetBlockResponse>> providerData =
+        completedFuture(Optional.of(new GetBlockResponse(signedBeaconBlock)));
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockBySlot(ONE)).thenReturn(providerData);
-
-    GetBlockResponse expectedResponse =
-        new GetBlockResponse(new SignedBeaconBlock(signedBeaconBlock));
-    assertThat(expectedResponse.root)
-        .isEqualTo(signedBeaconBlock.getMessage().hash_tree_root().toHexString().toLowerCase());
 
     handler.handle(context);
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> future = args.getValue();
     String data = future.get();
-    assertThat(data).isEqualTo(jsonProvider.objectToJSON(expectedResponse));
+    assertThat(data).isEqualTo(jsonProvider.objectToJSON(providerData.get().get()));
   }
 
   @Test
   public void shouldReturnEmptyWhenQueryBySlotNotFound() throws Exception {
     final Map<String, List<String>> params = Map.of(SLOT, List.of(ONE.toString()));
-    SafeFuture<Optional<SignedBeaconBlock>> providerData = completedFuture(Optional.empty());
+    SafeFuture<Optional<GetBlockResponse>> providerData = completedFuture(Optional.empty());
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockBySlot(ONE)).thenReturn(providerData);
 
@@ -166,27 +155,23 @@ public class GetBlockTest {
   @Test
   public void shouldReturnBlockWhenQueryByEpoch() throws Exception {
     final Map<String, List<String>> params = Map.of(EPOCH, List.of(ONE.toString()));
-    SafeFuture<Optional<SignedBeaconBlock>> providerData =
-        completedFuture(Optional.of(new SignedBeaconBlock(signedBeaconBlock)));
+    SafeFuture<Optional<GetBlockResponse>> providerData =
+        completedFuture(Optional.of(new GetBlockResponse(signedBeaconBlock)));
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockBySlot(UnsignedLong.valueOf(8))).thenReturn(providerData);
 
-    GetBlockResponse expectedResponse =
-        new GetBlockResponse(new SignedBeaconBlock(signedBeaconBlock));
-    assertThat(expectedResponse.root)
-        .isEqualTo(signedBeaconBlock.getMessage().hash_tree_root().toHexString().toLowerCase());
     handler.handle(context);
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> future = args.getValue();
     String data = future.get();
-    assertThat(data).isEqualTo(jsonProvider.objectToJSON(expectedResponse));
+    assertThat(data).isEqualTo(jsonProvider.objectToJSON(providerData.get().get()));
   }
 
   @Test
   public void shouldReturnEmptyWhenQueryByEpochNotFound() throws Exception {
     final Map<String, List<String>> params = Map.of(EPOCH, List.of(ONE.toString()));
-    SafeFuture<Optional<SignedBeaconBlock>> providerData = completedFuture(Optional.empty());
+    SafeFuture<Optional<GetBlockResponse>> providerData = completedFuture(Optional.empty());
     when(context.queryParamMap()).thenReturn(params);
     when(provider.getBlockBySlot(UnsignedLong.valueOf(8))).thenReturn(providerData);
 
