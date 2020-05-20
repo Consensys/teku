@@ -199,7 +199,7 @@ public class StateTransition {
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
-          preState.getSlot().compareTo(slot) <= 0,
+          preState.getSlot().compareTo(slot) < 0,
           "process_slots: State slot %s higher than given slot %s",
           preState.getSlot(),
           slot);

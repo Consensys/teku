@@ -125,5 +125,7 @@ public class PostValidatorsTest {
     verify(context).result(stringArgs.capture());
     String data = stringArgs.getValue();
     assertThat(data).contains("Public key is not valid");
+    // index of key that was bad
+    assertThat(data).contains("[0]");
   }
 }

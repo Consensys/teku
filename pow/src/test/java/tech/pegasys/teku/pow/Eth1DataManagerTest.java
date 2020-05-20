@@ -36,6 +36,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -107,9 +108,9 @@ public class Eth1DataManagerTest {
     timeProvider = StubTimeProvider.withTimeInSeconds(testStartTime);
 
     when(depositContractAccessor.getDepositCount(any()))
-        .thenReturn(SafeFuture.completedFuture(UnsignedLong.valueOf(1234)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(UnsignedLong.valueOf(1234))));
     when(depositContractAccessor.getDepositRoot(any()))
-        .thenReturn(SafeFuture.completedFuture(HEX_STRING));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(HEX_STRING)));
 
     eth1DataManager =
         new Eth1DataManager(
@@ -362,8 +363,7 @@ public class Eth1DataManagerTest {
         .thenReturn(latestBlock.getRequest());
 
     // Setup blocks around cache range
-    for (int i = 0; i < cacheRangeBlocks.size(); i++) {
-      MockBlock currentBlock = cacheRangeBlocks.get(i);
+    for (MockBlock currentBlock : cacheRangeBlocks) {
       Request mockedBlockRequest = currentBlock.getRequest();
       DefaultBlockParameter blockParam =
           DefaultBlockParameter.valueOf(BigInteger.valueOf(currentBlock.getBlockNumber()));
