@@ -404,15 +404,13 @@ workflows:
             - docker
       - extractAPISpec:
           requires:
-            - assemble #TODO only require publish when ok to merge
-          #   - publish
+            - publish
       - publishAPIDoc:
           requires:
             - extractAPISpec
-         #TODO activate filter when ok to merge
-         # filters:
-         #   branches:
-         #     only: master
+          filters:
+            branches:
+              only: master
 #  nightly:
 #    triggers:
 #      - schedule:
