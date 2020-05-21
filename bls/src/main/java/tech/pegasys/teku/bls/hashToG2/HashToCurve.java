@@ -14,7 +14,7 @@
 package tech.pegasys.teku.bls.hashToG2;
 
 import static tech.pegasys.teku.bls.hashToG2.Helper.clear_h2;
-import static tech.pegasys.teku.bls.hashToG2.Helper.hashToBase;
+import static tech.pegasys.teku.bls.hashToG2.Helper.hashToField;
 import static tech.pegasys.teku.bls.hashToG2.Helper.isInG2;
 import static tech.pegasys.teku.bls.hashToG2.Helper.isOnCurve;
 import static tech.pegasys.teku.bls.hashToG2.Helper.iso3;
@@ -45,9 +45,10 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public class HashToCurve {
 
-  // The cipher suite is defined in the Eth2 specs
+  // The cipher suite is defined in the Eth2 specs and also serves as the domain separation tag
+  // (DST)
   private static final Bytes CIPHER_SUITE =
-      Bytes.wrap("BLS_SIG_BLS12381G2-SHA256-SSWU-RO-_POP_".getBytes(StandardCharsets.UTF_8));
+      Bytes.wrap("BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_".getBytes(StandardCharsets.US_ASCII));
 
   public static boolean isInGroupG2(ECP2 point) {
     return isInG2(new JacobianPoint(point));
@@ -62,23 +63,22 @@ public class HashToCurve {
    */
   public static ECP2 hashToG2(Bytes message, Bytes cipherSuite) {
 
-    FP2Immutable u0 = hashToBase(message, (byte) 0, cipherSuite);
-    FP2Immutable u1 = hashToBase(message, (byte) 1, cipherSuite);
+    FP2Immutable[] u = hashToField(message, 2, cipherSuite);
 
-    JacobianPoint q0 = mapToCurve(u0);
-    JacobianPoint q1 = mapToCurve(u1);
+    JacobianPoint q0 = mapToCurve(u[0]);
+    JacobianPoint q1 = mapToCurve(u[1]);
 
-    JacobianPoint p = iso3(q0.add(q1));
+    JacobianPoint r = iso3(q0.add(q1));
 
     // This should never fail, and the check is non-trivial, so we use an assert
-    assert isOnCurve(p);
+    assert isOnCurve(r);
 
-    JacobianPoint q = clear_h2(p);
+    JacobianPoint p = clear_h2(r);
 
     // This should never fail, and the check is very expensive, so we use an assert
-    assert isInG2(q);
+    assert isInG2(p);
 
-    return q.toECP2();
+    return p.toECP2();
   }
 
   /**

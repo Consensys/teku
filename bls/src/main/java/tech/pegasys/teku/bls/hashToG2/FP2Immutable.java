@@ -170,18 +170,17 @@ final class FP2Immutable {
   }
 
   /**
-   * Calculate the sign of the field element.
+   * Calculate the "sign" of the field element in constant time.
    *
-   * <p>This is described in the "Notation" paragraph at the start of Section 2 of this paper:
-   * https://eprint.iacr.org/2019/403.pdf
+   * <p>Defined here: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-4.1
    *
    * @return -1 if x is the lexically larger of x and -1 * x, else returns 1
    */
   int sgn0() {
-    if (fp2.getB().iszilch()) {
-      return BIG.comp(fp2.getA(), THRESHOLD) > 0 ? -1 : 1;
-    }
-    return BIG.comp(fp2.getB(), THRESHOLD) > 0 ? -1 : 1;
+    final int sign0 = fp2.getA().parity();
+    final int zero0 = this.fp2.getA().iszilch() ? 1 : 0;
+    final int sign1 = fp2.getB().parity();
+    return sign0 | (zero0 & sign1);
   }
 
   /**
