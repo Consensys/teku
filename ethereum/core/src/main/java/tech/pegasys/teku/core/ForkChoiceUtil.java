@@ -305,18 +305,20 @@ public class ForkChoiceUtil {
               Optional<IndexedAttestation> maybeIndexedAttestation =
                       indexAndValidateAttestation(store, attestation, target);
 
-              if (maybeIndexedAttestation.isPresent()) {
-                IndexedAttestation indexedAttestation = maybeIndexedAttestation.get();
-                AttestationProcessingResult result = checkIfAttestationShouldBeSavedForFuture(store, attestation);
-                if (result.isSuccessful()) {
-                  forkChoiceStrategy.onAttestation(store, indexedAttestation);
-                } else {
-                  delayableAttestation.setIndexedAttestation(indexedAttestation);
-                }
-                return result;
-              } else {
+              if (maybeIndexedAttestation.isEmpty()) {
                 return INVALID;
               }
+
+              IndexedAttestation indexedAttestation = maybeIndexedAttestation.get();
+              AttestationProcessingResult result = checkIfAttestationShouldBeSavedForFuture(store, attestation);
+
+              if (result.isSuccessful()) {
+                forkChoiceStrategy.onAttestation(store, indexedAttestation);
+              } else {
+                delayableAttestation.setIndexedAttestation(indexedAttestation);
+              }
+
+              return result;
             });
 
   }
