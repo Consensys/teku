@@ -46,4 +46,4 @@ we recommend most users use the latest `master` branch of Teku.
 - Memory usage grows signficantly during periods of non-finalization.
 - Teku requires the ETH1 endpoint to keep historic world state available for at least the ETH1 voting period. 
   This is typically more historic state than is kept when ETH1 nodes are pruning state. 
-  Work around is to connect to an archive node or configure the node to preserve a greater period of historic world state.  
+  Workaround is to connect to an archive node or configure the node to preserve a greater period of historic world state.  
