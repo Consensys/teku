@@ -41,6 +41,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationValidator {
 
+  private static final UnsignedLong MAX_FUTURE_SLOT_ALLOWANCE = UnsignedLong.valueOf(10);
   private static final UnsignedLong MILLIS_PER_SECOND = UnsignedLong.valueOf(1000);
   private static final UnsignedLong MAXIMUM_GOSSIP_CLOCK_DISPARITY =
       UnsignedLong.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
@@ -105,7 +106,8 @@ public class AttestationValidator {
     // queue
     // future attestations for processing at the appropriate slot).
     final UnsignedLong currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
-    if (isAfterPropagationSlotRange(currentTimeMillis, attestation)) {
+    if (isAfterPropagationSlotRange(currentTimeMillis, attestation)
+            || isFromFarFuture(attestation, currentTimeMillis)) {
       return INVALID;
     }
     if (isBeforeMinimumBroadcastTime(attestation, currentTimeMillis)) {
@@ -150,6 +152,18 @@ public class AttestationValidator {
     final UnsignedLong minimumBroadcastTimeMillis =
         minimumBroadcastTimeMillis(attestation.getData().getSlot());
     return currentTimeMillis.compareTo(minimumBroadcastTimeMillis) < 0;
+  }
+
+  private boolean isFromFarFuture(
+          final Attestation attestation, final UnsignedLong currentTimeMillis) {
+    final UnsignedLong attestationSlotTimeMillis =
+            secondsToMillis(recentChainData
+                    .getGenesisTime()
+                    .plus(attestation.getEarliestSlotForForkChoiceProcessing()
+                            .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))
+                    ));
+    return attestationSlotTimeMillis.compareTo(currentTimeMillis
+            .plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))) > 0;
   }
 
   private boolean isAfterPropagationSlotRange(
