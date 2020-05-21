@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core;
 
+import static tech.pegasys.teku.core.results.AttestationProcessingResult.INVALID;
 import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -290,24 +292,46 @@ public class ForkChoiceUtil {
   @CheckReturnValue
   public static AttestationProcessingResult on_attestation(
       final MutableStore store,
-      final Attestation attestation,
+      final DelayableAttestation delayableAttestation,
       final StateTransition stateTransition,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
+    Attestation attestation = delayableAttestation.getAttestation();
     Checkpoint target = attestation.getData().getTarget();
 
     return validateOnAttestation(store, attestation)
-        .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
-        .ifSuccessful(
-            () ->
-                validateAndApplyIndexedAttestation(store, attestation, target, forkChoiceStrategy));
+            .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
+            .ifSuccessful(() -> {
+              Optional<IndexedAttestation> maybeIndexedAttestation =
+                      indexAndValidateAttestation(store, attestation, target);
+
+              if (maybeIndexedAttestation.isPresent()) {
+                IndexedAttestation indexedAttestation = maybeIndexedAttestation.get();
+                AttestationProcessingResult result = checkIfAttestationShouldBeSavedForFuture(store, attestation);
+                if (result.isSuccessful()) {
+                  forkChoiceStrategy.onAttestation(store, indexedAttestation);
+                } else {
+                  delayableAttestation.setIndexedAttestation(indexedAttestation);
+                }
+                return result;
+              } else {
+                return INVALID;
+              }
+            });
+
   }
 
-  private static AttestationProcessingResult validateAndApplyIndexedAttestation(
+  /**
+   * Returns the indexed attestation if attestation is valid, else, returns an empty optional.
+   * @param store
+   * @param attestation
+   * @param target
+   * @return
+   */
+  private static Optional<IndexedAttestation> indexAndValidateAttestation(
       MutableStore store,
       Attestation attestation,
-      Checkpoint target,
-      ForkChoiceStrategy forkChoiceStrategy) {
+      Checkpoint target) {
     BeaconState target_state = store.getCheckpointState(target);
 
     // Get state at the `target` to validate attestation and calculate the committees
@@ -316,16 +340,14 @@ public class ForkChoiceUtil {
       indexed_attestation = get_indexed_attestation(target_state, attestation);
     } catch (IllegalArgumentException e) {
       LOG.warn("on_attestation: Attestation is not valid: ", e);
-      return AttestationProcessingResult.INVALID;
+      return Optional.empty();
     }
     if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
       LOG.warn("on_attestation: Attestation is not valid");
-      return AttestationProcessingResult.INVALID;
+      return Optional.empty();
     }
 
-    forkChoiceStrategy.onAttestation(store, indexed_attestation);
-
-    return SUCCESSFUL;
+    return Optional.of(indexed_attestation);
   }
 
   private static AttestationProcessingResult storeTargetCheckpointState(
@@ -362,22 +384,10 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.INVALID;
     }
 
-    // Attestations can only affect the fork choice of subsequent slots.
-    // Delay consideration in the fork choice until their slot is in the past.
-    if (get_current_slot(store).compareTo(attestation.getData().getSlot()) <= 0) {
-      return AttestationProcessingResult.SAVED_FOR_FUTURE;
-    }
-
     if (!store.getBlockRoots().contains(target.getRoot())) {
       // Attestations target must be for a known block. If a target block is unknown, delay
       // consideration until the block is found
       return AttestationProcessingResult.UNKNOWN_BLOCK;
-    }
-
-    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
-    // arrives
-    if (get_current_slot(store).compareTo(target.getEpochStartSlot()) < 0) {
-      return AttestationProcessingResult.SAVED_FOR_FUTURE;
     }
 
     if (!store.getBlockRoots().contains(attestation.getData().getBeacon_block_root())) {
@@ -396,6 +406,23 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.INVALID;
     }
 
+    return SUCCESSFUL;
+  }
+
+  private static AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(MutableStore store,
+                                                                                      Attestation attestation) {
+
+    // Attestations can only affect the fork choice of subsequent slots.
+    // Delay consideration in the fork choice until their slot is in the past.
+    if (get_current_slot(store).compareTo(attestation.getData().getSlot()) <= 0) {
+      return AttestationProcessingResult.SAVED_FOR_FUTURE;
+    }
+
+    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
+    // arrives
+    if (get_current_slot(store).compareTo(attestation.getData().getTarget().getEpochStartSlot()) < 0) {
+      return AttestationProcessingResult.SAVED_FOR_FUTURE;
+    }
     return SUCCESSFUL;
   }
 

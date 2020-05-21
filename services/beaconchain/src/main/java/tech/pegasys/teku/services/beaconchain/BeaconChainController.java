@@ -75,7 +75,7 @@ import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.sync.AttestationManager;
 import tech.pegasys.teku.sync.BlockPropagationManager;
 import tech.pegasys.teku.sync.DefaultSyncService;
-import tech.pegasys.teku.sync.DelayableAttestation;
+import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.sync.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.FutureItems;
 import tech.pegasys.teku.sync.PendingPool;

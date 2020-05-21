@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.results;
 
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+
 import java.util.function.Supplier;
 
 public enum AttestationProcessingResult {
