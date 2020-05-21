@@ -13,7 +13,7 @@ we recommend most users use the latest `master` branch of Teku.
 ### Additions and Improvements
 
 - Updated to eth2 spec version v0.11.3.
-- Improved recovery from network changes. Peer's are now disconnected if they do not respond for a 
+- Improved recovery from network changes. Peers are now disconnected if they do not respond for a 
   period ensuring upstream network interruptions are detected and peers can reconnect.
 - The node's ENR is printed at startup even if the genesis state is not yet known.
   As per the beacon chain spec, the network ports are still not opened until the genesis state is known.
