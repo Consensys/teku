@@ -22,6 +22,10 @@ public enum AttestationProcessingResult {
   INVALID;
 
   public AttestationProcessingResult ifSuccessful(Supplier<AttestationProcessingResult> nextStep) {
-    return this == SUCCESSFUL ? nextStep.get() : this;
+    return isSuccessful() ? nextStep.get() : this;
+  }
+
+  public boolean isSuccessful() {
+    return this == SUCCESSFUL;
   }
 }
