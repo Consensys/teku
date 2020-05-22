@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.THRESHOLD;
 import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.ZERO;
 import static tech.pegasys.teku.bls.hashToG2.Util.bigFromHex;
 

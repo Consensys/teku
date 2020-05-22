@@ -26,14 +26,14 @@ import tech.pegasys.teku.bls.mikuli.PublicKey;
 
 /**
  * Implements the standard interfaces for BLS methods as defined in
- * https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00
+ * https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02
  */
 public class BLS {
 
   /**
    * Generates a BLSSignature from a private key and message.
    *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.2.1
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.2.1
    *
    * @param secretKey The secret key, not null
    * @param message The message to sign, not null
@@ -46,7 +46,7 @@ public class BLS {
   /**
    * Verifies the given BLS signature against the message bytes using the public key.
    *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.2.2
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.2.2
    *
    * @param publicKey The public key, not null
    * @param message The message data to verify, not null
@@ -85,7 +85,7 @@ public class BLS {
    * Verifies an aggregate BLS signature against a list of distinct messages using the list of
    * public keys.
    *
-   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.1.1
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.1.1
    *
    * @param publicKeys The list of public keys, not null
    * @param messages The list of messages to verify, all distinct, not null

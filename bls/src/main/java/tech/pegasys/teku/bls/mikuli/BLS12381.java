@@ -35,7 +35,7 @@ import org.apache.tuweni.bytes.Bytes;
  * BLS12-381 elliptic curve. It implements a subset of the functions from the proposed IETF
  * standard.
  *
- * <p>Reference: https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00
+ * <p>Reference: https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02
  *
  * <p>This class depends upon the Apache Milagro library being available. See
  * https://milagro.apache.org.
@@ -144,7 +144,7 @@ public final class BLS12381 {
    * Verifies an aggregate signature against a list of distinct messages using the list of public
    * keys.
    *
-   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.1.1
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.1.1
    *
    * @param publicKeys The list of public keys, not null
    * @param messages The list of messages to verify, all distinct, not null

@@ -53,38 +53,28 @@ public class BlsAggregateVerifyTestExecutor implements TestExecutor {
   }
 
   private static class Input {
-    @JsonProperty(value = "pairs", required = true)
-    private List<Pair> pairs;
+    @JsonProperty(value = "pubkeys", required = true)
+    private List<String> publicKeys;
+
+    @JsonProperty(value = "messages", required = true)
+    private List<String> messages;
 
     @JsonProperty(value = "signature", required = true)
     private String signature;
 
     public List<BLSPublicKey> getPublicKeys() {
-      return pairs.stream().map(Pair::getPublicKey).collect(toList());
+      return publicKeys.stream()
+              .map(Bytes::fromHexString)
+              .map(BLSPublicKey::fromBytes)
+              .collect(toList());
     }
 
     public List<Bytes> getMessages() {
-      return pairs.stream().map(Pair::getMessage).collect(toList());
+      return messages.stream().map(Bytes::fromHexString).collect(toList());
     }
 
     public BLSSignature getSignature() {
       return BlsTests.parseSignature(signature);
-    }
-  }
-
-  private static class Pair {
-    @JsonProperty(value = "pubkey", required = true)
-    private String publicKey;
-
-    @JsonProperty(value = "message", required = true)
-    private String message;
-
-    public BLSPublicKey getPublicKey() {
-      return BLSPublicKey.fromBytes(Bytes.fromHexString(publicKey));
-    }
-
-    public Bytes getMessage() {
-      return Bytes.fromHexString(message);
     }
   }
 }

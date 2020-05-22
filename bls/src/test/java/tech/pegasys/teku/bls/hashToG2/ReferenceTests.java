@@ -32,6 +32,7 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.bls.mikuli.G2Point;
  *   <li>The G2 point in compressed form
  * </ul>
  */
+@Disabled // TODO re-enable once test vectors for draft 07 are available
 class ReferenceTests {
 
   private static final Path pathToTests =

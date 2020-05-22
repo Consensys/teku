@@ -31,13 +31,13 @@ import org.apache.tuweni.bytes.Bytes;
  *
  * <ul>
  *   <li>WIP PR on the Eth2 specs repository: https://github.com/ethereum/eth2.0-specs/pull/1532
- *   <li>The draft standard: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-05
+ *   <li>The draft standard: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07
  *   <li>Reference implementations: https://github.com/algorand/bls_sigs_ref/
  *   <li>Interesting background: https://eprint.iacr.org/2019/403.pdf
  * </ul>
  *
- * <p>This code is based on the reference implementations in Python and C, and test vectors are
- * taken from there.
+ * <p>This code is partially based on the reference implementations in Python and C, and test
+ * vectors are taken from there.
  *
  * <p>Note that no attempt has been made to implement constant-time methods in this package. For the
  * purposes of hashing to G2 within Ethereum I believe that this is of no consequence, since all the
@@ -45,11 +45,19 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public class HashToCurve {
 
-  // The cipher suite is defined in the Eth2 specs and also serves as the domain separation tag
-  // (DST)
-  private static final Bytes CIPHER_SUITE =
+  // The ciphersuite defined in the Eth2 specification which also serves as domain separation tag
+  // https://github.com/ethereum/eth2.0-specs/blob/v0.12.0/specs/phase0/beacon-chain.md#bls-signatures
+  private static final Bytes ETH2_DST =
       Bytes.wrap("BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_".getBytes(StandardCharsets.US_ASCII));
 
+  /**
+   * Check whether a Milagro ECP2 point is in group G2.
+   *
+   * <p>This package provides a fast method for performing the check.
+   *
+   * @param point a Milagro ECP2 point
+   * @return true if the point is in G2, false otherwise
+   */
   public static boolean isInGroupG2(ECP2 point) {
     return isInG2(new JacobianPoint(point));
   }
@@ -58,12 +66,12 @@ public class HashToCurve {
    * Hashes to the G2 curve as described in the new BLS standard.
    *
    * @param message the message to be hashed. This is usually the 32 byte message digest
-   * @param cipherSuite the salt value for HKDF_Extract
+   * @param dst the domain separation tag (DST)
    * @return a point from the G2 group representing the message hash
    */
-  public static ECP2 hashToG2(Bytes message, Bytes cipherSuite) {
+  public static ECP2 hashToG2(Bytes message, Bytes dst) {
 
-    FP2Immutable[] u = hashToField(message, 2, cipherSuite);
+    FP2Immutable[] u = hashToField(message, 2, dst);
 
     JacobianPoint q0 = mapToCurve(u[0]);
     JacobianPoint q1 = mapToCurve(u[1]);
@@ -90,6 +98,6 @@ public class HashToCurve {
    * @return a point from the G2 group representing the message hash
    */
   public static ECP2 hashToG2(Bytes message) {
-    return hashToG2(message, CIPHER_SUITE);
+    return hashToG2(message, ETH2_DST);
   }
 }

@@ -57,7 +57,7 @@ class hashToCurveTest {
     return args.stream();
   }
 
-  // The following are the Official test vectors from
+  // The following are the Official test vectors from the IETF standard,
   // https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#appendix-G.10
 
   private static final Bytes TEST_DST =
@@ -90,7 +90,7 @@ class hashToCurveTest {
                 "0x10e03a54fd5ff7a0a69543aeeef42e22cb589e0b33455943cf84f0c5b28e93fe17c0bbba2fafb10aea29b28705eec303",
                 "0x053b939496e87877fb1569c911bf618056396fac2458757da71cd83fa152239d605c6a4e4e847295080ea3874f84a832"),
             new FP2Immutable(1)),
-        q0);
+        q0.toAffine());
     assertEquals(
         new JacobianPoint(
             new FP2Immutable(
@@ -100,7 +100,7 @@ class hashToCurveTest {
                 "0x0ad66ed30cb6f55a83feed4b12c141bd41f593292403127b07e1bc6dabacd8ea53f8a322b5d4080e4393184c713865fa",
                 "0x0c4e6fb11ad2fe3a081a399df36094465aafb232f7564f4d35abb0092ef9ee855bcfdac2e6775cd7d383241f13ed856a"),
             new FP2Immutable(1)),
-        q1);
+        q1.toAffine());
 
     JacobianPoint p = clear_h2(q0.add(q1));
     assertEquals(
@@ -112,7 +112,7 @@ class hashToCurveTest {
                 "0x0d8d49e7737d8f9fc5cef7c4b8817633103faf2613016cb86a1f3fc29968fe2413e232d9208d2d74a89bf7a48ac36f83",
                 "0x02e5cf8f9b7348428cc9e66b9a9b36fe45ba0b0a146290c3a68d92895b1af0e1f2d9f889fb412670ae8478d8abd4c5aa"),
             new FP2Immutable(1)),
-        p);
+        p.toAffine());
   }
 
   @Test
@@ -130,9 +130,9 @@ class hashToCurveTest {
             "0x0a1cb4196dec71b1f704f3533cdf27f247e3ea175ddcc1ca6df0f45c587eb77efc6c493848f4df98e24a32753dfcf96b",
             "0x07aac42db7f3dfbc5146c70ca0ac6157893abf4e2162e303510e0cefb8d024c24080b9c2a9896f6c03ffe680fc18b788"),
         u[1]);
+
     JacobianPoint q0 = iso3(mapToCurve(u[0]));
     JacobianPoint q1 = iso3(mapToCurve(u[1]));
-
     assertEquals(
         new JacobianPoint(
             new FP2Immutable(
@@ -142,7 +142,7 @@ class hashToCurveTest {
                 "0x15853304d7fd9f47df2ef6c4bd1fb0b3500386b23d1acc530be0c14e027f15b0aa83856d82edb723f3d857358ecffb80",
                 "0x0626fcfc6b3d8460df7ed2aeca6449cf6701dc7ff51c143ed20054ecf18732f4c5985455864c79a4065b13e26ecccf9f"),
             new FP2Immutable(1)),
-        q0);
+        q0.toAffine());
     assertEquals(
         new JacobianPoint(
             new FP2Immutable(
@@ -152,7 +152,7 @@ class hashToCurveTest {
                 "0x110c9643a8dfd00123bb9e6a956426f26bedb0d430130026ce49b862431e80f5e306850239c857474f564915fc9a4ba6",
                 "0x1748ca13032a2c262295863897a15cd9a7e0baf003336bec6fc6e40b982d866fe3250619fdd2ceadb49fab8055f47e65"),
             new FP2Immutable(1)),
-        q1);
+        q1.toAffine());
 
     JacobianPoint p = clear_h2(q0.add(q1));
     assertEquals(
@@ -164,7 +164,7 @@ class hashToCurveTest {
                 "0x0882ab045b8fe4d7d557ebb59a63a35ac9f3d312581b509af0f8eaa2960cbc5e1e36bb969b6e22980b5cbdd0787fcf4e",
                 "0x0184d26779ae9d4670aca9b267dbd4d3b30443ad05b8546d36a195686e1ccc3a59194aea05ed5bce7c3144a29ec047c4"),
             new FP2Immutable(1)),
-        p);
+        p.toAffine());
   }
 
   @Test
@@ -194,7 +194,7 @@ class hashToCurveTest {
                 "0x0cef664ee9270354c3bc06d1e0570e4d6663cc528711afca10118955990126f87917c87f7b9c4cf73aaf05c1b5875c6f",
                 "0x0b136f41d233ea420bc3658c4156f717fb190775d3690d139c0923c231e44af54d780119b8edf16038208b63feb1f3ee"),
             new FP2Immutable(1)),
-        q0);
+        q0.toAffine());
     assertEquals(
         new JacobianPoint(
             new FP2Immutable(
@@ -204,7 +204,7 @@ class hashToCurveTest {
                 "0x1651e6cc8af2241989a9006dd59a9cd41fc1bbc3a7f9e32875889ae54913b8398dfa106aff43ff1cfa9019141d9ad565",
                 "0x09324bdbfedfb886899a7961f7827702743ef550f548bb89ab15d4b24c7c086196891fc300e3e39c21aec0257543a3fd"),
             new FP2Immutable(1)),
-        q1);
+        q1.toAffine());
 
     JacobianPoint p = clear_h2(q0.add(q1));
     assertEquals(
@@ -216,7 +216,7 @@ class hashToCurveTest {
                 "0x174a3473a3af2d0302b9065e895ca4adba4ece6ce0b41148ba597001abb152f852dd9a96fb45c9de0a43d944746f833e",
                 "0x005cdf3d984e3391e7e969276fb4bc02323c5924a4449af167030d855acc2600cf3d4fab025432c6d868c79571a95bef"),
             new FP2Immutable(1)),
-        p);
+        p.toAffine());
   }
 
   @Test
@@ -258,7 +258,7 @@ class hashToCurveTest {
                 "0x18b1ef96738c5df727e1fa2098178fe371751c0c169af30bdb95be22a0ecbf0a75c0e6c63e4a32f241250f877859c086",
                 "0x0d04c624db798ca46a352637fa76516c83a5d98e147a25f629fb1e02a9a453970e42d835ba765bd7d94a4a3f9f50e4a1"),
             new FP2Immutable(1)),
-        q0);
+        q0.toAffine());
     assertEquals(
         new JacobianPoint(
             new FP2Immutable(
@@ -268,7 +268,7 @@ class hashToCurveTest {
                 "0x00f0793bcfaf12e5d23fdd4173f7539e3cf182a0f5a1c98b488f59daca5ecf7b694912a93f6b81498a5c2282c09ee63f",
                 "0x081adf3c45b42c35fdb678c8bdec1d8c12f9d5a30b22cf52c1afc967d6ddc82fdae0673f76a5186a84f3602c7a22f6b8"),
             new FP2Immutable(1)),
-        q1);
+        q1.toAffine());
 
     JacobianPoint p = clear_h2(q0.add(q1));
     assertEquals(
@@ -280,6 +280,6 @@ class hashToCurveTest {
                 "0x15c1d4f1a685bb63ee67ca1fd96155e3d091e852a684b78d085fd34f6091e5249ddddbdcf2e7ec82ce6c04c63647eeb7",
                 "0x05483f3b96d9252dd4fc0868344dfaf3c9d145e3387db23fa8e449304fab6a7b6ec9c15f05c0a1ea66ff0efcc03e001a"),
             new FP2Immutable(1)),
-        p);
+        p.toAffine());
   }
 }
