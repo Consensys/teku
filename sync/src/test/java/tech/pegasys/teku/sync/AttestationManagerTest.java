@@ -85,7 +85,7 @@ class AttestationManagerTest {
     verify(attestationProcessor).processAttestation(any());
     verify(attestationPool).add(eq(attestation));
     verifyNoInteractions(futureAttestations);
-    verifyNoInteractions(pendingAttestations);
+    verify(pendingAttestations, never()).add(any());
   }
 
   @Test
@@ -97,7 +97,7 @@ class AttestationManagerTest {
     verify(attestationProcessor).processAttestation(any());
     verify(attestationPool).add(eq(aggregate.getMessage().getAggregate()));
     verifyNoInteractions(futureAttestations);
-    verifyNoInteractions(pendingAttestations);
+    verify(pendingAttestations, never()).add(any());
   }
 
   @Test
