@@ -39,6 +39,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance;
@@ -138,6 +140,16 @@ public class V3RocksDbDao implements RocksDbDao {
   @Override
   public Map<UnsignedLong, VoteTracker> getVotes() {
     return db.getAll(V3Schema.VOTES);
+  }
+
+  @Override
+  public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
+    return db.stream(V3Schema.DEPOSITS_FORM_BLOCK_EVENTS).map(ColumnEntry::getValue);
+  }
+
+  @Override
+  public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
+    return db.get(V3Schema.MIN_GENESIS_TIME_BLOCK);
   }
 
   private Optional<BeaconState> getLatestFinalizedState() {
@@ -365,6 +377,18 @@ public class V3RocksDbDao implements RocksDbDao {
       prunedSlots.addAll(toRemove.keySet());
 
       return prunedRoots;
+    }
+
+    @Override
+    public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
+      transaction.put(V3Schema.MIN_GENESIS_TIME_BLOCK, event);
+      transaction.commit();
+    }
+
+    @Override
+    public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
+      transaction.put(V3Schema.DEPOSITS_FORM_BLOCK_EVENTS, event.getBlockNumber(), event);
+      transaction.commit();
     }
 
     @Override

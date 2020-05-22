@@ -3,6 +3,7 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':logging')
+  implementation project(':pow')
   implementation project(':ssz')
   implementation project(':util')
 
@@ -24,4 +25,5 @@ dependencies {
 
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-ssz'
 }
