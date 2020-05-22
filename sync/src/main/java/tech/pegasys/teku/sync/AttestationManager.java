@@ -69,13 +69,13 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onGossipedAttestation(final Attestation attestation) {
+   void onGossipedAttestation(final Attestation attestation) {
     processAttestation(new DelayableAttestation(attestation, aggregatingAttestationPool::add));
   }
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
+   void onGossipedAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     final Attestation aggregateAttestation = aggregateAndProof.getMessage().getAggregate();
     processAttestation(new DelayableAttestation(aggregateAttestation, aggregatingAttestationPool::add));
 
