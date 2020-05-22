@@ -26,7 +26,7 @@ public class DelayableAttestation {
   private final Attestation attestation;
   private final Consumer<Attestation> onSuccessfulProcessing;
 
-  private Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
+  private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
 
   public DelayableAttestation(
       final Attestation attestation, final Consumer<Attestation> onSuccessfulProcessing) {
