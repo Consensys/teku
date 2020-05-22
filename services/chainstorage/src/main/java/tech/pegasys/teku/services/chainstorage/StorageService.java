@@ -28,10 +28,10 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class StorageService extends Service {
-  private ChainStorage chainStorage;
-  private DepositStorage depositStorage;
-  private ServiceConfig serviceConfig;
-  private Database database;
+  private volatile ChainStorage chainStorage;
+  private volatile DepositStorage depositStorage;
+  private final ServiceConfig serviceConfig;
+  private volatile Database database;
 
   public StorageService(final ServiceConfig serviceConfig) {
     this.serviceConfig = serviceConfig;
