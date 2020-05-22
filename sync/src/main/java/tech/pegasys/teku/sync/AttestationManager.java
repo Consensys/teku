@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -30,8 +29,6 @@ import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProces
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import java.util.Optional;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -45,11 +42,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final AggregatingAttestationPool aggregatingAttestationPool;
 
   AttestationManager(
-          final EventBus eventBus,
-          final ForkChoiceAttestationProcessor attestationProcessor,
-          final PendingPool<DelayableAttestation> pendingAttestations,
-          final FutureItems<DelayableAttestation> futureAttestations,
-          final AggregatingAttestationPool aggregatingAttestationPool) {
+      final EventBus eventBus,
+      final ForkChoiceAttestationProcessor attestationProcessor,
+      final PendingPool<DelayableAttestation> pendingAttestations,
+      final FutureItems<DelayableAttestation> futureAttestations,
+      final AggregatingAttestationPool aggregatingAttestationPool) {
     this.eventBus = eventBus;
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
@@ -64,30 +61,38 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor,
       final AggregatingAttestationPool aggregatingAttestationPool) {
     return new AttestationManager(
-        eventBus, forkChoiceAttestationProcessor, pendingAttestations, futureAttestations, aggregatingAttestationPool);
+        eventBus,
+        forkChoiceAttestationProcessor,
+        pendingAttestations,
+        futureAttestations,
+        aggregatingAttestationPool);
   }
 
   @Subscribe
   @SuppressWarnings("unused")
-   void onGossipedAttestation(final Attestation attestation) {
+  void onGossipedAttestation(final Attestation attestation) {
     processAttestation(new DelayableAttestation(attestation, aggregatingAttestationPool::add));
   }
 
   @Subscribe
   @SuppressWarnings("unused")
-   void onGossipedAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
+  void onGossipedAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     final Attestation aggregateAttestation = aggregateAndProof.getMessage().getAggregate();
-    processAttestation(new DelayableAttestation(aggregateAttestation, aggregatingAttestationPool::add));
-
+    processAttestation(
+        new DelayableAttestation(aggregateAttestation, aggregatingAttestationPool::add));
   }
 
   @Override
   public void onSlot(final UnsignedLong slot) {
     futureAttestations.prune(slot).stream()
-            .map(DelayableAttestation::getIndexedAttestation)
-            .map(optional -> optional.orElseThrow(() ->
-                    new UnsupportedOperationException("FutureAttestation should contain indexed attestation")))
-            .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
+        .map(DelayableAttestation::getIndexedAttestation)
+        .map(
+            optional ->
+                optional.orElseThrow(
+                    () ->
+                        new UnsupportedOperationException(
+                            "FutureAttestation should contain indexed attestation")))
+        .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
   }
 
   @Subscribe

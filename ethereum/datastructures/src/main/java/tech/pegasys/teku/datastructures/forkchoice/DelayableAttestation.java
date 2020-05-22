@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Consumer;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;

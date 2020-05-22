@@ -107,7 +107,7 @@ public class AttestationValidator {
     // future attestations for processing at the appropriate slot).
     final UnsignedLong currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
-            || isFromFarFuture(attestation, currentTimeMillis)) {
+        || isFromFarFuture(attestation, currentTimeMillis)) {
       return INVALID;
     }
     if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(attestation, currentTimeMillis)) {
@@ -155,15 +155,19 @@ public class AttestationValidator {
   }
 
   private boolean isFromFarFuture(
-          final Attestation attestation, final UnsignedLong currentTimeMillis) {
+      final Attestation attestation, final UnsignedLong currentTimeMillis) {
     final UnsignedLong attestationSlotTimeMillis =
-            secondsToMillis(recentChainData
-                    .getGenesisTime()
-                    .plus(attestation.getEarliestSlotForForkChoiceProcessing()
-                            .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))
-                    ));
-    final UnsignedLong discardAttestationsAfterMillis = currentTimeMillis
-            .plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))));
+        secondsToMillis(
+            recentChainData
+                .getGenesisTime()
+                .plus(
+                    attestation
+                        .getEarliestSlotForForkChoiceProcessing()
+                        .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))));
+    final UnsignedLong discardAttestationsAfterMillis =
+        currentTimeMillis.plus(
+            secondsToMillis(
+                MAX_FUTURE_SLOT_ALLOWANCE.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))));
     return attestationSlotTimeMillis.compareTo(discardAttestationsAfterMillis) > 0;
   }
 

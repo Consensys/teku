@@ -300,17 +300,19 @@ public class ForkChoiceUtil {
     Checkpoint target = attestation.getData().getTarget();
 
     return validateOnAttestation(store, attestation)
-            .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
-            .ifSuccessful(() -> {
+        .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
+        .ifSuccessful(
+            () -> {
               Optional<IndexedAttestation> maybeIndexedAttestation =
-                      indexAndValidateAttestation(store, attestation, target);
+                  indexAndValidateAttestation(store, attestation, target);
 
               if (maybeIndexedAttestation.isEmpty()) {
                 return INVALID;
               }
 
               IndexedAttestation indexedAttestation = maybeIndexedAttestation.get();
-              AttestationProcessingResult result = checkIfAttestationShouldBeSavedForFuture(store, attestation);
+              AttestationProcessingResult result =
+                  checkIfAttestationShouldBeSavedForFuture(store, attestation);
 
               if (result.isSuccessful()) {
                 forkChoiceStrategy.onAttestation(store, indexedAttestation);
@@ -320,20 +322,18 @@ public class ForkChoiceUtil {
 
               return result;
             });
-
   }
 
   /**
    * Returns the indexed attestation if attestation is valid, else, returns an empty optional.
+   *
    * @param store
    * @param attestation
    * @param target
    * @return
    */
   private static Optional<IndexedAttestation> indexAndValidateAttestation(
-      MutableStore store,
-      Attestation attestation,
-      Checkpoint target) {
+      MutableStore store, Attestation attestation, Checkpoint target) {
     BeaconState target_state = store.getCheckpointState(target);
 
     // Get state at the `target` to validate attestation and calculate the committees
@@ -411,8 +411,8 @@ public class ForkChoiceUtil {
     return SUCCESSFUL;
   }
 
-  private static AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(MutableStore store,
-                                                                                      Attestation attestation) {
+  private static AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(
+      MutableStore store, Attestation attestation) {
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
@@ -422,7 +422,8 @@ public class ForkChoiceUtil {
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
-    if (get_current_slot(store).compareTo(attestation.getData().getTarget().getEpochStartSlot()) < 0) {
+    if (get_current_slot(store).compareTo(attestation.getData().getTarget().getEpochStartSlot())
+        < 0) {
       return AttestationProcessingResult.SAVED_FOR_FUTURE;
     }
     return SUCCESSFUL;
