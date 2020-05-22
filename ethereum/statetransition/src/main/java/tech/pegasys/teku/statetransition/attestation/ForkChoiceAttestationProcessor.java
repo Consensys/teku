@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.attestation;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -40,7 +41,7 @@ public class ForkChoiceAttestationProcessor {
     return result;
   }
 
-  public void applyAttestationToForkChoice(final DelayableAttestation attestation) {
+  public void applyIndexedAttestationToForkChoice(final IndexedAttestation attestation) {
     final Store.Transaction transaction = recentChainData.startStoreTransaction();
     forkChoice.applyIndexedAttestation(transaction, attestation);
     transaction.commit(() -> {}, "Failed to persist attestation result");

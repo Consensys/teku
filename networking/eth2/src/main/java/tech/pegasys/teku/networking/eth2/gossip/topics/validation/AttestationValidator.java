@@ -41,7 +41,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationValidator {
 
-  private static final UnsignedLong MAX_FUTURE_SLOT_ALLOWANCE = UnsignedLong.valueOf(10);
+  private static final UnsignedLong MAX_FUTURE_SLOT_ALLOWANCE = UnsignedLong.valueOf(3);
   private static final UnsignedLong MILLIS_PER_SECOND = UnsignedLong.valueOf(1000);
   private static final UnsignedLong MAXIMUM_GOSSIP_CLOCK_DISPARITY =
       UnsignedLong.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
@@ -106,11 +106,11 @@ public class AttestationValidator {
     // queue
     // future attestations for processing at the appropriate slot).
     final UnsignedLong currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
-    if (isAfterPropagationSlotRange(currentTimeMillis, attestation)
+    if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
             || isFromFarFuture(attestation, currentTimeMillis)) {
       return INVALID;
     }
-    if (isBeforeMinimumBroadcastTime(attestation, currentTimeMillis)) {
+    if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(attestation, currentTimeMillis)) {
       return SAVED_FOR_FUTURE;
     }
 
@@ -147,7 +147,7 @@ public class AttestationValidator {
         attestation.getAggregation_bits().streamAllSetBits().findFirst().orElseThrow());
   }
 
-  private boolean isBeforeMinimumBroadcastTime(
+  private boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
       final Attestation attestation, final UnsignedLong currentTimeMillis) {
     final UnsignedLong minimumBroadcastTimeMillis =
         minimumBroadcastTimeMillis(attestation.getData().getSlot());
@@ -162,11 +162,12 @@ public class AttestationValidator {
                     .plus(attestation.getEarliestSlotForForkChoiceProcessing()
                             .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))
                     ));
-    return attestationSlotTimeMillis.compareTo(currentTimeMillis
-            .plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))) > 0;
+    final UnsignedLong discardAttestationsAfterMillis = currentTimeMillis
+            .plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))));
+    return attestationSlotTimeMillis.compareTo(discardAttestationsAfterMillis) > 0;
   }
 
-  private boolean isAfterPropagationSlotRange(
+  private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
       final UnsignedLong currentTimeMillis, final Attestation attestation) {
     final UnsignedLong attestationSlot = attestation.getData().getSlot();
     return maximumBroadcastTimeMillis(attestationSlot).compareTo(currentTimeMillis) < 0;

@@ -22,15 +22,16 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
-import tech.pegasys.teku.statetransition.events.attestation.ProcessedAggregateEvent;
-import tech.pegasys.teku.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.util.Optional;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -82,7 +83,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UnsignedLong slot) {
-    futureAttestations.prune(slot).forEach(attestationProcessor::applyAttestationToForkChoice);
+    futureAttestations.prune(slot).stream()
+            .map(DelayableAttestation::getIndexedAttestation)
+            .map(optional -> optional.orElseThrow(() ->
+                    new UnsupportedOperationException("FutureAttestation should contain indexed attestation")))
+            .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
   }
 
   @Subscribe
