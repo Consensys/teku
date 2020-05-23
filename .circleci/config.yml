@@ -404,7 +404,11 @@ workflows:
             - docker
       - extractAPISpec:
           requires:
-            - publish
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
       # - publishAPIDoc:
       #     requires:
       #       - extractAPISpec
