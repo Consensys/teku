@@ -65,7 +65,9 @@ public class NetworkDefinition {
               builder()
                   .constants("witti")
                   .snappyCompressionEnabled(true)
-                  .eth1DepositContractAddress("0x6225f431644Ecf8A30b672D42b77c28297542b13")
+                  .discoveryBootnodes(
+                      "enr:-KG4QO6QrRlWQ2Z5ss4XoUsrPvsepRuuogcHyC81gMQr7PJ3IFh41bDnGSl9iN_ijg2EgQeEQDpRPkE4FzD2ecbp6XoChGV0aDKQgGboQQAAARP__________4JpZIJ2NIJpcIQAAAAAiXNlY3AyNTZrMaEDpsGvSN7oM2c04ZT9mrG32TVj-sMhb6HiKc6LMEXYEyiDdGNwgnUwg3VkcIJ1MA")
+                  .eth1DepositContractAddress("0x9eED6A5741e3D071d70817beD551D0078e9a2706")
                   .build())
           .build();
 
