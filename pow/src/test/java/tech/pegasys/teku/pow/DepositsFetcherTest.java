@@ -67,12 +67,11 @@ public class DepositsFetcherTest {
     depositFetcher.fetchDepositsInRange(BigInteger.ZERO, BigInteger.valueOf(10)).join();
 
     final InOrder inOrder = inOrder(eth1EventsChannel, eth1BlockFetcher);
+    inOrder.verify(eth1BlockFetcher).fetch(BigInteger.ZERO, BigInteger.ZERO);
     inOrder.verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(1, 2)));
     inOrder.verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(2, 1)));
-    inOrder.verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(5, 1)));
-    // After all the deposits are sent, backfill the empty blocks
-    inOrder.verify(eth1BlockFetcher).fetch(BigInteger.ZERO, BigInteger.ZERO);
     inOrder.verify(eth1BlockFetcher).fetch(BigInteger.valueOf(3), BigInteger.valueOf(4));
+    inOrder.verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(5, 1)));
     inOrder.verify(eth1BlockFetcher).fetch(BigInteger.valueOf(6), BigInteger.valueOf(10));
   }
 

@@ -23,7 +23,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
@@ -79,27 +78,10 @@ public class DepositFetcher {
         .thenCompose(
             eventResponsesByBlockHash ->
                 postDepositEvents(
-                        getListOfEthBlockFutures(eventResponsesByBlockHash.keySet()),
-                        eventResponsesByBlockHash)
-                    .thenRun(
-                        () ->
-                            fetchBlocksWithoutDeposits(
-                                eventResponsesByBlockHash.navigableKeySet(),
-                                fromBlockNumber,
-                                toBlockNumber)));
-  }
-
-  private void fetchBlocksWithoutDeposits(
-      final NavigableSet<BlockNumberAndHash> blocksWithDeposits,
-      final BigInteger fromBlockNumber,
-      final BigInteger toBlockNumber) {
-    BigInteger from = fromBlockNumber;
-    for (BlockNumberAndHash blockNumberAndHash : blocksWithDeposits) {
-      final BigInteger to = blockNumberAndHash.getNumber().subtract(BigInteger.ONE);
-      eth1BlockFetcher.fetch(from, to);
-      from = blockNumberAndHash.getNumber().add(BigInteger.ONE);
-    }
-    eth1BlockFetcher.fetch(from, toBlockNumber);
+                    getListOfEthBlockFutures(eventResponsesByBlockHash.keySet()),
+                    eventResponsesByBlockHash,
+                    fromBlockNumber,
+                    toBlockNumber));
   }
 
   private SafeFuture<List<DepositContract.DepositEventEventResponse>>
@@ -127,25 +109,38 @@ public class DepositFetcher {
 
   private SafeFuture<Void> postDepositEvents(
       List<SafeFuture<EthBlock.Block>> blockRequests,
-      Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>>
-          depositEventsByBlock) {
-
+      Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>> depositEventsByBlock,
+      BigInteger fromBlock,
+      BigInteger toBlock) {
+    BigInteger from = fromBlock;
     // First process completed requests using iteration.
     // Avoid StackOverflowException when there is a long string of requests already completed.
     while (!blockRequests.isEmpty() && blockRequests.get(0).isDone()) {
       final EthBlock.Block block = blockRequests.remove(0).join();
+
+      // Fetch any empty blocks between this deposit block and the previous one (or start of range)
+      final BigInteger to = block.getNumber().subtract(BigInteger.ONE);
+      eth1BlockFetcher.fetch(from, to);
+      from = block.getNumber().add(BigInteger.ONE);
+
       postEventsForBlock(block, depositEventsByBlock);
     }
 
     // All requests have completed and been processed.
     if (blockRequests.isEmpty()) {
+      // Fetch any empty blocks between the last deposit and end of the range
+      eth1BlockFetcher.fetch(from, toBlock);
       return SafeFuture.COMPLETE;
     }
 
+    BigInteger remainingRangeStart = from;
     // Reached a block request that isn't complete so wait for it and recurse back into this method.
     return blockRequests
         .get(0)
-        .thenCompose(block -> postDepositEvents(blockRequests, depositEventsByBlock));
+        .thenCompose(
+            block ->
+                postDepositEvents(
+                    blockRequests, depositEventsByBlock, remainingRangeStart, toBlock));
   }
 
   private synchronized void postEventsForBlock(
