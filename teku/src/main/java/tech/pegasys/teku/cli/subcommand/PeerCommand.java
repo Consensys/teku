@@ -109,6 +109,7 @@ public class PeerCommand {
       super();
       this.outputFile = outputFile;
     }
+
     PeerGenerationParams() {
       super();
     }
