@@ -68,7 +68,6 @@ public class PeerCommand {
           int number)
       throws IOException {
     try {
-      // TODO check if file exists
       File f = new File(params.outputFile);
       if (f.exists()) {
         throw new InvalidConfigurationException(
