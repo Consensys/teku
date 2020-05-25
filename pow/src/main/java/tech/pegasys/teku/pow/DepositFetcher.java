@@ -83,13 +83,13 @@ public class DepositFetcher {
                         eventResponsesByBlockHash)
                     .thenRun(
                         () ->
-                            postEmptyBlocks(
+                            fetchBlocksWithoutDeposits(
                                 eventResponsesByBlockHash.navigableKeySet(),
                                 fromBlockNumber,
                                 toBlockNumber)));
   }
 
-  private void postEmptyBlocks(
+  private void fetchBlocksWithoutDeposits(
       final NavigableSet<BlockNumberAndHash> blocksWithDeposits,
       final BigInteger fromBlockNumber,
       final BigInteger toBlockNumber) {
