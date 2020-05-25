@@ -167,8 +167,7 @@ class Eth1BlockFetcherTest {
   @Test
   void shouldNotFetchBlocksKnownToBeBeforeTheCachePeriod() {
     // Everything is before the cache period.
-    final Map<Integer, Block> blocks =
-        withBlocks(block(0, ZERO), block(3, ONE), block(4, TWO), block(5, BEFORE_CACHE_PERIOD));
+    withBlocks(block(0, ZERO), block(3, ONE), block(4, TWO), block(5, BEFORE_CACHE_PERIOD));
 
     blockFetcher.onInSync(ZERO);
     verify(eth1Provider).getGuaranteedEth1BlockFuture(ZERO);
