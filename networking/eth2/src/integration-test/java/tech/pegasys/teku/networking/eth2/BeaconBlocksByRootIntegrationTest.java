@@ -158,6 +158,18 @@ public abstract class BeaconBlocksByRootIntegrationTest {
   }
 
   @Test
+  public void shouldReturnMultipleLargeBlocksWhenAllRequestsMatch() throws Exception {
+    final List<SignedBeaconBlock> blocks = asList(addBlock(true), addBlock(true), addBlock(true));
+    final List<Bytes32> blockRoots =
+        blocks.stream()
+            .map(SignedBeaconBlock::getMessage)
+            .map(BeaconBlock::hash_tree_root)
+            .collect(toList());
+    final List<SignedBeaconBlock> response = requestBlocks(blockRoots);
+    assertThat(response).containsExactlyElementsOf(blocks);
+  }
+
+  @Test
   public void shouldReturnMatchingBlocksWhenSomeRequestsDoNotMatch() throws Exception {
     final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
 
@@ -174,7 +186,12 @@ public abstract class BeaconBlocksByRootIntegrationTest {
   }
 
   private SignedBeaconBlock addBlock() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
+    return addBlock(false);
+  }
+
+  private SignedBeaconBlock addBlock(boolean full) {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(1, dataStructureUtil.randomBytes32(), full);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Transaction transaction = storageClient1.startStoreTransaction();
     transaction.putBlock(blockRoot, block);

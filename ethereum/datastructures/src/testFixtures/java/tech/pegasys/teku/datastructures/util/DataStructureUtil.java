@@ -223,7 +223,11 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, Bytes32 parentRoot) {
-    final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, parentRoot);
+    return randomSignedBeaconBlock(slotNum, parentRoot, false);
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, Bytes32 parentRoot, boolean full) {
+    final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, parentRoot, full);
     return new SignedBeaconBlock(beaconBlock, randomSignature());
   }
 
