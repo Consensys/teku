@@ -105,9 +105,12 @@ public class PeerCommand {
     private String outputFile = "./config/peer-ids.dat";
 
     @VisibleForTesting
-    public PeerGenerationParams(final String outputFile) {
+    protected PeerGenerationParams(final String outputFile) {
       super();
       this.outputFile = outputFile;
+    }
+    PeerGenerationParams() {
+      super();
     }
   }
 }
