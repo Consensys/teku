@@ -13,259 +13,213 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.util.config.Constants;
 
 public class Eth1DataCacheTest {
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final EventBus eventBus = new EventBus();
-  private final BeaconState genesisState = mock(BeaconState.class);
+  private static final UnsignedLong CACHE_DURATION = UnsignedLong.valueOf(10_000);
 
-  private final UnsignedLong START_SLOT = UnsignedLong.valueOf(100);
-  private final UnsignedLong NEXT_VOTING_PERIOD_SLOT = UnsignedLong.valueOf(102);
-  private final UnsignedLong testStartTime = UnsignedLong.valueOf(1000);
+  // Note: The slot and genesis time won't line up with the voting period start and end
+  // This is semi-deliberate - if you use the Eth1VotingPeriod instance it all works,
+  // if you duplicate the logic to do the math or depend on some property of that math, it will fail
+  // It also saves us doing a bunch of math in this test...
+  private static final UnsignedLong VOTING_PERIOD_START = UnsignedLong.valueOf(50_000);
+  private static final UnsignedLong VOTING_PERIOD_END = UnsignedLong.valueOf(55_000);
+  private static final UnsignedLong SLOT = UnsignedLong.valueOf(125);
+  private static final UnsignedLong GENESIS_TIME = UnsignedLong.valueOf(77777);
+  public static final UnsignedLong IN_RANGE_TIMESTAMP_1 = UnsignedLong.valueOf(51_000);
+  public static final UnsignedLong IN_RANGE_TIMESTAMP_2 = UnsignedLong.valueOf(52_000);
+  public static final UnsignedLong IN_RANGE_TIMESTAMP_3 = UnsignedLong.valueOf(53_000);
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Eth1Data stateEth1Data = dataStructureUtil.randomEth1Data();
+  private final Eth1VotingPeriod eth1VotingPeriod = mock(Eth1VotingPeriod.class);
 
   private Eth1DataCache eth1DataCache;
 
-  // Voting Period Start Time
-  // = genesisTime + ((slot - (slot % slots_per_eth1_voting_period)) * seconds_per_slot)
-  // = 0 + (((100 - (100 % 6)) * 4)
-  // = 384
-  //
-  // Spec Range:
-  //    Lower Bound = 384 - (5 * 3 * 2) = 354
-  //    Upper Bound = 384 - (5 * 3) = 369
-
-  // Next Voting Period Start Slot = 102
-  // Next Voting Period Start Time = 408
-  // Next Voting Period Lower Bound = 378
-
-  @BeforeAll
-  static void setConstants() {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(3);
-    Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(5);
-    Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
-    Constants.SLOTS_PER_EPOCH = 6;
-    Constants.SECONDS_PER_SLOT = 4;
-  }
-
-  @AfterAll
-  static void restoreConstants() {
-    Constants.setConstants("minimal");
-  }
-
   @BeforeEach
   void setUp() {
-    when(genesisState.getGenesis_time())
-        .thenReturn(testStartTime.minus(UnsignedLong.valueOf(1000)));
-    when(genesisState.getSlot()).thenReturn(UnsignedLong.ZERO);
+    when(eth1VotingPeriod.getCacheDurationInSeconds()).thenReturn(CACHE_DURATION);
+    when(eth1VotingPeriod.getSpecRangeLowerBound(SLOT, GENESIS_TIME))
+        .thenReturn(VOTING_PERIOD_START);
+    when(eth1VotingPeriod.getSpecRangeUpperBound(SLOT, GENESIS_TIME)).thenReturn(VOTING_PERIOD_END);
+    eth1DataCache = new Eth1DataCache(eth1VotingPeriod);
+  }
 
-    eth1DataCache = new Eth1DataCache(eventBus);
+  // Add tests for eth1 block with no votes
+  // - Same block as a deposit
+  // - Received out of order (always after deposits though)
+  // - Multiple in a row
+  // - Voting for a block with no deposits
+
+  @Test
+  void shouldUseDepositDataFromPreviousBlockWhenNoDepositBlockAddedAsLatestBlock() {
+    final Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
+    final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data);
+    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_2);
+
+    final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(createBeaconStateWithVotes());
+    assertThat(eth1Vote).isEqualTo(eth1Data.withBlockHash(emptyBlockHash));
   }
 
   @Test
-  void checkTimeValues() {
-    eth1DataCache.startBeaconChainMode(genesisState);
-    assertThat(eth1DataCache.getSpecRangeLowerBound(START_SLOT))
-        .isEqualByComparingTo(UnsignedLong.valueOf(354));
-    assertThat(eth1DataCache.getSpecRangeUpperBound(START_SLOT))
-        .isEqualByComparingTo(UnsignedLong.valueOf(369));
-    assertThat(eth1DataCache.getSpecRangeLowerBound(NEXT_VOTING_PERIOD_SLOT))
-        .isEqualByComparingTo(UnsignedLong.valueOf(378));
+  void shouldUseDepositFromPreviousBlockWhenNoDepositBlockAddedBetweenDeposits() {
+    final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
+    final Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
+    final Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    final Eth1Data emptyBlockData = eth1Data1.withBlockHash(emptyBlockHash);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_3, eth1Data2);
+    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_2);
+
+    final Eth1Data eth1Vote = eth1DataCache.getEth1Vote(createBeaconStateWithVotes(emptyBlockData));
+    assertThat(eth1Vote).isEqualTo(emptyBlockData);
   }
 
   @Test
-  void checkTimeValuesStayAboveZero() {
-    eth1DataCache.startBeaconChainMode(genesisState);
-    assertThat(eth1DataCache.getSpecRangeLowerBound(UnsignedLong.ONE))
-        .isEqualByComparingTo(UnsignedLong.ZERO);
-    assertThat(eth1DataCache.getSpecRangeUpperBound(UnsignedLong.ONE))
-        .isEqualByComparingTo(UnsignedLong.ZERO);
+  void shouldIgnoreEmptyBlocksWithNoEarlierDeposits() {
+    final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
+    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1);
+
+    assertThat(eth1DataCache.size()).isZero();
+  }
+
+  @Test
+  void shouldAcceptEmptyBlocksWhenAllPreviousDepositsHaveBeenPruned() {
+    final Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
+    final Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1.minus(CACHE_DURATION), eth1Data1);
+
+    // New block would normally prune the first one, but doesn't because we preserve one item
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
+    assertThat(eth1DataCache.size()).isEqualTo(2);
+
+    // Then register an empty block within the voting period but prior to the latest deposit
+    eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_1);
+
+    // And it should be recorded
+    final Eth1Data emptyBlockData = eth1Data1.withBlockHash(emptyBlockHash);
+    final BeaconState beaconState = createBeaconStateWithVotes(emptyBlockData);
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(emptyBlockData);
   }
 
   @Test
   void majorityVoteWins() {
-    eth1DataCache.startBeaconChainMode(genesisState);
+    Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
+    Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
 
     // Both Eth1Data timestamp inside the spec range
-    CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
-    CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(361));
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
 
-    Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
-    Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
-
-    eventBus.post(cacheEth1BlockEvent1);
-    eventBus.post(cacheEth1BlockEvent2);
-
-    SSZMutableList<Eth1Data> eth1DataVotes =
-        SSZList.createMutable(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
-    BeaconStateImpl beaconState = mock(BeaconStateImpl.class);
-    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    when(beaconState.getSlot()).thenReturn(START_SLOT);
-    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data2);
+    BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2, eth1Data2);
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data2);
   }
 
   @Test
   void smallestDistanceWinsIfNoMajority() {
-    eth1DataCache.startBeaconChainMode(genesisState);
+    Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
+    Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
 
-    // Both Eth1Data timestamp inside the spec range
-    CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
-    CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(361));
+    BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2);
 
-    Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
-    Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
 
-    SSZMutableList<Eth1Data> eth1DataVotes =
-        SSZList.createMutable(List.of(eth1Data1, eth1Data2), 10, Eth1Data.class);
-    BeaconStateImpl beaconState = mock(BeaconStateImpl.class);
-    when(beaconState.getSlot()).thenReturn(START_SLOT);
-    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-
-    eventBus.post(cacheEth1BlockEvent1);
-    eventBus.post(cacheEth1BlockEvent2);
-
-    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
   }
 
   @Test
   void oldVoteDoesNotCount() {
-    eth1DataCache.startBeaconChainMode(genesisState);
+    Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
+    Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
 
-    // Eth1Data inside the range
-    CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
-    // Eth1Data timestamp lower than the lower bound
-    CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(352));
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_START.minus(ONE), eth1Data2);
 
-    Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
-    Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
-
-    eventBus.post(cacheEth1BlockEvent1);
-    eventBus.post(cacheEth1BlockEvent2);
-
-    SSZMutableList<Eth1Data> eth1DataVotes =
-        SSZList.createMutable(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
-    BeaconStateImpl beaconState = mock(BeaconStateImpl.class);
-    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    when(beaconState.getSlot()).thenReturn(START_SLOT);
-    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
+    BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2, eth1Data2);
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
   }
 
   @Test
   void tooRecentVoteDoesNotCount() {
-    eth1DataCache.startBeaconChainMode(genesisState);
+    Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
+    Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
 
-    // Eth1Data inside the range
-    CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
-    // Eth1Data timestamp greater than the upper bound
-    CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(372));
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_END.plus(ONE), eth1Data2);
 
-    Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
-    Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
-
-    eventBus.post(cacheEth1BlockEvent1);
-    eventBus.post(cacheEth1BlockEvent2);
-
-    SSZMutableList<Eth1Data> eth1DataVotes =
-        SSZList.createMutable(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
-    BeaconStateImpl beaconState = mock(BeaconStateImpl.class);
-    when(beaconState.getSlot()).thenReturn(START_SLOT);
-    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
+    BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2);
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
   }
 
   @Test
   void noValidVotesInThisPeriod_eth1ChainLive() {
-    eth1DataCache.startBeaconChainMode(genesisState);
+    final Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
+    final Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
 
-    // Both Eth1Data timestamp inside the spec range
-    CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(359));
-    CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
-
-    eventBus.post(cacheEth1BlockEvent1);
-    eventBus.post(cacheEth1BlockEvent2);
-
-    SSZMutableList<Eth1Data> eth1DataVotes = SSZList.createMutable(List.of(), 10, Eth1Data.class);
-    BeaconStateImpl beaconState = mock(BeaconStateImpl.class);
-    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    when(beaconState.getSlot()).thenReturn(START_SLOT);
+    BeaconState beaconState = createBeaconStateWithVotes();
 
     // The most recent Eth1Data in getVotesToConsider wins
-    Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
-    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data2);
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data2);
   }
 
   @Test
   void noValidVotesInThisPeriod_eth1ChainNotLive() {
-    eth1DataCache.startBeaconChainMode(genesisState);
-
-    Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
-
-    SSZMutableList<Eth1Data> eth1DataVotes =
-        SSZList.createMutable(List.of(eth1Data), 10, Eth1Data.class);
-    BeaconStateImpl beaconState = mock(BeaconStateImpl.class);
-    when(beaconState.getSlot()).thenReturn(START_SLOT);
-    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    when(beaconState.getEth1_data()).thenReturn(eth1Data);
-    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data);
+    BeaconState beaconState = createBeaconStateWithVotes(dataStructureUtil.randomEth1Data());
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(stateEth1Data);
   }
 
   @Test
   void shouldPruneOldBlocksWhenNewerOnesReceived() {
-    final UnsignedLong cacheDuration = eth1DataCache.getCacheDuration();
-    final CacheEth1BlockEvent oldBlock = createRandomCacheEth1BlockEvent(UnsignedLong.ZERO);
-    final CacheEth1BlockEvent newBlock =
-        createRandomCacheEth1BlockEvent(
-            oldBlock.getBlockTimestamp().plus(cacheDuration).plus(UnsignedLong.ONE));
-    final CacheEth1BlockEvent newerBlock =
-        createRandomCacheEth1BlockEvent(newBlock.getBlockTimestamp().plus(cacheDuration));
+    final UnsignedLong olderBlockTimestamp = ZERO;
+    final UnsignedLong oldBlockTimestamp = olderBlockTimestamp.plus(ONE);
+    final UnsignedLong newBlockTimestamp = oldBlockTimestamp.plus(CACHE_DURATION).plus(ONE);
+    final UnsignedLong newerBlockTimestamp = newBlockTimestamp.plus(CACHE_DURATION);
 
-    eventBus.post(oldBlock);
-    assertThat(eth1DataCache.size()).isEqualTo(1);
+    eth1DataCache.onBlockWithDeposit(olderBlockTimestamp, dataStructureUtil.randomEth1Data());
+    eth1DataCache.onBlockWithDeposit(oldBlockTimestamp, dataStructureUtil.randomEth1Data());
+    assertThat(eth1DataCache.size()).isEqualTo(2);
 
-    // Next block causes the first to be pruned.
-    eventBus.post(newBlock);
-    assertThat(eth1DataCache.size()).isEqualTo(1);
+    // Push both old blocks out of the cache period
+    eth1DataCache.onBlockWithDeposit(newBlockTimestamp, dataStructureUtil.randomEth1Data());
+    // But only the oldest block gets pruned because we need at least one event prior to the cache
+    // period so empty blocks right at the start of the period can lookup the
+    assertThat(eth1DataCache.size()).isEqualTo(2);
 
-    // Third block is close enough to the second that they are both kept
-    eventBus.post(newerBlock);
+    // Third block is close enough to the second that they are both kept.
+    // newBlockTimestamp is now exactly at the start of the cache period so we can remove oldBlock
+    eth1DataCache.onBlockWithDeposit(newerBlockTimestamp, dataStructureUtil.randomEth1Data());
     assertThat(eth1DataCache.size()).isEqualTo(2);
   }
 
-  private CacheEth1BlockEvent createRandomCacheEth1BlockEvent(UnsignedLong timestamp) {
-    return new CacheEth1BlockEvent(
-        dataStructureUtil.randomUnsignedLong(),
-        dataStructureUtil.randomBytes32(),
-        timestamp,
-        dataStructureUtil.randomBytes32(),
-        dataStructureUtil.randomUnsignedLong());
+  private BeaconState createBeaconStateWithVotes(final Eth1Data... votes) {
+    SSZMutableList<Eth1Data> eth1DataVotes =
+        SSZList.createMutable(List.of(votes), votes.length, Eth1Data.class);
+    final BeaconState beaconState = mock(BeaconState.class);
+    when(beaconState.getSlot()).thenReturn(SLOT);
+    when(beaconState.getGenesis_time()).thenReturn(GENESIS_TIME);
+    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
+    when(beaconState.getEth1_data()).thenReturn(stateEth1Data);
+    return beaconState;
   }
 }

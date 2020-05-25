@@ -15,18 +15,17 @@ package tech.pegasys.teku.pow;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.Longs;
 import java.math.BigInteger;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.utils.Numeric;
@@ -39,23 +38,15 @@ import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class DepositsFetcherTest {
 
-  private Eth1Provider eth1Provider;
-  private Eth1EventsChannel eth1EventsChannel;
-  private DepositContract depositContract;
-  private AsyncRunner asyncRunner;
+  private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
+  private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
+  private final DepositContract depositContract = mock(DepositContract.class);
+  private final Eth1BlockFetcher eth1BlockFetcher = mock(Eth1BlockFetcher.class);
+  private final AsyncRunner asyncRunner = new StubAsyncRunner();
 
-  private DepositFetcher depositFetcher;
-
-  @BeforeEach
-  void setUp() {
-    eth1Provider = mock(Eth1Provider.class);
-    eth1EventsChannel = mock(Eth1EventsChannel.class);
-    depositContract = mock(DepositContract.class);
-    asyncRunner = new StubAsyncRunner();
-
-    depositFetcher =
-        new DepositFetcher(eth1Provider, eth1EventsChannel, depositContract, asyncRunner);
-  }
+  private final DepositFetcher depositFetcher =
+      new DepositFetcher(
+          eth1Provider, eth1EventsChannel, depositContract, eth1BlockFetcher, asyncRunner);
 
   @Test
   void depositsInConsecutiveBlocks() {
@@ -75,10 +66,14 @@ public class DepositsFetcherTest {
 
     depositFetcher.fetchDepositsInRange(BigInteger.ZERO, BigInteger.valueOf(10)).join();
 
-    verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(1, 2)));
-    verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(2, 1)));
-    verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(5, 1)));
-    verifyNoMoreInteractions(eth1EventsChannel);
+    final InOrder inOrder = inOrder(eth1EventsChannel, eth1BlockFetcher);
+    inOrder.verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(1, 2)));
+    inOrder.verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(2, 1)));
+    inOrder.verify(eth1EventsChannel).onDepositsFromBlock(argThat(isEvent(5, 1)));
+    // After all the deposits are sent, backfill the empty blocks
+    inOrder.verify(eth1BlockFetcher).fetch(BigInteger.ZERO, BigInteger.ZERO);
+    inOrder.verify(eth1BlockFetcher).fetch(BigInteger.valueOf(3), BigInteger.valueOf(4));
+    inOrder.verify(eth1BlockFetcher).fetch(BigInteger.valueOf(6), BigInteger.valueOf(10));
   }
 
   private void mockBlockForEth1Provider(String blockHash, long blockNumber, long timestamp) {
