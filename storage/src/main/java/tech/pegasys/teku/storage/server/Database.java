@@ -51,7 +51,13 @@ public interface Database extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
-  Optional<BeaconState> getState(Bytes32 root);
+  /**
+   * Given a block root, returns the corresponding finalized state, if this state is available.
+   *
+   * @param root A block root.
+   * @return The finalized state corresponding to the given block root.
+   */
+  Optional<BeaconState> getFinalizedState(Bytes32 root);
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 

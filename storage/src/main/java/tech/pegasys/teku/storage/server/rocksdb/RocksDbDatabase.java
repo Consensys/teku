@@ -157,8 +157,8 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public Optional<BeaconState> getState(final Bytes32 root) {
-    return dao.getHotState(root).or(() -> dao.getFinalizedState(root));
+  public Optional<BeaconState> getFinalizedState(final Bytes32 root) {
+    return dao.getFinalizedState(root);
   }
 
   @Override

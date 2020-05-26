@@ -217,17 +217,23 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldGetHotStateByRoot() throws StateTransitionException {
-    final SignedBlockAndState block1 = chainBuilder.getBlockAndStateAtSlot(1);
-    final SignedBlockAndState block2 = chainBuilder.getBlockAndStateAtSlot(2);
+  public void getFinalizedState() {
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.ONE);
+    final SignedBlockAndState block2 =
+        chainBuilder.getLatestBlockAndStateAtEpochBoundary(UnsignedLong.ONE);
+    final SignedBlockAndState block1 =
+        chainBuilder.getBlockAndStateAtSlot(block2.getSlot().minus(UnsignedLong.ONE));
 
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlockAndState(block1);
     transaction.putBlockAndState(block2);
+    // Finalize block2
+    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
     commit(transaction);
 
-    assertThat(database.getState(block1.getRoot())).contains(block1.getState());
-    assertThat(database.getState(block2.getRoot())).contains(block2.getState());
+    assertThat(database.getFinalizedState(block2.getRoot())).contains(block2.getState());
+    assertThat(database.getFinalizedState(block1.getRoot())).contains(block1.getState());
   }
 
   @Test
@@ -679,13 +685,13 @@ public abstract class AbstractDatabaseTest {
 
   protected void assertStatesAvailable(final Map<Bytes32, BeaconState> states) {
     for (Bytes32 root : states.keySet()) {
-      assertThat(database.getState(root)).contains(states.get(root));
+      assertThat(database.getFinalizedState(root)).contains(states.get(root));
     }
   }
 
   protected void assertStatesUnavailable(final Collection<Bytes32> roots) {
     for (Bytes32 root : roots) {
-      Optional<BeaconState> bs = database.getState(root);
+      Optional<BeaconState> bs = database.getFinalizedState(root);
       assertThat(bs).isEmpty();
     }
   }

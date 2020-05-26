@@ -97,7 +97,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     // Close db
     database.close();
 
-    assertThatThrownBy(() -> database.getState(genesisCheckpoint.getRoot()))
+    assertThatThrownBy(() -> database.getFinalizedState(genesisCheckpoint.getRoot()))
         .isInstanceOf(IllegalStateException.class);
   }
 }
