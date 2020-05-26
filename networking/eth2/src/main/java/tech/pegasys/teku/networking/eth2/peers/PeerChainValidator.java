@@ -113,11 +113,16 @@ public class PeerChainValidator {
           peer);
       return SafeFuture.completedFuture(false);
     }
+    final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
+    // Only require fork digest to match if only genesis is finalized
+    if (remoteFinalizedEpoch.equals(UnsignedLong.ZERO)) {
+      return SafeFuture.completedFuture(true);
+    }
 
     // Check finalized checkpoint compatibility
-    final Checkpoint finalizedCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint finalizedCheckpoint =
+        storageClient.getBestState().orElseThrow().getFinalized_checkpoint();
     final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
-    final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
     final UnsignedLong currentEpoch = getCurrentEpoch();
 
     // Make sure remote finalized epoch is reasonable
