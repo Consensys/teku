@@ -123,6 +123,8 @@ public class BeaconRestApi {
               config.registerPlugin(
                   new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
               config.defaultContentType = "application/json";
+              config.logIfServerNotStarted = false;
+              config.showJavalinBanner = false;
             });
     initialize(dataProvider, configuration);
   }
