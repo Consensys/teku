@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class PendingPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -40,7 +41,6 @@ public class PendingPoolTest {
   @BeforeEach
   public void setup() {
     // Set up slot
-    assertThat(pendingPool.start()).isCompleted();
     pendingPool.subscribeRequiredBlockRoot(requiredRootEvents::add);
     pendingPool.subscribeRequiredBlockRootDropped(requiredRootDroppedEvents::add);
     setSlot(currentSlot);
@@ -53,11 +53,6 @@ public class PendingPoolTest {
   private void setSlot(final UnsignedLong slot) {
     currentSlot = slot;
     pendingPool.onSlot(slot);
-  }
-
-  @AfterEach
-  public void cleanup() {
-    assertThat(pendingPool.stop()).isCompleted();
   }
 
   @Test

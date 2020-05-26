@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -48,8 +49,8 @@ public class AttestationTopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
-  private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(
+  private final SingleAttestationTopicHandler topicHandler =
+      new tech.pegasys.teku.networking.eth2.gossip.topics.SingleAttestationTopicHandler(
           gossipEncoding,
           dataStructureUtil.randomForkInfo(),
           SUBNET_ID,
@@ -66,7 +67,7 @@ public class AttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(VALID);
+    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID)).thenReturn(VALID);
     final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
@@ -79,7 +80,7 @@ public class AttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(INVALID);
+    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID)).thenReturn(INVALID);
     final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
@@ -92,7 +93,7 @@ public class AttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVED_FOR_FUTURE);
+    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID)).thenReturn(SAVED_FOR_FUTURE);
     final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);

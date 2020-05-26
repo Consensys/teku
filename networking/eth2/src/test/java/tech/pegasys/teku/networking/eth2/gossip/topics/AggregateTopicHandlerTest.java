@@ -33,8 +33,8 @@ public class AggregateTopicHandlerTest {
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final SignedAggregateAndProofValidator validator =
       mock(SignedAggregateAndProofValidator.class);
-  private final AggregateTopicHandler topicHandler =
-      new AggregateTopicHandler(
+  private final AggregateAttestationTopicHandler topicHandler =
+      new AggregateAttestationTopicHandler(
           gossipEncoding, dataStructureUtil.randomForkInfo(), validator, eventBus);
 
   @Test

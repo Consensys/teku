@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -19,14 +19,13 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -68,18 +67,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         aggregatingAttestationPool);
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  void onGossipedAttestation(final Attestation attestation) {
+  public void onGossipedAttestation(final ValidateableAttestation attestation) {
     processAttestation(new DelayableAttestation(attestation, aggregatingAttestationPool::add));
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  void onGossipedAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    final Attestation aggregateAttestation = aggregateAndProof.getMessage().getAggregate();
-    processAttestation(
-        new DelayableAttestation(aggregateAttestation, aggregatingAttestationPool::add));
   }
 
   @Override
@@ -129,7 +118,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         LOG.trace(
             "Deferring attestation {} until a future slot", delayableAttestation::hash_tree_root);
         futureAttestations.add(delayableAttestation);
-        aggregatingAttestationPool.add(delayableAttestation.getAttestation());
+        delayableAttestation.onAttestationProcessedSuccessfully();
         break;
       case INVALID:
         break;
@@ -141,12 +130,12 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   @Override
   protected SafeFuture<?> doStart() {
     eventBus.register(this);
-    return this.pendingAttestations.start();
+    return SafeFuture.completedFuture(null);
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     eventBus.unregister(this);
-    return pendingAttestations.stop();
+    return SafeFuture.completedFuture(null);
   }
 }

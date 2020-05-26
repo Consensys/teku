@@ -36,7 +36,9 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.UpstreamAttestationPipe;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -50,6 +52,13 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -59,6 +68,7 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.StubTimeProvider;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class Eth2NetworkFactory {
 
@@ -83,6 +93,7 @@ public class Eth2NetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
+    protected UpstreamAttestationPipe upstreamAttestationPipe;
     protected Function<RpcMethod, Stream<RpcMethod>> rpcMethodsModifier = Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
@@ -164,12 +175,13 @@ public class Eth2NetworkFactory {
                 config);
 
         return new ActiveEth2Network(
-            network,
-            eth2PeerManager,
-            eventBus,
-            recentChainData,
-            gossipEncoding,
-            attestationSubnetService);
+                network,
+                eth2PeerManager,
+                eventBus,
+                recentChainData,
+                gossipEncoding,
+                attestationSubnetService,
+                upstreamAttestationPipe);
       }
     }
 
@@ -243,6 +255,12 @@ public class Eth2NetworkFactory {
     public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
       checkNotNull(recentChainData);
       this.recentChainData = recentChainData;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder upstreamAttestationPipe(final UpstreamAttestationPipe upstreamAttestationPipe) {
+      checkNotNull(upstreamAttestationPipe);
+      this.upstreamAttestationPipe = upstreamAttestationPipe;
       return this;
     }
 

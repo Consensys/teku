@@ -32,6 +32,8 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -93,8 +95,8 @@ public class SyncingNodeManager {
         new FutureItems<>(SignedBeaconBlock::getSlot);
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(eth2Network, pendingBlocks);
-    BlockPropagationManager blockPropagationManager =
-        BlockPropagationManager.create(
+    BlockManager blockManager =
+        BlockManager.create(
             eventBus,
             pendingBlocks,
             futureBlocks,
@@ -104,10 +106,10 @@ public class SyncingNodeManager {
 
     SyncManager syncManager = SyncManager.create(eth2Network, recentChainData, blockImporter);
     SyncService syncService =
-        new DefaultSyncService(blockPropagationManager, syncManager, recentChainData);
+        new DefaultSyncService(blockManager, syncManager, recentChainData);
 
     eventChannels
-        .subscribe(SlotEventsChannel.class, blockPropagationManager)
+        .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
 
     syncService.start().join();

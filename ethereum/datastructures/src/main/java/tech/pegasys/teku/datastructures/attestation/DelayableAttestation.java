@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.forkchoice;
+package tech.pegasys.teku.datastructures.attestation;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
@@ -22,14 +22,15 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 
 public class DelayableAttestation {
-  private final Attestation attestation;
-  private final Consumer<Attestation> onSuccessfulProcessing;
+  private final ValidateableAttestation validateableAttestation;
+  private final Consumer<ValidateableAttestation> onSuccessfulProcessing;
 
   private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
 
   public DelayableAttestation(
-      final Attestation attestation, final Consumer<Attestation> onSuccessfulProcessing) {
-    this.attestation = attestation;
+          final ValidateableAttestation validateableAttestation,
+          final Consumer<ValidateableAttestation> onSuccessfulProcessing) {
+    this.validateableAttestation = validateableAttestation;
     this.onSuccessfulProcessing = onSuccessfulProcessing;
   }
 
@@ -42,22 +43,22 @@ public class DelayableAttestation {
   }
 
   public Attestation getAttestation() {
-    return attestation;
+    return validateableAttestation.getAttestation();
   }
 
   public void onAttestationProcessedSuccessfully() {
-    onSuccessfulProcessing.accept(attestation);
+    onSuccessfulProcessing.accept(validateableAttestation);
   }
 
   public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
-    return attestation.getEarliestSlotForForkChoiceProcessing();
+    return validateableAttestation.getAttestation().getEarliestSlotForForkChoiceProcessing();
   }
 
   public Collection<Bytes32> getDependentBlockRoots() {
-    return attestation.getDependentBlockRoots();
+    return validateableAttestation.getAttestation().getDependentBlockRoots();
   }
 
   public Bytes32 hash_tree_root() {
-    return attestation.hash_tree_root();
+    return validateableAttestation.getAttestation().hash_tree_root();
   }
 }

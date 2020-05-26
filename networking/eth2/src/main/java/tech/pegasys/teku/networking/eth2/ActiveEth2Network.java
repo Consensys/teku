@@ -25,6 +25,7 @@ import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.UpstreamAttestationPipe;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -47,6 +49,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final GossipEncoding gossipEncoding;
   private final AttestationSubnetService attestationSubnetService;
+  private final UpstreamAttestationPipe upstreamAttestationPipe;
 
   private BlockGossipManager blockGossipManager;
   private AttestationGossipManager attestationGossipManager;
@@ -59,7 +62,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final EventBus eventBus,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final AttestationSubnetService attestationSubnetService) {
+      final AttestationSubnetService attestationSubnetService,
+      final UpstreamAttestationPipe upstreamAttestationPipe) {
     super(discoveryNetwork);
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
@@ -67,6 +71,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.recentChainData = recentChainData;
     this.gossipEncoding = gossipEncoding;
     this.attestationSubnetService = attestationSubnetService;
+    this.upstreamAttestationPipe = upstreamAttestationPipe;
   }
 
   @Override
@@ -91,7 +96,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            discoveryNetwork, gossipEncoding, attestationValidator, recentChainData, eventBus);
+            discoveryNetwork, gossipEncoding, attestationValidator, recentChainData, upstreamAttestationPipe);
     blockGossipManager =
         new BlockGossipManager(
             discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
@@ -99,7 +104,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions, eventBus);
     aggregateGossipManager =
         new AggregateGossipManager(
-            discoveryNetwork, gossipEncoding, forkInfo, aggregateValidator, eventBus);
+            discoveryNetwork, gossipEncoding, forkInfo, aggregateValidator, upstreamAttestationPipe, eventBus);
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
             discoveryNetwork::setLongTermAttestationSubnetSubscriptions);

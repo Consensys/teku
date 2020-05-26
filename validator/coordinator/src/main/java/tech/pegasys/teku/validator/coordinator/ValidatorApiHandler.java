@@ -40,6 +40,7 @@ import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -213,13 +214,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
-    attestationPool.add(attestation);
+    attestationPool.add(ValidateableAttestation.fromSingle(attestation));
     eventBus.post(attestation);
   }
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    attestationPool.add(aggregateAndProof.getMessage().getAggregate());
+    attestationPool.add(ValidateableAttestation.fromAggregate(aggregateAndProof));
     eventBus.post(aggregateAndProof);
   }
 

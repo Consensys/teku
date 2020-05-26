@@ -11,13 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.statetransition.util.FutureItems;
 
 public class FutureItemsTest {
 

@@ -35,12 +35,14 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.ImportedBlocks;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
-public class BlockPropagationManagerTest {
+public class BlockManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final EventBus localEventBus = new EventBus();
@@ -66,8 +68,8 @@ public class BlockPropagationManagerTest {
 
   private final BlockImporter blockImporter =
       new BlockImporter(localRecentChainData, forkChoice, localEventBus);
-  private final BlockPropagationManager blockPropagationManager =
-      new BlockPropagationManager(
+  private final BlockManager blockManager =
+      new BlockManager(
           localEventBus,
           localRecentChainData,
           blockImporter,
@@ -84,12 +86,12 @@ public class BlockPropagationManagerTest {
     remoteChain.initializeStorage();
     when(recentBlockFetcher.start()).thenReturn(SafeFuture.completedFuture(null));
     when(recentBlockFetcher.stop()).thenReturn(SafeFuture.completedFuture(null));
-    assertThat(blockPropagationManager.start()).isCompleted();
+    assertThat(blockManager.start()).isCompleted();
   }
 
   @AfterEach
   public void cleanup() throws Exception {
-    assertThat(blockPropagationManager.stop()).isCompleted();
+    assertThat(blockManager.stop()).isCompleted();
     importedBlocks.close();
   }
 
@@ -287,7 +289,7 @@ public class BlockPropagationManagerTest {
   private UnsignedLong incrementSlot() {
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
     localChain.setSlot(currentSlot);
-    blockPropagationManager.onSlot(currentSlot);
+    blockManager.onSlot(currentSlot);
     return currentSlot;
   }
 }

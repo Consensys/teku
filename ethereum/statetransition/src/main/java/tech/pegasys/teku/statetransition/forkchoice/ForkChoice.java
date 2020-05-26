@@ -22,7 +22,7 @@ import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;

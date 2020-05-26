@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,7 +37,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -45,9 +45,9 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 
 class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

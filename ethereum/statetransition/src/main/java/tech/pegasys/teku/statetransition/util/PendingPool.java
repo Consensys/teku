@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -30,7 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -39,7 +39,7 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class PendingPool<T> extends Service
+public class PendingPool<T>
     implements SlotEventsChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -85,8 +85,8 @@ public class PendingPool<T> extends Service
     return createForBlocks(DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
   }
 
-  static PendingPool<SignedBeaconBlock> createForBlocks(
-      final UnsignedLong historicalBlockTolerance, final UnsignedLong futureBlockTolerance) {
+  public static PendingPool<SignedBeaconBlock> createForBlocks(
+          final UnsignedLong historicalBlockTolerance, final UnsignedLong futureBlockTolerance) {
     return new PendingPool<>(
         historicalBlockTolerance,
         futureBlockTolerance,
@@ -102,11 +102,6 @@ public class PendingPool<T> extends Service
         DelayableAttestation::hash_tree_root,
         DelayableAttestation::getDependentBlockRoots,
         DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
-  }
-
-  @Override
-  protected SafeFuture<?> doStart() {
-    return SafeFuture.completedFuture(null);
   }
 
   public void add(T item) {
@@ -322,11 +317,6 @@ public class PendingPool<T> extends Service
     final Set<Bytes32> rootSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
     rootSet.add(initialValue);
     return rootSet;
-  }
-
-  @Override
-  protected SafeFuture<?> doStop() {
-    return SafeFuture.completedFuture(null);
   }
 
   public interface RequiredBlockRootSubscriber {
