@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -203,7 +202,7 @@ class AttestationManagerTest {
 
   private void verifyAttestationProcessed(final Attestation attestation) {
     ArgumentCaptor<DelayableAttestation> captor =
-            ArgumentCaptor.forClass(DelayableAttestation.class);
+        ArgumentCaptor.forClass(DelayableAttestation.class);
     verify(attestationProcessor).processAttestation(captor.capture());
     assertThat(captor.getValue().getAttestation()).isSameAs(attestation);
   }
