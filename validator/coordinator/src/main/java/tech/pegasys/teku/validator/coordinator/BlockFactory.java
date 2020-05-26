@@ -90,7 +90,7 @@ public class BlockFactory {
     // Collect deposits
     final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState);
 
-    Eth1Data eth1Data = eth1DataCache.get_eth1_vote(blockPreState);
+    Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
     final Bytes32 parentRoot = previousBlock.hash_tree_root();
 
     return blockCreator

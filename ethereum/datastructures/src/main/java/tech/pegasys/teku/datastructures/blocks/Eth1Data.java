@@ -70,6 +70,10 @@ public class Eth1Data extends AbstractImmutableContainer
     super(TYPE, eth1Data.getBackingNode());
   }
 
+  public Eth1Data withBlockHash(final Bytes32 blockHash) {
+    return new Eth1Data(getDeposit_root(), getDeposit_count(), blockHash);
+  }
+
   @Override
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
