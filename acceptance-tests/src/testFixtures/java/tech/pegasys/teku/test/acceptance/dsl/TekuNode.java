@@ -377,7 +377,7 @@ public class TekuNode extends Node {
         validatorsFile.deleteOnExit();
         Files.writeString(validatorsFile.toPath(), validatorKeys.get());
         configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-        configMap.put("validators-key-file", VALIDATORS_FILE_PATH);
+        configMap.put("validators-unencrypted-key-file", VALIDATORS_FILE_PATH);
       }
 
       if ((boolean) configMap.get("p2p-enabled")) {

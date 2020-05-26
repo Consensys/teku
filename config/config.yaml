@@ -24,7 +24,7 @@ Xinterop-number-of-validators: 64
 Xinterop-enabled: True
 
 # validator
-#validators-key-file: "path/to/keys.yaml"
+#validators-unencrypted-key-file: "path/to/keys.yaml"
 
 # deposit
 eth1-deposit-contract-address: "0x77f7bED277449F51505a4C54550B074030d989bC"
