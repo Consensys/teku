@@ -71,7 +71,7 @@ class YamlValidatorKeyProviderTest {
 
     assertThatExceptionOfType(RuntimeException.class)
         .isThrownBy(() -> provider.loadValidatorKeys(config))
-        .withMessageContaining("Error while reading validator key file values");
+        .withMessageContaining("Error while reading validator keys file values");
   }
 
   @Test
