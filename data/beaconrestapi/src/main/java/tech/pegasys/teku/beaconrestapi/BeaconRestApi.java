@@ -98,8 +98,7 @@ public class BeaconRestApi {
               && (!optionalHost.isPresent()
                   || !hostIsInWhitelist(configuration, optionalHost.get()))) {
             ctx.status(SC_FORBIDDEN);
-            LOG.error("Host not authorized " + optionalHost);
-            System.err.println("Host not authorized " + optionalHost);
+            LOG.info("Host not authorized " + optionalHost);
           }
         });
   }
