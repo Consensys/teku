@@ -58,9 +58,9 @@ class AttestationManagerTest {
   private ForkChoiceAttestationProcessor attestationProcessor =
       mock(ForkChoiceAttestationProcessor.class);
   private final PendingPool<DelayableAttestation> pendingAttestations =
-      spy(PendingPool.createForAttestations());
+      PendingPool.createForAttestations();
   private final FutureItems<DelayableAttestation> futureAttestations =
-      spy(new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing));
+      new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
 
   private final AttestationManager attestationManager =
       new AttestationManager(
@@ -82,10 +82,10 @@ class AttestationManagerTest {
     when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
     attestationManager.onGossipedAttestation(attestation);
 
-    verify(attestationProcessor).processAttestation(any());
-    verify(attestationPool).add(eq(attestation));
-    verifyNoInteractions(futureAttestations);
-    verify(pendingAttestations, never()).add(any());
+    verifyAttestationProcessed(attestation);
+    verify(attestationPool).add(attestation);
+    assertThat(futureAttestations.size()).isEqualTo(0);
+    assertThat(pendingAttestations.size()).isEqualTo(0);
   }
 
   @Test
@@ -94,10 +94,10 @@ class AttestationManagerTest {
     when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
     attestationManager.onGossipedAggregateAndProof(aggregate);
 
-    verify(attestationProcessor).processAttestation(any());
-    verify(attestationPool).add(eq(aggregate.getMessage().getAggregate()));
-    verifyNoInteractions(futureAttestations);
-    verify(pendingAttestations, never()).add(any());
+    verifyAttestationProcessed(aggregate.getMessage().getAggregate());
+    verify(attestationPool).add(aggregate.getMessage().getAggregate());
+    assertThat(futureAttestations.size()).isEqualTo(0);
+    assertThat(pendingAttestations.size()).isEqualTo(0);
   }
 
   @Test
@@ -112,8 +112,8 @@ class AttestationManagerTest {
     verify(attestationProcessor).processAttestation(captor.capture());
     captor.getValue().setIndexedAttestation(randomIndexedAttestation);
     verify(attestationPool).add(attestation);
-    verify(futureAttestations).add(captor.getValue());
-    verify(pendingAttestations, never()).add(any());
+    assertThat(futureAttestations.contains(captor.getValue())).isTrue();
+    assertThat(pendingAttestations.size()).isEqualTo(0);
 
     // Shouldn't try to process the attestation until after it's slot.
     attestationManager.onSlot(UnsignedLong.valueOf(100));
@@ -140,7 +140,7 @@ class AttestationManagerTest {
         ArgumentCaptor.forClass(DelayableAttestation.class);
     verify(attestationProcessor).processAttestation(captor.capture());
     assertThat(futureAttestations.size()).isZero();
-    verify(pendingAttestations).add(captor.getValue());
+    assertThat(pendingAttestations.contains(captor.getValue())).isTrue();
     assertThat(pendingAttestations.size()).isEqualTo(1);
 
     // Slots progressing shouldn't cause the attestation to be processed
@@ -155,7 +155,7 @@ class AttestationManagerTest {
     verify(attestationProcessor, times(2)).processAttestation(captor.getValue());
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    verify(attestationPool).add(eq(attestation));
+    verify(attestationPool).add(attestation);
   }
 
   @Test
@@ -165,9 +165,7 @@ class AttestationManagerTest {
         .thenReturn(AttestationProcessingResult.INVALID);
     attestationManager.onGossipedAttestation(attestation);
 
-    ArgumentCaptor<DelayableAttestation> captor =
-        ArgumentCaptor.forClass(DelayableAttestation.class);
-    verify(attestationProcessor).processAttestation(captor.capture());
+    verifyAttestationProcessed(attestation);
     assertThat(pendingAttestations.size()).isZero();
     assertThat(futureAttestations.size()).isZero();
     verifyNoInteractions(attestationPool);
@@ -181,9 +179,7 @@ class AttestationManagerTest {
         .thenReturn(AttestationProcessingResult.INVALID);
     attestationManager.onGossipedAggregateAndProof(aggregateAndProof);
 
-    ArgumentCaptor<DelayableAttestation> captor =
-        ArgumentCaptor.forClass(DelayableAttestation.class);
-    verify(attestationProcessor).processAttestation(captor.capture());
+    verifyAttestationProcessed(aggregateAndProof.getMessage().getAggregate());
     assertThat(pendingAttestations.size()).isZero();
     assertThat(futureAttestations.size()).isZero();
     verifyNoInteractions(attestationPool);
@@ -203,5 +199,12 @@ class AttestationManagerTest {
             new Checkpoint(UnsignedLong.ZERO, Bytes32.ZERO),
             new Checkpoint(UnsignedLong.ZERO, targetRoot)),
         BLSSignature.empty());
+  }
+
+  private void verifyAttestationProcessed(final Attestation attestation) {
+    ArgumentCaptor<DelayableAttestation> captor =
+            ArgumentCaptor.forClass(DelayableAttestation.class);
+    verify(attestationProcessor).processAttestation(captor.capture());
+    assertThat(captor.getValue().getAttestation()).isSameAs(attestation);
   }
 }
