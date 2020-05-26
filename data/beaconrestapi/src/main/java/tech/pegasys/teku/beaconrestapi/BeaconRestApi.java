@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static com.google.common.collect.Streams.stream;
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
 import io.javalin.plugin.openapi.OpenApiOptions;
@@ -27,6 +31,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Optional;
 import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -73,6 +78,8 @@ public class BeaconRestApi {
   private void initialize(final DataProvider dataProvider, final TekuConfiguration configuration) {
     app.server().setServerPort(configuration.getRestApiPort());
 
+    addHostWhitelistHandler(configuration);
+
     addExceptionHandlers();
     addAdminHandlers();
     addBeaconHandlers(dataProvider);
@@ -80,6 +87,39 @@ public class BeaconRestApi {
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
+  }
+
+  private void addHostWhitelistHandler(final TekuConfiguration configuration) {
+    app.before(
+        (ctx) -> {
+          String header = ctx.header("host");
+          Optional<String> optionalHost = getAndValidateHostHeader(header);
+          if (!configuration.getRestApiHostWhitelist().contains("*")
+              && (!optionalHost.isPresent()
+                  || !hostIsInWhitelist(configuration, optionalHost.get()))) {
+            ctx.status(SC_FORBIDDEN);
+            LOG.error("Host not authorized " + optionalHost);
+            System.err.println("Host not authorized " + optionalHost);
+          }
+        });
+  }
+
+  private Optional<String> getAndValidateHostHeader(final String hostHeader) {
+    final Iterable<String> splitHostHeader = Splitter.on(':').split(hostHeader);
+    final long hostPieces = stream(splitHostHeader).count();
+    if (hostPieces > 1) {
+      // If the host contains a colon, verify the host is correctly formed - host [ ":" port ]
+      if (hostPieces > 2 || !Iterables.get(splitHostHeader, 1).matches("\\d{1,5}+")) {
+        return Optional.empty();
+      }
+    }
+    return Optional.ofNullable(Iterables.get(splitHostHeader, 0));
+  }
+
+  private boolean hostIsInWhitelist(
+      final TekuConfiguration configuration, final String hostHeader) {
+    return configuration.getRestApiHostWhitelist().stream()
+        .anyMatch(whitelistEntry -> whitelistEntry.toLowerCase().equals(hostHeader.toLowerCase()));
   }
 
   private void addCustomErrorPages(final TekuConfiguration configuration) {
