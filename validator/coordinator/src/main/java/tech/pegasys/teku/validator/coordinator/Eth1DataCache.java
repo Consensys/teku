@@ -20,11 +20,15 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class Eth1DataCache {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final UnsignedLong cacheDuration;
   private final Eth1VotingPeriod eth1VotingPeriod;
 
@@ -45,6 +49,10 @@ public class Eth1DataCache {
     if (previousBlock == null) {
       // This block is either before any deposits so will never be voted for
       // or before the cache period so would be immediately pruned anyway.
+      LOG.debug(
+          "Not adding eth1 block {} with timestamp {} to cache because it is before all current entries",
+          blockHash,
+          blockTimestamp);
       return;
     }
     final Eth1Data data = previousBlock.getValue();

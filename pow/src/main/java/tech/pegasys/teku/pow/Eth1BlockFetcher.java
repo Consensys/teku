@@ -112,7 +112,6 @@ public class Eth1BlockFetcher {
                   blocksToRequest.headSet(blockNumberToRequest, true).clear();
                 }
               }
-              requestNextBlockIfRequired();
             })
         .exceptionallyCompose(
             error -> {
