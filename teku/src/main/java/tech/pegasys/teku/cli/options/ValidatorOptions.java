@@ -20,9 +20,9 @@ import picocli.CommandLine.Option;
 public class ValidatorOptions {
 
   @Option(
-      names = {"--validators-key-file"},
+      names = {"--validators-unencrypted-key-file"},
       paramLabel = "<FILENAME>",
-      description = "The file to load validator keys from",
+      description = "The file to load unencrypted validator keys from",
       arity = "1")
   private String validatorKeyFile = null;
 
