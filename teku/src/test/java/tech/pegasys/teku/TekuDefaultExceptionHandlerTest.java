@@ -35,7 +35,7 @@ import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.util.Waiter;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-class EventBusExceptionHandlerTest {
+class TekuDefaultExceptionHandlerTest {
 
   private static ExecutorService executor;
 
@@ -80,7 +80,7 @@ class EventBusExceptionHandlerTest {
 
     final var exceptionHandlerRecordingWrapper =
         new SubscriberExceptionHandler() {
-          private final SubscriberExceptionHandler delegate = new EventBusExceptionHandler(log);
+          private final SubscriberExceptionHandler delegate = new TekuDefaultExceptionHandler(log);
 
           @Override
           public void handleException(
