@@ -157,10 +157,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
     if (attestationGossipManager == null) {
-      System.out.println("Adding pending subscription to " + subnetId);
       pendingSubnetSubscriptions.add(subnetId);
     } else {
-      System.out.println("Subscribing to " + subnetId);
       attestationGossipManager.subscribeToSubnetId(subnetId);
     }
   }
