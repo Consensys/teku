@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.services.powchain;
 
+import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.pow.DepositContractAccessor;
 import tech.pegasys.teku.pow.DepositObjectsFactory;
-import tech.pegasys.teku.pow.Eth1DataManager;
+import tech.pegasys.teku.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.pow.Eth1DepositManager;
 import tech.pegasys.teku.pow.Eth1Provider;
 import tech.pegasys.teku.pow.ThrottlingEth1Provider;
@@ -31,12 +32,10 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.TekuConfiguration;
-import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 
 public class PowchainService extends Service {
 
   private final Eth1DepositManager eth1DepositManager;
-  private final Eth1DataManager eth1DataManager;
 
   public PowchainService(final ServiceConfig config) {
     TekuConfiguration tekuConfig = config.getConfig();
@@ -53,37 +52,32 @@ public class PowchainService extends Service {
         DepositContractAccessor.create(
             eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress().toHexString());
 
+    final Eth1EventsChannel eth1EventsChannel =
+        config.getEventChannels().getPublisher(Eth1EventsChannel.class);
+    final Eth1BlockFetcher eth1BlockFetcher =
+        new Eth1BlockFetcher(
+            eth1EventsChannel,
+            eth1Provider,
+            config.getTimeProvider(),
+            calculateEth1DataCacheDurationPriorToCurrentTime());
     DepositObjectsFactory depositsObjectFactory =
         new DepositObjectsFactory(
             eth1Provider,
-            config.getEventChannels().getPublisher(Eth1EventsChannel.class),
+            eth1EventsChannel,
             depositContractAccessor.getContract(),
+            eth1BlockFetcher,
             asyncRunner);
 
     eth1DepositManager = depositsObjectFactory.createEth1DepositsManager();
-
-    eth1DataManager =
-        new Eth1DataManager(
-            eth1Provider,
-            config.getEventBus(),
-            depositContractAccessor,
-            asyncRunner,
-            config.getTimeProvider());
-
-    config.getEventChannels().subscribe(TimeTickChannel.class, eth1DataManager);
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.allOfFailFast(
-        SafeFuture.fromRunnable(eth1DepositManager::start),
-        SafeFuture.fromRunnable(eth1DataManager::start));
+    return SafeFuture.fromRunnable(eth1DepositManager::start);
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(
-        SafeFuture.fromRunnable(eth1DepositManager::stop),
-        SafeFuture.fromRunnable(eth1DataManager::stop));
+    return SafeFuture.fromRunnable(eth1DepositManager::stop);
   }
 }
