@@ -7,6 +7,8 @@ we recommend most users use the latest `master` branch of Teku.
 
 - In a future release the `--eth1-enabled` option will be removed. 
   ETH1 will be enabled when an `--eth1-endpoint` is provided and otherwise disabled.
+- CLI option `--validators-key-file` renamed to `--validators-unencrypted-key-file` to avoid ambiguity from similar 
+named CLI option `--validators-key-files` which is used to specify encrypted validator keystore files.
 
 ## 0.11.2
 
