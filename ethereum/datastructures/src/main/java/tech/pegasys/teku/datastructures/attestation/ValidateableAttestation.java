@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.datastructures.attestation;
 
-import java.util.Optional;
-
 import com.google.common.base.Objects;
+import java.util.Optional;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 
@@ -56,8 +55,8 @@ public class ValidateableAttestation {
     if (this == o) return true;
     if (!(o instanceof ValidateableAttestation)) return false;
     ValidateableAttestation that = (ValidateableAttestation) o;
-    return Objects.equal(getAttestation(), that.getAttestation()) &&
-            Objects.equal(maybeAggregate, that.maybeAggregate);
+    return Objects.equal(getAttestation(), that.getAttestation())
+        && Objects.equal(maybeAggregate, that.maybeAggregate);
   }
 
   @Override
