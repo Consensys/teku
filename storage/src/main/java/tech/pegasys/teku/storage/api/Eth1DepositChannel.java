@@ -13,15 +13,10 @@
 
 package tech.pegasys.teku.storage.api;
 
-import java.util.Optional;
-import java.util.stream.Stream;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.storage.server.ReplayDepositsResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface Eth1DepositChannel {
 
-  SafeFuture<Stream<DepositsFromBlockEvent>> streamDepositFromBlockEvents();
-
-  SafeFuture<Optional<MinGenesisTimeBlockEvent>> getMinGenesisTimeBlockEvent();
+  SafeFuture<ReplayDepositsResult> replayDepositEvents();
 }

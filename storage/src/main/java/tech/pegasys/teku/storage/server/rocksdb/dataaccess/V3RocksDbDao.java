@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -133,6 +134,7 @@ public class V3RocksDbDao implements RocksDbDao {
   }
 
   @Override
+  @MustBeClosed
   public Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates() {
     return db.stream(V3Schema.CHECKPOINT_STATES);
   }
@@ -143,8 +145,9 @@ public class V3RocksDbDao implements RocksDbDao {
   }
 
   @Override
+  @MustBeClosed
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
-    return db.stream(V3Schema.DEPOSITS_FORM_BLOCK_EVENTS).map(ColumnEntry::getValue);
+    return db.stream(V3Schema.DEPOSITS_FROM_BLOCK_EVENTS).map(ColumnEntry::getValue);
   }
 
   @Override
@@ -387,7 +390,7 @@ public class V3RocksDbDao implements RocksDbDao {
 
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
-      transaction.put(V3Schema.DEPOSITS_FORM_BLOCK_EVENTS, event.getBlockNumber(), event);
+      transaction.put(V3Schema.DEPOSITS_FROM_BLOCK_EVENTS, event.getBlockNumber(), event);
       transaction.commit();
     }
 

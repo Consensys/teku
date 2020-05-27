@@ -44,8 +44,13 @@ public class StorageService extends Service {
           final VersionedDatabaseFactory dbFactory =
               new VersionedDatabaseFactory(serviceConfig.getConfig());
           database = dbFactory.createDatabase();
+
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
-          depositStorage = DepositStorage.create(serviceConfig.getEventBus(), database);
+          depositStorage =
+              DepositStorage.create(
+                  serviceConfig.getEventBus(),
+                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class),
+                  database);
 
           serviceConfig
               .getEventChannels()
@@ -54,6 +59,7 @@ public class StorageService extends Service {
               .subscribe(StorageUpdateChannel.class, chainStorage)
               .subscribeMultithreaded(
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
+
           chainStorage.start();
           depositStorage.start();
         });

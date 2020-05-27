@@ -46,7 +46,7 @@ public interface V3Schema extends Schema {
       RocksDbColumn.create(5, CHECKPOINT_SERIALIZER, STATE_SERIALIZER);
   RocksDbColumn<UnsignedLong, VoteTracker> VOTES =
       RocksDbColumn.create(6, UNSIGNED_LONG_SERIALIZER, VOTES_SERIALIZER);
-  RocksDbColumn<UnsignedLong, DepositsFromBlockEvent> DEPOSITS_FORM_BLOCK_EVENTS =
+  RocksDbColumn<UnsignedLong, DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENTS =
       RocksDbColumn.create(7, UNSIGNED_LONG_SERIALIZER, DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER);
 
   // Variables

@@ -64,6 +64,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -388,12 +389,22 @@ public final class DataStructureUtil {
   }
 
   public DepositsFromBlockEvent randomDepositsFromBlockEvent(
+      final long blockIndex, long depositCount) {
+    return randomDepositsFromBlockEvent(UnsignedLong.valueOf(blockIndex), depositCount);
+  }
+
+  public DepositsFromBlockEvent randomDepositsFromBlockEvent(
       UnsignedLong blockIndex, long depositCount) {
     List<tech.pegasys.teku.pow.event.Deposit> deposits = new ArrayList<>();
     for (long i = 0; i < depositCount; i++) {
       deposits.add(randomDepositEvent(UnsignedLong.valueOf(i)));
     }
     return new DepositsFromBlockEvent(blockIndex, randomBytes32(), randomUnsignedLong(), deposits);
+  }
+
+  public MinGenesisTimeBlockEvent randomMinGenesisTimeBlockEvent(final long blockIndex) {
+    return new MinGenesisTimeBlockEvent(
+        randomUnsignedLong(), UnsignedLong.valueOf(blockIndex), randomBytes32());
   }
 
   public Deposit randomDepositWithoutIndex() {
