@@ -19,23 +19,20 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 
 public class ValidateableAttestation {
   private final Attestation attestation;
-  private Optional<SignedAggregateAndProof> maybeAggregate = Optional.empty();
+  private final Optional<SignedAggregateAndProof> maybeAggregate;
 
   public static ValidateableAttestation fromSingle(Attestation attestation) {
-    return new ValidateableAttestation(attestation);
+    return new ValidateableAttestation(attestation, Optional.empty());
   }
 
   public static ValidateableAttestation fromAggregate(SignedAggregateAndProof attestation) {
-    return new ValidateableAttestation(attestation);
+    return new ValidateableAttestation(attestation.getMessage().getAggregate(), Optional.of(attestation));
   }
 
-  public ValidateableAttestation(Attestation attestation) {
+  private ValidateableAttestation(Attestation attestation,
+                                  Optional<SignedAggregateAndProof> aggregateAndProof) {
+    maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
-  }
-
-  private ValidateableAttestation(SignedAggregateAndProof attestation) {
-    maybeAggregate = Optional.of(attestation);
-    this.attestation = attestation.getMessage().getAggregate();
   }
 
   public boolean isAggregate() {
