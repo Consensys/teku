@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.beacon;
 
 import static io.javalin.core.util.Header.CACHE_CONTROL;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -27,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -59,7 +61,11 @@ public class GetHead implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     ctx.header(CACHE_CONTROL, CACHE_NONE);
-    final BeaconHead result = provider.getBeaconHead();
-    ctx.result(jsonProvider.objectToJSON(result));
+    final Optional<BeaconHead> result = provider.getBeaconHead();
+    if (result.isPresent()) {
+      ctx.result(jsonProvider.objectToJSON(result.get()));
+    } else {
+      ctx.status(SC_NO_CONTENT);
+    }
   }
 }

@@ -31,9 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.CommitteeAssignmentUtil;
@@ -52,6 +52,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
+import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -72,7 +73,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
-  private final AttestationTopicSubscriber attestationTopicSubscriptions;
+  private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final EventBus eventBus;
 
   public ValidatorApiHandler(
@@ -81,14 +82,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
-      final AttestationTopicSubscriber attestationTopicSubscriptions,
+      final AttestationTopicSubscriber attestationTopicSubscriber,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateTracker = syncStateTracker;
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
-    this.attestationTopicSubscriptions = attestationTopicSubscriptions;
+    this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.eventBus = eventBus;
   }
 
@@ -112,7 +113,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
     LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
-        .getStateAtSlot(slot)
+        .getLatestStateAtSlot(slot)
         .thenApply(
             optionalState ->
                 optionalState
@@ -147,18 +148,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private <T> SafeFuture<Optional<T>> createFromBlockAndState(
       final UnsignedLong maximumSlot,
       final ExceptionThrowingFunction<BeaconBlockAndState, T> creator) {
-    final Optional<Bytes32> headRoot = combinedChainDataClient.getBestBlockRoot();
-    if (headRoot.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
-    final UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
 
-    // We need to request the block on the canonical chain which is strictly before slot
-    // If slot is past the end of our canonical chain, we need the last block from our chain.
-    final UnsignedLong parentBlockSlot =
-        bestSlot.compareTo(maximumSlot) >= 0 ? maximumSlot : bestSlot;
     return combinedChainDataClient
-        .getBlockAndStateInEffectAtSlot(parentBlockSlot, headRoot.get())
+        .getBlockAndStateInEffectAtSlot(maximumSlot)
         .thenApplyChecked(
             maybeBlockAndState -> {
               if (maybeBlockAndState.isEmpty()) {
@@ -209,9 +201,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(
+  public void subscribeToBeaconCommitteeForAggregation(
       final int committeeIndex, final UnsignedLong aggregationSlot) {
-    attestationTopicSubscriptions.subscribeToCommittee(committeeIndex, aggregationSlot);
+    attestationTopicSubscriber.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
+  }
+
+  @Override
+  public void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions) {
+    attestationTopicSubscriber.subscribeToPersistentSubnets(subnetSubscriptions);
   }
 
   @Override

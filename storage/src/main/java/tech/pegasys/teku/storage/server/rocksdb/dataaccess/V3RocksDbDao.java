@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -44,21 +45,21 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstance.Transaction;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 
 public class V3RocksDbDao implements RocksDbDao {
   private static final Logger LOG = LogManager.getLogger();
 
   // Persistent data
-  private final RocksDbInstance db;
+  private final RocksDbAccessor db;
   // In-memory data
   private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache =
       new ConcurrentSkipListMap<>();
   private final Map<Bytes32, BeaconState> hotStates = new ConcurrentHashMap<>();
 
-  public V3RocksDbDao(final RocksDbInstance db) {
+  public V3RocksDbDao(final RocksDbAccessor db) {
     this.db = db;
     initialize();
   }
@@ -188,11 +189,31 @@ public class V3RocksDbDao implements RocksDbDao {
     }
 
     LOG.info("Initializing hot states from hot blocks");
-    initializeHotStates(finalizedRoot.get(), finalizedState.get(), hotBlocksByRoot);
+    final Map<Bytes32, SignedBeaconBlock> prunedHotBlocks =
+        initializeHotStatesAndBlocks(finalizedRoot.get(), finalizedState.get(), hotBlocksByRoot);
     LOG.info("Finished initializing hot states from hot blocks");
+
+    initializeHotSlotsByCache(prunedHotBlocks.values());
   }
 
-  private void initializeHotStates(
+  private void initializeHotSlotsByCache(Collection<SignedBeaconBlock> blocks) {
+    for (SignedBeaconBlock block : blocks) {
+      Set<Bytes32> blockRoots =
+          hotRootsBySlotCache.computeIfAbsent(
+              block.getSlot(), __ -> Collections.newSetFromMap(new ConcurrentHashMap<>()));
+      blockRoots.add(block.getRoot());
+    }
+  }
+
+  /**
+   * At the end deletes block roots for which we can't generate state for and returns the mutated
+   * hotBlocksByRoots map
+   *
+   * @param finalizedRoot
+   * @param finalizedState
+   * @param hotBlocksByRoot
+   */
+  private Map<Bytes32, SignedBeaconBlock> initializeHotStatesAndBlocks(
       final Bytes32 finalizedRoot,
       final BeaconState finalizedState,
       final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot) {
@@ -233,12 +254,22 @@ public class V3RocksDbDao implements RocksDbDao {
           hotStates.size(),
           hotBlocksByRoot.size());
 
-      Transaction transaction = db.startTransaction();
-      hotBlocksByRoot.keySet().stream()
-          .filter(signedBeaconBlock -> !hotStates.containsKey(signedBeaconBlock))
-          .forEach(blockRoot -> transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot));
+      RocksDbTransaction transaction = db.startTransaction();
+      Set<Bytes32> blockRootsToDelete =
+          hotBlocksByRoot.keySet().stream()
+              .filter(blockRoot -> !hotStates.containsKey(blockRoot))
+              .collect(Collectors.toSet());
+
+      blockRootsToDelete.forEach(
+          blockRoot -> {
+            hotBlocksByRoot.remove(blockRoot);
+            transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot);
+          });
+
       transaction.commit();
     }
+
+    return hotBlocksByRoot;
   }
 
   private final Optional<BeaconState> processBlock(
@@ -258,7 +289,7 @@ public class V3RocksDbDao implements RocksDbDao {
 
   private static class V3Updater implements Updater {
 
-    private final Transaction transaction;
+    private final RocksDbTransaction transaction;
     private final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache;
     private final Map<Bytes32, BeaconState> hotStates;
 
@@ -272,7 +303,7 @@ public class V3RocksDbDao implements RocksDbDao {
     private final Set<Bytes32> deletedStates = new HashSet<>();
 
     V3Updater(
-        final RocksDbInstance db,
+        final RocksDbAccessor db,
         final NavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache,
         final Map<Bytes32, BeaconState> hotStates) {
       this.transaction = db.startTransaction();
@@ -317,7 +348,7 @@ public class V3RocksDbDao implements RocksDbDao {
 
     @Override
     public void addHotBlock(final SignedBeaconBlock block) {
-      final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+      final Bytes32 blockRoot = block.getRoot();
       transaction.put(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot, block);
       hotRootsBySlotAdditions
           .computeIfAbsent(block.getSlot(), key -> new HashSet<>())
@@ -326,7 +357,7 @@ public class V3RocksDbDao implements RocksDbDao {
 
     @Override
     public void addFinalizedBlock(final SignedBeaconBlock block) {
-      final Bytes32 root = block.getMessage().hash_tree_root();
+      final Bytes32 root = block.getRoot();
       transaction.put(V3Schema.FINALIZED_ROOTS_BY_SLOT, block.getSlot(), root);
       transaction.put(V3Schema.FINALIZED_BLOCKS_BY_ROOT, root, block);
     }
@@ -364,7 +395,8 @@ public class V3RocksDbDao implements RocksDbDao {
 
     @Override
     public Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot) {
-      final Map<UnsignedLong, Set<Bytes32>> toRemove = hotRootsBySlotAdditions.headMap(slot);
+      final Map<UnsignedLong, Set<Bytes32>> toRemove = new HashMap<>();
+      toRemove.putAll(hotRootsBySlotAdditions.headMap(slot));
       toRemove.putAll(hotRootsBySlotCache.headMap(slot));
 
       final Set<Bytes32> prunedRoots =
@@ -376,6 +408,7 @@ public class V3RocksDbDao implements RocksDbDao {
           transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, root);
         }
       }
+
       hotRootsBySlotAdditions.keySet().removeAll(toRemove.keySet());
       prunedSlots.addAll(toRemove.keySet());
 

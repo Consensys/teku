@@ -83,8 +83,7 @@ public class ValidatorLoader {
 
   private static Collection<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
     final Set<ValidatorKeyProvider> keyProviders = new LinkedHashSet<>();
-    if (config.getValidatorsKeyFile() == null
-        && config.getValidatorKeystorePasswordFilePairs() == null) {
+    if (config.isInteropEnabled()) {
       keyProviders.add(new MockStartValidatorKeyProvider());
     } else {
       // support loading keys both from unencrypted yaml and encrypted keystores

@@ -183,6 +183,22 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
   }
 
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"Off", "Fatal", "WaRN", "InfO", "DebUG", "trACE", "all"})
+  public void loglevel_shouldAcceptValuesMixedCase(String level) {
+    final String[] args = {"--logging", level};
+    beaconNodeCommand.parse(args);
+    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level.toUpperCase());
+  }
+
+  @Test
+  public void logLevel_shouldRejectInvalidValues() {
+    final String[] args = {"--logging", "invalid"};
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str).contains("'invalid' is not a valid log level. Supported values are");
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
@@ -230,7 +246,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pAdvertisedPort(OptionalInt.empty())
         .setP2pDiscoveryEnabled(true)
         .setP2pInterface("0.0.0.0")
-        .setP2pPort(30303)
+        .setP2pPort(9000)
         .setP2pPrivateKeyFile(null)
         .setInteropEnabled(false)
         .setInteropGenesisTime(0)

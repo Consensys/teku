@@ -137,7 +137,7 @@ public class Constants {
   public static final long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 100;
-  public static final long STORAGE_REQUEST_TIMEOUT = 3; // in sec
+  public static final long STORAGE_REQUEST_TIMEOUT = 5; // in sec
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
   public static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
@@ -161,6 +161,7 @@ public class Constants {
   public static final int VALID_BLOCK_SET_SIZE = 1000;
   public static final int VALID_ATTESTATION_SET_SIZE = 1000;
   public static final int VALID_AGGREGATE_SET_SIZE = 1000;
+  public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
   static {
     setConstants("minimal");
@@ -176,7 +177,7 @@ public class Constants {
 
   private static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class, name -> name + ".yaml", "mainnet", "minimal")
+            Constants.class, name -> name + ".yaml", "mainnet", "minimal", "schlesi", "witti")
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }

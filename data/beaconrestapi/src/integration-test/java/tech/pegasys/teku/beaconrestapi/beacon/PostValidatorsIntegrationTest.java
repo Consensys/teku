@@ -13,47 +13,41 @@
 
 package tech.pegasys.teku.beaconrestapi.beacon;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import okhttp3.Response;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
+import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.storage.Store;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.core.ChainProperties;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
+public class PostValidatorsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   private static final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(1);
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    when(recentChainData.getStore()).thenReturn(null);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    startPreGenesisRestAPI();
 
     final Response response = post(1, keys);
     assertNoContent(response);
   }
 
   @Test
-  public void shouldReturnNoContentWhenBestBlockRootMissing() throws Exception {
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
+  public void shouldReturnNoContentIfPreForkChoice() throws Exception {
+    startPreForkChoiceRestAPI();
 
     final Response response = post(1, keys);
     assertNoContent(response);
@@ -61,23 +55,23 @@ public class PostValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrat
 
   @Test
   public void shouldHandleMissingFinalizedState() throws Exception {
-    final int epoch = 1;
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    final Store store = mock(Store.class);
-    when(recentChainData.getStore()).thenReturn(store);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
-    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(root));
-    when(historicalChainData.getLatestFinalizedStateAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
+    final int outOfRangeSlot = 20;
+    final int finalizedSlot = 20 + Constants.SLOTS_PER_HISTORICAL_ROOT;
+    createBlocksAtSlots(outOfRangeSlot, finalizedSlot);
+    final UnsignedLong finalizedEpoch =
+        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
 
-    final Response response = post(1, keys);
+    final int targetEpoch = finalizedEpoch.minus(UnsignedLong.ONE).intValue();
+    final Response response = post(targetEpoch, keys);
     assertGone(response);
   }
 
   @Test
   public void shouldReturnEmptyListIfWhenPubKeysIsEmpty() throws Exception {
-    final int epoch = 1;
-    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+    startRestAPIAtGenesis(StateStorageMode.PRUNE);
 
     final Response response = post(1, Collections.emptyList());
     assertBodyEquals(response, "[]");

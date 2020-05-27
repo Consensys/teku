@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
@@ -88,6 +89,8 @@ public class PostValidatorsTest {
     handler.handle(context);
 
     verify(context).status(SC_BAD_REQUEST);
+    verify(context).body();
+    verifyNoMoreInteractions(context);
   }
 
   @Test
@@ -103,5 +106,26 @@ public class PostValidatorsTest {
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> data = args.getValue();
     assertThat(data.get()).isEqualTo(EMPTY_LIST);
+  }
+
+  @Test
+  public void shouldGetErrorMessageWhenBadPublicKey() throws Exception {
+    final String body =
+        "{\"epoch\":0,\"pubkeys\":[\"0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af178bb2305b26a285fa2737f175668d0dff91cc\"]}";
+
+    when(context.body()).thenReturn(body);
+    when(provider.getValidatorsByValidatorsRequest(any()))
+        .thenReturn(completedFuture(Optional.of(new BeaconValidators())));
+    handler.handle(context);
+
+    verify(context).body();
+    verify(context).status(SC_BAD_REQUEST);
+
+    final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
+    verify(context).result(stringArgs.capture());
+    String data = stringArgs.getValue();
+    assertThat(data).contains("Public key is not valid");
+    // index of key that was bad
+    assertThat(data).contains("[0]");
   }
 }

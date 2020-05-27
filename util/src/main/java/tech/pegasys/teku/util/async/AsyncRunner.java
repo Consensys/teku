@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.util.async;
 
+import com.google.common.base.Preconditions;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public interface AsyncRunner {
@@ -34,5 +36,28 @@ public interface AsyncRunner {
 
   default SafeFuture<Void> getDelayedFuture(long delayAmount, TimeUnit delayUnit) {
     return runAfterDelay(() -> SafeFuture.COMPLETE, delayAmount, delayUnit);
+  }
+
+  /**
+   * Schedules the recurrent task which will be repeatedly executed with the specified delay.
+   *
+   * <p>The returned instance can be used to cancel the task. Note that {@link Cancellable#cancel()}
+   * doesn't interrupt already running task.
+   *
+   * <p>Whenever the {@code runnable} throws exception it is notified to the {@code
+   * exceptionHandler} and the task recurring executions are not interrupted
+   */
+  default Cancellable runWithFixedDelay(
+      ExceptionThrowingRunnable runnable,
+      long delayAmount,
+      TimeUnit delayUnit,
+      Consumer<Throwable> exceptionHandler) {
+
+    Preconditions.checkNotNull(exceptionHandler);
+
+    Cancellable cancellable = FutureUtil.createCancellable();
+    FutureUtil.runWithFixedDelay(
+        this, runnable, cancellable, delayAmount, delayUnit, exceptionHandler);
+    return cancellable;
   }
 }

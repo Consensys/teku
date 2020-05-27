@@ -36,6 +36,7 @@ class NodeRecordConverterTest {
       Bytes.fromHexString("0x0295A5A50F083697FF8557F3C6FE0CDF8E8EC2141D15F19A5A45571ED9C38CE181");
   private static final Bytes IPV6_LOCALHOST =
       Bytes.fromHexString("0x00000000000000000000000000000001");
+  private static final Optional<Bytes> ENR_FORK_ID = Optional.of(Bytes.EMPTY);
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -48,7 +49,8 @@ class NodeRecordConverterTest {
         new DiscoveryPeer(
             Bytes.fromHexString(
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
-            new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000));
+            new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
+            Optional.of(Bytes.EMPTY));
     assertThat(convertToDiscoveryPeer(nodeRecord)).contains(expectedPeer);
   }
 
@@ -79,7 +81,7 @@ class NodeRecordConverterTest {
     assertThat(
             convertNodeRecordWithFields(
                 new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP, 30303)))
-        .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 30303)));
+        .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 30303), ENR_FORK_ID));
   }
 
   @Test
@@ -103,7 +105,8 @@ class NodeRecordConverterTest {
             new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {-127, 24, 31, 22})),
             new EnrField(EnrField.TCP, 1234));
     assertThat(result)
-        .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("129.24.31.22", 1234)));
+        .contains(
+            new DiscoveryPeer(PUB_KEY, new InetSocketAddress("129.24.31.22", 1234), ENR_FORK_ID));
   }
 
   @Test
@@ -111,7 +114,8 @@ class NodeRecordConverterTest {
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
             new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V6, 1234));
-    assertThat(result).contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 1234)));
+    assertThat(result)
+        .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(final EnrField... fields) {

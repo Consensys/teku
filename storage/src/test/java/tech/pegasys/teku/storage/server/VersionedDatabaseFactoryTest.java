@@ -39,7 +39,7 @@ public class VersionedDatabaseFactoryTest {
 
   @Test
   public void createDatabase_fromEmptyDataDir() throws Exception {
-    final VersionedDatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
+    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -52,7 +52,7 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     createVersionFile(dataDir, DatabaseVersion.V3);
 
-    final VersionedDatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
+    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -63,7 +63,7 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     createVersionFile(dataDir, "bla");
 
-    final VersionedDatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
+    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -73,7 +73,7 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_dbExistsButNoVersionIsSaved() throws Exception {
     createDbDirectory(dataDir);
 
-    final VersionedDatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
+    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");

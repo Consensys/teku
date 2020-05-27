@@ -24,6 +24,8 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -43,12 +45,14 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
+  private final Eth1DataCache eth1DataCache;
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
 
-  private NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
+  private final NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
 
-  public DepositProvider(RecentChainData recentChainData) {
+  public DepositProvider(RecentChainData recentChainData, final Eth1DataCache eth1DataCache) {
     this.recentChainData = recentChainData;
+    this.eth1DataCache = eth1DataCache;
   }
 
   @Override
@@ -66,6 +70,12 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
                 depositMerkleTree.add(deposit.getData().hash_tree_root());
               }
             });
+    eth1DataCache.onBlockWithDeposit(
+        event.getBlockTimestamp(),
+        new Eth1Data(
+            depositMerkleTree.getRoot(),
+            UnsignedLong.valueOf(depositMerkleTree.getNumberOfLeaves()),
+            event.getBlockHash()));
   }
 
   @Override
@@ -77,6 +87,11 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
                 () -> new IllegalArgumentException("Finalized Checkpoint state can not be found."));
 
     depositNavigableMap.headMap(finalizedState.getEth1_deposit_index()).clear();
+  }
+
+  @Override
+  public void onEth1Block(final Bytes32 blockHash, final UnsignedLong blockTimestamp) {
+    eth1DataCache.onEth1Block(blockHash, blockTimestamp);
   }
 
   @Override

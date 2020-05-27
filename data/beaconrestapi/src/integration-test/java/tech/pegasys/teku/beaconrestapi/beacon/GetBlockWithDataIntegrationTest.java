@@ -24,59 +24,63 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import okhttp3.Response;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock;
 
 public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
+  @BeforeEach
+  public void setup() {
+    startRestAPIAtGenesis();
+  }
+
   @Test
   public void shouldGetBlockWhenPresent_getByEpoch() throws Exception {
-    final List<SignedBeaconBlock> blocks = withBlockDataAtSlot(SIX, SEVEN, EIGHT);
+    final List<SignedBeaconBlock> blocks = createBlocksAtSlotsAndMapToApiResult(SIX, SEVEN, EIGHT);
     final Response response = getByEpoch(ONE);
     final String responseBody = response.body().string();
-    final SignedBeaconBlock result =
-        jsonProvider.jsonToObject(responseBody, SignedBeaconBlock.class);
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
 
-    assertThat(result).usingRecursiveComparison().isEqualTo(blocks.get(2));
+    assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(2));
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
   @Test
   public void shouldGetBlockWhenPresent_getBySlot() throws Exception {
-    final List<SignedBeaconBlock> blocks = withBlockDataAtSlot(EIGHT, NINE);
+    final List<SignedBeaconBlock> blocks = createBlocksAtSlotsAndMapToApiResult(EIGHT, NINE);
     final Response response = getBySlot(EIGHT);
     final String responseBody = response.body().string();
-    final SignedBeaconBlock result =
-        jsonProvider.jsonToObject(responseBody, SignedBeaconBlock.class);
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
 
-    assertThat(result).usingRecursiveComparison().isEqualTo(blocks.get(0));
+    assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(0));
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
   @Test
   void shouldGetEffectiveBlockWhenSlotIsEmpty_getByEpoch() throws Exception {
-    final List<SignedBeaconBlock> blocks = withBlockDataAtSlot(SIX, SEVEN, NINE, TEN);
+    final List<SignedBeaconBlock> blocks =
+        createBlocksAtSlotsAndMapToApiResult(SIX, SEVEN, NINE, TEN);
     final Response response = getByEpoch(ONE);
-    final String responseBody = response.body().string();
-    final SignedBeaconBlock result =
-        jsonProvider.jsonToObject(responseBody, SignedBeaconBlock.class);
 
-    assertThat(result).usingRecursiveComparison().isEqualTo(blocks.get(1));
     assertThat(response.code()).isEqualTo(SC_OK);
+    final String responseBody = response.body().string();
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
+    assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(1));
   }
 
   @Test
   void shouldGetEffectiveBlockWhenSlotIsEmpty_getBySlot() throws Exception {
-    final List<SignedBeaconBlock> blocks = withBlockDataAtSlot(SIX, SEVEN, TEN);
+    final List<SignedBeaconBlock> blocks = createBlocksAtSlotsAndMapToApiResult(SIX, SEVEN, TEN);
     final Response response = getBySlot(NINE);
-    final String responseBody = response.body().string();
-    final SignedBeaconBlock result =
-        jsonProvider.jsonToObject(responseBody, SignedBeaconBlock.class);
 
-    assertThat(result).usingRecursiveComparison().isEqualTo(blocks.get(1));
     assertThat(response.code()).isEqualTo(SC_OK);
+    final String responseBody = response.body().string();
+    final GetBlockResponse result = jsonProvider.jsonToObject(responseBody, GetBlockResponse.class);
+    assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(1));
   }
 
   private Response getByEpoch(final UnsignedLong epoch) throws IOException {

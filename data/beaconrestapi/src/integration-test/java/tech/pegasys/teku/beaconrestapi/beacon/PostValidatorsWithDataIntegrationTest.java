@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import okhttp3.Response;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
@@ -30,21 +31,24 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 public class PostValidatorsWithDataIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
 
-  // private static final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(1);
+  @BeforeEach
+  public void setup() {
+    startRestAPIAtGenesis();
+  }
 
   @Test
   void shouldRetrieveValidatorsWhenBlockPresentAtEpoch() throws Exception {
-    withBlockDataAtSlot(SEVEN, EIGHT);
+    createBlocksAtSlotsAndMapToApiResult(SEVEN, EIGHT);
 
-    Response response = post(1, beaconChainUtil.getValidatorKeys());
+    Response response = post(1, VALIDATOR_KEYS);
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
   @Test
   void shouldRetrieveValidatorsWhenBlockMissingAtEpoch() throws Exception {
-    withBlockDataAtSlot(SEVEN, NINE);
+    createBlocksAtSlotsAndMapToApiResult(SEVEN, NINE);
 
-    Response response = post(1, beaconChainUtil.getValidatorKeys());
+    Response response = post(1, VALIDATOR_KEYS);
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 

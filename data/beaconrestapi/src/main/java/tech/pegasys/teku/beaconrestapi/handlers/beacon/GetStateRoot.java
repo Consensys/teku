@@ -66,7 +66,7 @@ public class GetStateRoot implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = Bytes32.class),
+            content = @OpenApiContent(from = String.class),
             description = "The beacon chain `state_root`(`Bytes32`) for the specified slot."),
         @OpenApiResponse(
             status = RES_NOT_FOUND,
@@ -107,6 +107,6 @@ public class GetStateRoot implements Handler {
   }
 
   private SafeFuture<Optional<Bytes32>> queryBySlot(final UnsignedLong slot) {
-    return provider.getHashTreeRootAtSlot(slot);
+    return provider.getStateRootAtSlot(slot);
   }
 }

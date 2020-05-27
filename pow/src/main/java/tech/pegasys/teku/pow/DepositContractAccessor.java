@@ -15,6 +15,7 @@ package tech.pegasys.teku.pow;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.abi.datatypes.Type;
@@ -45,26 +46,32 @@ public class DepositContractAccessor {
   }
 
   @SuppressWarnings("rawtypes")
-  public SafeFuture<Bytes32> getDepositRoot(UnsignedLong blockHeight) {
+  public SafeFuture<Optional<Bytes32>> getDepositRoot(UnsignedLong blockHeight) {
     String encodedFunction = contract.get_deposit_root().encodeFunctionCall();
     return callFunctionAtBlockNumber(encodedFunction, blockHeight)
         .thenApply(
             value -> {
               List<Type> list = contract.get_deposit_root().decodeFunctionResponse(value);
-              return Bytes32.wrap((byte[]) list.get(0).getValue());
+              if (list.isEmpty()) {
+                return Optional.empty();
+              }
+              return Optional.of(Bytes32.wrap((byte[]) list.get(0).getValue()));
             });
   }
 
   @SuppressWarnings("rawtypes")
-  public SafeFuture<UnsignedLong> getDepositCount(UnsignedLong blockHeight) {
+  public SafeFuture<Optional<UnsignedLong>> getDepositCount(UnsignedLong blockHeight) {
     String encodedFunction = contract.get_deposit_count().encodeFunctionCall();
     return callFunctionAtBlockNumber(encodedFunction, blockHeight)
         .thenApply(
             value -> {
               List<Type> list = contract.get_deposit_count().decodeFunctionResponse(value);
+              if (list.isEmpty()) {
+                return Optional.empty();
+              }
               byte[] bytes = (byte[]) list.get(0).getValue();
               long deposit_count = Bytes.wrap(bytes).reverse().toLong();
-              return UnsignedLong.valueOf(deposit_count);
+              return Optional.of(UnsignedLong.valueOf(deposit_count));
             });
   }
 

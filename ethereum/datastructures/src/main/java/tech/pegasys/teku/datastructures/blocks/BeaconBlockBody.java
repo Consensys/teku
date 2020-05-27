@@ -33,21 +33,23 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 /** A Beacon block body */
-public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
+public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 6;
 
-  private BLSSignature randao_reveal;
-  private Eth1Data eth1_data;
+  private final BLSSignature randao_reveal;
+  private final Eth1Data eth1_data;
   private final Bytes32 graffiti;
-  private SSZList<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
+  private final SSZList<ProposerSlashing>
+      proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
   private final SSZList<AttesterSlashing>
       attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
-  private SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
-  private SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
+  private final SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
+  private final SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
   private final SSZList<SignedVoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
 
   public BeaconBlockBody(
@@ -154,16 +156,8 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     return randao_reveal;
   }
 
-  public void setRandao_reveal(BLSSignature randao_reveal) {
-    this.randao_reveal = randao_reveal;
-  }
-
   public Eth1Data getEth1_data() {
     return eth1_data;
-  }
-
-  public void setEth1_data(Eth1Data eth1_data) {
-    this.eth1_data = eth1_data;
   }
 
   public Bytes32 getGraffiti() {
@@ -174,16 +168,8 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     return attestations;
   }
 
-  public void setAttestations(SSZList<Attestation> attestations) {
-    this.attestations = attestations;
-  }
-
   public SSZList<ProposerSlashing> getProposer_slashings() {
     return proposer_slashings;
-  }
-
-  public void setProposer_slashings(SSZList<ProposerSlashing> proposer_slashings) {
-    this.proposer_slashings = proposer_slashings;
   }
 
   public SSZList<AttesterSlashing> getAttester_slashings() {
@@ -194,14 +180,11 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     return deposits;
   }
 
-  public void setDeposits(SSZList<Deposit> deposits) {
-    this.deposits = deposits;
-  }
-
   public SSZList<SignedVoluntaryExit> getVoluntary_exits() {
     return voluntary_exits;
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(

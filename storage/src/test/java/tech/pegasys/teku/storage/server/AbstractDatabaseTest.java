@@ -709,13 +709,15 @@ public abstract class AbstractDatabaseTest {
 
   protected void assertStatesUnavailable(final Collection<Bytes32> roots) {
     for (Bytes32 root : roots) {
-      assertThat(database.getState(root)).isEmpty();
+      Optional<BeaconState> bs = database.getState(root);
+      assertThat(bs).isEmpty();
     }
   }
 
   protected void assertBlocksUnavailable(final Collection<Bytes32> roots) {
     for (Bytes32 root : roots) {
-      assertThat(database.getSignedBlock(root)).isEmpty();
+      Optional<SignedBeaconBlock> bb = database.getSignedBlock(root);
+      assertThat(bb).isEmpty();
     }
   }
 

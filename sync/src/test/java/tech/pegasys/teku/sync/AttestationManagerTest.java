@@ -14,56 +14,56 @@
 package tech.pegasys.teku.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.FAILED_NOT_FROM_PAST;
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
+import static tech.pegasys.teku.core.results.AttestationProcessingResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.core.results.AttestationProcessingResult.UNKNOWN_BLOCK;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
-import tech.pegasys.teku.statetransition.events.attestation.ProcessedAggregateEvent;
-import tech.pegasys.teku.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.teku.util.EventSink;
 
 class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
+
+  private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private ForkChoiceAttestationProcessor attestationProcessor =
+      mock(ForkChoiceAttestationProcessor.class);
   private final PendingPool<DelayableAttestation> pendingAttestations =
       PendingPool.createForAttestations();
   private final FutureItems<DelayableAttestation> futureAttestations =
       new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
 
-  private final ForkChoiceAttestationProcessor attestationProcessor =
-      mock(ForkChoiceAttestationProcessor.class);
-  private final List<ProcessedAttestationEvent> processedAttestationEvents =
-      EventSink.capture(eventBus, ProcessedAttestationEvent.class);
-  private final List<ProcessedAggregateEvent> processedAggregateEvents =
-      EventSink.capture(eventBus, ProcessedAggregateEvent.class);
-
   private final AttestationManager attestationManager =
       new AttestationManager(
-          eventBus, attestationProcessor, pendingAttestations, futureAttestations);
+          eventBus, attestationProcessor, pendingAttestations, futureAttestations, attestationPool);
 
   @BeforeEach
   public void setup() {
@@ -77,58 +77,52 @@ class AttestationManagerTest {
 
   @Test
   public void shouldProcessAttestationsThatAreReadyImmediately() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    when(attestationProcessor.processAttestation(attestation)).thenReturn(SUCCESSFUL);
-    eventBus.post(attestation);
+    Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
+    attestationManager.onGossipedAttestation(attestation);
 
-    verify(attestationProcessor).processAttestation(attestation);
-    assertThat(futureAttestations.size()).isZero();
-    assertThat(pendingAttestations.size()).isZero();
-    assertThat(processedAttestationEvents)
-        .containsExactly(new ProcessedAttestationEvent(attestation));
-    assertThat(processedAggregateEvents).isEmpty();
+    verifyAttestationProcessed(attestation);
+    verify(attestationPool).add(attestation);
+    assertThat(futureAttestations.size()).isEqualTo(0);
+    assertThat(pendingAttestations.size()).isEqualTo(0);
   }
 
   @Test
   public void shouldProcessAggregatesThatAreReadyImmediately() {
-    final SignedAggregateAndProof aggregateAndProof =
-        dataStructureUtil.randomSignedAggregateAndProof();
-    final Attestation aggregate = aggregateAndProof.getMessage().getAggregate();
-    when(attestationProcessor.processAttestation(aggregate)).thenReturn(SUCCESSFUL);
-    eventBus.post(aggregateAndProof);
+    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
+    when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
+    attestationManager.onGossipedAggregateAndProof(aggregate);
 
-    verify(attestationProcessor).processAttestation(aggregate);
-    assertThat(futureAttestations.size()).isZero();
-    assertThat(pendingAttestations.size()).isZero();
-    assertThat(processedAggregateEvents).containsExactly(new ProcessedAggregateEvent(aggregate));
-    assertThat(processedAttestationEvents).isEmpty();
+    verifyAttestationProcessed(aggregate.getMessage().getAggregate());
+    verify(attestationPool).add(aggregate.getMessage().getAggregate());
+    assertThat(futureAttestations.size()).isEqualTo(0);
+    assertThat(pendingAttestations.size()).isEqualTo(0);
   }
 
   @Test
-  public void shouldDeferProcessingForAttestationsThatHaveNotYetReachedTargetSlot() {
-    final Attestation attestation = attestationFromSlot(100);
-    when(attestationProcessor.processAttestation(attestation))
-        .thenReturn(FAILED_NOT_FROM_PAST)
-        .thenReturn(SUCCESSFUL);
+  public void shouldAddAttestationsThatHaveNotYetReachedTargetSlotToFutureItemsAndPool() {
+    Attestation attestation = attestationFromSlot(100);
+    IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
+    when(attestationProcessor.processAttestation(any())).thenReturn(SAVED_FOR_FUTURE);
+    attestationManager.onGossipedAttestation(attestation);
 
-    eventBus.post(attestation);
-
-    verify(attestationProcessor).processAttestation(attestation);
-    assertThat(futureAttestations.size()).isEqualTo(1);
-    assertThat(pendingAttestations.size()).isZero();
-    assertNoProcessedEvents();
+    ArgumentCaptor<DelayableAttestation> captor =
+        ArgumentCaptor.forClass(DelayableAttestation.class);
+    verify(attestationProcessor).processAttestation(captor.capture());
+    captor.getValue().setIndexedAttestation(randomIndexedAttestation);
+    verify(attestationPool).add(attestation);
+    assertThat(futureAttestations.contains(captor.getValue())).isTrue();
+    assertThat(pendingAttestations.size()).isEqualTo(0);
 
     // Shouldn't try to process the attestation until after it's slot.
     attestationManager.onSlot(UnsignedLong.valueOf(100));
-    verifyNoMoreInteractions(attestationProcessor);
-    assertNoProcessedEvents();
+    assertThat(futureAttestations.size()).isEqualTo(1);
+    verify(attestationProcessor, never()).applyIndexedAttestationToForkChoice(any());
 
     attestationManager.onSlot(UnsignedLong.valueOf(101));
-    verify(attestationProcessor, times(2)).processAttestation(attestation);
+    verify(attestationProcessor).applyIndexedAttestationToForkChoice(eq(randomIndexedAttestation));
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(processedAttestationEvents)
-        .containsExactly(new ProcessedAttestationEvent(attestation));
   }
 
   @Test
@@ -136,99 +130,58 @@ class AttestationManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     final Bytes32 requiredBlockRoot = block.getMessage().hash_tree_root();
     final Attestation attestation = attestationFromSlot(1, requiredBlockRoot);
-    when(attestationProcessor.processAttestation(attestation))
-        .thenReturn(FAILED_UNKNOWN_BLOCK)
+    when(attestationProcessor.processAttestation(any()))
+        .thenReturn(UNKNOWN_BLOCK)
         .thenReturn(SUCCESSFUL);
+    attestationManager.onGossipedAttestation(attestation);
 
-    eventBus.post(attestation);
-
-    verify(attestationProcessor).processAttestation(attestation);
+    ArgumentCaptor<DelayableAttestation> captor =
+        ArgumentCaptor.forClass(DelayableAttestation.class);
+    verify(attestationProcessor).processAttestation(captor.capture());
     assertThat(futureAttestations.size()).isZero();
+    assertThat(pendingAttestations.contains(captor.getValue())).isTrue();
     assertThat(pendingAttestations.size()).isEqualTo(1);
-    assertThat(pendingAttestations.size()).isEqualTo(1);
-    assertNoProcessedEvents();
 
     // Slots progressing shouldn't cause the attestation to be processed
     attestationManager.onSlot(UnsignedLong.valueOf(100));
     verifyNoMoreInteractions(attestationProcessor);
-    assertNoProcessedEvents();
 
     // Importing a different block shouldn't cause the attestation to be processed
     eventBus.post(new ImportedBlockEvent(dataStructureUtil.randomSignedBeaconBlock(2)));
     verifyNoMoreInteractions(attestationProcessor);
-    assertNoProcessedEvents();
 
     eventBus.post(new ImportedBlockEvent(block));
-    verify(attestationProcessor, times(2)).processAttestation(attestation);
+    verify(attestationProcessor, times(2)).processAttestation(captor.getValue());
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(processedAttestationEvents)
-        .containsExactly(new ProcessedAttestationEvent(attestation));
+    verify(attestationPool).add(attestation);
   }
 
   @Test
   public void shouldNotPublishProcessedAttestationEventWhenAttestationIsInvalid() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    when(attestationProcessor.processAttestation(attestation))
-        .thenReturn(AttestationProcessingResult.invalid("Seems fishy"));
+    when(attestationProcessor.processAttestation(any()))
+        .thenReturn(AttestationProcessingResult.INVALID);
+    attestationManager.onGossipedAttestation(attestation);
 
-    eventBus.post(attestation);
-
-    verify(attestationProcessor).processAttestation(attestation);
+    verifyAttestationProcessed(attestation);
     assertThat(pendingAttestations.size()).isZero();
     assertThat(futureAttestations.size()).isZero();
-    assertNoProcessedEvents();
+    verifyNoInteractions(attestationPool);
   }
 
   @Test
   public void shouldNotPublishProcessedAggregationEventWhenAttestationIsInvalid() {
-    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
-    final Attestation attestation = aggregateAndProof.getAggregate();
-    when(attestationProcessor.processAttestation(attestation))
-        .thenReturn(AttestationProcessingResult.invalid("Seems fishy"));
-
-    eventBus.post(attestation);
-
-    verify(attestationProcessor).processAttestation(attestation);
-    assertThat(pendingAttestations.size()).isZero();
-    assertThat(futureAttestations.size()).isZero();
-    assertNoProcessedEvents();
-  }
-
-  @Test
-  public void shouldNotPublishProcessedAggregateEventUntilDelayedAggregateIsProcessedSuccessful() {
-    final Attestation attestation = attestationFromSlot(100);
     final SignedAggregateAndProof aggregateAndProof =
-        new SignedAggregateAndProof(
-            new AggregateAndProof(UnsignedLong.ZERO, attestation, BLSSignature.empty()),
-            BLSSignature.empty());
-    when(attestationProcessor.processAttestation(attestation))
-        .thenReturn(FAILED_NOT_FROM_PAST)
-        .thenReturn(SUCCESSFUL);
+        dataStructureUtil.randomSignedAggregateAndProof();
+    when(attestationProcessor.processAttestation(any()))
+        .thenReturn(AttestationProcessingResult.INVALID);
+    attestationManager.onGossipedAggregateAndProof(aggregateAndProof);
 
-    eventBus.post(aggregateAndProof);
-
-    verify(attestationProcessor).processAttestation(attestation);
-    assertThat(futureAttestations.size()).isEqualTo(1);
+    verifyAttestationProcessed(aggregateAndProof.getMessage().getAggregate());
     assertThat(pendingAttestations.size()).isZero();
-    assertNoProcessedEvents();
-
-    // Shouldn't try to process the attestation until after it's slot.
-    attestationManager.onSlot(UnsignedLong.valueOf(100));
-    verifyNoMoreInteractions(attestationProcessor);
-    assertNoProcessedEvents();
-
-    attestationManager.onSlot(UnsignedLong.valueOf(101));
-    verify(attestationProcessor, times(2)).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
-    assertThat(pendingAttestations.size()).isZero();
-    assertThat(processedAttestationEvents).isEmpty();
-    assertThat(processedAggregateEvents).containsExactly(new ProcessedAggregateEvent(attestation));
-  }
-
-  private void assertNoProcessedEvents() {
-    assertThat(processedAttestationEvents).isEmpty();
-    assertThat(processedAggregateEvents).isEmpty();
+    verifyNoInteractions(attestationPool);
   }
 
   private Attestation attestationFromSlot(final long slot) {
@@ -245,5 +198,12 @@ class AttestationManagerTest {
             new Checkpoint(UnsignedLong.ZERO, Bytes32.ZERO),
             new Checkpoint(UnsignedLong.ZERO, targetRoot)),
         BLSSignature.empty());
+  }
+
+  private void verifyAttestationProcessed(final Attestation attestation) {
+    ArgumentCaptor<DelayableAttestation> captor =
+        ArgumentCaptor.forClass(DelayableAttestation.class);
+    verify(attestationProcessor).processAttestation(captor.capture());
+    assertThat(captor.getValue().getAttestation()).isSameAs(attestation);
   }
 }

@@ -52,7 +52,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.cli.LogTypeConverter;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
@@ -72,7 +72,7 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
     abbreviateSynopsis = true,
     description = "Run the Teku beacon chain client and validator",
     mixinStandardHelpOptions = true,
-    versionProvider = VersionProvider.class,
+    versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
@@ -226,11 +226,15 @@ public class BeaconNodeCommand implements Callable<Integer> {
     errorWriter.println(ex.getMessage());
 
     CommandLine.UnmatchedArgumentException.printSuggestions(ex, outputWriter);
+    printUsage(outputWriter);
+
+    return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
+  }
+
+  private void printUsage(PrintWriter outputWriter) {
     outputWriter.println();
     outputWriter.println("To display full help:");
     outputWriter.println("teku [COMMAND] --help");
-
-    return ex.getCommandLine().getCommandSpec().exitCodeOnInvalidInput();
   }
 
   @Override
@@ -258,12 +262,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private void reportUnexpectedError(final Throwable t) {
     System.err.println("Teku failed to start.");
     t.printStackTrace();
-    System.exit(1);
+
+    errorWriter.println("Teku failed to start");
+    printUsage(errorWriter);
   }
 
   private void reportUserError(final Throwable ex) {
-    System.err.println(ex.getMessage());
-    System.exit(1);
+    errorWriter.println(ex.getMessage());
+    printUsage(errorWriter);
   }
 
   private void setLogLevels() {

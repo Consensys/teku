@@ -58,19 +58,21 @@ class BlockFactoryTest {
   private final SSZMutableList<Deposit> deposits = createDeposits();
   private final SSZMutableList<Attestation> attestations = createAttestations();
 
+  private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final BlockFactory blockFactory =
       new BlockFactory(
           new BlockProposalUtil(stateTransition),
           stateTransition,
           attestationsPool,
           depositProvider,
-          eth1DataCache);
+          eth1DataCache,
+          graffiti);
 
   @BeforeEach
   void setUp() {
     when(depositProvider.getDeposits(any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any())).thenReturn(attestations);
-    when(eth1DataCache.get_eth1_vote(any())).thenReturn(ETH1_DATA);
+    when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     beaconChainUtil.initializeStorage();
   }
 
@@ -107,5 +109,6 @@ class BlockFactoryTest {
     assertThat(block.getBody().getEth1_data()).isEqualTo(ETH1_DATA);
     assertThat(block.getBody().getDeposits()).isEqualTo(deposits);
     assertThat(block.getBody().getAttestations()).isEqualTo(attestations);
+    assertThat(block.getBody().getGraffiti()).isEqualTo(graffiti);
   }
 }

@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,23 +28,51 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 public class BeaconState {
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong genesis_time;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong slot;
+
   public final Fork fork;
   public final BeaconBlockHeader latest_block_header;
+
+  @ArraySchema(
+      schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
   public final List<Bytes32> block_roots;
+
+  @ArraySchema(
+      schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
   public final List<Bytes32> state_roots;
+
+  @ArraySchema(
+      schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
   public final List<Bytes32> historical_roots;
+
   public final Eth1Data eth1_data;
   public final List<Eth1Data> eth1_data_votes;
+
+  @Schema(type = "string", format = "uint64")
   public final UnsignedLong eth1_deposit_index;
+
   public final List<Validator> validators;
+
+  @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UnsignedLong> balances;
+
+  @ArraySchema(
+      schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
   public final List<Bytes32> randao_mixes;
+
+  @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
   public final List<UnsignedLong> slashings;
+
   public final List<PendingAttestation> previous_epoch_attestations;
   public final List<PendingAttestation> current_epoch_attestations;
+
+  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
   public final Bitvector justification_bits;
+
   public final Checkpoint previous_justified_checkpoint;
   public final Checkpoint current_justified_checkpoint;
   public final Checkpoint finalized_checkpoint;

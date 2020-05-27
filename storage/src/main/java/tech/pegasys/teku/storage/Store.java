@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage;
 
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
@@ -34,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -95,7 +98,9 @@ public class Store implements ReadOnlyStore {
     checkpoint_states.put(anchorCheckpoint, anchorState);
 
     return new Store(
-        anchorState.getGenesis_time(),
+        anchorState
+            .getGenesis_time()
+            .plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(anchorState.getSlot())),
         anchorState.getGenesis_time(),
         anchorCheckpoint,
         anchorCheckpoint,
@@ -156,6 +161,16 @@ public class Store implements ReadOnlyStore {
   }
 
   @Override
+  public UnsignedLong getLatestFinalizedBlockSlot() {
+    readLock.lock();
+    try {
+      return blocks.get(finalized_checkpoint.getRoot()).getSlot();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public Checkpoint getBestJustifiedCheckpoint() {
     readLock.lock();
     try {
@@ -176,6 +191,21 @@ public class Store implements ReadOnlyStore {
     readLock.lock();
     try {
       return blocks.get(blockRoot);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
+    readLock.lock();
+    try {
+      final SignedBeaconBlock block = blocks.get(blockRoot);
+      final BeaconState state = block_states.get(blockRoot);
+      if (block == null || state == null) {
+        return Optional.empty();
+      }
+      return Optional.of(new SignedBlockAndState(block, state));
     } finally {
       readLock.unlock();
     }
@@ -406,6 +436,11 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
+    public UnsignedLong getLatestFinalizedBlockSlot() {
+      return getBlock(getFinalizedCheckpoint().getRoot()).getSlot();
+    }
+
+    @Override
     public Checkpoint getBestJustifiedCheckpoint() {
       return best_justified_checkpoint.orElseGet(Store.this::getBestJustifiedCheckpoint);
     }
@@ -419,6 +454,16 @@ public class Store implements ReadOnlyStore {
     @Override
     public SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
       return either(blockRoot, blocks::get, Store.this::getSignedBlock);
+    }
+
+    @Override
+    public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
+      final SignedBeaconBlock block = getSignedBlock(blockRoot);
+      final BeaconState state = getBlockState(blockRoot);
+      if (block == null || state == null) {
+        return Optional.empty();
+      }
+      return Optional.of(new SignedBlockAndState(block, state));
     }
 
     @Override

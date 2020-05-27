@@ -48,7 +48,7 @@ public class AggregationDuty implements Duty {
   }
 
   /**
-   * Adds a valiator to this duty. Only one aggregate per committee will be produced even if
+   * Adds a validator to this duty. Only one aggregate per committee will be produced even if
    * multiple validators are added for that committee. The aggregated attestations would be
    * identical anyway so sending all of them would be a waste of network bandwidth.
    *
@@ -68,7 +68,7 @@ public class AggregationDuty implements Duty {
     aggregatorsByCommitteeIndex.computeIfAbsent(
         attestationCommitteeIndex,
         committeeIndex -> {
-          validatorApiChannel.subscribeToBeaconCommittee(committeeIndex, slot);
+          validatorApiChannel.subscribeToBeaconCommitteeForAggregation(committeeIndex, slot);
           return new CommitteeAggregator(
               validator, UnsignedLong.valueOf(validatorIndex), proof, unsignedAttestationFuture);
         });

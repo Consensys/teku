@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -36,13 +39,18 @@ import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.Cancellable;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
+
+  private final AsyncRunner asyncRunner;
   private final StatusMessageFactory statusMessageFactory;
+  private final MetadataMessagesFactory metadataMessagesFactory;
 
   private final Subscribers<PeerConnectedSubscriber<Eth2Peer>> connectSubscribers =
       Subscribers.create(true);
@@ -51,16 +59,26 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final BeaconChainMethods rpcMethods;
   private final PeerValidatorFactory peerValidatorFactory;
 
+  private final Duration eth2RpcPingInterval;
+  private final int eth2RpcOutstandingPingThreshold;
+
+  private final Duration eth2StatusUpdateInterval;
+
   Eth2PeerManager(
+      final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
       final PeerValidatorFactory peerValidatorFactory,
       final AttestationSubnetService attestationSubnetService,
-      final RpcEncoding rpcEncoding) {
+      final RpcEncoding rpcEncoding,
+      final Duration eth2RpcPingInterval,
+      final int eth2RpcOutstandingPingThreshold,
+      Duration eth2StatusUpdateInterval) {
+    this.asyncRunner = asyncRunner;
     this.statusMessageFactory = new StatusMessageFactory(storageClient);
-    MetadataMessageFactory metadataMessageFactory = new MetadataMessageFactory();
-    attestationSubnetService.subscribeToUpdates(metadataMessageFactory);
+    metadataMessagesFactory = new MetadataMessagesFactory();
+    attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
@@ -70,31 +88,73 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             storageClient,
             metricsSystem,
             statusMessageFactory,
-            metadataMessageFactory,
+            metadataMessagesFactory,
             rpcEncoding);
+    this.eth2RpcPingInterval = eth2RpcPingInterval;
+    this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
+    this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
   }
 
   public static Eth2PeerManager create(
+      final AsyncRunner asyncRunner,
       final RecentChainData storageClient,
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
       final AttestationSubnetService attestationSubnetService,
-      final RpcEncoding rpcEncoding) {
+      final RpcEncoding rpcEncoding,
+      final Duration eth2RpcPingInterval,
+      final int eth2RpcOutstandingPingThreshold,
+      Duration eth2StatusUpdateInterval) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
             PeerChainValidator.create(storageClient, historicalChainData, peer, status);
     return new Eth2PeerManager(
+        asyncRunner,
         new CombinedChainDataClient(storageClient, historicalChainData),
         storageClient,
         metricsSystem,
         peerValidatorFactory,
         attestationSubnetService,
-        rpcEncoding);
+        rpcEncoding,
+        eth2RpcPingInterval,
+        eth2RpcOutstandingPingThreshold,
+        eth2StatusUpdateInterval);
+  }
+
+  private void setUpPeriodicTasksForPeer(Eth2Peer peer) {
+    Cancellable periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
+    Cancellable periodicPingTask = periodicallyPingPeer(peer);
+    peer.subscribeDisconnect(
+        () -> {
+          periodicStatusUpdateTask.cancel();
+          periodicPingTask.cancel();
+        });
+  }
+
+  Cancellable periodicallyUpdatePeerStatus(Eth2Peer peer) {
+    return asyncRunner.runWithFixedDelay(
+        () ->
+            peer.sendStatus()
+                .finish(
+                    () -> LOG.trace("Updated status for peer {}", peer),
+                    err -> LOG.debug("Exception updating status for peer {}", peer, err)),
+        eth2StatusUpdateInterval.getSeconds(),
+        TimeUnit.SECONDS,
+        err -> LOG.debug("Exception calling runnable for updating peer status.", err));
+  }
+
+  Cancellable periodicallyPingPeer(Eth2Peer peer) {
+    return asyncRunner.runWithFixedDelay(
+        () -> sendPeriodicPing(peer),
+        eth2RpcPingInterval.toMillis(),
+        TimeUnit.MILLISECONDS,
+        err -> LOG.debug("Exception calling runnable for pinging peer", err));
   }
 
   @Override
   public void onConnect(final Peer peer) {
-    Eth2Peer eth2Peer = new Eth2Peer(peer, rpcMethods, statusMessageFactory);
+    Eth2Peer eth2Peer =
+        new Eth2Peer(peer, rpcMethods, statusMessageFactory, metadataMessagesFactory);
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), eth2Peer) == null;
     if (!wasAdded) {
       LOG.warn("Duplicate peer connection detected. Ignoring peer.");
@@ -115,6 +175,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                   .defaultCatch(
                       err -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err)));
     }
+
     eth2Peer.subscribeInitialStatus(
         (status) ->
             peerValidatorFactory
@@ -124,8 +185,22 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     peerIsValid -> {
                       if (peerIsValid) {
                         connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
+                        setUpPeriodicTasksForPeer(eth2Peer);
                       }
                     }));
+  }
+
+  @VisibleForTesting
+  void sendPeriodicPing(Eth2Peer peer) {
+    if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
+      LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
+      peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+    } else {
+      peer.sendPing()
+          .finish(
+              i -> LOG.trace("Periodic ping returned {} from {}", i, peer.getId()),
+              t -> LOG.debug("Ping request failed for peer {}", peer.getId(), t));
+    }
   }
 
   private UnsignedLong convertToEth2DisconnectReason(final DisconnectReason reason) {

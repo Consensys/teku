@@ -13,50 +13,56 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.pow.event.CacheEth1BlockEvent;
-import tech.pegasys.teku.util.config.Constants;
 
 public class Eth1DataCache {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final UnsignedLong cacheDuration;
-  private volatile Optional<UnsignedLong> genesisTime = Optional.empty();
+  private final Eth1VotingPeriod eth1VotingPeriod;
 
   private final NavigableMap<UnsignedLong, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
 
-  public Eth1DataCache(EventBus eventBus) {
-    eventBus.register(this);
-    cacheDuration = calculateCacheDuration();
+  public Eth1DataCache(final Eth1VotingPeriod eth1VotingPeriod) {
+    this.eth1VotingPeriod = eth1VotingPeriod;
+    cacheDuration = eth1VotingPeriod.getCacheDurationInSeconds();
   }
 
-  public void startBeaconChainMode(BeaconState headState) {
-    this.genesisTime = Optional.of(headState.getGenesis_time());
+  public void onBlockWithDeposit(final UnsignedLong blockTimestamp, final Eth1Data eth1Data) {
+    eth1ChainCache.put(blockTimestamp, eth1Data);
+    prune(blockTimestamp);
   }
 
-  @Subscribe
-  public void onCacheEth1BlockEvent(CacheEth1BlockEvent cacheEth1BlockEvent) {
-    final UnsignedLong latestBlockTimestamp = cacheEth1BlockEvent.getBlockTimestamp();
-    eth1ChainCache.put(latestBlockTimestamp, createEth1Data(cacheEth1BlockEvent));
-    prune(latestBlockTimestamp);
+  public void onEth1Block(final Bytes32 blockHash, final UnsignedLong blockTimestamp) {
+    final Entry<UnsignedLong, Eth1Data> previousBlock = eth1ChainCache.floorEntry(blockTimestamp);
+    if (previousBlock == null) {
+      // This block is either before any deposits so will never be voted for
+      // or before the cache period so would be immediately pruned anyway.
+      LOG.debug(
+          "Not adding eth1 block {} with timestamp {} to cache because it is before all current entries",
+          blockHash,
+          blockTimestamp);
+      return;
+    }
+    final Eth1Data data = previousBlock.getValue();
+    eth1ChainCache.put(blockTimestamp, data.withBlockHash(blockHash));
+    prune(blockTimestamp);
   }
 
-  public Eth1Data get_eth1_vote(BeaconState state) {
-    NavigableMap<UnsignedLong, Eth1Data> votesToConsider = getVotesToConsider(state.getSlot());
+  public Eth1Data getEth1Vote(BeaconState state) {
+    NavigableMap<UnsignedLong, Eth1Data> votesToConsider =
+        getVotesToConsider(state.getSlot(), state.getGenesis_time());
     Map<Eth1Data, Eth1Vote> validVotes = new HashMap<>();
 
     int i = 0;
@@ -80,79 +86,28 @@ public class Eth1DataCache {
     return vote.orElse(defaultVote);
   }
 
-  private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider(final UnsignedLong slot) {
+  private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider(
+      final UnsignedLong slot, final UnsignedLong genesisTime) {
     return eth1ChainCache.subMap(
-        getSpecRangeLowerBound(slot), true, getSpecRangeUpperBound(slot), true);
-  }
-
-  private UnsignedLong calculateCacheDuration() {
-    // Worst case we're in the very last moment of the current slot
-    long cacheDurationSeconds = SECONDS_PER_SLOT;
-
-    // Worst case this slot is at the very end of the current voting period
-    cacheDurationSeconds += (EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH * SECONDS_PER_SLOT);
-
-    // We need 2 * ETH1_FOLLOW_DISTANCE prior to that but the blocks we get from Eth1DataManager are
-    // already ETH1_FOLLOW_DISTANCE behind head and the current time is taken from that.
-    cacheDurationSeconds += SECONDS_PER_ETH1_BLOCK.longValue() * ETH1_FOLLOW_DISTANCE.longValue();
-
-    // And we want to be able to create blocks for at least the past epoch
-    cacheDurationSeconds += SLOTS_PER_EPOCH * SECONDS_PER_SLOT;
-    return UnsignedLong.valueOf(cacheDurationSeconds);
+        eth1VotingPeriod.getSpecRangeLowerBound(slot, genesisTime),
+        true,
+        eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
+        true);
   }
 
   private void prune(final UnsignedLong latestBlockTimestamp) {
-    while (!eth1ChainCache.isEmpty()) {
-      final UnsignedLong earliestBlockTimestamp = eth1ChainCache.firstKey();
-      if (earliestBlockTimestamp.plus(cacheDuration).compareTo(latestBlockTimestamp) >= 0) {
-        break;
-      }
-      eth1ChainCache.remove(earliestBlockTimestamp);
+    if (latestBlockTimestamp.compareTo(cacheDuration) <= 0 || eth1ChainCache.isEmpty()) {
+      // Keep everything
+      return;
     }
-  }
-
-  private UnsignedLong getVotingPeriodStartTime(UnsignedLong slot) {
-    UnsignedLong eth1VotingPeriodStartSlot =
-        slot.minus(slot.mod(UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH)));
-    return computeTimeAtSlot(eth1VotingPeriodStartSlot);
-  }
-
-  UnsignedLong getSpecRangeLowerBound(final UnsignedLong slot) {
-    return secondsBeforeCurrentVotingPeriodStartTime(
-        slot, ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
-  }
-
-  UnsignedLong getSpecRangeUpperBound(final UnsignedLong slot) {
-    return secondsBeforeCurrentVotingPeriodStartTime(
-        slot, ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK));
-  }
-
-  private UnsignedLong secondsBeforeCurrentVotingPeriodStartTime(
-      final UnsignedLong slot, final UnsignedLong valueToSubtract) {
-    final UnsignedLong currentVotingPeriodStartTime = getVotingPeriodStartTime(slot);
-    if (currentVotingPeriodStartTime.compareTo(valueToSubtract) > 0) {
-      return currentVotingPeriodStartTime.minus(valueToSubtract);
-    } else {
-      return UnsignedLong.ZERO;
+    final UnsignedLong earliestBlockTimestampToKeep = latestBlockTimestamp.minus(cacheDuration);
+    // Make sure we have at least one entry prior to the cache period so that if we get an empty
+    // block before any deposit in the cached period, we can look back and get the deposit info
+    final UnsignedLong earliestKeyToKeep = eth1ChainCache.floorKey(earliestBlockTimestampToKeep);
+    if (earliestKeyToKeep == null) {
+      return;
     }
-  }
-
-  private UnsignedLong computeTimeAtSlot(UnsignedLong slot) {
-    return genesisTime
-        .orElseThrow(
-            () -> new RuntimeException("computeTimeAtSlot called without genesisTime being set"))
-        .plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
-  }
-
-  public static Eth1Data createEth1Data(CacheEth1BlockEvent eth1BlockEvent) {
-    return new Eth1Data(
-        eth1BlockEvent.getDepositRoot(),
-        eth1BlockEvent.getDepositCount(),
-        eth1BlockEvent.getBlockHash());
-  }
-
-  UnsignedLong getCacheDuration() {
-    return cacheDuration;
+    eth1ChainCache.headMap(earliestKeyToKeep, false).clear();
   }
 
   int size() {

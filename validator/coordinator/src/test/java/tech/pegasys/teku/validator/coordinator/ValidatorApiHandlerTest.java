@@ -99,7 +99,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldReturnEmptyWhenStateIsUnavailable() {
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<List<ValidatorDuties>>> duties =
@@ -109,7 +109,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldReturnEmptyWhenNoPublicKeysSpecified() {
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
 
     final SafeFuture<Optional<List<ValidatorDuties>>> result =
@@ -120,7 +120,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldReturnDutiesForUnknownValidator() {
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
@@ -133,7 +133,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldReturnDutiesForKnownValidator() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
 
     final int validatorIndex = 3;
@@ -150,7 +150,8 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldNotIncludeBlockProductionDutyForGenesisSlot() {
     final BeaconState state = createStateWithActiveValidators(ZERO);
-    when(chainDataClient.getStateAtSlot(ZERO)).thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getLatestStateAtSlot(ZERO))
+        .thenReturn(completedFuture(Optional.of(state)));
 
     final List<BLSPublicKey> allValidatorKeys =
         state.getValidators().stream().map(Validator::getPubkey).collect(Collectors.toList());
@@ -167,7 +168,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void getDuties_shouldReturnDutiesForMixOfKnownAndUnknownValidators() {
     final BeaconState state = createStateWithActiveValidators();
-    when(chainDataClient.getStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
 
     final BLSPublicKey unknownPublicKey = dataStructureUtil.randomPublicKey();
@@ -196,12 +197,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getDuties_shouldUseGenesisStateForFirstEpoch() {
-    when(chainDataClient.getStateAtSlot(any())).thenReturn(new SafeFuture<>());
+    when(chainDataClient.getLatestStateAtSlot(any())).thenReturn(new SafeFuture<>());
     validatorApiHandler
         .getDuties(ZERO, List.of(dataStructureUtil.randomPublicKey()))
         .reportExceptions();
 
-    verify(chainDataClient).getStateAtSlot(ZERO);
+    verify(chainDataClient).getLatestStateAtSlot(ZERO);
   }
 
   @Test
@@ -216,17 +217,6 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedBlock_shouldReturnEmptyWhenBestBlockNotSet() {
-    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
-
-    final SafeFuture<Optional<BeaconBlock>> result =
-        validatorApiHandler.createUnsignedBlock(
-            UnsignedLong.ONE, dataStructureUtil.randomSignature());
-
-    assertThat(result).isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
   public void createUnsignedBlock_shouldCreateBlock() throws Exception {
     final UnsignedLong newSlot = UnsignedLong.valueOf(25);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
@@ -238,7 +228,7 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getBestSlot()).thenReturn(UnsignedLong.valueOf(24));
-    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE), blockRoot))
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(previousBlockAndState)));
     when(blockFactory.createUnsignedBlock(
             previousState, previousBlockAndState.getBlock(), newSlot, randaoReveal))
@@ -261,16 +251,6 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedAttestation_shouldReturnEmptyWhenBestBlockNotSet() {
-    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
-
-    final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(UnsignedLong.ONE, 3);
-
-    assertThat(result).isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
   public void createUnsignedAttestation_shouldCreateAttestation() {
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final BeaconState state = createStateWithActiveValidators();
@@ -280,7 +260,7 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getBestSlot()).thenReturn(slot);
-    when(chainDataClient.getBlockAndStateInEffectAtSlot(slot, blockRoot))
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndState)));
 
     final int committeeIndex = 0;
@@ -342,9 +322,10 @@ class ValidatorApiHandlerTest {
   public void subscribeToBeaconCommittee_shouldSubscribeViaAttestationTopicSubscriptions() {
     final int committeeIndex = 10;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(13);
-    validatorApiHandler.subscribeToBeaconCommittee(committeeIndex, aggregationSlot);
+    validatorApiHandler.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
 
-    verify(attestationTopicSubscriptions).subscribeToCommittee(committeeIndex, aggregationSlot);
+    verify(attestationTopicSubscriptions)
+        .subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
   }
 
   @Test

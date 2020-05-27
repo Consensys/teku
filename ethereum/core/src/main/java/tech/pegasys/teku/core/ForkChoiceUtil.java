@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core;
 
+import static tech.pegasys.teku.core.results.AttestationProcessingResult.INVALID;
+import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -26,6 +28,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Optional;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
@@ -34,6 +38,7 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -43,6 +48,9 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtil {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
@@ -235,6 +243,9 @@ public class ForkChoiceUtil {
     if (preState == null) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
+    if (preState.getSlot().compareTo(block.getSlot()) >= 0) {
+      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
+    }
     if (blockIsFromFuture(block, store)) {
       return Optional.of(BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE);
     }
@@ -281,35 +292,64 @@ public class ForkChoiceUtil {
   @CheckReturnValue
   public static AttestationProcessingResult on_attestation(
       final MutableStore store,
-      final Attestation attestation,
+      final DelayableAttestation delayableAttestation,
       final StateTransition stateTransition,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
+    Attestation attestation = delayableAttestation.getAttestation();
     Checkpoint target = attestation.getData().getTarget();
 
     return validateOnAttestation(store, attestation)
         .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
         .ifSuccessful(
             () -> {
-              BeaconState target_state = store.getCheckpointState(target);
+              Optional<IndexedAttestation> maybeIndexedAttestation =
+                  indexAndValidateAttestation(store, attestation, target);
 
-              // Get state at the `target` to validate attestation and calculate the committees
-              IndexedAttestation indexed_attestation;
-              try {
-                indexed_attestation = get_indexed_attestation(target_state, attestation);
-              } catch (IllegalArgumentException e) {
-                return AttestationProcessingResult.invalid(
-                    "on_attestation: Attestation is not valid: " + e.getMessage());
-              }
-              if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
-                return AttestationProcessingResult.invalid(
-                    "on_attestation: Attestation is not valid");
+              if (maybeIndexedAttestation.isEmpty()) {
+                return INVALID;
               }
 
-              forkChoiceStrategy.onAttestation(store, indexed_attestation);
+              IndexedAttestation indexedAttestation = maybeIndexedAttestation.get();
+              AttestationProcessingResult result =
+                  checkIfAttestationShouldBeSavedForFuture(store, attestation);
 
-              return AttestationProcessingResult.SUCCESSFUL;
+              if (result.isSuccessful()) {
+                forkChoiceStrategy.onAttestation(store, indexedAttestation);
+              } else {
+                delayableAttestation.setIndexedAttestation(indexedAttestation);
+              }
+
+              return result;
             });
+  }
+
+  /**
+   * Returns the indexed attestation if attestation is valid, else, returns an empty optional.
+   *
+   * @param store
+   * @param attestation
+   * @param target
+   * @return
+   */
+  private static Optional<IndexedAttestation> indexAndValidateAttestation(
+      MutableStore store, Attestation attestation, Checkpoint target) {
+    BeaconState target_state = store.getCheckpointState(target);
+
+    // Get state at the `target` to validate attestation and calculate the committees
+    IndexedAttestation indexed_attestation;
+    try {
+      indexed_attestation = get_indexed_attestation(target_state, attestation);
+    } catch (IllegalArgumentException e) {
+      LOG.warn("on_attestation: Attestation is not valid: ", e);
+      return Optional.empty();
+    }
+    if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
+      LOG.warn("on_attestation: Attestation is not valid");
+      return Optional.empty();
+    }
+
+    return Optional.of(indexed_attestation);
   }
 
   private static AttestationProcessingResult storeTargetCheckpointState(
@@ -318,12 +358,11 @@ public class ForkChoiceUtil {
     BeaconState targetRootState = store.getBlockState(target.getRoot());
     try {
       storeCheckpointState(store, stateTransition, target, targetRootState);
-    } catch (SlotProcessingException e) {
-      return AttestationProcessingResult.failedStateTransition(e);
-    } catch (EpochProcessingException e) {
-      return AttestationProcessingResult.failedStateTransition(e);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      LOG.warn("on_attestation: Attestation failed state transition. ", e);
+      return AttestationProcessingResult.INVALID;
     }
-    return AttestationProcessingResult.SUCCESSFUL;
+    return SUCCESSFUL;
   }
 
   private static AttestationProcessingResult validateOnAttestation(
@@ -338,37 +377,25 @@ public class ForkChoiceUtil {
             : UnsignedLong.valueOf(GENESIS_EPOCH);
 
     if (!target.getEpoch().equals(previous_epoch) && !target.getEpoch().equals(current_epoch)) {
-      return AttestationProcessingResult.invalid(
-          "on_attestation: Attestations must be from the current or previous epoch");
+      LOG.warn("on_attestation: Attestations must be from the current or previous epoch");
+      return AttestationProcessingResult.INVALID;
     }
 
     if (!target.getEpoch().equals(compute_epoch_at_slot(attestation.getData().getSlot()))) {
-      return AttestationProcessingResult.invalid(
-          "on_attestation: Attestation slot must be within specified epoch");
-    }
-
-    // Attestations can only affect the fork choice of subsequent slots.
-    // Delay consideration in the fork choice until their slot is in the past.
-    if (get_current_slot(store).compareTo(attestation.getData().getSlot()) <= 0) {
-      return AttestationProcessingResult.FAILED_NOT_FROM_PAST;
+      LOG.warn("on_attestation: Attestation slot must be within specified epoch");
+      return AttestationProcessingResult.INVALID;
     }
 
     if (!store.getBlockRoots().contains(target.getRoot())) {
       // Attestations target must be for a known block. If a target block is unknown, delay
       // consideration until the block is found
-      return AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
-    }
-
-    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
-    // arrives
-    if (get_current_slot(store).compareTo(target.getEpochStartSlot()) < 0) {
-      return AttestationProcessingResult.FAILED_FUTURE_EPOCH;
+      return AttestationProcessingResult.UNKNOWN_BLOCK;
     }
 
     if (!store.getBlockRoots().contains(attestation.getData().getBeacon_block_root())) {
       // Attestations must be for a known block. If block is unknown, delay consideration until the
       // block is found
-      return AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
+      return AttestationProcessingResult.UNKNOWN_BLOCK;
     }
 
     if (store
@@ -376,11 +403,30 @@ public class ForkChoiceUtil {
             .getSlot()
             .compareTo(attestation.getData().getSlot())
         > 0) {
-      return AttestationProcessingResult.invalid(
+      LOG.warn(
           "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
+      return AttestationProcessingResult.INVALID;
     }
 
-    return AttestationProcessingResult.SUCCESSFUL;
+    return SUCCESSFUL;
+  }
+
+  private static AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(
+      MutableStore store, Attestation attestation) {
+
+    // Attestations can only affect the fork choice of subsequent slots.
+    // Delay consideration in the fork choice until their slot is in the past.
+    if (get_current_slot(store).compareTo(attestation.getData().getSlot()) <= 0) {
+      return AttestationProcessingResult.SAVED_FOR_FUTURE;
+    }
+
+    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
+    // arrives
+    if (get_current_slot(store).compareTo(attestation.getData().getTarget().getEpochStartSlot())
+        < 0) {
+      return AttestationProcessingResult.SAVED_FOR_FUTURE;
+    }
+    return SUCCESSFUL;
   }
 
   private static void storeCheckpointState(

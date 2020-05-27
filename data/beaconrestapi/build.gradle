@@ -14,6 +14,7 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation 'io.swagger.core.v3:swagger-core'
+    implementation 'io.swagger.core.v3:swagger-annotations'
     implementation 'io.github.classgraph:classgraph'
     implementation 'io.javalin:javalin'
     implementation 'org.apache.tuweni:tuweni-crypto'
@@ -28,6 +29,7 @@ dependencies {
 
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
+    integrationTestImplementation testFixtures(project(':ethereum:core'))
 
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))

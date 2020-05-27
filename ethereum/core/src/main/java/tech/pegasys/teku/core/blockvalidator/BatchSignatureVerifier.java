@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.blockvalidator;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +31,8 @@ import tech.pegasys.teku.bls.mikuli.BLS12381.BatchSemiAggregate;
  *
  * <p>Every instance of this class is disposable, i.e. it is intended for just a single batch and a
  * single {@link #batchVerify()} call.
+ *
+ * <p>This is thread-safe class.
  */
 public class BatchSignatureVerifier implements BLSSignatureVerifier {
   private static class Job {
@@ -46,11 +49,12 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
     }
   }
 
-  private final List<Job> toVerify = new ArrayList<>();
+  @VisibleForTesting final List<Job> toVerify = new ArrayList<>();
   private boolean complete = false;
 
   @Override
-  public boolean verify(List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
+  public synchronized boolean verify(
+      List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
     if (complete) throw new IllegalStateException("Reuse of disposable instance");
     toVerify.add(new Job(toVerify.size(), publicKeys, message, signature));
     return true;
@@ -63,7 +67,7 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
    * <p>After this method completes the instance should be disposed and any subsequent calls to this
    * instance methods would fail with exception
    */
-  public boolean batchVerify() {
+  public synchronized boolean batchVerify() {
     if (complete) throw new IllegalStateException("Reuse of disposable instance");
     List<BatchSemiAggregate> batchSemiAggregates =
         toVerify.stream()

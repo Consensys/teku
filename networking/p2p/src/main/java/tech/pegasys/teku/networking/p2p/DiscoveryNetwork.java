@@ -14,8 +14,10 @@
 package tech.pegasys.teku.networking.p2p;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -23,6 +25,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -30,6 +33,7 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.teku.networking.p2p.discovery.noop.NoOpDiscoveryService;
@@ -53,6 +57,8 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private final DiscoveryService discoveryService;
   private final ConnectionManager connectionManager;
 
+  private volatile Optional<EnrForkId> enrForkId = Optional.empty();
+
   DiscoveryNetwork(
       final P2PNetwork<P> p2pNetwork,
       final DiscoveryService discoveryService,
@@ -61,6 +67,16 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     this.p2pNetwork = p2pNetwork;
     this.discoveryService = discoveryService;
     this.connectionManager = connectionManager;
+    initialize();
+  }
+
+  public void initialize() {
+    setPreGenesisForkInfo();
+    getEnr().ifPresent(StatusLogger.STATUS_LOG::listeningForDiscv5PreGenesis);
+
+    // Set connection manager peer predicate so that we don't attempt to connect peers with
+    // different fork digests
+    connectionManager.addPeerPredicate(this::dontConnectPeersWithDifferentForkDigests);
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
@@ -136,6 +152,17 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
         new Bitvector(subnetIds, ATTESTATION_SUBNET_COUNT).serialize());
   }
 
+  public void setPreGenesisForkInfo() {
+    final EnrForkId enrForkId =
+        new EnrForkId(
+            compute_fork_digest(GENESIS_FORK_VERSION, Bytes32.ZERO),
+            GENESIS_FORK_VERSION,
+            FAR_FUTURE_EPOCH);
+    discoveryService.updateCustomENRField(
+        ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
+    this.enrForkId = Optional.of(enrForkId);
+  }
+
   public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
     // If no future fork is planned, set next_fork_version = current_fork_version to signal this
     final Bytes4 nextVersion =
@@ -145,10 +172,26 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     // If no future fork is planned, set next_fork_epoch = FAR_FUTURE_EPOCH to signal this
     final UnsignedLong nextForkEpoch = nextForkInfo.map(Fork::getEpoch).orElse(FAR_FUTURE_EPOCH);
 
-    final EnrForkId enrForkId =
-        new EnrForkId(currentForkInfo.getForkDigest(), nextVersion, nextForkEpoch);
-    discoveryService.updateCustomENRField(
-        ETH2_ENR_FIELD, SimpleOffsetSerializer.serialize(enrForkId));
+    final Bytes4 forkDigest = currentForkInfo.getForkDigest();
+    final EnrForkId enrForkId = new EnrForkId(forkDigest, nextVersion, nextForkEpoch);
+    final Bytes encodedEnrForkId = SimpleOffsetSerializer.serialize(enrForkId);
+
+    discoveryService.updateCustomENRField(ETH2_ENR_FIELD, encodedEnrForkId);
+    this.enrForkId = Optional.of(enrForkId);
+  }
+
+  private boolean dontConnectPeersWithDifferentForkDigests(DiscoveryPeer peer) {
+    return enrForkId
+        .map(EnrForkId::getForkDigest)
+        .flatMap(
+            forkDigest ->
+                peer.getEnrForkId()
+                    .map(
+                        peerEnrForkId ->
+                            SimpleOffsetSerializer.deserialize(peerEnrForkId, EnrForkId.class)
+                                .getForkDigest()
+                                .equals(forkDigest)))
+        .orElse(false);
   }
 
   @Override
