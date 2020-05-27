@@ -58,7 +58,11 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
   private static final TekuConfiguration config =
-      TekuConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
+      TekuConfiguration.builder()
+          .setRestApiPort(0)
+          .setRestApiDocsEnabled(false)
+          .setRestApiHostWhitelist(List.of("127.0.0.1", "localhost"))
+          .build();
 
   protected static final UnsignedLong SIX = UnsignedLong.valueOf(6);
   protected static final UnsignedLong SEVEN = UnsignedLong.valueOf(7);
