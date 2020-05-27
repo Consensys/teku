@@ -20,6 +20,8 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
 public interface RocksDbSerializer<T> {
   RocksDbSerializer<UnsignedLong> UNSIGNED_LONG_SERIALIZER = new UnsignedLongSerializer();
@@ -29,6 +31,10 @@ public interface RocksDbSerializer<T> {
   RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconStateImpl.class);
   RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.class);
   RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new SszSerializer<>(VoteTracker.class);
+  RocksDbSerializer<DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER =
+      new DepositsFromBlockEventSerializer();
+  RocksDbSerializer<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER =
+      new MinGenesisTimeBlockEventSerializer();
 
   T deserialize(final byte[] data);
 

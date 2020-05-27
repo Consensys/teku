@@ -18,7 +18,7 @@ import java.util.List;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
-import tech.pegasys.teku.services.chainstorage.ChainStorageService;
+import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -31,7 +31,7 @@ public class ServiceController extends Service {
   public ServiceController(final ServiceConfig config) {
     services.add(new TimerService(config));
     services.add(new BeaconChainService(config));
-    services.add(new ChainStorageService(config));
+    services.add(new StorageService(config));
     services.add(ValidatorClientService.create(config));
     if (!config.getConfig().isInteropEnabled() && config.getConfig().isEth1Enabled()) {
       services.add(new PowchainService(config));
