@@ -11,29 +11,42 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.datastructures.forkchoice;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
+import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 
 public class DelayableAttestation {
   private final Attestation attestation;
-  private final Runnable onSuccessfulProcessing;
+  private final Consumer<Attestation> onSuccessfulProcessing;
+
+  private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
 
   public DelayableAttestation(
-      final Attestation attestation, final Runnable onSuccessfulProcessing) {
+      final Attestation attestation, final Consumer<Attestation> onSuccessfulProcessing) {
     this.attestation = attestation;
     this.onSuccessfulProcessing = onSuccessfulProcessing;
   }
 
-  Attestation getAttestation() {
+  public Optional<IndexedAttestation> getIndexedAttestation() {
+    return maybeIndexedAttestation;
+  }
+
+  public void setIndexedAttestation(IndexedAttestation indexedAttestation) {
+    maybeIndexedAttestation = Optional.of(indexedAttestation);
+  }
+
+  public Attestation getAttestation() {
     return attestation;
   }
 
-  void onAttestationProcessedSuccessfully() {
-    onSuccessfulProcessing.run();
+  public void onAttestationProcessedSuccessfully() {
+    onSuccessfulProcessing.accept(attestation);
   }
 
   public UnsignedLong getEarliestSlotForForkChoiceProcessing() {

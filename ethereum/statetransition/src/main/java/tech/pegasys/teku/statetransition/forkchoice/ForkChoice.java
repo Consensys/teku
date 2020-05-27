@@ -22,8 +22,9 @@ import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.Store;
@@ -71,8 +72,13 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   public AttestationProcessingResult onAttestation(
-      final MutableStore store, final Attestation attestation) {
+      final MutableStore store, final DelayableAttestation attestation) {
     return on_attestation(store, attestation, stateTransition, protoArrayForkChoiceStrategy);
+  }
+
+  public void applyIndexedAttestation(
+      final MutableStore store, final IndexedAttestation indexedAttestation) {
+    protoArrayForkChoiceStrategy.onAttestation(store, indexedAttestation);
   }
 
   @Override
