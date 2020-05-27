@@ -378,6 +378,9 @@ workflows:
             - assemble
             - unitTests
             - spotless
+      - extractAPISpec:
+          requires:
+            - assemble
       - publish:
           filters:
             branches:
@@ -390,6 +393,7 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
+            - extractAPISpec
       - publishDocker:
           filters:
             branches:
@@ -402,16 +406,15 @@ workflows:
             - acceptanceTests
             - referenceTests
             - docker
-      - extractAPISpec:
-          requires:
-            - unitTests
-            - integrationTests
-            - acceptanceTests
-            - referenceTests
-            - docker
+            - extractAPISpec
       # - publishAPIDoc:
       #     requires:
       #       - extractAPISpec
+      #       - unitTests
+      #       - integrationTests
+      #       - acceptanceTests
+      #       - referenceTests
+      #       - docker
       #     filters:
       #       branches:
       #         only: master
