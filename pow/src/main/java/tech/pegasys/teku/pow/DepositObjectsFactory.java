@@ -22,26 +22,30 @@ public class DepositObjectsFactory {
   private final Eth1Provider eth1Provider;
   private final Eth1EventsChannel eth1EventsChannel;
   private final DepositContract depositContract;
+  private final Eth1BlockFetcher eth1BlockFetcher;
   private final AsyncRunner asyncRunner;
 
   public DepositObjectsFactory(
       Eth1Provider eth1Provider,
       Eth1EventsChannel eth1EventsChannel,
       DepositContract depositContract,
+      Eth1BlockFetcher eth1BlockFetcher,
       AsyncRunner asyncRunner) {
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
     this.depositContract = depositContract;
+    this.eth1BlockFetcher = eth1BlockFetcher;
     this.asyncRunner = asyncRunner;
   }
 
   public DepositFetcher createDepositsFetcher() {
-    return new DepositFetcher(eth1Provider, eth1EventsChannel, depositContract, asyncRunner);
+    return new DepositFetcher(
+        eth1Provider, eth1EventsChannel, depositContract, eth1BlockFetcher, asyncRunner);
   }
 
   public DepositProcessingController createDepositProcessingController() {
     return new DepositProcessingController(
-        eth1Provider, eth1EventsChannel, asyncRunner, createDepositsFetcher());
+        eth1Provider, eth1EventsChannel, asyncRunner, createDepositsFetcher(), eth1BlockFetcher);
   }
 
   public Eth1DepositManager createEth1DepositsManager() {
