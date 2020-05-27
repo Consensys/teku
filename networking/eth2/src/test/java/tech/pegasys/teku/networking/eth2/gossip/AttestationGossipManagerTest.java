@@ -31,6 +31,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -41,6 +42,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttestationGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final GossipedAttestationConsumer gossipedAttestationConsumer =
+      mock(GossipedAttestationConsumer.class);
   private final EventBus eventBus = new EventBus();
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
@@ -55,7 +58,11 @@ public class AttestationGossipManagerTest {
     doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            gossipNetwork, gossipEncoding, attestationValidator, recentChainData, eventBus);
+            gossipNetwork,
+            gossipEncoding,
+            attestationValidator,
+            recentChainData,
+            gossipedAttestationConsumer);
     attestationGossipManager =
         new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions, eventBus);
   }

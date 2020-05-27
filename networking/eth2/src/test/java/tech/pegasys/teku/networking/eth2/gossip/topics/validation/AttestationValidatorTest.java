@@ -283,7 +283,8 @@ class AttestationValidatorTest {
   }
 
   private ValidationResult validate(final Attestation attestation) {
-    return validator.validate(attestation, CommitteeUtil.getSubnetId(attestation));
+    return validator.validate(
+        ValidateableAttestation.fromSingle(attestation), CommitteeUtil.getSubnetId(attestation));
   }
 
   private boolean hasSameValidators(final Attestation attestation1, final Attestation attestation) {

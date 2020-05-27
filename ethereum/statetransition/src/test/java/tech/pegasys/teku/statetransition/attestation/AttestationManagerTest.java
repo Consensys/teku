@@ -37,11 +37,11 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
@@ -77,7 +77,8 @@ class AttestationManagerTest {
 
   @Test
   public void shouldProcessAttestationsThatAreReadyImmediately() {
-    Attestation attestation = dataStructureUtil.randomAttestation();
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromSingle(dataStructureUtil.randomAttestation());
     when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
     attestationManager.onGossipedAttestation(attestation);
 
@@ -89,19 +90,21 @@ class AttestationManagerTest {
 
   @Test
   public void shouldProcessAggregatesThatAreReadyImmediately() {
-    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
+    final ValidateableAttestation aggregate =
+        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
     when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
-    attestationManager.onGossipedAggregateAndProof(aggregate);
+    attestationManager.onGossipedAttestation(aggregate);
 
-    verifyAttestationProcessed(aggregate.getMessage().getAggregate());
-    verify(attestationPool).add(aggregate.getMessage().getAggregate());
+    verifyAttestationProcessed(aggregate);
+    verify(attestationPool).add(aggregate);
     assertThat(futureAttestations.size()).isEqualTo(0);
     assertThat(pendingAttestations.size()).isEqualTo(0);
   }
 
   @Test
   public void shouldAddAttestationsThatHaveNotYetReachedTargetSlotToFutureItemsAndPool() {
-    Attestation attestation = attestationFromSlot(100);
+    ValidateableAttestation attestation =
+        ValidateableAttestation.fromSingle(attestationFromSlot(100));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     when(attestationProcessor.processAttestation(any())).thenReturn(SAVED_FOR_FUTURE);
     attestationManager.onGossipedAttestation(attestation);
@@ -129,7 +132,8 @@ class AttestationManagerTest {
   public void shouldDeferProcessingForAttestationsThatAreMissingBlockDependencies() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     final Bytes32 requiredBlockRoot = block.getMessage().hash_tree_root();
-    final Attestation attestation = attestationFromSlot(1, requiredBlockRoot);
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromSingle(attestationFromSlot(1, requiredBlockRoot));
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(UNKNOWN_BLOCK)
         .thenReturn(SUCCESSFUL);
@@ -159,7 +163,8 @@ class AttestationManagerTest {
 
   @Test
   public void shouldNotPublishProcessedAttestationEventWhenAttestationIsInvalid() {
-    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromSingle(dataStructureUtil.randomAttestation());
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(AttestationProcessingResult.INVALID);
     attestationManager.onGossipedAttestation(attestation);
@@ -172,13 +177,13 @@ class AttestationManagerTest {
 
   @Test
   public void shouldNotPublishProcessedAggregationEventWhenAttestationIsInvalid() {
-    final SignedAggregateAndProof aggregateAndProof =
-        dataStructureUtil.randomSignedAggregateAndProof();
+    final ValidateableAttestation aggregateAndProof =
+        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(AttestationProcessingResult.INVALID);
-    attestationManager.onGossipedAggregateAndProof(aggregateAndProof);
+    attestationManager.onGossipedAttestation(aggregateAndProof);
 
-    verifyAttestationProcessed(aggregateAndProof.getMessage().getAggregate());
+    verifyAttestationProcessed(aggregateAndProof);
     assertThat(pendingAttestations.size()).isZero();
     assertThat(futureAttestations.size()).isZero();
     verifyNoInteractions(attestationPool);
@@ -200,10 +205,10 @@ class AttestationManagerTest {
         BLSSignature.empty());
   }
 
-  private void verifyAttestationProcessed(final Attestation attestation) {
+  private void verifyAttestationProcessed(final ValidateableAttestation attestation) {
     ArgumentCaptor<DelayableAttestation> captor =
         ArgumentCaptor.forClass(DelayableAttestation.class);
     verify(attestationProcessor).processAttestation(captor.capture());
-    assertThat(captor.getValue().getAttestation()).isSameAs(attestation);
+    assertThat(captor.getValue().getAttestation()).isSameAs(attestation.getAttestation());
   }
 }

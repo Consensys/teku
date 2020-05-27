@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -296,7 +297,8 @@ class ValidatorApiHandlerTest {
   public void createAggregate_shouldReturnAggregateFromAttestationPool() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
-    when(attestationPool.createAggregateFor(attestationData)).thenReturn(aggregate);
+    when(attestationPool.createAggregateFor(attestationData))
+        .thenReturn(aggregate.map(ValidateableAttestation::fromSingle));
 
     assertThat(validatorApiHandler.createAggregate(attestationData))
         .isCompletedWithValue(aggregate);
@@ -333,7 +335,7 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationPool).add(attestation);
+    verify(attestationPool).add(ValidateableAttestation.fromSingle(attestation));
     verify(eventBus).post(attestation);
   }
 
@@ -351,7 +353,7 @@ class ValidatorApiHandlerTest {
         dataStructureUtil.randomSignedAggregateAndProof();
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
-    verify(attestationPool).add(aggregateAndProof.getMessage().getAggregate());
+    verify(attestationPool).add(ValidateableAttestation.fromAggregate(aggregateAndProof));
     verify(eventBus).post(aggregateAndProof);
   }
 
