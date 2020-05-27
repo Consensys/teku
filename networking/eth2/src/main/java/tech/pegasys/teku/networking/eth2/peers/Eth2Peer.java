@@ -82,7 +82,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     if (curValue.isEmpty() || seqNumber.compareTo(curValue.get()) > 0) {
       requestMetadata()
           .finish(
-              this::updateMetadata, error -> LOG.debug("Failed to retrieve mpeer metadata", error));
+              this::updateMetadata, error -> LOG.debug("Failed to retrieve peer metadata", error));
     }
   }
 
