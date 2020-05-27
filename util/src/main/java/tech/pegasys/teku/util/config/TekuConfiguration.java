@@ -467,7 +467,7 @@ public class TekuConfiguration {
     if ((validatorKeystoreFiles != null && validatorKeystorePasswordFiles == null)
         || (validatorKeystoreFiles == null && validatorKeystorePasswordFiles != null)) {
       final String errorMessage =
-          "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' cannot be specified separately";
+          "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together";
       throw new InvalidConfigurationException(errorMessage);
     }
 
