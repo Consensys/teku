@@ -198,7 +198,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    return SafeFuture.completedFuture(attestationPool.createAggregateFor(attestationData));
+    return SafeFuture.completedFuture(
+            attestationPool.createAggregateFor(attestationData)
+            .map(ValidateableAttestation::getAttestation)
+    );
   }
 
   @Override

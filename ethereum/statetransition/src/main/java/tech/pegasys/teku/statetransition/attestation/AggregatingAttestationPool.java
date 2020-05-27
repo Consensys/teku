@@ -108,10 +108,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return attestations;
   }
 
-  public synchronized Optional<Attestation> createAggregateFor(
+  public synchronized Optional<ValidateableAttestation> createAggregateFor(
       final AttestationData attestationData) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationData.hash_tree_root()))
-        .flatMap(attestations -> attestations.stream().findFirst())
-        .map(ValidateableAttestation::getAttestation);
+        .flatMap(attestations -> attestations.stream().findFirst());
   }
 }
