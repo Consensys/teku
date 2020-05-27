@@ -261,7 +261,6 @@ public abstract class AbstractCombinedChainDataClientTest {
 
     final SignedBlockAndState targetBlock = chainBuilder.generateNextBlock();
     chainUpdater.saveBlock(targetBlock);
-    ;
 
     final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
     // Sanity check
