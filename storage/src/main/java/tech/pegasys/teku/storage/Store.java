@@ -307,13 +307,9 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
-    public void putBlockState(Bytes32 blockRoot, BeaconState state) {
-      block_states.put(blockRoot, state);
-    }
-
-    @Override
-    public void putBlock(Bytes32 blockRoot, SignedBeaconBlock block) {
-      blocks.put(blockRoot, block);
+    public void putBlockAndState(SignedBeaconBlock block, BeaconState state) {
+      blocks.put(block.getRoot(), block);
+      block_states.put(block.getRoot(), state);
     }
 
     @Override

@@ -187,7 +187,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                         connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
                         setUpPeriodicTasksForPeer(eth2Peer);
                       }
-                    }));
+                    },
+                    error -> LOG.debug("Error while validating peer", error)));
   }
 
   @VisibleForTesting

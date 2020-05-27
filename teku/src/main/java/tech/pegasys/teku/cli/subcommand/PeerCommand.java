@@ -82,7 +82,7 @@ public class PeerCommand {
       throws IOException {
     try {
       validateParamsAndGenerate(params.outputFile, number);
-    } catch (Exception ex) {
+    } catch (final Exception ex) {
       throw new ParameterException(spec.commandLine(), ex.getMessage());
     }
   }
@@ -93,7 +93,7 @@ public class PeerCommand {
       if (f.exists()) {
         throw new InvalidConfigurationException(
             String.format(
-                "Not overwriting existing file %s \nDelete file or use --outputFile to point to a file that does not currently exist.",
+                "Not overwriting existing file %s \nDelete file or use --output-file to point to a file that does not currently exist.",
                 outputFile));
       }
       FileWriter fileWriter = new FileWriter(outputFile, Charset.defaultCharset());
@@ -111,16 +111,16 @@ public class PeerCommand {
                 + peerId.toBase58());
       }
       printWriter.close();
-    } catch (FileNotFoundException ex) {
+    } catch (final FileNotFoundException ex) {
       throw new InvalidConfigurationException(
-          "use --outputFile to point to a file in an existing directory " + ex.getMessage());
+          "use --output-file to point to a file in an existing directory " + ex.getMessage());
     }
   }
 
   public static class PeerGenerationParams {
 
     @Option(
-        names = {"-o", "--outputFile"},
+        names = {"-o", "--output-file"},
         paramLabel = "<FILENAME>",
         description = "Path/filename of the output file")
     private String outputFile = "./config/peer-ids.dat";

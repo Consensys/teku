@@ -26,7 +26,7 @@ public class PeerCommandTest {
   @Test
   public void peerGenerate_shouldDisplayErrorIfFileNotFound() {
     PeerCommand peerCommand = new PeerCommand();
-    String fileWhichDoesNotExist = "directory-does-not-exist/config.dat";
+    final String fileWhichDoesNotExist = "directory-does-not-exist/config.dat";
 
     assertThatThrownBy(
             () -> {
