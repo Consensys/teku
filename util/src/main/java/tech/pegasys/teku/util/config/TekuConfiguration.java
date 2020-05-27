@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
@@ -438,7 +439,7 @@ public class TekuConfiguration {
       return null;
     }
 
-    validateKeyStoreFilesAndPasswordFilesSize();
+    validateKeyStoreFilesAndPasswordFilesConfig();
 
     final List<Pair<Path, Path>> keystoreFilePasswordFilePairs = new ArrayList<>();
     for (int i = 0; i < keystoreFiles.size(); i++) {
@@ -456,17 +457,30 @@ public class TekuConfiguration {
               "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
               interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
     }
-    validateKeyStoreFilesAndPasswordFilesSize();
+    validateKeyStoreFilesAndPasswordFilesConfig();
   }
 
-  private void validateKeyStoreFilesAndPasswordFilesSize() {
+  private void validateKeyStoreFilesAndPasswordFilesConfig() {
     final List<String> validatorKeystoreFiles = getValidatorKeystoreFiles();
     final List<String> validatorKeystorePasswordFiles = getValidatorKeystorePasswordFiles();
 
+    if ((validatorKeystoreFiles != null && validatorKeystorePasswordFiles == null)
+        || ((validatorKeystoreFiles == null && validatorKeystorePasswordFiles != null))) {
+      final String errorMessage =
+          "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' cannot be specified separately";
+      throw new InvalidConfigurationException(errorMessage);
+    }
+
     if (validatorKeystoreFiles.size() != validatorKeystorePasswordFiles.size()) {
+      StatusLogger.getLogger()
+          .debug(
+              "Invalid configuration. The size of validator.validatorsKeystoreFiles {} and validator.validatorsKeystorePasswordFiles {} must match",
+              validatorKeystoreFiles.size(),
+              validatorKeystorePasswordFiles.size());
+
       final String errorMessage =
           String.format(
-              "Invalid configuration. The size of validator.validatorsKeystoreFiles [%d] and validator.validatorsKeystorePasswordFiles [%d] must match",
+              "Invalid configuration. The number of arguments for --validators-key-files [%d] and --validators-key-password-files [%d] must match",
               validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
       throw new InvalidConfigurationException(errorMessage);
     }
