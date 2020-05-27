@@ -15,8 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

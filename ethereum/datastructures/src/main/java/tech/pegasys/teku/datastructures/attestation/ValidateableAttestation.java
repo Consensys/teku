@@ -14,12 +14,10 @@
 package tech.pegasys.teku.datastructures.attestation;
 
 import com.google.common.base.Objects;
-
+import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -39,9 +37,7 @@ public class ValidateableAttestation {
 
   public static ValidateableAttestation fromAggregate(SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
-        attestation.getMessage().getAggregate(),
-            Optional.of(attestation),
-            false);
+        attestation.getMessage().getAggregate(), Optional.of(attestation), false);
   }
 
   private ValidateableAttestation(
@@ -55,7 +51,9 @@ public class ValidateableAttestation {
 
   public IndexedAttestation getIndexedAttestation() {
     return maybeIndexedAttestation.orElseThrow(
-            () -> new UnsupportedOperationException("ValidateableAttestation does not have an IndexedAttestation yet."));
+        () ->
+            new UnsupportedOperationException(
+                "ValidateableAttestation does not have an IndexedAttestation yet."));
   }
 
   public void setIndexedAttestation(IndexedAttestation maybeIndexedAttestation) {

@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.attestation;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,8 +32,6 @@ import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-import java.util.List;
-
 public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -44,9 +43,10 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final FutureItems<ValidateableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
 
-  private final Subscribers<ProcessedAttestationConsumer> processedAttestationSubscriber = Subscribers.create(true);
-  private final Subscribers<ProcessedAggregateConsumer> processedAggregateSubscriber = Subscribers.create(true);
-
+  private final Subscribers<ProcessedAttestationConsumer> processedAttestationSubscriber =
+      Subscribers.create(true);
+  private final Subscribers<ProcessedAggregateConsumer> processedAggregateSubscriber =
+      Subscribers.create(true);
 
   AttestationManager(
       final EventBus eventBus,
@@ -75,21 +75,22 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         aggregatingAttestationPool);
   }
 
-  public void subscribeToProcessedAttestations(ProcessedAttestationConsumer processedAttestationConsumer) {
+  public void subscribeToProcessedAttestations(
+      ProcessedAttestationConsumer processedAttestationConsumer) {
     processedAttestationSubscriber.subscribe(processedAttestationConsumer);
   }
 
-  public void subscribeToProcessedAggregates(ProcessedAggregateConsumer processedAggregateConsumer) {
+  public void subscribeToProcessedAggregates(
+      ProcessedAggregateConsumer processedAggregateConsumer) {
     processedAggregateSubscriber.subscribe(processedAggregateConsumer);
   }
 
   @Override
   public void onSlot(final UnsignedLong slot) {
     List<ValidateableAttestation> attestations = futureAttestations.prune(slot);
-    attestations
-            .stream()
-            .map(ValidateableAttestation::getIndexedAttestation)
-            .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
+    attestations.stream()
+        .map(ValidateableAttestation::getIndexedAttestation)
+        .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
 
     attestations.forEach(this::gossipAttestationIfNeeded);
   }
@@ -138,8 +139,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         pendingAttestations.add(attestation);
         break;
       case SAVED_FOR_FUTURE:
-        LOG.trace(
-            "Deferring attestation {} until a future slot", attestation::hash_tree_root);
+        LOG.trace("Deferring attestation {} until a future slot", attestation::hash_tree_root);
         futureAttestations.add(attestation);
         aggregatingAttestationPool.add(attestation);
         break;
