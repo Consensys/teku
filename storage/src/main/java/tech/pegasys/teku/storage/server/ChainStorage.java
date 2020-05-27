@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -26,32 +25,28 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.StorageUpdateResult;
 import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
-public class ChainStorageServer implements StorageUpdateChannel, StorageQueryChannel {
+public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   private final EventBus eventBus;
-  private final DatabaseFactory databaseFactory;
 
   private volatile Database database;
   private volatile Optional<Store> cachedStore = Optional.empty();
 
-  private ChainStorageServer(EventBus eventBus, final DatabaseFactory dbFactory) {
+  private ChainStorage(final EventBus eventBus, final Database database) {
     this.eventBus = eventBus;
-    this.databaseFactory = dbFactory;
+    this.database = database;
   }
 
-  public static ChainStorageServer create(EventBus eventBus, TekuConfiguration config) {
-    return new ChainStorageServer(eventBus, new VersionedDatabaseFactory(config));
-  }
-
-  @VisibleForTesting
-  public static ChainStorageServer create(EventBus eventBus, DatabaseFactory dbFactory) {
-    return new ChainStorageServer(eventBus, dbFactory);
+  public static ChainStorage create(final EventBus eventBus, final Database database) {
+    return new ChainStorage(eventBus, database);
   }
 
   public void start() {
-    this.database = databaseFactory.createDatabase();
     eventBus.register(this);
+  }
+
+  public void stop() {
+    eventBus.unregister(this);
   }
 
   private synchronized Optional<Store> getStore() {

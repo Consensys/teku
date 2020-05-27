@@ -28,7 +28,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  private static final int BLS_SIGNATURE_SIZE = 96;
+  public static final int BLS_SIGNATURE_SIZE = 96;
 
   /**
    * Create a random, but valid, signature.
