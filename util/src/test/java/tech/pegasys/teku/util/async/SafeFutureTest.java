@@ -177,50 +177,6 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void finish_executeRunnableOnSuccess() {
-    final AtomicBoolean called = new AtomicBoolean(false);
-    final SafeFuture<String> future = new SafeFuture<>();
-    future.finish(() -> called.set(true));
-
-    assertThat(called).isFalse();
-    future.complete("Yay");
-    assertThat(called).isTrue();
-  }
-
-  @Test
-  public void finish_doNotExecuteRunnableOnException() {
-    final AtomicBoolean called = new AtomicBoolean(false);
-    final SafeFuture<String> future = new SafeFuture<>();
-    future.finish(() -> called.set(true));
-
-    assertThat(called).isFalse();
-    future.completeExceptionally(new RuntimeException("Nope"));
-    assertThat(called).isFalse();
-  }
-
-  @Test
-  public void finish_executeConsumerOnSuccess() {
-    final AtomicReference<String> called = new AtomicReference<>();
-    final SafeFuture<String> future = new SafeFuture<>();
-    future.finish(called::set);
-
-    assertThat(called).hasValue(null);
-    future.complete("Yay");
-    assertThat(called).hasValue("Yay");
-  }
-
-  @Test
-  public void finish_doNotExecuteConsumerOnException() {
-    final AtomicReference<String> called = new AtomicReference<>();
-    final SafeFuture<String> future = new SafeFuture<>();
-    future.finish(called::set);
-
-    assertThat(called).hasValue(null);
-    future.completeExceptionally(new RuntimeException("Oh no"));
-    assertThat(called).hasValue(null);
-  }
-
-  @Test
   public void finish_runnableAndErrorHandler_executeRunnableOnSuccess() {
     final AtomicBoolean called = new AtomicBoolean(false);
     final AtomicReference<Throwable> errorCallback = new AtomicReference<>();
@@ -327,17 +283,6 @@ public class SafeFutureTest {
           throw new RuntimeException("Oh no!");
         });
     safeFuture.completeExceptionally(new Exception("Original exception"));
-
-    assertThat(caughtExceptions).hasSize(1);
-  }
-
-  @Test
-  public void finish_shouldReportExceptionsWhenNoErrorHandlerProvided() {
-    final List<Throwable> caughtExceptions = collectUncaughtExceptions();
-
-    final SafeFuture<Object> safeFuture = new SafeFuture<>();
-    safeFuture.finish(() -> {});
-    safeFuture.completeExceptionally(new RuntimeException("Not handled"));
 
     assertThat(caughtExceptions).hasSize(1);
   }

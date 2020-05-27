@@ -126,7 +126,8 @@ public class SyncManager extends Service {
                   syncSubscribers.deliver(SyncSubscriber::onSyncingChange, syncActive);
                 }
               }
-            });
+            },
+            error -> LOG.error("Unexpected error during sync", error));
   }
 
   @VisibleForTesting
