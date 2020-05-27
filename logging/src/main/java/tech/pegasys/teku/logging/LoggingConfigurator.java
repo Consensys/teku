@@ -29,6 +29,8 @@ import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.core.pattern.PatternFormatter;
+import org.apache.logging.log4j.core.pattern.PatternParser;
 import org.apache.logging.log4j.status.StatusLogger;
 import tech.pegasys.teku.util.config.LoggingDestination;
 
@@ -41,6 +43,8 @@ public class LoggingConfigurator {
   private static final String LOG4J_LEGACY_CONFIG_FILE_KEY = "log4j.configurationFile";
   private static final String CONSOLE_APPENDER_NAME = "teku-console-appender";
   private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} %-5level - %msg%n";
+  private static final String CONSOLE_EXCEPTION_FORMAT =
+      "%d{HH:mm:ss.SSS} %-5level - %msg %throwable{1} (See log file for full stack trace)%n";
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
   private static final String FILE_MESSAGE_FORMAT =
       "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
@@ -216,10 +220,18 @@ public class LoggingConfigurator {
   private static Appender consoleAppender(final AbstractConfiguration configuration) {
     configuration.removeAppender(CONSOLE_APPENDER_NAME);
 
+    final PatternParser patternParser = PatternLayout.createPatternParser(configuration);
+    final PatternFormatter[] exceptionFormat =
+        patternParser.parse(CONSOLE_EXCEPTION_FORMAT, false, true).toArray(PatternFormatter[]::new);
+    final PatternFormatter[] messageFormat =
+        patternParser.parse(CONSOLE_FORMAT, false, true).toArray(PatternFormatter[]::new);
     final Layout<?> layout =
         PatternLayout.newBuilder()
+            .withAlwaysWriteExceptions(false)
+            .withNoConsoleNoAnsi(true)
             .withConfiguration(configuration)
-            .withPattern(CONSOLE_FORMAT)
+            .withPatternSelector(
+                event -> event.getThrownProxy() != null ? exceptionFormat : messageFormat)
             .build();
     final Appender consoleAppender =
         ConsoleAppender.newBuilder().setName(CONSOLE_APPENDER_NAME).setLayout(layout).build();
