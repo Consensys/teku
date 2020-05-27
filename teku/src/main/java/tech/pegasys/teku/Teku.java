@@ -23,6 +23,7 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public final class Teku {
   public static void main(final String... args) {
+    Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
     Security.addProvider(new BouncyCastleProvider());
     final PrintWriter outputWriter = new PrintWriter(System.out, true, UTF_8);
     final PrintWriter errorWriter = new PrintWriter(System.err, true, UTF_8);

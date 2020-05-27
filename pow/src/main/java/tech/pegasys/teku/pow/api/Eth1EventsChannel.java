@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.pow.api;
 
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
@@ -20,4 +22,6 @@ public interface Eth1EventsChannel {
   void onDepositsFromBlock(DepositsFromBlockEvent event);
 
   void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
+
+  default void onEth1Block(Bytes32 blockHash, UnsignedLong blockTimestamp) {}
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
@@ -45,20 +46,17 @@ import tech.pegasys.teku.util.config.Constants;
 public class DepositProviderTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final BeaconState beaconState = mock(BeaconState.class);
+  private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  private final MerkleTree depositMerkleTree =
+      new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
   private List<tech.pegasys.teku.pow.event.Deposit> allSeenDepositsList;
-  private DepositProvider depositProvider;
-  private RecentChainData recentChainData;
-  private BeaconState beaconState;
-  private MerkleTree depositMerkleTree;
+  private final DepositProvider depositProvider =
+      new DepositProvider(recentChainData, eth1DataCache);
 
   @BeforeEach
   void setUp() {
-    recentChainData = mock(RecentChainData.class);
-    beaconState = mock(BeaconState.class);
-
-    depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
-    depositProvider = new DepositProvider(recentChainData);
-
     createDepositEvents(40);
   }
 
@@ -115,6 +113,34 @@ public class DepositProviderTest {
     depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UnsignedLong.ONE, finalizedBlockRoot));
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
+  }
+
+  @Test
+  void shouldDelegateOnEth1BlockToEth1DataCache() {
+    final Bytes32 blockHash = dataStructureUtil.randomBytes32();
+    final UnsignedLong blockTimestamp = dataStructureUtil.randomUnsignedLong();
+    depositProvider.onEth1Block(blockHash, blockTimestamp);
+    verify(eth1DataCache).onEth1Block(blockHash, blockTimestamp);
+  }
+
+  @Test
+  void shouldNotifyEth1DataCacheOfDepositBlocks() {
+    final tech.pegasys.teku.pow.event.Deposit deposit =
+        dataStructureUtil.randomDepositEvent(UnsignedLong.ZERO);
+    final DepositsFromBlockEvent event =
+        new DepositsFromBlockEvent(
+            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUnsignedLong(),
+            List.of(deposit));
+    depositProvider.onDepositsFromBlock(event);
+
+    depositMerkleTree.add(
+        DepositUtil.convertDepositEventToOperationDeposit(deposit).getData().hash_tree_root());
+    verify(eth1DataCache)
+        .onBlockWithDeposit(
+            event.getBlockTimestamp(),
+            new Eth1Data(depositMerkleTree.getRoot(), UnsignedLong.ONE, event.getBlockHash()));
   }
 
   private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {

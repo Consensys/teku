@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
@@ -39,20 +41,25 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
   @SuppressWarnings("unchecked")
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Path keyFile = Path.of(config.getValidatorsKeyFile());
     LOG.log(Level.DEBUG, "Loading validator keys from " + keyFile.toAbsolutePath().toString());
-    try (InputStream in = Files.newInputStream(keyFile)) {
-      final List<Object> values = mapper.readerFor(Map.class).readValues(in).readAll();
+    try (final InputStream in = Files.newInputStream(keyFile)) {
+      final List<Map<String, String>> values = mapper.readValue(in, new TypeReference<>() {});
       return values.stream()
           .map(
               value -> {
-                Map<String, String> keys = (Map<String, String>) value;
-                final String privKey = keys.get("privkey");
+                final String privKey = value.get("privkey");
+                if (privKey == null) {
+                  throw new IllegalArgumentException(
+                      "Invalid private key supplied.  Please check your validator keys configuration file");
+                }
                 return new BLSKeyPair(
                     BLSSecretKey.fromBytes(padLeft(Bytes.fromHexString(privKey))));
               })
           .collect(toList());
+    } catch (final JsonMappingException e) {
+      throw new RuntimeException("Error while reading validator keys file values", e);
     } catch (final IOException e) {
       throw new RuntimeException("Failed to load validator key file", e);
     }
