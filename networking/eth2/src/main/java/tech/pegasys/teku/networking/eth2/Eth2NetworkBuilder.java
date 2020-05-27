@@ -99,7 +99,7 @@ public class Eth2NetworkBuilder {
         recentChainData,
         gossipEncoding,
         attestationSubnetService,
-            gossipedAttestationConsumer);
+        gossipedAttestationConsumer);
   }
 
   protected DiscoveryNetwork<?> buildNetwork() {

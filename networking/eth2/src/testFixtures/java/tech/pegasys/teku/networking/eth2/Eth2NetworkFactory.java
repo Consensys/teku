@@ -172,7 +172,7 @@ public class Eth2NetworkFactory {
             recentChainData,
             gossipEncoding,
             attestationSubnetService,
-                gossipedAttestationConsumer);
+            gossipedAttestationConsumer);
       }
     }
 

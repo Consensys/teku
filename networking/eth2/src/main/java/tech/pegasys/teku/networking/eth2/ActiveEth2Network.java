@@ -99,7 +99,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
             gossipEncoding,
             attestationValidator,
             recentChainData,
-                gossipedAttestationConsumer);
+            gossipedAttestationConsumer);
     blockGossipManager =
         new BlockGossipManager(
             discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
@@ -111,7 +111,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
             gossipEncoding,
             forkInfo,
             aggregateValidator,
-                gossipedAttestationConsumer,
+            gossipedAttestationConsumer,
             eventBus);
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
