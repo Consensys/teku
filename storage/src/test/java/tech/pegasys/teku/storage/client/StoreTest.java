@@ -65,16 +65,15 @@ class StoreTest {
             SafeFuture.completedFuture(
                 new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
+    final Bytes32 blockRoot = block.getRoot();
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
     final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final BeaconState state = dataStructureUtil.randomBeaconState();
     final UnsignedLong genesisTime = UnsignedLong.valueOf(1);
     final UnsignedLong time = UnsignedLong.valueOf(3);
-    transaction.putBlock(blockRoot, block);
-    transaction.putBlockState(blockRoot, state);
+    transaction.putBlockAndState(block, state);
     transaction.setFinalizedCheckpoint(finalizedCheckpoint);
     transaction.setJustifiedCheckpoint(justifiedCheckpoint);
     transaction.setBestJustifiedCheckpoint(bestJustifiedCheckpoint);
