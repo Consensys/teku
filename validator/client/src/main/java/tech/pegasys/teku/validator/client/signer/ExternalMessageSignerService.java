@@ -44,35 +44,35 @@ public class ExternalMessageSignerService implements MessageSignerService {
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final Bytes signingRoot) {
-    return sign(signingRoot, "/signer/block");
+    return sign(signingRoot);
   }
 
   @Override
   public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
-    return sign(signingRoot, "/signer/attestation");
+    return sign(signingRoot);
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
-    return sign(signingRoot, "/signer/aggregation_slot");
+    return sign(signingRoot);
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregateAndProof(final Bytes signingRoot) {
-    return sign(signingRoot, "/signer/aggregate_and_proof");
+    return sign(signingRoot);
   }
 
   @Override
   public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
-    return sign(signingRoot, "/signer/randao_reveal");
+    return sign(signingRoot);
   }
 
-  private SafeFuture<BLSSignature> sign(final Bytes signingRoot, final String path) {
+  private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
     final String publicKey = blsPublicKey.getPublicKey().toString();
     return SafeFuture.ofComposed(
         () -> {
           final String requestBody = createSigningRequestBody(signingRoot);
-          final URI uri = signingServiceUrl.toURI().resolve(path + "/" + publicKey);
+          final URI uri = signingServiceUrl.toURI().resolve("/signer/sign/" + publicKey);
           final HttpRequest request =
               HttpRequest.newBuilder()
                   .uri(uri)
