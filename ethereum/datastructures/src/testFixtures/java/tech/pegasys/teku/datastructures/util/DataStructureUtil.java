@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.datastructures.util;
 
+import static java.lang.Math.random;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
@@ -23,6 +24,7 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.LongStream;
@@ -61,6 +63,8 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -378,10 +382,33 @@ public final class DataStructureUtil {
   }
 
   public DepositWithIndex randomDepositWithIndex() {
+    return randomDepositWithIndex(randomLong());
+  }
+
+  public DepositWithIndex randomDepositWithIndex(long depositIndex) {
     return new DepositWithIndex(
         SSZVector.createMutable(32, randomBytes32()),
         randomDepositData(),
-        randomUnsignedLong().mod(UnsignedLong.valueOf(Constants.DEPOSIT_CONTRACT_TREE_DEPTH)));
+        UnsignedLong.valueOf(depositIndex));
+  }
+
+  public DepositsFromBlockEvent randomDepositsFromBlockEvent(
+      final long blockIndex, long depositCount) {
+    return randomDepositsFromBlockEvent(UnsignedLong.valueOf(blockIndex), depositCount);
+  }
+
+  public DepositsFromBlockEvent randomDepositsFromBlockEvent(
+      UnsignedLong blockIndex, long depositCount) {
+    List<tech.pegasys.teku.pow.event.Deposit> deposits = new ArrayList<>();
+    for (long i = 0; i < depositCount; i++) {
+      deposits.add(randomDepositEvent(UnsignedLong.valueOf(i)));
+    }
+    return new DepositsFromBlockEvent(blockIndex, randomBytes32(), randomUnsignedLong(), deposits);
+  }
+
+  public MinGenesisTimeBlockEvent randomMinGenesisTimeBlockEvent(final long blockIndex) {
+    return new MinGenesisTimeBlockEvent(
+        randomUnsignedLong(), UnsignedLong.valueOf(blockIndex), randomBytes32());
   }
 
   public Deposit randomDepositWithoutIndex() {
@@ -403,6 +430,10 @@ public final class DataStructureUtil {
         randomSignature(),
         randomUnsignedLong(),
         index);
+  }
+
+  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent() {
+    return randomDepositEvent(randomUnsignedLong());
   }
 
   public ArrayList<DepositWithIndex> randomDeposits(int num) {
