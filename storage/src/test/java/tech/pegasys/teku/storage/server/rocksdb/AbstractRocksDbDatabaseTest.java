@@ -91,8 +91,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     final SignedBlockAndState newBlock = chainBuilder.getBlockAndStateAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putBlock(newBlock.getRoot(), newBlock.getBlock());
-    transaction.putBlockState(newBlock.getRoot(), newBlock.getState());
+    transaction.putBlockAndState(newBlock);
     transaction.setFinalizedCheckpoint(newCheckpoint);
     transaction.commit().reportExceptions();
     // Close db

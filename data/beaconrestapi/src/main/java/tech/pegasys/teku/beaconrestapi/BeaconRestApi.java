@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.teku.beaconrestapi.HostWhitelistUtils.isHostAuthorized;
 
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
@@ -73,6 +75,8 @@ public class BeaconRestApi {
   private void initialize(final DataProvider dataProvider, final TekuConfiguration configuration) {
     app.server().setServerPort(configuration.getRestApiPort());
 
+    addHostWhitelistHandler(configuration);
+
     addExceptionHandlers();
     addAdminHandlers();
     addBeaconHandlers(dataProvider);
@@ -80,6 +84,17 @@ public class BeaconRestApi {
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
+  }
+
+  private void addHostWhitelistHandler(final TekuConfiguration configuration) {
+    app.before(
+        (ctx) -> {
+          String header = ctx.header("host");
+          if (!isHostAuthorized(configuration.getRestApiHostWhitelist(), header)) {
+            ctx.status(SC_FORBIDDEN);
+            LOG.debug("Host not authorized " + header);
+          }
+        });
   }
 
   private void addCustomErrorPages(final TekuConfiguration configuration) {
