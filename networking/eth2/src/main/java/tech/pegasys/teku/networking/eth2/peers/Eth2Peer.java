@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -45,6 +47,8 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -76,7 +80,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     Optional<UnsignedLong> curValue = this.remoteMetadataSeqNumber;
     remoteMetadataSeqNumber = Optional.of(seqNumber);
     if (curValue.isEmpty() || seqNumber.compareTo(curValue.get()) > 0) {
-      requestMetadata().finish(this::updateMetadata);
+      requestMetadata()
+          .finish(
+              this::updateMetadata, error -> LOG.debug("Failed to retrieve mpeer metadata", error));
     }
   }
 
@@ -86,7 +92,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
-    initialStatus.finish(subscriber::onInitialStatus);
+    initialStatus.finish(
+        subscriber::onInitialStatus,
+        error -> LOG.debug("Failed to retrieve initial status", error));
   }
 
   public PeerStatus getStatus() {
