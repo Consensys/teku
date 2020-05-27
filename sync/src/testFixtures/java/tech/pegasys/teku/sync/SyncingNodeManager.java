@@ -105,8 +105,7 @@ public class SyncingNodeManager {
             blockImporter);
 
     SyncManager syncManager = SyncManager.create(eth2Network, recentChainData, blockImporter);
-    SyncService syncService =
-        new DefaultSyncService(blockManager, syncManager, recentChainData);
+    SyncService syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

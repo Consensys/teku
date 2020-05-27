@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.statetransition.util.FutureItems;
 
 public class FutureItemsTest {
 

@@ -31,11 +31,11 @@ public interface Eth2TopicHandler<T extends SimpleOffsetSerializable> extends To
 
   default String getTopic() {
     return "/eth2/"
-            + getForkDigest().toUnprefixedHexString()
-            + "/"
-            + getTopicName()
-            + "/"
-            + getGossipEncoding().getName();
+        + getForkDigest().toUnprefixedHexString()
+        + "/"
+        + getTopicName()
+        + "/"
+        + getGossipEncoding().getName();
   }
 
   Bytes4 getForkDigest();

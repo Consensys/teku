@@ -67,7 +67,8 @@ public class AttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID)).thenReturn(VALID);
+    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID))
+        .thenReturn(VALID);
     final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
@@ -80,7 +81,8 @@ public class AttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID)).thenReturn(INVALID);
+    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID))
+        .thenReturn(INVALID);
     final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);
@@ -93,7 +95,8 @@ public class AttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
-    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID)).thenReturn(SAVED_FOR_FUTURE);
+    when(attestationValidator.validate(ValidateableAttestation.fromSingle(attestation), SUBNET_ID))
+        .thenReturn(SAVED_FOR_FUTURE);
     final Bytes serialized = gossipEncoding.encode(attestation);
 
     final boolean result = topicHandler.handleMessage(serialized);

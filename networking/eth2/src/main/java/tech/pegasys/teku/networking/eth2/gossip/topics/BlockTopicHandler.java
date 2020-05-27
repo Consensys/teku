@@ -14,11 +14,9 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import com.google.common.eventbus.EventBus;
-import jdk.jfr.Event;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
@@ -29,7 +27,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResu
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class BlockTopicHandler implements Eth2TopicHandler<SignedBeaconBlock> {
-  private final static Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
   public static String TOPIC_NAME = "beacon_block";
 
   private final GossipEncoding gossipEncoding;
@@ -66,7 +64,7 @@ public class BlockTopicHandler implements Eth2TopicHandler<SignedBeaconBlock> {
           return true;
         default:
           throw new UnsupportedOperationException(
-                  "Unexpected validation result: " + validationResult);
+              "Unexpected validation result: " + validationResult);
       }
     } catch (DecodingException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());

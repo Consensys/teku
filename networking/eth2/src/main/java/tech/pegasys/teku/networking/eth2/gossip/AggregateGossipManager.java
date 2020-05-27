@@ -25,7 +25,6 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.UpstreamAttestationPipe;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 
 public class AggregateGossipManager {
   private final GossipEncoding gossipEncoding;
@@ -35,16 +34,19 @@ public class AggregateGossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AggregateGossipManager(
-          final GossipNetwork gossipNetwork,
-          final GossipEncoding gossipEncoding,
-          final ForkInfo forkInfo,
-          final SignedAggregateAndProofValidator validator,
-          final UpstreamAttestationPipe upstreamAttestationPipe,
-          final EventBus eventBus) {
+      final GossipNetwork gossipNetwork,
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
+      final SignedAggregateAndProofValidator validator,
+      final UpstreamAttestationPipe upstreamAttestationPipe,
+      final EventBus eventBus) {
     this.gossipEncoding = gossipEncoding;
     final AggregateAttestationTopicHandler aggregateAttestationTopicHandler =
-        new AggregateAttestationTopicHandler(gossipEncoding, forkInfo, validator, upstreamAttestationPipe);
-    this.channel = gossipNetwork.subscribe(aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);
+        new AggregateAttestationTopicHandler(
+            gossipEncoding, forkInfo, validator, upstreamAttestationPipe);
+    this.channel =
+        gossipNetwork.subscribe(
+            aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);
 
     this.eventBus = eventBus;
     eventBus.register(this);

@@ -26,7 +26,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResu
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestation> {
-  private final static Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   private final int subnetId;
   private final AttestationValidator validator;
@@ -65,7 +65,7 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
           return true;
         default:
           throw new UnsupportedOperationException(
-                  "Unexpected validation result: " + validationResult);
+              "Unexpected validation result: " + validationResult);
       }
     } catch (DecodingException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());

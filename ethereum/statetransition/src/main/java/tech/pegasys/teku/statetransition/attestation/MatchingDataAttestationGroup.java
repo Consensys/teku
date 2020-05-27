@@ -22,9 +22,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 
 /**
@@ -61,7 +59,9 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    */
   public void add(final ValidateableAttestation attestation) {
     attestationsByValidatorCount
-        .computeIfAbsent(attestation.getAttestation().getAggregation_bits().getBitCount(), count -> new HashSet<>())
+        .computeIfAbsent(
+            attestation.getAttestation().getAggregation_bits().getBitCount(),
+            count -> new HashSet<>())
         .add(attestation);
   }
 
@@ -103,12 +103,16 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @param attestation the attestation to logically remove from the pool.
    */
   public void remove(final ValidateableAttestation attestation) {
-    final Collection<Set<ValidateableAttestation>> attestationSets = attestationsByValidatorCount.values();
+    final Collection<Set<ValidateableAttestation>> attestationSets =
+        attestationsByValidatorCount.values();
     for (Iterator<Set<ValidateableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
       final Set<ValidateableAttestation> candidates = i.next();
       candidates.removeIf(
           candidate ->
-              attestation.getAttestation().getAggregation_bits().isSuperSetOf(candidate.getAttestation().getAggregation_bits()));
+              attestation
+                  .getAttestation()
+                  .getAggregation_bits()
+                  .isSuperSetOf(candidate.getAttestation().getAggregation_bits()));
       if (candidates.isEmpty()) {
         i.remove();
       }

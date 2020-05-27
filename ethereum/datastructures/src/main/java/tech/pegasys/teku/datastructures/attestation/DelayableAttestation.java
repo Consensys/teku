@@ -28,8 +28,8 @@ public class DelayableAttestation {
   private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
 
   public DelayableAttestation(
-          final ValidateableAttestation validateableAttestation,
-          final Consumer<ValidateableAttestation> onSuccessfulProcessing) {
+      final ValidateableAttestation validateableAttestation,
+      final Consumer<ValidateableAttestation> onSuccessfulProcessing) {
     this.validateableAttestation = validateableAttestation;
     this.onSuccessfulProcessing = onSuccessfulProcessing;
   }

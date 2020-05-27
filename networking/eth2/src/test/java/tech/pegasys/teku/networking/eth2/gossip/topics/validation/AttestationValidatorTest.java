@@ -273,8 +273,13 @@ class AttestationValidatorTest {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
     final int expectedSubnetId = CommitteeUtil.getSubnetId(attestation);
-    assertThat(validator.validate(ValidateableAttestation.fromSingle(attestation), expectedSubnetId + 1)).isEqualTo(INVALID);
-    assertThat(validator.validate(ValidateableAttestation.fromSingle(attestation), expectedSubnetId)).isEqualTo(VALID);
+    assertThat(
+            validator.validate(
+                ValidateableAttestation.fromSingle(attestation), expectedSubnetId + 1))
+        .isEqualTo(INVALID);
+    assertThat(
+            validator.validate(ValidateableAttestation.fromSingle(attestation), expectedSubnetId))
+        .isEqualTo(VALID);
   }
 
   private ValidationResult validate(final Attestation attestation) {

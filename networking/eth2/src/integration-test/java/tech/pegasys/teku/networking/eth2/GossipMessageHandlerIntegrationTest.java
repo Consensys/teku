@@ -14,18 +14,12 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.util.Waiter.ensureConditionRemainsMet;
 import static tech.pegasys.teku.util.Waiter.waitFor;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
@@ -105,8 +99,8 @@ public class GossipMessageHandlerIntegrationTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getEncodings")
-  public void shouldNotGossipInvalidBlocks(
-          final String testName, GossipEncoding gossipEncoding) throws Exception {
+  public void shouldNotGossipInvalidBlocks(final String testName, GossipEncoding gossipEncoding)
+      throws Exception {
     final UnsignedLong blockSlot = UnsignedLong.valueOf(2L);
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
@@ -154,17 +148,19 @@ public class GossipMessageHandlerIntegrationTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getEncodings")
   public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet(
-          final String testName, GossipEncoding gossipEncoding) throws Exception {
+      final String testName, GossipEncoding gossipEncoding) throws Exception {
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
 
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 = b -> {
-      b.gossipEncoding(gossipEncoding);
-    };
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 =
+        b -> {
+          b.gossipEncoding(gossipEncoding);
+        };
 
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 = b -> {
-      b.gossipEncoding(gossipEncoding);
-      b.upstreamAttestationPipe(node2attestations::add);
-    };
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
+        b -> {
+          b.gossipEncoding(gossipEncoding);
+          b.upstreamAttestationPipe(node2attestations::add);
+        };
 
     // Setup network 1
     final NodeManager node1 = createNodeManager(networkBuilder1);
@@ -196,17 +192,19 @@ public class GossipMessageHandlerIntegrationTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("getEncodings")
   public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet(
-          final String testName, GossipEncoding gossipEncoding) throws Exception {
+      final String testName, GossipEncoding gossipEncoding) throws Exception {
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
 
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 = b -> {
-      b.gossipEncoding(gossipEncoding);
-    };
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 =
+        b -> {
+          b.gossipEncoding(gossipEncoding);
+        };
 
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 = b -> {
-      b.gossipEncoding(gossipEncoding);
-      b.upstreamAttestationPipe(node2attestations::add);
-    };
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
+        b -> {
+          b.gossipEncoding(gossipEncoding);
+          b.upstreamAttestationPipe(node2attestations::add);
+        };
 
     // Setup network 1
     final NodeManager node1 = createNodeManager(networkBuilder1);
@@ -246,24 +244,25 @@ public class GossipMessageHandlerIntegrationTest {
         () -> {
           assertThat(node2attestations.size()).isEqualTo(1);
           assertThat(node2attestations.get(0).getAttestation()).isEqualTo(validAttestation);
-        }
-    );
+        });
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("getEncodings")
   public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic(
-          final String testName, GossipEncoding gossipEncoding) throws Exception {
+      final String testName, GossipEncoding gossipEncoding) throws Exception {
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
 
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 = b -> {
-      b.gossipEncoding(gossipEncoding);
-    };
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 =
+        b -> {
+          b.gossipEncoding(gossipEncoding);
+        };
 
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 = b -> {
-      b.gossipEncoding(gossipEncoding);
-      b.upstreamAttestationPipe(node2attestations::add);
-    };
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
+        b -> {
+          b.gossipEncoding(gossipEncoding);
+          b.upstreamAttestationPipe(node2attestations::add);
+        };
 
     // Setup network 1
     final NodeManager node1 = createNodeManager(networkBuilder1);
@@ -316,10 +315,10 @@ public class GossipMessageHandlerIntegrationTest {
     node1.eventBus().post(validAttestation);
 
     ensureConditionRemainsMet(
-            () -> {
-              assertThat(node2attestations.size()).isEqualTo(1);
-              assertThat(node2attestations.get(0).getAttestation()).isEqualTo(validAttestation);
-            });
+        () -> {
+          assertThat(node2attestations.size()).isEqualTo(1);
+          assertThat(node2attestations.get(0).getAttestation()).isEqualTo(validAttestation);
+        });
   }
 
   private NodeManager createNodeManager(final Consumer<Eth2P2PNetworkBuilder> networkBuilder)

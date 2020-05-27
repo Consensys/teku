@@ -24,10 +24,9 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 
 public class AggregateAttestationTopicHandler implements Eth2TopicHandler<SignedAggregateAndProof> {
-  private final static Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
   public static String TOPIC_NAME = "beacon_aggregate_and_proof";
 
   private final SignedAggregateAndProofValidator validator;
@@ -49,7 +48,8 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
   @Override
   public boolean handleMessage(final Bytes bytes) {
     try {
-      ValidateableAttestation attestation = ValidateableAttestation.fromAggregate(deserialize(bytes));
+      ValidateableAttestation attestation =
+          ValidateableAttestation.fromAggregate(deserialize(bytes));
       final ValidationResult validationResult = validateData(attestation);
       switch (validationResult) {
         case INVALID:
@@ -64,7 +64,7 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
           return true;
         default:
           throw new UnsupportedOperationException(
-                  "Unexpected validation result: " + validationResult);
+              "Unexpected validation result: " + validationResult);
       }
     } catch (DecodingException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());

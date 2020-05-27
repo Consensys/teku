@@ -99,7 +99,7 @@ public class Eth2NetworkBuilder {
         recentChainData,
         gossipEncoding,
         attestationSubnetService,
-            upstreamAttestationPipe);
+        upstreamAttestationPipe);
   }
 
   protected DiscoveryNetwork<?> buildNetwork() {
@@ -154,7 +154,8 @@ public class Eth2NetworkBuilder {
     return this;
   }
 
-  public Eth2NetworkBuilder upstreamAttestationPipe(final UpstreamAttestationPipe upstreamAttestationPipe) {
+  public Eth2NetworkBuilder upstreamAttestationPipe(
+      final UpstreamAttestationPipe upstreamAttestationPipe) {
     checkNotNull(upstreamAttestationPipe);
     this.upstreamAttestationPipe = upstreamAttestationPipe;
     return this;

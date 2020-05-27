@@ -58,15 +58,14 @@ class AggregateAttestationBuilder {
 
   public ValidateableAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
-    return ValidateableAttestation.fromSingle(new Attestation(
+    return ValidateableAttestation.fromSingle(
+        new Attestation(
             currentAggregateBits,
             attestationData,
             BLS.aggregate(
-                    includedAttestations
-                            .stream()
-                            .map(ValidateableAttestation::getAttestation)
-                            .map(Attestation::getAggregate_signature))
-    ));
+                includedAttestations.stream()
+                    .map(ValidateableAttestation::getAttestation)
+                    .map(Attestation::getAggregate_signature))));
   }
 
   public Collection<ValidateableAttestation> getIncludedAttestations() {

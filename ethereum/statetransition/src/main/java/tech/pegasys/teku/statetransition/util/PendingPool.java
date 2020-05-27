@@ -29,18 +29,15 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class PendingPool<T>
-    implements SlotEventsChannel, FinalizedCheckpointChannel {
+public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -86,7 +83,7 @@ public class PendingPool<T>
   }
 
   public static PendingPool<SignedBeaconBlock> createForBlocks(
-          final UnsignedLong historicalBlockTolerance, final UnsignedLong futureBlockTolerance) {
+      final UnsignedLong historicalBlockTolerance, final UnsignedLong futureBlockTolerance) {
     return new PendingPool<>(
         historicalBlockTolerance,
         futureBlockTolerance,
