@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +72,7 @@ public class AggregateTopicHandlerTest {
     final boolean result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isFalse();
-    verify(attestationConsumer).accept(aggregate);
+    verify(attestationConsumer, never()).accept(aggregate);
   }
 
   @Test
