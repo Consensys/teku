@@ -17,6 +17,7 @@ import static com.google.common.primitives.UnsignedLong.ZERO;
 
 import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,6 +32,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.StorageUpdateResult;
@@ -156,6 +159,31 @@ public class RocksDbDatabase implements Database {
   @Override
   public Optional<BeaconState> getState(final Bytes32 root) {
     return dao.getHotState(root).or(() -> dao.getFinalizedState(root));
+  }
+
+  @Override
+  public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
+    return dao.getMinGenesisTimeBlock();
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
+    return dao.streamDepositsFromBlocks();
+  }
+
+  @Override
+  public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
+    try (final Updater updater = dao.updater()) {
+      updater.addMinGenesisTimeBlock(event);
+    }
+  }
+
+  @Override
+  public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
+    try (final Updater updater = dao.updater()) {
+      updater.addDepositsFromBlockEvent(event);
+    }
   }
 
   @Override

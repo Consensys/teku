@@ -3,6 +3,7 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':storage')
   implementation project(':util')
+  implementation project(':pow')
   implementation project(':events')
 
   implementation 'org.apache.tuweni:tuweni-config'
