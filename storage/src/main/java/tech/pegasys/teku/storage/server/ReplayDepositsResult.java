@@ -18,18 +18,18 @@ import java.util.Optional;
 
 public class ReplayDepositsResult {
   private final Optional<UnsignedLong> blockNumber;
-  private final boolean pastGenesisBlock;
+  private final boolean pastMinGenesisBlock;
 
-  public ReplayDepositsResult(final UnsignedLong blockNumber, final boolean pastGenesisBlock) {
+  public ReplayDepositsResult(final UnsignedLong blockNumber, final boolean pastMinGenesisBlock) {
     this.blockNumber = Optional.ofNullable(blockNumber);
-    this.pastGenesisBlock = pastGenesisBlock;
+    this.pastMinGenesisBlock = pastMinGenesisBlock;
   }
 
   public Optional<UnsignedLong> getBlockNumber() {
     return blockNumber;
   }
 
-  public boolean isPastGenesisBlock() {
-    return pastGenesisBlock;
+  public boolean isPastMinGenesisBlock() {
+    return pastMinGenesisBlock;
   }
 }

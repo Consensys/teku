@@ -18,7 +18,7 @@ import static tech.pegasys.teku.util.config.Constants.STORAGE_QUERY_CHANNEL_PARA
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.storage.api.Eth1DepositChannel;
+import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
@@ -48,13 +48,11 @@ public class StorageService extends Service {
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
           depositStorage =
               DepositStorage.create(
-                  serviceConfig.getEventBus(),
-                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class),
-                  database);
+                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);
 
           serviceConfig
               .getEventChannels()
-              .subscribe(Eth1DepositChannel.class, depositStorage)
+              .subscribe(Eth1DepositStorageChannel.class, depositStorage)
               .subscribe(Eth1EventsChannel.class, depositStorage)
               .subscribe(StorageUpdateChannel.class, chainStorage)
               .subscribeMultithreaded(

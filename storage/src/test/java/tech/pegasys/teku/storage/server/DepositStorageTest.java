@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.eventbus.EventBus;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,94 +32,108 @@ import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
-  private final EventBus eventBus = new EventBus();
   private final TrackingEth1EventsChannel eventsChannel = new TrackingEth1EventsChannel();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private DepositStorage depositStorage;
 
+  private final DepositsFromBlockEvent block_99 =
+      dataStructureUtil.randomDepositsFromBlockEvent(99L, 10);
+  private final MinGenesisTimeBlockEvent genesis_100 =
+      dataStructureUtil.randomMinGenesisTimeBlockEvent(100L);
+  private final DepositsFromBlockEvent block_100 =
+      dataStructureUtil.randomDepositsFromBlockEvent(100L, 10);
+  private final DepositsFromBlockEvent block_101 =
+      dataStructureUtil.randomDepositsFromBlockEvent(101L, 10);
+
   @BeforeEach
   public void beforeEach() {
-    depositStorage = DepositStorage.create(eventBus, eventsChannel, database);
+    depositStorage = DepositStorage.create(eventsChannel, database);
     depositStorage.start();
   }
 
   @Test
   public void shouldSendGenesisBeforeFirstDeposit()
       throws ExecutionException, InterruptedException {
-    DepositsFromBlockEvent blockEvent = dataStructureUtil.randomDepositsFromBlockEvent(100L, 10);
-    MinGenesisTimeBlockEvent genesis = dataStructureUtil.randomMinGenesisTimeBlockEvent(1L);
-    database.addDepositsFromBlockEvent(blockEvent);
-    database.addMinGenesisTimeBlock(genesis);
+    database.addMinGenesisTimeBlock(genesis_100);
+    database.addDepositsFromBlockEvent(block_101);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future.isDone()).isTrue();
 
-    assertThat(eventsChannel.getOrderedList()).containsExactly(genesis, blockEvent);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis);
-    assertThat(future.get().getBlockNumber().get()).isEqualTo(blockEvent.getBlockNumber());
-    assertThat(future.get().isPastGenesisBlock()).isTrue();
-    depositStorage.stop();
+    assertThat(eventsChannel.getOrderedList()).containsExactly(genesis_100, block_101);
+    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(block_101.getBlockNumber());
+    assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
   @Test
   public void shouldSendGenesisAfterFirstDeposit() throws ExecutionException, InterruptedException {
-    DepositsFromBlockEvent blockEvent = dataStructureUtil.randomDepositsFromBlockEvent(100L, 10);
-    DepositsFromBlockEvent blockEvent2 = dataStructureUtil.randomDepositsFromBlockEvent(102L, 10);
-    MinGenesisTimeBlockEvent genesis = dataStructureUtil.randomMinGenesisTimeBlockEvent(101L);
-
-    database.addDepositsFromBlockEvent(blockEvent);
-    database.addDepositsFromBlockEvent(blockEvent2);
-    database.addMinGenesisTimeBlock(genesis);
+    database.addDepositsFromBlockEvent(block_99);
+    database.addMinGenesisTimeBlock(genesis_100);
+    database.addDepositsFromBlockEvent(block_101);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future.isDone()).isTrue();
-    assertThat(eventsChannel.getOrderedList()).containsExactly(blockEvent, genesis, blockEvent2);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis);
-    assertThat(future.get().getBlockNumber().get()).isEqualTo(blockEvent2.getBlockNumber());
-    assertThat(future.get().isPastGenesisBlock()).isTrue();
-    depositStorage.stop();
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_99, genesis_100, block_101);
+    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
+
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(block_101.getBlockNumber());
+    assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
   @Test
   public void shouldReplayMultipleDeposits() throws ExecutionException, InterruptedException {
-    DepositsFromBlockEvent blockEvent = dataStructureUtil.randomDepositsFromBlockEvent(100L, 10);
-    DepositsFromBlockEvent blockEvent2 = dataStructureUtil.randomDepositsFromBlockEvent(101L, 10);
-    database.addDepositsFromBlockEvent(blockEvent);
-    database.addDepositsFromBlockEvent(blockEvent2);
+    database.addDepositsFromBlockEvent(block_100);
+    database.addDepositsFromBlockEvent(block_101);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future.isDone()).isTrue();
-    assertThat(eventsChannel.getOrderedList()).containsExactly(blockEvent, blockEvent2);
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_100, block_101);
     assertThat(eventsChannel.getGenesis()).isNull();
-    assertThat(future.get().getBlockNumber().get()).isEqualTo(blockEvent2.getBlockNumber());
-    assertThat(future.get().isPastGenesisBlock()).isFalse();
-    depositStorage.stop();
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(block_101.getBlockNumber());
+    assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
   @Test
-  public void shouldSendBlockThenGenesisWhenBlockNumberIsTheSame() {
-    DepositsFromBlockEvent blockEvent = dataStructureUtil.randomDepositsFromBlockEvent(100L, 10);
-    MinGenesisTimeBlockEvent genesis = dataStructureUtil.randomMinGenesisTimeBlockEvent(100L);
-    database.addDepositsFromBlockEvent(blockEvent);
-    database.addMinGenesisTimeBlock(genesis);
+  public void shouldSendBlockThenGenesisWhenBlockNumberIsTheSame()
+      throws ExecutionException, InterruptedException {
+    database.addDepositsFromBlockEvent(block_100);
+    database.addMinGenesisTimeBlock(genesis_100);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future.isDone()).isTrue();
-    assertThat(eventsChannel.getOrderedList()).containsExactly(blockEvent, genesis);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis);
-    depositStorage.stop();
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_100, genesis_100);
+    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
+
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(genesis_100.getBlockNumber());
+    assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
   @Test
-  public void shouldJustSendGenesis() {
-    MinGenesisTimeBlockEvent genesis = dataStructureUtil.randomMinGenesisTimeBlockEvent(100L);
-    database.addMinGenesisTimeBlock(genesis);
+  public void shouldJustSendGenesis() throws ExecutionException, InterruptedException {
+    database.addMinGenesisTimeBlock(genesis_100);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future.isDone()).isTrue();
-    assertThat(eventsChannel.getOrderedList()).containsExactly(genesis);
-    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis);
-    depositStorage.stop();
+    assertThat(eventsChannel.getOrderedList()).containsExactly(genesis_100);
+    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
+
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(genesis_100.getBlockNumber());
+    assertThat(future.get().isPastMinGenesisBlock()).isTrue();
+  }
+
+  @Test
+  public void shouldSendDepositsThenGenesis() throws ExecutionException, InterruptedException {
+    database.addDepositsFromBlockEvent(block_99);
+    database.addMinGenesisTimeBlock(genesis_100);
+
+    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
+    assertThat(future.isDone()).isTrue();
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_99, genesis_100);
+    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
+
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(genesis_100.getBlockNumber());
+    assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
   @Override

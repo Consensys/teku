@@ -15,43 +15,35 @@ package tech.pegasys.teku.storage.server;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.storage.api.Eth1DepositChannel;
+import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-public class DepositStorage implements Eth1DepositChannel, Eth1EventsChannel {
-  private final EventBus eventBus;
+public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChannel {
   private final Database database;
   private final Eth1EventsChannel eth1EventsChannel;
   private volatile boolean isSyncingFromDatabase = false;
-  private volatile Supplier<SafeFuture<ReplayDepositsResult>> replayResult;
+  private final Supplier<SafeFuture<ReplayDepositsResult>> replayResult;
 
-  private DepositStorage(
-      final EventBus eventBus, final Eth1EventsChannel eth1EventsChannel, final Database database) {
-    this.eventBus = eventBus;
+  private DepositStorage(final Eth1EventsChannel eth1EventsChannel, final Database database) {
     this.eth1EventsChannel = eth1EventsChannel;
     this.database = database;
     this.replayResult = Suppliers.memoize(() -> SafeFuture.of(this::replayDeposits));
   }
 
   public static DepositStorage create(
-      final EventBus eventBus, final Eth1EventsChannel eth1EventsChannel, final Database database) {
-    return new DepositStorage(eventBus, eth1EventsChannel, database);
+      final Eth1EventsChannel eth1EventsChannel, final Database database) {
+    return new DepositStorage(eth1EventsChannel, database);
   }
 
-  public void start() {
-    eventBus.register(this);
-  }
+  public void start() {}
 
-  public void stop() {
-    eventBus.unregister(this);
-  }
+  public void stop() {}
 
   @Override
   public SafeFuture<ReplayDepositsResult> replayDepositEvents() {
@@ -84,7 +76,7 @@ public class DepositStorage implements Eth1DepositChannel, Eth1EventsChannel {
     }
   }
 
-  static class DepositSequencer {
+  private static class DepositSequencer {
     private final Eth1EventsChannel eth1EventsChannel;
     private final Optional<MinGenesisTimeBlockEvent> genesis;
     private boolean isGenesisDone;
@@ -111,6 +103,7 @@ public class DepositStorage implements Eth1DepositChannel, Eth1EventsChannel {
     public void depositsComplete() {
       if (genesis.isPresent() && !isGenesisDone) {
         this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
+        lastDeposit = genesis.get().getBlockNumber();
         isGenesisDone = true;
       }
     }
