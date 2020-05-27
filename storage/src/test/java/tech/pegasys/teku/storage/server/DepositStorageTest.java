@@ -90,7 +90,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future.isDone()).isTrue();
-    assertThat(eventsChannel.getBlockEventList()).containsExactly(blockEvent, blockEvent2);
+    assertThat(eventsChannel.getOrderedList()).containsExactly(blockEvent, blockEvent2);
     assertThat(eventsChannel.getGenesis()).isNull();
     assertThat(future.get().getBlockNumber().get()).isEqualTo(blockEvent2.getBlockNumber());
     assertThat(future.get().isPastGenesisBlock()).isFalse();
@@ -111,6 +111,18 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     depositStorage.stop();
   }
 
+  @Test
+  public void shouldJustSendGenesis() {
+    MinGenesisTimeBlockEvent genesis = dataStructureUtil.randomMinGenesisTimeBlockEvent(100L);
+    database.addMinGenesisTimeBlock(genesis);
+
+    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
+    assertThat(future.isDone()).isTrue();
+    assertThat(eventsChannel.getOrderedList()).containsExactly(genesis);
+    assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis);
+    depositStorage.stop();
+  }
+
   @Override
   protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
     final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
@@ -118,13 +130,11 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
   }
 
   static class TrackingEth1EventsChannel implements Eth1EventsChannel {
-    private final List<DepositsFromBlockEvent> blockEventList = new ArrayList<>();
     private final List<Object> orderedList = new ArrayList<>();
     private MinGenesisTimeBlockEvent genesis;
 
     @Override
     public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
-      blockEventList.add(event);
       orderedList.add(event);
     }
 
@@ -132,10 +142,6 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
       genesis = event;
       orderedList.add(event);
-    }
-
-    public List<DepositsFromBlockEvent> getBlockEventList() {
-      return blockEventList;
     }
 
     public MinGenesisTimeBlockEvent getGenesis() {

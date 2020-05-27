@@ -18,7 +18,6 @@ import com.google.common.base.Suppliers;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -61,31 +60,14 @@ public class DepositStorage implements Eth1DepositChannel, Eth1EventsChannel {
 
   private ReplayDepositsResult replayDeposits() {
     isSyncingFromDatabase = true;
-    final AtomicReference<UnsignedLong> lastDeposit = new AtomicReference<>();
-    final AtomicReference<Boolean> isGenesisDone = new AtomicReference<>();
-    lastDeposit.set(UnsignedLong.MAX_VALUE);
-    isGenesisDone.set(false);
-    final Optional<MinGenesisTimeBlockEvent> genesis = database.getMinGenesisTimeBlock();
+    final DepositSequencer depositSequencer =
+        new DepositSequencer(eth1EventsChannel, database.getMinGenesisTimeBlock());
     try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {
-      eventStream.forEach(
-          depositEvent -> {
-            if (genesis.isPresent()
-                && !isGenesisDone.get()
-                && genesis.get().getBlockNumber().compareTo(depositEvent.getBlockNumber()) < 0) {
-              this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
-              isGenesisDone.set(true);
-            }
-            this.eth1EventsChannel.onDepositsFromBlock(depositEvent);
-
-            lastDeposit.set(depositEvent.getBlockNumber());
-          });
+      eventStream.forEach(depositSequencer::depositEvent);
     }
-
-    if (!isGenesisDone.get() && genesis.isPresent()) {
-      this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
-    }
+    depositSequencer.depositsComplete();
     isSyncingFromDatabase = false;
-    return new ReplayDepositsResult(lastDeposit.get(), genesis.isPresent());
+    return depositSequencer.done();
   }
 
   @Override
@@ -99,6 +81,42 @@ public class DepositStorage implements Eth1DepositChannel, Eth1EventsChannel {
   public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     if (!isSyncingFromDatabase) {
       database.addMinGenesisTimeBlock(event);
+    }
+  }
+
+  static class DepositSequencer {
+    private final Eth1EventsChannel eth1EventsChannel;
+    private final Optional<MinGenesisTimeBlockEvent> genesis;
+    private boolean isGenesisDone;
+    private UnsignedLong lastDeposit;
+
+    public DepositSequencer(
+        Eth1EventsChannel eventChannel, Optional<MinGenesisTimeBlockEvent> genesis) {
+      this.eth1EventsChannel = eventChannel;
+      this.genesis = genesis;
+      this.isGenesisDone = false;
+    }
+
+    public void depositEvent(final DepositsFromBlockEvent event) {
+      if (genesis.isPresent()
+          && !isGenesisDone
+          && genesis.get().getBlockNumber().compareTo(event.getBlockNumber()) < 0) {
+        this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
+        isGenesisDone = true;
+      }
+      eth1EventsChannel.onDepositsFromBlock(event);
+      lastDeposit = event.getBlockNumber();
+    }
+
+    public void depositsComplete() {
+      if (genesis.isPresent() && !isGenesisDone) {
+        this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
+        isGenesisDone = true;
+      }
+    }
+
+    public ReplayDepositsResult done() {
+      return new ReplayDepositsResult(lastDeposit, isGenesisDone);
     }
   }
 }
