@@ -99,7 +99,7 @@ public class PeerCommand {
   public static class PeerGenerationParams {
 
     @Option(
-        names = {"-o", "--outputFile"},
+        names = {"-o", "--output-file"},
         paramLabel = "<FILENAME>",
         description = "Path/filename of the output file")
     private String outputFile = "./config/peer-ids.dat";
