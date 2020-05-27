@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import okhttp3.OkHttpClient;
@@ -46,7 +47,11 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
   static final TekuConfiguration config =
-      TekuConfiguration.builder().setRestApiPort(0).setRestApiDocsEnabled(false).build();
+      TekuConfiguration.builder()
+          .setRestApiPort(0)
+          .setRestApiDocsEnabled(false)
+          .setRestApiHostWhitelist(List.of("127.0.0.1", "localhost"))
+          .build();
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   protected final ObjectMapper objectMapper = new ObjectMapper();

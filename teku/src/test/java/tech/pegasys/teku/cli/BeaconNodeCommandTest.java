@@ -306,7 +306,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
-        .setRestApiInterface("127.0.0.1");
+        .setRestApiInterface("127.0.0.1")
+        .setRestApiHostWhitelist(List.of("127.0.0.1", "localhost"));
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
