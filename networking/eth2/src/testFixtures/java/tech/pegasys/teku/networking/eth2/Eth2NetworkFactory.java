@@ -37,7 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.UpstreamAttestationPipe;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -84,7 +84,7 @@ public class Eth2NetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
-    protected UpstreamAttestationPipe upstreamAttestationPipe;
+    protected GossipedAttestationConsumer gossipedAttestationConsumer;
     protected Function<RpcMethod, Stream<RpcMethod>> rpcMethodsModifier = Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
@@ -172,7 +172,7 @@ public class Eth2NetworkFactory {
             recentChainData,
             gossipEncoding,
             attestationSubnetService,
-            upstreamAttestationPipe);
+                gossipedAttestationConsumer);
       }
     }
 
@@ -250,9 +250,9 @@ public class Eth2NetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder upstreamAttestationPipe(
-        final UpstreamAttestationPipe upstreamAttestationPipe) {
-      checkNotNull(upstreamAttestationPipe);
-      this.upstreamAttestationPipe = upstreamAttestationPipe;
+        final GossipedAttestationConsumer gossipedAttestationConsumer) {
+      checkNotNull(gossipedAttestationConsumer);
+      this.gossipedAttestationConsumer = gossipedAttestationConsumer;
       return this;
     }
 

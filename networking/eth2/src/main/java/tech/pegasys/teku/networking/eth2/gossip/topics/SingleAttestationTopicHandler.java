@@ -31,7 +31,7 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
   private final int subnetId;
   private final AttestationValidator validator;
   private final GossipEncoding gossipEncoding;
-  private final UpstreamAttestationPipe upstreamAttestationPipe;
+  private final GossipedAttestationConsumer gossipedAttestationConsumer;
   private final Bytes4 forkDigest;
 
   public SingleAttestationTopicHandler(
@@ -39,11 +39,11 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
       final ForkInfo forkInfo,
       final int subnetId,
       final AttestationValidator validator,
-      final UpstreamAttestationPipe upstreamAttestationPipe) {
+      final GossipedAttestationConsumer gossipedAttestationConsumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
-    this.upstreamAttestationPipe = upstreamAttestationPipe;
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
     this.subnetId = subnetId;
   }
 
@@ -58,10 +58,10 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
           return false;
         case SAVED_FOR_FUTURE:
           LOG.trace("Deferring message for topic: {}", this::getTopic);
-          upstreamAttestationPipe.forward(attestation);
+          gossipedAttestationConsumer.accept(attestation);
           return false;
         case VALID:
-          upstreamAttestationPipe.forward(attestation);
+          gossipedAttestationConsumer.accept(attestation);
           return true;
         default:
           throw new UnsupportedOperationException(

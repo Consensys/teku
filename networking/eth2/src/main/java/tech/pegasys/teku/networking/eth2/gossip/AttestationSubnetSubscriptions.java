@@ -19,7 +19,7 @@ import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.SingleAttestationTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.UpstreamAttestationPipe;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -30,7 +30,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipEncoding gossipEncoding;
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
-  private final UpstreamAttestationPipe upstreamAttestationPipe;
+  private final GossipedAttestationConsumer gossipedAttestationConsumer;
 
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
@@ -39,12 +39,12 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
       final GossipEncoding gossipEncoding,
       final AttestationValidator attestationValidator,
       final RecentChainData recentChainData,
-      final UpstreamAttestationPipe upstreamAttestationPipe) {
+      final GossipedAttestationConsumer gossipedAttestationConsumer) {
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
     this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
-    this.upstreamAttestationPipe = upstreamAttestationPipe;
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
   }
 
   public synchronized Optional<TopicChannel> getChannel(final int subnetId) {
@@ -66,7 +66,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final SingleAttestationTopicHandler topicHandler =
         new SingleAttestationTopicHandler(
-            gossipEncoding, forkInfo, subnetId, attestationValidator, upstreamAttestationPipe);
+            gossipEncoding, forkInfo, subnetId, attestationValidator, gossipedAttestationConsumer);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
