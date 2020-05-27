@@ -82,19 +82,19 @@ public class GenesisCommand {
 
   public static class MockGenesisParams {
     @Option(
-        names = {"-o", "--outputFile"},
+        names = {"-o", "--output-file"},
         paramLabel = "<FILENAME>",
         description = "Path/filename of the output file")
     private String outputFile = null;
 
     @Option(
-        names = {"-v", "--validatorCount"},
+        names = {"-v", "--validator-count"},
         paramLabel = "<VALIDATOR_COUNT>",
         description = "The number of validators to include")
     private int validatorCount = 64;
 
     @Option(
-        names = {"-t", "--genesisTime"},
+        names = {"-t", "--genesis-time"},
         paramLabel = "<GENESIS_TIME>",
         description = "The genesis time")
     private long genesisTime = System.currentTimeMillis() / 1000;
