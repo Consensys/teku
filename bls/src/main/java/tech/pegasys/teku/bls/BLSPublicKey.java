@@ -26,7 +26,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  private static final int BLS_PUBKEY_SIZE = 48;
+  public static final int BLS_PUBKEY_SIZE = 48;
 
   /**
    * Generates a compressed, serialized, random, valid public key based on a seed.
