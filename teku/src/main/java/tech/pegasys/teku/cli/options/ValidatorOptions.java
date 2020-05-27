@@ -60,7 +60,7 @@ public class ValidatorOptions {
   @Option(
       names = {"--validators-external-signer-timeout"},
       paramLabel = "<INTEGER>",
-      description = "Timeout for the external signing service",
+      description = "Timeout (in milliseconds) for the external signing service",
       arity = "1")
   private int validatorExternalSignerTimeout = 1000;
 
