@@ -260,8 +260,8 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.initializeGenesis();
 
     final SignedBlockAndState targetBlock = chainBuilder.generateNextBlock();
-    chainUpdater.saveState(targetBlock.getRoot(), targetBlock.getState());
-    chainUpdater.saveBlock(targetBlock.getBlock());
+    chainUpdater.saveBlock(targetBlock);
+    ;
 
     final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
     // Sanity check
@@ -270,38 +270,6 @@ public abstract class AbstractCombinedChainDataClientTest {
     final SafeFuture<Optional<BeaconBlockAndState>> result =
         client.getBlockAndStateInEffectAtSlot(targetBlock.getSlot());
     assertThat(result).isCompletedWithValue(Optional.of(targetBlock.toUnsigned()));
-  }
-
-  @Test
-  public void getBlockAndStateInEffectAtSlot_missingBlock() throws Exception {
-    chainUpdater.initializeGenesis();
-
-    final SignedBlockAndState targetBlock = chainBuilder.generateNextBlock();
-    chainUpdater.saveState(targetBlock.getRoot(), targetBlock.getState());
-
-    final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
-    // Sanity check
-    assertThat(bestBlock.getSlot()).isGreaterThan(targetBlock.getSlot());
-
-    final SafeFuture<Optional<BeaconBlockAndState>> result =
-        client.getBlockAndStateInEffectAtSlot(targetBlock.getSlot());
-    assertThat(result).isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
-  public void getBlockAndStateInEffectAtSlot_missingState() throws Exception {
-    chainUpdater.initializeGenesis();
-
-    final SignedBlockAndState targetBlock = chainBuilder.generateNextBlock();
-    chainUpdater.saveBlock(targetBlock.getBlock());
-
-    final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
-    // Sanity check
-    assertThat(bestBlock.getSlot()).isGreaterThan(targetBlock.getSlot());
-
-    final SafeFuture<Optional<BeaconBlockAndState>> result =
-        client.getBlockAndStateInEffectAtSlot(targetBlock.getSlot());
-    assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
   @Test
