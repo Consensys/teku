@@ -89,7 +89,7 @@ class AggregateAttestationBuilderTest {
                 attestation3.getAttestation().getAggregate_signature()));
 
     assertThat(builder.buildAggregate())
-        .isEqualTo(new Attestation(expectedAggregationBits, attestationData, expectedSignature));
+        .isEqualTo(ValidateableAttestation.fromSingle(new Attestation(expectedAggregationBits, attestationData, expectedSignature)));
   }
 
   @Test

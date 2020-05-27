@@ -14,6 +14,8 @@
 package tech.pegasys.teku.datastructures.attestation;
 
 import java.util.Optional;
+
+import com.google.common.base.Objects;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 
@@ -47,5 +49,19 @@ public class ValidateableAttestation {
   public SignedAggregateAndProof getSignedAggregateAndProof() {
     return maybeAggregate.orElseThrow(
         () -> new UnsupportedOperationException("ValidateableAttestation is not an aggregate."));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ValidateableAttestation)) return false;
+    ValidateableAttestation that = (ValidateableAttestation) o;
+    return Objects.equal(getAttestation(), that.getAttestation()) &&
+            Objects.equal(maybeAggregate, that.maybeAggregate);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(getAttestation(), maybeAggregate);
   }
 }
