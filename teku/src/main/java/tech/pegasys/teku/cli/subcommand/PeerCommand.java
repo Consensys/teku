@@ -72,7 +72,7 @@ public class PeerCommand {
       if (f.exists()) {
         throw new InvalidConfigurationException(
             String.format(
-                "Not overwriting existing file %s \nDelete file or use --outputFile to point to a file that does not currently exist.",
+                "Not overwriting existing file %s \nDelete file or use --output-file to point to a file that does not currently exist.",
                 params.outputFile));
       }
       FileWriter fileWriter = new FileWriter(params.outputFile, Charset.defaultCharset());
@@ -92,14 +92,14 @@ public class PeerCommand {
       printWriter.close();
     } catch (FileNotFoundException ex) {
       throw new InvalidConfigurationException(
-          "use --outputFile to point to a file in an existing directory " + ex.getMessage());
+          "use --output-file to point to a file in an existing directory " + ex.getMessage());
     }
   }
 
   public static class PeerGenerationParams {
 
     @Option(
-        names = {"-o", "--outputFile"},
+        names = {"-o", "--output-file"},
         paramLabel = "<FILENAME>",
         description = "Path/filename of the output file")
     private String outputFile = "./config/peer-ids.dat";
