@@ -65,6 +65,7 @@ public class NetworkDefinition {
               builder()
                   .constants("witti")
                   .snappyCompressionEnabled(true)
+                  .initialStateFromClasspath("witti-genesis.ssz")
                   .discoveryBootnodes(
                       "enr:-Ku4QMucba73OPBz2mgyYduH1tM50mZjaiLNEXMrEmTSnrgyEWMEF0zFK0QT6URu_wFfqW04gYn1wze-VQe-jb0L8r8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhFzAVJaJc2VjcDI1NmsxoQIX4kyr2PR-bGTptaN9DbXa2A2L_rVfuIpMj7sCjPBov4N1ZHCCW8w",
                       "enr:-Ku4QJsxkOibTc9FXfBWYmcdMAGwH4bnOOFb4BlTHfMdx_f0WN-u4IUqZcQVP9iuEyoxipFs7-Qd_rH_0HfyOQitc7IBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhLAJM9iJc2VjcDI1NmsxoQL2RyM26TKZzqnUsyycHQB4jnyg6Wi79rwLXtaZXty06YN1ZHCCW8w",
@@ -160,6 +161,12 @@ public class NetworkDefinition {
 
     public Builder initialState(final String initialState) {
       this.initialState = Optional.of(initialState);
+      return this;
+    }
+
+    public Builder initialStateFromClasspath(final String filename) {
+      this.initialState =
+          Optional.of(NetworkDefinition.class.getResource(filename).toExternalForm());
       return this;
     }
 
