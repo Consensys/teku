@@ -338,6 +338,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
+        .setRestApiHostWhitelist(beaconRestApiOptions.getRestApiHostWhitelist())
         .build();
   }
 }
