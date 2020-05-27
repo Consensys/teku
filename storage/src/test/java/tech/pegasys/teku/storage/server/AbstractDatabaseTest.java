@@ -126,14 +126,15 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreBlockWithLargeSlot() throws StateTransitionException {
+  public void shouldStoreBlockWithLargeSlot() {
     final UnsignedLong slot = UnsignedLong.MAX_VALUE;
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final SignedBeaconBlock newBlock = dataStructureUtil.randomSignedBeaconBlock(slot);
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final Bytes32 root = newBlock.getMessage().hash_tree_root();
 
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putBlock(root, newBlock);
+    transaction.putBlockAndState(newBlock, state);
     final UnsignedLong epoch = compute_epoch_at_slot(slot);
     transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
     transaction.commit().reportExceptions();
@@ -145,16 +146,16 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldGetHotBlockByRoot() {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    final SignedBeaconBlock block1 = chainBuilder.getBlockAtSlot(1);
-    final SignedBeaconBlock block2 = chainBuilder.getBlockAtSlot(2);
+    final SignedBlockAndState block1 = chainBuilder.getBlockAndStateAtSlot(1);
+    final SignedBlockAndState block2 = chainBuilder.getBlockAndStateAtSlot(2);
 
-    transaction.putBlock(block1.getRoot(), block1);
-    transaction.putBlock(block2.getRoot(), block2);
+    transaction.putBlockAndState(block1);
+    transaction.putBlockAndState(block2);
 
     commit(transaction);
 
-    assertThat(database.getSignedBlock(block1.getRoot())).contains(block1);
-    assertThat(database.getSignedBlock(block2.getRoot())).contains(block2);
+    assertThat(database.getSignedBlock(block1.getRoot())).contains(block1.getBlock());
+    assertThat(database.getSignedBlock(block2.getRoot())).contains(block2.getBlock());
   }
 
   protected void commit(final Transaction transaction) {
@@ -217,8 +218,8 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState block2 = chainBuilder.getBlockAndStateAtSlot(2);
 
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putBlockState(block1.getRoot(), block1.getState());
-    transaction.putBlockState(block2.getRoot(), block2.getState());
+    transaction.putBlockAndState(block1);
+    transaction.putBlockAndState(block2);
     commit(transaction);
 
     assertThat(database.getState(block1.getRoot())).contains(block1.getState());
@@ -227,10 +228,7 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void shouldStoreSingleValueFields() {
-    addBlocks(
-        checkpoint1BlockAndState.getBlock(),
-        checkpoint2BlockAndState.getBlock(),
-        checkpoint3BlockAndState.getBlock());
+    addBlocks(checkpoint1BlockAndState, checkpoint2BlockAndState, checkpoint3BlockAndState);
 
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setGenesis_time(UnsignedLong.valueOf(3));
@@ -306,33 +304,19 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_singleBlock() {
+  public void shouldStoreSingleValue_singleBlockAndState() {
     final SignedBeaconBlock newBlock = checkpoint3BlockAndState.getBlock();
-    final Bytes32 newBlockRoot = newBlock.getMessage().hash_tree_root();
-    // Sanity check
-    assertThat(store.getBlock(newBlockRoot)).isNull();
-
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putBlock(newBlockRoot, newBlock);
-    commit(transaction);
-
-    final Store result = database.createMemoryStore().orElseThrow();
-    assertThat(result.getBlock(newBlockRoot)).isEqualTo(newBlock.getMessage());
-  }
-
-  @Test
-  public void shouldStoreSingleValue_singleBlockState() {
     final BeaconState newState = checkpoint3BlockAndState.getState();
-    final Bytes32 blockRoot = checkpoint3BlockAndState.getBlock().getMessage().hash_tree_root();
     // Sanity check
-    assertThat(store.getBlockState(blockRoot)).isNull();
+    assertThat(store.getBlock(newBlock.getRoot())).isNull();
 
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putBlockState(blockRoot, newState);
+    transaction.putBlockAndState(checkpoint3BlockAndState);
     commit(transaction);
 
     final Store result = database.createMemoryStore().orElseThrow();
-    assertThat(result.getBlockState(blockRoot)).isEqualTo(newState);
+    assertThat(result.getSignedBlock(newBlock.getRoot())).isEqualTo(newBlock);
+    assertThat(result.getBlockState(newBlock.getRoot())).isEqualTo(newState);
   }
 
   @Test
@@ -354,10 +338,7 @@ public abstract class AbstractDatabaseTest {
   public void shouldStoreCheckpointStates() {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
 
-    addBlocks(
-        checkpoint1BlockAndState.getBlock(),
-        checkpoint2BlockAndState.getBlock(),
-        checkpoint3BlockAndState.getBlock());
+    addBlocks(checkpoint1BlockAndState, checkpoint2BlockAndState, checkpoint3BlockAndState);
 
     transaction.putCheckpointState(checkpoint1, checkpoint1BlockAndState.getState());
     transaction.putCheckpointState(checkpoint2, checkpoint2BlockAndState.getState());
@@ -379,10 +360,10 @@ public abstract class AbstractDatabaseTest {
     // First store the initial checkpoints.
     final Transaction transaction1 = store.startTransaction(storageUpdateChannel);
     // Add blocks
-    transaction1.putBlock(checkpoint1BlockAndState.getRoot(), checkpoint1BlockAndState.getBlock());
-    transaction1.putBlock(checkpoint2BlockAndState.getRoot(), checkpoint2BlockAndState.getBlock());
-    transaction1.putBlock(checkpoint3BlockAndState.getRoot(), checkpoint3BlockAndState.getBlock());
-    // Add checkpoints
+    transaction1.putBlockAndState(checkpoint1BlockAndState);
+    transaction1.putBlockAndState(checkpoint2BlockAndState);
+    transaction1.putBlockAndState(checkpoint3BlockAndState);
+    // Add checkpoint states
     transaction1.putCheckpointState(checkpoint1, checkpoint1BlockAndState.getState());
     transaction1.putCheckpointState(checkpoint2, checkpoint2BlockAndState.getState());
     transaction1.putCheckpointState(checkpoint3, checkpoint3BlockAndState.getState());
@@ -424,10 +405,8 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState blockAndState1 = chainBuilder.getBlockAndStateAtSlot(1);
     final SignedBlockAndState blockAndState2 = chainBuilder.getBlockAndStateAtSlot(2);
 
-    transaction.putBlock(blockAndState1.getRoot(), blockAndState1.getBlock());
-    transaction.putBlock(blockAndState2.getRoot(), blockAndState2.getBlock());
-    transaction.putBlockState(blockAndState1.getRoot(), blockAndState1.getState());
-    transaction.putBlockState(blockAndState2.getRoot(), blockAndState2.getState());
+    transaction.putBlockAndState(blockAndState1);
+    transaction.putBlockAndState(blockAndState2);
 
     commit(transaction);
 
@@ -449,12 +428,9 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState unfinalizedBlock =
         chainBuilder.getLatestBlockAndStateAtEpochBoundary(2);
 
-    transaction.putBlock(block1.getRoot(), block1.getBlock());
-    transaction.putBlock(block2.getRoot(), block2.getBlock());
-    transaction.putBlock(unfinalizedBlock.getRoot(), unfinalizedBlock.getBlock());
-    transaction.putBlockState(block1.getRoot(), block1.getState());
-    transaction.putBlockState(block2.getRoot(), block2.getState());
-    transaction.putBlockState(unfinalizedBlock.getRoot(), unfinalizedBlock.getState());
+    transaction.putBlockAndState(block1);
+    transaction.putBlockAndState(block2);
+    transaction.putBlockAndState(unfinalizedBlock);
 
     commit(transaction);
 
@@ -715,10 +691,10 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  protected void addBlocks(final SignedBeaconBlock... blocks) {
+  protected void addBlocks(final SignedBlockAndState... blocks) {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    for (SignedBeaconBlock block : blocks) {
-      transaction.putBlock(block.getMessage().hash_tree_root(), block);
+    for (SignedBlockAndState block : blocks) {
+      transaction.putBlockAndState(block);
     }
     commit(transaction);
   }
@@ -732,8 +708,7 @@ public abstract class AbstractDatabaseTest {
   protected void add(
       final Transaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
     for (SignedBlockAndState blockAndState : blocksAndStates) {
-      transaction.putBlock(blockAndState.getRoot(), blockAndState.getBlock());
-      transaction.putBlockState(blockAndState.getRoot(), blockAndState.getState());
+      transaction.putBlockAndState(blockAndState);
     }
   }
 
