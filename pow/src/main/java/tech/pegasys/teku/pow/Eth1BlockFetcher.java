@@ -139,7 +139,8 @@ public class Eth1BlockFetcher {
               } else {
                 LOG.debug("Completed back-fill of Eth1 blocks");
               }
-            });
+            },
+            error -> LOG.error("Unexpected error while back-filling ETH1 blocks", error));
   }
 
   private boolean isAboveLowerBound(UnsignedLong timestamp) {
