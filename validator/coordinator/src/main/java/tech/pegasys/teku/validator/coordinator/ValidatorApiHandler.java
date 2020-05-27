@@ -57,6 +57,7 @@ import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncStateTracker;
@@ -74,6 +75,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
   private final AggregatingAttestationPool attestationPool;
+  private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final EventBus eventBus;
 
@@ -83,6 +85,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
       final AggregatingAttestationPool attestationPool,
+      final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
       final EventBus eventBus) {
     this.combinedChainDataClient = combinedChainDataClient;
@@ -90,6 +93,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
     this.attestationPool = attestationPool;
+    this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.eventBus = eventBus;
   }
@@ -217,13 +221,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
-    attestationPool.add(ValidateableAttestation.fromSingle(attestation));
+    attestationManager.onAttestation(ValidateableAttestation.fromSingle(attestation));
     eventBus.post(attestation);
   }
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    attestationPool.add(ValidateableAttestation.fromAggregate(aggregateAndProof));
+    attestationManager.onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof));
     eventBus.post(aggregateAndProof);
   }
 

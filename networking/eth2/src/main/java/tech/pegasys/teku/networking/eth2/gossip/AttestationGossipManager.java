@@ -20,6 +20,7 @@ import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 
@@ -28,22 +29,18 @@ public class AttestationGossipManager {
 
   private final GossipEncoding gossipEncoding;
   private final AttestationSubnetSubscriptions subnetSubscriptions;
-  private final EventBus eventBus;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttestationGossipManager(
       final GossipEncoding gossipEncoding,
-      final AttestationSubnetSubscriptions attestationSubnetSubscriptions,
-      final EventBus eventBus) {
+      final AttestationSubnetSubscriptions attestationSubnetSubscriptions) {
     this.gossipEncoding = gossipEncoding;
     subnetSubscriptions = attestationSubnetSubscriptions;
-    this.eventBus = eventBus;
-    eventBus.register(this);
   }
 
-  @Subscribe
-  public void onNewAttestation(final Attestation attestation) {
+  public void onNewAttestation(final ValidateableAttestation validateableAttestation) {
+    final Attestation attestation = validateableAttestation.getAttestation();
     final int subnetId = committeeIndexToSubnetId(attestation.getData().getIndex());
     subnetSubscriptions
         .getChannel(subnetId)
@@ -65,7 +62,6 @@ public class AttestationGossipManager {
 
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
-      eventBus.unregister(this);
       subnetSubscriptions.close();
     }
   }

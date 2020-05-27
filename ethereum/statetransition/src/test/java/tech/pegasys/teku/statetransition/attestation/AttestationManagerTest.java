@@ -80,7 +80,7 @@ class AttestationManagerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromSingle(dataStructureUtil.randomAttestation());
     when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
-    attestationManager.onGossipedAttestation(attestation);
+    attestationManager.onAttestation(attestation);
 
     verifyAttestationProcessed(attestation);
     verify(attestationPool).add(attestation);
@@ -93,7 +93,7 @@ class AttestationManagerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
     when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
-    attestationManager.onGossipedAttestation(aggregate);
+    attestationManager.onAttestation(aggregate);
 
     verifyAttestationProcessed(aggregate);
     verify(attestationPool).add(aggregate);
@@ -107,7 +107,7 @@ class AttestationManagerTest {
         ValidateableAttestation.fromSingle(attestationFromSlot(100));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     when(attestationProcessor.processAttestation(any())).thenReturn(SAVED_FOR_FUTURE);
-    attestationManager.onGossipedAttestation(attestation);
+    attestationManager.onAttestation(attestation);
 
     ArgumentCaptor<DelayableAttestation> captor =
         ArgumentCaptor.forClass(DelayableAttestation.class);
@@ -137,7 +137,7 @@ class AttestationManagerTest {
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(UNKNOWN_BLOCK)
         .thenReturn(SUCCESSFUL);
-    attestationManager.onGossipedAttestation(attestation);
+    attestationManager.onAttestation(attestation);
 
     ArgumentCaptor<DelayableAttestation> captor =
         ArgumentCaptor.forClass(DelayableAttestation.class);
@@ -167,7 +167,7 @@ class AttestationManagerTest {
         ValidateableAttestation.fromSingle(dataStructureUtil.randomAttestation());
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(AttestationProcessingResult.INVALID);
-    attestationManager.onGossipedAttestation(attestation);
+    attestationManager.onAttestation(attestation);
 
     verifyAttestationProcessed(attestation);
     assertThat(pendingAttestations.size()).isZero();
@@ -181,7 +181,7 @@ class AttestationManagerTest {
         ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(AttestationProcessingResult.INVALID);
-    attestationManager.onGossipedAttestation(aggregateAndProof);
+    attestationManager.onAttestation(aggregateAndProof);
 
     verifyAttestationProcessed(aggregateAndProof);
     assertThat(pendingAttestations.size()).isZero();

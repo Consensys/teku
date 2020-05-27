@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -92,13 +92,13 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         SignedBeaconBlock::getSlot);
   }
 
-  public static PendingPool<DelayableAttestation> createForAttestations() {
+  public static PendingPool<ValidateableAttestation> createForAttestations() {
     return new PendingPool<>(
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DelayableAttestation::hash_tree_root,
-        DelayableAttestation::getDependentBlockRoots,
-        DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
+        ValidateableAttestation::hash_tree_root,
+        ValidateableAttestation::getDependentBlockRoots,
+        ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
   public void add(T item) {

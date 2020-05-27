@@ -14,27 +14,60 @@
 package tech.pegasys.teku.datastructures.attestation;
 
 import com.google.common.base.Objects;
+
+import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 
 public class ValidateableAttestation {
   private final Attestation attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
+  private final AtomicBoolean gossiped;
+
+  private Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
+  private Optional<Bytes32> hashTreeRoot = Optional.empty();
 
   public static ValidateableAttestation fromSingle(Attestation attestation) {
-    return new ValidateableAttestation(attestation, Optional.empty());
+    return new ValidateableAttestation(attestation, Optional.empty(), false);
   }
 
   public static ValidateableAttestation fromAggregate(SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
-        attestation.getMessage().getAggregate(), Optional.of(attestation));
+        attestation.getMessage().getAggregate(),
+            Optional.of(attestation),
+            false);
   }
 
   private ValidateableAttestation(
-      Attestation attestation, Optional<SignedAggregateAndProof> aggregateAndProof) {
-    maybeAggregate = aggregateAndProof;
+      Attestation attestation,
+      Optional<SignedAggregateAndProof> aggregateAndProof,
+      boolean gossiped) {
+    this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
+    this.gossiped = new AtomicBoolean(gossiped);
+  }
+
+  public IndexedAttestation getIndexedAttestation() {
+    return maybeIndexedAttestation.orElseThrow(
+            () -> new UnsupportedOperationException("ValidateableAttestation does not have an IndexedAttestation yet."));
+  }
+
+  public void setIndexedAttestation(IndexedAttestation maybeIndexedAttestation) {
+    this.maybeIndexedAttestation = Optional.of(maybeIndexedAttestation);
+  }
+
+  public boolean markGossiped() {
+    return gossiped.compareAndSet(false, true);
+  }
+
+  public boolean isGossiped() {
+    return gossiped.get();
   }
 
   public boolean isAggregate() {
@@ -48,6 +81,18 @@ public class ValidateableAttestation {
   public SignedAggregateAndProof getSignedAggregateAndProof() {
     return maybeAggregate.orElseThrow(
         () -> new UnsupportedOperationException("ValidateableAttestation is not an aggregate."));
+  }
+
+  public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
+    return attestation.getEarliestSlotForForkChoiceProcessing();
+  }
+
+  public Collection<Bytes32> getDependentBlockRoots() {
+    return attestation.getDependentBlockRoots();
+  }
+
+  public Bytes32 hash_tree_root() {
+    return hashTreeRoot.orElse(attestation.hash_tree_root());
   }
 
   @Override

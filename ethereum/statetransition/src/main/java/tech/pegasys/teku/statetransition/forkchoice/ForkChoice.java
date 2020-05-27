@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
@@ -72,7 +72,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   public AttestationProcessingResult onAttestation(
-      final MutableStore store, final DelayableAttestation attestation) {
+      final MutableStore store, final ValidateableAttestation attestation) {
     return on_attestation(store, attestation, stateTransition, protoArrayForkChoiceStrategy);
   }
 

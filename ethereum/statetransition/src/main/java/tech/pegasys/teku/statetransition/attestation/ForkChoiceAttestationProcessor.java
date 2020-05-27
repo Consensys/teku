@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
-import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.Store;
@@ -31,7 +31,7 @@ public class ForkChoiceAttestationProcessor {
     this.forkChoice = forkChoice;
   }
 
-  public AttestationProcessingResult processAttestation(final DelayableAttestation attestation) {
+  public AttestationProcessingResult processAttestation(final ValidateableAttestation attestation) {
     final Store.Transaction transaction = recentChainData.startStoreTransaction();
     final AttestationProcessingResult result = forkChoice.onAttestation(transaction, attestation);
     if (result.isSuccessful()) {

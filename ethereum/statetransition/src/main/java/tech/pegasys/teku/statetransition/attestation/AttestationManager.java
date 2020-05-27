@@ -19,7 +19,8 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.ProcessedAggregateConsumer;
+import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationConsumer;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -27,7 +28,10 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.util.List;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -36,15 +40,19 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final EventBus eventBus;
   private final ForkChoiceAttestationProcessor attestationProcessor;
 
-  private final PendingPool<DelayableAttestation> pendingAttestations;
-  private final FutureItems<DelayableAttestation> futureAttestations;
+  private final PendingPool<ValidateableAttestation> pendingAttestations;
+  private final FutureItems<ValidateableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
+
+  private final Subscribers<ProcessedAttestationConsumer> processedAttestationSubscriber = Subscribers.create(true);
+  private final Subscribers<ProcessedAggregateConsumer> processedAggregateSubscriber = Subscribers.create(true);
+
 
   AttestationManager(
       final EventBus eventBus,
       final ForkChoiceAttestationProcessor attestationProcessor,
-      final PendingPool<DelayableAttestation> pendingAttestations,
-      final FutureItems<DelayableAttestation> futureAttestations,
+      final PendingPool<ValidateableAttestation> pendingAttestations,
+      final FutureItems<ValidateableAttestation> futureAttestations,
       final AggregatingAttestationPool aggregatingAttestationPool) {
     this.eventBus = eventBus;
     this.attestationProcessor = attestationProcessor;
@@ -55,8 +63,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   public static AttestationManager create(
       final EventBus eventBus,
-      final PendingPool<DelayableAttestation> pendingAttestations,
-      final FutureItems<DelayableAttestation> futureAttestations,
+      final PendingPool<ValidateableAttestation> pendingAttestations,
+      final FutureItems<ValidateableAttestation> futureAttestations,
       final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor,
       final AggregatingAttestationPool aggregatingAttestationPool) {
     return new AttestationManager(
@@ -67,21 +75,35 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         aggregatingAttestationPool);
   }
 
-  public void onGossipedAttestation(final ValidateableAttestation attestation) {
-    processAttestation(new DelayableAttestation(attestation, aggregatingAttestationPool::add));
+  public void subscribeToProcessedAttestations(ProcessedAttestationConsumer processedAttestationConsumer) {
+    processedAttestationSubscriber.subscribe(processedAttestationConsumer);
+  }
+
+  public void subscribeToProcessedAggregates(ProcessedAggregateConsumer processedAggregateConsumer) {
+    processedAggregateSubscriber.subscribe(processedAggregateConsumer);
   }
 
   @Override
   public void onSlot(final UnsignedLong slot) {
-    futureAttestations.prune(slot).stream()
-        .map(DelayableAttestation::getIndexedAttestation)
-        .map(
-            optional ->
-                optional.orElseThrow(
-                    () ->
-                        new UnsupportedOperationException(
-                            "FutureAttestation should contain indexed attestation")))
-        .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
+    List<ValidateableAttestation> attestations = futureAttestations.prune(slot);
+    attestations
+            .stream()
+            .map(ValidateableAttestation::getIndexedAttestation)
+            .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
+
+    attestations.forEach(this::gossipAttestationIfNeeded);
+  }
+
+  private void gossipAttestationIfNeeded(ValidateableAttestation attestation) {
+    if (attestation.isGossiped()) {
+      return;
+    }
+
+    if (attestation.isAggregate()) {
+      processedAggregateSubscriber.forEach(s -> s.accept(attestation));
+    } else {
+      processedAttestationSubscriber.forEach(s -> s.accept(attestation));
+    }
   }
 
   @Subscribe
@@ -94,31 +116,32 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         .forEach(
             attestation -> {
               pendingAttestations.remove(attestation);
-              processAttestation(attestation);
+              onAttestation(attestation);
             });
   }
 
-  private void processAttestation(final DelayableAttestation delayableAttestation) {
-    if (pendingAttestations.contains(delayableAttestation)) {
+  public void onAttestation(final ValidateableAttestation attestation) {
+    if (pendingAttestations.contains(attestation)) {
       return;
     }
 
-    switch (attestationProcessor.processAttestation(delayableAttestation)) {
+    switch (attestationProcessor.processAttestation(attestation)) {
       case SUCCESSFUL:
-        LOG.trace("Processed attestation {} successfully", delayableAttestation::hash_tree_root);
-        delayableAttestation.onAttestationProcessedSuccessfully();
+        LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
+        aggregatingAttestationPool.add(attestation);
+        gossipAttestationIfNeeded(attestation);
         break;
       case UNKNOWN_BLOCK:
         LOG.trace(
             "Deferring attestation {} as required block is not yet present",
-            delayableAttestation::hash_tree_root);
-        pendingAttestations.add(delayableAttestation);
+            attestation::hash_tree_root);
+        pendingAttestations.add(attestation);
         break;
       case SAVED_FOR_FUTURE:
         LOG.trace(
-            "Deferring attestation {} until a future slot", delayableAttestation::hash_tree_root);
-        futureAttestations.add(delayableAttestation);
-        delayableAttestation.onAttestationProcessedSuccessfully();
+            "Deferring attestation {} until a future slot", attestation::hash_tree_root);
+        futureAttestations.add(attestation);
+        aggregatingAttestationPool.add(attestation);
         break;
       case INVALID:
         break;

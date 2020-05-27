@@ -36,6 +36,7 @@ import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -104,18 +105,24 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new BlockGossipManager(
             discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
     attestationGossipManager =
-        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions, eventBus);
+        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions);
     aggregateGossipManager =
         new AggregateGossipManager(
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
             aggregateValidator,
-            gossipedAttestationConsumer,
-            eventBus);
+            gossipedAttestationConsumer);
+
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
             discoveryNetwork::setLongTermAttestationSubnetSubscriptions);
+  }
+
+  @Override
+  public void subscribeToAttestations(AttestationManager attestationManager) {
+    attestationManager.subscribeToProcessedAttestations(attestationGossipManager::onNewAttestation);
+    attestationManager.subscribeToProcessedAggregates(aggregateGossipManager::onNewAggregate);
   }
 
   @Override

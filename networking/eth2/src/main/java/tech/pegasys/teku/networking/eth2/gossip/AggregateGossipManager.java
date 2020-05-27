@@ -17,6 +17,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 public class AggregateGossipManager {
   private final GossipEncoding gossipEncoding;
   private final TopicChannel channel;
-  private final EventBus eventBus;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -38,8 +38,7 @@ public class AggregateGossipManager {
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final SignedAggregateAndProofValidator validator,
-      final GossipedAttestationConsumer gossipedAttestationConsumer,
-      final EventBus eventBus) {
+      final GossipedAttestationConsumer gossipedAttestationConsumer) {
     this.gossipEncoding = gossipEncoding;
     final AggregateAttestationTopicHandler aggregateAttestationTopicHandler =
         new AggregateAttestationTopicHandler(
@@ -47,20 +46,15 @@ public class AggregateGossipManager {
     this.channel =
         gossipNetwork.subscribe(
             aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);
-
-    this.eventBus = eventBus;
-    eventBus.register(this);
   }
 
-  @Subscribe
-  public void onNewAggregate(final SignedAggregateAndProof aggregateAndProof) {
-    final Bytes data = gossipEncoding.encode(aggregateAndProof);
+  public void onNewAggregate(final ValidateableAttestation validateableAttestation) {
+    final Bytes data = gossipEncoding.encode(validateableAttestation.getSignedAggregateAndProof());
     channel.gossip(data);
   }
 
   public void shutdown() {
     if (shutdown.compareAndSet(false, true)) {
-      eventBus.unregister(this);
       // Close gossip channels
       channel.close();
     }

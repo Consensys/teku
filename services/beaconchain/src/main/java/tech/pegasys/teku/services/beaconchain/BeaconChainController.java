@@ -41,7 +41,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -288,6 +288,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             stateTransition,
             blockFactory,
             attestationPool,
+            attestationManager,
             attestationTopicSubscriber,
             eventBus);
     eventChannels
@@ -304,10 +305,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initAttestationManager() {
-    final PendingPool<DelayableAttestation> pendingAttestations =
+    final PendingPool<ValidateableAttestation> pendingAttestations =
         PendingPool.createForAttestations();
-    final FutureItems<DelayableAttestation> futureAttestations =
-        new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
+    final FutureItems<ValidateableAttestation> futureAttestations =
+        new FutureItems<>(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
     final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
         new ForkChoiceAttestationProcessor(recentChainData, forkChoice);
     attestationManager =
@@ -357,12 +358,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
-              .upstreamAttestationPipe(attestationManager::onGossipedAttestation)
+              .upstreamAttestationPipe(attestationManager::onAttestation)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .asyncRunner(asyncRunner)
               .build();
+
+      p2pNetwork.subscribeToAttestations(attestationManager);
     }
   }
 
