@@ -26,11 +26,12 @@ public class ValidateableAttestation {
   }
 
   public static ValidateableAttestation fromAggregate(SignedAggregateAndProof attestation) {
-    return new ValidateableAttestation(attestation.getMessage().getAggregate(), Optional.of(attestation));
+    return new ValidateableAttestation(
+        attestation.getMessage().getAggregate(), Optional.of(attestation));
   }
 
-  private ValidateableAttestation(Attestation attestation,
-                                  Optional<SignedAggregateAndProof> aggregateAndProof) {
+  private ValidateableAttestation(
+      Attestation attestation, Optional<SignedAggregateAndProof> aggregateAndProof) {
     maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
   }
@@ -45,7 +46,6 @@ public class ValidateableAttestation {
 
   public SignedAggregateAndProof getSignedAggregateAndProof() {
     return maybeAggregate.orElseThrow(
-            () -> new UnsupportedOperationException("ValidateableAttestation is not an aggregate.")
-    );
+        () -> new UnsupportedOperationException("ValidateableAttestation is not an aggregate."));
   }
 }
