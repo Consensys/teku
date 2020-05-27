@@ -130,12 +130,12 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   @Override
   protected SafeFuture<?> doStart() {
     eventBus.register(this);
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     eventBus.unregister(this);
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 }
