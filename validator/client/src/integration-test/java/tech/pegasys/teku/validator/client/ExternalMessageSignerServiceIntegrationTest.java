@@ -92,7 +92,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
         request()
             .withMethod("POST")
             .withBody(json(signingRequestBody))
-            .withPath("/signer/block/" + UNKNOWN_PUBLIC_KEY));
+            .withPath("/signer/sign/" + UNKNOWN_PUBLIC_KEY));
   }
 
   @Test
@@ -133,7 +133,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
         request()
             .withMethod("POST")
             .withBody(json(signingRequestBody))
-            .withPath("/signer/block/" + publicKey));
+            .withPath("/signer/sign/" + publicKey));
   }
 
   @Test
@@ -151,7 +151,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
         request()
             .withMethod("POST")
             .withBody(json(signingRequestBody))
-            .withPath("/signer/attestation/" + publicKey));
+            .withPath("/signer/sign/" + publicKey));
   }
 
   @Test
@@ -169,7 +169,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
         request()
             .withMethod("POST")
             .withBody(json(signingRequestBody))
-            .withPath("/signer/randao_reveal/" + publicKey));
+            .withPath("/signer/sign/" + publicKey));
   }
 
   @Test
@@ -187,6 +187,6 @@ public class ExternalMessageSignerServiceIntegrationTest {
         request()
             .withMethod("POST")
             .withBody(json(signingRequestBody))
-            .withPath("/signer/aggregation_slot/" + publicKey));
+            .withPath("/signer/sign/" + publicKey));
   }
 }
