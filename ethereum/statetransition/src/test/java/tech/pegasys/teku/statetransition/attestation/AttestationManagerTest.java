@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
-import tech.pegasys.teku.datastructures.attestation.DelayableAttestation;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -56,10 +55,10 @@ class AttestationManagerTest {
   private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private ForkChoiceAttestationProcessor attestationProcessor =
       mock(ForkChoiceAttestationProcessor.class);
-  private final PendingPool<DelayableAttestation> pendingAttestations =
+  private final PendingPool<ValidateableAttestation> pendingAttestations =
       PendingPool.createForAttestations();
-  private final FutureItems<DelayableAttestation> futureAttestations =
-      new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
+  private final FutureItems<ValidateableAttestation> futureAttestations =
+      new FutureItems<>(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
 
   private final AttestationManager attestationManager =
       new AttestationManager(
@@ -109,8 +108,8 @@ class AttestationManagerTest {
     when(attestationProcessor.processAttestation(any())).thenReturn(SAVED_FOR_FUTURE);
     attestationManager.onAttestation(attestation);
 
-    ArgumentCaptor<DelayableAttestation> captor =
-        ArgumentCaptor.forClass(DelayableAttestation.class);
+    ArgumentCaptor<ValidateableAttestation> captor =
+        ArgumentCaptor.forClass(ValidateableAttestation.class);
     verify(attestationProcessor).processAttestation(captor.capture());
     captor.getValue().setIndexedAttestation(randomIndexedAttestation);
     verify(attestationPool).add(attestation);
@@ -139,8 +138,8 @@ class AttestationManagerTest {
         .thenReturn(SUCCESSFUL);
     attestationManager.onAttestation(attestation);
 
-    ArgumentCaptor<DelayableAttestation> captor =
-        ArgumentCaptor.forClass(DelayableAttestation.class);
+    ArgumentCaptor<ValidateableAttestation> captor =
+        ArgumentCaptor.forClass(ValidateableAttestation.class);
     verify(attestationProcessor).processAttestation(captor.capture());
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.contains(captor.getValue())).isTrue();
@@ -206,8 +205,8 @@ class AttestationManagerTest {
   }
 
   private void verifyAttestationProcessed(final ValidateableAttestation attestation) {
-    ArgumentCaptor<DelayableAttestation> captor =
-        ArgumentCaptor.forClass(DelayableAttestation.class);
+    ArgumentCaptor<ValidateableAttestation> captor =
+        ArgumentCaptor.forClass(ValidateableAttestation.class);
     verify(attestationProcessor).processAttestation(captor.capture());
     assertThat(captor.getValue().getAttestation()).isSameAs(attestation.getAttestation());
   }

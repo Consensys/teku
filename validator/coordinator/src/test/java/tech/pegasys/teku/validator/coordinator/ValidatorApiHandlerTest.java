@@ -50,6 +50,7 @@ import tech.pegasys.teku.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
@@ -70,6 +71,7 @@ class ValidatorApiHandlerTest {
   private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
   private final EventBus eventBus = mock(EventBus.class);
@@ -81,6 +83,7 @@ class ValidatorApiHandlerTest {
           stateTransition,
           blockFactory,
           attestationPool,
+          attestationManager,
           attestationTopicSubscriptions,
           eventBus);
 
