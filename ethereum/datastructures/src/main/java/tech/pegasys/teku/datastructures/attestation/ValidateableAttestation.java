@@ -44,9 +44,8 @@ public class ValidateableAttestation {
   }
 
   public SignedAggregateAndProof getSignedAggregateAndProof() {
-    if (!isAggregate()) {
-      throw new UnsupportedOperationException("ValidateableAttestation is not an aggregate.");
-    }
-    return maybeAggregate.get();
+    return maybeAggregate.orElseThrow(
+            () -> new UnsupportedOperationException("ValidateableAttestation is not an aggregate.")
+    );
   }
 }
