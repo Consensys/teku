@@ -99,6 +99,7 @@ public class ValidatorsUtil {
             });
   }
 
+  @SuppressWarnings("DoNotReturnNullOptionals")
   public static Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
     final Integer validatorIndex =
         BeaconStateCache.getTransitionCaches(state)
