@@ -38,7 +38,7 @@ public class AttestationGossipManager {
   }
 
   public void onNewAttestation(final ValidateableAttestation validateableAttestation) {
-    if (validateableAttestation.isGossiped() || validateableAttestation.isAggregate()) {
+    if (validateableAttestation.isAggregate() || !validateableAttestation.markGossiped()) {
       return;
     }
     final Attestation attestation = validateableAttestation.getAttestation();

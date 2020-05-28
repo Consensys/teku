@@ -65,10 +65,6 @@ public class ValidateableAttestation {
     return gossiped.compareAndSet(false, true);
   }
 
-  public boolean isGossiped() {
-    return gossiped.get();
-  }
-
   public boolean isAggregate() {
     return maybeAggregate.isPresent();
   }

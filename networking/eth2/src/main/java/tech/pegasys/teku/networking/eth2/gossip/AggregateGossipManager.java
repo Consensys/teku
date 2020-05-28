@@ -46,7 +46,7 @@ public class AggregateGossipManager {
   }
 
   public void onNewAggregate(final ValidateableAttestation validateableAttestation) {
-    if (validateableAttestation.isGossiped() || !validateableAttestation.isAggregate()) {
+    if (!validateableAttestation.isAggregate() || !validateableAttestation.markGossiped()) {
       return;
     }
     final Bytes data = gossipEncoding.encode(validateableAttestation.getSignedAggregateAndProof());
