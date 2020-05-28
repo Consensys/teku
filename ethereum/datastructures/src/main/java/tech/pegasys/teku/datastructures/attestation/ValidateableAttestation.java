@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -45,8 +44,7 @@ public class ValidateableAttestation {
   }
 
   private ValidateableAttestation(
-      Attestation attestation,
-      Optional<SignedAggregateAndProof> aggregateAndProof) {
+      Attestation attestation, Optional<SignedAggregateAndProof> aggregateAndProof) {
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
     this.hashTreeRoot = Suppliers.memoize(attestation::hash_tree_root);

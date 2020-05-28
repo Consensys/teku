@@ -359,7 +359,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eventBus(eventBus)
               .recentChainData(recentChainData)
               .gossipedAttestationConsumer(attestationManager::onAttestation)
-              .processedAttestationSubscriptionProvider(attestationManager::subscribeToProcessedAttestations)
+              .processedAttestationSubscriptionProvider(
+                  attestationManager::subscribeToProcessedAttestations)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)

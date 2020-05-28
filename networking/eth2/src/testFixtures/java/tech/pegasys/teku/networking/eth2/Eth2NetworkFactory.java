@@ -266,7 +266,7 @@ public class Eth2NetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder processedAttestationSubscriptionProvider(
-            final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
+        final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
       checkNotNull(processedAttestationSubscriptionProvider);
       this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
       return this;
