@@ -17,18 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.CountingNoOpAppender;
-import org.apache.logging.log4j.core.config.AppenderRef;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,9 +30,8 @@ public class SafeFutureTest {
 
   @AfterEach
   public void tearDown() {
-    // Reset logging to remove any additional appenders we added
-    final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    ctx.reconfigure();
+    // Reset the thread uncaught exception handler
+    Thread.currentThread().setUncaughtExceptionHandler(null);
   }
 
   @Test
@@ -184,50 +177,6 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void finish_executeRunnableOnSuccess() {
-    final AtomicBoolean called = new AtomicBoolean(false);
-    final SafeFuture<String> future = new SafeFuture<>();
-    future.finish(() -> called.set(true));
-
-    assertThat(called).isFalse();
-    future.complete("Yay");
-    assertThat(called).isTrue();
-  }
-
-  @Test
-  public void finish_doNotExecuteRunnableOnException() {
-    final AtomicBoolean called = new AtomicBoolean(false);
-    final SafeFuture<String> future = new SafeFuture<>();
-    future.finish(() -> called.set(true));
-
-    assertThat(called).isFalse();
-    future.completeExceptionally(new RuntimeException("Nope"));
-    assertThat(called).isFalse();
-  }
-
-  @Test
-  public void finish_executeConsumerOnSuccess() {
-    final AtomicReference<String> called = new AtomicReference<>();
-    final SafeFuture<String> future = new SafeFuture<>();
-    future.finish(called::set);
-
-    assertThat(called).hasValue(null);
-    future.complete("Yay");
-    assertThat(called).hasValue("Yay");
-  }
-
-  @Test
-  public void finish_doNotExecuteConsumerOnException() {
-    final AtomicReference<String> called = new AtomicReference<>();
-    final SafeFuture<String> future = new SafeFuture<>();
-    future.finish(called::set);
-
-    assertThat(called).hasValue(null);
-    future.completeExceptionally(new RuntimeException("Oh no"));
-    assertThat(called).hasValue(null);
-  }
-
-  @Test
   public void finish_runnableAndErrorHandler_executeRunnableOnSuccess() {
     final AtomicBoolean called = new AtomicBoolean(false);
     final AtomicReference<Throwable> errorCallback = new AtomicReference<>();
@@ -299,18 +248,18 @@ public class SafeFutureTest {
 
   @Test
   public void finish_shouldNotLogHandledExceptions() {
-    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+    final List<Throwable> caughtExceptions = collectUncaughtExceptions();
 
     final SafeFuture<Object> safeFuture = new SafeFuture<>();
     safeFuture.finish(() -> {}, onError -> {});
     safeFuture.completeExceptionally(new RuntimeException("Oh no!"));
 
-    assertThat(logCounter.getCount()).isZero();
+    assertThat(caughtExceptions).isEmpty();
   }
 
   @Test
   public void finish_shouldReportExceptionsThrowBySuccessHandler() {
-    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+    final List<Throwable> caughtExceptions = collectUncaughtExceptions();
 
     final SafeFuture<Object> safeFuture = new SafeFuture<>();
     safeFuture.finish(
@@ -320,12 +269,12 @@ public class SafeFutureTest {
         onError -> {});
     safeFuture.complete(null);
 
-    assertThat(logCounter.getCount()).isEqualTo(1);
+    assertThat(caughtExceptions).hasSize(1);
   }
 
   @Test
   public void finish_shouldReportExceptionsThrowByErrorHandler() {
-    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+    final List<Throwable> caughtExceptions = collectUncaughtExceptions();
 
     final SafeFuture<Object> safeFuture = new SafeFuture<>();
     safeFuture.finish(
@@ -335,29 +284,18 @@ public class SafeFutureTest {
         });
     safeFuture.completeExceptionally(new Exception("Original exception"));
 
-    assertThat(logCounter.getCount()).isEqualTo(1);
-  }
-
-  @Test
-  public void finish_shouldReportExceptionsWhenNoErrorHandlerProvided() {
-    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
-
-    final SafeFuture<Object> safeFuture = new SafeFuture<>();
-    safeFuture.finish(() -> {});
-    safeFuture.completeExceptionally(new RuntimeException("Not handled"));
-
-    assertThat(logCounter.getCount()).isEqualTo(1);
+    assertThat(caughtExceptions).hasSize(1);
   }
 
   @Test
   public void reportExceptions_shouldLogUnhandledExceptions() {
-    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+    final List<Throwable> caughtExceptions = collectUncaughtExceptions();
 
     final SafeFuture<Object> safeFuture = new SafeFuture<>();
     safeFuture.reportExceptions();
     safeFuture.completeExceptionally(new RuntimeException("Oh no!"));
 
-    assertThat(logCounter.getCount()).isEqualTo(1);
+    assertThat(caughtExceptions).hasSize(1);
   }
 
   @Test
@@ -564,21 +502,10 @@ public class SafeFutureTest {
     assertThat(result).isCompleted();
   }
 
-  private CountingNoOpAppender startCountingReportedUnhandledExceptions() {
-    final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    final Configuration config = ctx.getConfiguration();
-    final CountingNoOpAppender appender =
-        new CountingNoOpAppender("Mock", PatternLayout.newBuilder().build());
-    appender.start();
-    config.addAppender(appender);
-    AppenderRef ref = AppenderRef.createAppenderRef("Mock", null, null);
-    AppenderRef[] refs = new AppenderRef[] {ref};
-    LoggerConfig loggerConfig =
-        LoggerConfig.createLogger(false, Level.ERROR, "Mock", null, refs, null, config, null);
-    loggerConfig.addAppender(appender, null, null);
-    config.addLogger(SafeFuture.class.getName(), loggerConfig);
-    ctx.updateLoggers();
-    return appender;
+  private List<Throwable> collectUncaughtExceptions() {
+    final List<Throwable> caughtExceptions = new ArrayList<>();
+    Thread.currentThread().setUncaughtExceptionHandler((t, e) -> caughtExceptions.add(e));
+    return caughtExceptions;
   }
 
   static void assertExceptionallyCompletedWith(

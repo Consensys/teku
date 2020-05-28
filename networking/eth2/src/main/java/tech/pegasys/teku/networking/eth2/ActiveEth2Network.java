@@ -15,7 +15,9 @@ package tech.pegasys.teku.networking.eth2;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.teku.core.StateTransition;
@@ -51,6 +53,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final AttestationSubnetService attestationSubnetService;
   private final GossipedAttestationConsumer gossipedAttestationConsumer;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
+  private final Set<Integer> pendingSubnetSubscriptions = new HashSet<>();
 
   private BlockGossipManager blockGossipManager;
   private AttestationGossipManager attestationGossipManager;
@@ -90,7 +93,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     return super.start().thenAccept(r -> startup());
   }
 
-  private void startup() {
+  private synchronized void startup() {
     state.set(State.RUNNING);
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
@@ -125,12 +128,15 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         attestationSubnetService.subscribeToUpdates(
             discoveryNetwork::setLongTermAttestationSubnetSubscriptions);
 
+    pendingSubnetSubscriptions.forEach(this::subscribeToAttestationSubnetId);
+    pendingSubnetSubscriptions.clear();
+
     processedAttestationSubscriptionProvider.subscribe(attestationGossipManager::onNewAttestation);
     processedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
   }
 
   @Override
-  public void stop() {
+  public synchronized void stop() {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return;
     }
@@ -173,21 +179,21 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   @Override
-  public void subscribeToAttestationSubnetId(final int subnetId) {
-    if (aggregateGossipManager == null) {
-      throw new IllegalStateException(
-          "Attestation committee can not be subscribed due to gossip manager not being initialized");
+  public synchronized void subscribeToAttestationSubnetId(final int subnetId) {
+    if (attestationGossipManager == null) {
+      pendingSubnetSubscriptions.add(subnetId);
+    } else {
+      attestationGossipManager.subscribeToSubnetId(subnetId);
     }
-    attestationGossipManager.subscribeToSubnetId(subnetId);
   }
 
   @Override
-  public void unsubscribeFromAttestationSubnetId(final int subnetId) {
-    if (aggregateGossipManager == null) {
-      throw new IllegalStateException(
-          "Attestation committee can not be unsubscribed due to gossip manager not being initialized");
+  public synchronized void unsubscribeFromAttestationSubnetId(final int subnetId) {
+    if (attestationGossipManager == null) {
+      pendingSubnetSubscriptions.remove(subnetId);
+    } else {
+      attestationGossipManager.unsubscribeFromSubnetId(subnetId);
     }
-    attestationGossipManager.unsubscribeFromSubnetId(subnetId);
   }
 
   @Override

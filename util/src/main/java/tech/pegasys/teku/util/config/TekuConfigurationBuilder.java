@@ -70,6 +70,7 @@ public class TekuConfigurationBuilder {
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
   private String restApiInterface;
+  private List<String> restApiHostWhitelist;
   private NetworkDefinition network;
   private boolean eth1Enabled;
 
@@ -340,6 +341,11 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setRestApiHostWhitelist(final List<String> restApiHostWhitelist) {
+    this.restApiHostWhitelist = restApiHostWhitelist;
+    return this;
+  }
+
   public TekuConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
@@ -418,7 +424,8 @@ public class TekuConfigurationBuilder {
         restApiPort,
         restApiDocsEnabled,
         restApiEnabled,
-        restApiInterface);
+        restApiInterface,
+        restApiHostWhitelist);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

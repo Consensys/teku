@@ -22,18 +22,16 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class SafeFuture<T> extends CompletableFuture<T> {
-  private static final Logger LOG = LogManager.getLogger();
 
   public static SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
 
   public static void reportExceptions(final CompletionStage<?> future) {
     future.exceptionally(
         error -> {
-          LOG.error("Unhandled exception", error);
+          final Thread currentThread = Thread.currentThread();
+          currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, error);
           return null;
         });
   }
@@ -173,14 +171,6 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void reportExceptions() {
     reportExceptions(this);
-  }
-
-  public void finish(final Runnable onSuccess) {
-    finish(complete -> onSuccess.run());
-  }
-
-  public void finish(final Consumer<T> onSuccess) {
-    reportExceptions(thenAccept(onSuccess));
   }
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {

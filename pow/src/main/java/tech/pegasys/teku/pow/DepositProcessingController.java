@@ -47,15 +47,19 @@ public class DepositProcessingController {
   private BigInteger latestSuccessfullyQueriedBlock = BigInteger.ZERO;
   private BigInteger latestCanonicalBlockNumber = BigInteger.ZERO;
 
+  private final Eth1BlockFetcher eth1BlockFetcher;
+
   public DepositProcessingController(
       Eth1Provider eth1Provider,
       Eth1EventsChannel eth1EventsChannel,
       AsyncRunner asyncRunner,
-      DepositFetcher depositFetcher) {
+      DepositFetcher depositFetcher,
+      Eth1BlockFetcher eth1BlockFetcher) {
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
     this.asyncRunner = asyncRunner;
     this.depositFetcher = depositFetcher;
+    this.eth1BlockFetcher = eth1BlockFetcher;
   }
 
   public synchronized void switchToBlockByBlockMode() {
@@ -177,9 +181,11 @@ public class DepositProcessingController {
   private synchronized void onSubscriptionDepositRequestSuccessful(BigInteger requestToBlock) {
     active = false;
     latestSuccessfullyQueriedBlock = requestToBlock;
-
     if (latestCanonicalBlockNumber.compareTo(latestSuccessfullyQueriedBlock) > 0) {
       fetchLatestSubscriptionDeposits();
+    } else {
+      // We've caught up with deposits all the way up to the follow distance
+      eth1BlockFetcher.onInSync(UnsignedLong.valueOf(latestCanonicalBlockNumber));
     }
   }
 

@@ -22,9 +22,9 @@ import java.math.BigInteger;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +34,7 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
+import tech.pegasys.teku.pow.contract.DepositContract.DepositEventEventResponse;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.util.async.AsyncRunner;
@@ -47,16 +48,19 @@ public class DepositFetcher {
   private final Eth1Provider eth1Provider;
   private final Eth1EventsChannel eth1EventsChannel;
   private final DepositContract depositContract;
+  private final Eth1BlockFetcher eth1BlockFetcher;
   private final AsyncRunner asyncRunner;
 
   public DepositFetcher(
       Eth1Provider eth1Provider,
       Eth1EventsChannel eth1EventsChannel,
       DepositContract depositContract,
+      Eth1BlockFetcher eth1BlockFetcher,
       AsyncRunner asyncRunner) {
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
     this.depositContract = depositContract;
+    this.eth1BlockFetcher = eth1BlockFetcher;
     this.asyncRunner = asyncRunner;
   }
 
@@ -75,7 +79,9 @@ public class DepositFetcher {
             eventResponsesByBlockHash ->
                 postDepositEvents(
                     getListOfEthBlockFutures(eventResponsesByBlockHash.keySet()),
-                    eventResponsesByBlockHash));
+                    eventResponsesByBlockHash,
+                    fromBlockNumber,
+                    toBlockNumber));
   }
 
   private SafeFuture<List<DepositContract.DepositEventEventResponse>>
@@ -103,25 +109,38 @@ public class DepositFetcher {
 
   private SafeFuture<Void> postDepositEvents(
       List<SafeFuture<EthBlock.Block>> blockRequests,
-      Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>>
-          depositEventsByBlock) {
-
+      Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>> depositEventsByBlock,
+      BigInteger fromBlock,
+      BigInteger toBlock) {
+    BigInteger from = fromBlock;
     // First process completed requests using iteration.
     // Avoid StackOverflowException when there is a long string of requests already completed.
     while (!blockRequests.isEmpty() && blockRequests.get(0).isDone()) {
       final EthBlock.Block block = blockRequests.remove(0).join();
+
+      // Fetch any empty blocks between this deposit block and the previous one (or start of range)
+      final BigInteger to = block.getNumber().subtract(BigInteger.ONE);
+      eth1BlockFetcher.fetch(from, to);
+      from = block.getNumber().add(BigInteger.ONE);
+
       postEventsForBlock(block, depositEventsByBlock);
     }
 
     // All requests have completed and been processed.
     if (blockRequests.isEmpty()) {
+      // Fetch any empty blocks between the last deposit and end of the range
+      eth1BlockFetcher.fetch(from, toBlock);
       return SafeFuture.COMPLETE;
     }
 
+    BigInteger remainingRangeStart = from;
     // Reached a block request that isn't complete so wait for it and recurse back into this method.
     return blockRequests
         .get(0)
-        .thenCompose(block -> postDepositEvents(blockRequests, depositEventsByBlock));
+        .thenCompose(
+            block ->
+                postDepositEvents(
+                    blockRequests, depositEventsByBlock, remainingRangeStart, toBlock));
   }
 
   private synchronized void postEventsForBlock(
@@ -157,7 +176,7 @@ public class DepositFetcher {
         .collect(toList());
   }
 
-  private SortedMap<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>>
+  private NavigableMap<BlockNumberAndHash, List<DepositEventEventResponse>>
       groupDepositEventResponsesByBlockHash(
           List<DepositContract.DepositEventEventResponse> events) {
     return events.stream()
