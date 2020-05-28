@@ -28,8 +28,8 @@ public class ValidateableAttestation {
   private final Optional<SignedAggregateAndProof> maybeAggregate;
   private final AtomicBoolean gossiped;
 
-  private Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
-  private Optional<Bytes32> hashTreeRoot = Optional.empty();
+  private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
+  private volatile Optional<Bytes32> hashTreeRoot = Optional.empty();
 
   public static ValidateableAttestation fromSingle(Attestation attestation) {
     return new ValidateableAttestation(attestation, Optional.empty(), false);
