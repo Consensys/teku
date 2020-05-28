@@ -14,6 +14,7 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -39,6 +40,26 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
   @Override
   public int compareTo(@NotNull DepositWithIndex o) {
     return this.getIndex().compareTo(o.getIndex());
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    final DepositWithIndex that = (DepositWithIndex) o;
+    return index.equals(that.index);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), index);
   }
 
   @Override

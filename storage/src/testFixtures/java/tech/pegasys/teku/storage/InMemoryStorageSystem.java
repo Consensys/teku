@@ -20,9 +20,8 @@ import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.teku.storage.server.ChainStorageServer;
+import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.DatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -61,10 +60,9 @@ public class InMemoryStorageSystem {
       final EventBus eventBus = new EventBus();
       final Database database =
           InMemoryRocksDbDatabaseFactory.createV3(rocksDbInstance, storageMode);
-      final DatabaseFactory dbFactory = () -> database;
 
       // Create and start storage server
-      final ChainStorageServer chainStorageServer = ChainStorageServer.create(eventBus, dbFactory);
+      final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
       chainStorageServer.start();
 
       // Create recent chain data

@@ -39,7 +39,6 @@ public class LoggingConfigurator {
   private static final String LOG4J_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
   private static final String LOG4J_LEGACY_CONFIG_FILE_KEY = "log4j.configurationFile";
   private static final String CONSOLE_APPENDER_NAME = "teku-console-appender";
-  private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} %-5level - %msg%n";
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
   private static final String FILE_MESSAGE_FORMAT =
       "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
@@ -101,7 +100,7 @@ public class LoggingConfigurator {
 
     switch (DESTINATION) {
       case CONSOLE:
-        consoleAppender = consoleAppender(configuration);
+        consoleAppender = consoleAppender(configuration, false);
 
         setUpStatusLogger(consoleAppender);
         setUpEventsLogger(consoleAppender);
@@ -122,7 +121,7 @@ public class LoggingConfigurator {
       case DEFAULT_BOTH:
         // fall through
       case BOTH:
-        consoleAppender = consoleAppender(configuration);
+        consoleAppender = consoleAppender(configuration, true);
         final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
         final LoggerConfig statusLogger = setUpStatusLogger(consoleAppender);
         configuration.addLogger(eventsLogger.getName(), eventsLogger);
@@ -212,13 +211,16 @@ public class LoggingConfigurator {
     return logger;
   }
 
-  private static Appender consoleAppender(final AbstractConfiguration configuration) {
+  private static Appender consoleAppender(
+      final AbstractConfiguration configuration, final boolean omitStackTraces) {
     configuration.removeAppender(CONSOLE_APPENDER_NAME);
 
     final Layout<?> layout =
         PatternLayout.newBuilder()
+            .withAlwaysWriteExceptions(!omitStackTraces)
+            .withNoConsoleNoAnsi(true)
             .withConfiguration(configuration)
-            .withPattern(CONSOLE_FORMAT)
+            .withPatternSelector(new ConsolePatternSelector(configuration, omitStackTraces))
             .build();
     final Appender consoleAppender =
         ConsoleAppender.newBuilder().setName(CONSOLE_APPENDER_NAME).setLayout(layout).build();
