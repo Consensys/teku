@@ -53,7 +53,7 @@ public class MinimumGenesisTimeBlockFinder {
     if (searchContext.low.compareTo(searchContext.high) <= 0) {
       final UnsignedLong mid = searchContext.low.plus(searchContext.high).dividedBy(TWO);
       return eth1Provider
-          .getEth1BlockFuture(mid)
+          .getEth1Block(mid)
           .thenCompose(
               midBlock -> {
                 final int cmp = compareBlockTimestampToMinGenesisTime(midBlock);
@@ -74,7 +74,7 @@ public class MinimumGenesisTimeBlockFinder {
               });
     } else {
       // Completed search
-      return eth1Provider.getEth1BlockFuture(searchContext.low);
+      return eth1Provider.getEth1Block(searchContext.low);
     }
   }
 

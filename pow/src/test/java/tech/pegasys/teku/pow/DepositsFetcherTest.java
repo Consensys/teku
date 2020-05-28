@@ -80,7 +80,7 @@ public class DepositsFetcherTest {
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
     when(block.getHash()).thenReturn(blockHash);
-    when(eth1Provider.getGuaranteedEth1BlockFuture(blockHash))
+    when(eth1Provider.getGuaranteedEth1Block(blockHash))
         .thenReturn(SafeFuture.completedFuture(block));
   }
 
