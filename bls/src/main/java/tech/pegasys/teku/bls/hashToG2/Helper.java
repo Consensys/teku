@@ -86,23 +86,24 @@ class Helper {
   }
 
   /**
-   * Produces a pseudorandom byte string of arbitrary length using SHA-256.
+   * Produces a uniformly random byte string of arbitrary length using SHA-256.
    *
    * <p>As defined at https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-5.3.1
    *
    * @param message the message to hash
    * @param dst the domain separation tag for the cipher suite
    * @param lengthInBytes the number of bytes we want to obtain
-   * @return a pseudo random sequences of Bytes
+   * @return a uniformly random sequence of Bytes
    */
-  private static Bytes expandMessage(Bytes message, Bytes dst, int lengthInBytes) {
+  @VisibleForTesting
+  static Bytes expandMessage(Bytes message, Bytes dst, int lengthInBytes) {
     checkArgument(dst.size() < 256, "The DST must be 255 bytes or fewer.");
     checkArgument(lengthInBytes > 0, "Number of bytes requested must be greater than zero.");
 
     final int ell = 1 + (lengthInBytes - 1) / SHA256_HASH_SIZE;
     checkArgument(ell <= 255, "Too many bytes of output were requested.");
 
-    byte[] pseudoRandomBytes = new byte[ell * SHA256_HASH_SIZE];
+    byte[] uniformBytes = new byte[ell * SHA256_HASH_SIZE];
 
     Bytes dstPrime = Bytes.concatenate(dst, Bytes.of((byte) dst.size()));
     Bytes zPad = Bytes.wrap(new byte[SHA256_BLOCK_SIZE]);
@@ -110,13 +111,12 @@ class Helper {
     Bytes b0 =
         Hash.sha2_256(Bytes.concatenate(zPad, message, libStr, Bytes.of((byte) 0), dstPrime));
     Bytes bb = Hash.sha2_256(Bytes.concatenate(b0, Bytes.of((byte) 1), dstPrime));
-    System.arraycopy(bb.toArrayUnsafe(), 0, pseudoRandomBytes, 0, SHA256_HASH_SIZE);
+    System.arraycopy(bb.toArrayUnsafe(), 0, uniformBytes, 0, SHA256_HASH_SIZE);
     for (int i = 1; i < ell; i++) {
       bb = Hash.sha2_256(Bytes.concatenate(b0.xor(bb), Bytes.of((byte) (i + 1)), dstPrime));
-      System.arraycopy(
-          bb.toArrayUnsafe(), 0, pseudoRandomBytes, i * SHA256_HASH_SIZE, SHA256_HASH_SIZE);
+      System.arraycopy(bb.toArrayUnsafe(), 0, uniformBytes, i * SHA256_HASH_SIZE, SHA256_HASH_SIZE);
     }
-    return Bytes.wrap(pseudoRandomBytes, 0, lengthInBytes);
+    return Bytes.wrap(uniformBytes, 0, lengthInBytes);
   }
 
   /**
@@ -137,12 +137,12 @@ class Helper {
     final int m = 2;
 
     final int lenInBytes = count * m * l;
-    final Bytes pseudoRandomBytes = expandMessage(message, dst, lenInBytes);
+    final Bytes uniformBytes = expandMessage(message, dst, lenInBytes);
     FP2Immutable[] u = new FP2Immutable[count];
 
     for (int i = 0; i < count; i++) {
-      FP e0 = os2ip_modP(pseudoRandomBytes.slice(l * i * m, l));
-      FP e1 = os2ip_modP(pseudoRandomBytes.slice(l * (1 + i * m), l));
+      FP e0 = os2ip_modP(uniformBytes.slice(l * i * m, l));
+      FP e1 = os2ip_modP(uniformBytes.slice(l * (1 + i * m), l));
       u[i] = new FP2Immutable(e0, e1);
     }
 
@@ -232,7 +232,6 @@ class Helper {
    * @return output point on BLS12-381
    */
   static JacobianPoint iso3(JacobianPoint p) {
-
     FP2Immutable x = new FP2Immutable(p.getX());
     FP2Immutable y = new FP2Immutable(p.getY());
     FP2Immutable z = new FP2Immutable(p.getZ());
@@ -329,7 +328,7 @@ class Helper {
    * @param p the point to be transformed to the G2 group
    * @return a corresponding point in the G2 group
    */
-  static JacobianPoint clear_h2(JacobianPoint p) {
+  static JacobianPoint clearH2(JacobianPoint p) {
     // (-x + 1) P
     JacobianPoint work = mxChain(p).add(p);
     // -psi(P)

@@ -9,4 +9,5 @@ dependencies {
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 
   testImplementation project(':logging')
+  testImplementation 'com.googlecode.json-simple:json-simple'
 }

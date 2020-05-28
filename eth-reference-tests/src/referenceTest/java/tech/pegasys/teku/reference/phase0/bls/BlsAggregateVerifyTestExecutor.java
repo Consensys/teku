@@ -64,9 +64,9 @@ public class BlsAggregateVerifyTestExecutor implements TestExecutor {
 
     public List<BLSPublicKey> getPublicKeys() {
       return publicKeys.stream()
-              .map(Bytes::fromHexString)
-              .map(BLSPublicKey::fromBytes)
-              .collect(toList());
+          .map(Bytes::fromHexString)
+          .map(BLSPublicKey::fromBytes)
+          .collect(toList());
     }
 
     public List<Bytes> getMessages() {

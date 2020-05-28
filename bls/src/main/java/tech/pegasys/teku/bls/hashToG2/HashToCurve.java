@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.bls.hashToG2;
 
-import static tech.pegasys.teku.bls.hashToG2.Helper.clear_h2;
+import static tech.pegasys.teku.bls.hashToG2.Helper.clearH2;
 import static tech.pegasys.teku.bls.hashToG2.Helper.hashToField;
 import static tech.pegasys.teku.bls.hashToG2.Helper.isInG2;
 import static tech.pegasys.teku.bls.hashToG2.Helper.isOnCurve;
@@ -81,7 +81,7 @@ public class HashToCurve {
     // This should never fail, and the check is non-trivial, so we use an assert
     assert isOnCurve(r);
 
-    JacobianPoint p = clear_h2(r);
+    JacobianPoint p = clearH2(r);
 
     // This should never fail, and the check is very expensive, so we use an assert
     assert isInG2(p);

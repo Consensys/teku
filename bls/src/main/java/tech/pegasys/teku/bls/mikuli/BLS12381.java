@@ -35,7 +35,10 @@ import org.apache.tuweni.bytes.Bytes;
  * BLS12-381 elliptic curve. It implements a subset of the functions from the proposed IETF
  * standard.
  *
- * <p>Reference: https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02
+ * <p>The basic reference is https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02, but note
+ * that this implementation deviates from the standard in some edge cases (such as aggregating empty
+ * lists of signatures, or verifying with empty lists of public keys). Use the tech.pegasys.teku.bls
+ * for a fully conformant implementation.
  *
  * <p>This class depends upon the Apache Milagro library being available. See
  * https://milagro.apache.org.
@@ -82,14 +85,8 @@ public final class BLS12381 {
     }
   }
 
-  /*
-   * Methods used directly in the Ethereum 2.0 specifications.
-   */
-
   /**
    * Generates a Signature from a private key and message.
-   *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.2.1
    *
    * @param secretKey The secret key, not null
    * @param message The message to sign, not null
@@ -103,10 +100,6 @@ public final class BLS12381 {
   /**
    * Verifies the given BLS signature against the message bytes using the public key.
    *
-   * <p>Implements the basic scheme of
-   * https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.1 which is identical to
-   * CoreVerify().
-   *
    * @param publicKey The public key, not null
    * @param message The message data to verify, not null
    * @param signature The signature, not null
@@ -119,8 +112,6 @@ public final class BLS12381 {
   /**
    * Aggregates a list of signatures into a single signature using BLS magic.
    *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.7
-   *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
    */
@@ -130,8 +121,6 @@ public final class BLS12381 {
 
   /**
    * Aggregates a stream of signatures into a single signature using BLS magic.
-   *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.7
    *
    * @param signatures the stream of signatures to be aggregated
    * @return the aggregated signature
@@ -143,8 +132,6 @@ public final class BLS12381 {
   /**
    * Verifies an aggregate signature against a list of distinct messages using the list of public
    * keys.
-   *
-   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.1.1
    *
    * @param publicKeys The list of public keys, not null
    * @param messages The list of messages to verify, all distinct, not null
@@ -164,8 +151,6 @@ public final class BLS12381 {
   /**
    * Verifies an aggregate signature against a message using the list of public keys.
    *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.3.4
-   *
    * @param publicKeys The list of public keys, not null
    * @param message The message data to verify, not null
    * @param signature The aggregate signature, not null
@@ -176,15 +161,9 @@ public final class BLS12381 {
     return verify(PublicKey.aggregate(publicKeys), message, signature);
   }
 
-  /*
-   * Other methods defined by the standard and used above.
-   */
-
   /**
    * The CoreVerify algorithm checks that a signature is valid for the octet string message under
    * the public key publicKey.
-   *
-   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.6
    *
    * @param publicKey The public key, not null
    * @param message The message data to verify, not null
@@ -199,8 +178,6 @@ public final class BLS12381 {
   /**
    * Verifies an aggregate signature against a list of distinct messages using the list of public
    * keys.
-   *
-   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.8
    *
    * @param publicKeys The list of public keys, not null
    * @param messages The list of messages to verify, all distinct, not null

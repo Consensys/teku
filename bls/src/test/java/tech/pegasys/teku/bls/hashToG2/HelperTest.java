@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.bls.hashToG2.Chains.h2Chain;
 import static tech.pegasys.teku.bls.hashToG2.Chains.mxChain;
-import static tech.pegasys.teku.bls.hashToG2.Helper.clear_h2;
+import static tech.pegasys.teku.bls.hashToG2.Helper.clearH2;
 import static tech.pegasys.teku.bls.hashToG2.Helper.mapG2ToInfinity;
 
 import org.apache.milagro.amcl.BLS381.ECP2;
@@ -86,7 +86,7 @@ class HelperTest {
             new FP2Immutable(
                 "0x0f008a6b5637c0f7e5957c3c56ba616c5477f1dce08d6805f42dc495faed05ad046304ec7e2c7229694b82f6c886c6f8",
                 "0x00a0ede04aa5881555e0dc51a8db295b393cb349ea7be5547829b2f102191b2d06118e71a8a756db2316cf15a8378b72"));
-    assertEquals(expected, clear_h2(a));
+    assertEquals(expected, clearH2(a));
   }
 
   @Test
@@ -103,7 +103,7 @@ class HelperTest {
             new FP2Immutable(
                 "0x05594bb289f0ebfd8fa3f020c6e1eaf4c49b97d8ccaf3470a3a02da4b3e7104778105bd6c7e0caf97206c77a8b501d4d",
                 "0x0625151f905fad40eb0e2b9b0a46d9afe531256c6d5e39897a27d94700f037a761a741d11275180bd18e620289e02a16"));
-    assertEquals(clear_h2_slow(a), clear_h2(a));
+    assertEquals(clearH2Slow(a), clearH2(a));
   }
 
   @Test
@@ -156,7 +156,7 @@ class HelperTest {
    * @param p the point to be transformed to the G2 group
    * @return a corresponding point in the G2 group
    */
-  private static JacobianPoint clear_h2_slow(JacobianPoint p) {
+  private static JacobianPoint clearH2Slow(JacobianPoint p) {
     JacobianPoint work, work3;
 
     // h2

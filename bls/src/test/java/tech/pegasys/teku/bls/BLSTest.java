@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,7 @@ class BLSTest {
   }
 
   @Test
+  // The empty signature is not a valid signature
   void succeedsWhenCallingVerifyWithEmptySignatureReturnsFalse() {
     assertFalse(
         BLS.verify(
@@ -49,6 +51,7 @@ class BLSTest {
   }
 
   @Test
+  // The empty signature is not a valid signature
   void succeedsWhenPassingEmptySignatureToAggregateSignaturesThrowsIllegalArgumentException() {
     BLSSignature signature1 = BLSSignature.random(1);
     BLSSignature signature2 = BLSSignature.empty();
@@ -75,5 +78,23 @@ class BLSTest {
     BLSSignature aggregatedSignature = BLS.aggregate(signatures);
 
     assertTrue(BLS.fastAggregateVerify(publicKeys, message, aggregatedSignature));
+  }
+
+  @Test
+  // The standard says that this is INVALID
+  void aggregateThrowsExceptionForEmptySignatureList() {
+    assertThrows(IllegalArgumentException.class, () -> BLS.aggregate(new ArrayList<>()));
+  }
+
+  @Test
+  // The standard says that this is INVALID
+  void aggregateVerifyReturnsFalseForEmptyPubkeysList() {
+    assertFalse(BLS.aggregateVerify(new ArrayList<>(), new ArrayList<>(), BLSSignature.empty()));
+  }
+
+  @Test
+  // The standard says that this is INVALID
+  void fastAggregateVerifyReturnsFalseForEmptyPubkeysList() {
+    assertFalse(BLS.fastAggregateVerify(new ArrayList<>(), Bytes.EMPTY, BLSSignature.empty()));
   }
 }

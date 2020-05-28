@@ -33,8 +33,8 @@ public final class Signature {
   private static final G1Point g1GeneratorNeg = g1Generator.neg();
 
   /**
-   * Aggregates list of Signature pairs, returns the signature that corresponds to G2 point at
-   * infinity if list is empty
+   * Aggregates a list of Signatures, returning the signature that corresponds to G2 point at
+   * infinity if list is empty.
    *
    * @param signatures The list of signatures to aggregate
    * @return Signature
@@ -44,8 +44,8 @@ public final class Signature {
   }
 
   /**
-   * Aggregates a stream of Signature pairs, returns the signature that corresponds to G2 point at
-   * infinity if list is empty
+   * Aggregates a stream of Signatures, returning the signature that corresponds to G2 point at
+   * infinity if list is empty.
    *
    * @param signatures The stream of signatures to aggregate
    * @return Signature

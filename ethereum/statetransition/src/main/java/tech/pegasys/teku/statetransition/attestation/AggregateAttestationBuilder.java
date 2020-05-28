@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -65,7 +66,8 @@ class AggregateAttestationBuilder {
             BLS.aggregate(
                 includedAttestations.stream()
                     .map(ValidateableAttestation::getAttestation)
-                    .map(Attestation::getAggregate_signature))));
+                    .map(Attestation::getAggregate_signature)
+                    .collect(Collectors.toList()))));
   }
 
   public Collection<ValidateableAttestation> getIncludedAttestations() {
