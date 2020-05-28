@@ -23,7 +23,6 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
 import org.apache.logging.log4j.core.appender.RollingFileAppender;
 import org.apache.logging.log4j.core.appender.rolling.CompositeTriggeringPolicy;
-import org.apache.logging.log4j.core.appender.rolling.OnStartupTriggeringPolicy;
 import org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy;
 import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.Configurator;
@@ -242,12 +241,12 @@ public class LoggingConfigurator {
     final Appender fileAppender =
         RollingFileAppender.newBuilder()
             .setName(FILE_APPENDER_NAME)
+            .withAppend(true)
             .setLayout(layout)
             .withFileName(FILE)
             .withFilePattern(FILE_PATTERN)
             .withPolicy(
                 CompositeTriggeringPolicy.createPolicy(
-                    OnStartupTriggeringPolicy.createPolicy(1),
                     TimeBasedTriggeringPolicy.newBuilder()
                         .withInterval(1)
                         .withModulate(true)
