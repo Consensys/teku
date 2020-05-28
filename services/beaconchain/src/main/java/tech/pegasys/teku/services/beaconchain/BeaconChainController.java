@@ -44,7 +44,6 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
