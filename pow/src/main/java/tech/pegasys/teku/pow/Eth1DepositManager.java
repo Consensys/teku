@@ -102,7 +102,7 @@ public class Eth1DepositManager {
 
   private SafeFuture<EthBlock.Block> getHead() {
     return eth1Provider
-        .getLatestEth1BlockFuture()
+        .getLatestEth1Block()
         .thenApply(EthBlock.Block::getNumber)
         .thenApply(number -> number.subtract(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
         .thenApply(UnsignedLong::valueOf)

@@ -14,14 +14,11 @@
 package tech.pegasys.teku.pow;
 
 import com.google.common.primitives.UnsignedLong;
-import io.reactivex.Flowable;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface Eth1Provider {
-
-  Flowable<Block> getLatestBlockFlowable();
 
   SafeFuture<Block> getEth1BlockFuture(UnsignedLong blockNumber);
 
@@ -31,7 +28,7 @@ public interface Eth1Provider {
 
   SafeFuture<Block> getGuaranteedEth1BlockFuture(UnsignedLong blockNumber);
 
-  SafeFuture<Block> getLatestEth1BlockFuture();
+  SafeFuture<Block> getLatestEth1Block();
 
   SafeFuture<EthCall> ethCall(String from, String to, String data, UnsignedLong blockNumber);
 }

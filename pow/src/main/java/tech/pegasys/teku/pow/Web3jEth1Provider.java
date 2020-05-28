@@ -14,7 +14,6 @@
 package tech.pegasys.teku.pow;
 
 import com.google.common.primitives.UnsignedLong;
-import io.reactivex.Flowable;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,12 +36,6 @@ public class Web3jEth1Provider implements Eth1Provider {
   public Web3jEth1Provider(Web3j web3j, AsyncRunner asyncRunner) {
     this.web3j = web3j;
     this.asyncRunner = asyncRunner;
-  }
-
-  @Override
-  public Flowable<EthBlock.Block> getLatestBlockFlowable() {
-    LOG.trace("Subscribing to new block events");
-    return web3j.blockFlowable(false).map(EthBlock::getBlock);
   }
 
   @Override
@@ -92,7 +85,7 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getLatestEth1BlockFuture() {
+  public SafeFuture<EthBlock.Block> getLatestEth1Block() {
     DefaultBlockParameter blockParameter = DefaultBlockParameterName.LATEST;
     return getEth1BlockFuture(blockParameter);
   }

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.pow;
 
 import com.google.common.primitives.UnsignedLong;
-import io.reactivex.Flowable;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
@@ -31,11 +30,6 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   public ThrottlingEth1Provider(final Eth1Provider delegate, final int maximumConcurrentRequests) {
     this.delegate = delegate;
     this.maximumConcurrentRequests = maximumConcurrentRequests;
-  }
-
-  @Override
-  public Flowable<Block> getLatestBlockFlowable() {
-    return delegate.getLatestBlockFlowable();
   }
 
   @Override
@@ -59,8 +53,8 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<Block> getLatestEth1BlockFuture() {
-    return queueRequest(delegate::getLatestEth1BlockFuture);
+  public SafeFuture<Block> getLatestEth1Block() {
+    return queueRequest(delegate::getLatestEth1Block);
   }
 
   @Override

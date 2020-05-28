@@ -55,7 +55,7 @@ class ThrottlingEth1ProviderTest {
     when(delegateProvider.getEth1BlockFuture(any(UnsignedLong.class)))
         .thenAnswer(returnBlockFuture);
     when(delegateProvider.getEth1BlockFuture(any(String.class))).thenAnswer(returnBlockFuture);
-    when(delegateProvider.getLatestEth1BlockFuture()).thenAnswer(returnBlockFuture);
+    when(delegateProvider.getLatestEth1Block()).thenAnswer(returnBlockFuture);
   }
 
   @Test
@@ -105,12 +105,12 @@ class ThrottlingEth1ProviderTest {
   void shouldThrottleTotalRequestsRegardlessOfType() {
     provider.getEth1BlockFuture(ONE).reportExceptions();
     provider.getEth1BlockFuture("TWO").reportExceptions();
-    provider.getLatestEth1BlockFuture().reportExceptions();
+    provider.getLatestEth1Block().reportExceptions();
     provider.getEth1BlockFuture(FOUR).reportExceptions();
 
     verify(delegateProvider).getEth1BlockFuture(ONE);
     verify(delegateProvider).getEth1BlockFuture("TWO");
-    verify(delegateProvider).getLatestEth1BlockFuture();
+    verify(delegateProvider).getLatestEth1Block();
     verifyNoMoreInteractions(delegateProvider);
   }
 }
