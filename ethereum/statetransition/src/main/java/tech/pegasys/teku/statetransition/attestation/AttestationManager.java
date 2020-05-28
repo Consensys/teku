@@ -20,8 +20,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.attestation.ProcessedAggregateConsumer;
-import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationConsumer;
+import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -43,9 +42,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   private final FutureItems<ValidateableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
 
-  private final Subscribers<ProcessedAttestationConsumer> processedAttestationSubscriber =
-      Subscribers.create(true);
-  private final Subscribers<ProcessedAggregateConsumer> processedAggregateSubscriber =
+  private final Subscribers<ProcessedAttestationListener> processedAttestationSubscriber =
       Subscribers.create(true);
 
   AttestationManager(
@@ -76,13 +73,8 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   }
 
   public void subscribeToProcessedAttestations(
-      ProcessedAttestationConsumer processedAttestationConsumer) {
-    processedAttestationSubscriber.subscribe(processedAttestationConsumer);
-  }
-
-  public void subscribeToProcessedAggregates(
-      ProcessedAggregateConsumer processedAggregateConsumer) {
-    processedAggregateSubscriber.subscribe(processedAggregateConsumer);
+      ProcessedAttestationListener processedAttestationListener) {
+    processedAttestationSubscriber.subscribe(processedAttestationListener);
   }
 
   @Override
@@ -92,19 +84,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         .map(ValidateableAttestation::getIndexedAttestation)
         .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
 
-    attestations.forEach(this::gossipAttestationIfNeeded);
+    attestations.forEach(this::notifySubscribers);
   }
 
-  private void gossipAttestationIfNeeded(ValidateableAttestation attestation) {
-    if (attestation.isGossiped()) {
-      return;
-    }
-
-    if (attestation.isAggregate()) {
-      processedAggregateSubscriber.forEach(s -> s.accept(attestation));
-    } else {
-      processedAttestationSubscriber.forEach(s -> s.accept(attestation));
-    }
+  private void notifySubscribers(ValidateableAttestation attestation) {
+    processedAttestationSubscriber.forEach(s -> s.accept(attestation));
   }
 
   @Subscribe
@@ -130,7 +114,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       case SUCCESSFUL:
         LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
         aggregatingAttestationPool.add(attestation);
-        gossipAttestationIfNeeded(attestation);
+        notifySubscribers(attestation);
         break;
       case UNKNOWN_BLOCK:
         LOG.trace(

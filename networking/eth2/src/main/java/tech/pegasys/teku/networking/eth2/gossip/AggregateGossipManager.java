@@ -46,6 +46,9 @@ public class AggregateGossipManager {
   }
 
   public void onNewAggregate(final ValidateableAttestation validateableAttestation) {
+    if (validateableAttestation.isGossiped() || !validateableAttestation.isAggregate()) {
+      return;
+    }
     final Bytes data = gossipEncoding.encode(validateableAttestation.getSignedAggregateAndProof());
     channel.gossip(data);
   }

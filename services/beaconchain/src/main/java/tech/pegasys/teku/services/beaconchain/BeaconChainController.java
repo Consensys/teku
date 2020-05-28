@@ -358,14 +358,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
-              .upstreamAttestationPipe(attestationManager::onAttestation)
+              .gossipedAttestationConsumer(attestationManager::onAttestation)
+              .processedAttestationSubscriptionProvider(attestationManager::subscribeToProcessedAttestations)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .asyncRunner(asyncRunner)
               .build();
-
-      p2pNetwork.subscribeToAttestations(attestationManager);
     }
   }
 

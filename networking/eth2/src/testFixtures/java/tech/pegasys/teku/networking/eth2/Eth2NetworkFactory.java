@@ -36,8 +36,10 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -59,6 +61,7 @@ import tech.pegasys.teku.util.Waiter;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
 public class Eth2NetworkFactory {
@@ -85,6 +88,7 @@ public class Eth2NetworkFactory {
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
     protected GossipedAttestationConsumer gossipedAttestationConsumer;
+    protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected Function<RpcMethod, Stream<RpcMethod>> rpcMethodsModifier = Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
@@ -172,7 +176,8 @@ public class Eth2NetworkFactory {
             recentChainData,
             gossipEncoding,
             attestationSubnetService,
-            gossipedAttestationConsumer);
+            gossipedAttestationConsumer,
+            processedAttestationSubscriptionProvider);
       }
     }
 
@@ -218,6 +223,10 @@ public class Eth2NetworkFactory {
         recentChainData = MemoryOnlyRecentChainData.create(eventBus);
         BeaconChainUtil.create(0, recentChainData).initializeStorage();
       }
+      if (processedAttestationSubscriptionProvider == null) {
+        Subscribers<ProcessedAttestationListener> subscribers = Subscribers.create(false);
+        processedAttestationSubscriptionProvider = subscribers::subscribe;
+      }
     }
 
     public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
@@ -249,10 +258,17 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder upstreamAttestationPipe(
+    public Eth2P2PNetworkBuilder gossipedAttestationConsumer(
         final GossipedAttestationConsumer gossipedAttestationConsumer) {
       checkNotNull(gossipedAttestationConsumer);
       this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder processedAttestationSubscriptionProvider(
+            final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
+      checkNotNull(processedAttestationSubscriptionProvider);
+      this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
       return this;
     }
 

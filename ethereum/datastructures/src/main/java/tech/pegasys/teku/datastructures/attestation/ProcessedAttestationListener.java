@@ -13,6 +13,6 @@
 
 package tech.pegasys.teku.datastructures.attestation;
 
-public interface ProcessedAttestationConsumer {
+public interface ProcessedAttestationListener {
   void accept(ValidateableAttestation attestation);
 }

@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilde
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.util.Waiter;
+import tech.pegasys.teku.util.events.Subscribers;
 
 public class GossipMessageHandlerIntegrationTest {
 
@@ -150,16 +152,18 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet(
       final String testName, GossipEncoding gossipEncoding) throws Exception {
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
+    Subscribers<ProcessedAttestationListener> processedAttestationSubscribers = Subscribers.create(false);
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 =
         b -> {
           b.gossipEncoding(gossipEncoding);
+          b.processedAttestationSubscriptionProvider(processedAttestationSubscribers::subscribe);
         };
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
         b -> {
           b.gossipEncoding(gossipEncoding);
-          b.upstreamAttestationPipe(node2attestations::add);
+          b.gossipedAttestationConsumer(node2attestations::add);
         };
 
     // Setup network 1
@@ -184,7 +188,7 @@ public class GossipMessageHandlerIntegrationTest {
     final BeaconBlockAndState bestBlockAndState =
         node1.storageClient().getBestBlockAndState().orElseThrow();
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
-    node1.eventBus().post(validAttestation);
+    processedAttestationSubscribers.forEach(s -> s.accept(ValidateableAttestation.fromSingle(validAttestation)));
 
     ensureConditionRemainsMet(() -> assertThat(node2attestations).isEmpty());
   }
@@ -194,17 +198,19 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet(
       final String testName, GossipEncoding gossipEncoding) throws Exception {
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
+    Subscribers<ProcessedAttestationListener> processedAttestationSubscribers = Subscribers.create(false);
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 =
-        b -> {
-          b.gossipEncoding(gossipEncoding);
-        };
+            b -> {
+              b.gossipEncoding(gossipEncoding);
+              b.processedAttestationSubscriptionProvider(processedAttestationSubscribers::subscribe);
+            };
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
-        b -> {
-          b.gossipEncoding(gossipEncoding);
-          b.upstreamAttestationPipe(node2attestations::add);
-        };
+            b -> {
+              b.gossipEncoding(gossipEncoding);
+              b.gossipedAttestationConsumer(node2attestations::add);
+            };
 
     // Setup network 1
     final NodeManager node1 = createNodeManager(networkBuilder1);
@@ -227,7 +233,8 @@ public class GossipMessageHandlerIntegrationTest {
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
         node1.storageClient().getBestBlockAndState().orElseThrow();
-    Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
+    ValidateableAttestation validAttestation =
+            ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(bestBlockAndState));
 
     node1
         .network()
@@ -238,12 +245,12 @@ public class GossipMessageHandlerIntegrationTest {
 
     waitForTopicRegistration();
 
-    node1.eventBus().post(validAttestation);
+    processedAttestationSubscribers.forEach(s -> s.accept(validAttestation));
 
     Waiter.waitFor(
         () -> {
           assertThat(node2attestations.size()).isEqualTo(1);
-          assertThat(node2attestations.get(0).getAttestation()).isEqualTo(validAttestation);
+          assertThat(node2attestations.get(0)).isEqualTo(validAttestation);
         });
   }
 
@@ -252,17 +259,19 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic(
       final String testName, GossipEncoding gossipEncoding) throws Exception {
     List<ValidateableAttestation> node2attestations = new ArrayList<>();
+    Subscribers<ProcessedAttestationListener> processedAttestationSubscribers = Subscribers.create(false);
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder1 =
-        b -> {
-          b.gossipEncoding(gossipEncoding);
-        };
+            b -> {
+              b.gossipEncoding(gossipEncoding);
+              b.processedAttestationSubscriptionProvider(processedAttestationSubscribers::subscribe);
+            };
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
-        b -> {
-          b.gossipEncoding(gossipEncoding);
-          b.upstreamAttestationPipe(node2attestations::add);
-        };
+            b -> {
+              b.gossipEncoding(gossipEncoding);
+              b.gossipedAttestationConsumer(node2attestations::add);
+            };
 
     // Setup network 1
     final NodeManager node1 = createNodeManager(networkBuilder1);
@@ -285,7 +294,8 @@ public class GossipMessageHandlerIntegrationTest {
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
         node1.storageClient().getBestBlockAndState().orElseThrow();
-    Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
+    ValidateableAttestation validAttestation =
+            ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(bestBlockAndState));
 
     node1
         .network()
@@ -296,12 +306,12 @@ public class GossipMessageHandlerIntegrationTest {
 
     waitForTopicRegistration();
 
-    node1.eventBus().post(validAttestation);
+    processedAttestationSubscribers.forEach(s -> s.accept(validAttestation));
 
     waitForMessageToBeDelivered();
 
     assertThat(node2attestations.size()).isEqualTo(1);
-    assertThat(node2attestations.get(0).getAttestation()).isEqualTo(validAttestation);
+    assertThat(node2attestations.get(0)).isEqualTo(validAttestation);
 
     node1
         .network()
@@ -312,12 +322,12 @@ public class GossipMessageHandlerIntegrationTest {
 
     waitForTopicDeregistration();
 
-    node1.eventBus().post(validAttestation);
+    processedAttestationSubscribers.forEach(s -> s.accept(validAttestation));
 
     ensureConditionRemainsMet(
         () -> {
           assertThat(node2attestations.size()).isEqualTo(1);
-          assertThat(node2attestations.get(0).getAttestation()).isEqualTo(validAttestation);
+          assertThat(node2attestations.get(0)).isEqualTo(validAttestation);
         });
   }
 

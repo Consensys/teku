@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -24,6 +25,4 @@ public interface Eth2Network extends P2PNetwork<Eth2Peer> {
   void unsubscribeFromAttestationSubnetId(final int subnetId);
 
   void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices);
-
-  void subscribeToAttestations(AttestationManager attestationManager);
 }

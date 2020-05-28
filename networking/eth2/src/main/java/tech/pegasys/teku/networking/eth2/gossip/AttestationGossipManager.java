@@ -38,6 +38,9 @@ public class AttestationGossipManager {
   }
 
   public void onNewAttestation(final ValidateableAttestation validateableAttestation) {
+    if (validateableAttestation.isGossiped() || validateableAttestation.isAggregate()) {
+      return;
+    }
     final Attestation attestation = validateableAttestation.getAttestation();
     final int subnetId = committeeIndexToSubnetId(attestation.getData().getIndex());
     subnetSubscriptions

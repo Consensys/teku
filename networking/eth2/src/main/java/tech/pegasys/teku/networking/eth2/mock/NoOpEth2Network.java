@@ -28,7 +28,4 @@ public class NoOpEth2Network extends MockP2PNetwork<Eth2Peer> implements Eth2Net
 
   @Override
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {}
-
-  @Override
-  public void subscribeToAttestations(AttestationManager attestationManager) {}
 }

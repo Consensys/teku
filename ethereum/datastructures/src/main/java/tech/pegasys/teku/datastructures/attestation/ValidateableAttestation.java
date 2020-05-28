@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 
@@ -81,6 +82,10 @@ public class ValidateableAttestation {
   public SignedAggregateAndProof getSignedAggregateAndProof() {
     return maybeAggregate.orElseThrow(
         () -> new UnsupportedOperationException("ValidateableAttestation is not an aggregate."));
+  }
+
+  public AttestationData getData() {
+    return attestation.getData();
   }
 
   public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
