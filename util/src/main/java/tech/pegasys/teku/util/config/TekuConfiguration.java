@@ -480,7 +480,7 @@ public class TekuConfiguration {
 
       final String errorMessage =
           String.format(
-              "Invalid configuration. The number of arguments for --validators-key-files [%d] and --validators-key-password-files [%d] must match",
+              "Invalid configuration. The number of --validators-key-files (%d) must equal the number of --validators-key-password-files (%d)",
               validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
       throw new InvalidConfigurationException(errorMessage);
     }
