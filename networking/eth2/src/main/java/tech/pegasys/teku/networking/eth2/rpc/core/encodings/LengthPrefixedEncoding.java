@@ -62,7 +62,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
     return payloadDecoder.decodePayload(inputStream);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private <T> T decodeEmptyMessage(final InputStream inputStream) throws RpcException {
     try {
       // Check no input was provided.
