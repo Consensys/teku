@@ -29,7 +29,7 @@ class TekuConfigurationTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::validateConfig)
         .withMessageContaining(
-            "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' cannot be specified separately");
+            "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together");
   }
 
   @Test
@@ -38,7 +38,7 @@ class TekuConfigurationTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::validateConfig)
         .withMessageContaining(
-            "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' cannot be specified separately");
+            "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together");
   }
 
   @Test
@@ -47,7 +47,7 @@ class TekuConfigurationTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::validateConfig)
         .withMessageContaining(
-            "Invalid configuration. The number of arguments for --validators-key-files [0] and --validators-key-password-files [1] must match");
+                "Invalid configuration. The number of --validators-key-files (0) must equal the number of --validators-key-password-files (1)");
   }
 
   private TekuConfiguration buildConfig(
