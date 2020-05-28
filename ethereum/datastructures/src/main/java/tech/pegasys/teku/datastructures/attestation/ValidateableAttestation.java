@@ -14,10 +14,13 @@
 package tech.pegasys.teku.datastructures.attestation;
 
 import com.google.common.base.Objects;
+import com.google.common.base.Suppliers;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -26,10 +29,10 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 public class ValidateableAttestation {
   private final Attestation attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
+  private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
 
   private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
-  private volatile Optional<Bytes32> hashTreeRoot = Optional.empty();
 
   public static ValidateableAttestation fromSingle(Attestation attestation) {
     return new ValidateableAttestation(attestation, Optional.empty());
@@ -45,6 +48,7 @@ public class ValidateableAttestation {
       Optional<SignedAggregateAndProof> aggregateAndProof) {
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
+    this.hashTreeRoot = Suppliers.memoize(attestation::hash_tree_root);
   }
 
   public IndexedAttestation getIndexedAttestation() {
@@ -88,7 +92,7 @@ public class ValidateableAttestation {
   }
 
   public Bytes32 hash_tree_root() {
-    return hashTreeRoot.orElse(attestation.hash_tree_root());
+    return hashTreeRoot.get();
   }
 
   @Override
