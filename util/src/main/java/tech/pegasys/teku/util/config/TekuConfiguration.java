@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -64,7 +65,6 @@ public class TekuConfiguration {
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
 
-  private final boolean eth1Enabled;
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
@@ -133,7 +133,6 @@ public class TekuConfiguration {
       final List<String> validatorExternalSignerPublicKeys,
       final String validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
-      final boolean eth1Enabled,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final boolean logColorEnabled,
@@ -185,7 +184,6 @@ public class TekuConfiguration {
     this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
-    this.eth1Enabled = eth1Enabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.logColorEnabled = logColorEnabled;
@@ -338,7 +336,7 @@ public class TekuConfiguration {
   }
 
   public boolean isEth1Enabled() {
-    return eth1Enabled;
+    return !StringUtils.isEmpty(eth1Endpoint);
   }
 
   public Eth1Address getEth1DepositContractAddress() {
