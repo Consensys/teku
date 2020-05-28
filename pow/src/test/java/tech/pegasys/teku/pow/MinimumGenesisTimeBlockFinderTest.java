@@ -99,7 +99,7 @@ public class MinimumGenesisTimeBlockFinderTest {
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
     when(block.toString()).thenReturn("Block " + blockNumber + " at timestamp " + timestamp);
-    when(eth1Provider.getEth1BlockFuture(UnsignedLong.valueOf(blockNumber)))
+    when(eth1Provider.getEth1Block(UnsignedLong.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(block));
     return block;
   }
