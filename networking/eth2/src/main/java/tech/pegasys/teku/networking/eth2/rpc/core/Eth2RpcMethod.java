@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -78,14 +77,7 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
     return rpcEncoder;
   }
 
-  public boolean isEmptyRequest() {
-    return requestType.equals(EmptyMessage.class);
-  }
-
   public Bytes encodeRequest(TRequest request) {
-    if (isEmptyRequest()) {
-      return Bytes.EMPTY;
-    }
     return rpcEncoder.encodeRequest(request);
   }
 

@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
+import static tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage.EMPTY_MESSAGE;
+
 import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 
@@ -40,15 +43,26 @@ public class LengthPrefixedEncoding implements RpcEncoding {
     final RpcPayloadEncoder<T> payloadEncoder =
         payloadEncoders.getEncoder((Class<T>) message.getClass());
     final Bytes payload = payloadEncoder.encode(message);
+    if (payload.isEmpty()) {
+      return payload;
+    }
     return encodeMessageWithLength(payload);
   }
 
   @Override
   public <T> T decodePayload(final InputStream inputStream, final Class<T> payloadType)
       throws RpcException {
+    if (payloadType.equals(EmptyMessage.class)) {
+      return getEmptyMessage();
+    }
     final LengthPrefixedPayloadDecoder<T> payloadDecoder =
         new LengthPrefixedPayloadDecoder<>(payloadEncoders.getEncoder(payloadType), compressor);
     return payloadDecoder.decodePayload(inputStream);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T getEmptyMessage() {
+    return (T) EMPTY_MESSAGE;
   }
 
   private Bytes encodeMessageWithLength(final Bytes payload) {
