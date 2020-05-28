@@ -14,7 +14,6 @@
 package tech.pegasys.teku.pow;
 
 import com.google.common.primitives.UnsignedLong;
-import io.reactivex.Flowable;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,61 +39,55 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public Flowable<EthBlock.Block> getLatestBlockFlowable() {
-    LOG.trace("Subscribing to new block events");
-    return web3j.blockFlowable(false).map(EthBlock::getBlock);
-  }
-
-  @Override
-  public SafeFuture<EthBlock.Block> getEth1BlockFuture(UnsignedLong blockNumber) {
+  public SafeFuture<EthBlock.Block> getEth1Block(UnsignedLong blockNumber) {
     LOG.trace("Getting eth1 block {}", blockNumber);
     DefaultBlockParameter blockParameter =
         DefaultBlockParameter.valueOf(blockNumber.bigIntegerValue());
-    return getEth1BlockFuture(blockParameter);
+    return getEth1Block(blockParameter);
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1BlockFuture(String blockHash) {
+  public SafeFuture<EthBlock.Block> getEth1Block(String blockHash) {
     LOG.trace("Getting eth1 block {}", blockHash);
     return SafeFuture.of(web3j.ethGetBlockByHash(blockHash, false).sendAsync())
         .thenApply(EthBlock::getBlock);
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(String blockHash) {
-    return getEth1BlockFuture(blockHash)
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(String blockHash) {
+    return getEth1Block(blockHash)
         .exceptionallyCompose(
             (err) -> {
               LOG.warn("Retrying Eth1 request for block: {}", blockHash, err);
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
-                  .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockHash));
+                  .thenCompose(__ -> getGuaranteedEth1Block(blockHash));
             });
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(UnsignedLong blockNumber) {
-    return getEth1BlockFuture(blockNumber)
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(UnsignedLong blockNumber) {
+    return getEth1Block(blockNumber)
         .exceptionallyCompose(
             (err) -> {
               LOG.warn("Retrying Eth1 request for block: {}", blockNumber, err);
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
-                  .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockNumber));
+                  .thenCompose(__ -> getGuaranteedEth1Block(blockNumber));
             });
   }
 
-  private SafeFuture<EthBlock.Block> getEth1BlockFuture(DefaultBlockParameter blockParameter) {
+  private SafeFuture<EthBlock.Block> getEth1Block(DefaultBlockParameter blockParameter) {
     return SafeFuture.of(web3j.ethGetBlockByNumber(blockParameter, false).sendAsync())
         .thenApply(EthBlock::getBlock);
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getLatestEth1BlockFuture() {
+  public SafeFuture<EthBlock.Block> getLatestEth1Block() {
     DefaultBlockParameter blockParameter = DefaultBlockParameterName.LATEST;
-    return getEth1BlockFuture(blockParameter);
+    return getEth1Block(blockParameter);
   }
 
   @Override

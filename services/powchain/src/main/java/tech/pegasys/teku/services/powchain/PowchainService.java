@@ -19,10 +19,13 @@ import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_RE
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.pow.DepositContractAccessor;
-import tech.pegasys.teku.pow.DepositObjectsFactory;
+import tech.pegasys.teku.pow.DepositFetcher;
+import tech.pegasys.teku.pow.DepositProcessingController;
 import tech.pegasys.teku.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.pow.Eth1DepositManager;
+import tech.pegasys.teku.pow.Eth1HeadTracker;
 import tech.pegasys.teku.pow.Eth1Provider;
+import tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder;
 import tech.pegasys.teku.pow.ThrottlingEth1Provider;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
@@ -36,6 +39,7 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 public class PowchainService extends Service {
 
   private final Eth1DepositManager eth1DepositManager;
+  private final Eth1HeadTracker headTracker;
 
   public PowchainService(final ServiceConfig config) {
     TekuConfiguration tekuConfig = config.getConfig();
@@ -60,24 +64,45 @@ public class PowchainService extends Service {
             eth1Provider,
             config.getTimeProvider(),
             calculateEth1DataCacheDurationPriorToCurrentTime());
-    DepositObjectsFactory depositsObjectFactory =
-        new DepositObjectsFactory(
+
+    final DepositFetcher depositFetcher =
+        new DepositFetcher(
             eth1Provider,
             eth1EventsChannel,
             depositContractAccessor.getContract(),
             eth1BlockFetcher,
             asyncRunner);
 
-    eth1DepositManager = depositsObjectFactory.createEth1DepositsManager();
+    headTracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
+    final DepositProcessingController depositProcessingController =
+        new DepositProcessingController(
+            eth1Provider,
+            eth1EventsChannel,
+            asyncRunner,
+            depositFetcher,
+            eth1BlockFetcher,
+            headTracker);
+
+    eth1DepositManager =
+        new Eth1DepositManager(
+            eth1Provider,
+            asyncRunner,
+            eth1EventsChannel,
+            depositProcessingController,
+            new MinimumGenesisTimeBlockFinder(eth1Provider));
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.fromRunnable(eth1DepositManager::start);
+    return SafeFuture.allOfFailFast(
+        SafeFuture.fromRunnable(headTracker::start),
+        SafeFuture.fromRunnable(eth1DepositManager::start));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.fromRunnable(eth1DepositManager::stop);
+    return SafeFuture.allOfFailFast(
+        SafeFuture.fromRunnable(headTracker::stop),
+        SafeFuture.fromRunnable(eth1DepositManager::stop));
   }
 }

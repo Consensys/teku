@@ -172,7 +172,7 @@ public class DepositFetcher {
       Set<BlockNumberAndHash> neededBlockHashes) {
     return neededBlockHashes.stream()
         .map(BlockNumberAndHash::getHash)
-        .map(eth1Provider::getGuaranteedEth1BlockFuture)
+        .map(eth1Provider::getGuaranteedEth1Block)
         .collect(toList());
   }
 
