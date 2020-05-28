@@ -14,6 +14,8 @@
 package tech.pegasys.teku.util.bytes;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -27,5 +29,10 @@ public class KeyFormatterTest {
             "0xab10fc693d038b73d67279127501a05f0072cbb7147c68650ef6ac4e0a413e5cabd1f35c8711e1f7d9d885bbc3b8eddc");
     BLSPublicKey blsPublicKey = BLSPublicKey.fromBytes(keyBytes);
     assertThat(KeyFormatter.shortPublicKey(blsPublicKey)).isEqualTo("ab10fc6");
+  }
+
+  @Test
+  public void shouldRaiseErrorForNullPublicKey() {
+    assertThrows(IllegalArgumentException.class, () -> KeyFormatter.shortPublicKey(null));
   }
 }
