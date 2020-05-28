@@ -100,7 +100,7 @@ public class Eth1BlockFetcher {
     // we may miss some blocks but that's better than potentially getting stuck retrying a block
     LOG.debug("Requesting block {}", blockNumberToRequest);
     return eth1Provider
-        .getEth1BlockFuture(blockNumberToRequest)
+        .getEth1Block(blockNumberToRequest)
         .thenAccept(
             block -> {
               if (isAboveLowerBound(UnsignedLong.valueOf(block.getTimestamp()))) {
@@ -128,7 +128,7 @@ public class Eth1BlockFetcher {
   private void backfillEth1Blocks(final UnsignedLong nextBlockToRequest) {
     // Walk backwards from blockNumber until we reach the start of the voting period
     eth1Provider
-        .getGuaranteedEth1BlockFuture(nextBlockToRequest)
+        .getGuaranteedEth1Block(nextBlockToRequest)
         .finish(
             block -> {
               if (isAboveLowerBound(UnsignedLong.valueOf(block.getTimestamp()))) {

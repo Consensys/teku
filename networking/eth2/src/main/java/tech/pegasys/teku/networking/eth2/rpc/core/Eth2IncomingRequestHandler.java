@@ -65,8 +65,8 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
 
     final ResponseCallback<TResponse> callback = new RpcResponseCallback<>(rpcStream, rpcEncoder);
     try {
-      final TRequest request = requestDecoder.decodeRequest(input);
       Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
+      final TRequest request = requestDecoder.decodeRequest(input);
       handleRequest(peer, request, callback);
     } catch (final RpcException e) {
       requestHandled.set(true);

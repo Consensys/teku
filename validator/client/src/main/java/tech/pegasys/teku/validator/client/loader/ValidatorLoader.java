@@ -30,6 +30,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.util.bytes.KeyFormatter;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
@@ -46,13 +47,25 @@ public class ValidatorLoader {
     validators.putAll(createLocalSignerValidator(config));
     validators.putAll(createExternalSignerValidator(config));
 
-    LOG.debug(
-        "Loaded validators: {}",
-        () ->
-            validators.values().stream()
-                .map(Validator::getPublicKey)
-                .map(BLSPublicKey::toString)
-                .collect(joining(", ")));
+    if (validators.size() > 100) {
+      LOG.info("Loaded {} validators", validators.size());
+      LOG.debug(
+          "validators: {}",
+          () ->
+              validators.values().stream()
+                  .map(Validator::getPublicKey)
+                  .map(KeyFormatter::shortPublicKey)
+                  .collect(joining(", ")));
+    } else {
+      LOG.info(
+          "Loaded {} Validators: {}",
+          validators::size,
+          () ->
+              validators.values().stream()
+                  .map(Validator::getPublicKey)
+                  .map(KeyFormatter::shortPublicKey)
+                  .collect(joining(", ")));
+    }
     return validators;
   }
 
