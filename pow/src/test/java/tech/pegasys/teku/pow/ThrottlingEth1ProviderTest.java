@@ -52,35 +52,34 @@ class ThrottlingEth1ProviderTest {
   @BeforeEach
   void setUp() {
 
-    when(delegateProvider.getEth1BlockFuture(any(UnsignedLong.class)))
-        .thenAnswer(returnBlockFuture);
-    when(delegateProvider.getEth1BlockFuture(any(String.class))).thenAnswer(returnBlockFuture);
-    when(delegateProvider.getLatestEth1BlockFuture()).thenAnswer(returnBlockFuture);
+    when(delegateProvider.getEth1Block(any(UnsignedLong.class))).thenAnswer(returnBlockFuture);
+    when(delegateProvider.getEth1Block(any(String.class))).thenAnswer(returnBlockFuture);
+    when(delegateProvider.getLatestEth1Block()).thenAnswer(returnBlockFuture);
   }
 
   @Test
   void shouldLimitNumberOfInFlightRequests() {
-    provider.getEth1BlockFuture(ONE).reportExceptions();
-    provider.getEth1BlockFuture(TWO).reportExceptions();
-    provider.getEth1BlockFuture(THREE).reportExceptions();
-    provider.getEth1BlockFuture(FOUR).reportExceptions();
+    provider.getEth1Block(ONE).reportExceptions();
+    provider.getEth1Block(TWO).reportExceptions();
+    provider.getEth1Block(THREE).reportExceptions();
+    provider.getEth1Block(FOUR).reportExceptions();
 
-    verify(delegateProvider).getEth1BlockFuture(ONE);
-    verify(delegateProvider).getEth1BlockFuture(TWO);
-    verify(delegateProvider).getEth1BlockFuture(THREE);
+    verify(delegateProvider).getEth1Block(ONE);
+    verify(delegateProvider).getEth1Block(TWO);
+    verify(delegateProvider).getEth1Block(THREE);
     verifyNoMoreInteractions(delegateProvider);
   }
 
   @Test
   void shouldProcessNextRequestWhenInFlightOneCompletes() {
-    final SafeFuture<Block> request1 = provider.getEth1BlockFuture(ONE);
-    final SafeFuture<Block> request2 = provider.getEth1BlockFuture(TWO);
-    final SafeFuture<Block> request3 = provider.getEth1BlockFuture(THREE);
-    final SafeFuture<Block> request4 = provider.getEth1BlockFuture(FOUR);
+    final SafeFuture<Block> request1 = provider.getEth1Block(ONE);
+    final SafeFuture<Block> request2 = provider.getEth1Block(TWO);
+    final SafeFuture<Block> request3 = provider.getEth1Block(THREE);
+    final SafeFuture<Block> request4 = provider.getEth1Block(FOUR);
 
-    verify(delegateProvider).getEth1BlockFuture(ONE);
-    verify(delegateProvider).getEth1BlockFuture(TWO);
-    verify(delegateProvider).getEth1BlockFuture(THREE);
+    verify(delegateProvider).getEth1Block(ONE);
+    verify(delegateProvider).getEth1Block(TWO);
+    verify(delegateProvider).getEth1Block(THREE);
     verifyNoMoreInteractions(delegateProvider);
 
     blockRequests.get(1).complete(block2);
@@ -89,7 +88,7 @@ class ThrottlingEth1ProviderTest {
     assertThat(request3).isNotDone();
     assertThat(request4).isNotDone();
 
-    verify(delegateProvider).getEth1BlockFuture(FOUR);
+    verify(delegateProvider).getEth1Block(FOUR);
 
     blockRequests.get(0).complete(block1);
     assertThat(request1).isCompletedWithValue(block1);
@@ -103,14 +102,14 @@ class ThrottlingEth1ProviderTest {
 
   @Test
   void shouldThrottleTotalRequestsRegardlessOfType() {
-    provider.getEth1BlockFuture(ONE).reportExceptions();
-    provider.getEth1BlockFuture("TWO").reportExceptions();
-    provider.getLatestEth1BlockFuture().reportExceptions();
-    provider.getEth1BlockFuture(FOUR).reportExceptions();
+    provider.getEth1Block(ONE).reportExceptions();
+    provider.getEth1Block("TWO").reportExceptions();
+    provider.getLatestEth1Block().reportExceptions();
+    provider.getEth1Block(FOUR).reportExceptions();
 
-    verify(delegateProvider).getEth1BlockFuture(ONE);
-    verify(delegateProvider).getEth1BlockFuture("TWO");
-    verify(delegateProvider).getLatestEth1BlockFuture();
+    verify(delegateProvider).getEth1Block(ONE);
+    verify(delegateProvider).getEth1Block("TWO");
+    verify(delegateProvider).getLatestEth1Block();
     verifyNoMoreInteractions(delegateProvider);
   }
 }
