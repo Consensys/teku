@@ -15,9 +15,12 @@ package tech.pegasys.teku.storage.server;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.StorageUpdateResult;
@@ -49,4 +52,12 @@ public interface Database extends AutoCloseable {
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
   Optional<BeaconState> getState(Bytes32 root);
+
+  Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
+
+  Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
+
+  void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
+
+  void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 }
