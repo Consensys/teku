@@ -47,7 +47,7 @@ public class ValidatorLoader {
     validators.putAll(createLocalSignerValidator(config));
     validators.putAll(createExternalSignerValidator(config));
 
-    if (validators.size() > 64) {
+    if (validators.size() > 100) {
       LOG.info("Loaded {} validators", validators.size());
       LOG.debug(
           "validators: {}",
