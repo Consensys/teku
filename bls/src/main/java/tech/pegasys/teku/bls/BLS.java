@@ -76,7 +76,7 @@ public class BLS {
    * an exception in this case.
    *
    * @param signatures the list of signatures to be aggregated
-   * @return the aggregated signature or the empty signature if the list is empty
+   * @return the aggregated signature
    */
   public static BLSSignature aggregate(List<BLSSignature> signatures) {
     checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");

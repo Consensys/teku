@@ -174,7 +174,7 @@ final class FP2Immutable {
    *
    * <p>Defined here: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-4.1
    *
-   * @return -1 if x is the lexically larger of x and -1 * x, else returns 1
+   * @return zero or one
    */
   int sgn0() {
     final int sign0 = fp2.getA().parity();

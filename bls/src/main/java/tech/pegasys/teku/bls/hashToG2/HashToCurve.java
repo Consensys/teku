@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes;
  * <p>References:
  *
  * <ul>
- *   <li>WIP PR on the Eth2 specs repository: https://github.com/ethereum/eth2.0-specs/pull/1532
  *   <li>The draft standard: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07
  *   <li>Reference implementations: https://github.com/algorand/bls_sigs_ref/
  *   <li>Interesting background: https://eprint.iacr.org/2019/403.pdf
