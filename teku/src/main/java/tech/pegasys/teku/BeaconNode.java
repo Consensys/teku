@@ -49,6 +49,14 @@ public class BeaconNode {
 
   public BeaconNode(final TekuConfiguration config) {
 
+    LoggingConfigurator.update(
+        new LoggingConfiguration(
+            config.isLogColorEnabled(),
+            config.isLogIncludeEventsEnabled(),
+            config.getLogDestination(),
+            config.getLogFile(),
+            config.getLogFileNamePattern()));
+
     this.metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
@@ -69,15 +77,6 @@ public class BeaconNode {
     }
 
     this.serviceController = new ServiceController(serviceConfig);
-
-    LoggingConfigurator.update(
-        new LoggingConfiguration(
-            config.isLogColorEnabled(),
-            config.isLogIncludeEventsEnabled(),
-            config.getLogDestination(),
-            config.getLogFile(),
-            config.getLogFileNamePattern()));
-
     STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
   }
 
