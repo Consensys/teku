@@ -47,7 +47,7 @@ class TekuConfigurationTest {
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::validateConfig)
         .withMessageContaining(
-                "Invalid configuration. The number of --validators-key-files (0) must equal the number of --validators-key-password-files (1)");
+            "Invalid configuration. The number of --validators-key-files (0) must equal the number of --validators-key-password-files (1)");
   }
 
   private TekuConfiguration buildConfig(
