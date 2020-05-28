@@ -32,23 +32,11 @@ public class DepositOptions {
       arity = "1")
   private String eth1Endpoint = null;
 
-  @Option(
-      names = {"--eth1-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Whether to connect to the ETH1 chain",
-      fallbackValue = "true",
-      arity = "0..1")
-  private boolean eth1Enabled = true;
-
   public Eth1Address getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
   }
 
   public String getEth1Endpoint() {
     return eth1Endpoint;
-  }
-
-  public boolean isEth1Enabled() {
-    return eth1Enabled;
   }
 }
