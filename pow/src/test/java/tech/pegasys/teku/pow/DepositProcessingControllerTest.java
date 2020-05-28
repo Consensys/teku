@@ -170,7 +170,7 @@ public class DepositProcessingControllerTest {
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
     when(block.getHash()).thenReturn(blockHash);
-    when(eth1Provider.getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(blockNumber)))
+    when(eth1Provider.getGuaranteedEth1Block(UnsignedLong.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(block));
   }
 

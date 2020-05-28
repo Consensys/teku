@@ -106,7 +106,7 @@ public class Eth1DepositManager {
         .thenApply(EthBlock.Block::getNumber)
         .thenApply(number -> number.subtract(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
         .thenApply(UnsignedLong::valueOf)
-        .thenCompose(eth1Provider::getGuaranteedEth1BlockFuture)
+        .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
             (err) -> {
               LOG.warn(

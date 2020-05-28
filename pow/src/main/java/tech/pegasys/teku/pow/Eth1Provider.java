@@ -20,13 +20,13 @@ import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface Eth1Provider {
 
-  SafeFuture<Block> getEth1BlockFuture(UnsignedLong blockNumber);
+  SafeFuture<Block> getEth1Block(UnsignedLong blockNumber);
 
-  SafeFuture<Block> getEth1BlockFuture(String blockHash);
+  SafeFuture<Block> getEth1Block(String blockHash);
 
-  SafeFuture<Block> getGuaranteedEth1BlockFuture(String blockHash);
+  SafeFuture<Block> getGuaranteedEth1Block(String blockHash);
 
-  SafeFuture<Block> getGuaranteedEth1BlockFuture(UnsignedLong blockNumber);
+  SafeFuture<Block> getGuaranteedEth1Block(UnsignedLong blockNumber);
 
   SafeFuture<Block> getLatestEth1Block();
 

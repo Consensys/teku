@@ -33,23 +33,23 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<Block> getEth1BlockFuture(final UnsignedLong blockNumber) {
-    return queueRequest(() -> delegate.getEth1BlockFuture(blockNumber));
+  public SafeFuture<Block> getEth1Block(final UnsignedLong blockNumber) {
+    return queueRequest(() -> delegate.getEth1Block(blockNumber));
   }
 
   @Override
-  public SafeFuture<Block> getGuaranteedEth1BlockFuture(final String blockHash) {
-    return queueRequest(() -> delegate.getGuaranteedEth1BlockFuture(blockHash));
+  public SafeFuture<Block> getGuaranteedEth1Block(final String blockHash) {
+    return queueRequest(() -> delegate.getGuaranteedEth1Block(blockHash));
   }
 
   @Override
-  public SafeFuture<Block> getGuaranteedEth1BlockFuture(final UnsignedLong blockNumber) {
-    return queueRequest(() -> delegate.getGuaranteedEth1BlockFuture(blockNumber));
+  public SafeFuture<Block> getGuaranteedEth1Block(final UnsignedLong blockNumber) {
+    return queueRequest(() -> delegate.getGuaranteedEth1Block(blockNumber));
   }
 
   @Override
-  public SafeFuture<Block> getEth1BlockFuture(final String blockHash) {
-    return queueRequest(() -> delegate.getEth1BlockFuture(blockHash));
+  public SafeFuture<Block> getEth1Block(final String blockHash) {
+    return queueRequest(() -> delegate.getEth1Block(blockHash));
   }
 
   @Override

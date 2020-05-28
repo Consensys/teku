@@ -130,7 +130,7 @@ public class DepositProcessingController {
     depositFetcher
         .fetchDepositsInRange(nextBlockNumber, nextBlockNumber)
         .thenCompose(
-            __ -> eth1Provider.getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(nextBlockNumber)))
+            __ -> eth1Provider.getGuaranteedEth1Block(UnsignedLong.valueOf(nextBlockNumber)))
         .thenAccept(
             block -> {
               final BigInteger blockNumber = block.getNumber();
