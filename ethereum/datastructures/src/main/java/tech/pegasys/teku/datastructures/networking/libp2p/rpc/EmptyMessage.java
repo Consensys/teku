@@ -19,8 +19,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public enum EmptyMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
-  EMPTY_MESSAGE;
+public class EmptyMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+  public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
   @Override
   public int getSSZFieldCount() {
