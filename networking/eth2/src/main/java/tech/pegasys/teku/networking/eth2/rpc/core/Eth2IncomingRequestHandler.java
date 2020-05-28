@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import static tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage.EMPTY_MESSAGE;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.io.InputStream;
 import java.time.Duration;
@@ -65,13 +67,22 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
 
     final ResponseCallback<TResponse> callback = new RpcResponseCallback<>(rpcStream, rpcEncoder);
     try {
-      final TRequest request = requestDecoder.decodeRequest(input);
       Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
+      if (method.isEmptyRequest()) {
+        handleRequest(peer, getEmptyMessage(), callback);
+        return;
+      }
+      final TRequest request = requestDecoder.decodeRequest(input);
       handleRequest(peer, request, callback);
     } catch (final RpcException e) {
       requestHandled.set(true);
       callback.completeWithErrorResponse(e);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private TRequest getEmptyMessage() {
+    return (TRequest) EMPTY_MESSAGE;
   }
 
   private void handleRequest(

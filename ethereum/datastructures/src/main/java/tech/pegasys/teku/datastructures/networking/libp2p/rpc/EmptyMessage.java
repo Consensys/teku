@@ -19,7 +19,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public class EmptyMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+public enum EmptyMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+  EMPTY_MESSAGE;
 
   @Override
   public int getSSZFieldCount() {
@@ -29,22 +30,6 @@ public class EmptyMessage implements RpcRequest, SimpleOffsetSerializable, SSZCo
   @Override
   public List<Bytes> get_fixed_parts() {
     return Collections.emptyList();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    return 0;
   }
 
   @Override

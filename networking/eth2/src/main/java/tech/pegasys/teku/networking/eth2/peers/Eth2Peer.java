@@ -176,7 +176,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<MetadataMessage> requestMetadata() {
-    return requestSingleItem(rpcMethods.getMetadata(), new EmptyMessage());
+    return requestSingleItem(rpcMethods.getMetadata(), EmptyMessage.EMPTY_MESSAGE);
   }
 
   public SafeFuture<UnsignedLong> sendPing() {
