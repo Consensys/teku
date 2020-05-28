@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +24,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 
 /**
@@ -63,6 +66,11 @@ public interface RocksDbDao extends AutoCloseable {
   Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates();
 
   Map<UnsignedLong, VoteTracker> getVotes();
+
+  @MustBeClosed
+  Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
+
+  Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
   Updater updater();
 
@@ -106,6 +114,10 @@ public interface RocksDbDao extends AutoCloseable {
      * @return A list of pruned block roots
      */
     Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot);
+
+    void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
+
+    void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
     void commit();
 

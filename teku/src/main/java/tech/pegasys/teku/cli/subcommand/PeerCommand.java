@@ -28,7 +28,12 @@ import java.nio.charset.Charset;
 import org.apache.tuweni.bytes.Bytes;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParameterException;
+import picocli.CommandLine.ParentCommand;
+import picocli.CommandLine.Spec;
+import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
@@ -45,6 +50,14 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class PeerCommand {
+
+  @SuppressWarnings("unused")
+  @ParentCommand
+  private BeaconNodeCommand parentCommand; // Picocli injects reference to parent command
+
+  @SuppressWarnings("unused")
+  @Spec
+  private CommandSpec spec;
 
   @Command(
       name = "generate",
@@ -68,14 +81,22 @@ public class PeerCommand {
           int number)
       throws IOException {
     try {
-      File f = new File(params.outputFile);
+      validateParamsAndGenerate(params.outputFile, number);
+    } catch (final Exception ex) {
+      throw new ParameterException(spec.commandLine(), ex.getMessage());
+    }
+  }
+
+  void validateParamsAndGenerate(String outputFile, int number) throws IOException {
+    try {
+      File f = new File(outputFile);
       if (f.exists()) {
         throw new InvalidConfigurationException(
             String.format(
-                "Not overwriting existing file %s \nDelete file or use --outputFile to point to a file that does not currently exist.",
-                params.outputFile));
+                "Not overwriting existing file %s \nDelete file or use --output-file to point to a file that does not currently exist.",
+                outputFile));
       }
-      FileWriter fileWriter = new FileWriter(params.outputFile, Charset.defaultCharset());
+      FileWriter fileWriter = new FileWriter(outputFile, Charset.defaultCharset());
       PrintWriter printWriter = new PrintWriter(fileWriter);
       printWriter.println("Private Key(Hex)\tPublic Key(Hex)\tPeerId(Base58)");
       for (int i = 0; i < number; i++) {
@@ -90,16 +111,16 @@ public class PeerCommand {
                 + peerId.toBase58());
       }
       printWriter.close();
-    } catch (FileNotFoundException ex) {
+    } catch (final FileNotFoundException ex) {
       throw new InvalidConfigurationException(
-          "use --outputFile to point to a file in an existing directory " + ex.getMessage());
+          "use --output-file to point to a file in an existing directory " + ex.getMessage());
     }
   }
 
   public static class PeerGenerationParams {
 
     @Option(
-        names = {"-o", "--outputFile"},
+        names = {"-o", "--output-file"},
         paramLabel = "<FILENAME>",
         description = "Path/filename of the output file")
     private String outputFile = "./config/peer-ids.dat";

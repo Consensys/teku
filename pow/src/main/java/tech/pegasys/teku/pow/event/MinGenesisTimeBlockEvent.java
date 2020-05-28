@@ -14,6 +14,7 @@
 package tech.pegasys.teku.pow.event;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class MinGenesisTimeBlockEvent {
@@ -51,5 +52,20 @@ public class MinGenesisTimeBlockEvent {
         + ", blockHash="
         + blockHash
         + '}';
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final MinGenesisTimeBlockEvent that = (MinGenesisTimeBlockEvent) o;
+    return Objects.equals(timestamp, that.timestamp)
+        && Objects.equals(blockNumber, that.blockNumber)
+        && Objects.equals(blockHash, that.blockHash);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(timestamp, blockNumber, blockHash);
   }
 }

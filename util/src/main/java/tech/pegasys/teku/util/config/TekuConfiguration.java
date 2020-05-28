@@ -100,6 +100,7 @@ public class TekuConfiguration {
   private final boolean restApiDocsEnabled;
   private final boolean restApiEnabled;
   private final String restApiInterface;
+  private final List<String> restApiHostWhitelist;
 
   public static TekuConfigurationBuilder builder() {
     return new TekuConfigurationBuilder();
@@ -156,7 +157,8 @@ public class TekuConfiguration {
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
-      final String restApiInterface) {
+      final String restApiInterface,
+      final List<String> restApiHostWhitelist) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -208,6 +210,7 @@ public class TekuConfiguration {
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
+    this.restApiHostWhitelist = restApiHostWhitelist;
   }
 
   public String getConstants() {
@@ -429,6 +432,10 @@ public class TekuConfiguration {
 
   public String getRestApiInterface() {
     return restApiInterface;
+  }
+
+  public List<String> getRestApiHostWhitelist() {
+    return restApiHostWhitelist;
   }
 
   public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
