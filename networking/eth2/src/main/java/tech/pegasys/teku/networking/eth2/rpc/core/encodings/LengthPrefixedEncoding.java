@@ -50,19 +50,15 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <T> T decodePayload(final InputStream inputStream, final Class<T> payloadType)
       throws RpcException {
     if (payloadType.equals(EmptyMessage.class)) {
-      return getEmptyMessage();
+      return (T) EMPTY_MESSAGE;
     }
     final LengthPrefixedPayloadDecoder<T> payloadDecoder =
         new LengthPrefixedPayloadDecoder<>(payloadEncoders.getEncoder(payloadType), compressor);
     return payloadDecoder.decodePayload(inputStream);
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T> T getEmptyMessage() {
-    return (T) EMPTY_MESSAGE;
   }
 
   private Bytes encodeMessageWithLength(final Bytes payload) {
