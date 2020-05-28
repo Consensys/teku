@@ -60,6 +60,7 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
           gossipedAttestationConsumer.accept(attestation);
           return false;
         case VALID:
+          attestation.markGossiped();
           gossipedAttestationConsumer.accept(attestation);
           return true;
         default:
