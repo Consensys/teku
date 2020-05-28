@@ -311,13 +311,12 @@ public class ForkChoiceUtil {
               }
 
               IndexedAttestation indexedAttestation = maybeIndexedAttestation.get();
+              validateableAttestation.setIndexedAttestation(indexedAttestation);
               AttestationProcessingResult result =
                   checkIfAttestationShouldBeSavedForFuture(store, attestation);
 
               if (result.isSuccessful()) {
                 forkChoiceStrategy.onAttestation(store, indexedAttestation);
-              } else {
-                validateableAttestation.setIndexedAttestation(indexedAttestation);
               }
 
               return result;
