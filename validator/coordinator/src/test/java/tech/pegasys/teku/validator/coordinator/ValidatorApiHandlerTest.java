@@ -338,8 +338,7 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationPool).add(ValidateableAttestation.fromSingle(attestation));
-    verify(eventBus).post(attestation);
+    verify(attestationManager).onAttestation(ValidateableAttestation.fromSingle(attestation));
   }
 
   @Test
@@ -356,8 +355,7 @@ class ValidatorApiHandlerTest {
         dataStructureUtil.randomSignedAggregateAndProof();
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
-    verify(attestationPool).add(ValidateableAttestation.fromAggregate(aggregateAndProof));
-    verify(eventBus).post(aggregateAndProof);
+    verify(attestationManager).onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof));
   }
 
   private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(

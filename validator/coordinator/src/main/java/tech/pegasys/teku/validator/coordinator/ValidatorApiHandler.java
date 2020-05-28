@@ -222,13 +222,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
     attestationManager.onAttestation(ValidateableAttestation.fromSingle(attestation));
-    eventBus.post(attestation);
   }
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     attestationManager.onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof));
-    eventBus.post(aggregateAndProof);
   }
 
   @Override
