@@ -112,7 +112,8 @@ public class Eth1DepositManager {
               LOG.warn(
                   "Eth1DepositManager failed to get the head of Eth1: {}. Retrying in {} seconds.",
                   err.getMessage(),
-                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT);
+                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
+                  err);
 
               return asyncRunner
                   .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
