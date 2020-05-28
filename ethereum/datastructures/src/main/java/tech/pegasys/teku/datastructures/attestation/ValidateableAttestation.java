@@ -26,27 +26,25 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 public class ValidateableAttestation {
   private final Attestation attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
-  private final AtomicBoolean gossiped;
+  private final AtomicBoolean gossiped = new AtomicBoolean(false);
 
   private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> hashTreeRoot = Optional.empty();
 
   public static ValidateableAttestation fromSingle(Attestation attestation) {
-    return new ValidateableAttestation(attestation, Optional.empty(), false);
+    return new ValidateableAttestation(attestation, Optional.empty());
   }
 
   public static ValidateableAttestation fromAggregate(SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
-        attestation.getMessage().getAggregate(), Optional.of(attestation), false);
+        attestation.getMessage().getAggregate(), Optional.of(attestation));
   }
 
   private ValidateableAttestation(
       Attestation attestation,
-      Optional<SignedAggregateAndProof> aggregateAndProof,
-      boolean gossiped) {
+      Optional<SignedAggregateAndProof> aggregateAndProof) {
     this.maybeAggregate = aggregateAndProof;
     this.attestation = attestation;
-    this.gossiped = new AtomicBoolean(gossiped);
   }
 
   public IndexedAttestation getIndexedAttestation() {
