@@ -176,7 +176,7 @@ public class BeaconChainMethods {
       final PeerLookup peerLookup,
       final RpcEncoding rpcEncoding) {
     MetadataMessageHandler messageHandler = new MetadataMessageHandler(metadataMessagesFactory);
-    return new Eth2RpcMethod<EmptyMessage, MetadataMessage>(
+    return new Eth2RpcMethod<>(
         asyncRunner,
         GET_METADATA,
         rpcEncoding,

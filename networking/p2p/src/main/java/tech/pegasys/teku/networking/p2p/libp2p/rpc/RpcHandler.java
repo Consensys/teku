@@ -76,7 +76,8 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         .thenAccept(
             __ ->
                 streamFuture.completeExceptionally(
-                    new StreamTimeoutException("Timed out waiting to initialize stream")))
+                    new StreamTimeoutException(
+                        "Timed out waiting to initialize stream for method " + rpcMethod.getId())))
         .reportExceptions();
 
     // Try to initiate stream
