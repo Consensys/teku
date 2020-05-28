@@ -79,7 +79,7 @@ class Eth1BlockFetcherTest {
     verifyBlockSent(blocks.get(98));
     verifyNoMoreBlocksSent();
     // Requested block 97 but never sent it because it was outside the cache period
-    verify(eth1Provider).getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(97));
+    verify(eth1Provider).getGuaranteedEth1Block(UnsignedLong.valueOf(97));
     // And never requested block 96 because it must be outside the cache period.
     verifyBlockNotRequested(96);
   }
@@ -94,11 +94,11 @@ class Eth1BlockFetcherTest {
             timeProvider.getTimeInSeconds().minus(CACHE_DURATION).minus(ONE)));
 
     blockFetcher.onInSync(blockNumber);
-    verify(eth1Provider).getGuaranteedEth1BlockFuture(blockNumber);
+    verify(eth1Provider).getGuaranteedEth1Block(blockNumber);
 
     blockFetcher.onInSync(blockNumber);
     // Still only requested this block the one time.
-    verify(eth1Provider).getGuaranteedEth1BlockFuture(blockNumber);
+    verify(eth1Provider).getGuaranteedEth1Block(blockNumber);
     verifyNoMoreInteractions(eth1Provider);
   }
 
@@ -112,8 +112,8 @@ class Eth1BlockFetcherTest {
     blockFetcher.onInSync(ONE);
     verifyBlockSent(blocks.get(1));
     verifyBlockSent(blocks.get(0));
-    verify(eth1Provider).getGuaranteedEth1BlockFuture(ONE);
-    verify(eth1Provider).getGuaranteedEth1BlockFuture(ZERO);
+    verify(eth1Provider).getGuaranteedEth1Block(ONE);
+    verify(eth1Provider).getGuaranteedEth1Block(ZERO);
     verifyNoMoreInteractions(eth1Provider);
   }
 
@@ -140,7 +140,7 @@ class Eth1BlockFetcherTest {
   void shouldNotFetchAnyBlocksIfStartIsAfterEnd() {
     withBlocks(block(0, BEFORE_CACHE_PERIOD));
     blockFetcher.onInSync(UnsignedLong.valueOf(0));
-    verify(eth1Provider).getGuaranteedEth1BlockFuture(ZERO);
+    verify(eth1Provider).getGuaranteedEth1Block(ZERO);
 
     blockFetcher.fetch(BigInteger.valueOf(7), BigInteger.valueOf(5));
 
@@ -170,11 +170,11 @@ class Eth1BlockFetcherTest {
     withBlocks(block(0, ZERO), block(3, ONE), block(4, TWO), block(5, BEFORE_CACHE_PERIOD));
 
     blockFetcher.onInSync(ZERO);
-    verify(eth1Provider).getGuaranteedEth1BlockFuture(ZERO);
+    verify(eth1Provider).getGuaranteedEth1Block(ZERO);
 
     // Download the latest block first and since it's before the cache period, skip the rest
     blockFetcher.fetch(BigInteger.valueOf(3), BigInteger.valueOf(5));
-    verify(eth1Provider).getEth1BlockFuture(UnsignedLong.valueOf(5));
+    verify(eth1Provider).getEth1Block(UnsignedLong.valueOf(5));
     verifyNoMoreInteractions(eth1Provider);
     verifyNoMoreBlocksSent();
   }
@@ -186,16 +186,16 @@ class Eth1BlockFetcherTest {
     final Block block5 = block(5, BEFORE_CACHE_PERIOD);
     final Block block6 = block(6, IN_CACHE_PERIOD_1);
 
-    when(eth1Provider.getGuaranteedEth1BlockFuture(ZERO)).thenReturn(new SafeFuture<>());
-    when(eth1Provider.getEth1BlockFuture(UnsignedLong.valueOf(5))).thenReturn(block5Future);
-    when(eth1Provider.getEth1BlockFuture(UnsignedLong.valueOf(6))).thenReturn(block6Future);
+    when(eth1Provider.getGuaranteedEth1Block(ZERO)).thenReturn(new SafeFuture<>());
+    when(eth1Provider.getEth1Block(UnsignedLong.valueOf(5))).thenReturn(block5Future);
+    when(eth1Provider.getEth1Block(UnsignedLong.valueOf(6))).thenReturn(block6Future);
 
     blockFetcher.onInSync(ZERO);
-    verify(eth1Provider).getGuaranteedEth1BlockFuture(ZERO);
+    verify(eth1Provider).getGuaranteedEth1Block(ZERO);
 
     // Fetch blocks 3-5 which will all be before cache period.
     blockFetcher.fetch(BigInteger.valueOf(3), BigInteger.valueOf(5));
-    verify(eth1Provider).getEth1BlockFuture(UnsignedLong.valueOf(5));
+    verify(eth1Provider).getEth1Block(UnsignedLong.valueOf(5));
 
     // Before that completes, also ask to fetch block 6 which is in the cache period.
     blockFetcher.fetch(BigInteger.valueOf(6), BigInteger.valueOf(6));
@@ -203,7 +203,7 @@ class Eth1BlockFetcherTest {
 
     // When block 5 complete, it should request block 6
     block5Future.complete(block5);
-    verify(eth1Provider).getEth1BlockFuture(UnsignedLong.valueOf(6));
+    verify(eth1Provider).getEth1Block(UnsignedLong.valueOf(6));
     verifyNoMoreInteractions(eth1Provider);
 
     // But we shouldn't go back to get blocks 3 & 4 because we know they're too early
@@ -214,8 +214,8 @@ class Eth1BlockFetcherTest {
   }
 
   private void verifyBlockNotRequested(final int blockNumber) {
-    verify(eth1Provider, never()).getEth1BlockFuture(UnsignedLong.valueOf(blockNumber));
-    verify(eth1Provider, never()).getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(blockNumber));
+    verify(eth1Provider, never()).getEth1Block(UnsignedLong.valueOf(blockNumber));
+    verify(eth1Provider, never()).getGuaranteedEth1Block(UnsignedLong.valueOf(blockNumber));
   }
 
   private void verifyNoMoreBlocksSent() {
@@ -231,9 +231,8 @@ class Eth1BlockFetcherTest {
   private Map<Integer, Block> withBlocks(final Block... blocks) {
     for (Block block : blocks) {
       final UnsignedLong blockNumber = UnsignedLong.valueOf(block.getNumber());
-      when(eth1Provider.getEth1BlockFuture(blockNumber))
-          .thenReturn(SafeFuture.completedFuture(block));
-      when(eth1Provider.getGuaranteedEth1BlockFuture(blockNumber))
+      when(eth1Provider.getEth1Block(blockNumber)).thenReturn(SafeFuture.completedFuture(block));
+      when(eth1Provider.getGuaranteedEth1Block(blockNumber))
           .thenReturn(SafeFuture.completedFuture(block));
     }
     return Arrays.stream(blocks)
