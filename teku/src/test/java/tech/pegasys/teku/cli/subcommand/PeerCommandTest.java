@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.cli.subcommand.PeerCommand.PeerGenerationParams;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class PeerCommandTest {
@@ -27,11 +26,11 @@ public class PeerCommandTest {
   @Test
   public void peerGenerate_shouldDisplayErrorIfFileNotFound() {
     PeerCommand peerCommand = new PeerCommand();
-    PeerGenerationParams params = new PeerGenerationParams("directory-does-not-exist/config.dat");
+    final String fileWhichDoesNotExist = "directory-does-not-exist/config.dat";
 
     assertThatThrownBy(
             () -> {
-              peerCommand.generate(params, 3);
+              peerCommand.validateParamsAndGenerate(fileWhichDoesNotExist, 3);
             })
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("existing directory");
@@ -42,12 +41,11 @@ public class PeerCommandTest {
     final Path peerIdsFile = Files.createTempFile("config", ".dat");
     peerIdsFile.toFile().deleteOnExit();
     PeerCommand peerCommand = new PeerCommand();
-    PeerGenerationParams params = new PeerGenerationParams(peerIdsFile.toAbsolutePath().toString());
 
     assertThatThrownBy(
             () -> {
-              peerCommand.generate(params, 3);
-              peerCommand.generate(params, 3);
+              peerCommand.validateParamsAndGenerate(peerIdsFile.toAbsolutePath().toString(), 3);
+              peerCommand.validateParamsAndGenerate(peerIdsFile.toAbsolutePath().toString(), 3);
             })
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Not overwriting existing file");
