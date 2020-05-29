@@ -17,10 +17,6 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
@@ -83,98 +79,6 @@ class AttestationDataTest {
             target);
 
     assertThat(data.getEarliestSlotForForkChoice()).isEqualTo(target.getEpochStartSlot());
-  }
-
-  @Test
-  public void shouldNotBeAbleToIncludeInBlockWithinMinAttestationInclusionDelay() {
-    final UnsignedLong attestationSlot = UnsignedLong.valueOf(60);
-    final AttestationData data =
-        new AttestationData(
-            attestationSlot,
-            UnsignedLong.ZERO,
-            Bytes32.ZERO,
-            new Checkpoint(ONE, Bytes32.ZERO),
-            new Checkpoint(ONE, Bytes32.ZERO));
-
-    assertThat(data.canIncludeInBlockAtSlot(attestationSlot)).isFalse();
-    assertThat(data.canIncludeInBlockAtSlot(attestationSlot.plus(ONE))).isFalse();
-    assertThat(data.canIncludeInBlockAtSlot(attestationSlot.plus(UnsignedLong.valueOf(2))))
-        .isTrue();
-  }
-
-  @Test
-  public void shouldNotBeAbleToIncludeInBlockBeforeFirstSlotOfTargetEpoch() {
-    final Checkpoint target = new Checkpoint(UnsignedLong.valueOf(10), Bytes32.ZERO);
-    final AttestationData data =
-        new AttestationData(
-            target.getEpochStartSlot().minus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)),
-            UnsignedLong.ZERO,
-            Bytes32.ZERO,
-            new Checkpoint(ONE, Bytes32.ZERO),
-            target);
-
-    assertThat(data.canIncludeInBlockAtSlot(target.getEpochStartSlot().minus(ONE))).isFalse();
-    assertThat(data.canIncludeInBlockAtSlot(target.getEpochStartSlot())).isTrue();
-  }
-
-  @Test
-  public void shouldNotBeAbleToIncludeInBlockTooFarAfterAttestationSlot() {
-    final AttestationData data =
-        new AttestationData(
-            UnsignedLong.valueOf(60),
-            UnsignedLong.ZERO,
-            Bytes32.ZERO,
-            new Checkpoint(ONE, Bytes32.ZERO),
-            new Checkpoint(ONE, Bytes32.ZERO));
-
-    final UnsignedLong lastValidSlot = data.getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-    assertThat(data.canIncludeInBlockAtSlot(lastValidSlot)).isTrue();
-    assertThat(data.canIncludeInBlockAtSlot(lastValidSlot.plus(ONE))).isFalse();
-  }
-
-  @Test
-  public void shouldNotBeAbleToIncludeInBlockMoreThanOneEpochLater() {
-    final UnsignedLong attestationEpoch = UnsignedLong.valueOf(6);
-    final UnsignedLong nextEpoch = attestationEpoch.plus(ONE);
-    final UnsignedLong tooLateEpoch = nextEpoch.plus(ONE);
-    final AttestationData data =
-        new AttestationData(
-            compute_start_slot_at_epoch(attestationEpoch).plus(UnsignedLong.valueOf(3)),
-            UnsignedLong.ZERO,
-            Bytes32.ZERO,
-            new Checkpoint(ONE, Bytes32.ZERO),
-            new Checkpoint(ONE, Bytes32.ZERO));
-
-    // In the attestation epoch, but has to be after the attestation slot
-    final UnsignedLong slotInCurrentEpoch =
-        data.getSlot().plus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY));
-    assertThat(compute_epoch_at_slot(slotInCurrentEpoch)).isEqualTo(attestationEpoch);
-    assertThat(data.canIncludeInBlockAtSlot(slotInCurrentEpoch)).isTrue();
-
-    // Next epoch is ok
-    assertThat(data.canIncludeInBlockAtSlot(compute_start_slot_at_epoch(nextEpoch))).isTrue();
-
-    // Very last slot of next epoch is more than SLOTS_PER_EPOCH later so is not ok
-    assertThat(data.canIncludeInBlockAtSlot(compute_start_slot_at_epoch(tooLateEpoch).minus(ONE)))
-        .isFalse();
-
-    // Epoch after that is not ok.
-    assertThat(data.canIncludeInBlockAtSlot(compute_start_slot_at_epoch(tooLateEpoch))).isFalse();
-  }
-
-  @Test
-  public void shouldNotBeAbleToIncludeInBlockBeforeAttestationSlot() {
-    final UnsignedLong attestationSlot = UnsignedLong.valueOf(13);
-    final UnsignedLong blockSlot = UnsignedLong.valueOf(14);
-    final AttestationData data =
-        new AttestationData(
-            attestationSlot,
-            UnsignedLong.ZERO,
-            Bytes32.ZERO,
-            new Checkpoint(ONE, Bytes32.ZERO),
-            new Checkpoint(ONE, Bytes32.ZERO));
-
-    assertThat(data.canIncludeInBlockAtSlot(blockSlot)).isFalse();
   }
 
   @Test
