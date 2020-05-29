@@ -32,22 +32,6 @@ public class BlockAttestationDataValidator {
 
   public Optional<InvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
-
-    final Supplier<Optional<InvalidReason>> justifiedCheckpointCheck;
-    if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
-      justifiedCheckpointCheck =
-          () ->
-              check(
-                  data.getSource().equals(state.getCurrent_justified_checkpoint()),
-                  InvalidReason.INCORRECT_CURRENT_JUSTIFIED_CHECKPOINT);
-    } else {
-      justifiedCheckpointCheck =
-          () ->
-              check(
-                  data.getSource().equals(state.getPrevious_justified_checkpoint()),
-                  InvalidReason.INCORRECT_PREVIOUS_JUSTIFIED_CHECKPOINT);
-    }
-
     return firstOf(
         () ->
             check(
@@ -75,8 +59,18 @@ public class BlockAttestationDataValidator {
                         .getSlot()
                         .compareTo(data.getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
                     <= 0,
-                InvalidReason.SUBMITTED_TOO_FAR_IN_HISTORY),
-        justifiedCheckpointCheck);
+                InvalidReason.SUBMITTED_TOO_LATE),
+        () -> {
+          if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
+            return check(
+                data.getSource().equals(state.getCurrent_justified_checkpoint()),
+                InvalidReason.INCORRECT_CURRENT_JUSTIFIED_CHECKPOINT);
+          } else {
+            return check(
+                data.getSource().equals(state.getPrevious_justified_checkpoint()),
+                InvalidReason.INCORRECT_PREVIOUS_JUSTIFIED_CHECKPOINT);
+          }
+        });
   }
 
   @SafeVarargs
@@ -98,7 +92,7 @@ public class BlockAttestationDataValidator {
     NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH("Attestation not from current or previous epoch"),
     SLOT_NOT_IN_EPOCH("Attestation slot not in specified epoch"),
     SUBMITTED_TOO_QUICKLY("Attestation submitted too quickly"),
-    SUBMITTED_TOO_FAR_IN_HISTORY("Attestation submitted too far in history"),
+    SUBMITTED_TOO_LATE("Attestation submitted too late"),
     INCORRECT_CURRENT_JUSTIFIED_CHECKPOINT(
         "Attestation source does not match current justified checkpoint"),
     INCORRECT_PREVIOUS_JUSTIFIED_CHECKPOINT(
