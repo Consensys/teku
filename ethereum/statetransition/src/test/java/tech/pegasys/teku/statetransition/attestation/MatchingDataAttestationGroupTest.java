@@ -48,7 +48,7 @@ class MatchingDataAttestationGroupTest {
 
   @Test
   public void isEmpty_shouldBeEmptyAfterAttestationRemoved() {
-    final ValidateableAttestation attestation = addAttestation(1);
+    final Attestation attestation = addAttestation(1).getAttestation();
     group.remove(attestation);
 
     assertThat(group.isEmpty()).isTrue();
@@ -56,11 +56,10 @@ class MatchingDataAttestationGroupTest {
 
   @Test
   public void remove_shouldRemoveAttestationEvenWhenInstanceIsDifferent() {
-    final ValidateableAttestation attestation = addAttestation(1);
-    final ValidateableAttestation copy =
-        ValidateableAttestation.fromSingle(
-            SimpleOffsetSerializer.deserialize(
-                SimpleOffsetSerializer.serialize(attestation.getAttestation()), Attestation.class));
+    final Attestation attestation = addAttestation(1).getAttestation();
+    final Attestation copy =
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(attestation), Attestation.class);
     group.remove(copy);
 
     assertThat(group.stream()).isEmpty();
@@ -74,8 +73,7 @@ class MatchingDataAttestationGroupTest {
     final ValidateableAttestation attestation3 = addAttestation(3);
 
     group.remove(
-        ValidateableAttestation.fromSingle(
-            aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation())));
+        aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
 
     assertThat(group.stream()).containsExactly(attestation3);
   }
