@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.storage.api;
 
-import tech.pegasys.teku.storage.server.ReplayDepositsResult;
+import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface Eth1DepositStorageChannel {
-
   SafeFuture<ReplayDepositsResult> replayDepositEvents();
 }

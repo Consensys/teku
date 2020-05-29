@@ -1,0 +1,4 @@
+dependencies {
+    implementation project(':ethereum:datastructures')
+    implementation project(':util')
+}

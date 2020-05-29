@@ -5,6 +5,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':logging')
   implementation project(':pow')
+  implementation project(':storage:api')
   implementation project(':ssz')
   implementation project(':util')
 
@@ -22,6 +23,7 @@ dependencies {
 
   testFixturesApi project(':util')
   testFixturesApi project(':storage')
+  testFixturesApi project(':storage:api')
   testFixturesApi project(':ethereum:datastructures')
 
   testFixturesImplementation testFixtures(project(':ethereum:core'))
