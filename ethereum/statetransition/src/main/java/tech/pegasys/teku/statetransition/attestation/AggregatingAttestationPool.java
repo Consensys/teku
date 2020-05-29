@@ -27,9 +27,11 @@ import java.util.Set;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.BlockAttestationDataValidator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -45,6 +47,11 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
   private final NavigableMap<UnsignedLong, Set<Bytes>> dataHashBySlot = new TreeMap<>();
+  private final BlockAttestationDataValidator attestationDataValidator;
+
+  public AggregatingAttestationPool(final BlockAttestationDataValidator attestationDataValidator) {
+    this.attestationDataValidator = attestationDataValidator;
+  }
 
   public synchronized void add(final Attestation attestation) {
     final Bytes32 dataHash = attestation.getData().hash_tree_root();
@@ -94,14 +101,22 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     }
   }
 
-  public synchronized SSZList<Attestation> getAttestationsForBlock(final UnsignedLong slot) {
+  public synchronized SSZList<Attestation> getAttestationsForBlock(
+      final BeaconState stateAtBlockSlot) {
     final SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
     attestationGroupByDataHash.values().stream()
-        .filter(group -> group.getAttestationData().canIncludeInBlockAtSlot(slot))
+        .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestations.getMaxSize())
         .forEach(attestations::add);
     return attestations;
+  }
+
+  private boolean isValid(
+      final BeaconState stateAtBlockSlot, final AttestationData attestationData) {
+    return attestationDataValidator
+        .validateAttestation(stateAtBlockSlot, attestationData)
+        .isEmpty();
   }
 
   public synchronized Optional<Attestation> createAggregateFor(
