@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -55,7 +56,9 @@ public class AttestationValidator {
     this.recentChainData = recentChainData;
   }
 
-  public ValidationResult validate(final Attestation attestation, final int receivedOnSubnetId) {
+  public ValidationResult validate(
+      final ValidateableAttestation validateableAttestation, final int receivedOnSubnetId) {
+    Attestation attestation = validateableAttestation.getAttestation();
     ValidationResult validationResult = singleAttestationChecks(attestation, receivedOnSubnetId);
     if (validationResult != VALID) {
       return validationResult;

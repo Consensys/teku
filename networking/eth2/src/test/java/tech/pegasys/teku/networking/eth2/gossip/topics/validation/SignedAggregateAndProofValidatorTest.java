@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AggregateGenerator;
 import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -118,7 +119,8 @@ class SignedAggregateAndProofValidatorTest {
     final BeaconBlockAndState chainHead = recentChainData.getBestBlockAndState().orElseThrow();
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(chainHead);
     whenAttestationIsValid(aggregate);
-    assertThat(validator.validate(aggregate)).isEqualTo(VALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
+        .isEqualTo(VALID);
   }
 
   @Test
@@ -129,7 +131,8 @@ class SignedAggregateAndProofValidatorTest {
             aggregate.getMessage().getAggregate()))
         .thenReturn(INVALID);
 
-    assertThat(validator.validate(aggregate)).isEqualTo(INVALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
+        .isEqualTo(INVALID);
   }
 
   @Test
@@ -140,7 +143,8 @@ class SignedAggregateAndProofValidatorTest {
             aggregate.getMessage().getAggregate()))
         .thenReturn(SAVED_FOR_FUTURE);
 
-    assertThat(validator.validate(aggregate)).isEqualTo(SAVED_FOR_FUTURE);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
+        .isEqualTo(SAVED_FOR_FUTURE);
   }
 
   @Test
@@ -151,7 +155,8 @@ class SignedAggregateAndProofValidatorTest {
             aggregate.getMessage().getAggregate()))
         .thenReturn(SAVED_FOR_FUTURE);
 
-    assertThat(validator.validate(aggregate)).isEqualTo(SAVED_FOR_FUTURE);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
+        .isEqualTo(SAVED_FOR_FUTURE);
   }
 
   @Test
@@ -167,7 +172,8 @@ class SignedAggregateAndProofValidatorTest {
             aggregate.getMessage().getAggregate()))
         .thenReturn(SAVED_FOR_FUTURE);
 
-    assertThat(validator.validate(aggregate)).isEqualTo(INVALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
+        .isEqualTo(INVALID);
   }
 
   @Test
@@ -195,8 +201,10 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(aggregateAndProof1.getMessage().getAggregate()).isNotEqualTo(aggregate2);
     assertThat(aggregateAndProof1).isNotEqualTo(aggregateAndProof2);
 
-    assertThat(validator.validate(aggregateAndProof1)).isEqualTo(VALID);
-    assertThat(validator.validate(aggregateAndProof2)).isEqualTo(INVALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregateAndProof1)))
+        .isEqualTo(VALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregateAndProof2)))
+        .isEqualTo(INVALID);
   }
 
   @Test
@@ -220,8 +228,10 @@ class SignedAggregateAndProofValidatorTest {
     whenAttestationIsValid(aggregateAndProof1);
     whenAttestationIsValid(aggregateAndProof2);
 
-    assertThat(validator.validate(aggregateAndProof1)).isEqualTo(VALID);
-    assertThat(validator.validate(aggregateAndProof2)).isEqualTo(VALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregateAndProof1)))
+        .isEqualTo(VALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregateAndProof2)))
+        .isEqualTo(VALID);
   }
 
   @Test
@@ -252,8 +262,10 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(aggregateAndProof1.getMessage().getIndex())
         .isEqualTo(aggregateAndProof2.getMessage().getIndex());
 
-    assertThat(validator.validate(aggregateAndProof1)).isEqualTo(VALID);
-    assertThat(validator.validate(aggregateAndProof2)).isEqualTo(VALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregateAndProof1)))
+        .isEqualTo(VALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregateAndProof2)))
+        .isEqualTo(VALID);
   }
 
   @Test
@@ -277,7 +289,8 @@ class SignedAggregateAndProofValidatorTest {
     assertThat(isAggregator(aggregate.getMessage().getSelection_proof(), aggregatorModulo))
         .isFalse();
 
-    assertThat(validator.validate(aggregate)).isEqualTo(INVALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
+        .isEqualTo(INVALID);
   }
 
   @Test
@@ -301,7 +314,8 @@ class SignedAggregateAndProofValidatorTest {
       fail("Aggregator was in the committee");
     }
 
-    assertThat(validator.validate(aggregate)).isEqualTo(INVALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
+        .isEqualTo(INVALID);
   }
 
   @Test
@@ -315,7 +329,8 @@ class SignedAggregateAndProofValidatorTest {
             .generate();
     whenAttestationIsValid(aggregate);
 
-    assertThat(validator.validate(aggregate)).isEqualTo(INVALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
+        .isEqualTo(INVALID);
   }
 
   @Test
@@ -328,8 +343,10 @@ class SignedAggregateAndProofValidatorTest {
     whenAttestationIsValid(invalidAggregate);
     whenAttestationIsValid(validAggregate);
 
-    assertThat(validator.validate(invalidAggregate)).isEqualTo(INVALID);
-    assertThat(validator.validate(validAggregate)).isEqualTo(VALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(invalidAggregate)))
+        .isEqualTo(INVALID);
+    assertThat(validator.validate(ValidateableAttestation.fromAggregate(validAggregate)))
+        .isEqualTo(VALID);
   }
 
   private boolean hasSameCommitteeIndex(

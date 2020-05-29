@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -272,12 +273,18 @@ class AttestationValidatorTest {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
     final int expectedSubnetId = CommitteeUtil.getSubnetId(attestation);
-    assertThat(validator.validate(attestation, expectedSubnetId + 1)).isEqualTo(INVALID);
-    assertThat(validator.validate(attestation, expectedSubnetId)).isEqualTo(VALID);
+    assertThat(
+            validator.validate(
+                ValidateableAttestation.fromSingle(attestation), expectedSubnetId + 1))
+        .isEqualTo(INVALID);
+    assertThat(
+            validator.validate(ValidateableAttestation.fromSingle(attestation), expectedSubnetId))
+        .isEqualTo(VALID);
   }
 
   private ValidationResult validate(final Attestation attestation) {
-    return validator.validate(attestation, CommitteeUtil.getSubnetId(attestation));
+    return validator.validate(
+        ValidateableAttestation.fromSingle(attestation), CommitteeUtil.getSubnetId(attestation));
   }
 
   private boolean hasSameValidators(final Attestation attestation1, final Attestation attestation) {

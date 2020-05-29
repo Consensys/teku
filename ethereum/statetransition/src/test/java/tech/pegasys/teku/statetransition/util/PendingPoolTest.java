@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -20,7 +20,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -40,7 +39,6 @@ public class PendingPoolTest {
   @BeforeEach
   public void setup() {
     // Set up slot
-    assertThat(pendingPool.start()).isCompleted();
     pendingPool.subscribeRequiredBlockRoot(requiredRootEvents::add);
     pendingPool.subscribeRequiredBlockRootDropped(requiredRootDroppedEvents::add);
     setSlot(currentSlot);
@@ -53,11 +51,6 @@ public class PendingPoolTest {
   private void setSlot(final UnsignedLong slot) {
     currentSlot = slot;
     pendingPool.onSlot(slot);
-  }
-
-  @AfterEach
-  public void cleanup() {
-    assertThat(pendingPool.stop()).isCompleted();
   }
 
   @Test
