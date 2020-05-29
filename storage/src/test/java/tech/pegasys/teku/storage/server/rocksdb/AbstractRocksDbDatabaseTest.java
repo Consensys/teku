@@ -38,11 +38,11 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     database.storeGenesis(store);
     database.close();
 
-    final Checkpoint newValue = checkpoint3;
+    final SignedBlockAndState newValue = chainBuilder.generateBlockAtSlot(1);
     // Sanity check
-    assertThat(store.getFinalizedCheckpoint()).isNotEqualTo(checkpoint3);
+    assertThat(store.getBlockState(newValue.getRoot())).isNull();
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.setFinalizedCheckpoint(newValue);
+    transaction.putBlockAndState(newValue);
 
     final SafeFuture<Void> result = transaction.commit();
     assertThatThrownBy(result::get).hasCauseInstanceOf(IllegalStateException.class);
@@ -88,7 +88,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     // Store genesis
     database.storeGenesis(store);
     // Add a new finalized block to supersede genesis
-    final SignedBlockAndState newBlock = chainBuilder.getBlockAndStateAtSlot(1);
+    final SignedBlockAndState newBlock = chainBuilder.generateBlockAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlockAndState(newBlock);

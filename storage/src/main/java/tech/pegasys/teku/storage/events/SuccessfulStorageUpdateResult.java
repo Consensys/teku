@@ -13,19 +13,9 @@
 
 package tech.pegasys.teku.storage.events;
 
-import java.util.Set;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-
 public class SuccessfulStorageUpdateResult implements StorageUpdateResult {
-  private final Set<Bytes32> prunedBlockRoots;
-  private final Set<Checkpoint> prunedCheckpoints;
 
-  public SuccessfulStorageUpdateResult(
-      final Set<Bytes32> prunedBlockRoots, final Set<Checkpoint> prunedCheckpoints) {
-    this.prunedBlockRoots = prunedBlockRoots;
-    this.prunedCheckpoints = prunedCheckpoints;
-  }
+  public SuccessfulStorageUpdateResult() {}
 
   @Override
   public boolean isSuccessful() {
@@ -35,15 +25,5 @@ public class SuccessfulStorageUpdateResult implements StorageUpdateResult {
   @Override
   public RuntimeException getError() {
     return null;
-  }
-
-  @Override
-  public Set<Checkpoint> getPrunedCheckpoints() {
-    return prunedCheckpoints;
-  }
-
-  @Override
-  public Set<Bytes32> getPrunedBlockRoots() {
-    return prunedBlockRoots;
   }
 }

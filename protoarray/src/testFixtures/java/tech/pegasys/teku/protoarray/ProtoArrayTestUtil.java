@@ -36,7 +36,7 @@ public class ProtoArrayTestUtil {
       UnsignedLong finalizedCheckpointEpoch,
       UnsignedLong justifiedCheckpointEpoch) {
     Store store =
-        new Store(
+        Store.create(
             UnsignedLong.ONE,
             ZERO,
             new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO),
@@ -61,7 +61,7 @@ public class ProtoArrayTestUtil {
   }
 
   public static Store createStoreToManipulateVotes() {
-    return new Store(
+    return Store.create(
         UnsignedLong.ONE,
         ZERO,
         new Checkpoint(ZERO, Bytes32.ZERO),

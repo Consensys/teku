@@ -28,7 +28,7 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
   public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {
-    return SafeFuture.completedFuture(StorageUpdateResult.successfulWithNothingPruned());
+    return SafeFuture.completedFuture(StorageUpdateResult.successful());
   }
 
   @Override

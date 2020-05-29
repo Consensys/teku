@@ -14,21 +14,20 @@
 package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.Collections;
-import java.util.HashMap;
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.StateTransitionException;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -36,78 +35,110 @@ import tech.pegasys.teku.storage.events.SuccessfulStorageUpdateResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class StoreTest {
-  private static final Checkpoint INITIAL_FINALIZED_CHECKPOINT = new Checkpoint();
-
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Checkpoint initialJustifiedCheckpoint =
-      new Checkpoint(UnsignedLong.valueOf(50), dataStructureUtil.randomBytes32());
-  private final Checkpoint initialBestJustifiedCheckpoint =
-      new Checkpoint(UnsignedLong.valueOf(33), dataStructureUtil.randomBytes32());
-  private UnsignedLong INITIAL_GENESIS_TIME = UnsignedLong.ZERO;
-  private UnsignedLong INITIAL_TIME = UnsignedLong.ONE;
-  private final Store store =
-      new Store(
-          INITIAL_TIME,
-          INITIAL_GENESIS_TIME,
-          initialJustifiedCheckpoint,
-          INITIAL_FINALIZED_CHECKPOINT,
-          initialBestJustifiedCheckpoint,
-          new HashMap<>(),
-          new HashMap<>(),
-          new HashMap<>(),
-          new HashMap<>());
+  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
+  private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
   @Test
-  public void shouldApplyChangesWhenTransactionCommits() {
+  public void shouldApplyChangesWhenTransactionCommits() throws StateTransitionException {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final Store store = Store.getForkChoiceStore(genesisBlockAndState.getState());
+    final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
+    final UnsignedLong initialTime = store.getTime();
+    final UnsignedLong genesisTime = store.getGenesisTime();
+
+    final UnsignedLong epoch3Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(4));
+    chainBuilder.generateBlocksUpToSlot(epoch3Slot);
+    final Checkpoint checkpoint1 =
+        chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.valueOf(1));
+    final Checkpoint checkpoint2 =
+        chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.valueOf(2));
+    final Checkpoint checkpoint3 =
+        chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.valueOf(3));
+
+    // Start transaction
     StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
     when(storageUpdateChannel.onStorageUpdate(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet())));
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Bytes32 blockRoot = block.getRoot();
-    final BeaconState state = dataStructureUtil.randomBeaconState();
-    final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
-    final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
-    final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(1);
-    final UnsignedLong time = UnsignedLong.valueOf(3);
-    transaction.putBlockAndState(block, state);
-    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
-    transaction.setJustifiedCheckpoint(justifiedCheckpoint);
-    transaction.setBestJustifiedCheckpoint(bestJustifiedCheckpoint);
-    transaction.putCheckpointState(justifiedCheckpoint, state);
-    transaction.setTime(time);
-    transaction.setGenesis_time(genesisTime);
+        .thenReturn(SafeFuture.completedFuture(new SuccessfulStorageUpdateResult()));
+    final Transaction tx = store.startTransaction(storageUpdateChannel);
+    // Add blocks
+    chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
+    // Update checkpoints
+    tx.setJustifiedCheckpoint(checkpoint1);
+    tx.setBestJustifiedCheckpoint(checkpoint2);
+    tx.setFinalizedCheckpoint(checkpoint3);
+    // Update checkpoint states
+    tx.putCheckpointState(
+        checkpoint1, chainBuilder.getStateAtSlot(checkpoint1.getEpochStartSlot()));
+    tx.putCheckpointState(
+        checkpoint2, chainBuilder.getStateAtSlot(checkpoint2.getEpochStartSlot()));
+    tx.putCheckpointState(
+        checkpoint3, chainBuilder.getStateAtSlot(checkpoint3.getEpochStartSlot()));
+    // Update time
+    tx.setTime(initialTime.plus(UnsignedLong.ONE));
+    tx.setGenesis_time(genesisTime.plus(UnsignedLong.ONE));
 
-    assertFalse(store.containsBlock(blockRoot));
-    assertFalse(store.containsBlockState(blockRoot));
-    assertFalse(store.containsCheckpointState(justifiedCheckpoint));
-    assertEquals(INITIAL_TIME, store.getTime());
-    assertEquals(INITIAL_GENESIS_TIME, store.getGenesisTime());
-    assertEquals(INITIAL_FINALIZED_CHECKPOINT, store.getFinalizedCheckpoint());
-    assertEquals(initialJustifiedCheckpoint, store.getJustifiedCheckpoint());
-    assertEquals(initialBestJustifiedCheckpoint, store.getBestJustifiedCheckpoint());
+    // Check that store is not yet updated
+    // Check blocks
+    chainBuilder
+        .streamBlocksAndStates(1, chainBuilder.getLatestSlot().longValue())
+        .forEach(
+            b -> {
+              assertThat(store.containsBlock(b.getRoot())).isFalse();
+              assertThat(store.containsBlockState(b.getRoot())).isFalse();
+            });
+    // Check checkpoints
+    assertThat(store.getJustifiedCheckpoint()).isEqualTo(genesisCheckpoint);
+    assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(genesisCheckpoint);
+    assertThat(store.getFinalizedCheckpoint()).isEqualTo(genesisCheckpoint);
+    // Check checkpoint states
+    assertThat(store.containsCheckpointState(checkpoint1)).isFalse();
+    assertThat(store.containsCheckpointState(checkpoint2)).isFalse();
+    assertThat(store.containsCheckpointState(checkpoint3)).isFalse();
+    // Check time
+    assertThat(store.getTime()).isEqualTo(initialTime);
+    assertThat(store.getGenesisTime()).isEqualTo(genesisTime);
 
-    assertEquals(block, transaction.getSignedBlock(blockRoot));
-    assertEquals(state, transaction.getBlockState(blockRoot));
-    assertEquals(finalizedCheckpoint, transaction.getFinalizedCheckpoint());
-    assertEquals(justifiedCheckpoint, transaction.getJustifiedCheckpoint());
-    assertEquals(bestJustifiedCheckpoint, transaction.getBestJustifiedCheckpoint());
-    assertEquals(state, transaction.getCheckpointState(justifiedCheckpoint));
-    assertEquals(time, transaction.getTime());
-    assertEquals(genesisTime, transaction.getGenesisTime());
+    // Check that transaction is updated
+    chainBuilder
+        .streamBlocksAndStates(1, chainBuilder.getLatestSlot().longValue())
+        .forEach(
+            b -> {
+              assertThat(tx.containsBlock(b.getRoot())).isTrue();
+              assertThat(tx.containsBlockState(b.getRoot())).isTrue();
+            });
+    // Check checkpoints
+    assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint1);
+    assertThat(tx.getBestJustifiedCheckpoint()).isEqualTo(checkpoint2);
+    assertThat(tx.getFinalizedCheckpoint()).isEqualTo(checkpoint3);
+    // Check checkpoint states
+    assertThat(tx.containsCheckpointState(checkpoint1)).isTrue();
+    assertThat(tx.containsCheckpointState(checkpoint2)).isTrue();
+    assertThat(tx.containsCheckpointState(checkpoint3)).isTrue();
+    // Check time
+    assertThat(tx.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
+    assertThat(tx.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
 
-    assertThat(transaction.commit()).isCompleted();
+    // Commit transaction
+    assertThat(tx.commit()).isCompleted();
 
-    assertEquals(block, store.getSignedBlock(blockRoot));
-    assertEquals(state, store.getBlockState(blockRoot));
-    assertEquals(finalizedCheckpoint, store.getFinalizedCheckpoint());
-    assertEquals(justifiedCheckpoint, store.getJustifiedCheckpoint());
-    assertEquals(bestJustifiedCheckpoint, store.getBestJustifiedCheckpoint());
-    assertEquals(state, store.getCheckpointState(justifiedCheckpoint));
-    assertEquals(time, store.getTime());
-    assertEquals(genesisTime, store.getGenesisTime());
+    // Check store is updated
+    chainBuilder
+        .streamBlocksAndStates(checkpoint3.getEpochStartSlot(), chainBuilder.getLatestSlot())
+        .forEach(
+            b -> {
+              assertThat(store.containsBlock(b.getRoot())).isTrue();
+              assertThat(store.containsBlockState(b.getRoot())).isTrue();
+            });
+    // Check checkpoints
+    assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint1);
+    assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(checkpoint2);
+    assertThat(store.getFinalizedCheckpoint()).isEqualTo(checkpoint3);
+    // Check checkpoint states
+    assertThat(store.containsCheckpointState(checkpoint1)).isTrue();
+    assertThat(store.containsCheckpointState(checkpoint2)).isTrue();
+    assertThat(store.containsCheckpointState(checkpoint3)).isTrue();
+    // Check time
+    assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
+    assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
   }
 }

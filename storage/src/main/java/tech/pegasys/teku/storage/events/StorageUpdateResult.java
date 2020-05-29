@@ -13,24 +13,14 @@
 
 package tech.pegasys.teku.storage.events;
 
-import java.util.Collections;
-import java.util.Set;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-
 public interface StorageUpdateResult {
 
   static StorageUpdateResult failed(final RuntimeException error) {
     return new FailedStorageUpdateResult(error);
   }
 
-  static StorageUpdateResult successful(
-      final Set<Bytes32> prunedBlockRoots, final Set<Checkpoint> prunedCheckpoints) {
-    return new SuccessfulStorageUpdateResult(prunedBlockRoots, prunedCheckpoints);
-  }
-
-  static StorageUpdateResult successfulWithNothingPruned() {
-    return new SuccessfulStorageUpdateResult(Collections.emptySet(), Collections.emptySet());
+  static StorageUpdateResult successful() {
+    return new SuccessfulStorageUpdateResult();
   }
 
   /** @return {@code true} if the update was successfully processed */
@@ -38,15 +28,4 @@ public interface StorageUpdateResult {
 
   /** @return If the result is unsuccessful, returns the error, otherwise null. */
   RuntimeException getError();
-
-  /**
-   * @return If the update was successful returns the set of block roots that were pruned from
-   *     storage. Otherwise, returns an empty collection.
-   */
-  Set<Bytes32> getPrunedBlockRoots();
-  /**
-   * @return If the update was successful returns the set of checkpoints that were pruned from
-   *     storage. Otherwise, returns an empty collection.
-   */
-  Set<Checkpoint> getPrunedCheckpoints();
 }

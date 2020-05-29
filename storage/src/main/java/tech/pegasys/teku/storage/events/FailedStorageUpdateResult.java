@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.storage.events;
 
-import java.util.Collections;
-import java.util.Set;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-
 public class FailedStorageUpdateResult implements StorageUpdateResult {
   private final RuntimeException error;
 
@@ -33,15 +28,5 @@ public class FailedStorageUpdateResult implements StorageUpdateResult {
   @Override
   public RuntimeException getError() {
     return error;
-  }
-
-  @Override
-  public Set<Bytes32> getPrunedBlockRoots() {
-    return Collections.emptySet();
-  }
-
-  @Override
-  public Set<Checkpoint> getPrunedCheckpoints() {
-    return Collections.emptySet();
   }
 }

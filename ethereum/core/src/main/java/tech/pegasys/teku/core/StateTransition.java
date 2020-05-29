@@ -21,6 +21,14 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.teku.util.config.Constants.ZERO_HASH;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
@@ -60,6 +68,60 @@ public class StateTransition {
 
   public StateTransition(BlockValidator blockValidator) {
     this(Optional.empty(), blockValidator);
+  }
+
+  public static Map<Bytes32, BeaconState> produceStatesForBlocks(
+      final Bytes32 baseBlockRoot,
+      final BeaconState baseState,
+      final Collection<SignedBeaconBlock> newBlocks) {
+    final Map<Bytes32, BeaconState> statesByRoot = new HashMap<>();
+
+    // Initialize states with the base state
+    statesByRoot.put(baseBlockRoot, baseState);
+
+    // Index blocks by parent root
+    final Map<Bytes32, List<SignedBeaconBlock>> blocksByParent = new HashMap<>();
+    for (SignedBeaconBlock currentBlock : newBlocks) {
+      final List<SignedBeaconBlock> blockList =
+          blocksByParent.computeIfAbsent(currentBlock.getParent_root(), (key) -> new ArrayList<>());
+      blockList.add(currentBlock);
+    }
+
+    // Generate states
+    final Deque<Bytes32> parentRoots = new ArrayDeque<>();
+    parentRoots.push(baseBlockRoot);
+    while (!parentRoots.isEmpty()) {
+      final Bytes32 parentRoot = parentRoots.pop();
+      final BeaconState parentState = statesByRoot.get(parentRoot);
+      final List<SignedBeaconBlock> blocks =
+          blocksByParent.computeIfAbsent(parentRoot, (key) -> Collections.emptyList());
+      for (SignedBeaconBlock block : blocks) {
+        final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+        processBlock(parentState, block)
+            .ifPresent(
+                state -> {
+                  statesByRoot.put(blockRoot, state);
+                  parentRoots.push(blockRoot);
+                });
+      }
+    }
+
+    return statesByRoot;
+  }
+
+  private static Optional<BeaconState> processBlock(
+      final BeaconState preState, final SignedBeaconBlock block) {
+    StateTransition stateTransition = new StateTransition();
+    try {
+      final BeaconState postState = stateTransition.initiate(preState, block);
+      return Optional.of(postState);
+    } catch (StateTransitionException e) {
+      LOG.trace(
+          "Unable to produce state for block at slot {} ({})",
+          block.getSlot(),
+          block.getMessage().hash_tree_root());
+      return Optional.empty();
+    }
   }
 
   private StateTransition(Optional<EpochMetrics> epochMetrics, BlockValidator blockValidator) {

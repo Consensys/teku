@@ -195,11 +195,9 @@ public class BlockImporterTest {
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
 
-    // This block does not descend from the latest finalized block, but we know about it and so
-    // we mark the import as successful without trying to re-import which would trigger a
-    // DOES_NOT_DESCEND_FROM_LATEST_FINALIZED error
+    // Import a block prior to the latest finalized block
     final BlockImportResult result = blockImporter.importBlock(blocks.get(1));
-    assertSuccessfulResult(result);
+    assertImportFailed(result, FailureReason.UNKNOWN_PARENT);
   }
 
   @Test

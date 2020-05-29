@@ -22,6 +22,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
+import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -271,12 +273,17 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void startStoreTransaction_mutateFinalizedCheckpoint() {
+  public void startStoreTransaction_mutateFinalizedCheckpoint() throws StateTransitionException {
     preGenesisStorageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
 
     final Checkpoint originalCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
-    final Checkpoint newCheckpoint = dataStructureUtil.randomCheckpoint();
+
+    // Add a new finalized checkpoint
+    final SignedBlockAndState newBlock = advanceChain(preGenesisStorageClient);
+    final UnsignedLong finalizedEpoch =
+        ChainProperties.computeBestEpochFinalizableAtSlot(newBlock.getSlot());
+    final Checkpoint newCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
     assertThat(originalCheckpoint).isNotEqualTo(newCheckpoint); // Sanity check
 
     final Transaction tx = preGenesisStorageClient.startStoreTransaction();
@@ -534,7 +541,7 @@ class RecentChainDataTest {
     final UnsignedLong oldestAvailableSlot = UnsignedLong.valueOf(10);
     final UnsignedLong finalizedBlockSlot = oldestAvailableSlot.plus(historicalRoots);
     final UnsignedLong finalizedEpoch =
-        compute_epoch_at_slot(finalizedBlockSlot).plus(UnsignedLong.ONE);
+        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedBlockSlot);
     final UnsignedLong recentSlot =
         compute_start_slot_at_epoch(finalizedEpoch).plus(UnsignedLong.ONE);
     final UnsignedLong chainHeight =
@@ -556,9 +563,11 @@ class RecentChainDataTest {
     }
     // Build recent blocks
     SignedBlockAndState bestBlock = null;
+    UnsignedLong nextSlot = recentSlot;
     while (chainBuilder.getLatestSlot().compareTo(chainHeight) < 0) {
-      bestBlock = chainBuilder.generateNextBlock(skipBlocks);
+      bestBlock = chainBuilder.generateBlockAtSlot(nextSlot);
       saveBlock(storageClient, bestBlock);
+      nextSlot = nextSlot.plus(UnsignedLong.valueOf(skipBlocks));
     }
     // Update best block and finalized state
     updateBestBlock(storageClient, bestBlock);
@@ -574,7 +583,12 @@ class RecentChainDataTest {
       final UnsignedLong targetSlot = UnsignedLong.valueOf(i);
       final SignedBlockAndState expectedResult =
           chainBuilder.getLatestBlockAndStateAtSlot(targetSlot);
-      assertThat(storageClient.getBlockRootBySlot(targetSlot)).contains(expectedResult.getRoot());
+      final Optional<Bytes32> result = storageClient.getBlockRootBySlot(targetSlot);
+      assertThat(result)
+          .withFailMessage(
+              "Expected root at slot %s to be %s (%s) but was %s",
+              targetSlot, expectedResult.getRoot(), expectedResult.getSlot(), result)
+          .contains(expectedResult.getRoot());
     }
   }
 

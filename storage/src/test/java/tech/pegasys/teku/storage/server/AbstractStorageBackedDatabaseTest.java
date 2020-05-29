@@ -13,27 +13,17 @@
 
 package tech.pegasys.teku.storage.server;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.collect.Streams;
 import com.google.common.io.Files;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.TrackingStorageUpdateChannel;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -107,78 +97,18 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
   private void testShouldPersistOnDisk(
       @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
-    // Setup chains
-    // Both chains share block up to slot 3
-    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
-    final SignedBlockAndState genesis = primaryChain.generateGenesis();
-    primaryChain.generateBlocksUpToSlot(3);
-    final ChainBuilder forkChain = primaryChain.fork();
-    // Fork chain's next block is at 6
-    forkChain.generateBlockAtSlot(6);
-    forkChain.generateBlocksUpToSlot(9);
-    // Primary chain's next block is at 7
-    primaryChain.generateBlockAtSlot(7);
-    primaryChain.generateBlocksUpToSlot(9);
-
-    // Setup database
-    database = setupDatabase(tempDir.toFile(), storageMode);
-    store = Store.getForkChoiceStore(genesis.getState());
-    database.storeGenesis(store);
-
-    final Set<SignedBlockAndState> allBlocksAndStates =
-        Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
-            .collect(Collectors.toSet());
-
-    final Map<Bytes32, BeaconState> allStatesByRoot =
-        allBlocksAndStates.stream()
-            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
-
-    add(allBlocksAndStates);
-    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(3));
-    finalizeCheckpoint(finalizedCheckpoint);
-
-    // Close database and rebuild from disk
-    database.close();
-    database = setupDatabase(tempDir.toFile(), storageMode);
-
-    // Check hot data
-    final List<SignedBlockAndState> expectedHotBlocksAndStates =
-        new ArrayList<>(allBlocksAndStates);
-    expectedHotBlocksAndStates.remove(primaryChain.getBlockAndStateAtSlot(0));
-    expectedHotBlocksAndStates.remove(primaryChain.getBlockAndStateAtSlot(1));
-    expectedHotBlocksAndStates.remove(primaryChain.getBlockAndStateAtSlot(2));
-    assertHotBlocksAndStates(expectedHotBlocksAndStates);
-
-    // Check finalized blocks
-    final List<SignedBeaconBlock> expectedFinalizedBlocks =
-        primaryChain
-            .streamBlocksAndStatesUpTo(3)
-            .map(SignedBlockAndState::getBlock)
-            .collect(toList());
-    assertBlocksFinalized(expectedFinalizedBlocks);
-    assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(expectedFinalizedBlocks);
-    assertBlocksAvailableByRoot(expectedFinalizedBlocks);
-
-    switch (storageMode) {
-      case ARCHIVE:
-        assertStatesAvailable(allStatesByRoot);
-        break;
-      case PRUNE:
-        // Check states roots that should've been prune
-        final List<Bytes32> prunedRoots =
-            primaryChain
-                .streamBlocksAndStatesUpTo(2)
-                .map(SignedBlockAndState::getRoot)
-                .collect(Collectors.toList());
-        assertStatesUnavailable(prunedRoots);
-        // Check hot states
-        final Map<Bytes32, BeaconState> expectedHotStates =
-            Streams.concat(
-                    primaryChain.streamBlocksAndStates(3, 9), forkChain.streamBlocksAndStates(6, 9))
-                .collect(
-                    Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
-        assertStatesAvailable(expectedHotStates);
-        break;
-    }
+    Function<StateStorageMode, Database> initializeDatabase =
+        mode -> setupDatabase(tempDir.toFile(), mode);
+    Function<Database, Database> restartDatabase =
+        d -> {
+          try {
+            d.close();
+            return initializeDatabase.apply(storageMode);
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        };
+    testShouldRecordFinalizedBlocksAndStates(
+        storageMode, false, initializeDatabase, restartDatabase);
   }
 }
