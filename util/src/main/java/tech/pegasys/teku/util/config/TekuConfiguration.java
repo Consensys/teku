@@ -22,7 +22,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
@@ -64,7 +66,6 @@ public class TekuConfiguration {
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
 
-  private final boolean eth1Enabled;
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
@@ -133,7 +134,6 @@ public class TekuConfiguration {
       final List<String> validatorExternalSignerPublicKeys,
       final String validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
-      final boolean eth1Enabled,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final boolean logColorEnabled,
@@ -185,7 +185,6 @@ public class TekuConfiguration {
     this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
-    this.eth1Enabled = eth1Enabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.logColorEnabled = logColorEnabled;
@@ -338,7 +337,7 @@ public class TekuConfiguration {
   }
 
   public boolean isEth1Enabled() {
-    return eth1Enabled;
+    return !StringUtils.isEmpty(eth1Endpoint);
   }
 
   public Eth1Address getEth1DepositContractAddress() {
@@ -445,7 +444,7 @@ public class TekuConfiguration {
       return null;
     }
 
-    validateKeyStoreFilesAndPasswordFilesSize();
+    validateKeyStoreFilesAndPasswordFilesConfig();
 
     final List<Pair<Path, Path>> keystoreFilePasswordFilePairs = new ArrayList<>();
     for (int i = 0; i < keystoreFiles.size(); i++) {
@@ -463,17 +462,30 @@ public class TekuConfiguration {
               "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
               interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
     }
-    validateKeyStoreFilesAndPasswordFilesSize();
+    validateKeyStoreFilesAndPasswordFilesConfig();
   }
 
-  private void validateKeyStoreFilesAndPasswordFilesSize() {
+  private void validateKeyStoreFilesAndPasswordFilesConfig() {
     final List<String> validatorKeystoreFiles = getValidatorKeystoreFiles();
     final List<String> validatorKeystorePasswordFiles = getValidatorKeystorePasswordFiles();
 
+    if ((validatorKeystoreFiles != null && validatorKeystorePasswordFiles == null)
+        || (validatorKeystoreFiles == null && validatorKeystorePasswordFiles != null)) {
+      final String errorMessage =
+          "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together";
+      throw new InvalidConfigurationException(errorMessage);
+    }
+
     if (validatorKeystoreFiles.size() != validatorKeystorePasswordFiles.size()) {
+      StatusLogger.getLogger()
+          .debug(
+              "Invalid configuration. The size of validator.validatorsKeystoreFiles {} and validator.validatorsKeystorePasswordFiles {} must match",
+              validatorKeystoreFiles.size(),
+              validatorKeystorePasswordFiles.size());
+
       final String errorMessage =
           String.format(
-              "Invalid configuration. The size of validator.validatorsKeystoreFiles [%d] and validator.validatorsKeystorePasswordFiles [%d] must match",
+              "Invalid configuration. The number of --validators-key-files (%d) must equal the number of --validators-key-password-files (%d)",
               validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
       throw new InvalidConfigurationException(errorMessage);
     }

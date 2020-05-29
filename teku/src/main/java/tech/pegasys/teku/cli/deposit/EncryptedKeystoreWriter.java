@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.deposit;
 
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.util.bytes.KeyFormatter.shortPublicKey;
 import static tech.pegasys.teku.util.crypto.SecureRandomProvider.createSecureRandom;
 
 import java.io.IOException;
@@ -57,9 +58,9 @@ public class EncryptedKeystoreWriter implements KeysWriter {
         generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
 
     final String validatorFileName =
-        "validator_" + trimPublicKey(validatorKey.getPublicKey().toString()) + ".json";
+        "validator_" + shortPublicKey(validatorKey.getPublicKey()) + ".json";
     final String withdrawalFileName =
-        "withdrawal_" + trimPublicKey(withdrawalKey.getPublicKey().toString()) + ".json";
+        "withdrawal_" + shortPublicKey(withdrawalKey.getPublicKey()) + ".json";
 
     saveKeyStore(keystoreDirectory.resolve(validatorFileName), validatorKeyStoreData);
     saveKeyStore(keystoreDirectory.resolve(withdrawalFileName), withdrawalKeyStoreData);
@@ -67,7 +68,7 @@ public class EncryptedKeystoreWriter implements KeysWriter {
 
   private Path createKeystoreDirectory(final BLSKeyPair validatorKey) {
     final Path keystoreDirectory =
-        outputPath.resolve("validator_" + trimPublicKey(validatorKey.getPublicKey().toString()));
+        outputPath.resolve("validator_" + shortPublicKey(validatorKey.getPublicKey()));
     try {
       return Files.createDirectories(keystoreDirectory);
     } catch (IOException e) {
@@ -98,12 +99,5 @@ public class EncryptedKeystoreWriter implements KeysWriter {
           "Error: Unable to save keystore file [{}] : {}", outputPath, e.getMessage());
       throw new UncheckedIOException(e);
     }
-  }
-
-  private String trimPublicKey(final String publicKey) {
-    if (publicKey.toLowerCase().startsWith("0x")) {
-      return publicKey.substring(2, 9);
-    }
-    return publicKey.substring(0, 7);
   }
 }
