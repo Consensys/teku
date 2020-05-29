@@ -29,13 +29,15 @@ import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class BlockPropagationManager extends Service implements SlotEventsChannel {
+public class BlockManager extends Service implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventBus eventBus;
@@ -48,7 +50,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   private final Set<Bytes32> invalidBlockRoots =
       ConcurrentLimitedSet.create(500, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
 
-  BlockPropagationManager(
+  BlockManager(
       final EventBus eventBus,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
@@ -63,14 +65,14 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
     this.recentBlockFetcher = recentBlockFetcher;
   }
 
-  public static BlockPropagationManager create(
+  public static BlockManager create(
       final EventBus eventBus,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final FetchRecentBlocksService recentBlockFetcher,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter) {
-    return new BlockPropagationManager(
+    return new BlockManager(
         eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks, recentBlockFetcher);
   }
 
@@ -78,13 +80,13 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   public SafeFuture<?> doStart() {
     this.eventBus.register(this);
     recentBlockFetcher.subscribeBlockFetched(this::importBlock);
-    return SafeFuture.allOfFailFast(recentBlockFetcher.start(), pendingBlocks.start());
+    return recentBlockFetcher.start();
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     eventBus.unregister(this);
-    return SafeFuture.allOf(recentBlockFetcher.stop(), pendingBlocks.stop());
+    return recentBlockFetcher.stop();
   }
 
   @Subscribe

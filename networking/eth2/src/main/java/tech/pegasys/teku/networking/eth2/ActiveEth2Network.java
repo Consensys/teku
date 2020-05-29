@@ -27,6 +27,8 @@ import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
@@ -49,6 +51,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final GossipEncoding gossipEncoding;
   private final AttestationSubnetService attestationSubnetService;
+  private final GossipedAttestationConsumer gossipedAttestationConsumer;
+  private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private final Set<Integer> pendingSubnetSubscriptions = new HashSet<>();
 
   private BlockGossipManager blockGossipManager;
@@ -62,7 +66,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final EventBus eventBus,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final AttestationSubnetService attestationSubnetService) {
+      final AttestationSubnetService attestationSubnetService,
+      final GossipedAttestationConsumer gossipedAttestationConsumer,
+      final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     super(discoveryNetwork);
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
@@ -70,6 +76,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.recentChainData = recentChainData;
     this.gossipEncoding = gossipEncoding;
     this.attestationSubnetService = attestationSubnetService;
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+    this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
   }
 
   @Override
@@ -92,23 +100,39 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     SignedAggregateAndProofValidator aggregateValidator =
         new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
+
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
-            discoveryNetwork, gossipEncoding, attestationValidator, recentChainData, eventBus);
+            discoveryNetwork,
+            gossipEncoding,
+            attestationValidator,
+            recentChainData,
+            gossipedAttestationConsumer);
+
     blockGossipManager =
         new BlockGossipManager(
             discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
+
     attestationGossipManager =
-        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions, eventBus);
+        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions);
+
     aggregateGossipManager =
         new AggregateGossipManager(
-            discoveryNetwork, gossipEncoding, forkInfo, aggregateValidator, eventBus);
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            aggregateValidator,
+            gossipedAttestationConsumer);
+
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
             discoveryNetwork::setLongTermAttestationSubnetSubscriptions);
 
     pendingSubnetSubscriptions.forEach(this::subscribeToAttestationSubnetId);
     pendingSubnetSubscriptions.clear();
+
+    processedAttestationSubscriptionProvider.subscribe(attestationGossipManager::onNewAttestation);
+    processedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
   }
 
   @Override

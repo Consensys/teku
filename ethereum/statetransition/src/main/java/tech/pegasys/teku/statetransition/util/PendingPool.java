@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -29,18 +29,15 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class PendingPool<T> extends Service
-    implements SlotEventsChannel, FinalizedCheckpointChannel {
+public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -85,7 +82,7 @@ public class PendingPool<T> extends Service
     return createForBlocks(DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
   }
 
-  static PendingPool<SignedBeaconBlock> createForBlocks(
+  public static PendingPool<SignedBeaconBlock> createForBlocks(
       final UnsignedLong historicalBlockTolerance, final UnsignedLong futureBlockTolerance) {
     return new PendingPool<>(
         historicalBlockTolerance,
@@ -95,18 +92,13 @@ public class PendingPool<T> extends Service
         SignedBeaconBlock::getSlot);
   }
 
-  public static PendingPool<DelayableAttestation> createForAttestations() {
+  public static PendingPool<ValidateableAttestation> createForAttestations() {
     return new PendingPool<>(
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DelayableAttestation::hash_tree_root,
-        DelayableAttestation::getDependentBlockRoots,
-        DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
-  }
-
-  @Override
-  protected SafeFuture<?> doStart() {
-    return SafeFuture.completedFuture(null);
+        ValidateableAttestation::hash_tree_root,
+        ValidateableAttestation::getDependentBlockRoots,
+        ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
   public void add(T item) {
@@ -322,11 +314,6 @@ public class PendingPool<T> extends Service
     final Set<Bytes32> rootSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
     rootSet.add(initialValue);
     return rootSet;
-  }
-
-  @Override
-  protected SafeFuture<?> doStop() {
-    return SafeFuture.completedFuture(null);
   }
 
   public interface RequiredBlockRootSubscriber {

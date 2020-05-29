@@ -20,16 +20,16 @@ import tech.pegasys.teku.util.async.SafeFuture;
 public class DefaultSyncService extends Service implements SyncService {
 
   private final SyncManager syncManager;
-  private final BlockPropagationManager blockPropagationManager;
+  private final BlockManager blockManager;
   private final RecentChainData storageClient;
 
   public DefaultSyncService(
-      final BlockPropagationManager blockPropagationManager,
+      final BlockManager blockManager,
       final SyncManager syncManager,
       final RecentChainData storageClient) {
     this.storageClient = storageClient;
     this.syncManager = syncManager;
-    this.blockPropagationManager = blockPropagationManager;
+    this.blockManager = blockManager;
   }
 
   @Override
@@ -40,14 +40,14 @@ public class DefaultSyncService extends Service implements SyncService {
     storageClient.subscribeStoreInitialized(
         () -> {
           syncManager.start().reportExceptions();
-          blockPropagationManager.start().reportExceptions();
+          blockManager.start().reportExceptions();
         });
     return SafeFuture.COMPLETE;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(syncManager.stop(), blockPropagationManager.stop());
+    return SafeFuture.allOf(syncManager.stop(), blockManager.stop());
   }
 
   @Override
