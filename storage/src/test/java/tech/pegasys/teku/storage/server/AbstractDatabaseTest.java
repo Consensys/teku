@@ -603,7 +603,6 @@ public abstract class AbstractDatabaseTest {
     assertHotBlocksAndStates(store, expectedHotBlocksAndStates);
     final SignedBlockAndState prunedForkBlock = forkChain.getBlockAndStateAtSlot(hotSlot);
     assertThat(store.containsBlock(prunedForkBlock.getRoot())).isFalse();
-    assertThat(store.containsBlockState(prunedForkBlock.getRoot())).isFalse();
 
     // Check finalized data
     final List<SignedBeaconBlock> expectedFinalizedBlocks =

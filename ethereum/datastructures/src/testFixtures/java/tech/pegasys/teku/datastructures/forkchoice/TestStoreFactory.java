@@ -198,11 +198,6 @@ public class TestStoreFactory {
     }
 
     @Override
-    public boolean containsBlockState(final Bytes32 blockRoot) {
-      return block_states.containsKey(blockRoot);
-    }
-
-    @Override
     public BeaconState getCheckpointState(final Checkpoint checkpoint) {
       return checkpoint_states.get(checkpoint);
     }

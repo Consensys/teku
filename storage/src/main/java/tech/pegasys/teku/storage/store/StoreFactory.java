@@ -31,9 +31,12 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.util.config.Constants;
 
 public abstract class StoreFactory {
   private static final Logger LOG = LogManager.getLogger();
+
+  public static final int STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 5;
 
   public static UpdatableStore getForkChoiceStore(final BeaconState anchorState) {
     final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
@@ -120,6 +123,7 @@ public abstract class StoreFactory {
         blocks,
         block_states,
         checkpoint_states,
-        votes);
+        votes,
+        STATE_CACHE_SIZE);
   }
 }
