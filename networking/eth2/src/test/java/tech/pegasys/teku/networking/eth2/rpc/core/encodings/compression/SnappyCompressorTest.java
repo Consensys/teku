@@ -17,15 +17,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.SnappyFramedCompressor.MAX_FRAME_CONTENT_SIZE;
 
+import io.libp2p.etc.types.BufferExtKt;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.embedded.EmbeddedChannel;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.Random;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.xerial.snappy.SnappyFramedOutputStream;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcResponseChunk;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcResponseChunkDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
@@ -164,6 +176,127 @@ public class SnappyCompressorTest {
       outputStream.write(compressed.slice(0, partialPayloadSize).toArrayUnsafe());
       assertThatThrownBy(() -> compressor.uncompress(inputStream, bytesToRead))
           .isInstanceOf(CompressionException.class);
+    }
+  }
+
+  private byte[] compress(byte[] bytes) throws IOException {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    SnappyFramedOutputStream snappyOut = new SnappyFramedOutputStream(baos);
+    snappyOut.write(bytes);
+    snappyOut.flush();
+    return baos.toByteArray();
+  }
+
+  @Test
+  void snappyNettyDecoderTest() throws IOException {
+    var rnd = new Random(777);
+
+    byte[] chunk1RawBytes = new byte[100 * 1024];
+    rnd.nextBytes(chunk1RawBytes);
+    byte[] chunk1CompressedBytes = compress(chunk1RawBytes);
+
+    byte[] chunk2RawBytes = new byte[10 * 1024];
+    rnd.nextBytes(chunk2RawBytes);
+    byte[] chunk2CompressedBytes = compress(chunk2RawBytes);
+
+    byte[] chunk3RawBytes = new byte[0];
+    byte[] chunk3CompressedBytes = compress(chunk3RawBytes);
+
+    byte[] chunk4RawBytes = new byte[1024];
+    rnd.nextBytes(chunk4RawBytes);
+
+    ByteBuf chunk1Buf =
+        Unpooled.wrappedBuffer(
+            new byte[] {0},
+            ProtobufEncoder.encodeVarInt(chunk1RawBytes.length).toArray(),
+            chunk1CompressedBytes);
+    ByteBuf chunk2Buf =
+        Unpooled.wrappedBuffer(
+            new byte[] {0},
+            ProtobufEncoder.encodeVarInt(chunk2RawBytes.length).toArray(),
+            chunk2CompressedBytes);
+    ByteBuf chunk3Buf =
+        Unpooled.wrappedBuffer(
+            new byte[] {0},
+            ProtobufEncoder.encodeVarInt(chunk3RawBytes.length).toArray(),
+            chunk3CompressedBytes);
+    ByteBuf chunk4Buf =
+        Unpooled.wrappedBuffer(
+            new byte[] {1},
+            ProtobufEncoder.encodeVarInt(chunk4RawBytes.length).toArray(),
+            chunk4RawBytes);
+
+    Consumer<EmbeddedChannel> check =
+        channel -> {
+          {
+            RpcResponseChunk inbound = channel.readInbound();
+            assertThat(inbound.getRespCode()).isEqualTo(0);
+            assertThat(BufferExtKt.toByteArray(inbound.getContent()))
+                .containsExactly(chunk1RawBytes);
+          }
+          {
+            RpcResponseChunk inbound = channel.readInbound();
+            assertThat(inbound.getRespCode()).isEqualTo(0);
+            assertThat(BufferExtKt.toByteArray(inbound.getContent()))
+                .containsExactly(chunk2RawBytes);
+          }
+          {
+            RpcResponseChunk inbound = channel.readInbound();
+            assertThat(inbound.getRespCode()).isEqualTo(0);
+            assertThat(BufferExtKt.toByteArray(inbound.getContent()))
+                .containsExactly(chunk3RawBytes);
+          }
+          {
+            RpcResponseChunk inbound = channel.readInbound();
+            assertThat(inbound.getRespCode()).isEqualTo(1);
+            assertThat(BufferExtKt.toByteArray(inbound.getContent()))
+                .containsExactly(chunk4RawBytes);
+          }
+        };
+
+    {
+      EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
+      channel.writeOneInbound(Unpooled.wrappedBuffer(chunk1Buf, chunk2Buf, chunk3Buf, chunk4Buf));
+      check.accept(channel);
+    }
+
+    {
+      EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
+      channel.writeInbound(
+          chunk1Buf.retainedSlice(),
+          chunk2Buf.retainedSlice(),
+          chunk3Buf.retainedSlice(),
+          chunk4Buf.retainedSlice());
+      check.accept(channel);
+    }
+
+    {
+      EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
+
+      channel.writeInbound(
+          chunk1Buf.retainedSlice(0, 1),
+          chunk1Buf.retainedSlice(1, 1),
+          chunk1Buf.retainedSlice(2, 1),
+          chunk1Buf.retainedSlice(3, 1),
+          chunk1Buf.retainedSlice(4, 1),
+          chunk1Buf.retainedSlice(5, 1000),
+          chunk1Buf.retainedSlice(1005, chunk1Buf.readableBytes() - 1005),
+          chunk2Buf.retainedSlice(),
+          chunk3Buf.retainedSlice(),
+          chunk4Buf.retainedSlice());
+      check.accept(channel);
+    }
+
+    {
+      EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
+
+      channel.writeInbound(
+          chunk1Buf.retainedSlice(),
+          chunk2Buf.retainedSlice(),
+          chunk3Buf.retainedSlice(),
+          chunk4Buf.retainedSlice(0, 100),
+          chunk4Buf.retainedSlice(100, chunk4Buf.readableBytes() - 100));
+      check.accept(channel);
     }
   }
 }
