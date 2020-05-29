@@ -9,6 +9,7 @@ we recommend most users use the latest `master` branch of Teku.
   ETH1 will be enabled when an `--eth1-endpoint` is provided and otherwise disabled.
 - CLI option `--validators-key-file` renamed to `--validators-unencrypted-key-file` to avoid ambiguity from similar 
 named CLI option `--validators-key-files` which is used to specify encrypted validator keystore files.
+- Added CLI option `--rest-api-host-whitelist` which restricts access to the REST API. Defaults to [localhost, 127.0.0.1]
 
 ## 0.11.2
 
