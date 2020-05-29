@@ -82,6 +82,7 @@ public class PeerCommand {
       throws IOException {
     try {
       validateParamsAndGenerate(params.outputFile, number);
+      spec.commandLine().getOut().println("Generated file " + params.outputFile);
     } catch (final Exception ex) {
       throw new ParameterException(spec.commandLine(), ex.getMessage());
     }
