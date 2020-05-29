@@ -19,6 +19,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -195,17 +196,23 @@ public class ChainBuilder {
     return blockAndState;
   }
 
-  public void generateBlocksUpToSlot(final long slot) throws StateTransitionException {
-    generateBlocksUpToSlot(UnsignedLong.valueOf(slot));
+  public List<SignedBlockAndState> generateBlocksUpToSlot(final long slot)
+      throws StateTransitionException {
+    return generateBlocksUpToSlot(UnsignedLong.valueOf(slot));
   }
 
-  public void generateBlocksUpToSlot(final UnsignedLong slot) throws StateTransitionException {
+  public List<SignedBlockAndState> generateBlocksUpToSlot(final UnsignedLong slot)
+      throws StateTransitionException {
     assertBlockCanBeGenerated();
+    final List<SignedBlockAndState> generated = new ArrayList<>();
 
     SignedBlockAndState latestBlock = getLatestBlockAndState();
     while (latestBlock.getState().getSlot().compareTo(slot) < 0) {
       latestBlock = generateNextBlock();
+      generated.add(latestBlock);
     }
+
+    return generated;
   }
 
   public SignedBlockAndState generateNextBlock() throws StateTransitionException {

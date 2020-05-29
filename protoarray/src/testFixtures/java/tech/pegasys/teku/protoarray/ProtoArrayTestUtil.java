@@ -45,7 +45,8 @@ public class ProtoArrayTestUtil {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            new HashMap<>());
+            new HashMap<>(),
+            Store.STATE_CACHE_SIZE);
 
     ProtoArrayForkChoiceStrategy forkChoice = ProtoArrayForkChoiceStrategy.create(store);
 
@@ -70,6 +71,7 @@ public class ProtoArrayTestUtil {
         new HashMap<>(),
         new HashMap<>(),
         new HashMap<>(),
-        new HashMap<>());
+        new HashMap<>(),
+        Store.STATE_CACHE_SIZE);
   }
 }

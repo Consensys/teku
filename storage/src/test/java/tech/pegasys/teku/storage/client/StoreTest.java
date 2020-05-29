@@ -20,23 +20,68 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.events.SuccessfulStorageUpdateResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class StoreTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+
+  @Test
+  public void getBlockState_withLimitedStateCache() throws StateTransitionException {
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    // Create a new store with a small state cache
+    final int stateCacheSize = 10;
+    final Store store =
+        Store.create(
+            genesis.getState().getGenesis_time(),
+            genesis.getState().getGenesis_time(),
+            genesisCheckpoint,
+            genesisCheckpoint,
+            genesisCheckpoint,
+            Map.of(genesis.getRoot(), genesis.getBlock()),
+            Map.of(genesis.getRoot(), genesis.getState()),
+            Map.of(genesisCheckpoint, genesis.getState()),
+            Collections.emptyMap(),
+            stateCacheSize);
+
+    // Generate enough blocks to exceed our cache limit
+    final List<SignedBlockAndState> blocks =
+        chainBuilder.generateBlocksUpToSlot(3 * stateCacheSize);
+    addBlocks(store, blocks);
+
+    // Request states in order
+    for (SignedBlockAndState block : blocks) {
+      final BeaconState result = store.getBlockState(block.getRoot());
+      assertThat(result).isNotNull();
+      assertThat(result.hash_tree_root()).isEqualTo(block.getBlock().getMessage().getState_root());
+    }
+
+    // Request states in reverse order
+    Collections.reverse(blocks);
+    for (SignedBlockAndState block : blocks) {
+      final BeaconState result = store.getBlockState(block.getRoot());
+      assertThat(result).isNotNull();
+      assertThat(result.hash_tree_root()).isEqualTo(block.getBlock().getMessage().getState_root());
+    }
+  }
 
   @Test
   public void shouldApplyChangesWhenTransactionCommits() throws StateTransitionException {
@@ -84,7 +129,6 @@ class StoreTest {
         .forEach(
             b -> {
               assertThat(store.containsBlock(b.getRoot())).isFalse();
-              assertThat(store.containsBlockState(b.getRoot())).isFalse();
             });
     // Check checkpoints
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(genesisCheckpoint);
@@ -101,11 +145,7 @@ class StoreTest {
     // Check that transaction is updated
     chainBuilder
         .streamBlocksAndStates(1, chainBuilder.getLatestSlot().longValue())
-        .forEach(
-            b -> {
-              assertThat(tx.containsBlock(b.getRoot())).isTrue();
-              assertThat(tx.containsBlockState(b.getRoot())).isTrue();
-            });
+        .forEach(b -> assertThat(tx.getBlockAndState(b.getRoot())).isEqualTo(Optional.of(b)));
     // Check checkpoints
     assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(tx.getBestJustifiedCheckpoint()).isEqualTo(checkpoint2);
@@ -124,11 +164,7 @@ class StoreTest {
     // Check store is updated
     chainBuilder
         .streamBlocksAndStates(checkpoint3.getEpochStartSlot(), chainBuilder.getLatestSlot())
-        .forEach(
-            b -> {
-              assertThat(store.containsBlock(b.getRoot())).isTrue();
-              assertThat(store.containsBlockState(b.getRoot())).isTrue();
-            });
+        .forEach(b -> assertThat(store.getBlockAndState(b.getRoot())).isEqualTo(Optional.of(b)));
     // Check checkpoints
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(checkpoint2);
@@ -140,5 +176,11 @@ class StoreTest {
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
+  }
+
+  private void addBlocks(final Store store, final List<SignedBlockAndState> blocks) {
+    final Transaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    blocks.forEach(tx::putBlockAndState);
+    assertThat(tx.commit()).isCompletedWithValue(null);
   }
 }

@@ -55,8 +55,6 @@ public interface ReadOnlyStore {
 
   BeaconState getBlockState(Bytes32 blockRoot);
 
-  boolean containsBlockState(Bytes32 blockRoot);
-
   BeaconState getCheckpointState(Checkpoint checkpoint);
 
   boolean containsCheckpointState(Checkpoint checkpoint);
