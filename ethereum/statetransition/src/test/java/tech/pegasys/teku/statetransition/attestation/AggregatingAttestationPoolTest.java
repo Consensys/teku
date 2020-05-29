@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -46,7 +47,7 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void createAggregateFor_shouldReturnEmptyWhenNoAttestationsMatchGivenData() {
-    final Optional<Attestation> result =
+    final Optional<ValidateableAttestation> result =
         aggregatingPool.createAggregateFor(dataStructureUtil.randomAttestationData());
     assertThat(result).isEmpty();
   }
@@ -57,8 +58,10 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6);
 
-    final Optional<Attestation> result = aggregatingPool.createAggregateFor(attestationData);
-    assertThat(result).contains(aggregateAttestations(attestation1, attestation2));
+    final Optional<ValidateableAttestation> result =
+        aggregatingPool.createAggregateFor(attestationData);
+    assertThat(result.map(ValidateableAttestation::getAttestation))
+        .contains(aggregateAttestations(attestation1, attestation2));
   }
 
   @Test
@@ -68,8 +71,10 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6, 8);
     addAttestationFromValidators(attestationData, 2, 3, 9);
 
-    final Optional<Attestation> result = aggregatingPool.createAggregateFor(attestationData);
-    assertThat(result).contains(aggregateAttestations(attestation1, attestation2));
+    final Optional<ValidateableAttestation> result =
+        aggregatingPool.createAggregateFor(attestationData);
+    assertThat(result.map(ValidateableAttestation::getAttestation))
+        .contains(aggregateAttestations(attestation1, attestation2));
   }
 
   @Test
@@ -156,7 +161,7 @@ class AggregatingAttestationPoolTest {
     IntStream.of(validators).forEach(bitlist::setBit);
     final Attestation attestation =
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
-    aggregatingPool.add(attestation);
+    aggregatingPool.add(ValidateableAttestation.fromSingle(attestation));
     return attestation;
   }
 

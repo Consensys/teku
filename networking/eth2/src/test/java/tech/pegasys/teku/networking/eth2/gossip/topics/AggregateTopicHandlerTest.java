@@ -19,51 +19,71 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final EventBus eventBus = mock(EventBus.class);
+  private final GossipedAttestationConsumer attestationConsumer =
+      mock(GossipedAttestationConsumer.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final SignedAggregateAndProofValidator validator =
       mock(SignedAggregateAndProofValidator.class);
-  private final AggregateTopicHandler topicHandler =
-      new AggregateTopicHandler(
-          gossipEncoding, dataStructureUtil.randomForkInfo(), validator, eventBus);
+  private final AggregateAttestationTopicHandler topicHandler =
+      new AggregateAttestationTopicHandler(
+          gossipEncoding, dataStructureUtil.randomForkInfo(), validator, attestationConsumer);
 
   @Test
   public void handleMessage_validAggregate() {
-    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
+    final ValidateableAttestation aggregate =
+        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
     when(validator.validate(aggregate)).thenReturn(ValidationResult.VALID);
 
-    final boolean result = topicHandler.handleMessage(gossipEncoding.encode(aggregate));
+    final boolean result =
+        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isTrue();
-    verify(eventBus).post(aggregate);
+    verify(attestationConsumer).accept(aggregate);
   }
 
   @Test
   public void handleMessage_savedForFuture() {
-    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
+    final ValidateableAttestation aggregate =
+        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
     when(validator.validate(aggregate)).thenReturn(ValidationResult.SAVED_FOR_FUTURE);
 
-    final boolean result = topicHandler.handleMessage(gossipEncoding.encode(aggregate));
+    final boolean result =
+        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isFalse();
-    verify(eventBus).post(aggregate);
+    verify(attestationConsumer).accept(aggregate);
   }
 
   @Test
   public void handleMessage_invalidAggregate() {
-    final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
+    final ValidateableAttestation aggregate =
+        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
     when(validator.validate(aggregate)).thenReturn(ValidationResult.INVALID);
 
-    final boolean result = topicHandler.handleMessage(gossipEncoding.encode(aggregate));
+    final boolean result =
+        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isFalse();
-    verify(eventBus, never()).post(aggregate);
+    verify(attestationConsumer, never()).accept(aggregate);
+  }
+
+  @Test
+  public void returnProperTopicName() {
+    final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
+    final ForkInfo forkInfo = mock(ForkInfo.class);
+    when(forkInfo.getForkDigest()).thenReturn(forkDigest);
+    final AggregateAttestationTopicHandler topicHandler =
+        new AggregateAttestationTopicHandler(
+            gossipEncoding, forkInfo, validator, attestationConsumer);
+    assertThat(topicHandler.getTopic())
+        .isEqualTo("/eth2/11223344/beacon_aggregate_and_proof/ssz_snappy");
   }
 }

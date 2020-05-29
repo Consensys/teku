@@ -36,9 +36,9 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -288,11 +288,11 @@ public class ForkChoiceUtil {
   @CheckReturnValue
   public static AttestationProcessingResult on_attestation(
       final MutableStore store,
-      final DelayableAttestation delayableAttestation,
+      final ValidateableAttestation validateableAttestation,
       final StateTransition stateTransition,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
-    Attestation attestation = delayableAttestation.getAttestation();
+    Attestation attestation = validateableAttestation.getAttestation();
     Checkpoint target = attestation.getData().getTarget();
 
     return validateOnAttestation(store, attestation)
@@ -307,13 +307,12 @@ public class ForkChoiceUtil {
               }
 
               IndexedAttestation indexedAttestation = maybeIndexedAttestation.get();
+              validateableAttestation.setIndexedAttestation(indexedAttestation);
               AttestationProcessingResult result =
                   checkIfAttestationShouldBeSavedForFuture(store, attestation);
 
               if (result.isSuccessful()) {
                 forkChoiceStrategy.onAttestation(store, indexedAttestation);
-              } else {
-                delayableAttestation.setIndexedAttestation(indexedAttestation);
               }
 
               return result;

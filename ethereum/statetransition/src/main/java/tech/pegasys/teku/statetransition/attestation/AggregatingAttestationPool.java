@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -46,15 +47,16 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       new HashMap<>();
   private final NavigableMap<UnsignedLong, Set<Bytes>> dataHashBySlot = new TreeMap<>();
 
-  public synchronized void add(final Attestation attestation) {
-    final Bytes32 dataHash = attestation.getData().hash_tree_root();
+  public synchronized void add(final ValidateableAttestation attestation) {
+    final AttestationData attestationData = attestation.getAttestation().getData();
+    final Bytes32 dataRoot = attestationData.hash_tree_root();
     attestationGroupByDataHash
-        .computeIfAbsent(dataHash, key -> new MatchingDataAttestationGroup(attestation.getData()))
+        .computeIfAbsent(dataRoot, key -> new MatchingDataAttestationGroup(attestationData))
         .add(attestation);
 
     dataHashBySlot
-        .computeIfAbsent(attestation.getData().getSlot(), slot -> new HashSet<>())
-        .add(dataHash);
+        .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
+        .add(dataRoot);
   }
 
   @Override
@@ -71,8 +73,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     dataHashesToRemove.clear();
   }
 
-  public synchronized void remove(final Attestation attestation) {
-    final Bytes32 dataRoot = attestation.getData().hash_tree_root();
+  public synchronized void remove(final ValidateableAttestation attestation) {
+    final AttestationData attestationData = attestation.getAttestation().getData();
+    final Bytes32 dataRoot = attestationData.hash_tree_root();
     final MatchingDataAttestationGroup attestations = attestationGroupByDataHash.get(dataRoot);
     if (attestations == null) {
       return;
@@ -80,7 +83,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     attestations.remove(attestation);
     if (attestations.isEmpty()) {
       attestationGroupByDataHash.remove(dataRoot);
-      removeFromSlotMappings(attestation.getData().getSlot(), dataRoot);
+      removeFromSlotMappings(attestationData.getSlot(), dataRoot);
     }
   }
 
@@ -100,11 +103,12 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(group -> group.getAttestationData().canIncludeInBlockAtSlot(slot))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestations.getMaxSize())
+        .map(ValidateableAttestation::getAttestation)
         .forEach(attestations::add);
     return attestations;
   }
 
-  public synchronized Optional<Attestation> createAggregateFor(
+  public synchronized Optional<ValidateableAttestation> createAggregateFor(
       final AttestationData attestationData) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationData.hash_tree_root()))
         .flatMap(attestations -> attestations.stream().findFirst());

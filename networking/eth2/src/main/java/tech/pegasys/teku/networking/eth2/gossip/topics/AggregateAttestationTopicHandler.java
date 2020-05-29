@@ -13,54 +13,55 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import com.google.common.eventbus.EventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class BlockTopicHandler implements Eth2TopicHandler<SignedBeaconBlock> {
+public class AggregateAttestationTopicHandler implements Eth2TopicHandler<SignedAggregateAndProof> {
   private static final Logger LOG = LogManager.getLogger();
-  public static String TOPIC_NAME = "beacon_block";
+  public static String TOPIC_NAME = "beacon_aggregate_and_proof";
 
+  private final SignedAggregateAndProofValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final BlockValidator blockValidator;
-  private final EventBus eventBus;
+  private final GossipedAttestationConsumer gossipedAttestationConsumer;
 
-  public BlockTopicHandler(
+  public AggregateAttestationTopicHandler(
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final BlockValidator blockValidator,
-      final EventBus eventBus) {
+      final SignedAggregateAndProofValidator validator,
+      final GossipedAttestationConsumer gossipedAttestationConsumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
-    this.blockValidator = blockValidator;
-    this.eventBus = eventBus;
+    this.validator = validator;
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
   }
 
   @Override
   public boolean handleMessage(final Bytes bytes) {
     try {
-      SignedBeaconBlock block = deserialize(bytes);
-      final ValidationResult validationResult = validateData(block);
+      ValidateableAttestation attestation =
+          ValidateableAttestation.fromAggregate(deserialize(bytes));
+      final ValidationResult validationResult = validateData(attestation);
       switch (validationResult) {
         case INVALID:
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
           return false;
         case SAVED_FOR_FUTURE:
           LOG.trace("Deferring message for topic: {}", this::getTopic);
-          eventBus.post(createEvent(block));
+          gossipedAttestationConsumer.accept(attestation);
           return false;
         case VALID:
-          eventBus.post(createEvent(block));
+          attestation.markGossiped();
+          gossipedAttestationConsumer.accept(attestation);
           return true;
         default:
           throw new UnsupportedOperationException(
@@ -80,18 +81,14 @@ public class BlockTopicHandler implements Eth2TopicHandler<SignedBeaconBlock> {
     return gossipEncoding;
   }
 
-  public Object createEvent(final SignedBeaconBlock block) {
-    return new GossipedBlockEvent(block);
-  }
-
   @Override
   public String getTopicName() {
     return TOPIC_NAME;
   }
 
   @Override
-  public Class<SignedBeaconBlock> getValueType() {
-    return SignedBeaconBlock.class;
+  public Class<SignedAggregateAndProof> getValueType() {
+    return SignedAggregateAndProof.class;
   }
 
   @Override
@@ -99,7 +96,7 @@ public class BlockTopicHandler implements Eth2TopicHandler<SignedBeaconBlock> {
     return forkDigest;
   }
 
-  public ValidationResult validateData(final SignedBeaconBlock block) {
-    return blockValidator.validate(block);
+  protected ValidationResult validateData(final ValidateableAttestation validateableAttestation) {
+    return validator.validate(validateableAttestation);
   }
 }
