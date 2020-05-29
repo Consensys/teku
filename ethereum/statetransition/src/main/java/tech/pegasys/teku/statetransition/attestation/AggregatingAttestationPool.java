@@ -80,8 +80,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     dataHashesToRemove.clear();
   }
 
-  public synchronized void remove(final ValidateableAttestation attestation) {
-    final AttestationData attestationData = attestation.getAttestation().getData();
+  public synchronized void remove(final Attestation attestation) {
+    final AttestationData attestationData = attestation.getData();
     final Bytes32 dataRoot = attestationData.hash_tree_root();
     final MatchingDataAttestationGroup attestations = attestationGroupByDataHash.get(dataRoot);
     if (attestations == null) {
