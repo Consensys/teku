@@ -76,7 +76,8 @@ public class BlockFactory {
     }
 
     // Collect attestations to include
-    SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(newSlot);
+    final BeaconState blockSlotState = stateTransition.process_slots(previousState, newSlot);
+    SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(blockSlotState);
     // Collect slashing to include
     final SSZList<ProposerSlashing> proposerSlashings =
         BeaconBlockBodyLists.createProposerSlashings();
