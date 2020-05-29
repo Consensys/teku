@@ -57,7 +57,6 @@ public interface V3Schema extends Schema {
       RocksDbVariable.create(3, CHECKPOINT_SERIALIZER);
   RocksDbVariable<Checkpoint> FINALIZED_CHECKPOINT =
       RocksDbVariable.create(4, CHECKPOINT_SERIALIZER);
-  RocksDbVariable<BeaconState> LATEST_FINALIZED_STATE = RocksDbVariable.create(5, STATE_SERIALIZER);
   RocksDbVariable<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK =
       RocksDbVariable.create(6, MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER);
 }

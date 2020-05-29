@@ -541,7 +541,7 @@ public class Store implements ReadOnlyStore {
                   if (newlyFinalizedBlock.isPresent()) {
                     // Prune stale checkpoint states
                     staleCheckpointStates.forEach(Store.this.checkpoint_states::remove);
-                    // Prune finalized blocks and states
+                    // Prune blocks and states
                     prunedHotBlockRoots.forEach(
                         (slot, roots) -> {
                           roots.forEach(
