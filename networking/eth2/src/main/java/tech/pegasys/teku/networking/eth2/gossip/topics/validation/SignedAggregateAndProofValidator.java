@@ -35,6 +35,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
@@ -60,7 +61,8 @@ public class SignedAggregateAndProofValidator {
     this.recentChainData = recentChainData;
   }
 
-  public ValidationResult validate(final SignedAggregateAndProof signedAggregate) {
+  public ValidationResult validate(final ValidateableAttestation attestation) {
+    final SignedAggregateAndProof signedAggregate = attestation.getSignedAggregateAndProof();
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
     final Attestation aggregate = aggregateAndProof.getAggregate();
 

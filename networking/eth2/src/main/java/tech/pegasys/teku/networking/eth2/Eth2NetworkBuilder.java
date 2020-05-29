@@ -24,6 +24,8 @@ import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -47,6 +49,8 @@ public class Eth2NetworkBuilder {
   private Eth2Config eth2Config;
   private EventBus eventBus;
   private RecentChainData recentChainData;
+  private GossipedAttestationConsumer gossipedAttestationConsumer;
+  private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private StorageQueryChannel historicalChainData;
   private MetricsSystem metricsSystem;
   private List<RpcMethod> rpcMethods = new ArrayList<>();
@@ -96,7 +100,9 @@ public class Eth2NetworkBuilder {
         eventBus,
         recentChainData,
         gossipEncoding,
-        attestationSubnetService);
+        attestationSubnetService,
+        gossipedAttestationConsumer,
+        processedAttestationSubscriptionProvider);
   }
 
   protected DiscoveryNetwork<?> buildNetwork() {
@@ -148,6 +154,20 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder recentChainData(final RecentChainData recentChainData) {
     checkNotNull(recentChainData);
     this.recentChainData = recentChainData;
+    return this;
+  }
+
+  public Eth2NetworkBuilder processedAttestationSubscriptionProvider(
+      final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
+    checkNotNull(processedAttestationSubscriptionProvider);
+    this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
+    return this;
+  }
+
+  public Eth2NetworkBuilder gossipedAttestationConsumer(
+      final GossipedAttestationConsumer gossipedAttestationConsumer) {
+    checkNotNull(gossipedAttestationConsumer);
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
     return this;
   }
 

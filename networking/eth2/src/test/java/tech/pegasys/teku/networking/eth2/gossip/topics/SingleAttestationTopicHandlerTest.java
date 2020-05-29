@@ -30,31 +30,35 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class AttestationTopicHandlerTest {
+public class SingleAttestationTopicHandlerTest {
 
   private static final int SUBNET_ID = 1;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final EventBus eventBus = mock(EventBus.class);
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+  private final GossipedAttestationConsumer gossipedAttestationConsumer =
+      mock(GossipedAttestationConsumer.class);
+  private final RecentChainData recentChainData =
+      MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
-  private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(
+  private final SingleAttestationTopicHandler topicHandler =
+      new tech.pegasys.teku.networking.eth2.gossip.topics.SingleAttestationTopicHandler(
           gossipEncoding,
           dataStructureUtil.randomForkInfo(),
           SUBNET_ID,
           attestationValidator,
-          eventBus);
+          gossipedAttestationConsumer);
 
   @BeforeEach
   public void setup() {
@@ -65,39 +69,42 @@ public class AttestationTopicHandlerTest {
   public void handleMessage_validAttestation() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
-    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(VALID);
-    final Bytes serialized = gossipEncoding.encode(attestation);
+    final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(true);
-    verify(eventBus).post(attestation);
+    verify(gossipedAttestationConsumer).accept(attestation);
   }
 
   @Test
   public void handleMessage_failsValidation() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
-    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(INVALID);
-    final Bytes serialized = gossipEncoding.encode(attestation);
+    final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
-    verify(eventBus, never()).post(attestation);
+    verify(gossipedAttestationConsumer, never()).accept(attestation);
   }
 
   @Test
   public void handleMessage_saveForFuture() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
-    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVED_FOR_FUTURE);
-    final Bytes serialized = gossipEncoding.encode(attestation);
+    final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
-    verify(eventBus).post(attestation);
+    verify(gossipedAttestationConsumer).accept(attestation);
   }
 
   @Test
@@ -106,5 +113,17 @@ public class AttestationTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
+  }
+
+  @Test
+  public void returnProperTopicName() {
+    final Bytes4 forkDigest = Bytes4.fromHexString("0x11223344");
+    final ForkInfo forkInfo = mock(ForkInfo.class);
+    when(forkInfo.getForkDigest()).thenReturn(forkDigest);
+    final SingleAttestationTopicHandler topicHandler =
+        new SingleAttestationTopicHandler(
+            gossipEncoding, forkInfo, 0, attestationValidator, gossipedAttestationConsumer);
+    assertThat(topicHandler.getTopic())
+        .isEqualTo("/eth2/11223344/committee_index0_beacon_attestation/ssz_snappy");
   }
 }

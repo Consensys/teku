@@ -20,6 +20,7 @@ import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITT
 import com.google.common.primitives.UnsignedLong;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -47,7 +48,7 @@ class MatchingDataAttestationGroupTest {
 
   @Test
   public void isEmpty_shouldBeEmptyAfterAttestationRemoved() {
-    final Attestation attestation = addAttestation(1);
+    final Attestation attestation = addAttestation(1).getAttestation();
     group.remove(attestation);
 
     assertThat(group.isEmpty()).isTrue();
@@ -55,7 +56,7 @@ class MatchingDataAttestationGroupTest {
 
   @Test
   public void remove_shouldRemoveAttestationEvenWhenInstanceIsDifferent() {
-    final Attestation attestation = addAttestation(1);
+    final Attestation attestation = addAttestation(1).getAttestation();
     final Attestation copy =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(attestation), Attestation.class);
@@ -67,60 +68,66 @@ class MatchingDataAttestationGroupTest {
 
   @Test
   public void remove_shouldRemoveAttestationsThatAreAggregatedIntoRemovedAttestation() {
-    final Attestation attestation1 = addAttestation(1);
-    final Attestation attestation2 = addAttestation(2);
-    final Attestation attestation3 = addAttestation(3);
+    final ValidateableAttestation attestation1 = addAttestation(1);
+    final ValidateableAttestation attestation2 = addAttestation(2);
+    final ValidateableAttestation attestation3 = addAttestation(3);
 
-    group.remove(aggregateAttestations(attestation1, attestation2));
+    group.remove(
+        aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
 
     assertThat(group.stream()).containsExactly(attestation3);
   }
 
   @Test
   public void iterator_shouldAggregateAttestationsWhereValidatorsDoNotOverlap() {
-    final Attestation attestation1 = addAttestation(1);
-    final Attestation attestation2 = addAttestation(2);
+    final ValidateableAttestation attestation1 = addAttestation(1);
+    final ValidateableAttestation attestation2 = addAttestation(2);
 
-    final Attestation expected = aggregateAttestations(attestation1, attestation2);
-    assertThat(group).containsExactlyInAnyOrder(expected);
+    final Attestation expected =
+        aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation());
+    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.fromSingle(expected));
   }
 
   @Test
   public void iterator_shouldAggregateAttestationsWithMoreValidatorsFirst() {
-    final Attestation bigAttestation = addAttestation(1, 3, 5, 7);
-    final Attestation mediumAttestation = addAttestation(3, 5, 9);
-    final Attestation littleAttestation = addAttestation(2);
+    final ValidateableAttestation bigAttestation = addAttestation(1, 3, 5, 7);
+    final ValidateableAttestation mediumAttestation = addAttestation(3, 5, 9);
+    final ValidateableAttestation littleAttestation = addAttestation(2);
 
     assertThat(group)
         .containsExactly(
-            aggregateAttestations(bigAttestation, littleAttestation), mediumAttestation);
+            ValidateableAttestation.fromSingle(
+                aggregateAttestations(
+                    bigAttestation.getAttestation(), littleAttestation.getAttestation())),
+            mediumAttestation);
   }
 
   @Test
   public void iterator_shouldNotAggregateAttestationsWhenValidatorsOverlap() {
-    final Attestation attestation1 = addAttestation(1, 2, 5);
-    final Attestation attestation2 = addAttestation(1, 2, 3);
+    final ValidateableAttestation attestation1 = addAttestation(1, 2, 5);
+    final ValidateableAttestation attestation2 = addAttestation(1, 2, 3);
 
     assertThat(group).containsExactlyInAnyOrder(attestation1, attestation2);
   }
 
   @Test
   public void iterator_shouldOmitAttestationsThatAreAlreadyIncludedInTheAggregate() {
-    final Attestation aggregate = addAttestation(1, 2, 3);
+    final ValidateableAttestation aggregate = addAttestation(1, 2, 3);
     addAttestation(2);
 
     assertThat(group).containsExactly(aggregate);
   }
 
-  private Attestation addAttestation(final int... validators) {
-    final Attestation attestation = createAttestation(validators);
+  private ValidateableAttestation addAttestation(final int... validators) {
+    final ValidateableAttestation attestation = createAttestation(validators);
     group.add(attestation);
     return attestation;
   }
 
-  private Attestation createAttestation(final int... validators) {
+  private ValidateableAttestation createAttestation(final int... validators) {
     final Bitlist aggregationBits = new Bitlist(10, MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(aggregationBits::setBit);
-    return new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature());
+    return ValidateableAttestation.fromSingle(
+        new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }
