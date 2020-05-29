@@ -9,6 +9,7 @@ dependencies {
   implementation project(':logging')
   implementation project(':ssz')
   implementation project(':storage')
+  implementation project(':storage:api')
   implementation project(':util')
   implementation project(':services:serviceutils')
 
