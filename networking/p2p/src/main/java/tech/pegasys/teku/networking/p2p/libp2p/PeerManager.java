@@ -45,7 +45,7 @@ public class PeerManager implements ConnectionHandler {
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
-  private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final ReputationManager reputationManager;
   private final List<PeerHandler> peerHandlers;
 
