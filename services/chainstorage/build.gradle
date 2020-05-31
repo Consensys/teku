@@ -2,6 +2,7 @@ dependencies {
   implementation project(':logging')
   implementation project(':services:serviceutils')
   implementation project(':storage')
+  implementation project(':storage:api')
   implementation project(':util')
   implementation project(':pow')
   implementation project(':events')
