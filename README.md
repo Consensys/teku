@@ -4,7 +4,7 @@
  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/teku/blob/master/LICENSE)
  [![Gitter chat](https://badges.gitter.im/PegaSysEng/teku.png)](https://gitter.im/PegaSysEng/teku)
 
-Teku is a Java implementation of the Ethereum 2.0 Beacon Chain.
+Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. Teku is changing rapidly hence we recommend building from the latest master. See the [Changelog](CHANGELOG.md) for known issues and breaking changes.
 
 ## Useful links 
 
@@ -13,6 +13,7 @@ Teku is a Java implementation of the Ethereum 2.0 Beacon Chain.
 * [Teku REST API reference documentation](https://pegasyseng.github.io/teku/)
 * [Teku issues](https://github.com/PegaSysEng/teku/issues)
 * [Contribution guidelines](CONTRIBUTING.md)
+* [Teku Changelog](CHANGELOG.md)
 
 ## Teku users 
 
