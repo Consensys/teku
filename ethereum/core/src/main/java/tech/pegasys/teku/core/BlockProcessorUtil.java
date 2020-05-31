@@ -21,10 +21,8 @@ import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_ind
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.process_deposit;
@@ -59,6 +57,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
+import tech.pegasys.teku.core.BlockAttestationDataValidator.InvalidReason;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
@@ -77,7 +76,6 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.util.config.Constants;
 
 public final class BlockProcessorUtil {
 
@@ -402,30 +400,15 @@ public final class BlockProcessorUtil {
   public static void process_attestations_no_validation(
       MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
+      final BlockAttestationDataValidator validator = new BlockAttestationDataValidator();
 
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
+        final Optional<InvalidReason> invalidReason = validator.validateAttestation(state, data);
         checkArgument(
-            data.getIndex().compareTo(get_committee_count_at_slot(state, data.getSlot())) < 0,
-            "process_attestations: CommitteeIndex too high");
-        checkArgument(
-            data.getTarget().getEpoch().equals(get_previous_epoch(state))
-                || data.getTarget().getEpoch().equals(get_current_epoch(state)),
-            "process_attestations: Attestation not from current or previous epoch");
-        checkArgument(
-            data.getTarget().getEpoch().equals(compute_epoch_at_slot(data.getSlot())),
-            "process_attestations: Attestation slot not in specified epoch");
-        checkArgument(
-            data.getSlot()
-                    .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-                    .compareTo(state.getSlot())
-                <= 0,
-            "process_attestations: Attestation submitted too quickly");
-
-        checkArgument(
-            state.getSlot().compareTo(data.getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
-                <= 0,
-            "process_attestations: Attestation submitted too far in history");
+            invalidReason.isEmpty(),
+            "process_attestations: %s",
+            invalidReason.map(InvalidReason::describe).orElse(""));
 
         List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
         checkArgument(
@@ -440,14 +423,8 @@ public final class BlockProcessorUtil {
                 UnsignedLong.valueOf(get_beacon_proposer_index(state)));
 
         if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
-          checkArgument(
-              data.getSource().equals(state.getCurrent_justified_checkpoint()),
-              "process_attestations: Attestation source error 1");
           state.getCurrent_epoch_attestations().add(pendingAttestation);
         } else {
-          checkArgument(
-              data.getSource().equals(state.getPrevious_justified_checkpoint()),
-              "process_attestations: Attestation source error 2");
           state.getPrevious_epoch_attestations().add(pendingAttestation);
         }
       }
