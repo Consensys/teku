@@ -5,11 +5,11 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
-- In a future release the `--eth1-enabled` option will be removed. 
-  ETH1 will be enabled when an `--eth1-endpoint` is provided and otherwise disabled.
+- ETH1 will be enabled when an `--eth1-endpoint` is provided and otherwise disabled. `--eth1-enabled` option removed.
 - CLI option `--validators-key-file` renamed to `--validators-unencrypted-key-file` to avoid ambiguity from similar 
 named CLI option `--validators-key-files` which is used to specify encrypted validator keystore files.
 - Added CLI option `--rest-api-host-whitelist` which restricts access to the REST API. Defaults to [localhost, 127.0.0.1]
+- `peer generate` and `genesis mock` subcommands now use lower case options consistently: `--outputFile` is renamed `--output-file`, `--validatorCount` is renamed `--validator-count`, and `--genesisTime` is renamed `--genesis-time`
 
 ## 0.11.2
 
