@@ -5,7 +5,7 @@ dependencies {
   implementation project(':ethereum:statetransition')
   implementation project(':events')
   implementation project(':services:serviceutils')
-  implementation project(':storage')
+  implementation project(':storage:api')
   implementation project(':validator:api')
   implementation project(':util')
 
