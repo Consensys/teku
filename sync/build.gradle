@@ -9,6 +9,7 @@ dependencies {
     implementation project(':services:serviceutils')
     implementation project(':ssz')
     implementation project(':storage')
+    implementation project(':storage:api')
     implementation project(':util')
     implementation project(':events')
 

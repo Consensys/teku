@@ -139,6 +139,7 @@ downloadLicenses {
       (group('teku.services'))   : apache,
       (group('teku.consensus'))  : apache,
       (group('teku.data'))       : apache,
+      (group('teku.storage'))    : apache,
       (group('teku.validator'))  : apache,
       (group('teku.networking')) : apache,
 
