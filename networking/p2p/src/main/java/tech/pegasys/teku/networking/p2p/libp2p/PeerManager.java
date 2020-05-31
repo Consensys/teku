@@ -45,7 +45,9 @@ public class PeerManager implements ConnectionHandler {
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
-  private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<NodeId, SafeFuture<Peer>> pendingConnections =
+      new ConcurrentHashMap<>();
   private final ReputationManager reputationManager;
   private final List<PeerHandler> peerHandlers;
 
@@ -79,6 +81,10 @@ public class PeerManager implements ConnectionHandler {
   }
 
   public SafeFuture<Peer> connect(final MultiaddrPeerAddress peer, final Network network) {
+    return pendingConnections.computeIfAbsent(peer.getId(), __ -> doConnect(peer, network));
+  }
+
+  private SafeFuture<Peer> doConnect(final MultiaddrPeerAddress peer, final Network network) {
     LOG.debug("Connecting to {}", peer);
 
     return SafeFuture.of(() -> network.connect(peer.getMultiaddr()))
@@ -103,7 +109,8 @@ public class PeerManager implements ConnectionHandler {
               return connectedPeer;
             })
         .exceptionallyCompose(this::handleConcurrentConnectionInitiation)
-        .catchAndRethrow(error -> reputationManager.reportInitiatedConnectionFailed(peer));
+        .catchAndRethrow(error -> reputationManager.reportInitiatedConnectionFailed(peer))
+        .whenComplete((result, error) -> pendingConnections.remove(peer.getId()));
   }
 
   private CompletionStage<Peer> handleConcurrentConnectionInitiation(final Throwable error) {
@@ -127,6 +134,7 @@ public class PeerManager implements ConnectionHandler {
       peer.subscribeDisconnect(() -> onDisconnectedPeer(peer));
     } else {
       LOG.trace("Disconnecting duplicate connection to {}", peer::getId);
+      peer.disconnectImmediately();
       throw new PeerAlreadyConnectedException(peer);
     }
   }
