@@ -10,6 +10,7 @@ we recommend most users use the latest `master` branch of Teku.
 - CLI option `--validators-key-file` renamed to `--validators-unencrypted-key-file` to avoid ambiguity from similar 
 named CLI option `--validators-key-files` which is used to specify encrypted validator keystore files.
 - Added CLI option `--rest-api-host-whitelist` which restricts access to the REST API. Defaults to [localhost, 127.0.0.1]
+- `peer generate` and `genesis mock` subcommands now use lower case options consistently: `--outputFile` is renamed `--output-file`, `--validatorCount` is renamed `--validator-count`, and `--genesisTime` is renamed `--genesis-time`
 
 ## 0.11.2
 
