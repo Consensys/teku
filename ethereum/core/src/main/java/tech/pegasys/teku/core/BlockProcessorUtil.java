@@ -500,34 +500,8 @@ public final class BlockProcessorUtil {
 
       // For each exit in block.body.voluntaryExits:
       for (SignedVoluntaryExit signedExit : exits) {
-        final VoluntaryExit exit = signedExit.getMessage();
-        checkArgument(
-            UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
-                > 0,
-            "process_voluntary_exits: Invalid validator index");
-
-        final Validator validator =
-            state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
-        checkArgument(
-            is_active_validator(validator, get_current_epoch(state)),
-            "process_voluntary_exits: Verify the validator is active");
-
-        checkArgument(
-            validator.getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
-            "process_voluntary_exits: Verify exit has not been initiated");
-
-        checkArgument(
-            get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
-            "process_voluntary_exits: Exits must specify an epoch when they become valid; they are not valid before then");
-
-        checkArgument(
-            get_current_epoch(state)
-                    .compareTo(
-                        validator
-                            .getActivation_epoch()
-                            .plus(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD)))
-                >= 0,
-            "process_voluntary_exits: Verify the validator has been active long enough");
+        VoluntaryExit exit = signedExit.getMessage();
+        check_voluntary_exit(state, exit);
 
         // - Run initiate_validator_exit(state, exit.validator_index)
         initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
@@ -536,6 +510,35 @@ public final class BlockProcessorUtil {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
+  }
+
+  public static void check_voluntary_exit(BeaconState state, VoluntaryExit exit) {
+    checkArgument(
+        UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index()) > 0,
+        "process_voluntary_exits: Invalid validator index");
+
+    final Validator validator =
+        state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
+    checkArgument(
+        is_active_validator(validator, get_current_epoch(state)),
+        "process_voluntary_exits: Verify the validator is active");
+
+    checkArgument(
+        validator.getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
+        "process_voluntary_exits: Verify exit has not been initiated");
+
+    checkArgument(
+        get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
+        "process_voluntary_exits: Exits must specify an epoch when they become valid; they are not valid before then");
+
+    checkArgument(
+        get_current_epoch(state)
+                .compareTo(
+                    validator
+                        .getActivation_epoch()
+                        .plus(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD)))
+            >= 0,
+        "process_voluntary_exits: Verify the validator has been active long enough");
   }
 
   public static void verify_voluntary_exits(
