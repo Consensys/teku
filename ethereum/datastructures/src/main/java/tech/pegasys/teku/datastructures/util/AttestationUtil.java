@@ -152,7 +152,7 @@ public class AttestationUtil {
     List<UnsignedLong> bit_0_indices_sorted =
         attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
     if (!attesting_indices.equals(bit_0_indices_sorted)) {
-      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
+      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
@@ -168,7 +168,7 @@ public class AttestationUtil {
     Bytes signing_root = compute_signing_root(indexed_attestation.getData(), domain);
 
     if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
-      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;
