@@ -188,7 +188,7 @@ public class SnappyCompressorTest {
   }
 
   @Test
-  void snappyNettyDecoderTest() throws IOException {
+  void snappyNettyDecoderTest() throws Exception {
     var rnd = new Random(777);
 
     byte[] chunk1RawBytes = new byte[100 * 1024];
@@ -204,6 +204,7 @@ public class SnappyCompressorTest {
 
     byte[] chunk4RawBytes = new byte[1024];
     rnd.nextBytes(chunk4RawBytes);
+    byte[] chunk4CompressedBytes = compress(chunk4RawBytes);
 
     ByteBuf chunk1Buf =
         Unpooled.wrappedBuffer(
@@ -224,7 +225,7 @@ public class SnappyCompressorTest {
         Unpooled.wrappedBuffer(
             new byte[] {1},
             ProtobufEncoder.encodeVarInt(chunk4RawBytes.length).toArray(),
-            chunk4RawBytes);
+            chunk4CompressedBytes);
 
     Consumer<EmbeddedChannel> check =
         channel -> {
@@ -256,7 +257,7 @@ public class SnappyCompressorTest {
 
     {
       EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
-      channel.writeOneInbound(Unpooled.wrappedBuffer(chunk1Buf, chunk2Buf, chunk3Buf, chunk4Buf));
+      channel.writeInbound(Unpooled.wrappedBuffer(chunk1Buf, chunk2Buf, chunk3Buf, chunk4Buf));
       check.accept(channel);
     }
 

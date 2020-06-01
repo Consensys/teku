@@ -67,7 +67,7 @@ public class RpcResponseChunkDecoder extends SnappyFrameDecoder {
       decodePayload = true;
     } else {
       ArrayList<Object> rawOut = new ArrayList<>();
-      if (respCode == 0 && compressed) {
+      if (compressed) {
         super.decode(ctx, in, rawOut);
       } else {
         rawOut.add(in.readSlice(min(in.readableBytes(), (int) remainingRawLength)).retain());
