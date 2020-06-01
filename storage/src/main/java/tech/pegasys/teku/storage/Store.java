@@ -451,9 +451,8 @@ public class Store implements ReadOnlyStore {
 
     @CheckReturnValue
     public SafeFuture<Void> commit() {
-      final Map<Bytes32, SignedBeaconBlock> hotBlocks = new HashMap<>();
       // To start all blocks are assumed to be hot blocks
-      hotBlocks.putAll(blocks);
+      final Map<Bytes32, SignedBeaconBlock> hotBlocks = new HashMap<>(blocks);
 
       // If a new checkpoint has been finalized, calculated what to finalize and what to prune
       final UnsignedLong previouslyFinalizedEpoch = Store.this.finalized_checkpoint.getEpoch();
@@ -500,7 +499,7 @@ public class Store implements ReadOnlyStore {
 
       final Set<Bytes32> prunedRootsSet =
           prunedHotBlockRoots.values().stream()
-              .flatMap(roots -> roots.stream())
+              .flatMap(Collection::stream)
               .collect(Collectors.toSet());
       final StorageUpdate updateEvent =
           new StorageUpdate(
