@@ -71,10 +71,12 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void disconnectImmediately() {
     connected.set(false);
-    connection.close();
+    SafeFuture.of(connection.close())
+        .finish(
+            () -> LOG.trace("Disconnected from {}", getId()),
+            error -> LOG.warn("Failed to disconnect from peer {}", getId(), error));
   }
 
   @Override

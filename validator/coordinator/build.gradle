@@ -3,6 +3,7 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:client')
   implementation project(':storage')
+  implementation project(':storage:api')
   implementation project(':services:serviceutils')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:core')

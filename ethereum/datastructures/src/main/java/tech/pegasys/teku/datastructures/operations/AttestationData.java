@@ -14,8 +14,6 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
-import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
@@ -124,22 +122,6 @@ public class AttestationData extends AbstractImmutableContainer
     // Attestations can't be processed by fork choice until their slot is in the past and until we
     // are in the same epoch as their target.
     return max(getSlot().plus(UnsignedLong.ONE), getTarget().getEpochStartSlot());
-  }
-
-  public boolean canIncludeInBlockAtSlot(final UnsignedLong blockSlot) {
-    return isBlockWithinOneEpochOfAttestation(blockSlot)
-        && isBlockAtLeastMinInclusionDelayAfterAttestation(blockSlot);
-  }
-
-  private boolean isBlockWithinOneEpochOfAttestation(final UnsignedLong blockSlot) {
-    return blockSlot.compareTo(getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) <= 0;
-  }
-
-  private boolean isBlockAtLeastMinInclusionDelayAfterAttestation(final UnsignedLong blockSlot) {
-    return getSlot()
-            .plus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY))
-            .compareTo(blockSlot)
-        <= 0;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

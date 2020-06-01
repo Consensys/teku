@@ -39,6 +39,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
+import tech.pegasys.teku.core.BlockAttestationDataValidator;
 import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -381,7 +382,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool = new AggregatingAttestationPool();
+    attestationPool = new AggregatingAttestationPool(new BlockAttestationDataValidator());
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
   }
 

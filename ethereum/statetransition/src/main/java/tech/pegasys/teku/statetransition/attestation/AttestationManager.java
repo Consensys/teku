@@ -103,6 +103,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
               pendingAttestations.remove(attestation);
               onAttestation(attestation);
             });
+    block.getMessage().getBody().getAttestations().forEach(aggregatingAttestationPool::remove);
   }
 
   public void onAttestation(final ValidateableAttestation attestation) {

@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 
 /**
@@ -102,7 +103,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    *
    * @param attestation the attestation to logically remove from the pool.
    */
-  public void remove(final ValidateableAttestation attestation) {
+  public void remove(final Attestation attestation) {
     final Collection<Set<ValidateableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
     for (Iterator<Set<ValidateableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
@@ -110,7 +111,6 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       candidates.removeIf(
           candidate ->
               attestation
-                  .getAttestation()
                   .getAggregation_bits()
                   .isSuperSetOf(candidate.getAttestation().getAggregation_bits()));
       if (candidates.isEmpty()) {
