@@ -39,7 +39,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -132,8 +132,9 @@ public class Store implements ReadOnlyStore {
       final Map<Checkpoint, BeaconState> checkpoint_states,
       final Map<UnsignedLong, VoteTracker> votes) {
 
+    final StateGenerator stateGenerator = new StateGenerator();
     final Map<Bytes32, BeaconState> blockStates =
-        StateTransition.produceStatesForBlocks(
+        stateGenerator.produceStatesForBlocks(
             finalized_checkpoint.getRoot(),
             checkpoint_states.get(finalized_checkpoint),
             blocks.values());

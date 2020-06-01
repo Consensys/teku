@@ -30,7 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.StateGenerator;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -38,9 +38,10 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 
 @Disabled
 @ExtendWith(BouncyCastleExtension.class)
-class StateTransitionTest {
+class StateGeneratorTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final StateGenerator stateGenerator = new StateGenerator();
 
   @Test
   public void produceStatesForBlocks_validChainFromGenesis() throws StateTransitionException {
@@ -61,7 +62,7 @@ class StateTransitionTest {
     expectedResult.put(genesis.getRoot(), genesis.getState());
 
     final Map<Bytes32, BeaconState> result =
-        StateTransition.produceStatesForBlocks(genesis.getRoot(), genesis.getState(), newBlocks);
+        stateGenerator.produceStatesForBlocks(genesis.getRoot(), genesis.getState(), newBlocks);
     assertThat(result.size()).isEqualTo(expectedResult.size());
     assertThat(result).isEqualToComparingFieldByField(expectedResult);
   }
@@ -86,8 +87,7 @@ class StateTransitionTest {
     expectedResult.put(baseBlock.getRoot(), baseBlock.getState());
 
     final Map<Bytes32, BeaconState> result =
-        StateTransition.produceStatesForBlocks(
-            baseBlock.getRoot(), baseBlock.getState(), newBlocks);
+        stateGenerator.produceStatesForBlocks(baseBlock.getRoot(), baseBlock.getState(), newBlocks);
     assertThat(result.size()).isEqualTo(expectedResult.size());
     assertThat(result).isEqualToComparingFieldByField(expectedResult);
   }
@@ -129,8 +129,7 @@ class StateTransitionTest {
     expectedResult.put(baseBlock.getRoot(), baseBlock.getState());
 
     final Map<Bytes32, BeaconState> result =
-        StateTransition.produceStatesForBlocks(
-            baseBlock.getRoot(), baseBlock.getState(), newBlocks);
+        stateGenerator.produceStatesForBlocks(baseBlock.getRoot(), baseBlock.getState(), newBlocks);
     assertThat(result.size()).isEqualTo(expectedResult.size());
     assertThat(result).isEqualToComparingFieldByField(expectedResult);
   }
@@ -142,7 +141,7 @@ class StateTransitionTest {
     final Map<Bytes32, BeaconState> expectedResult = Map.of(genesis.getRoot(), genesis.getState());
 
     final Map<Bytes32, BeaconState> result =
-        StateTransition.produceStatesForBlocks(
+        stateGenerator.produceStatesForBlocks(
             genesis.getRoot(), genesis.getState(), Collections.emptyList());
     assertThat(result.size()).isEqualTo(expectedResult.size());
     assertThat(result).isEqualToComparingFieldByField(expectedResult);
