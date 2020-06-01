@@ -593,8 +593,8 @@ public class Store implements ReadOnlyStore {
 
       // Build combined index from slot to block root for new and existing blocks
       final NavigableMap<UnsignedLong, Set<Bytes32>> slotToHotBlockRootIndex = new TreeMap<>();
-      indexBlockRootsBySlot(slotToHotBlockRootIndex, newBlocks.values());
       slotToHotBlockRootIndex.putAll(rootsBySlotLookup);
+      indexBlockRootsBySlot(slotToHotBlockRootIndex, newBlocks.values());
 
       // Prune historical blocks
       slotToHotBlockRootIndex

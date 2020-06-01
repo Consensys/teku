@@ -100,6 +100,14 @@ public class ChainBuilder {
     return streamBlocksAndStates(UnsignedLong.valueOf(fromSlot), UnsignedLong.valueOf(toSlot));
   }
 
+  public Stream<SignedBlockAndState> streamBlocksAndStates(final long fromSlot) {
+    return streamBlocksAndStates(UnsignedLong.valueOf(fromSlot));
+  }
+
+  public Stream<SignedBlockAndState> streamBlocksAndStates(final UnsignedLong fromSlot) {
+    return streamBlocksAndStates(fromSlot, getLatestSlot());
+  }
+
   public Stream<SignedBlockAndState> streamBlocksAndStates(
       final UnsignedLong fromSlot, final UnsignedLong toSlot) {
     return blocks.values().stream()

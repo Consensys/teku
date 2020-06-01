@@ -21,8 +21,11 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -637,6 +640,99 @@ class RecentChainDataTest {
       }
       assertThat(storageClient.getBlockRootBySlot(targetSlot, headRoot))
           .contains(expectedBlock.getRoot());
+    }
+  }
+
+  @Test
+  public void commit_pruneParallelNewBlocks() throws Exception {
+    testCommitPruningOfParallelBlocks(true);
+  }
+
+  @Test
+  public void commit_pruneParallelExistingBlocks() throws Exception {
+    testCommitPruningOfParallelBlocks(false);
+  }
+
+  /**
+   * Builds 2 parallel chains, one of which will get pruned when a block in the middle of the other
+   * chain is finalized. Keep one chain in the finalizing transaction, the other chain is already
+   * saved to the store.
+   *
+   * @param pruneNewBlocks Whether to keep the blocks to be pruned in the finalizing transaction, or
+   *     keep the blocks to be kept in the finalizing transaction
+   * @throws StateTransitionException
+   */
+  private void testCommitPruningOfParallelBlocks(final boolean pruneNewBlocks)
+      throws StateTransitionException {
+    final UnsignedLong epoch2Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(2));
+
+    // Create a fork by skipping the next slot on the fork chain
+    ChainBuilder fork = chainBuilder.fork();
+    // Generate the next 2 blocks on the primary chain
+    final SignedBlockAndState firstCanonicalBlock = chainBuilder.generateNextBlock();
+    saveBlock(storageClient, firstCanonicalBlock);
+    saveBlock(storageClient, chainBuilder.generateNextBlock());
+    // Skip a block and then generate the next block on the fork chain
+    final SignedBlockAndState firstForkBlock = fork.generateNextBlock(1);
+    saveBlock(storageClient, firstForkBlock);
+
+    // Build both the primary and fork chain past epoch1
+    // Make sure both chains are at the same slot
+    assertThat(chainBuilder.getLatestSlot()).isEqualTo(fork.getLatestSlot());
+    while (chainBuilder.getLatestSlot().compareTo(epoch2Slot) < 0) {
+      chainBuilder.generateNextBlock();
+      fork.generateNextBlock();
+    }
+
+    // Save one chain to the store, setup the other chain to be saved in the finalizing transaction
+    final List<SignedBlockAndState> newBlocks = new ArrayList<>();
+    if (pruneNewBlocks) {
+      // Save canonical blocks now, put fork blocks in the transaction
+      chainBuilder
+          .streamBlocksAndStates(firstCanonicalBlock.getSlot())
+          .forEach(b -> saveBlock(storageClient, b));
+      fork.streamBlocksAndStates(firstForkBlock.getSlot()).forEach(newBlocks::add);
+    } else {
+      // Save fork blocks now, put canonical blocks in the transaction
+      chainBuilder.streamBlocksAndStates(firstCanonicalBlock.getSlot()).forEach(newBlocks::add);
+      fork.streamBlocksAndStates(firstForkBlock.getSlot())
+          .forEach(b -> saveBlock(storageClient, b));
+    }
+
+    // Add blocks and finalize epoch 1, so that blocks will be pruned
+    final Transaction tx = storageClient.startStoreTransaction();
+    final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(1);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    newBlocks.forEach(tx::putBlockAndState);
+    tx.commit().reportExceptions();
+
+    // Check that only recent, canonical blocks at or after the latest finalized block are left in
+    // the store
+    final List<SignedBlockAndState> expectedBlocks =
+        chainBuilder
+            .streamBlocksAndStates(finalizedCheckpoint.getEpochStartSlot())
+            .collect(Collectors.toList());
+    final Set<Bytes32> blockRoots =
+        expectedBlocks.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());
+    // Collect blocks that should be pruned
+    final Set<Bytes32> prunedBlocks =
+        fork.streamBlocksAndStates(firstForkBlock.getSlot())
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toSet());
+
+    // Check expected blocks
+    assertThat(storageClient.getStore().getBlockRoots())
+        .containsExactlyInAnyOrderElementsOf(blockRoots);
+    for (SignedBlockAndState expectedBlock : expectedBlocks) {
+      assertThat(storageClient.getSignedBlockByRoot(expectedBlock.getRoot()))
+          .contains(expectedBlock.getBlock());
+      assertThat(storageClient.getBlockState(expectedBlock.getRoot()))
+          .contains(expectedBlock.getState());
+    }
+    // Check pruned blocks
+    for (Bytes32 prunedBlock : prunedBlocks) {
+      assertThat(storageClient.getSignedBlockByRoot(prunedBlock)).isEmpty();
+      assertThat(storageClient.getBlockState(prunedBlock)).isEmpty();
     }
   }
 
