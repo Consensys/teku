@@ -18,7 +18,7 @@ import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
-import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetValidators;
+import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class RestApiHostWhitelistIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -38,6 +38,6 @@ public class RestApiHostWhitelistIntegrationTest extends AbstractDataBackedRestA
   }
 
   private Response getLatest() throws IOException {
-    return getResponse(GetValidators.ROUTE);
+    return getResponse(GetVersion.ROUTE);
   }
 }
