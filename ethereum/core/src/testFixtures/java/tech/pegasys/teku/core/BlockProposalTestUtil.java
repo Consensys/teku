@@ -17,6 +17,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
@@ -35,12 +36,9 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-
-import java.util.Optional;
 
 public class BlockProposalTestUtil {
 
@@ -92,27 +90,26 @@ public class BlockProposalTestUtil {
   }
 
   public SignedBlockAndState createBlock(
-          final MessageSignerService signer,
-          final UnsignedLong newSlot,
-          final BeaconState previousState,
-          final Bytes32 parentBlockSigningRoot,
-          final Optional<SSZList<Attestation>> attestations,
-          final Optional<SSZList<Deposit>> deposits,
-          final Optional<SSZList<SignedVoluntaryExit>> exits,
-          final Optional<Eth1Data> eth1Data)
-          throws StateTransitionException {
+      final MessageSignerService signer,
+      final UnsignedLong newSlot,
+      final BeaconState previousState,
+      final Bytes32 parentBlockSigningRoot,
+      final Optional<SSZList<Attestation>> attestations,
+      final Optional<SSZList<Deposit>> deposits,
+      final Optional<SSZList<SignedVoluntaryExit>> exits,
+      final Optional<Eth1Data> eth1Data)
+      throws StateTransitionException {
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     return createNewBlock(
-            signer,
-            newSlot,
-            previousState,
-            parentBlockSigningRoot,
-            eth1Data.orElse(get_eth1_data_stub(previousState, newEpoch)),
-            attestations.orElse(BeaconBlockBodyLists.createAttestations()),
-            BeaconBlockBodyLists.createProposerSlashings(),
-            deposits.orElse(BeaconBlockBodyLists.createDeposits()),
-            exits.orElse(BeaconBlockBodyLists.createVoluntaryExits())
-    );
+        signer,
+        newSlot,
+        previousState,
+        parentBlockSigningRoot,
+        eth1Data.orElse(get_eth1_data_stub(previousState, newEpoch)),
+        attestations.orElse(BeaconBlockBodyLists.createAttestations()),
+        BeaconBlockBodyLists.createProposerSlashings(),
+        deposits.orElse(BeaconBlockBodyLists.createDeposits()),
+        exits.orElse(BeaconBlockBodyLists.createVoluntaryExits()));
   }
 
   private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {

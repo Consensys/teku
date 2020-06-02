@@ -296,15 +296,14 @@ public class ChainBuilder {
     final MessageSignerService signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState =
         blockProposalTestUtil.createBlock(
-                signer,
-                slot,
-                preState,
-                parentRoot,
-                Optional.of(options.getAttestations()),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty()
-        );
+            signer,
+            slot,
+            preState,
+            parentRoot,
+            Optional.of(options.getAttestations()),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty());
 
     blocks.put(slot, nextBlockAndState);
     return nextBlockAndState;

@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.DepositMerkleTree;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -26,7 +27,6 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.core.DepositMerkleTree;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -91,5 +91,4 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   public int getDepositMapSize() {
     return depositMerkleTree.getDepositMapSize();
   }
-
 }

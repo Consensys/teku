@@ -150,6 +150,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
+    voluntaryExitGossipManager.shutdown();
     attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
     super.stop();
   }

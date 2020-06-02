@@ -21,7 +21,6 @@ import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;

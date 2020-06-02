@@ -143,7 +143,8 @@ public class BlockImporterTest {
 
     assertThatCode(
             () -> {
-              localChain.createAndImportBlockAtSlotWithAttestations(currentSlotFinal, aggregatedAttestations);
+              localChain.createAndImportBlockAtSlotWithAttestations(
+                  currentSlotFinal, aggregatedAttestations);
             })
         .hasMessageContaining("signature");
   }

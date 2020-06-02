@@ -34,9 +34,9 @@ public class VoluntaryExitGenerator {
     this.validatorKeys = validatorKeys;
   }
 
-  private SignedVoluntaryExit create(ForkInfo forkInfo, UnsignedLong epoch, int validatorIndex, boolean valid) {
-    VoluntaryExit exit =
-        new VoluntaryExit(epoch, UnsignedLong.valueOf(validatorIndex));
+  private SignedVoluntaryExit create(
+      ForkInfo forkInfo, UnsignedLong epoch, int validatorIndex, boolean valid) {
+    VoluntaryExit exit = new VoluntaryExit(epoch, UnsignedLong.valueOf(validatorIndex));
 
     BLSSignature exitSignature =
         new Signer(new LocalMessageSignerService(getKeypair(validatorIndex, valid)))
@@ -47,14 +47,17 @@ public class VoluntaryExitGenerator {
   }
 
   public SignedVoluntaryExit withInvalidSignature(BeaconState state, int validatorIndex) {
-    return create(state.getForkInfo(), compute_epoch_at_slot(state.getSlot()), validatorIndex, false);
+    return create(
+        state.getForkInfo(), compute_epoch_at_slot(state.getSlot()), validatorIndex, false);
   }
 
-  public SignedVoluntaryExit valid(BeaconState state, int validatorIndex, boolean checkForHavingBeenActiveLongEnough) {
+  public SignedVoluntaryExit valid(
+      BeaconState state, int validatorIndex, boolean checkForHavingBeenActiveLongEnough) {
     if (checkForHavingBeenActiveLongEnough) {
       checkForValidatorHavingBeenActiveLongEnough(state, validatorIndex);
     }
-    return create(state.getForkInfo(), compute_epoch_at_slot(state.getSlot()), validatorIndex, true);
+    return create(
+        state.getForkInfo(), compute_epoch_at_slot(state.getSlot()), validatorIndex, true);
   }
 
   public SignedVoluntaryExit valid(BeaconState state, int validatorIndex) {
@@ -65,11 +68,12 @@ public class VoluntaryExitGenerator {
     return create(state.getForkInfo(), UnsignedLong.valueOf(epoch), validatorIndex, true);
   }
 
-  private BLSKeyPair getKeypair(int validatorIndex,  boolean valid) {
+  private BLSKeyPair getKeypair(int validatorIndex, boolean valid) {
     return valid ? validatorKeys.get(validatorIndex) : BLSKeyPair.random(12345);
   }
 
-  // It is easy to miss to update the state to a slot where validator can finally exit. This check is to
+  // It is easy to miss to update the state to a slot where validator can finally exit. This check
+  // is to
   // ensure that the passed state slot is high enough to make sure that doesn't happen.
   private void checkForValidatorHavingBeenActiveLongEnough(BeaconState state, int validatorIndex) {
     if (state
@@ -77,9 +81,10 @@ public class VoluntaryExitGenerator {
             .get(validatorIndex)
             .getActivation_epoch()
             .plus(UnsignedLong.valueOf(Constants.PERSISTENT_COMMITTEE_PERIOD))
-            .compareTo(compute_epoch_at_slot(state.getSlot())) >= 0
-    ) {
-      throw new IllegalStateException("Validator has not been active long enough to have a valid exit");
+            .compareTo(compute_epoch_at_slot(state.getSlot()))
+        >= 0) {
+      throw new IllegalStateException(
+          "Validator has not been active long enough to have a valid exit");
     }
   }
 }

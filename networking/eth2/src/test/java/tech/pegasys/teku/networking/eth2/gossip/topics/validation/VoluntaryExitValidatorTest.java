@@ -20,10 +20,8 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Validat
 import static tech.pegasys.teku.statetransition.BeaconChainUtil.initializeStorage;
 
 import com.google.common.eventbus.EventBus;
-
-import java.util.List;
-
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,9 +41,9 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class VoluntaryExitValidatorTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
-          new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
+      new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private final VoluntaryExitGenerator voluntaryExitGenerator =
-          new VoluntaryExitGenerator(VALIDATOR_KEYS);
+      new VoluntaryExitGenerator(VALIDATOR_KEYS);
 
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
@@ -74,8 +72,8 @@ public class VoluntaryExitValidatorTest {
   public void shouldReturnValidForValidVoluntaryExit() throws Exception {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
-    SignedVoluntaryExit exit = voluntaryExitGenerator
-            .valid(recentChainData.getBestState().orElseThrow(), 3);
+    SignedVoluntaryExit exit =
+        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(VALID);
   }
 
@@ -84,13 +82,13 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit1 =
-            voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
+        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
 
     SignedVoluntaryExit exit2 =
-            voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
+        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
 
     SignedVoluntaryExit exit3 =
-            voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
+        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
 
     assertThat(voluntaryExitValidator.validate(exit1)).isEqualTo(VALID);
     assertThat(voluntaryExitValidator.validate(exit2)).isEqualTo(INVALID);
@@ -102,24 +100,24 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit1 =
-            voluntaryExitGenerator.withInvalidSignature(recentChainData.getBestState().orElseThrow(), 3);
+        voluntaryExitGenerator.withInvalidSignature(
+            recentChainData.getBestState().orElseThrow(), 3);
     assertThat(voluntaryExitValidator.validate(exit1)).isEqualTo(INVALID);
   }
 
   @Test
   public void shouldReturnInvalidForExitOfInactiveValidator() throws Exception {
-    TestDepositGenerator testDepositGenerator = new TestDepositGenerator(VALIDATOR_KEYS.subList(0, 20));
+    TestDepositGenerator testDepositGenerator =
+        new TestDepositGenerator(VALIDATOR_KEYS.subList(0, 20));
     List<Deposit> deposits = testDepositGenerator.getDeposits(10, 20, 20);
     initializeStorage(recentChainData, VALIDATOR_KEYS.subList(0, 10));
 
-    beaconChainUtil.setEth1DataOfChain(new Eth1Data(
-            testDepositGenerator.getRoot(),
-            UnsignedLong.valueOf(20),
-            Bytes32.ZERO));
+    beaconChainUtil.setEth1DataOfChain(
+        new Eth1Data(testDepositGenerator.getRoot(), UnsignedLong.valueOf(20), Bytes32.ZERO));
     beaconChainUtil.createAndImportBlockAtSlotWithDeposits(UnsignedLong.valueOf(6), deposits);
 
     SignedVoluntaryExit exit =
-            voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 15);
+        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 15);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
   }
 
@@ -128,7 +126,7 @@ public class VoluntaryExitValidatorTest {
     initializeStorage(recentChainData, VALIDATOR_KEYS.subList(0, 10));
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit =
-            voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 20, false);
+        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 20, false);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
   }
 
@@ -137,12 +135,12 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit1 =
-            voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
+        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
 
     beaconChainUtil.createAndImportBlockAtSlotWithExits(UnsignedLong.valueOf(7), List.of(exit1));
 
     SignedVoluntaryExit exit2 =
-            voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
+        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
     assertThat(voluntaryExitValidator.validate(exit2)).isEqualTo(INVALID);
   }
 
@@ -153,28 +151,25 @@ public class VoluntaryExitValidatorTest {
 
     // Sanity check
     assertThat(compute_epoch_at_slot(recentChainData.getBestState().orElseThrow().getSlot()))
-            .isEqualTo(UnsignedLong.valueOf(3));
+        .isEqualTo(UnsignedLong.valueOf(3));
 
     SignedVoluntaryExit exit =
-            voluntaryExitGenerator.withEpoch(
-                    recentChainData.getBestState().orElseThrow(),
-                    4,
-                    3
-            );
+        voluntaryExitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 4, 3);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
   }
 
   @Test
   public void shouldReturnInvalidForValidatorThatHasntBeenActiveLongEnough() throws Exception {
     beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(1); // epoch at 0, and persistent committee period is 2 epochs
+    beaconChainUtil.createAndImportBlockAtSlot(
+        1); // epoch at 0, and persistent committee period is 2 epochs
 
     // Sanity check
     assertThat(compute_epoch_at_slot(recentChainData.getBestState().orElseThrow().getSlot()))
-            .isEqualTo(UnsignedLong.valueOf(0));
+        .isEqualTo(UnsignedLong.valueOf(0));
 
     SignedVoluntaryExit exit =
-            voluntaryExitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 0, 3);
+        voluntaryExitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 0, 3);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
   }
 }
