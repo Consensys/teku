@@ -44,7 +44,7 @@ public class AttestationSubnetSubscriptionsTest {
   @BeforeEach
   void setUp() {
     final RecentChainData recentChainData = mock(RecentChainData.class);
-    when(recentChainData.getCurrentForkInfo())
+    when(recentChainData.getHeadForkInfo())
         .thenReturn(Optional.of(dataStructureUtil.randomForkInfo()));
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
