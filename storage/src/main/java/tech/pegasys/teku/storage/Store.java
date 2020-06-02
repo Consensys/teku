@@ -48,6 +48,7 @@ import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.FailedPrecommitException;
@@ -252,6 +253,18 @@ public class Store implements ReadOnlyStore {
     readLock.lock();
     try {
       return finalized_checkpoint;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
+    readLock.lock();
+    try {
+      final Checkpoint checkpoint = finalized_checkpoint;
+      final SignedBeaconBlock block = getSignedBlock(checkpoint.getRoot());
+      return new CheckpointAndBlock(checkpoint, block);
     } finally {
       readLock.unlock();
     }
@@ -532,6 +545,16 @@ public class Store implements ReadOnlyStore {
     @Override
     public Checkpoint getFinalizedCheckpoint() {
       return finalized_checkpoint.orElseGet(Store.this::getFinalizedCheckpoint);
+    }
+
+    @Override
+    public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
+      return finalized_checkpoint
+          .flatMap(
+              (checkpoint) ->
+                  Optional.ofNullable(getSignedBlock(checkpoint.getRoot()))
+                      .map(block -> new CheckpointAndBlock(checkpoint, block)))
+          .orElse(Store.this.getFinalizedCheckpointAndBlock());
     }
 
     @Override
