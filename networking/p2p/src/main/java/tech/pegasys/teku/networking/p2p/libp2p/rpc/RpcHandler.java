@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import static tech.pegasys.teku.util.async.FutureUtil.ignoreFuture;
 
+import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
 import io.libp2p.core.multistream.Mode;
@@ -210,7 +211,11 @@ public class RpcHandler implements ProtocolBinding<Controller> {
           .handle(
               (res, err) -> {
                 if (err != null) {
-                  LOG.error("Unhandled exception while processing rpc input", err);
+                  if (Throwables.getRootCause(err) instanceof RpcStream.StreamClosedException) {
+                    LOG.debug("Stream closed while processing rpc input", err);
+                  } else {
+                    LOG.error("Unhandled exception while processing rpc input", err);
+                  }
                 }
                 try {
                   inputStream.close();
