@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -57,7 +58,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
-  private static final TekuConfiguration config =
+  private static final TekuConfiguration CONFIG =
       TekuConfiguration.builder()
           .setRestApiPort(0)
           .setRestApiDocsEnabled(false)
@@ -104,7 +105,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
   }
 
-  private void setupAndStartRestAPI() {
+  private void setupAndStartRestAPI(TekuConfiguration config) {
     blockImporter =
         new BlockImporter(recentChainData, mock(ForkChoice.class), storageSystem.eventBus());
     combinedChainDataClient = storageSystem.combinedChainDataClient();
@@ -119,6 +120,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
+  }
+
+  private void setupAndStartRestAPI() {
+    setupAndStartRestAPI(CONFIG);
   }
 
   protected void startPreForkChoiceRestAPI() {
@@ -136,6 +141,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupStorage(StateStorageMode.ARCHIVE);
     // Start API
     setupAndStartRestAPI();
+  }
+
+  protected void startPreGenesisRestAPIWithConfig(TekuConfiguration config) {
+    setupStorage(StateStorageMode.ARCHIVE);
+    // Start API
+    setupAndStartRestAPI(config);
   }
 
   protected void startRestAPIAtGenesis() {
@@ -196,6 +207,11 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected void assertNotFound(final Response response) throws IOException {
     assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
     assertThat(response.body().string()).isEmpty();
+  }
+
+  protected void assertForbidden(final Response response) throws IOException {
+    assertThat(response.code()).isEqualTo(SC_FORBIDDEN);
+    assertThat(response.body().string()).contains("Host not authorized");
   }
 
   protected void assertBodyEquals(final Response response, final String body) throws IOException {

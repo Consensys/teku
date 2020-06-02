@@ -21,6 +21,7 @@ import static tech.pegasys.teku.beaconrestapi.HostWhitelistUtils.isHostAuthorize
 
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
+import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
@@ -89,10 +90,13 @@ public class BeaconRestApi {
   private void addHostWhitelistHandler(final TekuConfiguration configuration) {
     app.before(
         (ctx) -> {
-          String header = ctx.header("host");
+          String header = ctx.host();
           if (!isHostAuthorized(configuration.getRestApiHostWhitelist(), header)) {
             ctx.status(SC_FORBIDDEN);
             LOG.debug("Host not authorized " + header);
+            ctx.result("Host not authorized");
+            ctx.contentType("text/html");
+            throw new HttpResponseException(0, "Host not authorized", null);
           }
         });
   }
