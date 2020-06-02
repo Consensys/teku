@@ -47,21 +47,26 @@ public class BlockProductionDuty implements Duty {
   }
 
   @Override
-  public SafeFuture<?> performDuty() {
+  public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
     return forkProvider.getForkInfo().thenCompose(this::produceBlock);
   }
 
   @Override
-  public String describe() {
-    return "Block production for slot " + slot + " by " + validator.getPublicKey();
+  public String getProducedType() {
+    return "block";
   }
 
-  public SafeFuture<Void> produceBlock(final ForkInfo forkInfo) {
+  public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     return createRandaoReveal(forkInfo)
         .thenCompose(this::createUnsignedBlock)
         .thenCompose(unsignedBlock -> signBlock(forkInfo, unsignedBlock))
-        .thenAccept(validatorApiChannel::sendSignedBlock);
+        .thenApply(
+            signedBlock -> {
+              validatorApiChannel.sendSignedBlock(signedBlock);
+              return DutyResult.success(signedBlock.getRoot());
+            })
+        .exceptionally(DutyResult::forError);
   }
 
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(final BLSSignature randaoReveal) {
@@ -76,7 +81,10 @@ public class BlockProductionDuty implements Duty {
       final ForkInfo forkInfo, final Optional<BeaconBlock> unsignedBlock) {
     return validator
         .getSigner()
-        .signBlock(unsignedBlock.orElseThrow(), forkInfo)
+        .signBlock(
+            unsignedBlock.orElseThrow(
+                () -> new IllegalStateException("Node was not syncing but could not create block")),
+            forkInfo)
         .thenApply(signature -> new SignedBeaconBlock(unsignedBlock.orElseThrow(), signature));
   }
 }
