@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
@@ -202,6 +203,29 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   public Optional<Fork> getNextFork() {
     // There is no future fork defined at this point.
     return Optional.empty();
+  }
+
+  /**
+   * Returns the fork info that applies based on the node's current slot, regardless of where the
+   * sync progress is up to.
+   *
+   * @return fork info based on the current time, not head block
+   */
+  public Optional<ForkInfo> getForkInfoAtCurrentTime() {
+    return getCurrentForkInfo()
+        .map(
+            headForkInfo ->
+                getNextFork()
+                    .filter(this::isForkActive)
+                    .map(
+                        nextFork -> new ForkInfo(nextFork, headForkInfo.getGenesisValidatorsRoot()))
+                    .orElse(headForkInfo));
+  }
+
+  private boolean isForkActive(final Fork fork) {
+    return getCurrentSlot()
+        .map(currentSlot -> compute_epoch_at_slot(currentSlot).compareTo(fork.getEpoch()) >= 0)
+        .orElse(false);
   }
 
   /**
