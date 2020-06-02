@@ -14,13 +14,14 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
@@ -28,6 +29,7 @@ import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.logging.ValidatorLogger;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -53,8 +56,10 @@ class AggregationDutyTest {
   private final Signer signer2 = mock(Signer.class);
   private final Validator validator1 = new Validator(dataStructureUtil.randomPublicKey(), signer1);
   private final Validator validator2 = new Validator(dataStructureUtil.randomPublicKey(), signer2);
+  private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
-  private final AggregationDuty duty = new AggregationDuty(SLOT, validatorApiChannel, forkProvider);
+  private final AggregationDuty duty =
+      new AggregationDuty(SLOT, validatorApiChannel, forkProvider, validatorLogger);
 
   @BeforeEach
   public void setUp() {
@@ -62,8 +67,14 @@ class AggregationDutyTest {
   }
 
   @Test
+  public void shouldReturnCorrectProducedType() {
+    assertThat(duty.getProducedType()).isEqualTo("aggregate");
+  }
+
+  @Test
   public void shouldBeCompleteWhenNoValidatorsAdded() {
-    assertThat(duty.performDuty()).isCompleted();
+    performAndReportDuty();
+    verifyNoInteractions(validatorApiChannel, validatorLogger);
   }
 
   @Test
@@ -206,12 +217,16 @@ class AggregationDutyTest {
     when(signer1.signAggregateAndProof(aggregateAndProof, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregateSignature1));
 
-    assertThat(duty.performDuty()).isCompleted();
+    performAndReportDuty();
 
     verify(validatorApiChannel)
         .sendAggregateAndProof(new SignedAggregateAndProof(aggregateAndProof, aggregateSignature1));
     // Only one proof should be sent.
     verify(validatorApiChannel, times(1)).sendAggregateAndProof(any());
+    verify(validatorLogger)
+        .dutyCompleted(
+            duty.getProducedType(), SLOT, 1, Set.of(aggregate.getData().getBeacon_block_root()));
+    verifyNoMoreInteractions(validatorLogger);
   }
 
   @Test
@@ -220,8 +235,11 @@ class AggregationDutyTest {
         validator1, 1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
     verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(anyInt(), any());
 
-    assertThat(duty.performDuty()).isCompletedExceptionally();
-    verifyNoMoreInteractions(validatorApiChannel);
+    performAndReportDuty();
+
+    verify(validatorLogger)
+        .dutyFailed(eq(duty.getProducedType()), eq(SLOT), any(IllegalStateException.class));
+    verifyNoMoreInteractions(validatorLogger);
   }
 
   @Test
@@ -230,13 +248,14 @@ class AggregationDutyTest {
     duty.addValidator(
         validator1, 1, dataStructureUtil.randomSignature(), 2, failedFuture(exception));
 
-    final SafeFuture<?> result = duty.performDuty();
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::join).hasRootCause(exception);
+    performAndReportDuty();
+
+    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, exception);
+    verifyNoMoreInteractions(validatorLogger);
   }
 
   @Test
-  public void shouldFailWhenAggregateNotCreated() {
+  public void shouldReportWhenAggregateNotCreated() {
     final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
     duty.addValidator(
         validator1,
@@ -247,8 +266,10 @@ class AggregationDutyTest {
     when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
         .thenReturn(completedFuture(Optional.empty()));
 
-    assertThat(duty.performDuty()).isCompletedExceptionally();
+    assertThat(duty.performDuty()).isCompleted();
     verify(validatorApiChannel, never()).sendAggregateAndProof(any());
+    verify(validatorLogger).aggregationSkipped(SLOT);
+    verifyNoMoreInteractions(validatorLogger);
   }
 
   @Test
@@ -264,9 +285,15 @@ class AggregationDutyTest {
     when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
         .thenReturn(failedFuture(exception));
 
-    final SafeFuture<?> result = duty.performDuty();
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::join).hasRootCause(exception);
+    performAndReportDuty();
     verify(validatorApiChannel, never()).sendAggregateAndProof(any());
+    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, exception);
+    verifyNoMoreInteractions(validatorLogger);
+  }
+
+  private void performAndReportDuty() {
+    final SafeFuture<DutyResult> result = duty.performDuty();
+    assertThat(result).isCompleted();
+    result.join().report(duty.getProducedType(), SLOT, validatorLogger);
   }
 }
