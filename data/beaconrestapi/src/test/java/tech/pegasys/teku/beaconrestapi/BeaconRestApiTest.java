@@ -173,4 +173,9 @@ class BeaconRestApiTest {
   public void RestApiShouldHaveCustomNotFoundError() {
     verify(app, never()).error(eq(SC_NOT_FOUND), any());
   }
+
+  @Test
+  public void RestApiShouldHaveBeforeHandler() {
+    verify(app).before(any());
+  }
 }
