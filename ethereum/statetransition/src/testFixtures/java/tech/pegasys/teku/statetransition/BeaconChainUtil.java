@@ -15,7 +15,9 @@ package tech.pegasys.teku.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -30,9 +32,12 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.TestMessageSignerService;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -120,20 +125,65 @@ public class BeaconChainUtil {
     return createAndImportBlockAtSlot(UnsignedLong.valueOf(slot));
   }
 
-  public SignedBeaconBlock createAndImportBlockAtSlot(
+  public SignedBeaconBlock createAndImportBlockAtSlotWithExits(
+          final UnsignedLong slot, List<SignedVoluntaryExit> exits) throws Exception {
+    Optional<SSZList<SignedVoluntaryExit>> exitsSSZList =
+            exits.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(
+                    SSZList.createMutable(exits, Constants.MAX_VOLUNTARY_EXITS, SignedVoluntaryExit.class));
+
+    return createAndImportBlockAtSlot(slot,
+            Optional.empty(),
+            Optional.empty(),
+            exitsSSZList,
+            Optional.empty());
+  }
+
+  public SignedBeaconBlock createAndImportBlockAtSlotWithDeposits(
+          final UnsignedLong slot, List<Deposit> deposits) throws Exception {
+    Optional<SSZList<Deposit>> depositsSSZlist =
+            deposits.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(
+                    SSZList.createMutable(deposits, Constants.MAX_DEPOSITS, Deposit.class));
+
+    return createAndImportBlockAtSlot(slot,
+            Optional.empty(),
+            depositsSSZlist,
+            Optional.empty(),
+            Optional.empty());
+  }
+
+  public SignedBeaconBlock createAndImportBlockAtSlotWithAttestations(
       final UnsignedLong slot, List<Attestation> attestations) throws Exception {
-    Optional<SSZList<Attestation>> sszList =
+    Optional<SSZList<Attestation>> attestationsSSZList =
         attestations.isEmpty()
             ? Optional.empty()
             : Optional.of(
                 SSZList.createMutable(attestations, Constants.MAX_ATTESTATIONS, Attestation.class));
 
-    return createAndImportBlockAtSlot(slot, sszList);
+    return createAndImportBlockAtSlot(
+            slot,
+            attestationsSSZList,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty());
   }
 
   public SignedBeaconBlock createAndImportBlockAtSlot(
-      final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
-    final SignedBeaconBlock block = createBlockAndStateAtSlot(slot, true, attestations).getBlock();
+      final UnsignedLong slot,
+      Optional<SSZList<Attestation>> attestations,
+      Optional<SSZList<Deposit>> deposits,
+      Optional<SSZList<SignedVoluntaryExit>> exits,
+      Optional<Eth1Data> eth1Data) throws Exception {
+    final SignedBeaconBlock block = createBlockAndStateAtSlot(
+            slot,
+            true,
+            attestations,
+            deposits,
+            exits,
+            eth1Data).getBlock();
     setSlot(slot);
     final Transaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult importResult =
@@ -158,7 +208,12 @@ public class BeaconChainUtil {
   }
 
   public SignedBeaconBlock createAndImportBlockAtSlot(final UnsignedLong slot) throws Exception {
-    return createAndImportBlockAtSlot(slot, Optional.empty());
+    return createAndImportBlockAtSlot(
+            slot,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty());
   }
 
   public SignedBeaconBlock createBlockAtSlotFromInvalidProposer(final UnsignedLong slot)
@@ -173,16 +228,24 @@ public class BeaconChainUtil {
 
   public SignedBlockAndState createBlockAndStateAtSlot(
       final UnsignedLong slot, boolean withValidProposer) throws Exception {
-    return createBlockAndStateAtSlot(slot, withValidProposer, Optional.empty());
+    return createBlockAndStateAtSlot(
+            slot,
+            withValidProposer,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty());
   }
 
   private SignedBlockAndState createBlockAndStateAtSlot(
       final UnsignedLong slot,
       boolean withValidProposer,
-      Optional<SSZList<Attestation>> attestations)
+      Optional<SSZList<Attestation>> attestations,
+      Optional<SSZList<Deposit>> deposits,
+      Optional<SSZList<SignedVoluntaryExit>> exits,
+      Optional<Eth1Data> eth1Data)
       throws Exception {
-    checkState(
-        withValidProposer || validatorKeys.size() > 1,
+    checkState(withValidProposer || validatorKeys.size() > 1,
         "Must have >1 validator in order to create a block from an invalid proposer.");
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconBlock bestBlock = recentChainData.getStore().getBlock(bestBlockRoot);
@@ -194,12 +257,16 @@ public class BeaconChainUtil {
         withValidProposer ? correctProposerIndex : getWrongProposerIndex(correctProposerIndex);
 
     final MessageSignerService signer = getSigner(proposerIndex);
-    if (attestations.isPresent()) {
-      return blockCreator.createBlockWithAttestations(
-          signer, slot, preState, bestBlockRoot, attestations.get());
-    } else {
-      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot);
-    }
+    return blockCreator.createBlock(
+          signer,
+            slot,
+            preState,
+            bestBlockRoot,
+            attestations,
+            deposits,
+            exits,
+            eth1Data
+    );
   }
 
   public void finalizeChainAtEpoch(final UnsignedLong epoch) throws Exception {
@@ -226,8 +293,33 @@ public class BeaconChainUtil {
               Constants.MAX_ATTESTATIONS,
               Attestation.class);
       createAndImportBlockAtSlot(
-          recentChainData.getBestSlot().plus(UnsignedLong.ONE),
-          Optional.of(currentSlotAssignments));
+              recentChainData.getBestSlot().plus(UnsignedLong.ONE),
+              Optional.of(currentSlotAssignments),
+              Optional.empty(),
+              Optional.empty(),
+              Optional.empty()
+      );
+    }
+  }
+
+  public void setEth1DataOfChain(final Eth1Data eth1Data) throws Exception {
+    long vote_count = 0;
+    while (true) {
+      System.out.println(vote_count);
+      createAndImportBlockAtSlot(
+              recentChainData.getBestSlot().plus(UnsignedLong.ONE),
+              Optional.empty(),
+              Optional.empty(),
+              Optional.empty(),
+              Optional.of(eth1Data)
+      );
+      vote_count =
+              recentChainData.getBestState().orElseThrow().getEth1_data_votes().stream()
+                      .filter(item -> item.equals(eth1Data))
+                      .count();
+      if (vote_count * 2 < EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH) {
+        return;
+      }
     }
   }
 

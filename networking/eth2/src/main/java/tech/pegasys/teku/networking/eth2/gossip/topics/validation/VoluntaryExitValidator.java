@@ -21,6 +21,9 @@ import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Set;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -30,6 +33,7 @@ import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 
 public class VoluntaryExitValidator {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
   private final Set<UnsignedLong> receivedValidValidatorExitSet =
@@ -42,14 +46,20 @@ public class VoluntaryExitValidator {
 
   public ValidationResult validate(SignedVoluntaryExit exit) {
     if (!isFirstValidExitForValidator(exit)) {
+      LOG.trace("VoluntaryExitValidator: Exit is not the first one for the given validator.");
       return INVALID;
     }
 
-    if (passesProcessVoluntaryExitConditions(exit)) {
-      return VALID;
+    if (!passesProcessVoluntaryExitConditions(exit)) {
+      return INVALID;
     }
 
-    return INVALID;
+    if (receivedValidValidatorExitSet.add(exit.getMessage().getValidator_index())) {
+      return VALID;
+    } else {
+      LOG.trace("VoluntaryExitValidator: Exit is not the first one for the given validator.");
+      return INVALID;
+    }
   }
 
   private boolean passesProcessVoluntaryExitConditions(SignedVoluntaryExit exit) {
@@ -64,9 +74,10 @@ public class VoluntaryExitValidator {
       check_voluntary_exit(state, exit.getMessage());
       verify_voluntary_exits(state, SSZList.singleton(exit), BLSSignatureVerifier.SIMPLE);
     } catch (IllegalArgumentException | BLSSignatureVerifier.InvalidSignatureException e) {
+      LOG.trace("VoluntaryExitValidator: Exit fails process voluntary exit conditions.", e);
       return false;
     }
-    return receivedValidValidatorExitSet.add(exit.getMessage().getValidator_index());
+    return true;
   }
 
   private boolean isFirstValidExitForValidator(SignedVoluntaryExit exit) {
