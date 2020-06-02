@@ -11,12 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.validator.coordinator;
 
-import tech.pegasys.teku.util.async.SafeFuture;
+import com.google.common.primitives.UnsignedLong;
 
-public interface Duty {
-  SafeFuture<DutyResult> performDuty();
+public class MissingDepositsException extends IllegalStateException {
 
-  String getProducedType();
+  public MissingDepositsException(
+      final UnsignedLong maxAvailableDeposit, final UnsignedLong requiredDepositIndex) {
+    super(
+        "Unable to create block because ETH1 deposits are not available. Missing deposits "
+            + maxAvailableDeposit.plus(UnsignedLong.ONE)
+            + " to "
+            + requiredDepositIndex);
+  }
 }

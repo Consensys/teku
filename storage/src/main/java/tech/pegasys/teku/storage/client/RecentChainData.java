@@ -14,13 +14,12 @@
 package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.max;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,8 +31,6 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -195,13 +192,39 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.of(ForkChoiceUtil.get_current_slot(store));
   }
 
-  public Optional<ForkInfo> getCurrentForkInfo() {
+  public Optional<ForkInfo> getHeadForkInfo() {
     return getBestState().map(BeaconState::getForkInfo);
   }
 
   public Optional<Fork> getNextFork() {
     // There is no future fork defined at this point.
     return Optional.empty();
+  }
+
+  /**
+   * Returns the fork info that applies based on the node's current slot, regardless of where the
+   * sync progress is up to.
+   *
+   * <p>NOTE: Works on the basis that there is only one future forked scheduled as that's all we can
+   * currently support.
+   *
+   * @return fork info based on the current time, not head block
+   */
+  public Optional<ForkInfo> getForkInfoAtCurrentTime() {
+    return getHeadForkInfo()
+        .map(
+            headForkInfo ->
+                getNextFork()
+                    .filter(this::isForkActive)
+                    .map(
+                        nextFork -> new ForkInfo(nextFork, headForkInfo.getGenesisValidatorsRoot()))
+                    .orElse(headForkInfo));
+  }
+
+  private boolean isForkActive(final Fork fork) {
+    return getCurrentSlot()
+        .map(currentSlot -> compute_epoch_at_slot(currentSlot).compareTo(fork.getEpoch()) >= 0)
+        .orElse(false);
   }
 
   /**
@@ -247,22 +270,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    */
   public UnsignedLong getBestSlot() {
     return chainHead.map(SignedBlockAndState::getSlot).orElse(UnsignedLong.ZERO);
-  }
-
-  @Subscribe
-  public void onNewUnprocessedBlock(BeaconBlock block) {
-    EVENT_LOG.unprocessedBlock(block.getState_root());
-  }
-
-  @Subscribe
-  public void onNewUnprocessedAttestation(Attestation attestation) {
-    EVENT_LOG.unprocessedAttestation(attestation.getData().getBeacon_block_root());
-  }
-
-  @Subscribe
-  public void onNewAggregateAndProof(SignedAggregateAndProof attestation) {
-    EVENT_LOG.aggregateAndProof(
-        attestation.getMessage().getAggregate().getData().getBeacon_block_root());
   }
 
   public boolean containsBlock(final Bytes32 root) {

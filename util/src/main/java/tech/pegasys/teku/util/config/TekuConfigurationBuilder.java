@@ -51,6 +51,7 @@ public class TekuConfigurationBuilder {
   private String eth1Endpoint;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
+  private boolean logIncludeValidatorDutiesEnabled;
   private LoggingDestination logDestination;
   private String logFile;
   private String logFileNamePattern;
@@ -239,6 +240,12 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setLogIncludeValidatorDutiesEnabled(
+      final boolean logIncludeValidatorDutiesEnabled) {
+    this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
+    return this;
+  }
+
   public TekuConfigurationBuilder setLogDestination(final LoggingDestination logDestination) {
     this.logDestination = logDestination;
     return this;
@@ -399,6 +406,7 @@ public class TekuConfigurationBuilder {
         eth1Endpoint,
         logColorEnabled,
         logIncludeEventsEnabled,
+        logIncludeValidatorDutiesEnabled,
         logDestination,
         logFile,
         logFileNamePattern,
