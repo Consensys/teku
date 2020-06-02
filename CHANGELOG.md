@@ -23,6 +23,8 @@ named CLI option `--validators-key-files` which is used to specify encrypted val
 - `--network witti` includes the final configuration for the Witti testnet. The genesis state is included so an ETH1 endpoint is no longer required when connecting to Witti
 - Teku can now use Infura as the ETH1 endpoint
 - ETH1 node is no longer required to maintain historic world state
+- Added `--log-include-validator-duties-enabled` option to enable log messages when validator clients produce blocks, attestations or aggregates (defaults to off)
+- Improved logging of errors during execution of validator duties to be more informative, less noisy and set log levels more appropriately
 - Teku will now exit when an `OutOfMemoryError` is encountered to allow tools like systemd to restart it
 - Added support for compiling from source using Java 14
 - Improved error messages for a number of configuration errors
