@@ -196,7 +196,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.of(ForkChoiceUtil.get_current_slot(store));
   }
 
-  public Optional<ForkInfo> getCurrentForkInfo() {
+  public Optional<ForkInfo> getHeadForkInfo() {
     return getBestState().map(BeaconState::getForkInfo);
   }
 
@@ -209,10 +209,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * Returns the fork info that applies based on the node's current slot, regardless of where the
    * sync progress is up to.
    *
+   * <p>NOTE: Works on the basis that there is only one future forked scheduled as that's all we can
+   * currently support.
+   *
    * @return fork info based on the current time, not head block
    */
   public Optional<ForkInfo> getForkInfoAtCurrentTime() {
-    return getCurrentForkInfo()
+    return getHeadForkInfo()
         .map(
             headForkInfo ->
                 getNextFork()

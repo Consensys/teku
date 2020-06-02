@@ -85,7 +85,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     // Set the current fork info prior to discovery starting up.
     final ForkInfo currentForkInfo =
         recentChainData
-            .getCurrentForkInfo()
+            .getHeadForkInfo()
             .orElseThrow(
                 () ->
                     new IllegalStateException("Can not start Eth2Network before genesis is known"));
@@ -99,7 +99,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
     SignedAggregateAndProofValidator aggregateValidator =
         new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
-    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
+    final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
