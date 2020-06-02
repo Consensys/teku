@@ -211,7 +211,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
           .handle(
               (res, err) -> {
                 if (err != null) {
-                  if (Throwables.getRootCause(err) instanceof RpcStream.StreamClosedException) {
+                  if (Throwables.getRootCause(err) instanceof StreamClosedException) {
                     LOG.debug("Stream closed while processing rpc input", err);
                   } else {
                     LOG.error("Unhandled exception while processing rpc input", err);
