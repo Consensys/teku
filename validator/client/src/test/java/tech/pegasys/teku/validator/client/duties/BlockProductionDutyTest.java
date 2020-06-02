@@ -14,9 +14,11 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
@@ -24,6 +26,7 @@ import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -32,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.logging.ValidatorLogger;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -46,6 +50,7 @@ class BlockProductionDutyTest {
   private final Signer signer = mock(Signer.class);
   private final Validator validator = new Validator(dataStructureUtil.randomPublicKey(), signer);
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
+  private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
   private final BlockProductionDuty duty =
       new BlockProductionDuty(validator, SLOT, forkProvider, validatorApiChannel);
@@ -53,6 +58,11 @@ class BlockProductionDutyTest {
   @BeforeEach
   public void setUp() {
     when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
+  }
+
+  @Test
+  public void shouldReportCorrectProducedType() {
+    assertThat(duty.getProducedType()).isEqualTo("block");
   }
 
   @Test
@@ -66,10 +76,13 @@ class BlockProductionDutyTest {
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
 
-    assertThat(duty.performDuty()).isCompleted();
+    performAndReportDuty();
 
     verify(validatorApiChannel)
         .sendSignedBlock(new SignedBeaconBlock(unsignedBlock, blockSignature));
+    verify(validatorLogger)
+        .dutyCompleted(duty.getProducedType(), SLOT, 1, Set.of(unsignedBlock.hash_tree_root()));
+    verifyNoMoreInteractions(validatorLogger);
   }
 
   @Test
@@ -101,7 +114,11 @@ class BlockProductionDutyTest {
     when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal))
         .thenReturn(completedFuture(Optional.empty()));
 
-    assertThat(duty.performDuty()).isCompletedExceptionally();
+    performAndReportDuty();
+
+    verify(validatorLogger)
+        .dutyFailed(eq(duty.getProducedType()), eq(SLOT), any(IllegalStateException.class));
+    verifyNoMoreInteractions(validatorLogger);
   }
 
   @Test
@@ -119,8 +136,14 @@ class BlockProductionDutyTest {
   }
 
   public void assertDutyFails(final RuntimeException error) {
-    final SafeFuture<?> result = duty.performDuty();
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::join).hasRootCause(error);
+    performAndReportDuty();
+    verify(validatorLogger).dutyFailed(duty.getProducedType(), SLOT, error);
+    verifyNoMoreInteractions(validatorLogger);
+  }
+
+  private void performAndReportDuty() {
+    final SafeFuture<DutyResult> result = duty.performDuty();
+    assertThat(result).isCompleted();
+    result.join().report(duty.getProducedType(), SLOT, validatorLogger);
   }
 }

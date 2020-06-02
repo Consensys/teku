@@ -19,6 +19,7 @@ public class LoggingConfiguration {
 
   private final boolean colorEnabled;
   private final boolean includeEventsEnabled;
+  private final boolean includeValidatorDutiesEnabled;
   private final LoggingDestination destination;
   private final String file;
   private final String fileNamePattern;
@@ -26,11 +27,13 @@ public class LoggingConfiguration {
   public LoggingConfiguration(
       final boolean colorEnabled,
       final boolean includeEventsEnabled,
+      final boolean includeValidatorDutiesEnabled,
       final LoggingDestination destination,
       final String file,
       final String fileNamePattern) {
     this.colorEnabled = colorEnabled;
     this.includeEventsEnabled = includeEventsEnabled;
+    this.includeValidatorDutiesEnabled = includeValidatorDutiesEnabled;
     this.destination = destination;
     this.file = file;
     this.fileNamePattern = fileNamePattern;
@@ -42,6 +45,10 @@ public class LoggingConfiguration {
 
   public boolean isIncludeEventsEnabled() {
     return includeEventsEnabled;
+  }
+
+  public boolean isIncludeValidatorDutiesEnabled() {
+    return includeValidatorDutiesEnabled;
   }
 
   public LoggingDestination getDestination() {

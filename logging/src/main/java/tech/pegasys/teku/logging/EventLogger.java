@@ -14,6 +14,7 @@
 package tech.pegasys.teku.logging;
 
 import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
+import static tech.pegasys.teku.logging.LogFormatter.formatHashRoot;
 import static tech.pegasys.teku.logging.LoggingConfigurator.EVENT_LOGGER_NAME;
 
 import com.google.common.primitives.UnsignedLong;
@@ -51,8 +52,8 @@ public class EventLogger {
             currentEpoch.toString(),
             justifiedCheckpoint.toString(),
             finalizedCheckpoint.toString(),
-            shortenHash(finalizedRoot.toHexString()));
-    info(epochEventLog, Color.YELLOW);
+            formatHashRoot(finalizedRoot));
+    info(epochEventLog, Color.GREEN);
   }
 
   public void syncEvent(
@@ -74,7 +75,7 @@ public class EventLogger {
       final int numPeers) {
     String blockRoot = "   ... empty";
     if (nodeSlot.equals(headSlot)) {
-      blockRoot = shortenHash(bestBlockRoot.toHexString());
+      blockRoot = formatHashRoot(bestBlockRoot);
     }
     final String slotEventLog =
         String.format(
@@ -83,34 +84,12 @@ public class EventLogger {
             blockRoot,
             nodeEpoch.toString(),
             finalizedCheckpoint.toString(),
-            shortenHash(finalizedRoot.toHexString()),
+            formatHashRoot(finalizedRoot),
             numPeers);
     info(slotEventLog, Color.WHITE);
   }
 
-  public void unprocessedAttestation(final Bytes32 beaconBlockRoot) {
-    debug("New Attestation with block root:  " + beaconBlockRoot + " detected.", Color.GREEN);
-  }
-
-  public void aggregateAndProof(final Bytes32 beaconBlockRoot) {
-    debug("New AggregateAndProof with block root:  " + beaconBlockRoot + " detected.", Color.BLUE);
-  }
-
-  public void unprocessedBlock(final Bytes32 stateRoot) {
-    debug(
-        "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
-  }
-
-  private void debug(final String message, final Color color) {
-    log.debug(print(message, color));
-  }
-
   private void info(final String message, final Color color) {
     log.info(print(message, color));
-  }
-
-  private String shortenHash(final String hash) {
-    return String.format(
-        "%s..%s", hash.substring(0, 6), hash.substring(hash.length() - 4, hash.length()));
   }
 }

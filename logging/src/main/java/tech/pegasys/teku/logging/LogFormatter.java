@@ -11,12 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.logging;
 
-import tech.pegasys.teku.util.async.SafeFuture;
+import org.apache.tuweni.bytes.Bytes32;
 
-public interface Duty {
-  SafeFuture<DutyResult> performDuty();
-
-  String getProducedType();
+public class LogFormatter {
+  public static String formatHashRoot(final Bytes32 root) {
+    final String hash = root.toUnprefixedHexString();
+    return String.format("%s..%s", hash.substring(0, 6), hash.substring(hash.length() - 4));
+  }
 }

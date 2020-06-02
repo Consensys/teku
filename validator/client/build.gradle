@@ -5,6 +5,7 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':events')
+  implementation project(':logging')
   implementation project(':services:serviceutils')
   implementation project(':validator:anticorruption')
   implementation project(':validator:api')

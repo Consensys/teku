@@ -15,12 +15,10 @@ package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.max;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,8 +30,6 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -247,22 +243,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    */
   public UnsignedLong getBestSlot() {
     return chainHead.map(SignedBlockAndState::getSlot).orElse(UnsignedLong.ZERO);
-  }
-
-  @Subscribe
-  public void onNewUnprocessedBlock(BeaconBlock block) {
-    EVENT_LOG.unprocessedBlock(block.getState_root());
-  }
-
-  @Subscribe
-  public void onNewUnprocessedAttestation(Attestation attestation) {
-    EVENT_LOG.unprocessedAttestation(attestation.getData().getBeacon_block_root());
-  }
-
-  @Subscribe
-  public void onNewAggregateAndProof(SignedAggregateAndProof attestation) {
-    EVENT_LOG.aggregateAndProof(
-        attestation.getMessage().getAggregate().getData().getBeacon_block_root());
   }
 
   public boolean containsBlock(final Bytes32 root) {

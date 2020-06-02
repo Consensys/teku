@@ -40,11 +40,18 @@ public class LoggingOptions {
   @CommandLine.Option(
       names = {"--log-include-events-enabled"},
       paramLabel = "<BOOLEAN>",
-      description =
-          "Whether frequent update events are logged (e.g. every slot event, with validators and attestations)",
+      description = "Whether frequent update events are logged (e.g. every slot and epoch event)",
       fallbackValue = "true",
       arity = "0..1")
   private boolean logIncludeEventsEnabled = true;
+
+  @CommandLine.Option(
+      names = {"--log-include-validator-duties-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Whether events are logged when validators perform duties",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean logIncludeValidatorDutiesEnabled = false;
 
   @CommandLine.Option(
       names = {"--log-destination"},
@@ -110,6 +117,10 @@ public class LoggingOptions {
 
   public boolean isLogIncludeEventsEnabled() {
     return logIncludeEventsEnabled;
+  }
+
+  public boolean isLogIncludeValidatorDutiesEnabled() {
+    return logIncludeValidatorDutiesEnabled;
   }
 
   public LoggingDestination getLogDestination() {
