@@ -28,7 +28,7 @@ import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 public class ValidatorLogger {
   public static final ValidatorLogger VALIDATOR_LOGGER = new ValidatorLogger(VALIDATOR_LOGGER_NAME);
   public static final int LONGEST_TYPE_LENGTH = "attestation".length();
-  private static final String PREFIX = "Validator  *** ";
+  private static final String PREFIX = "Validator   *** ";
 
   private final Logger log;
 

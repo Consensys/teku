@@ -60,7 +60,7 @@ public class EventLogger {
       final UnsignedLong nodeSlot, final UnsignedLong headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
-            "Sync Event *** Current slot: %s, Head slot: %s, Connected peers: %d",
+            "Sync Event  *** Current slot: %s, Head slot: %s, Connected peers: %d",
             nodeSlot, headSlot.toString(), numPeers);
     info(syncEventLog, Color.WHITE);
   }
@@ -79,7 +79,7 @@ public class EventLogger {
     }
     final String slotEventLog =
         String.format(
-            "Slot Event *** Slot: %s, Block: %s, Epoch: %s, Finalized checkpoint: %s, Finalized root: %s, Peers: %d",
+            "Slot Event  *** Slot: %s, Block: %s, Epoch: %s, Finalized checkpoint: %s, Finalized root: %s, Peers: %d",
             nodeSlot.toString(),
             blockRoot,
             nodeEpoch.toString(),
