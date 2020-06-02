@@ -35,7 +35,7 @@ public class StatusLogger {
   }
 
   public void unexpectedFailure(final String description, final Throwable cause) {
-    log.fatal("PLEASE FIX OR REPORT | Unexpected exception thrown for {}", description, cause);
+    log.error("PLEASE FIX OR REPORT | Unexpected exception thrown for {}", description, cause);
   }
 
   public void listeningForLibP2P(final String address) {
