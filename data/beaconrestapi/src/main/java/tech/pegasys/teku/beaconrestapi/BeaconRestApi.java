@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -21,7 +20,7 @@ import static tech.pegasys.teku.beaconrestapi.HostWhitelistUtils.isHostAuthorize
 
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
-import io.javalin.http.HttpResponseException;
+import io.javalin.http.ForbiddenResponse;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
@@ -92,11 +91,8 @@ public class BeaconRestApi {
         (ctx) -> {
           String header = ctx.host();
           if (!isHostAuthorized(configuration.getRestApiHostWhitelist(), header)) {
-            ctx.status(SC_FORBIDDEN);
             LOG.debug("Host not authorized " + header);
-            ctx.result("Host not authorized");
-            ctx.contentType("text/html");
-            throw new HttpResponseException(0, "Host not authorized", null);
+            throw new ForbiddenResponse("Host not authorized");
           }
         });
   }
