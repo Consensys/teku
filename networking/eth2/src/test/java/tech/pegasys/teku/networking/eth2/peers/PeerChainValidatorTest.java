@@ -270,11 +270,11 @@ public class PeerChainValidatorTest {
   }
 
   private void forksMatch() {
-    when(recentChainData.getCurrentForkInfo()).thenReturn(Optional.of(remoteForkInfo));
+    when(recentChainData.getHeadForkInfo()).thenReturn(Optional.of(remoteForkInfo));
   }
 
   private void forksDontMatch() {
-    when(recentChainData.getCurrentForkInfo()).thenReturn(Optional.of(otherForkInfo));
+    when(recentChainData.getHeadForkInfo()).thenReturn(Optional.of(otherForkInfo));
   }
 
   private void finalizedCheckpointsMatch() {
