@@ -36,7 +36,7 @@ public class VoluntaryExitValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
-  private final Set<UnsignedLong> receivedValidValidatorExitSet =
+  private final Set<UnsignedLong> receivedValidExitSet =
       ConcurrentLimitedSet.create(
           VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
 
@@ -54,7 +54,7 @@ public class VoluntaryExitValidator {
       return INVALID;
     }
 
-    if (receivedValidValidatorExitSet.add(exit.getMessage().getValidator_index())) {
+    if (receivedValidExitSet.add(exit.getMessage().getValidator_index())) {
       return VALID;
     } else {
       LOG.trace("VoluntaryExitValidator: Exit is not the first one for the given validator.");
@@ -81,6 +81,6 @@ public class VoluntaryExitValidator {
   }
 
   private boolean isFirstValidExitForValidator(SignedVoluntaryExit exit) {
-    return !receivedValidValidatorExitSet.contains(exit.getMessage().getValidator_index());
+    return !receivedValidExitSet.contains(exit.getMessage().getValidator_index());
   }
 }

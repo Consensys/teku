@@ -105,7 +105,7 @@ public class Signer {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(voluntaryExit, domain);
-    return signerService.signAggregateAndProof(signingRoot);
+    return signerService.signVoluntaryExit(signingRoot);
   }
 
   public MessageSignerService getMessageSignerService() {
