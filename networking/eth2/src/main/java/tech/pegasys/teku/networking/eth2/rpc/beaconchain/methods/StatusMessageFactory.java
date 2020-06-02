@@ -34,9 +34,10 @@ public class StatusMessageFactory {
       // We don't have chainhead information, so we can't generate an accurate status message
       return Optional.empty();
     }
-    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
+
     final BeaconBlockAndState bestBlockAndState =
         recentChainData.getBestBlockAndState().orElseThrow();
+    final ForkInfo forkInfo = recentChainData.getForkInfoAtCurrentTime().orElseThrow();
     final Checkpoint finalizedCheckpoint = bestBlockAndState.getState().getFinalized_checkpoint();
     final BeaconBlock chainHead = bestBlockAndState.getBlock();
 
