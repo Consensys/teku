@@ -135,10 +135,18 @@ class Consts {
   static final FP k_qi_y =
       fpFromHex(
           "0x06af0e0437ff400b6831e36d6bd17ffe48395dabc2d3435e77f76e17009241c5ee67992f72ec05f4c81084fbede3cc09");
+  // 1 / (1 + I)^((p - 1) / 3)
   static final FP2Immutable k_cx = new FP2Immutable(new FP(0), k_qi_x);
+  // 1 / (1 + I)^((p - 1) / 2)
   static final FP2Immutable k_cy =
       new FP2Immutable(
           fpFromHex(
               "0x135203e60180a68ee2e9c448d77a2cd91c3dedd930b1cf60ef396489f61eb45e304466cf3e67fa0af1ee7b04121bdea2"),
           k_qi_y);
+
+  // Constant for Psi^2 and Psi^3 - it's the absolute value of k_cx, which is k_qi_x squared.
+  // 1 / 2^((p - 1) / 3)
+  static final FP k_cx_abs =
+      fpFromHex(
+          "0x1a0111ea397fe699ec02408663d4de85aa0d857d89759ad4897d29650fb85f9b409427eb4f49fffd8bfd00000000aaac");
 }

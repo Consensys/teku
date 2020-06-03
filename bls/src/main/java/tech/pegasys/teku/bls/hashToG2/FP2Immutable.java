@@ -122,6 +122,14 @@ final class FP2Immutable {
     return new FP2Immutable(result);
   }
 
+  /** Wrap FP2 pmul() method to return a result */
+  FP2Immutable mul(FP c) {
+    FP2 result = new FP2(fp2);
+    result.pmul(c);
+    result.norm();
+    return new FP2Immutable(result);
+  }
+
   /** Wrap FP2 add() method to return a result */
   FP2Immutable add(FP2Immutable a) {
     FP2 result = new FP2(fp2);

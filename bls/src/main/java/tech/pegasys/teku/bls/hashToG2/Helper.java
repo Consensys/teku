@@ -18,6 +18,7 @@ import static tech.pegasys.teku.bls.hashToG2.Chains.expChain;
 import static tech.pegasys.teku.bls.hashToG2.Chains.mxChain;
 import static tech.pegasys.teku.bls.hashToG2.Consts.iwsc;
 import static tech.pegasys.teku.bls.hashToG2.Consts.k_cx;
+import static tech.pegasys.teku.bls.hashToG2.Consts.k_cx_abs;
 import static tech.pegasys.teku.bls.hashToG2.Consts.k_cy;
 import static tech.pegasys.teku.bls.hashToG2.Consts.k_qi_x;
 import static tech.pegasys.teku.bls.hashToG2.Consts.k_qi_y;
@@ -79,10 +80,7 @@ class Helper {
    */
   @VisibleForTesting
   static JacobianPoint mapG2ToInfinity(JacobianPoint p) {
-    JacobianPoint psi1 = psi(p);
-    JacobianPoint psi2 = psi(psi1);
-    JacobianPoint psi3 = psi(psi2);
-    return mxChain(psi3).add(psi2).neg().add(p);
+    return mxChain(psi3(p)).add(psi2(p)).neg().add(p);
   }
 
   /**
@@ -297,10 +295,11 @@ class Helper {
   }
 
   /** The untwist-Frobenius-twist endomorphism */
-  private static JacobianPoint psi(JacobianPoint p) {
-    FP2Immutable x = new FP2Immutable(p.getX());
-    FP2Immutable y = new FP2Immutable(p.getY());
-    FP2Immutable z = new FP2Immutable(p.getZ());
+  @VisibleForTesting
+  static JacobianPoint psi(JacobianPoint p) {
+    FP2Immutable x = p.getX();
+    FP2Immutable y = p.getY();
+    FP2Immutable z = p.getZ();
 
     FP2Immutable z2 = z.sqr();
     FP2Immutable px = k_cx.mul(qi_x(iwsc.mul(x)));
@@ -311,6 +310,32 @@ class Helper {
     FP2Immutable zOut = pz2.mul(pz3);
     FP2Immutable xOut = px.mul(pz3).mul(zOut);
     FP2Immutable yOut = py.mul(pz2).mul(zOut.sqr());
+
+    return new JacobianPoint(xOut, yOut, zOut);
+  }
+
+  /** Optimised calculation for psi^2(p) */
+  @VisibleForTesting
+  static JacobianPoint psi2(JacobianPoint p) {
+    return new JacobianPoint(p.getX().mul(k_cx_abs), p.getY().neg(), p.getZ());
+  }
+
+  /** Optimised calculation for psi^3(p) */
+  @VisibleForTesting
+  static JacobianPoint psi3(JacobianPoint p) {
+    FP2Immutable x = p.getX();
+    FP2Immutable y = p.getY();
+    FP2Immutable z = p.getZ();
+
+    FP2Immutable z2 = z.sqr();
+    FP2Immutable px = k_cx.mul(qi_x(iwsc.mul(x)));
+    FP2Immutable pz2 = qi_x(iwsc.mul(z2));
+    FP2Immutable py = k_cy.mul(qi_y(iwsc.mul(y)));
+    FP2Immutable pz3 = qi_y(iwsc.mul(z2).mul(z));
+
+    FP2Immutable zOut = pz2.mul(pz3);
+    FP2Immutable xOut = px.mul(pz3).mul(zOut).mul(k_cx_abs);
+    FP2Immutable yOut = py.mul(pz2).mul(zOut.sqr()).neg();
 
     return new JacobianPoint(xOut, yOut, zOut);
   }
@@ -342,7 +367,7 @@ class Helper {
     // (x^2 - x - 1) P + (x - 1) psi(P)
     work = work.add(p.neg());
     // psi(psi(2P))
-    JacobianPoint psi_psi_2p = psi(psi(p.dbl()));
+    JacobianPoint psi_psi_2p = psi2(p.dbl());
     // (x^2 - x - 1) P + (x - 1) psi(P) + psi(psi(2P))
     work = work.add(psi_psi_2p);
 
