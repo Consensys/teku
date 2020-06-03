@@ -74,7 +74,7 @@ public class VoluntaryExitTopicHandlerTest {
   }
 
   @Test
-  public void handleMessage_invalidBlock_invalidSSZ() {
+  public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
     final boolean result = topicHandler.handleMessage(serialized);
