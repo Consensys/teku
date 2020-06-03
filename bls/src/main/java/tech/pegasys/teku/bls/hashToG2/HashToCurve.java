@@ -62,7 +62,40 @@ public class HashToCurve {
   }
 
   /**
-   * Hashes to the G2 curve as described in the new BLS standard.
+   * Hashes arbitrary data to the G2 curve as per the draft IETF standard v07:
+   * https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07
+   *
+   * <p>The basic method is as described in
+   * https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-3
+   *
+   * <ol>
+   *   <li>u = hash_to_field(msg, 2)
+   *   <li>Q0 = map_to_curve(u[0])
+   *   <li>Q1 = map_to_curve(u[1])
+   *   <li>R = Q0 + Q1 # Point addition
+   *   <li>P = clear_cofactor(R)
+   *   <li>return P
+   * </ol>
+   *
+   * <p>Since the 3-isogeny map commutes with point addition, as an optimisation we apply it after
+   * step 4 rather than separately in steps 2 and 3. See the note in
+   * https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-6.6.3
+   *
+   * <p>The specifics for hashing to BLS12-381 G2 are described in
+   * https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-8.8.2
+   *
+   * <ul>
+   *   <li>hash_to_field (hashToField) is as defined in
+   *       https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-5.2 where the
+   *       expand_message function is expand_message_xmd,
+   *       https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-5.3.1
+   *   <li>map_to_curve (mapToCurve) is "Simplified SWU for AB == 0",
+   *       https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-6.6.3
+   *   <li>iso_map (iso3) is the "3-isogeny map",
+   *       https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#appendix-C.3
+   *   <li>clear_cofactor (clearH2) uses the method of
+   *       https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#appendix-D.4
+   * </ul>
    *
    * @param message the message to be hashed. This is usually the 32 byte message digest
    * @param dst the domain separation tag (DST)

@@ -69,6 +69,9 @@ class ReferenceTests {
   // Reference tests for expand message from
   // https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/tree/master/poc/vectors
   //
+  // These match the test vectors from spec v08:
+  // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-08#appendix-I.1
+  //
 
   private static final Path pathToExpandMessageTests =
       Paths.get(
@@ -120,6 +123,9 @@ class ReferenceTests {
   //
   // Reference tests for hash to G2 from
   // https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/tree/master/poc/vectors
+  //
+  // These match the test vectors from spec v08:
+  // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-08#appendix-H.10.1
   //
 
   private static final Path pathToHashG2Tests =
