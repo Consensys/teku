@@ -57,7 +57,8 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
-import tech.pegasys.teku.core.BlockAttestationDataValidator.InvalidReason;
+import tech.pegasys.teku.core.BlockAttestationDataValidator.AttestationInvalidReason;
+import tech.pegasys.teku.core.BlockVoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
@@ -404,11 +405,11 @@ public final class BlockProcessorUtil {
 
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
-        final Optional<InvalidReason> invalidReason = validator.validateAttestation(state, data);
+        final Optional<AttestationInvalidReason> invalidReason = validator.validateAttestation(state, data);
         checkArgument(
             invalidReason.isEmpty(),
             "process_attestations: %s",
-            invalidReason.map(InvalidReason::describe).orElse(""));
+            invalidReason.map(AttestationInvalidReason::describe).orElse(""));
 
         List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
         checkArgument(
@@ -496,49 +497,24 @@ public final class BlockProcessorUtil {
   public static void process_voluntary_exits_no_validation(
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
+    BlockVoluntaryExitValidator validator = new BlockVoluntaryExitValidator();
     try {
 
       // For each exit in block.body.voluntaryExits:
       for (SignedVoluntaryExit signedExit : exits) {
-        VoluntaryExit exit = signedExit.getMessage();
-        check_voluntary_exit(state, exit);
+        Optional<ExitInvalidReason> invalidReason = validator.validateExit(state, signedExit);
+        checkArgument(
+                invalidReason.isEmpty(),
+                "process_voluntary_exits: %s",
+                invalidReason.map(ExitInvalidReason::describe).orElse(""));
 
         // - Run initiate_validator_exit(state, exit.validator_index)
-        initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
+        initiate_validator_exit(state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
-  }
-
-  public static void check_voluntary_exit(BeaconState state, VoluntaryExit exit) {
-    checkArgument(
-        UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index()) > 0,
-        "process_voluntary_exits: Invalid validator index");
-
-    final Validator validator =
-        state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
-    checkArgument(
-        is_active_validator(validator, get_current_epoch(state)),
-        "process_voluntary_exits: Verify the validator is active");
-
-    checkArgument(
-        validator.getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
-        "process_voluntary_exits: Verify exit has not been initiated");
-
-    checkArgument(
-        get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
-        "process_voluntary_exits: Exits must specify an epoch when they become valid; they are not valid before then");
-
-    checkArgument(
-        get_current_epoch(state)
-                .compareTo(
-                    validator
-                        .getActivation_epoch()
-                        .plus(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD)))
-            >= 0,
-        "process_voluntary_exits: Verify the validator has been active long enough");
   }
 
   public static void verify_voluntary_exits(

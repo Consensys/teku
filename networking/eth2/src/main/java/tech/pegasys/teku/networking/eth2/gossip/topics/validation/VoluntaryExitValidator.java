@@ -13,17 +13,20 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static tech.pegasys.teku.core.BlockProcessorUtil.check_voluntary_exit;
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.BlockProcessorUtil.verify_voluntary_exits;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.core.BlockVoluntaryExitValidator;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -38,6 +41,7 @@ public class VoluntaryExitValidator {
   private final Set<UnsignedLong> receivedValidExitSet =
       ConcurrentLimitedSet.create(
           VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+  private final BlockVoluntaryExitValidator validator = new BlockVoluntaryExitValidator();
 
   public VoluntaryExitValidator(RecentChainData recentChainData) {
     this.recentChainData = recentChainData;
@@ -70,7 +74,10 @@ public class VoluntaryExitValidator {
                   () ->
                       new IllegalStateException(
                           "Unable to get best state for voluntary exit processing"));
-      check_voluntary_exit(state, exit.getMessage());
+      Optional<BlockVoluntaryExitValidator.ExitInvalidReason> invalidReason = validator.validateExit(state, exit);
+      checkArgument(invalidReason.isEmpty(),
+              "process_voluntary_exit: %s",
+              invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
       verify_voluntary_exits(state, SSZList.singleton(exit), BLSSignatureVerifier.SIMPLE);
     } catch (IllegalArgumentException | BLSSignatureVerifier.InvalidSignatureException e) {
       LOG.trace("VoluntaryExitValidator: Exit fails process voluntary exit conditions.", e);
