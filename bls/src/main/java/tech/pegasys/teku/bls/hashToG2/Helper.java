@@ -80,7 +80,8 @@ class Helper {
    */
   @VisibleForTesting
   static JacobianPoint mapG2ToInfinity(JacobianPoint p) {
-    return mxChain(psi3(p)).add(psi2(p)).neg().add(p);
+    JacobianPoint psi3 = psi2(psi(p));
+    return mxChain(psi3).add(psi2(p)).neg().add(p);
   }
 
   /**
@@ -318,26 +319,6 @@ class Helper {
   @VisibleForTesting
   static JacobianPoint psi2(JacobianPoint p) {
     return new JacobianPoint(p.getX().mul(k_cx_abs), p.getY().neg(), p.getZ());
-  }
-
-  /** Optimised calculation for psi^3(p) */
-  @VisibleForTesting
-  static JacobianPoint psi3(JacobianPoint p) {
-    FP2Immutable x = p.getX();
-    FP2Immutable y = p.getY();
-    FP2Immutable z = p.getZ();
-
-    FP2Immutable z2 = z.sqr();
-    FP2Immutable px = k_cx.mul(qi_x(iwsc.mul(x)));
-    FP2Immutable pz2 = qi_x(iwsc.mul(z2));
-    FP2Immutable py = k_cy.mul(qi_y(iwsc.mul(y)));
-    FP2Immutable pz3 = qi_y(iwsc.mul(z2).mul(z));
-
-    FP2Immutable zOut = pz2.mul(pz3);
-    FP2Immutable xOut = px.mul(pz3).mul(zOut).mul(k_cx_abs);
-    FP2Immutable yOut = py.mul(pz2).mul(zOut.sqr()).neg();
-
-    return new JacobianPoint(xOut, yOut, zOut);
   }
 
   /**

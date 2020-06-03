@@ -144,7 +144,7 @@ class Consts {
               "0x135203e60180a68ee2e9c448d77a2cd91c3dedd930b1cf60ef396489f61eb45e304466cf3e67fa0af1ee7b04121bdea2"),
           k_qi_y);
 
-  // Constant for Psi^2 and Psi^3 - it's the absolute value of k_cx, which is k_qi_x squared.
+  // Constant for Psi^2 - it's the absolute value of k_cx, which is k_qi_x squared.
   // 1 / 2^((p - 1) / 3)
   static final FP k_cx_abs =
       fpFromHex(

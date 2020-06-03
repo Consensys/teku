@@ -24,7 +24,6 @@ import static tech.pegasys.teku.bls.hashToG2.Helper.isOnCurve;
 import static tech.pegasys.teku.bls.hashToG2.Helper.mapG2ToInfinity;
 import static tech.pegasys.teku.bls.hashToG2.Helper.psi;
 import static tech.pegasys.teku.bls.hashToG2.Helper.psi2;
-import static tech.pegasys.teku.bls.hashToG2.Helper.psi3;
 
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP;
@@ -166,24 +165,6 @@ class HelperTest {
                 "0x0625151f905fad40eb0e2b9b0a46d9afe531256c6d5e39897a27d94700f037a761a741d11275180bd18e620289e02a16"));
     assertTrue(isOnCurve(a));
     assertEquals(psi(psi(a)), psi2(a));
-  }
-
-  @Test
-  void psi3EqualsPsiPsiPsi() {
-    // A point on the curve, not necessarily in G2
-    JacobianPoint a =
-        new JacobianPoint(
-            new FP2Immutable(
-                "0x0c8977fab5175ac2f09e5f39e29d016f11c094ef10f237d2a5e23f482d0bfb4466688527cd31685bfe481725c31462cc",
-                "0x0b305838069012861bb63501841c91bd5bc7e1359d44cd196681fb14c03e544c22205bced326d490eb886aaa3ed52918"),
-            new FP2Immutable(
-                "0x172cf997b3501882861c07e852fadbf5753eb8a3e1d2ce375e6aed07cf9c1b5ff1cbf1124c6e3b0cf4607c683eafd1a4",
-                "0x0d9dacf241a753d55cff6d45b568b716a2ad68ba29d23f92dea6e7cf6ed54e96cdac4a2b95213f93439b946ebc63349c"),
-            new FP2Immutable(
-                "0x05594bb289f0ebfd8fa3f020c6e1eaf4c49b97d8ccaf3470a3a02da4b3e7104778105bd6c7e0caf97206c77a8b501d4d",
-                "0x0625151f905fad40eb0e2b9b0a46d9afe531256c6d5e39897a27d94700f037a761a741d11275180bd18e620289e02a16"));
-    assertTrue(isOnCurve(a));
-    assertEquals(psi(psi(psi(a))), psi3(a));
   }
 
   /**
