@@ -101,7 +101,7 @@ public class Signer {
     final Bytes domain =
         get_domain(
             Constants.DOMAIN_VOLUNTARY_EXIT,
-            compute_epoch_at_slot(voluntaryExit.getEpoch()),
+            voluntaryExit.getEpoch(),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(voluntaryExit, domain);
