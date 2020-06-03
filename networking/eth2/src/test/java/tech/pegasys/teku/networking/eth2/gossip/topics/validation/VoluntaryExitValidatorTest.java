@@ -32,7 +32,12 @@ import tech.pegasys.teku.core.TestDepositGenerator;
 import tech.pegasys.teku.core.VoluntaryExitGenerator;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.datastructures.util.MockStartBeaconStateGenerator;
+import tech.pegasys.teku.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -107,17 +112,18 @@ public class VoluntaryExitValidatorTest {
 
   @Test
   public void shouldReturnInvalidForExitOfInactiveValidator() throws Exception {
-    TestDepositGenerator testDepositGenerator =
-        new TestDepositGenerator(VALIDATOR_KEYS.subList(0, 20));
-    List<Deposit> deposits = testDepositGenerator.getDeposits(10, 20, 20);
-    initializeStorage(recentChainData, VALIDATOR_KEYS.subList(0, 10));
-
-    beaconChainUtil.setEth1DataOfChain(
-        new Eth1Data(testDepositGenerator.getRoot(), UnsignedLong.valueOf(20), Bytes32.ZERO));
-    beaconChainUtil.createAndImportBlockAtSlotWithDeposits(UnsignedLong.valueOf(6), deposits);
-
+    final DepositGenerator depositGenerator = new DepositGenerator(true);
+    final List<DepositData> initialDepositData =
+            new MockStartDepositGenerator(depositGenerator)
+                    .createDeposits(VALIDATOR_KEYS.subList(0, 10));
+    // Add an inactive validator (they haven't deposited enough to become a validator)
+    final BLSKeyPair inactiveValidatorKeyPair = VALIDATOR_KEYS.get(10);
+    initialDepositData.add(depositGenerator.createDepositData(inactiveValidatorKeyPair, UnsignedLong.ONE, inactiveValidatorKeyPair.getPublicKey()));
+    final BeaconState genesisState = new MockStartBeaconStateGenerator()
+            .createInitialBeaconState(UnsignedLong.ZERO, initialDepositData);
+    recentChainData.initializeFromGenesis(genesisState);
     SignedVoluntaryExit exit =
-        voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 15);
+            voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 10, false);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
   }
 
