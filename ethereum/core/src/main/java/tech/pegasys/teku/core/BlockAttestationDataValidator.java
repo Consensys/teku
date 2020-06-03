@@ -74,7 +74,8 @@ public class BlockAttestationDataValidator {
   }
 
   @SafeVarargs
-  private Optional<AttestationInvalidReason> firstOf(final Supplier<Optional<AttestationInvalidReason>>... checks) {
+  private Optional<AttestationInvalidReason> firstOf(
+      final Supplier<Optional<AttestationInvalidReason>>... checks) {
     return Stream.of(checks)
         .map(Supplier::get)
         .filter(Optional::isPresent)
@@ -83,7 +84,8 @@ public class BlockAttestationDataValidator {
   }
 
   @CheckReturnValue
-  private Optional<AttestationInvalidReason> check(final boolean isValid, final AttestationInvalidReason check) {
+  private Optional<AttestationInvalidReason> check(
+      final boolean isValid, final AttestationInvalidReason check) {
     return !isValid ? Optional.of(check) : Optional.empty();
   }
 

@@ -28,16 +28,13 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_val
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.slash_validator;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.teku.util.config.Constants.PERSISTENT_COMMITTEE_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.collect.Sets;
@@ -405,7 +402,8 @@ public final class BlockProcessorUtil {
 
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
-        final Optional<AttestationInvalidReason> invalidReason = validator.validateAttestation(state, data);
+        final Optional<AttestationInvalidReason> invalidReason =
+            validator.validateAttestation(state, data);
         checkArgument(
             invalidReason.isEmpty(),
             "process_attestations: %s",
@@ -504,12 +502,13 @@ public final class BlockProcessorUtil {
       for (SignedVoluntaryExit signedExit : exits) {
         Optional<ExitInvalidReason> invalidReason = validator.validateExit(state, signedExit);
         checkArgument(
-                invalidReason.isEmpty(),
-                "process_voluntary_exits: %s",
-                invalidReason.map(ExitInvalidReason::describe).orElse(""));
+            invalidReason.isEmpty(),
+            "process_voluntary_exits: %s",
+            invalidReason.map(ExitInvalidReason::describe).orElse(""));
 
         // - Run initiate_validator_exit(state, exit.validator_index)
-        initiate_validator_exit(state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
+        initiate_validator_exit(
+            state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());

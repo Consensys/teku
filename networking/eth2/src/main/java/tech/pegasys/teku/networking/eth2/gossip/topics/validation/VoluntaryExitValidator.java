@@ -20,7 +20,6 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Validat
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -74,10 +73,12 @@ public class VoluntaryExitValidator {
                   () ->
                       new IllegalStateException(
                           "Unable to get best state for voluntary exit processing"));
-      Optional<BlockVoluntaryExitValidator.ExitInvalidReason> invalidReason = validator.validateExit(state, exit);
-      checkArgument(invalidReason.isEmpty(),
-              "process_voluntary_exit: %s",
-              invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
+      Optional<BlockVoluntaryExitValidator.ExitInvalidReason> invalidReason =
+          validator.validateExit(state, exit);
+      checkArgument(
+          invalidReason.isEmpty(),
+          "process_voluntary_exit: %s",
+          invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
       verify_voluntary_exits(state, SSZList.singleton(exit), BLSSignatureVerifier.SIMPLE);
     } catch (IllegalArgumentException | BLSSignatureVerifier.InvalidSignatureException e) {
       LOG.trace("VoluntaryExitValidator: Exit fails process voluntary exit conditions.", e);

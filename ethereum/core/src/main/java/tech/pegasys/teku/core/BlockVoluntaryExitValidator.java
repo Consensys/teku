@@ -14,11 +14,8 @@
 package tech.pegasys.teku.core;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.PERSISTENT_COMMITTEE_PERIOD;
 
@@ -27,47 +24,44 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.CheckReturnValue;
-
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.datastructures.state.Validator;
 
 public class BlockVoluntaryExitValidator {
 
   public Optional<ExitInvalidReason> validateExit(
-          final BeaconState state, final SignedVoluntaryExit signedExit) {
+      final BeaconState state, final SignedVoluntaryExit signedExit) {
     VoluntaryExit exit = signedExit.getMessage();
     return firstOf(
-            () ->
-                    check(
-                            UnsignedLong.valueOf(state.getValidators().size())
-                                    .compareTo(exit.getValidator_index()) > 0,
-                            ExitInvalidReason.INVALID_VALIDATOR_INDEX),
-            () ->
-                    check(
-                            is_active_validator(getValidator(state, exit), get_current_epoch(state)),
-                            ExitInvalidReason.VALIDATOR_INACTIVE),
-            () ->
-                    check(
-                           getValidator(state, exit).getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
-                            ExitInvalidReason.EXIT_INITIATED),
-            () ->
-                    check(
-                            get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
-                            ExitInvalidReason.SUBMITTED_TOO_EARLY),
-            () ->
-                    check(
-                            get_current_epoch(state)
-                                    .compareTo(getValidator(state, exit)
-                                                    .getActivation_epoch()
-                                                    .plus(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD))) >= 0,
-                            ExitInvalidReason.VALIDATOR_TOO_YOUNG)
-    );
+        () ->
+            check(
+                UnsignedLong.valueOf(state.getValidators().size())
+                        .compareTo(exit.getValidator_index())
+                    > 0,
+                ExitInvalidReason.INVALID_VALIDATOR_INDEX),
+        () ->
+            check(
+                is_active_validator(getValidator(state, exit), get_current_epoch(state)),
+                ExitInvalidReason.VALIDATOR_INACTIVE),
+        () ->
+            check(
+                getValidator(state, exit).getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
+                ExitInvalidReason.EXIT_INITIATED),
+        () ->
+            check(
+                get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
+                ExitInvalidReason.SUBMITTED_TOO_EARLY),
+        () ->
+            check(
+                get_current_epoch(state)
+                        .compareTo(
+                            getValidator(state, exit)
+                                .getActivation_epoch()
+                                .plus(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD)))
+                    >= 0,
+                ExitInvalidReason.VALIDATOR_TOO_YOUNG));
   }
 
   private Validator getValidator(BeaconState state, VoluntaryExit exit) {
@@ -75,12 +69,13 @@ public class BlockVoluntaryExitValidator {
   }
 
   @SafeVarargs
-  private Optional<ExitInvalidReason> firstOf(final Supplier<Optional<ExitInvalidReason>>... checks) {
+  private Optional<ExitInvalidReason> firstOf(
+      final Supplier<Optional<ExitInvalidReason>>... checks) {
     return Stream.of(checks)
-            .map(Supplier::get)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .findFirst();
+        .map(Supplier::get)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .findFirst();
   }
 
   @CheckReturnValue
