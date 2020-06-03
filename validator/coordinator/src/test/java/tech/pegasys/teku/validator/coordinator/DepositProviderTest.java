@@ -22,13 +22,10 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -103,11 +100,11 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     mockDepositsFromEth1Block(10, 30);
 
-    long enoughVoteCount = Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH;
+    int enoughVoteCount = Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH;
     UnsignedLong newDepositCount = UnsignedLong.valueOf(30);
     Eth1Data newEth1Data = new Eth1Data(Bytes32.ZERO, newDepositCount, Bytes32.ZERO);
     SSZMutableList<Eth1Data> et1hDataVotes = SSZList.createMutable(Eth1Data.class, 50);
-    LongStream.range(0, enoughVoteCount).forEach(__ -> et1hDataVotes.add(newEth1Data));
+    IntStream.range(0, enoughVoteCount).forEach(__ -> et1hDataVotes.add(newEth1Data));
     when(state.getEth1_data_votes()).thenReturn(et1hDataVotes);
 
     SSZList<Deposit> deposits = depositProvider.getDeposits(state, newEth1Data);
@@ -218,10 +215,10 @@ public class DepositProviderTest {
 
   private void mockDepositsFromEth1Block(int startIndex, int n) {
     allSeenDepositsList.subList(startIndex, n).stream()
-            .map(DepositUtil::convertDepositEventToOperationDeposit)
-            .map(Deposit::getData)
-            .map(DepositData::hash_tree_root)
-            .forEachOrdered(depositMerkleTree::add);
+        .map(DepositUtil::convertDepositEventToOperationDeposit)
+        .map(Deposit::getData)
+        .map(DepositData::hash_tree_root)
+        .forEachOrdered(depositMerkleTree::add);
 
     DepositsFromBlockEvent depositsFromBlockEvent = mock(DepositsFromBlockEvent.class);
     when(depositsFromBlockEvent.getDeposits())

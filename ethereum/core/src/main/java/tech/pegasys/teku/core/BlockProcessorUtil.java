@@ -197,9 +197,7 @@ public final class BlockProcessorUtil {
   }
 
   public static long getVoteCount(BeaconState state, Eth1Data eth1Data) {
-    return state.getEth1_data_votes().stream()
-            .filter(item -> item.equals(eth1Data))
-            .count();
+    return state.getEth1_data_votes().stream().filter(item -> item.equals(eth1Data)).count();
   }
 
   /**
