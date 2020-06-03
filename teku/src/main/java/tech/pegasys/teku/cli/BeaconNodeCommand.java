@@ -319,6 +319,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
         .setLogColorEnabled(loggingOptions.isLogColorEnabled())
         .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
+        .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())
         .setLogDestination(loggingOptions.getLogDestination())
         .setLogFile(loggingOptions.getLogFile())
         .setLogFileNamePattern(loggingOptions.getLogFileNamePattern())

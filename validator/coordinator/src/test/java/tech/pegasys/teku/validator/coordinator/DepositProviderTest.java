@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -141,6 +142,29 @@ public class DepositProviderTest {
         .onBlockWithDeposit(
             event.getBlockTimestamp(),
             new Eth1Data(depositMerkleTree.getRoot(), UnsignedLong.ONE, event.getBlockHash()));
+  }
+
+  @Test
+  void shouldThrowMissingDepositsExceptionWhenRequiredDepositsAreNotAvailable() {
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(10);
+    assertThatThrownBy(() -> depositProvider.getDeposits(beaconState))
+        .isInstanceOf(MissingDepositsException.class)
+        .hasMessageContaining("6 to 10");
+  }
+
+  @Test
+  void shouldThrowMissingDepositsExceptionWhenAllDepositsRequiredForStateNotAvailable() {
+    // To generate a valid proof we need the deposits up to state deposit count
+    // So fail even if we could have filled MAX_DEPOSITS
+    Constants.MAX_DEPOSITS = 1;
+    mockDepositsFromEth1Block(0, 8);
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(10);
+
+    assertThatThrownBy(() -> depositProvider.getDeposits(beaconState))
+        .isInstanceOf(MissingDepositsException.class)
+        .hasMessageContaining("8 to 10");
   }
 
   private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {

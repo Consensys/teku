@@ -74,6 +74,7 @@ public class TekuConfiguration {
   // Logging
   private final boolean logColorEnabled;
   private final boolean logIncludeEventsEnabled;
+  private final boolean logIncludeValidatorDutiesEnabled;
   private final LoggingDestination logDestination;
   private final String logFile;
   private final String logFileNamePattern;
@@ -140,6 +141,7 @@ public class TekuConfiguration {
       final boolean eth1DepositsFromStorageEnabled,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
+      final boolean logIncludeValidatorDutiesEnabled,
       final LoggingDestination logDestination,
       final String logFile,
       final String logFileNamePattern,
@@ -192,6 +194,7 @@ public class TekuConfiguration {
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.logColorEnabled = logColorEnabled;
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
+    this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
     this.logDestination = logDestination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
@@ -361,6 +364,10 @@ public class TekuConfiguration {
 
   public boolean isLogIncludeEventsEnabled() {
     return logIncludeEventsEnabled;
+  }
+
+  public boolean isLogIncludeValidatorDutiesEnabled() {
+    return logIncludeValidatorDutiesEnabled;
   }
 
   public LoggingDestination getLogDestination() {

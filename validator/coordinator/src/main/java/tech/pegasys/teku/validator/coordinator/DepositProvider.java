@@ -101,6 +101,15 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     UnsignedLong eth1DepositCount = state.getEth1_data().getDeposit_count();
 
     UnsignedLong fromDepositIndex = state.getEth1_deposit_index();
+
+    // We need to have all the deposits that can be included in the state available to ensure
+    // the generated proofs are valid
+    final UnsignedLong lastAvailableDepositIndex =
+        depositNavigableMap.isEmpty() ? fromDepositIndex : depositNavigableMap.lastKey();
+    if (lastAvailableDepositIndex.compareTo(eth1DepositCount) < 0) {
+      throw new MissingDepositsException(lastAvailableDepositIndex, eth1DepositCount);
+    }
+
     UnsignedLong latestDepositIndexWithMaxBlock =
         fromDepositIndex.plus(UnsignedLong.valueOf(MAX_DEPOSITS));
 
