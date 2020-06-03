@@ -27,9 +27,9 @@ import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.Store;
 
 public class ForkChoice implements FinalizedCheckpointChannel {
 

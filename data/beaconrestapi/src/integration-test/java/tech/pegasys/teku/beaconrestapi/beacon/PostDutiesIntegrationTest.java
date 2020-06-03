@@ -30,7 +30,7 @@ import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.client.Store;
 
 public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 

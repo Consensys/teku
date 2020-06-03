@@ -50,10 +50,10 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.storage.Store;
-import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.client.Store;
+import tech.pegasys.teku.storage.client.Store.Transaction;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 

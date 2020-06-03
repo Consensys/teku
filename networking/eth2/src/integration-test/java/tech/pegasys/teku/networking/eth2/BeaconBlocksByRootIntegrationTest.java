@@ -37,9 +37,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.Store.Transaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class BeaconBlocksByRootIntegrationTest {

@@ -21,7 +21,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.client.Store;
 
 public class ProtoArrayTestUtil {
 

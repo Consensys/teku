@@ -21,7 +21,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.client.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 
 public interface Database extends AutoCloseable {

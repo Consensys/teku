@@ -22,7 +22,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
-import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.client.Store;
 
 public class GetForkIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 

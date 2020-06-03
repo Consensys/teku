@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.api;
 
 import java.util.Optional;
-import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.client.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.util.async.SafeFuture;
