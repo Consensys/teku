@@ -158,7 +158,7 @@ public final class BLS12381 {
    */
   public static boolean fastAggregateVerify(
       List<PublicKey> publicKeys, Bytes message, Signature signature) {
-    return verify(PublicKey.aggregate(publicKeys), message, signature);
+    return coreVerify(PublicKey.aggregate(publicKeys), message, signature);
   }
 
   /**
@@ -170,7 +170,7 @@ public final class BLS12381 {
    * @param signature The aggregate signature, not null
    * @return True if the verification is successful, false otherwise
    */
-  private static boolean coreVerify(PublicKey publicKey, Bytes message, Signature signature) {
+  public static boolean coreVerify(PublicKey publicKey, Bytes message, Signature signature) {
     G2Point hashInGroup2 = new G2Point(hashToG2(message));
     return signature.verify(publicKey, hashInGroup2);
   }

@@ -17,7 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -64,7 +66,7 @@ public class BLS {
    * @return True if the verification is successful, false otherwise.
    */
   public static boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
-    return BLS12381.verify(publicKey.getPublicKey(), message, signature.getSignature());
+    return BLS12381.coreVerify(publicKey.getPublicKey(), message, signature.getSignature());
   }
 
   /**
@@ -73,7 +75,8 @@ public class BLS {
    * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-2.8
    *
    * <p>The standard says to return INVALID if the list of signatures is empty. We choose to throw
-   * an exception in this case.
+   * an exception in this case. In addition, BLS12381.aggregate will throw an
+   * IllegalArgumentException if any of the signatures is not a valid G2 curve point.
    *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
@@ -93,6 +96,8 @@ public class BLS {
    * <p>The standard says to return INVALID, that is, false, if the list of public keys is empty.
    * See also discussion at https://github.com/ethereum/eth2.0-specs/issues/1713
    *
+   * <p>We also return false if any of the messages are duplicates.
+   *
    * @param publicKeys The list of public keys, not null
    * @param messages The list of messages to verify, all distinct, not null
    * @param signature The aggregate signature, not null
@@ -100,12 +105,20 @@ public class BLS {
    */
   public static boolean aggregateVerify(
       List<BLSPublicKey> publicKeys, List<Bytes> messages, BLSSignature signature) {
+    checkArgument(
+        publicKeys.size() == messages.size(),
+        "Number of public keys and number of messages differs.");
     if (publicKeys.isEmpty()) {
       return false;
     }
+    // Check that there are no duplicate messages
+    Set<Bytes> set = new HashSet<>();
+    for (Bytes message : messages) {
+      if (!set.add(message)) return false;
+    }
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
-    return BLS12381.aggregateVerify(publicKeyObjects, messages, signature.getSignature());
+    return BLS12381.coreAggregateVerify(publicKeyObjects, messages, signature.getSignature());
   }
 
   /**
