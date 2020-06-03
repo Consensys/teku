@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
@@ -30,11 +32,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.StateGenerator;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
 @Disabled
 @ExtendWith(BouncyCastleExtension.class)
@@ -145,5 +149,40 @@ class StateGeneratorTest {
             genesis.getRoot(), genesis.getState(), Collections.emptyList());
     assertThat(result.size()).isEqualTo(expectedResult.size());
     assertThat(result).isEqualToComparingFieldByField(expectedResult);
+  }
+
+  @Test
+  public void produceStatesForBlocks_invalidBaseState() throws StateTransitionException {
+    final DataStructureUtil rand = new DataStructureUtil();
+
+    // Build a small chain
+    chainBuilder.generateGenesis();
+    final UnsignedLong lastCommonSlot = compute_start_slot_at_epoch(UnsignedLong.valueOf(2));
+    chainBuilder.generateBlocksUpToSlot(lastCommonSlot);
+    // Fork chain and create 2 divergent chains
+    final ChainBuilder fork = chainBuilder.fork();
+    // Make sure chains diverge at this point
+    final UnsignedLong firstDivergentSlot = lastCommonSlot.plus(UnsignedLong.ONE);
+    chainBuilder.generateBlockAtSlot(
+        firstDivergentSlot, BlockOptions.create().setEth1Data(rand.randomEth1Data()));
+    fork.generateBlockAtSlot(
+        firstDivergentSlot, BlockOptions.create().setEth1Data(rand.randomEth1Data()));
+    // Add more blocks
+    final UnsignedLong lastSlot = firstDivergentSlot.plus(UnsignedLong.valueOf(10));
+    chainBuilder.generateBlocksUpToSlot(lastSlot);
+    fork.generateBlocksUpToSlot(lastSlot);
+
+    // Try to regenerate states using the wrong base state
+    final Bytes32 baseRoot = chainBuilder.getBlockAndStateAtSlot(lastCommonSlot).getRoot();
+    final BeaconState baseState = fork.getStateAtSlot(firstDivergentSlot);
+    final List<SignedBeaconBlock> newBlocks =
+        chainBuilder
+            .streamBlocksAndStates(firstDivergentSlot)
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList());
+
+    assertThatThrownBy(() -> stateGenerator.produceStatesForBlocks(baseRoot, baseState, newBlocks))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Unable to produce state for block at slot " + firstDivergentSlot);
   }
 }

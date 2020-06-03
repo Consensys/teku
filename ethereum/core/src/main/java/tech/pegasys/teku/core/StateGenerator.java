@@ -21,25 +21,21 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class StateGenerator {
-  private static final Logger LOG = LogManager.getLogger();
-
   /**
-   * Given a base state and some blocks, processes the given blocks on top of the base state to
-   * produce the states belonging to each block.
+   * Given a base state and a set of subsequent blocks, processes the given blocks on top of the
+   * base state to produce the states belonging to each block.
    *
    * @param baseStateBlockRoot The block root corresponding to the base state.
    * @param baseState The base state to build on top of.
    * @param newBlocks A list of blocks to process on top of the base state.
    * @return A map from blockRoot to state containing the base state and all other states that could
-   *     be successfully generated.
+   *     be successfully generated. Any blocks that do not descend from the base state will be
+   *     ignored.
    */
   public Map<Bytes32, BeaconState> produceStatesForBlocks(
       final Bytes32 baseStateBlockRoot,
@@ -68,30 +64,31 @@ public class StateGenerator {
           blocksByParent.computeIfAbsent(parentRoot, (key) -> Collections.emptyList());
       for (SignedBeaconBlock block : blocks) {
         final Bytes32 blockRoot = block.getMessage().hash_tree_root();
-        processBlock(parentState, block)
-            .ifPresent(
-                state -> {
-                  statesByRoot.put(blockRoot, state);
-                  parentRoots.push(blockRoot);
-                });
+        final BeaconState state = processBlock(parentState, block);
+        statesByRoot.put(blockRoot, state);
+        parentRoots.push(blockRoot);
       }
     }
 
     return statesByRoot;
   }
 
-  private Optional<BeaconState> processBlock(
-      final BeaconState preState, final SignedBeaconBlock block) {
+  private BeaconState processBlock(final BeaconState preState, final SignedBeaconBlock block) {
     StateTransition stateTransition = new StateTransition();
     try {
       final BeaconState postState = stateTransition.initiate(preState, block);
-      return Optional.of(postState);
+      // Validate that state matches expectation
+      if (!block.getMessage().getState_root().equals(postState.hash_tree_root())) {
+        throw new IllegalStateException(getFailedStateGenerationError(block));
+      }
+      return postState;
     } catch (StateTransitionException e) {
-      LOG.trace(
-          "Unable to produce state for block at slot {} ({})",
-          block.getSlot(),
-          block.getMessage().hash_tree_root());
-      return Optional.empty();
+      throw new IllegalStateException(getFailedStateGenerationError(block), e);
     }
+  }
+
+  private String getFailedStateGenerationError(final SignedBeaconBlock block) {
+    return String.format(
+        "Unable to produce state for block at slot %s (%s)", block.getSlot(), block.getRoot());
   }
 }
