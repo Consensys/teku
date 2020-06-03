@@ -23,7 +23,6 @@ import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
@@ -58,10 +57,8 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
     return cachedStore;
   }
 
-  private synchronized void handleStoreUpdate(final StorageUpdateResult result) {
-    if (result.isSuccessful()) {
-      cachedStore = Optional.empty();
-    }
+  private synchronized void handleStoreUpdate() {
+    cachedStore = Optional.empty();
   }
 
   @Override
@@ -74,12 +71,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<StorageUpdateResult> onStorageUpdate(final StorageUpdate event) {
-    return SafeFuture.of(
+  public SafeFuture<Void> onStorageUpdate(final StorageUpdate event) {
+    return SafeFuture.fromRunnable(
         () -> {
-          StorageUpdateResult result = database.update(event);
-          handleStoreUpdate(result);
-          return result;
+          database.update(event);
+          handleStoreUpdate();
         });
   }
 

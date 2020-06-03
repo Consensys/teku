@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
@@ -28,7 +31,6 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstanceFactory;
@@ -93,11 +95,11 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public StorageUpdateResult update(final StorageUpdate event) {
+  public void update(final StorageUpdate event) {
     if (event.isEmpty()) {
-      return StorageUpdateResult.successful();
+      return;
     }
-    return doUpdate(event);
+    doUpdate(event);
   }
 
   @Override
@@ -187,7 +189,7 @@ public class RocksDbDatabase implements Database {
     dao.close();
   }
 
-  private StorageUpdateResult doUpdate(final StorageUpdate update) {
+  private void doUpdate(final StorageUpdate update) {
     try (final Updater updater = dao.updater()) {
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
       update.getFinalizedCheckpoint().ifPresent(updater::setFinalizedCheckpoint);
@@ -214,7 +216,6 @@ public class RocksDbDatabase implements Database {
               });
 
       updater.commit();
-      return StorageUpdateResult.successful();
     }
   }
 

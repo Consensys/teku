@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.api;
 import java.util.Optional;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class StubStorageUpdateChannel implements StorageUpdateChannel {
@@ -27,8 +26,8 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {
-    return SafeFuture.completedFuture(StorageUpdateResult.successful());
+  public SafeFuture<Void> onStorageUpdate(StorageUpdate event) {
+    return SafeFuture.COMPLETE;
   }
 
   @Override

@@ -23,13 +23,12 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
 
 public interface Database extends AutoCloseable {
 
   void storeGenesis(Store store);
 
-  StorageUpdateResult update(StorageUpdate event);
+  void update(StorageUpdate event);
 
   Optional<Store> createMemoryStore();
 

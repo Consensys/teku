@@ -52,8 +52,8 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.Store.Transaction;
-import tech.pegasys.teku.storage.api.TrackingStorageUpdateChannel;
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
+import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
+import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -75,12 +75,12 @@ public abstract class AbstractDatabaseTest {
   protected Checkpoint checkpoint3;
 
   protected Database database;
-  protected TrackingStorageUpdateChannel storageUpdateChannel;
+  protected StorageUpdateChannel storageUpdateChannel;
 
   protected List<Database> databases = new ArrayList<>();
 
   @BeforeEach
-  public void setup() throws StateTransitionException {
+  public void setup() {
     Constants.SLOTS_PER_EPOCH = 3;
     setupDatabase(StateStorageMode.ARCHIVE);
 
@@ -117,7 +117,7 @@ public abstract class AbstractDatabaseTest {
   protected Database setupDatabase(final StateStorageMode storageMode) {
     database = createDatabase(storageMode);
     databases.add(database);
-    storageUpdateChannel = new TrackingStorageUpdateChannel(database);
+    storageUpdateChannel = new DatabaseBackedStorageUpdateChannel(database);
     return database;
   }
 
@@ -784,11 +784,6 @@ public abstract class AbstractDatabaseTest {
     final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setFinalizedCheckpoint(checkpoint);
     commit(transaction);
-  }
-
-  protected StorageUpdateResult getLatestUpdateResult() {
-    final List<StorageUpdateResult> updateResults = storageUpdateChannel.getStorageUpdates();
-    return updateResults.get(updateResults.size() - 1);
   }
 
   protected Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {

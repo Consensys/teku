@@ -32,7 +32,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.Store.Transaction;
-import tech.pegasys.teku.storage.api.TrackingStorageUpdateChannel;
+import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.file.FileUtil;
 
@@ -61,7 +61,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   protected Database setupDatabase(final File tempDir, final StateStorageMode storageMode) {
     database = createDatabase(tempDir, storageMode);
     databases.add(database);
-    storageUpdateChannel = new TrackingStorageUpdateChannel(database);
+    storageUpdateChannel = new DatabaseBackedStorageUpdateChannel(database);
     return database;
   }
 

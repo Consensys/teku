@@ -51,7 +51,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.client.FailedPrecommitException;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -468,10 +467,7 @@ public class Store implements ReadOnlyStore {
       return storageUpdateChannel
           .onStorageUpdate(updates.createStorageUpdate())
           .thenAccept(
-              updateResult -> {
-                if (!updateResult.isSuccessful()) {
-                  throw new FailedPrecommitException(updateResult);
-                }
+              __ -> {
                 // Propagate changes to Store
                 final Lock writeLock = Store.this.lock.writeLock();
                 writeLock.lock();

@@ -31,7 +31,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.events.SuccessfulStorageUpdateResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class StoreTest {
@@ -57,8 +56,7 @@ class StoreTest {
 
     // Start transaction
     StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-    when(storageUpdateChannel.onStorageUpdate(any()))
-        .thenReturn(SafeFuture.completedFuture(new SuccessfulStorageUpdateResult()));
+    when(storageUpdateChannel.onStorageUpdate(any())).thenReturn(SafeFuture.COMPLETE);
     final Transaction tx = store.startTransaction(storageUpdateChannel);
     // Add blocks
     chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
