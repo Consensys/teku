@@ -381,7 +381,6 @@ workflows:
       - docker:
           requires:
             - assemble
-            - unitTests
             - spotless
       - extractAPISpec:
           requires:
