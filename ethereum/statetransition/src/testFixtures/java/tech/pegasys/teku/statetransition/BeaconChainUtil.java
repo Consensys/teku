@@ -276,26 +276,6 @@ public class BeaconChainUtil {
     }
   }
 
-  public void setEth1DataOfChain(final Eth1Data eth1Data) throws Exception {
-    long vote_count = 0;
-    while (true) {
-      System.out.println(vote_count);
-      createAndImportBlockAtSlot(
-          recentChainData.getBestSlot().plus(UnsignedLong.ONE),
-          Optional.empty(),
-          Optional.empty(),
-          Optional.empty(),
-          Optional.of(eth1Data));
-      vote_count =
-          recentChainData.getBestState().orElseThrow().getEth1_data_votes().stream()
-              .filter(item -> item.equals(eth1Data))
-              .count();
-      if (vote_count * 2 < EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH) {
-        return;
-      }
-    }
-  }
-
   public List<BLSKeyPair> getValidatorKeys() {
     return validatorKeys;
   }
