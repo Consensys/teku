@@ -22,6 +22,7 @@ import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
 import tech.pegasys.teku.reference.phase0.operations.OperationsTestExecutor;
+import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutor;
 import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
@@ -38,6 +39,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
           .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
+          .putAll(RewardsTestExecutor.REWARDS_TEST_TYPES)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
