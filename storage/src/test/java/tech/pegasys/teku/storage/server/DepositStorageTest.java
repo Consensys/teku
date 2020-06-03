@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +49,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
 
   @BeforeEach
   public void beforeEach() {
-    depositStorage = DepositStorage.create(eventsChannel, database);
+    depositStorage = DepositStorage.create(eventsChannel, database, true);
     depositStorage.start();
   }
 
@@ -65,6 +66,21 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
     assertThat(future.get().getBlockNumber().get()).isEqualTo(block_101.getBlockNumber());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
+  }
+
+  @Test
+  public void shouldNotLoadFromStorageIfDisabled() throws ExecutionException, InterruptedException {
+    depositStorage = DepositStorage.create(eventsChannel, database, false);
+    depositStorage.start();
+
+    database.addMinGenesisTimeBlock(genesis_100);
+    database.addDepositsFromBlockEvent(block_101);
+    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
+    assertThat(future.isDone()).isTrue();
+
+    assertThat(eventsChannel.getOrderedList()).isEmpty();
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(UnsignedLong.ZERO);
+    assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
   @Test

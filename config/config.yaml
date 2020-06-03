@@ -29,6 +29,7 @@ Xinterop-enabled: True
 # deposit
 eth1-deposit-contract-address: "0x77f7bED277449F51505a4C54550B074030d989bC"
 eth1-endpoint: "http://localhost:8545"
+eth1-deposits-from-storage-enabled: False
 
 # output
 #Xtransaction-record-directory: "/tmp/teku"
