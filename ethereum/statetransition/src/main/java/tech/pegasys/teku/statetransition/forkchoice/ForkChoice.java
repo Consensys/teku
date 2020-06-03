@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
@@ -53,8 +54,8 @@ public class ForkChoice implements FinalizedCheckpointChannel {
     Store.Transaction transaction = recentChainData.startStoreTransaction();
     Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(transaction);
     transaction.commit(() -> {}, "Failed to persist validator vote changes.");
-    BeaconBlock headBlock = recentChainData.getStore().getBlock(headBlockRoot);
-    recentChainData.updateBestBlock(headBlockRoot, headBlock.getSlot());
+    recentChainData.updateBestBlock(headBlockRoot, protoArrayForkChoiceStrategy.blockSlot(headBlockRoot)
+            .orElseThrow(() -> new IllegalStateException("Unable to retrieve the slot of fork choice head")));
     return headBlockRoot;
   }
 
