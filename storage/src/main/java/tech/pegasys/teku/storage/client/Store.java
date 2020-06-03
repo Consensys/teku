@@ -462,14 +462,21 @@ public class Store implements ReadOnlyStore {
 
     @CheckReturnValue
     public SafeFuture<Void> commit() {
-      final TransactionCommitUpdates updates = TransactionCommitUpdates.calculate(Store.this, this);
+      final TransactionCommitUpdates updates;
+      // Lock so that we have a consistent view while calculating our updates
+      final Lock writeLock = Store.this.lock.writeLock();
+      writeLock.lock();
+      try {
+        updates = TransactionCommitUpdates.calculate(Store.this, this);
+      } finally {
+        writeLock.unlock();
+      }
 
       return storageUpdateChannel
           .onStorageUpdate(updates.createStorageUpdate())
           .thenAccept(
               __ -> {
                 // Propagate changes to Store
-                final Lock writeLock = Store.this.lock.writeLock();
                 writeLock.lock();
                 try {
                   // Add new data
