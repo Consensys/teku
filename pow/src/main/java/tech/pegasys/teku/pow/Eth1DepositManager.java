@@ -23,6 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
+import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
@@ -34,18 +36,21 @@ public class Eth1DepositManager {
   private final Eth1Provider eth1Provider;
   private final AsyncRunner asyncRunner;
   private final Eth1EventsChannel eth1EventsChannel;
+  private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
 
   public Eth1DepositManager(
-      Eth1Provider eth1Provider,
-      AsyncRunner asyncRunner,
-      Eth1EventsChannel eth1EventsChannel,
-      DepositProcessingController depositProcessingController,
-      MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder) {
+      final Eth1Provider eth1Provider,
+      final AsyncRunner asyncRunner,
+      final Eth1EventsChannel eth1EventsChannel,
+      final Eth1DepositStorageChannel eth1DepositStorageChannel,
+      final DepositProcessingController depositProcessingController,
+      final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder) {
     this.eth1Provider = eth1Provider;
     this.asyncRunner = asyncRunner;
     this.eth1EventsChannel = eth1EventsChannel;
+    this.eth1DepositStorageChannel = eth1DepositStorageChannel;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
   }
