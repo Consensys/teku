@@ -63,9 +63,9 @@ class StoreTest {
     // Add blocks
     chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
     // Update checkpoints
-    tx.setJustifiedCheckpoint(checkpoint1);
-    tx.setBestJustifiedCheckpoint(checkpoint2);
-    tx.setFinalizedCheckpoint(checkpoint3);
+    tx.setFinalizedCheckpoint(checkpoint1);
+    tx.setJustifiedCheckpoint(checkpoint2);
+    tx.setBestJustifiedCheckpoint(checkpoint3);
     // Update checkpoint states
     tx.putCheckpointState(
         checkpoint1, chainBuilder.getStateAtSlot(checkpoint1.getEpochStartSlot()));
@@ -107,9 +107,9 @@ class StoreTest {
               assertThat(tx.containsBlockState(b.getRoot())).isTrue();
             });
     // Check checkpoints
-    assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint1);
-    assertThat(tx.getBestJustifiedCheckpoint()).isEqualTo(checkpoint2);
-    assertThat(tx.getFinalizedCheckpoint()).isEqualTo(checkpoint3);
+    assertThat(tx.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
+    assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
+    assertThat(tx.getBestJustifiedCheckpoint()).isEqualTo(checkpoint3);
     // Check checkpoint states
     assertThat(tx.containsCheckpointState(checkpoint1)).isTrue();
     assertThat(tx.containsCheckpointState(checkpoint2)).isTrue();
@@ -130,9 +130,9 @@ class StoreTest {
               assertThat(store.containsBlockState(b.getRoot())).isTrue();
             });
     // Check checkpoints
-    assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint1);
-    assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(checkpoint2);
-    assertThat(store.getFinalizedCheckpoint()).isEqualTo(checkpoint3);
+    assertThat(store.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
+    assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
+    assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(checkpoint3);
     // Check checkpoint states
     assertThat(store.containsCheckpointState(checkpoint1)).isTrue();
     assertThat(store.containsCheckpointState(checkpoint2)).isTrue();
