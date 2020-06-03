@@ -62,6 +62,7 @@ import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -185,13 +186,20 @@ public final class BlockProcessorUtil {
    */
   public static void process_eth1_data(MutableBeaconState state, BeaconBlockBody body) {
     state.getEth1_data_votes().add(body.getEth1_data());
-    long vote_count =
-        state.getEth1_data_votes().stream()
-            .filter(item -> item.equals(body.getEth1_data()))
-            .count();
-    if (vote_count * 2 > EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH) {
+    long vote_count = getVoteCount(state, body.getEth1_data());
+    if (isEnoughVotesToUpdateEth1Data(vote_count)) {
       state.setEth1_data(body.getEth1_data());
     }
+  }
+
+  public static boolean isEnoughVotesToUpdateEth1Data(long voteCount) {
+    return voteCount * 2 > EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH;
+  }
+
+  public static long getVoteCount(BeaconState state, Eth1Data eth1Data) {
+    return state.getEth1_data_votes().stream()
+            .filter(item -> item.equals(eth1Data))
+            .count();
   }
 
   /**

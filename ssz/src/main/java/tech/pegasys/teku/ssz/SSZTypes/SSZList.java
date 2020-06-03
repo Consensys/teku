@@ -14,6 +14,8 @@
 package tech.pegasys.teku.ssz.SSZTypes;
 
 import com.google.common.base.Preconditions;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.function.Function;
@@ -57,6 +59,10 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
 
   static <T> SSZList<T> singleton(T obj) {
     return new SSZArrayCollection<>(1, obj, false);
+  }
+
+  static <T> SSZList<T> empty(Class<T> clazz) {
+    return new SSZArrayCollection<>(clazz,  0, false);
   }
 
   default SSZList<T> reversed() {
