@@ -78,12 +78,8 @@ public class MinimumGenesisTimeBlockFinder {
     }
   }
 
-  // eth1_timestamp - eth1_timestamp % MIN_GENESIS_DELAY + 2 * MIN_GENESIS_DELAY,
   static UnsignedLong calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
-    UnsignedLong timestamp = UnsignedLong.valueOf(eth1Timestamp);
-    return timestamp
-        .minus(timestamp.mod(UnsignedLong.valueOf(Constants.MIN_GENESIS_DELAY)))
-        .plus(UnsignedLong.valueOf(2 * Constants.MIN_GENESIS_DELAY));
+    return UnsignedLong.valueOf(eth1Timestamp).plus(Constants.GENESIS_DELAY);
   }
 
   static int compareBlockTimestampToMinGenesisTime(EthBlock.Block block) {

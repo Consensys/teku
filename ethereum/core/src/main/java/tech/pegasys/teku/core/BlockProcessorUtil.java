@@ -37,7 +37,7 @@ import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PER
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.teku.util.config.Constants.PERSISTENT_COMMITTEE_PERIOD;
+import static tech.pegasys.teku.util.config.Constants.SHARD_COMMITTEE_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.collect.Sets;
@@ -522,10 +522,7 @@ public final class BlockProcessorUtil {
 
         checkArgument(
             get_current_epoch(state)
-                    .compareTo(
-                        validator
-                            .getActivation_epoch()
-                            .plus(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD)))
+                    .compareTo(validator.getActivation_epoch().plus(SHARD_COMMITTEE_PERIOD))
                 >= 0,
             "process_voluntary_exits: Verify the validator has been active long enough");
 

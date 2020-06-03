@@ -71,7 +71,7 @@ import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkData;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
-import tech.pegasys.teku.datastructures.state.SigningRoot;
+import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -346,7 +346,7 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Return the signing root of an object by calculating the root of the object-domain tree.
+   * Return the signing root for the corresponding signing data.
    *
    * @param object An object implementing the Merkleizable interface
    * @param domain
@@ -355,8 +355,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
   public static Bytes compute_signing_root(Merkleizable object, Bytes domain) {
-    SigningRoot domain_wrapped_object = new SigningRoot(object.hash_tree_root(), domain);
-    return domain_wrapped_object.hash_tree_root();
+    return new SigningData(object.hash_tree_root(), domain).hash_tree_root();
   }
 
   /**
@@ -369,8 +368,8 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
   public static Bytes compute_signing_root(long number, Bytes domain) {
-    SigningRoot domain_wrapped_object =
-        new SigningRoot(
+    SigningData domain_wrapped_object =
+        new SigningData(
             HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(number)),
             domain);
     return domain_wrapped_object.hash_tree_root();
@@ -386,8 +385,8 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
   public static Bytes compute_signing_root(Bytes bytes, Bytes domain) {
-    SigningRoot domain_wrapped_object =
-        new SigningRoot(
+    SigningData domain_wrapped_object =
+        new SigningData(
             HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.VECTOR_OF_BASIC, bytes), domain);
     return domain_wrapped_object.hash_tree_root();
   }
@@ -554,8 +553,7 @@ public class BeaconStateUtil {
         validator
             .getEffective_balance()
             .dividedBy(UnsignedLong.valueOf(WHISTLEBLOWER_REWARD_QUOTIENT));
-    UnsignedLong proposer_reward =
-        whistleblower_reward.dividedBy(UnsignedLong.valueOf(PROPOSER_REWARD_QUOTIENT));
+    UnsignedLong proposer_reward = whistleblower_reward.dividedBy(PROPOSER_REWARD_QUOTIENT);
     increase_balance(state, proposer_index, proposer_reward);
     increase_balance(state, whistleblower_index, whistleblower_reward.minus(proposer_reward));
   }

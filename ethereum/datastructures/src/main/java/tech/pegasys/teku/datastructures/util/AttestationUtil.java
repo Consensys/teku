@@ -147,19 +147,17 @@ public class AttestationUtil {
       BeaconState state,
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
-    SSZList<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
+    SSZList<UnsignedLong> indices = indexed_attestation.getAttesting_indices();
 
     List<UnsignedLong> bit_0_indices_sorted =
-        attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
-    if (!attesting_indices.equals(bit_0_indices_sorted)) {
+        indices.stream().sorted().distinct().collect(Collectors.toList());
+    if (indices.isEmpty() || !indices.equals(bit_0_indices_sorted)) {
       LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
     List<BLSPublicKey> pubkeys =
-        attesting_indices.stream()
-            .map(i -> getValidatorPubKey(state, i))
-            .collect(Collectors.toList());
+        indices.stream().map(i -> getValidatorPubKey(state, i)).collect(Collectors.toList());
 
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes domain =

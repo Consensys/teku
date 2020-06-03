@@ -90,7 +90,8 @@ public class ForkChoiceUtil {
     } else if (block.getSlot().equals(slot)) {
       return root;
     } else {
-      // root is older than the queried slot, thus a skip slot. Return earliest root prior to slot.
+      // root is older than the queried slot, thus a skip slot.
+      // Return most recent root prior to slot.
       return root;
     }
   }
@@ -401,6 +402,15 @@ public class ForkChoiceUtil {
       LOG.warn(
           "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
       return AttestationProcessingResult.INVALID;
+    }
+
+    // LMD vote must be consistent with FFG vote target
+    final UnsignedLong target_slot = compute_start_slot_at_epoch(target.getEpoch());
+    if (!target
+        .getRoot()
+        .equals(get_ancestor(store, attestation.getData().getBeacon_block_root(), target_slot))) {
+      LOG.warn("on_attestation: LMD vote must be consistent with FFG vote target");
+      return INVALID;
     }
 
     return SUCCESSFUL;

@@ -37,7 +37,7 @@ public class MinimumGenesisTimeBlockFinderTest {
   @BeforeAll
   static void setUp() {
     // Setup so genesis time for a block will be blockTime + 2
-    Constants.MIN_GENESIS_DELAY = 1;
+    Constants.GENESIS_DELAY = UnsignedLong.valueOf(2);
   }
 
   @AfterAll

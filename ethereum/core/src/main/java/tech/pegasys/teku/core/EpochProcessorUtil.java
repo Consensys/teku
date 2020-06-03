@@ -61,6 +61,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.IntFunction;
@@ -290,11 +291,199 @@ public final class EpochProcessorUtil {
     return effective_balance
         .times(UnsignedLong.valueOf(BASE_REWARD_FACTOR))
         .dividedBy(total_balance_square_root)
-        .dividedBy(UnsignedLong.valueOf(BASE_REWARDS_PER_EPOCH));
+        .dividedBy(BASE_REWARDS_PER_EPOCH);
+  }
+
+  private static List<Integer> get_eligible_validator_indices(BeaconState state) {
+    final UnsignedLong previous_epoch = get_previous_epoch(state);
+    final UnsignedLong previous_epoch_plus_one = previous_epoch.plus(UnsignedLong.ONE);
+    return IntStream.range(0, state.getValidators().size())
+        .filter(
+            index -> {
+              final Validator v = state.getValidators().get(index);
+              return is_active_validator(v, previous_epoch)
+                  || (v.isSlashed()
+                      && previous_epoch_plus_one.compareTo(v.getWithdrawable_epoch()) < 0);
+            })
+        .boxed()
+        .collect(Collectors.toList());
+  }
+
+  private static UnsignedLong get_proposer_reward(BeaconState state, int attestingIndex) {
+    return get_base_reward(state, attestingIndex).dividedBy(PROPOSER_REWARD_QUOTIENT);
+  }
+
+  private static UnsignedLong get_finality_delay(BeaconState state) {
+    return get_previous_epoch(state).minus(state.getFinalized_checkpoint().getEpoch());
+  }
+
+  private static boolean is_in_inactivity_leak(BeaconState state) {
+    return get_finality_delay(state).compareTo(MIN_EPOCHS_TO_INACTIVITY_PENALTY) > 0;
   }
 
   /**
-   * Returns rewards and penalties specific to each validator resulting from ttestations
+   * Helper with shared logic for use by get source, target and head deltas functions
+   *
+   * @param state
+   * @param attestations
+   * @return
+   */
+  private static Deltas get_attestation_component_deltas(
+      BeaconState state, SSZList<PendingAttestation> attestations) {
+    int validatorCount = state.getValidators().size();
+    List<UnsignedLong> rewards = new ArrayList<>(validatorCount);
+    List<UnsignedLong> penalties = new ArrayList<>(validatorCount);
+    for (int i = 0; i < validatorCount; i++) {
+      rewards.add(UnsignedLong.ZERO);
+      penalties.add(UnsignedLong.ZERO);
+    }
+    UnsignedLong total_balance = get_total_active_balance(state);
+    Set<Integer> unslashed_attesting_indices =
+        get_unslashed_attesting_indices(state, attestations, HashSet::new);
+    UnsignedLong attesting_balance = get_total_balance(state, unslashed_attesting_indices);
+
+    for (int index : get_eligible_validator_indices(state)) {
+      if (unslashed_attesting_indices.contains(index)) {
+        UnsignedLong increment = EFFECTIVE_BALANCE_INCREMENT;
+        if (is_in_inactivity_leak(state)) {
+          // Since full base reward will be canceled out by inactivity penalty deltas,
+          // optimal participation receives full base reward compensation here.
+          add(rewards, index, get_base_reward(state, index));
+        } else {
+          UnsignedLong reward_numerator =
+              get_base_reward(state, index).times(attesting_balance.dividedBy(increment));
+          add(rewards, index, reward_numerator.dividedBy(total_balance.dividedBy(increment)));
+        }
+      } else {
+        add(penalties, index, get_base_reward(state, index));
+      }
+    }
+    return new Deltas(rewards, penalties);
+  }
+
+  /**
+   * Return attester micro-rewards/penalties for source-vote for each validator.
+   *
+   * @param state
+   * @return
+   */
+  public static Deltas getSourceDeltas(BeaconState state) {
+    final SSZList<PendingAttestation> matching_source_attestations =
+        get_matching_source_attestations(state, get_previous_epoch(state));
+    return get_attestation_component_deltas(state, matching_source_attestations);
+  }
+
+  /**
+   * Return attester micro-rewards/penalties for target-vote for each validator.
+   *
+   * @param state
+   * @return
+   */
+  public static Deltas getTargetDeltas(BeaconState state) {
+    final SSZList<PendingAttestation> matching_target_attestations =
+        get_matching_target_attestations(state, get_previous_epoch(state));
+    return get_attestation_component_deltas(state, matching_target_attestations);
+  }
+
+  /**
+   * Return attester micro-rewards/penalties for head-vote for each validator.
+   *
+   * @param state
+   * @return
+   */
+  public static Deltas getHeadDeltas(BeaconState state) {
+    final SSZList<PendingAttestation> matching_head_attestations =
+        get_matching_head_attestations(state, get_previous_epoch(state));
+    return get_attestation_component_deltas(state, matching_head_attestations);
+  }
+
+  /**
+   * Return proposer and inclusion delay micro-rewards/penalties for each validator
+   *
+   * @param state
+   */
+  public static Deltas getInclusionDelayDeltas(BeaconState state) {
+    int validatorCount = state.getValidators().size();
+    List<UnsignedLong> rewards = new ArrayList<>(validatorCount);
+    List<UnsignedLong> penalties = new ArrayList<>(validatorCount);
+    for (int i = 0; i < validatorCount; i++) {
+      rewards.add(UnsignedLong.ZERO);
+      penalties.add(UnsignedLong.ZERO);
+    }
+    SSZList<PendingAttestation> matching_source_attestations =
+        get_matching_source_attestations(state, get_previous_epoch(state));
+    for (int index : get_unslashed_attesting_indices(state, matching_source_attestations)) {
+      Optional<PendingAttestation> attestation =
+          matching_source_attestations.stream()
+              .filter(
+                  a ->
+                      get_attesting_indices(state, a.getData(), a.getAggregation_bits())
+                          .contains(index))
+              .min(Comparator.comparing(PendingAttestation::getInclusion_delay));
+      attestation.ifPresent(
+          a -> {
+            add(
+                rewards,
+                toIntExact(a.getProposer_index().longValue()),
+                get_proposer_reward(state, index));
+
+            UnsignedLong max_attester_reward =
+                get_base_reward(state, index).minus(get_proposer_reward(state, index));
+            add(rewards, index, max_attester_reward.dividedBy(a.getInclusion_delay()));
+          });
+    }
+
+    // No penalties associtated with inclusion delay
+    // TODO: Don't create a list of zeros for no reason
+    return new Deltas(rewards, penalties);
+  }
+
+  /**
+   * Return inactivity reward/penalty deltas for each validator
+   *
+   * @param state
+   * @return
+   */
+  public static Deltas getInactivityPenaltyDeltas(BeaconState state) {
+    int validatorCount = state.getValidators().size();
+    List<UnsignedLong> rewards = new ArrayList<>(validatorCount);
+    List<UnsignedLong> penalties = new ArrayList<>(validatorCount);
+    for (int i = 0; i < validatorCount; i++) {
+      rewards.add(UnsignedLong.ZERO);
+      penalties.add(UnsignedLong.ZERO);
+    }
+    if (is_in_inactivity_leak(state)) {
+      SSZList<PendingAttestation> matching_target_attestations =
+          get_matching_target_attestations(state, get_previous_epoch(state));
+      Set<Integer> matching_target_attesting_indices =
+          get_unslashed_attesting_indices(state, matching_target_attestations, HashSet::new);
+      for (int index : get_eligible_validator_indices(state)) {
+        // If validator is performing optimally this cancels all rewards for a neutral balance
+        UnsignedLong base_reward = get_base_reward(state, index);
+        add(
+            penalties,
+            index,
+            BASE_REWARDS_PER_EPOCH.times(base_reward).minus(get_proposer_reward(state, index)));
+        if (!matching_target_attesting_indices.contains(index)) {
+          final UnsignedLong effective_balance =
+              state.getValidators().get(index).getEffective_balance();
+          add(
+              penalties,
+              index,
+              effective_balance
+                  .times(get_finality_delay(state))
+                  .dividedBy(INACTIVITY_PENALTY_QUOTIENT));
+        }
+      }
+    }
+
+    // No rewards associated with inactivity penalties
+    // TODO: Don't create a list of zeros for no reason
+    return new Deltas(rewards, penalties);
+  }
+
+  /**
+   * Return attestation reward/penalty deltas for each validator
    *
    * @param state
    * @return
@@ -302,8 +491,34 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
-  private static ImmutablePair<List<UnsignedLong>, List<UnsignedLong>> get_attestation_deltas(
-      BeaconState state) throws IllegalArgumentException {
+  private static Deltas get_attestation_deltas(BeaconState state) throws IllegalArgumentException {
+    Deltas sourceDeltas = getSourceDeltas(state);
+    Deltas targetDeltas = getTargetDeltas(state);
+    Deltas headDeltas = getHeadDeltas(state);
+    Deltas inclusionDelayDeltas = getInclusionDelayDeltas(state);
+    Deltas inactivityDeltas = getInactivityPenaltyDeltas(state);
+
+    List<UnsignedLong> rewards = new ArrayList<>();
+    List<UnsignedLong> penalties = new ArrayList<>();
+    for (int i = 0; i < state.getValidators().size(); i++) {
+      rewards.add(
+          sourceDeltas
+              .getReward(i)
+              .plus(targetDeltas.getReward(i))
+              .plus(headDeltas.getReward(i))
+              .plus(inclusionDelayDeltas.getReward(i)));
+      penalties.add(
+          sourceDeltas
+              .getPenalty(i)
+              .plus(targetDeltas.getPenalty(i))
+              .plus(headDeltas.getPenalty(i))
+              .plus(inactivityDeltas.getPenalty(i)));
+    }
+    return new Deltas(rewards, penalties);
+  }
+
+  private static Pair<List<UnsignedLong>, List<UnsignedLong>> old_get_attestation_deltas(
+      BeaconState state) {
     UnsignedLong previous_epoch = get_previous_epoch(state);
     UnsignedLong total_balance = get_total_active_balance(state);
 
@@ -315,6 +530,7 @@ public final class EpochProcessorUtil {
       penalties.add(UnsignedLong.ZERO);
     }
 
+    // TODO: Restore this optimization
     Map<Integer, UnsignedLong> eligible_validator_base_rewards =
         IntStream.range(0, state.getValidators().size())
             .parallel()
@@ -391,9 +607,7 @@ public final class EpochProcessorUtil {
                 .ifPresent(
                     attestation -> {
                       UnsignedLong proposer_reward =
-                          base_reward_func
-                              .apply(index)
-                              .dividedBy(UnsignedLong.valueOf(PROPOSER_REWARD_QUOTIENT));
+                          base_reward_func.apply(index).dividedBy(PROPOSER_REWARD_QUOTIENT);
                       add(rewards, attestation.getProposer_index().intValue(), proposer_reward);
                       UnsignedLong max_attester_reward =
                           base_reward_func.apply(index).minus(proposer_reward);
@@ -405,17 +619,14 @@ public final class EpochProcessorUtil {
 
     // Inactivity penalty
     UnsignedLong finality_delay = previous_epoch.minus(state.getFinalized_checkpoint().getEpoch());
-    if (finality_delay.longValue() > MIN_EPOCHS_TO_INACTIVITY_PENALTY) {
+    if (finality_delay.longValue() > MIN_EPOCHS_TO_INACTIVITY_PENALTY.longValue()) {
       Set<Integer> matching_target_attesting_indices =
           get_unslashed_attesting_indices(state, matching_target_attestations, HashSet::new);
 
       for (Entry<Integer, UnsignedLong> index_base_reward :
           eligible_validator_base_rewards.entrySet()) {
         int index = index_base_reward.getKey();
-        add(
-            penalties,
-            index,
-            UnsignedLong.valueOf(BASE_REWARDS_PER_EPOCH).times(index_base_reward.getValue()));
+        add(penalties, index, BASE_REWARDS_PER_EPOCH.times(index_base_reward.getValue()));
         if (!matching_target_attesting_indices.contains(index)) {
           add(
               penalties,
@@ -425,7 +636,7 @@ public final class EpochProcessorUtil {
                   .get(index)
                   .getEffective_balance()
                   .times(finality_delay)
-                  .dividedBy(UnsignedLong.valueOf(INACTIVITY_PENALTY_QUOTIENT)));
+                  .dividedBy(INACTIVITY_PENALTY_QUOTIENT));
         }
       }
     }
@@ -452,14 +663,11 @@ public final class EpochProcessorUtil {
         return;
       }
 
-      Pair<List<UnsignedLong>, List<UnsignedLong>> attestation_deltas =
-          get_attestation_deltas(state);
-      List<UnsignedLong> rewards = attestation_deltas.getLeft();
-      List<UnsignedLong> penalties = attestation_deltas.getRight();
+      Deltas attestation_deltas = get_attestation_deltas(state);
 
       for (int i = 0; i < state.getValidators().size(); i++) {
-        increase_balance(state, i, rewards.get(i));
-        decrease_balance(state, i, penalties.get(i));
+        increase_balance(state, i, attestation_deltas.getReward(i));
+        decrease_balance(state, i, attestation_deltas.getPenalty(i));
       }
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);

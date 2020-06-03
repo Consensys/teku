@@ -76,7 +76,7 @@ public class CommitteeUtil {
         flip += index_count;
       }
 
-      int position = (indexRet < flip) ? flip : indexRet;
+      int position = Math.max(indexRet, flip);
 
       Bytes positionDiv256 = int_to_bytes(Math.floorDiv(position, 256), 4);
       Bytes source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, positionDiv256));
