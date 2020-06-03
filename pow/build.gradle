@@ -3,7 +3,7 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
   implementation project(':events')
-
+  implementation project(':storage:api')
   api 'org.web3j:core'
   
   implementation 'com.googlecode.json-simple:json-simple'

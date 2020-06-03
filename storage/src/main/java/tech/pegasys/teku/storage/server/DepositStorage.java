@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.primitives.UnsignedLong;
+import java.math.BigInteger;
 import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
@@ -28,7 +29,7 @@ import tech.pegasys.teku.util.async.SafeFuture;
 public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChannel {
   private final Database database;
   private final Eth1EventsChannel eth1EventsChannel;
-  private volatile boolean isSyncingFromDatabase = false;
+  private volatile Optional<BigInteger> startingBlock = Optional.empty();
   private final Supplier<SafeFuture<ReplayDepositsResult>> replayResult;
 
   private DepositStorage(final Eth1EventsChannel eth1EventsChannel, final Database database) {
@@ -52,27 +53,36 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   }
 
   private ReplayDepositsResult replayDeposits() {
-    isSyncingFromDatabase = true;
     final DepositSequencer depositSequencer =
         new DepositSequencer(eth1EventsChannel, database.getMinGenesisTimeBlock());
     try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {
       eventStream.forEach(depositSequencer::depositEvent);
     }
     depositSequencer.depositsComplete();
-    isSyncingFromDatabase = false;
-    return depositSequencer.done();
+    ReplayDepositsResult result = depositSequencer.done();
+    if (result.getBlockNumber().isPresent()) {
+      startingBlock =
+          Optional.of(result.getBlockNumber().get().plus(UnsignedLong.ONE).bigIntegerValue());
+    } else {
+      startingBlock = Optional.of(BigInteger.valueOf(-1L));
+    }
+    return result;
+  }
+
+  private boolean shouldProcessEvent(final BigInteger blockNumber) {
+    return startingBlock.isPresent() && startingBlock.get().compareTo(blockNumber) < 0;
   }
 
   @Override
   public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
-    if (!isSyncingFromDatabase) {
+    if (shouldProcessEvent(event.getBlockNumber().bigIntegerValue())) {
       database.addDepositsFromBlockEvent(event);
     }
   }
 
   @Override
   public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-    if (!isSyncingFromDatabase) {
+    if (shouldProcessEvent(event.getBlockNumber().bigIntegerValue())) {
       database.addMinGenesisTimeBlock(event);
     }
   }

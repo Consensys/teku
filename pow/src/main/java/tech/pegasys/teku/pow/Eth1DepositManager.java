@@ -50,16 +50,13 @@ public class Eth1DepositManager {
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void start() {
-    getHead()
-        .thenCompose(
-            headBlock -> {
-              if (isBlockAfterMinGenesis(headBlock)) {
-                return headAfterMinGenesisMode(headBlock);
-              } else {
-                return headBeforeMinGenesisMode(headBlock);
-              }
-            })
+    eth1DepositStorageChannel
+        .replayDepositEvents()
+        .thenAccept(
+            replayDepositsResult ->
+                getHead().thenCompose(headBlock -> processStart(headBlock, replayDepositsResult)))
         .finish(
             () -> LOG.info("Eth1DepositsManager successfully ran startup sequence."),
             (err) -> LOG.fatal("Eth1DepositsManager unable to run startup sequence.", err));
@@ -69,23 +66,56 @@ public class Eth1DepositManager {
     depositProcessingController.stopIfSubscribed();
   }
 
-  private SafeFuture<Void> headBeforeMinGenesisMode(EthBlock.Block headBlock) {
-    LOG.debug("Eth1DepositsManager initiating head before genesis mode");
-    BigInteger headBlockNumber = headBlock.getNumber();
-    return depositProcessingController
-        .fetchDepositsFromGenesisTo(headBlockNumber)
-        .thenRun(
-            () -> {
-              depositProcessingController.switchToBlockByBlockMode();
-              depositProcessingController.startSubscription(headBlockNumber.add(BigInteger.ONE));
-            });
+  private SafeFuture<Void> processStart(
+      final EthBlock.Block headBlock, final ReplayDepositsResult replayDepositsResult) {
+    BigInteger startBlockNumber =
+        replayDepositsResult.getBlockNumber().orElse(UnsignedLong.ZERO).bigIntegerValue();
+    if (headBlock.getNumber().compareTo(startBlockNumber) > 0) {
+      if (isBlockAfterMinGenesis(headBlock)) {
+        return headAfterMinGenesisMode(headBlock, replayDepositsResult);
+      } else {
+        return headBeforeMinGenesisMode(headBlock, replayDepositsResult);
+      }
+    }
+    return SafeFuture.COMPLETE;
   }
 
-  private SafeFuture<Void> headAfterMinGenesisMode(EthBlock.Block headBlock) {
+  @SuppressWarnings("FutureReturnValueIgnored")
+  private SafeFuture<Void> headBeforeMinGenesisMode(
+      final EthBlock.Block headBlock, final ReplayDepositsResult replayDepositsResult) {
+    LOG.debug("Eth1DepositsManager initiating head before genesis mode");
+    BigInteger headBlockNumber = headBlock.getNumber();
+    BigInteger startBlockNumber =
+        replayDepositsResult.getBlockNumber().orElse(UnsignedLong.ZERO).bigIntegerValue();
+    if (startBlockNumber.compareTo(headBlockNumber) < 0) {
+      return depositProcessingController
+          .fetchDepositsInRange(startBlockNumber, headBlockNumber)
+          .thenRun(() -> preGenesisSubscription(headBlockNumber));
+    } else {
+      return preGenesisSubscription(headBlockNumber);
+    }
+  }
+
+  private SafeFuture<Void> preGenesisSubscription(final BigInteger headBlockNumber) {
+    depositProcessingController.switchToBlockByBlockMode();
+    depositProcessingController.startSubscription(headBlockNumber.add(BigInteger.ONE));
+    return SafeFuture.COMPLETE;
+  }
+
+  private SafeFuture<Void> headAfterMinGenesisMode(
+      final EthBlock.Block headBlock, final ReplayDepositsResult replayDepositsResult) {
     LOG.debug("Eth1DepositsManager initiating head after genesis mode");
+    BigInteger startBlockNumber =
+        replayDepositsResult.getBlockNumber().orElse(UnsignedLong.ZERO).bigIntegerValue();
+
+    if (replayDepositsResult.isPastMinGenesisBlock()) {
+      depositProcessingController.startSubscription(startBlockNumber);
+      return SafeFuture.COMPLETE;
+    }
+
     return minimumGenesisTimeBlockFinder
         .findMinGenesisTimeBlockInHistory(headBlock)
-        .thenCompose(this::sendDepositsUpToMinGenesis)
+        .thenCompose(block -> sendDepositsUpToMinGenesis(block, replayDepositsResult))
         .thenAccept(
             minGenesisTimeBlock -> {
               notifyMinGenesisTimeBlockReached(eth1EventsChannel, minGenesisTimeBlock);
@@ -94,9 +124,11 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<EthBlock.Block> sendDepositsUpToMinGenesis(
-      final EthBlock.Block minGenesisTimeBlock) {
+      final EthBlock.Block minGenesisTimeBlock, final ReplayDepositsResult replayDepositsResult) {
+    BigInteger startBlockNumber =
+        replayDepositsResult.getBlockNumber().orElse(UnsignedLong.ZERO).bigIntegerValue();
     return depositProcessingController
-        .fetchDepositsFromGenesisTo(minGenesisTimeBlock.getNumber())
+        .fetchDepositsInRange(startBlockNumber, minGenesisTimeBlock.getNumber())
         .thenApply(__ -> minGenesisTimeBlock);
   }
 
