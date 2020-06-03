@@ -56,15 +56,15 @@ public class Store implements ReadOnlyStore {
   private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
-  private UnsignedLong time;
-  private UnsignedLong genesis_time;
-  private Checkpoint justified_checkpoint;
+  UnsignedLong time;
+  UnsignedLong genesis_time;
+  Checkpoint justified_checkpoint;
   Checkpoint finalized_checkpoint;
-  private Checkpoint best_justified_checkpoint;
-  private Map<Bytes32, SignedBeaconBlock> blocks;
-  private Map<Bytes32, BeaconState> block_states;
+  Checkpoint best_justified_checkpoint;
+  Map<Bytes32, SignedBeaconBlock> blocks;
+  Map<Bytes32, BeaconState> block_states;
   Map<Checkpoint, BeaconState> checkpoint_states;
-  private Map<UnsignedLong, VoteTracker> votes;
+  Map<UnsignedLong, VoteTracker> votes;
 
   final NavigableMap<UnsignedLong, Set<Bytes32>> rootsBySlotLookup = new TreeMap<>();
 
@@ -390,13 +390,13 @@ public class Store implements ReadOnlyStore {
   public class Transaction implements MutableStore {
 
     private final StorageUpdateChannel storageUpdateChannel;
-    private Optional<UnsignedLong> time = Optional.empty();
+    Optional<UnsignedLong> time = Optional.empty();
     Optional<UnsignedLong> genesis_time = Optional.empty();
     Optional<Checkpoint> justified_checkpoint = Optional.empty();
     Optional<Checkpoint> finalized_checkpoint = Optional.empty();
     Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
-    private Map<Bytes32, BeaconState> block_states = new HashMap<>();
+    Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     Map<UnsignedLong, VoteTracker> votes = new ConcurrentHashMap<>();
     private final StoreUpdateHandler updateHandler;
@@ -478,38 +478,7 @@ public class Store implements ReadOnlyStore {
                 writeLock.lock();
                 try {
                   // Add new data
-                  time.ifPresent(value -> Store.this.time = value);
-                  genesis_time.ifPresent(value -> Store.this.genesis_time = value);
-                  justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
-                  finalized_checkpoint.ifPresent(value -> Store.this.finalized_checkpoint = value);
-                  best_justified_checkpoint.ifPresent(
-                      value -> Store.this.best_justified_checkpoint = value);
-                  Store.this.blocks.putAll(blocks);
-                  Store.this.block_states.putAll(block_states);
-                  Store.this.checkpoint_states.putAll(checkpoint_states);
-                  Store.this.votes.putAll(votes);
-                  // Track roots by slot
-                  indexBlockRootsBySlot(rootsBySlotLookup, updates.getHotBlocks().values());
-
-                  // Prune old data if we updated our finalized epoch
-                  if (updates.getNewlyFinalizedBlock().isPresent()) {
-                    // Prune stale checkpoint states
-                    updates
-                        .getStaleCheckpointStates()
-                        .forEach(Store.this.checkpoint_states::remove);
-                    // Prune blocks and states
-                    updates
-                        .getPrunedHotBlockRoots()
-                        .forEach(
-                            (slot, roots) -> {
-                              roots.forEach(
-                                  (root) -> {
-                                    Store.this.blocks.remove(root);
-                                    Store.this.block_states.remove(root);
-                                    removeBlockRootFromSlotIndex(rootsBySlotLookup, slot, root);
-                                  });
-                            });
-                  }
+                  updates.applyToStore(Store.this);
                 } finally {
                   writeLock.unlock();
                 }
