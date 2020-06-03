@@ -14,8 +14,10 @@
 package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.io.Files;
+import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -24,7 +26,12 @@ import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.api.TrackingStorageUpdateChannel;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.file.FileUtil;
@@ -76,6 +83,62 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     database = setupDatabase(tempDir.toFile(), storageMode);
     store = Store.getForkChoiceStore(genesisBlockAndState.getState());
     database.storeGenesis(store);
+
+    // Shutdown and restart
+    database.close();
+    database = setupDatabase(tempDir.toFile(), storageMode);
+
+    final Store memoryStore = database.createMemoryStore().orElseThrow();
+    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
+  }
+
+  @Test
+  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_archiveMode(
+      @TempDir final Path tempDir) throws Exception {
+    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
+        tempDir, StateStorageMode.ARCHIVE);
+  }
+
+  @Test
+  public void shouldRecreateStoreOnRestart_withOffEpochBoundaryFinalizedBlock_pruneMode(
+      @TempDir final Path tempDir) throws Exception {
+    testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
+        tempDir, StateStorageMode.PRUNE);
+  }
+
+  public void testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
+      final Path tempDir, final StateStorageMode storageMode) throws Exception {
+    // Set up database with genesis state
+    database = setupDatabase(tempDir.toFile(), storageMode);
+    store = Store.getForkChoiceStore(genesisBlockAndState.getState());
+    database.storeGenesis(store);
+
+    // Create finalized block at slot prior to epoch boundary
+    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
+    final UnsignedLong finalizedSlot =
+        compute_start_slot_at_epoch(finalizedEpoch).minus(UnsignedLong.ONE);
+    chainBuilder.generateBlocksUpToSlot(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
+    // Calculate finalized state
+    StateTransition stateTransition = new StateTransition();
+    final BeaconState finalizedCheckpointState =
+        stateTransition.process_slots(
+            finalizedBlock.getState(), finalizedCheckpoint.getEpochStartSlot());
+
+    // Add some more blocks
+    final UnsignedLong firstHotBlockSlot =
+        finalizedCheckpoint.getEpochStartSlot().plus(UnsignedLong.ONE);
+    chainBuilder.generateBlockAtSlot(firstHotBlockSlot);
+    chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(UnsignedLong.valueOf(10)));
+
+    // Save new blocks and finalized checkpoint
+    final Transaction tx = store.startTransaction(storageUpdateChannel);
+    chainBuilder.streamBlocksAndStates(1).forEach(tx::putBlockAndState);
+    tx.putCheckpointState(finalizedCheckpoint, finalizedCheckpointState);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.commit().join();
 
     // Shutdown and restart
     database.close();

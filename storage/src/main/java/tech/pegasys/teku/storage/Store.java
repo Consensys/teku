@@ -131,14 +131,13 @@ public class Store implements ReadOnlyStore {
       final Checkpoint best_justified_checkpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Checkpoint, BeaconState> checkpoint_states,
+      final BeaconState finalizedState,
       final Map<UnsignedLong, VoteTracker> votes) {
 
     final StateGenerator stateGenerator = new StateGenerator();
     final Map<Bytes32, BeaconState> blockStates =
         stateGenerator.produceStatesForBlocks(
-            finalized_checkpoint.getRoot(),
-            checkpoint_states.get(finalized_checkpoint),
-            blocks.values());
+            finalized_checkpoint.getRoot(), finalizedState, blocks.values());
 
     // If we couldn't regenerate states, log a warning
     if (blockStates.size() < blocks.size()) {

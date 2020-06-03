@@ -72,6 +72,7 @@ public class RocksDbDatabase implements Database {
       final BeaconState genesisState =
           store.getBlockState(store.getFinalizedCheckpoint().getRoot());
       updater.addCheckpointState(store.getFinalizedCheckpoint(), genesisState);
+      updater.setLatestFinalizedState(genesisState);
 
       for (Bytes32 root : store.getBlockRoots()) {
         // Since we're storing genesis, we should only have 1 root here corresponding to genesis
@@ -110,10 +111,18 @@ public class RocksDbDatabase implements Database {
     final Checkpoint justifiedCheckpoint = dao.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = dao.getFinalizedCheckpoint().orElseThrow();
     final Checkpoint bestJustifiedCheckpoint = dao.getBestJustifiedCheckpoint().orElseThrow();
+    final BeaconState finalizedState = dao.getLatestFinalizedState().orElseThrow();
 
     final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot = dao.getHotBlocks();
     final Map<Checkpoint, BeaconState> checkpointStates = dao.getCheckpointStates();
     final Map<UnsignedLong, VoteTracker> votes = dao.getVotes();
+
+    // Validate finalized data is consistent and available
+    final SignedBeaconBlock finalizedBlock = hotBlocksByRoot.get(finalizedCheckpoint.getRoot());
+    checkNotNull(finalizedBlock);
+    checkState(
+        finalizedBlock.getMessage().getState_root().equals(finalizedState.hash_tree_root()),
+        "Latest finalized state does not match latest finalized block");
 
     return Optional.of(
         Store.createByRegeneratingHotStates(
@@ -124,6 +133,7 @@ public class RocksDbDatabase implements Database {
             bestJustifiedCheckpoint,
             hotBlocksByRoot,
             checkpointStates,
+            finalizedState,
             votes));
   }
 
@@ -196,6 +206,9 @@ public class RocksDbDatabase implements Database {
           .getFinalizedBlocksAndStates()
           .forEach(
               (root, blockAndState) -> {
+                if (update.getFinalizedCheckpoint().get().getRoot().equals(root)) {
+                  updater.setLatestFinalizedState(blockAndState.getState());
+                }
                 updater.addFinalizedBlock(blockAndState.getBlock());
                 putFinalizedState(updater, root, blockAndState.getState());
               });

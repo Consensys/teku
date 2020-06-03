@@ -84,6 +84,11 @@ public class V3RocksDbDao implements RocksDbDao {
   }
 
   @Override
+  public Optional<BeaconState> getLatestFinalizedState() {
+    return db.get(V3Schema.LATEST_FINALIZED_STATE);
+  }
+
+  @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
     return db.getAll(V3Schema.HOT_BLOCKS_BY_ROOT);
   }
@@ -145,6 +150,11 @@ public class V3RocksDbDao implements RocksDbDao {
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(V3Schema.FINALIZED_CHECKPOINT, checkpoint);
+    }
+
+    @Override
+    public void setLatestFinalizedState(final BeaconState state) {
+      transaction.put(V3Schema.LATEST_FINALIZED_STATE, state);
     }
 
     @Override

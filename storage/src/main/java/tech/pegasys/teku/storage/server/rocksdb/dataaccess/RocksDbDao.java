@@ -51,6 +51,8 @@ public interface RocksDbDao extends AutoCloseable {
 
   Optional<BeaconState> getFinalizedState(final Bytes32 root);
 
+  Optional<BeaconState> getLatestFinalizedState();
+
   Map<Bytes32, SignedBeaconBlock> getHotBlocks();
 
   Map<Checkpoint, BeaconState> getCheckpointStates();
@@ -73,6 +75,8 @@ public interface RocksDbDao extends AutoCloseable {
     void setBestJustifiedCheckpoint(final Checkpoint checkpoint);
 
     void setFinalizedCheckpoint(final Checkpoint checkpoint);
+
+    void setLatestFinalizedState(final BeaconState state);
 
     void addCheckpointState(final Checkpoint checkpoint, final BeaconState state);
 
