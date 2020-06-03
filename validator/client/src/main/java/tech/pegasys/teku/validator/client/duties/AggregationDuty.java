@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.validator.client.duties.DutyResult.combine;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -25,6 +28,7 @@ import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.logging.ValidatorLogger;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -37,14 +41,17 @@ public class AggregationDuty implements Duty {
   private final UnsignedLong slot;
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
+  private final ValidatorLogger validatorLogger;
 
   public AggregationDuty(
       final UnsignedLong slot,
       final ValidatorApiChannel validatorApiChannel,
-      final ForkProvider forkProvider) {
+      final ForkProvider forkProvider,
+      final ValidatorLogger validatorLogger) {
     this.slot = slot;
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
+    this.validatorLogger = validatorLogger;
   }
 
   /**
@@ -75,15 +82,15 @@ public class AggregationDuty implements Duty {
   }
 
   @Override
-  public SafeFuture<?> performDuty() {
+  public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Aggregating attestations at slot {}", slot);
-    return SafeFuture.allOf(
+    return combine(
         aggregatorsByCommitteeIndex.values().stream()
             .map(this::aggregateCommittee)
-            .toArray(SafeFuture[]::new));
+            .collect(toList()));
   }
 
-  public SafeFuture<Void> aggregateCommittee(final CommitteeAggregator aggregator) {
+  public SafeFuture<DutyResult> aggregateCommittee(final CommitteeAggregator aggregator) {
     return aggregator
         .unsignedAttestationFuture
         .thenCompose(this::createAggregate)
@@ -102,11 +109,13 @@ public class AggregationDuty implements Duty {
     return validatorApiChannel.createAggregate(attestationData);
   }
 
-  private SafeFuture<Void> sendAggregate(
+  private SafeFuture<DutyResult> sendAggregate(
       final CommitteeAggregator aggregator, final Optional<Attestation> maybeAggregate) {
-    final Attestation aggregate =
-        maybeAggregate.orElseThrow(
-            () -> new IllegalStateException("No aggregation could be created"));
+    if (maybeAggregate.isEmpty()) {
+      validatorLogger.aggregationSkipped(slot);
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
+    }
+    final Attestation aggregate = maybeAggregate.get();
     final AggregateAndProof aggregateAndProof =
         new AggregateAndProof(aggregator.validatorIndex, aggregate, aggregator.proof);
     return forkProvider
@@ -114,15 +123,18 @@ public class AggregationDuty implements Duty {
         .thenCompose(
             forkInfo ->
                 aggregator.validator.getSigner().signAggregateAndProof(aggregateAndProof, forkInfo))
-        .thenAccept(
-            signature ->
-                validatorApiChannel.sendAggregateAndProof(
-                    new SignedAggregateAndProof(aggregateAndProof, signature)));
+        .thenApply(
+            signature -> {
+              validatorApiChannel.sendAggregateAndProof(
+                  new SignedAggregateAndProof(aggregateAndProof, signature));
+              return DutyResult.success(
+                  aggregateAndProof.getAggregate().getData().getBeacon_block_root());
+            });
   }
 
   @Override
-  public String describe() {
-    return "Attestation aggregation for slot " + slot;
+  public String getProducedType() {
+    return "aggregate";
   }
 
   private static class CommitteeAggregator {

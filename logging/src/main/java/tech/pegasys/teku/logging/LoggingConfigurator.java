@@ -35,6 +35,7 @@ public class LoggingConfigurator {
 
   static final String EVENT_LOGGER_NAME = "teku-event-log";
   static final String STATUS_LOGGER_NAME = "teku-status-log";
+  static final String VALIDATOR_LOGGER_NAME = "teku-validator-log";
 
   private static final String LOG4J_CONFIG_FILE_KEY = "LOG4J_CONFIGURATION_FILE";
   private static final String LOG4J_LEGACY_CONFIG_FILE_KEY = "log4j.configurationFile";
@@ -46,6 +47,7 @@ public class LoggingConfigurator {
 
   private static LoggingDestination DESTINATION;
   private static boolean INCLUDE_EVENTS;
+  private static boolean INCLUDE_VALIDATOR_DUTIES;
   private static String FILE;
   private static String FILE_PATTERN;
   private static Level ROOT_LOG_LEVEL = Level.INFO;
@@ -69,6 +71,7 @@ public class LoggingConfigurator {
     COLOR.set(configuration.isColorEnabled());
     DESTINATION = configuration.getDestination();
     INCLUDE_EVENTS = configuration.isIncludeEventsEnabled();
+    INCLUDE_VALIDATOR_DUTIES = configuration.isIncludeValidatorDutiesEnabled();
     FILE = configuration.getFile();
     FILE_PATTERN = configuration.getFileNamePattern();
 
@@ -104,6 +107,7 @@ public class LoggingConfigurator {
 
         setUpStatusLogger(consoleAppender);
         setUpEventsLogger(consoleAppender);
+        setUpValidatorLogger(consoleAppender);
 
         addAppenderToRootLogger(configuration, consoleAppender);
         break;
@@ -112,6 +116,7 @@ public class LoggingConfigurator {
 
         setUpStatusLogger(fileAppender);
         setUpEventsLogger(fileAppender);
+        setUpValidatorLogger(fileAppender);
 
         addAppenderToRootLogger(configuration, fileAppender);
         break;
@@ -124,8 +129,10 @@ public class LoggingConfigurator {
         consoleAppender = consoleAppender(configuration, true);
         final LoggerConfig eventsLogger = setUpEventsLogger(consoleAppender);
         final LoggerConfig statusLogger = setUpStatusLogger(consoleAppender);
+        final LoggerConfig validatorLogger = setUpValidatorLogger(consoleAppender);
         configuration.addLogger(eventsLogger.getName(), eventsLogger);
         configuration.addLogger(statusLogger.getName(), statusLogger);
+        configuration.addLogger(validatorLogger.getName(), validatorLogger);
 
         fileAppender = fileAppender(configuration);
 
@@ -157,6 +164,8 @@ public class LoggingConfigurator {
     }
 
     StatusLogger.getLogger().info("Logging includes events: {}", INCLUDE_EVENTS);
+    StatusLogger.getLogger()
+        .info("Logging includes validator duties: {}", INCLUDE_VALIDATOR_DUTIES);
     StatusLogger.getLogger().info("Logging includes color: {}", COLOR);
   }
 
@@ -207,6 +216,17 @@ public class LoggingConfigurator {
 
   private static LoggerConfig setUpStatusLogger(final Appender appender) {
     final LoggerConfig logger = new LoggerConfig(STATUS_LOGGER_NAME, ROOT_LOG_LEVEL, true);
+    logger.addAppender(appender, ROOT_LOG_LEVEL, null);
+    return logger;
+  }
+
+  private static LoggerConfig setUpValidatorLogger(final Appender appender) {
+    // Don't disable validator error logs unless the root log level disables error.
+    final Level validatorLogLevel =
+        INCLUDE_VALIDATOR_DUTIES || ROOT_LOG_LEVEL.isMoreSpecificThan(Level.ERROR)
+            ? ROOT_LOG_LEVEL
+            : Level.ERROR;
+    final LoggerConfig logger = new LoggerConfig(VALIDATOR_LOGGER_NAME, validatorLogLevel, true);
     logger.addAppender(appender, ROOT_LOG_LEVEL, null);
     return logger;
   }

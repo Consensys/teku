@@ -53,6 +53,7 @@ public class BeaconNode {
         new LoggingConfiguration(
             config.isLogColorEnabled(),
             config.isLogIncludeEventsEnabled(),
+            config.isLogIncludeValidatorDutiesEnabled(),
             config.getLogDestination(),
             config.getLogFile(),
             config.getLogFileNamePattern()));

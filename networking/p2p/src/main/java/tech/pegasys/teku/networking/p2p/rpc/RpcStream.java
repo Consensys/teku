@@ -34,6 +34,4 @@ public interface RpcStream {
    * @return A future completing when the write stream is closed.
    */
   SafeFuture<Void> closeWriteStream();
-
-  class StreamClosedException extends RuntimeException {}
 }

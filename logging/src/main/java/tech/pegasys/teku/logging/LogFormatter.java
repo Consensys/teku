@@ -11,22 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.libp2p;
+package tech.pegasys.teku.logging;
 
-import io.libp2p.pubsub.gossip.GossipRouter;
-import java.util.Base64;
-import org.apache.tuweni.crypto.Hash;
-import org.jetbrains.annotations.NotNull;
-import pubsub.pb.Rpc.Message;
+import org.apache.tuweni.bytes.Bytes32;
 
-/** Customization of a standard Libp2p Gossip router for Eth2 spec */
-public class Eth2GossipRouter extends GossipRouter {
-
-  @NotNull
-  @Override
-  protected String getMessageId(@NotNull Message msg) {
-    return Base64.getUrlEncoder()
-        .withoutPadding()
-        .encodeToString(Hash.sha2_256(msg.getData().toByteArray()));
+public class LogFormatter {
+  public static String formatHashRoot(final Bytes32 root) {
+    final String hash = root.toUnprefixedHexString();
+    return String.format("%s..%s", hash.substring(0, 6), hash.substring(hash.length() - 4));
   }
 }
