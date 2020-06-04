@@ -175,7 +175,7 @@ public class DepositProviderTest {
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(5);
     mockDepositsFromEth1Block(0, 5);
-    assertThat(depositProvider.getDeposits(beaconState)).isEmpty();
+    assertThat(depositProvider.getDeposits(state, randomEth1Data)).isEmpty();
   }
 
   @Test
