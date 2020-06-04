@@ -38,7 +38,7 @@ import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.Store.Transaction;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -107,7 +107,7 @@ public class BeaconChainUtil {
 
   public void setTime(final UnsignedLong time) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
-    final Transaction tx = recentChainData.startStoreTransaction();
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setTime(time);
     tx.commit().join();
   }
@@ -135,7 +135,7 @@ public class BeaconChainUtil {
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
     final SignedBeaconBlock block = createBlockAndStateAtSlot(slot, true, attestations).getBlock();
     setSlot(slot);
-    final Transaction transaction = recentChainData.startStoreTransaction();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult importResult =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
     if (!importResult.isSuccessful()) {

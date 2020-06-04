@@ -36,6 +36,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.store.Store.Transaction;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StoreTransactionUpdates {
   private final Store.Transaction tx;
@@ -128,7 +129,7 @@ class StoreTransactionUpdates {
   }
 
   private static Map<Bytes32, SignedBlockAndState> calculateFinalizedChainData(
-      final Transaction tx,
+      final StoreTransaction tx,
       final CheckpointAndBlock prevFinalizedCheckpoint,
       final SignedBlockAndState newlyFinalizedBlock) {
     final Map<Bytes32, SignedBlockAndState> finalizedChainData = new HashMap<>();
@@ -152,7 +153,7 @@ class StoreTransactionUpdates {
 
   private static Map<UnsignedLong, Set<Bytes32>> calculatePrunedHotBlockRoots(
       final Store baseStore,
-      final Transaction tx,
+      final StoreTransaction tx,
       final CheckpointAndBlock newFinalizedCheckpoint,
       final SignedBeaconBlock finalizedBlock,
       final Map<Bytes32, SignedBeaconBlock> newBlocks) {

@@ -37,7 +37,8 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbDao.Updater;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
-import tech.pegasys.teku.storage.store.Store;
+import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
@@ -63,7 +64,7 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void storeGenesis(final Store store) {
+  public void storeGenesis(final UpdatableStore store) {
     try (final Updater updater = dao.updater()) {
       updater.setGenesisTime(store.getGenesisTime());
       updater.setJustifiedCheckpoint(store.getJustifiedCheckpoint());
@@ -103,7 +104,7 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public Optional<Store> createMemoryStore() {
+  public Optional<UpdatableStore> createMemoryStore() {
     Optional<UnsignedLong> maybeGenesisTime = dao.getGenesisTime();
     if (maybeGenesisTime.isEmpty()) {
       // If genesis time hasn't been set, genesis hasn't happened and we have no data
@@ -127,7 +128,7 @@ public class RocksDbDatabase implements Database {
         "Latest finalized state does not match latest finalized block");
 
     return Optional.of(
-        Store.createByRegeneratingHotStates(
+        StoreFactory.createByRegeneratingHotStates(
             UnsignedLong.valueOf(Instant.now().getEpochSecond()),
             genesisTime,
             justifiedCheckpoint,

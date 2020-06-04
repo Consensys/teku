@@ -32,14 +32,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
-import tech.pegasys.teku.storage.store.Store;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ProtoArrayForkChoiceStrategyTest {
 
   private Map<Bytes32, Integer> indices;
   private List<UnsignedLong> oldBalances;
   private List<UnsignedLong> newBalances;
-  private Store.Transaction store;
+  private StoreTransaction store;
 
   @BeforeEach
   void setUp() {

@@ -36,7 +36,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.Disconnect
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.Store;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -44,7 +44,7 @@ public class PeerChainValidatorTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2Peer peer = mock(Eth2Peer.class);
-  private final Store store = mock(Store.class);
+  private final UpdatableStore store = mock(UpdatableStore.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
 

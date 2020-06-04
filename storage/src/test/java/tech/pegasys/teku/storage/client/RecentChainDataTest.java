@@ -46,7 +46,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.storage.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
-import tech.pegasys.teku.storage.store.Store.Transaction;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.EventSink;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -289,7 +289,7 @@ class RecentChainDataTest {
     final Checkpoint newCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
     assertThat(originalCheckpoint).isNotEqualTo(newCheckpoint); // Sanity check
 
-    final Transaction tx = preGenesisStorageClient.startStoreTransaction();
+    final StoreTransaction tx = preGenesisStorageClient.startStoreTransaction();
     tx.setFinalizedCheckpoint(newCheckpoint);
 
     tx.commit().reportExceptions();
@@ -308,7 +308,7 @@ class RecentChainDataTest {
     final Checkpoint originalCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
 
-    final Transaction tx = preGenesisStorageClient.startStoreTransaction();
+    final StoreTransaction tx = preGenesisStorageClient.startStoreTransaction();
     tx.setTime(UnsignedLong.valueOf(11L));
     tx.commit().reportExceptions();
     assertThat(checkpointEvents).isEmpty();
@@ -437,7 +437,7 @@ class RecentChainDataTest {
     saveBlock(storageClient, finalizedBlock);
 
     // Start tx to update finalized checkpoint
-    final Transaction tx = storageClient.startStoreTransaction();
+    final StoreTransaction tx = storageClient.startStoreTransaction();
     // Initially finalized slot should match store
     assertThat(tx.getLatestFinalizedBlockSlot()).isEqualTo(genesis.getSlot());
     // Update checkpoint and check finalized slot accessors
@@ -460,7 +460,7 @@ class RecentChainDataTest {
   @Test
   public void getBlockAndState_withinTxFromUnderlyingStore() throws Exception {
     final SignedBlockAndState block = advanceChain(storageClient);
-    final Transaction tx = storageClient.startStoreTransaction();
+    final StoreTransaction tx = storageClient.startStoreTransaction();
     assertThat(tx.getBlockAndState(block.getRoot())).contains(block);
   }
 
@@ -468,7 +468,7 @@ class RecentChainDataTest {
   public void getBlockAndState_withinTxFromUpdates() throws Exception {
     final SignedBlockAndState block = chainBuilder.generateNextBlock();
 
-    final Transaction tx = storageClient.startStoreTransaction();
+    final StoreTransaction tx = storageClient.startStoreTransaction();
     tx.putBlockAndState(block);
 
     assertThat(tx.getBlockAndState(block.getRoot())).contains(block);
@@ -700,7 +700,7 @@ class RecentChainDataTest {
     }
 
     // Add blocks and finalize epoch 1, so that blocks will be pruned
-    final Transaction tx = storageClient.startStoreTransaction();
+    final StoreTransaction tx = storageClient.startStoreTransaction();
     final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(1);
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
     newBlocks.forEach(tx::putBlockAndState);
@@ -737,7 +737,7 @@ class RecentChainDataTest {
   }
 
   private void importBlocksAndStates(final ChainBuilder... chainBuilders) {
-    final Transaction transaction = preGenesisStorageClient.startStoreTransaction();
+    final StoreTransaction transaction = preGenesisStorageClient.startStoreTransaction();
     Stream.of(chainBuilders)
         .flatMap(ChainBuilder::streamBlocksAndStates)
         .forEach(transaction::putBlockAndState);
@@ -772,7 +772,7 @@ class RecentChainDataTest {
       final SignedBlockAndState finalizedBlock) {
     saveBlock(recentChainData, finalizedBlock);
 
-    final Transaction tx = recentChainData.startStoreTransaction();
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()));
     tx.commit().reportExceptions();
   }
@@ -785,7 +785,7 @@ class RecentChainDataTest {
   }
 
   private void saveBlock(final RecentChainData recentChainData, final SignedBlockAndState block) {
-    final Transaction tx = recentChainData.startStoreTransaction();
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block);
     tx.commit().reportExceptions();
   }

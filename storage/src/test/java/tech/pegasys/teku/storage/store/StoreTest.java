@@ -29,7 +29,7 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.store.Store.Transaction;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class StoreTest {
@@ -39,7 +39,7 @@ class StoreTest {
   @Test
   public void shouldApplyChangesWhenTransactionCommits() throws StateTransitionException {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
-    final Store store = Store.getForkChoiceStore(genesisBlockAndState.getState());
+    final UpdatableStore store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
     final UnsignedLong initialTime = store.getTime();
     final UnsignedLong genesisTime = store.getGenesisTime();
@@ -56,7 +56,7 @@ class StoreTest {
     // Start transaction
     StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
     when(storageUpdateChannel.onStorageUpdate(any())).thenReturn(SafeFuture.COMPLETE);
-    final Transaction tx = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     // Add blocks
     chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
     // Update checkpoints

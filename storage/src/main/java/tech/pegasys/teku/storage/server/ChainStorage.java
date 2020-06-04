@@ -22,14 +22,14 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.store.Store;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   private final EventBus eventBus;
 
   private volatile Database database;
-  private volatile Optional<Store> cachedStore = Optional.empty();
+  private volatile Optional<UpdatableStore> cachedStore = Optional.empty();
 
   private ChainStorage(final EventBus eventBus, final Database database) {
     this.eventBus = eventBus;
@@ -48,7 +48,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
     eventBus.unregister(this);
   }
 
-  private synchronized Optional<Store> getStore() {
+  private synchronized Optional<UpdatableStore> getStore() {
     if (cachedStore.isEmpty()) {
       // Create store from database
       cachedStore = database.createMemoryStore();
@@ -62,7 +62,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Store>> onStoreRequest() {
+  public SafeFuture<Optional<UpdatableStore>> onStoreRequest() {
     if (database == null) {
       return SafeFuture.failedFuture(new IllegalStateException("Database not initialized yet"));
     }
@@ -80,7 +80,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public void onGenesis(final Store store) {
+  public void onGenesis(final UpdatableStore store) {
     database.storeGenesis(store);
   }
 

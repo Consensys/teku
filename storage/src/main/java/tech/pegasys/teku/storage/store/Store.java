@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.store;
 
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
@@ -31,28 +29,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-public class Store implements ReadOnlyStore {
+class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
@@ -68,7 +60,7 @@ public class Store implements ReadOnlyStore {
 
   final NavigableMap<UnsignedLong, Set<Bytes32>> rootsBySlotLookup = new TreeMap<>();
 
-  private Store(
+  Store(
       final UnsignedLong time,
       final UnsignedLong genesis_time,
       final Checkpoint justified_checkpoint,
@@ -90,92 +82,6 @@ public class Store implements ReadOnlyStore {
 
     // Setup slot to root mappings
     indexBlockRootsBySlot(rootsBySlotLookup, this.blocks.values());
-  }
-
-  public static Store getForkChoiceStore(final BeaconState anchorState) {
-    final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
-    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
-    final UnsignedLong anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
-    final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
-    Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
-    Map<Bytes32, BeaconState> block_states = new HashMap<>();
-    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
-
-    blocks.put(anchorRoot, new SignedBeaconBlock(anchorBlock, BLSSignature.empty()));
-    block_states.put(anchorRoot, anchorState);
-    checkpoint_states.put(anchorCheckpoint, anchorState);
-
-    return create(
-        anchorState
-            .getGenesis_time()
-            .plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(anchorState.getSlot())),
-        anchorState.getGenesis_time(),
-        anchorCheckpoint,
-        anchorCheckpoint,
-        anchorCheckpoint,
-        blocks,
-        block_states,
-        checkpoint_states,
-        votes);
-  }
-
-  public static Store createByRegeneratingHotStates(
-      final UnsignedLong time,
-      final UnsignedLong genesis_time,
-      final Checkpoint justified_checkpoint,
-      final Checkpoint finalized_checkpoint,
-      final Checkpoint best_justified_checkpoint,
-      final Map<Bytes32, SignedBeaconBlock> blocks,
-      final Map<Checkpoint, BeaconState> checkpoint_states,
-      final BeaconState finalizedState,
-      final Map<UnsignedLong, VoteTracker> votes) {
-
-    final StateGenerator stateGenerator = new StateGenerator();
-    final Map<Bytes32, BeaconState> blockStates =
-        stateGenerator.produceStatesForBlocks(
-            finalized_checkpoint.getRoot(), finalizedState, blocks.values());
-
-    // If we couldn't regenerate states, log a warning
-    if (blockStates.size() < blocks.size()) {
-      LOG.warn("Unable to regenerate some hot states from hot blocks");
-
-      // Drop any blocks for which a state couldn't be generated
-      new HashSet<>(Sets.difference(blocks.keySet(), blockStates.keySet())).forEach(blocks::remove);
-    }
-
-    return create(
-        time,
-        genesis_time,
-        justified_checkpoint,
-        finalized_checkpoint,
-        best_justified_checkpoint,
-        blocks,
-        blockStates,
-        checkpoint_states,
-        votes);
-  }
-
-  public static Store create(
-      final UnsignedLong time,
-      final UnsignedLong genesis_time,
-      final Checkpoint justified_checkpoint,
-      final Checkpoint finalized_checkpoint,
-      final Checkpoint best_justified_checkpoint,
-      final Map<Bytes32, SignedBeaconBlock> blocks,
-      final Map<Bytes32, BeaconState> block_states,
-      final Map<Checkpoint, BeaconState> checkpoint_states,
-      final Map<UnsignedLong, VoteTracker> votes) {
-    return new Store(
-        time,
-        genesis_time,
-        justified_checkpoint,
-        finalized_checkpoint,
-        best_justified_checkpoint,
-        blocks,
-        block_states,
-        checkpoint_states,
-        votes);
   }
 
   static void indexBlockRootsBySlot(
@@ -205,11 +111,13 @@ public class Store implements ReadOnlyStore {
     removeBlockRootFromSlotIndex(index, block.getSlot(), block.getRoot());
   }
 
-  public Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
+  @Override
+  public StoreTransaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
     return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP);
   }
 
-  public Transaction startTransaction(
+  @Override
+  public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new Transaction(storageUpdateChannel, updateHandler);
   }
@@ -387,7 +295,7 @@ public class Store implements ReadOnlyStore {
     }
   }
 
-  public class Transaction implements MutableStore {
+  class Transaction implements StoreTransaction {
 
     private final StorageUpdateChannel storageUpdateChannel;
     Optional<UnsignedLong> time = Optional.empty();
@@ -459,6 +367,7 @@ public class Store implements ReadOnlyStore {
     }
 
     @CheckReturnValue
+    @Override
     public SafeFuture<Void> commit() {
       final StoreTransactionUpdates updates;
       // Lock so that we have a consistent view while calculating our updates
@@ -488,12 +397,9 @@ public class Store implements ReadOnlyStore {
               });
     }
 
+    @Override
     public void commit(final Runnable onSuccess, final String errorMessage) {
       commit(onSuccess, err -> LOG.error(errorMessage, err));
-    }
-
-    public void commit(final Runnable onSuccess, final Consumer<Throwable> onError) {
-      commit().finish(onSuccess, onError);
     }
 
     @Override
@@ -629,11 +535,5 @@ public class Store implements ReadOnlyStore {
         blocks,
         block_states,
         checkpoint_states);
-  }
-
-  public interface StoreUpdateHandler {
-    StoreUpdateHandler NOOP = finalizedCheckpoint -> {};
-
-    void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint);
   }
 }

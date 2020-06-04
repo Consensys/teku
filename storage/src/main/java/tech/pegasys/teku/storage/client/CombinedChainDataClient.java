@@ -34,7 +34,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
-import tech.pegasys.teku.storage.store.Store;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class CombinedChainDataClient {
@@ -173,7 +173,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
-    final Store store = getStore();
+    final UpdatableStore store = getStore();
     if (store == null) {
       LOG.trace("No state at blockRoot {} because the store is not set", blockRoot);
       return STATE_NOT_AVAILABLE;
@@ -222,7 +222,7 @@ public class CombinedChainDataClient {
   }
 
   @VisibleForTesting
-  public Store getStore() {
+  public UpdatableStore getStore() {
     return recentChainData.getStore();
   }
 

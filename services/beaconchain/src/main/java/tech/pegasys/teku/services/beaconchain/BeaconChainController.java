@@ -75,7 +75,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.teku.storage.store.Store;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.BlockManager;
 import tech.pegasys.teku.sync.DefaultSyncService;
 import tech.pegasys.teku.sync.FetchRecentBlocksService;
@@ -460,7 +460,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
     final boolean nextSlotDue = isNextSlotDue(currentTime);
 
-    final Store.Transaction transaction = recentChainData.startStoreTransaction();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     on_tick(transaction, currentTime);
     transaction.commit().join();
 

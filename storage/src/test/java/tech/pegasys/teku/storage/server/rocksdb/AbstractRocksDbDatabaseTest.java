@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
-import tech.pegasys.teku.storage.store.Store.Transaction;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
@@ -41,7 +41,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     final SignedBlockAndState newValue = chainBuilder.generateBlockAtSlot(1);
     // Sanity check
     assertThat(store.getBlockState(newValue.getRoot())).isNull();
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlockAndState(newValue);
 
     final SafeFuture<Void> result = transaction.commit();
@@ -90,7 +90,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     // Add a new finalized block to supersede genesis
     final SignedBlockAndState newBlock = chainBuilder.generateBlockAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlockAndState(newBlock);
     transaction.setFinalizedCheckpoint(newCheckpoint);
     transaction.commit().reportExceptions();

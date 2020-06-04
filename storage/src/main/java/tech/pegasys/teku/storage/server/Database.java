@@ -22,15 +22,15 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.store.Store;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public interface Database extends AutoCloseable {
 
-  void storeGenesis(Store store);
+  void storeGenesis(UpdatableStore store);
 
   void update(StorageUpdate event);
 
-  Optional<Store> createMemoryStore();
+  Optional<UpdatableStore> createMemoryStore();
 
   /**
    * Return the root of the finalized block at this slot if such a block exists.

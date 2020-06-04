@@ -52,8 +52,9 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.store.Store;
-import tech.pegasys.teku.storage.store.Store.Transaction;
+import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -62,7 +63,7 @@ public abstract class AbstractDatabaseTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
   protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
-  protected Store store;
+  protected UpdatableStore store;
 
   protected SignedBlockAndState genesisBlockAndState;
   protected SignedBlockAndState checkpoint1BlockAndState;
@@ -87,7 +88,7 @@ public abstract class AbstractDatabaseTest {
     genesisBlockAndState = chainBuilder.generateGenesis();
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
 
-    store = Store.getForkChoiceStore(genesisBlockAndState.getState());
+    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
     database.storeGenesis(store);
   }
 
@@ -129,13 +130,13 @@ public abstract class AbstractDatabaseTest {
 
   @Test
   public void shouldRecreateOriginalGenesisStore() {
-    final Store memoryStore = database.createMemoryStore().orElseThrow();
+    final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
   }
 
   @Test
   public void shouldGetHotBlockByRoot() throws StateTransitionException {
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
 
@@ -148,7 +149,7 @@ public abstract class AbstractDatabaseTest {
     assertThat(database.getSignedBlock(block2.getRoot())).contains(block2.getBlock());
   }
 
-  protected void commit(final Transaction transaction) {
+  protected void commit(final StoreTransaction transaction) {
     assertThat(transaction.commit()).isCompleted();
   }
 
@@ -219,7 +220,7 @@ public abstract class AbstractDatabaseTest {
     addBlocks(allBlocks);
 
     // Finalize block2
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setFinalizedCheckpoint(finalizedCheckpoint);
     commit(transaction);
 
@@ -237,7 +238,7 @@ public abstract class AbstractDatabaseTest {
             .collect(toList());
     addBlocks(allBlocks);
 
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setGenesis_time(UnsignedLong.valueOf(3));
     transaction.setFinalizedCheckpoint(checkpoint1);
     transaction.setJustifiedCheckpoint(checkpoint2);
@@ -245,7 +246,7 @@ public abstract class AbstractDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
 
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(transaction.getFinalizedCheckpoint());
@@ -260,11 +261,11 @@ public abstract class AbstractDatabaseTest {
     // Sanity check
     assertThat(store.getGenesisTime()).isNotEqualTo(newGenesisTime);
 
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setGenesis_time(newGenesisTime);
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
   }
 
@@ -275,11 +276,11 @@ public abstract class AbstractDatabaseTest {
     // Sanity check
     assertThat(store.getJustifiedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setJustifiedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -296,11 +297,11 @@ public abstract class AbstractDatabaseTest {
     // Sanity check
     assertThat(store.getFinalizedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setFinalizedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -311,11 +312,11 @@ public abstract class AbstractDatabaseTest {
     // Sanity check
     assertThat(store.getBestJustifiedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setBestJustifiedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getBestJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -325,11 +326,11 @@ public abstract class AbstractDatabaseTest {
     // Sanity check
     assertThat(store.getBlock(newBlock.getRoot())).isNull();
 
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlockAndState(newBlock);
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getSignedBlock(newBlock.getRoot())).isEqualTo(newBlock.getBlock());
     assertThat(result.getBlockState(newBlock.getRoot())).isEqualTo(newBlock.getState());
   }
@@ -342,18 +343,18 @@ public abstract class AbstractDatabaseTest {
     // Sanity check
     assertThat(store.getCheckpointState(checkpoint)).isNull();
 
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putCheckpointState(checkpoint, newState);
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(checkpoint)).isEqualTo(newState);
   }
 
   @Test
   public void shouldStoreCheckpointStates() throws StateTransitionException {
     generateCheckpoints();
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
 
     addBlocks(checkpoint1BlockAndState, checkpoint2BlockAndState, checkpoint3BlockAndState);
 
@@ -363,7 +364,7 @@ public abstract class AbstractDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(checkpoint1))
         .isEqualTo(checkpoint1BlockAndState.getState());
     assertThat(result.getCheckpointState(checkpoint2))
@@ -384,7 +385,7 @@ public abstract class AbstractDatabaseTest {
     addBlocks(allBlocks);
 
     // First store the initial checkpoints.
-    final Transaction transaction1 = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction1 = store.startTransaction(storageUpdateChannel);
     // Add blocks
     transaction1.putBlockAndState(checkpoint1BlockAndState);
     transaction1.putBlockAndState(checkpoint2BlockAndState);
@@ -401,7 +402,7 @@ public abstract class AbstractDatabaseTest {
             .streamBlocksAndStates(0, checkpoint2.getEpochStartSlot().longValue())
             .collect(Collectors.toSet());
     blocksToPrune.remove(checkpoint2BlockAndState);
-    final Transaction transaction2 = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction2 = store.startTransaction(storageUpdateChannel);
     transaction2.setFinalizedCheckpoint(checkpoint2);
     commit(transaction2);
 
@@ -412,7 +413,7 @@ public abstract class AbstractDatabaseTest {
     // Check pruned data has been removed from store
     assertStoreWasPruned(store, expectedPrunedBlocks, expectedPrunedCheckpoints);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(checkpoint1)).isNull();
     assertThat(result.getCheckpointState(checkpoint2))
         .isEqualTo(transaction1.getCheckpointState(checkpoint2));
@@ -424,7 +425,7 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldLoadHotBlocksAndStatesIntoMemoryStore() throws StateTransitionException {
     final Bytes32 genesisRoot = genesisBlockAndState.getRoot();
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
 
     final SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState blockAndState2 = chainBuilder.generateBlockAtSlot(2);
@@ -434,7 +435,7 @@ public abstract class AbstractDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     assertThat(result.getSignedBlock(genesisRoot)).isEqualTo(genesisBlockAndState.getBlock());
     assertThat(result.getSignedBlock(blockAndState1.getRoot()))
         .isEqualTo(blockAndState1.getBlock());
@@ -454,7 +455,7 @@ public abstract class AbstractDatabaseTest {
     addBlocks(allBlocks);
 
     // Finalize block
-    final Transaction tx = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.setFinalizedCheckpoint(checkpoint1);
     commit(tx);
 
@@ -469,7 +470,7 @@ public abstract class AbstractDatabaseTest {
                 checkpoint1BlockAndState.getSlot(), checkpoint2BlockAndState.getSlot())
             .collect(toList());
 
-    final Store result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = database.createMemoryStore().orElseThrow();
     // Historical blocks should not be in the new store
     for (SignedBlockAndState historicalBlock : historicalBlocks) {
       assertThat(result.getSignedBlock(historicalBlock.getRoot())).isNull();
@@ -564,7 +565,7 @@ public abstract class AbstractDatabaseTest {
     // Setup database
     database = initializeDatabase.apply(storageMode);
     final Checkpoint genesisCheckpoint = getCheckpointForBlock(genesis.getBlock());
-    store = Store.getForkChoiceStore(genesis.getState());
+    store = StoreFactory.getForkChoiceStore(genesis.getState());
     database.storeGenesis(store);
 
     final Set<SignedBlockAndState> allBlocksAndStates =
@@ -572,7 +573,7 @@ public abstract class AbstractDatabaseTest {
             .collect(Collectors.toSet());
 
     if (batchUpdate) {
-      final Transaction transaction = store.startTransaction(storageUpdateChannel);
+      final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
       add(transaction, allBlocksAndStates);
       transaction.setFinalizedCheckpoint(finalizedCheckpoint);
       transaction.commit().reportExceptions();
@@ -682,9 +683,10 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void assertHotBlocksAndStates(
-      final Store store, final Collection<SignedBlockAndState> blocksAndStates) {
-    final List<Store> storesToCheck = List.of(store, database.createMemoryStore().orElseThrow());
-    for (Store currentStore : storesToCheck) {
+      final UpdatableStore store, final Collection<SignedBlockAndState> blocksAndStates) {
+    final List<UpdatableStore> storesToCheck =
+        List.of(store, database.createMemoryStore().orElseThrow());
+    for (UpdatableStore currentStore : storesToCheck) {
       assertThat(currentStore.getBlockRoots())
           .hasSameElementsAs(
               blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
@@ -703,7 +705,7 @@ public abstract class AbstractDatabaseTest {
 
   protected void assertHotBlocksAndStatesInclude(
       final Collection<SignedBlockAndState> blocksAndStates) {
-    final Store memoryStore = database.createMemoryStore().orElseThrow();
+    final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore.getBlockRoots())
         .containsAll(blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
 
@@ -738,7 +740,9 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void assertStoreWasPruned(
-      final Store store, final Set<Bytes32> prunedBlocks, final Set<Checkpoint> prunedCheckpoints) {
+      final UpdatableStore store,
+      final Set<Bytes32> prunedBlocks,
+      final Set<Checkpoint> prunedCheckpoints) {
     // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
       assertThat(store.getBlock(prunedBlock)).isNull();
@@ -754,7 +758,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void addBlocks(final List<SignedBlockAndState> blocks) {
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     for (SignedBlockAndState block : blocks) {
       transaction.putBlockAndState(block);
     }
@@ -762,26 +766,26 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void add(final Collection<SignedBlockAndState> blocks) {
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     add(transaction, blocks);
     commit(transaction);
   }
 
   protected void add(
-      final Transaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
+      final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
     for (SignedBlockAndState blockAndState : blocksAndStates) {
       transaction.putBlockAndState(blockAndState);
     }
   }
 
   protected void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
     commit(transaction);
   }
 
   protected void finalizeCheckpoint(final Checkpoint checkpoint) {
-    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.setFinalizedCheckpoint(checkpoint);
     commit(transaction);
   }

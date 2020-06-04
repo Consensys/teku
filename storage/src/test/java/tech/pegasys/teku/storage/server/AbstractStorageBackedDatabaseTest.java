@@ -31,8 +31,9 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
-import tech.pegasys.teku.storage.store.Store;
-import tech.pegasys.teku.storage.store.Store.Transaction;
+import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.file.FileUtil;
 
@@ -81,14 +82,14 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = Store.getForkChoiceStore(genesisBlockAndState.getState());
+    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
     database.storeGenesis(store);
 
     // Shutdown and restart
     database.close();
     database = setupDatabase(tempDir.toFile(), storageMode);
 
-    final Store memoryStore = database.createMemoryStore().orElseThrow();
+    final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
   }
 
@@ -110,7 +111,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = Store.getForkChoiceStore(genesisBlockAndState.getState());
+    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
     database.storeGenesis(store);
 
     // Create finalized block at slot prior to epoch boundary
@@ -134,7 +135,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(UnsignedLong.valueOf(10)));
 
     // Save new blocks and finalized checkpoint
-    final Transaction tx = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     chainBuilder.streamBlocksAndStates(1).forEach(tx::putBlockAndState);
     tx.putCheckpointState(finalizedCheckpoint, finalizedCheckpointState);
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
@@ -144,7 +145,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     database.close();
     database = setupDatabase(tempDir.toFile(), storageMode);
 
-    final Store memoryStore = database.createMemoryStore().orElseThrow();
+    final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
   }
 
