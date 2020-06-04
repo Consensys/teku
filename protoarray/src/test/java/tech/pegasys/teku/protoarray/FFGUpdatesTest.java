@@ -27,14 +27,14 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class FFGUpdatesTest {
 
   @Test
   void case1() {
-    Store.Transaction store =
+    StoreTransaction store =
         createStoreToManipulateVotes().startTransaction(new StubStorageUpdateChannel());
 
     ProtoArrayForkChoiceStrategy forkChoice =
@@ -100,7 +100,7 @@ public class FFGUpdatesTest {
 
   @Test
   void case2() {
-    Store.Transaction store =
+    StoreTransaction store =
         createStoreToManipulateVotes().startTransaction(new StubStorageUpdateChannel());
 
     ProtoArrayForkChoiceStrategy forkChoice =
