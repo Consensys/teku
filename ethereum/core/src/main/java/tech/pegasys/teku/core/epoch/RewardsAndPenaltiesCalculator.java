@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core.epoch;
 
 import static java.lang.Math.toIntExact;
+import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.core.epoch.EpochProcessorUtil.get_unslashed_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -87,7 +87,6 @@ public class RewardsAndPenaltiesCalculator {
     final UnsignedLong previous_epoch = get_previous_epoch(state);
     final UnsignedLong previous_epoch_plus_one = previous_epoch.plus(UnsignedLong.ONE);
     return IntStream.range(0, state.getValidators().size())
-        .parallel()
         .filter(
             index -> {
               final Validator v = state.getValidators().get(index);
@@ -96,7 +95,7 @@ public class RewardsAndPenaltiesCalculator {
                       && previous_epoch_plus_one.compareTo(v.getWithdrawable_epoch()) < 0);
             })
         .boxed()
-        .collect(Collectors.toConcurrentMap(i -> i, this::calculate_base_reward));
+        .collect(toMap(i -> i, this::calculate_base_reward));
   }
 
   private Collection<Integer> get_eligible_validator_indices() {
