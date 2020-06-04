@@ -117,7 +117,7 @@ public class BlockImporterTest {
 
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
 
-    localChain.createAndImportBlockAtSlot(currentSlot, aggregatedAttestations);
+    localChain.createAndImportBlockAtSlotWithAttestations(currentSlot, aggregatedAttestations);
   }
 
   @Test
@@ -143,7 +143,8 @@ public class BlockImporterTest {
 
     assertThatCode(
             () -> {
-              localChain.createAndImportBlockAtSlot(currentSlotFinal, aggregatedAttestations);
+              localChain.createAndImportBlockAtSlotWithAttestations(
+                  currentSlotFinal, aggregatedAttestations);
             })
         .hasMessageContaining("signature");
   }
@@ -278,7 +279,7 @@ public class BlockImporterTest {
     final BeaconBlockAndState blockAndState = otherStorage.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final SignedBeaconBlock block =
-        otherChain.createAndImportBlockAtSlot(currentSlot, List.of(attestation));
+        otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));
 
     final BlockImportResult result = blockImporter.importBlock(block);
     assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
