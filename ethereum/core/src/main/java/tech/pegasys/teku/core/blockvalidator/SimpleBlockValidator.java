@@ -81,7 +81,7 @@ public class SimpleBlockValidator implements BlockValidator {
         BlockProcessorUtil.verify_proposer_slashings(
             preState, blockBody.getProposer_slashings(), signatureVerifier);
         if (!BlockProcessorUtil.verify_voluntary_exits(
-                preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
+            preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
           return SafeFuture.completedFuture(new BlockValidationResult(false));
         }
       }

@@ -481,8 +481,8 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
   public static void process_voluntary_exits(
-          MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
-          throws BlockProcessingException {
+      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
+      throws BlockProcessingException {
 
     process_voluntary_exits_no_validation(state, exits);
     boolean signatureValid = verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
@@ -516,7 +516,9 @@ public final class BlockProcessorUtil {
   }
 
   public static boolean verify_voluntary_exits(
-      BeaconState state, SSZList<SignedVoluntaryExit> exits, BLSSignatureVerifier signatureVerifier) {
+      BeaconState state,
+      SSZList<SignedVoluntaryExit> exits,
+      BLSSignatureVerifier signatureVerifier) {
     for (SignedVoluntaryExit signedExit : exits) {
       final VoluntaryExit exit = signedExit.getMessage();
 
@@ -529,14 +531,13 @@ public final class BlockProcessorUtil {
 
       final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
       final Bytes signing_root = compute_signing_root(exit, domain);
-      boolean exitSignatureValid = signatureVerifier.verify(
-              publicKey,
-              signing_root,
-              signedExit.getSignature());
+      boolean exitSignatureValid =
+          signatureVerifier.verify(publicKey, signing_root, signedExit.getSignature());
       if (!exitSignatureValid) {
         LOG.trace("Exit signature is invalid {}", signedExit);
         return false;
       }
     }
+    return true;
   }
 }

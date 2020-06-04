@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.BlockProcessorUtil.verify_voluntary_exits;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
@@ -66,18 +65,19 @@ public class VoluntaryExitValidator {
 
   private boolean passesProcessVoluntaryExitConditions(SignedVoluntaryExit exit) {
     BeaconState state =
-            recentChainData
-                    .getBestState()
-                    .orElseThrow(
-                            () ->
-                                    new IllegalStateException(
-                                            "Unable to get best state for voluntary exit processing."));
+        recentChainData
+            .getBestState()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Unable to get best state for voluntary exit processing."));
     Optional<BlockVoluntaryExitValidator.ExitInvalidReason> invalidReason =
-            validator.validateExit(state, exit);
+        validator.validateExit(state, exit);
 
     if (invalidReason.isPresent()) {
-      LOG.trace("VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
-              invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
+      LOG.trace(
+          "VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
+          invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
       return false;
     }
 
