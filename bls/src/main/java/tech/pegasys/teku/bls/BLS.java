@@ -19,7 +19,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -108,14 +107,9 @@ public class BLS {
     checkArgument(
         publicKeys.size() == messages.size(),
         "Number of public keys and number of messages differs.");
-    if (publicKeys.isEmpty()) {
-      return false;
-    }
+    if (publicKeys.isEmpty()) return false;
     // Check that there are no duplicate messages
-    Set<Bytes> set = new HashSet<>();
-    for (Bytes message : messages) {
-      if (!set.add(message)) return false;
-    }
+    if (new HashSet<>(messages).size() != messages.size()) return false;
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
     return BLS12381.coreAggregateVerify(publicKeyObjects, messages, signature.getSignature());
@@ -136,9 +130,7 @@ public class BLS {
    */
   public static boolean fastAggregateVerify(
       List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
-    if (publicKeys.isEmpty()) {
-      return false;
-    }
+    if (publicKeys.isEmpty()) return false;
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
     return BLS12381.fastAggregateVerify(publicKeyObjects, message, signature.getSignature());
@@ -214,9 +206,7 @@ public class BLS {
         publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
         "Different collection sizes");
     int count = publicKeys.size();
-    if (count == 0) {
-      return false;
-    }
+    if (count == 0) return false;
     if (doublePairing) {
       Stream<List<Integer>> pairsStream =
           Lists.partition(IntStream.range(0, count).boxed().collect(Collectors.toList()), 2)
