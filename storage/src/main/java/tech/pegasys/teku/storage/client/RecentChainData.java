@@ -39,7 +39,8 @@ import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.client.Store.StoreUpdateHandler;
+import tech.pegasys.teku.storage.store.Store;
+import tech.pegasys.teku.storage.store.Store.StoreUpdateHandler;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 

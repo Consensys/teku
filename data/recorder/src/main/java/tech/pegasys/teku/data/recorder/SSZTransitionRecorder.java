@@ -27,7 +27,7 @@ import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.storage.client.Store;
+import tech.pegasys.teku.storage.store.Store;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SSZTransitionRecorder {

@@ -29,7 +29,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.storage.client.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -38,6 +37,7 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbDao.Updater;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
+import tech.pegasys.teku.storage.store.Store;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {

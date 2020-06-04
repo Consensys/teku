@@ -18,7 +18,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.client.Store.Transaction;
+import tech.pegasys.teku.storage.store.Store.Transaction;
 
 public class ChainUpdater {
 

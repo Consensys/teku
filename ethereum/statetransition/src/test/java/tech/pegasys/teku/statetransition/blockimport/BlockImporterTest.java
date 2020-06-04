@@ -46,7 +46,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.client.Store.Transaction;
+import tech.pegasys.teku.storage.store.Store.Transaction;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BlockImporterTest {

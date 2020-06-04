@@ -46,7 +46,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.storage.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
-import tech.pegasys.teku.storage.client.Store.Transaction;
+import tech.pegasys.teku.storage.store.Store.Transaction;
 import tech.pegasys.teku.util.EventSink;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;

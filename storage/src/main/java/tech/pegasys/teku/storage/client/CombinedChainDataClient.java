@@ -34,6 +34,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.store.Store;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class CombinedChainDataClient {

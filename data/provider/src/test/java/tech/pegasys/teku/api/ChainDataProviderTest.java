@@ -54,7 +54,7 @@ import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.client.Store;
+import tech.pegasys.teku.storage.store.Store;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ChainDataProviderTest {

@@ -18,7 +18,7 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.client.Store;
+import tech.pegasys.teku.storage.store.Store;
 
 public class ForkChoiceAttestationProcessor {
 

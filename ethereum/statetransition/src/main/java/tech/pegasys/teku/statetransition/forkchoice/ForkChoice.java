@@ -29,7 +29,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.client.Store;
+import tech.pegasys.teku.storage.store.Store;
 
 public class ForkChoice implements FinalizedCheckpointChannel {
 

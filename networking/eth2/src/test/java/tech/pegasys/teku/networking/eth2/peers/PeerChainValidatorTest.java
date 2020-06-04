@@ -36,7 +36,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.Disconnect
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.client.Store;
+import tech.pegasys.teku.storage.store.Store;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 

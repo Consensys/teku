@@ -30,8 +30,8 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.client.Store;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.store.Store;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {

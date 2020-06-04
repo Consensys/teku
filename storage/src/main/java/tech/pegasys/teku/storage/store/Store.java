@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.client;
+package tech.pegasys.teku.storage.store;
 
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 

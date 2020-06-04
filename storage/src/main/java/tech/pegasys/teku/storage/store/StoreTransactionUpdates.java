@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.client;
+package tech.pegasys.teku.storage.store;
 
-import static tech.pegasys.teku.storage.client.Store.indexBlockRootsBySlot;
-import static tech.pegasys.teku.storage.client.Store.removeBlockRootFromSlotIndex;
+import static tech.pegasys.teku.storage.store.Store.indexBlockRootsBySlot;
+import static tech.pegasys.teku.storage.store.Store.removeBlockRootFromSlotIndex;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
@@ -34,8 +34,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
-import tech.pegasys.teku.storage.client.Store.Transaction;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.store.Store.Transaction;
 
 class StoreTransactionUpdates {
   private final Store.Transaction tx;
