@@ -81,7 +81,11 @@ public class Eth1DepositManager {
       }
     }
 
-    depositProcessingController.startSubscription(startBlockNumber);
+    if (replayDepositsResult.isPastMinGenesisBlock()) {
+      depositProcessingController.startSubscription(startBlockNumber);
+    } else {
+      preGenesisSubscription(startBlockNumber);
+    }
     return SafeFuture.COMPLETE;
   }
 
@@ -125,10 +129,9 @@ public class Eth1DepositManager {
 
   private SafeFuture<EthBlock.Block> sendDepositsUpToMinGenesis(
       final EthBlock.Block minGenesisTimeBlock, final ReplayDepositsResult replayDepositsResult) {
-    BigInteger startBlockNumber =
-        replayDepositsResult.getBlockNumber().orElse(UnsignedLong.ZERO).bigIntegerValue();
     return depositProcessingController
-        .fetchDepositsInRange(startBlockNumber, minGenesisTimeBlock.getNumber())
+        .fetchDepositsInRange(
+            replayDepositsResult.getBlockNumberOrZero(), minGenesisTimeBlock.getNumber())
         .thenApply(__ -> minGenesisTimeBlock);
   }
 
