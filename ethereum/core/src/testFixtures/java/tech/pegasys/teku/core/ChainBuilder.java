@@ -303,20 +303,16 @@ public class ChainBuilder {
 
     final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     final MessageSignerService signer = getSigner(proposerIndex);
-
-    final SSZList<Attestation> attestations = options.getAttestations();
-    final Eth1Data eth1Data =
-        options.getEth1Data().orElseGet(() -> latestBlockAndState.getState().getEth1_data());
     final SignedBlockAndState nextBlockAndState =
-        blockProposalTestUtil.createNewBlock(
+        blockProposalTestUtil.createBlock(
             signer,
             slot,
             preState,
             parentRoot,
-            eth1Data,
-            attestations,
-            BeaconBlockBodyLists.createProposerSlashings(),
-            BeaconBlockBodyLists.createDeposits());
+            Optional.of(options.getAttestations()),
+            Optional.empty(),
+            Optional.empty(),
+            options.getEth1Data());
 
     blocks.put(slot, nextBlockAndState);
     return nextBlockAndState;

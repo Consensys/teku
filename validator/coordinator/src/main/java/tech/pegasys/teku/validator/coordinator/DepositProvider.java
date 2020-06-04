@@ -14,6 +14,8 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.lang.StrictMath.toIntExact;
+import static tech.pegasys.teku.core.BlockProcessorUtil.getVoteCount;
+import static tech.pegasys.teku.core.BlockProcessorUtil.isEnoughVotesToUpdateEth1Data;
 import static tech.pegasys.teku.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 
@@ -97,8 +99,13 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
 
-  public SSZList<Deposit> getDeposits(BeaconState state) {
-    UnsignedLong eth1DepositCount = state.getEth1_data().getDeposit_count();
+  public SSZList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
+    UnsignedLong eth1DepositCount;
+    if (isEnoughVotesToUpdateEth1Data(getVoteCount(state, eth1Data) + 1)) {
+      eth1DepositCount = eth1Data.getDeposit_count();
+    } else {
+      eth1DepositCount = state.getEth1_data().getDeposit_count();
+    }
 
     UnsignedLong fromDepositIndex = state.getEth1_deposit_index();
 
