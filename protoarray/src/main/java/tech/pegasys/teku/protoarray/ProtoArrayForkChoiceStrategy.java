@@ -135,6 +135,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     protoArray.onBlock(
         block.getSlot(),
         blockRoot,
+        block.getParent_root(),
         store.getBlockRoots().contains(block.getParent_root())
             ? Optional.of(block.getParent_root())
             : Optional.empty(),
@@ -166,7 +167,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     protoArrayLock.writeLock().lock();
     try {
       protoArray.onBlock(
-          blockSlot, blockRoot, Optional.of(parentRoot), stateRoot, justifiedEpoch, finalizedEpoch);
+          blockSlot, blockRoot, parentRoot, Optional.of(parentRoot), stateRoot, justifiedEpoch, finalizedEpoch);
     } finally {
       protoArrayLock.writeLock().unlock();
     }
@@ -216,7 +217,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
-  public boolean containsBlock(Bytes32 blockRoot) {
+  @Override
+  public boolean contains(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return protoArray.getIndices().containsKey(blockRoot);
@@ -225,6 +227,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
+  @Override
   public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
     return blockSlotAndStateRoot(blockRoot).map(BlockSlotAndStateRoot::getBlockSlot);
   }
@@ -232,17 +235,32 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   public Optional<BlockSlotAndStateRoot> blockSlotAndStateRoot(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      int blockIndex =
-          checkNotNull(
-              protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
-      if (blockIndex >= protoArray.getNodes().size()) {
-        return Optional.empty();
-      } else {
-        ProtoNode node = protoArray.getNodes().get(blockIndex);
-        return Optional.of(new BlockSlotAndStateRoot(node.getBlockSlot(), node.getStateRoot()));
-      }
+      return getProtoNode(blockRoot)
+              .map(node -> new BlockSlotAndStateRoot(node.getBlockSlot(), node.getStateRoot()));
     } finally {
       protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public Optional<Bytes32> blockParentRoot(Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getProtoNode(blockRoot)
+              .map(ProtoNode::getParentRoot);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
+    int blockIndex =
+            checkNotNull(
+                    protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
+    if (blockIndex >= protoArray.getNodes().size()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(protoArray.getNodes().get(blockIndex));
     }
   }
 

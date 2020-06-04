@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.protoarray;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+
+import java.util.Optional;
 
 public interface ForkChoiceStrategy {
 
@@ -26,4 +29,10 @@ public interface ForkChoiceStrategy {
   void onAttestation(final MutableStore store, final IndexedAttestation attestation);
 
   void onBlock(final ReadOnlyStore store, final BeaconBlock block);
+
+  Optional<UnsignedLong> blockSlot(Bytes32 blockRoot);
+
+  Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
+
+  boolean contains(Bytes32 blockRoot);
 }

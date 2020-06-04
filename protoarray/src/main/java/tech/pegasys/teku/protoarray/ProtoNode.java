@@ -26,6 +26,7 @@ public class ProtoNode {
   private final Bytes32 stateRoot;
 
   private final Bytes32 blockRoot;
+  private final Bytes32 parentRoot;
   private final UnsignedLong justifiedEpoch;
   private final UnsignedLong finalizedEpoch;
 
@@ -38,6 +39,7 @@ public class ProtoNode {
       final UnsignedLong blockSlot,
       final Bytes32 stateRoot,
       final Bytes32 blockRoot,
+      final Bytes32 parentRoot,
       final Optional<Integer> parentIndex,
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch,
@@ -47,6 +49,7 @@ public class ProtoNode {
     this.blockSlot = blockSlot;
     this.stateRoot = stateRoot;
     this.blockRoot = blockRoot;
+    this.parentRoot = parentRoot;
     this.parentIndex = parentIndex;
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
@@ -66,6 +69,10 @@ public class ProtoNode {
     } else {
       weight = weight.plus(UnsignedLong.valueOf(delta));
     }
+  }
+
+  public Bytes32 getParentRoot() {
+    return parentRoot;
   }
 
   public UnsignedLong getWeight() {
