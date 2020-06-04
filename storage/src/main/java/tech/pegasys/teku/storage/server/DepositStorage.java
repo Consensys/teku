@@ -62,7 +62,7 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   private ReplayDepositsResult replayDeposits() {
     if (!eth1DepositsFromStorageEnabled) {
       startingBlock = Optional.of(BigInteger.valueOf(-1L));
-      return new ReplayDepositsResult(UnsignedLong.ZERO, false);
+      return new ReplayDepositsResult(BigInteger.ZERO, false);
     }
 
     final DepositSequencer depositSequencer =
@@ -71,12 +71,15 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
       eventStream.forEach(depositSequencer::depositEvent);
     }
     ReplayDepositsResult result = depositSequencer.depositsComplete();
-    startingBlock =
-        result
-            .getBlockNumber()
-            .map(number -> number.plus(UnsignedLong.ONE).bigIntegerValue())
-            .or(() -> Optional.of(BigInteger.valueOf(-1)));
+    startingBlock = Optional.of(getStartingBlockFromDepositsResult(result));
     return result;
+  }
+
+  private BigInteger getStartingBlockFromDepositsResult(
+      final ReplayDepositsResult replayDepositsResult) {
+    return replayDepositsResult.getBlockNumber().equals(BigInteger.ZERO)
+        ? BigInteger.valueOf(-1L)
+        : replayDepositsResult.getBlockNumber().add(BigInteger.ONE);
   }
 
   private boolean shouldProcessEvent(final BigInteger blockNumber) {
@@ -104,10 +107,11 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     private UnsignedLong lastDeposit;
 
     public DepositSequencer(
-        Eth1EventsChannel eventChannel, Optional<MinGenesisTimeBlockEvent> genesis) {
+        final Eth1EventsChannel eventChannel, final Optional<MinGenesisTimeBlockEvent> genesis) {
       this.eth1EventsChannel = eventChannel;
       this.genesis = genesis;
       this.isGenesisDone = false;
+      this.lastDeposit = UnsignedLong.ZERO;
     }
 
     public void depositEvent(final DepositsFromBlockEvent event) {
@@ -127,7 +131,7 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
         lastDeposit = genesis.get().getBlockNumber();
         isGenesisDone = true;
       }
-      return new ReplayDepositsResult(lastDeposit, isGenesisDone);
+      return new ReplayDepositsResult(lastDeposit.bigIntegerValue(), isGenesisDone);
     }
   }
 }

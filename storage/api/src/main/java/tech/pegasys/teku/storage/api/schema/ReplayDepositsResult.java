@@ -13,25 +13,19 @@
 
 package tech.pegasys.teku.storage.api.schema;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
-import java.util.Optional;
 
 public class ReplayDepositsResult {
-  private final Optional<UnsignedLong> blockNumber;
+  private final BigInteger blockNumber;
   private final boolean pastMinGenesisBlock;
 
-  public ReplayDepositsResult(final UnsignedLong blockNumber, final boolean pastMinGenesisBlock) {
-    this.blockNumber = Optional.ofNullable(blockNumber);
+  public ReplayDepositsResult(final BigInteger blockNumber, final boolean pastMinGenesisBlock) {
+    this.blockNumber = blockNumber;
     this.pastMinGenesisBlock = pastMinGenesisBlock;
   }
 
-  public Optional<UnsignedLong> getBlockNumber() {
+  public BigInteger getBlockNumber() {
     return blockNumber;
-  }
-
-  public BigInteger getBlockNumberOrZero() {
-    return this.getBlockNumber().orElse(UnsignedLong.ZERO).bigIntegerValue();
   }
 
   public boolean isPastMinGenesisBlock() {
