@@ -145,6 +145,14 @@ public class DepositProviderTest {
   }
 
   @Test
+  void shouldNotThrowMissingDepositsExceptionWhenAllKnownDepositsHaveBeenIncluded() {
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(5);
+    mockDepositsFromEth1Block(0, 5);
+    assertThat(depositProvider.getDeposits(beaconState)).isEmpty();
+  }
+
+  @Test
   void shouldThrowMissingDepositsExceptionWhenRequiredDepositsAreNotAvailable() {
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(10);
@@ -164,7 +172,7 @@ public class DepositProviderTest {
 
     assertThatThrownBy(() -> depositProvider.getDeposits(beaconState))
         .isInstanceOf(MissingDepositsException.class)
-        .hasMessageContaining("8 to 10");
+        .hasMessageContaining("9 to 10");
   }
 
   private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {

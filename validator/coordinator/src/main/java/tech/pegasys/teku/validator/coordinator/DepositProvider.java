@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
 import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.teku.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
@@ -104,11 +105,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
 
     // We need to have all the deposits that can be included in the state available to ensure
     // the generated proofs are valid
-    final UnsignedLong lastAvailableDepositIndex =
-        depositNavigableMap.isEmpty() ? fromDepositIndex : depositNavigableMap.lastKey();
-    if (lastAvailableDepositIndex.compareTo(eth1DepositCount) < 0) {
-      throw new MissingDepositsException(lastAvailableDepositIndex, eth1DepositCount);
-    }
+    checkRequiredDepositsAvailable(eth1DepositCount, fromDepositIndex);
 
     UnsignedLong latestDepositIndexWithMaxBlock =
         fromDepositIndex.plus(UnsignedLong.valueOf(MAX_DEPOSITS));
@@ -122,6 +119,18 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
         getDepositsWithProof(fromDepositIndex, toDepositIndex, eth1DepositCount),
         MAX_DEPOSITS,
         Deposit.class);
+  }
+
+  private void checkRequiredDepositsAvailable(
+      final UnsignedLong eth1DepositCount, final UnsignedLong fromDepositIndex) {
+    // Note that eth1_deposit_index in the state is actually actually the number of deposits
+    // included, so always one bigger than the index of the last included deposit,
+    // hence lastKey().plus(ONE).
+    final UnsignedLong maxPossibleResultingDepositIndex =
+        depositNavigableMap.isEmpty() ? fromDepositIndex : depositNavigableMap.lastKey().plus(ONE);
+    if (maxPossibleResultingDepositIndex.compareTo(eth1DepositCount) < 0) {
+      throw new MissingDepositsException(maxPossibleResultingDepositIndex, eth1DepositCount);
+    }
   }
 
   public int getDepositMapSize() {
