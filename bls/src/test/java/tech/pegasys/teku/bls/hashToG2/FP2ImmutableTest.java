@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.THRESHOLD;
 import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.ZERO;
 import static tech.pegasys.teku.bls.hashToG2.Util.bigFromHex;
 
@@ -152,7 +151,7 @@ class FP2ImmutableTest {
   @Test
   void signZilch0() {
     FP2Immutable x = new FP2Immutable(0);
-    assertEquals(1, x.sgn0());
+    assertEquals(0, x.sgn0());
   }
 
   @Test
@@ -164,7 +163,7 @@ class FP2ImmutableTest {
   @Test
   void signZilch2() {
     FP2Immutable x = new FP2Immutable(P.minus(new BIG(0)), P.minus(new BIG(1)));
-    assertEquals(-1, x.sgn0());
+    assertEquals(1, x.sgn0());
   }
 
   @Test
@@ -176,37 +175,7 @@ class FP2ImmutableTest {
   @Test
   void signZilch4() {
     FP2Immutable x = new FP2Immutable(P.minus(new BIG(1)), new BIG(0));
-    assertEquals(-1, x.sgn0());
-  }
-
-  @Test
-  void signEquals() {
-    FP2Immutable x = new FP2Immutable(THRESHOLD, THRESHOLD);
-    assertEquals(1, x.sgn0());
-  }
-
-  @Test
-  void signFirstLessThan() {
-    FP2Immutable x = new FP2Immutable(THRESHOLD.minus(new BIG(1)), THRESHOLD);
-    assertEquals(1, x.sgn0());
-  }
-
-  @Test
-  void signFirstGreaterThan() {
-    FP2Immutable x = new FP2Immutable(THRESHOLD.plus(new BIG(1)), THRESHOLD);
-    assertEquals(1, x.sgn0());
-  }
-
-  @Test
-  void signSecondLessThan() {
-    FP2Immutable x = new FP2Immutable(THRESHOLD, THRESHOLD.minus(new BIG(1)));
-    assertEquals(1, x.sgn0());
-  }
-
-  @Test
-  void signSecondGreaterThan() {
-    FP2Immutable x = new FP2Immutable(THRESHOLD, THRESHOLD.plus(new BIG(1)));
-    assertEquals(-1, x.sgn0());
+    assertEquals(0, x.sgn0());
   }
 
   @Test

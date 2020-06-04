@@ -239,10 +239,16 @@ class SignedAggregateAndProofValidatorTest {
     beaconChainUtil.setSlot(ONE);
     final BeaconBlockAndState chainHead = recentChainData.getBestBlockAndState().orElseThrow();
 
+    // We need a validator that is an aggregator for both epoch 0 and 1. 238 happens to be one.
+    final UnsignedLong aggregatorIndex = UnsignedLong.valueOf(238);
     final SignedAggregateAndProof aggregateAndProof1 =
-        generator.validAggregateAndProof(chainHead, ZERO);
+        generator
+            .generator()
+            .blockAndState(chainHead)
+            .slot(ZERO)
+            .aggregatorIndex(aggregatorIndex)
+            .generate();
 
-    final UnsignedLong aggregatorIndex = aggregateAndProof1.getMessage().getIndex();
     final CommitteeAssignment epochOneCommitteeAssignment =
         getCommitteeAssignment(chainHead, aggregatorIndex.intValue(), ONE);
     final SignedAggregateAndProof aggregateAndProof2 =
