@@ -25,6 +25,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
@@ -93,6 +94,18 @@ public class Signer {
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(aggregateAndProof, domain);
     return signerService.signAggregateAndProof(signingRoot);
+  }
+
+  public SafeFuture<BLSSignature> signVoluntaryExit(
+      final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
+    final Bytes domain =
+        get_domain(
+            Constants.DOMAIN_VOLUNTARY_EXIT,
+            voluntaryExit.getEpoch(),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
+    final Bytes signingRoot = compute_signing_root(voluntaryExit, domain);
+    return signerService.signVoluntaryExit(signingRoot);
   }
 
   public MessageSignerService getMessageSignerService() {
