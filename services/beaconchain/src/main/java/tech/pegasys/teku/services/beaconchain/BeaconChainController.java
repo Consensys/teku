@@ -238,6 +238,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
     new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem);
+    eventChannels.subscribe(
+        SlotEventsChannel.class, new EpochMetrics(metricsSystem, recentChainData));
   }
 
   public void initDepositProvider() {
@@ -464,14 +466,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     on_tick(transaction, currentTime);
     transaction.commit().join();
 
-    if (syncService.isSyncActive()) {
-      if (nextSlotDue) {
-        processSlotWhileSyncing();
-      }
-      return;
-    }
     if (nextSlotDue) {
-      processSlot();
+      if (syncService.isSyncActive()) {
+        processSlotWhileSyncing();
+      } else {
+        processSlot();
+      }
     }
   }
 
