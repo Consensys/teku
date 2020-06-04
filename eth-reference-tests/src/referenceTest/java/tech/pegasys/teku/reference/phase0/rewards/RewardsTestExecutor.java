@@ -24,9 +24,10 @@ import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import tech.pegasys.teku.core.Deltas;
-import tech.pegasys.teku.core.EpochProcessorUtil;
+import tech.pegasys.teku.core.epoch.MatchingAttestations;
+import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
@@ -39,30 +40,25 @@ public class RewardsTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final BeaconState state = loadStateFromSsz(testDefinition, "pre.ssz");
-    assertDeltas(testDefinition, "head_deltas.yaml", state, EpochProcessorUtil::getHeadDeltas);
+    final RewardsAndPenaltiesCalculator calculator =
+        new RewardsAndPenaltiesCalculator(state, new MatchingAttestations(state));
+    assertDeltas(testDefinition, "head_deltas.yaml", calculator::getHeadDeltas);
     assertDeltas(
-        testDefinition,
-        "inactivity_penalty_deltas.yaml",
-        state,
-        EpochProcessorUtil::getInactivityPenaltyDeltas);
+        testDefinition, "inactivity_penalty_deltas.yaml", calculator::getInactivityPenaltyDeltas);
     assertDeltas(
-        testDefinition,
-        "inclusion_delay_deltas.yaml",
-        state,
-        EpochProcessorUtil::getInclusionDelayDeltas);
-    assertDeltas(testDefinition, "source_deltas.yaml", state, EpochProcessorUtil::getSourceDeltas);
-    assertDeltas(testDefinition, "target_deltas.yaml", state, EpochProcessorUtil::getTargetDeltas);
+        testDefinition, "inclusion_delay_deltas.yaml", calculator::getInclusionDelayDeltas);
+    assertDeltas(testDefinition, "source_deltas.yaml", calculator::getSourceDeltas);
+    assertDeltas(testDefinition, "target_deltas.yaml", calculator::getTargetDeltas);
   }
 
   private void assertDeltas(
       final TestDefinition testDefinition,
       final String expectedResultsFileName,
-      final BeaconState state,
-      final Function<BeaconState, Deltas> function)
+      final Supplier<Deltas> function)
       throws IOException {
     final Deltas expectedDeltas =
         loadYaml(testDefinition, expectedResultsFileName, DeltaYaml.class).getDeltas();
-    final Deltas actualDeltas = function.apply(state);
+    final Deltas actualDeltas = function.get();
     assertThat(actualDeltas)
         .describedAs(expectedResultsFileName)
         .isEqualToComparingFieldByField(expectedDeltas);
