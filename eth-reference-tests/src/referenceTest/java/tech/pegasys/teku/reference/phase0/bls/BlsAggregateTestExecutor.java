@@ -33,7 +33,13 @@ public class BlsAggregateTestExecutor implements TestExecutor {
     final Data data = TestDataUtils.loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
     final List<BLSSignature> signatures = data.getInput();
     final BLSSignature expectedSignature = data.getOutput();
-    assertThat(BLS.aggregate(signatures)).isEqualTo(expectedSignature);
+    BLSSignature actualSignature;
+    try {
+      actualSignature = BLS.aggregate(signatures);
+    } catch (RuntimeException e) {
+      actualSignature = null;
+    }
+    assertThat(actualSignature).isEqualTo(expectedSignature);
   }
 
   private static class Data {
@@ -48,7 +54,7 @@ public class BlsAggregateTestExecutor implements TestExecutor {
     }
 
     public BLSSignature getOutput() {
-      return parseSignature(output);
+      return output == null ? null : parseSignature(output);
     }
   }
 }

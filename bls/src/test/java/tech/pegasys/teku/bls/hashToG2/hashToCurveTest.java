@@ -29,7 +29,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class hashToCurveTest {
 
-  private static int nTest = 256;
+  private static final int nTest = 256;
 
   // Smoke test. Generate lots of hashes and make sure that they all land in G2.
   @ParameterizedTest(name = "hashToG2Test:{index}, i={0}")

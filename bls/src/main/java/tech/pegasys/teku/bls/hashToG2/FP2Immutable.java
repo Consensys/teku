@@ -47,7 +47,7 @@ final class FP2Immutable {
    * @param fp2Immutable the FP2Immutable object to copy
    */
   FP2Immutable(FP2Immutable fp2Immutable) {
-    this.fp2 = new FP2(fp2Immutable.fp2);
+    fp2 = fp2Immutable.getFp2();
   }
 
   /**
@@ -62,11 +62,11 @@ final class FP2Immutable {
   /**
    * Construct from two FP objects.
    *
-   * @param fp1 the first element
-   * @param fp2 the second element
+   * @param fpA the first element
+   * @param fpB the second element
    */
-  FP2Immutable(FP fp1, FP fp2) {
-    this.fp2 = new FP2(fp1, fp2);
+  FP2Immutable(FP fpA, FP fpB) {
+    fp2 = new FP2(fpA, fpB);
   }
 
   /**
@@ -76,7 +76,7 @@ final class FP2Immutable {
    * @param big2 the second element
    */
   FP2Immutable(BIG big1, BIG big2) {
-    this.fp2 = new FP2(big1, big2);
+    fp2 = new FP2(big1, big2);
   }
 
   /**
@@ -87,7 +87,7 @@ final class FP2Immutable {
    * @param c integer to set the first element to
    */
   FP2Immutable(int c) {
-    this.fp2 = new FP2(c);
+    fp2 = new FP2(c);
   }
 
   /**
@@ -97,34 +97,42 @@ final class FP2Immutable {
    * @param hex2 hexadecimal representation of the first element
    */
   FP2Immutable(String hex1, String hex2) {
-    this.fp2 = new FP2(fpFromHex(hex1), fpFromHex(hex2));
+    fp2 = new FP2(fpFromHex(hex1), fpFromHex(hex2));
   }
 
   /** Wrap FP2 sqr() method to return a result */
   FP2Immutable sqr() {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     result.sqr();
     return new FP2Immutable(result);
   }
 
   /** Wrap FP2 mul() method to return a result */
   FP2Immutable mul(FP2Immutable a) {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     result.mul(a.fp2);
     return new FP2Immutable(result);
   }
 
   /** Wrap FP2 imul() method to return a result */
   FP2Immutable mul(int c) {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     result.imul(c);
+    result.norm();
+    return new FP2Immutable(result);
+  }
+
+  /** Wrap FP2 pmul() method to return a result */
+  FP2Immutable mul(FP c) {
+    FP2 result = new FP2(fp2);
+    result.pmul(c);
     result.norm();
     return new FP2Immutable(result);
   }
 
   /** Wrap FP2 add() method to return a result */
   FP2Immutable add(FP2Immutable a) {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     result.add(a.fp2);
     result.norm();
     return new FP2Immutable(result);
@@ -132,7 +140,7 @@ final class FP2Immutable {
 
   /** Wrap FP2 sub() method to return a result */
   FP2Immutable sub(FP2Immutable a) {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     result.sub(a.fp2);
     result.norm();
     return new FP2Immutable(result);
@@ -140,21 +148,21 @@ final class FP2Immutable {
 
   /** Wrap FP2 neg() method to return a result */
   FP2Immutable neg() {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     result.neg();
     return new FP2Immutable(result);
   }
 
   /** Wrap FP2 reduce() method to return a result */
   FP2Immutable reduce() {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     result.reduce();
     return new FP2Immutable(result);
   }
 
   /** Wrap FP2 inverse() method to return a result */
   FP2Immutable inverse() {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     result.inverse();
     return new FP2Immutable(result);
   }
@@ -170,18 +178,17 @@ final class FP2Immutable {
   }
 
   /**
-   * Calculate the sign of the field element.
+   * Calculate the "sign" of the field element in constant time.
    *
-   * <p>This is described in the "Notation" paragraph at the start of Section 2 of this paper:
-   * https://eprint.iacr.org/2019/403.pdf
+   * <p>Defined here: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-4.1
    *
-   * @return -1 if x is the lexically larger of x and -1 * x, else returns 1
+   * @return zero or one
    */
   int sgn0() {
-    if (fp2.getB().iszilch()) {
-      return BIG.comp(fp2.getA(), THRESHOLD) > 0 ? -1 : 1;
-    }
-    return BIG.comp(fp2.getB(), THRESHOLD) > 0 ? -1 : 1;
+    final int sign0 = fp2.getA().parity();
+    final int zero0 = fp2.getA().iszilch() ? 1 : 0;
+    final int sign1 = fp2.getB().parity();
+    return sign0 | (zero0 & sign1);
   }
 
   /**
@@ -191,7 +198,7 @@ final class FP2Immutable {
    * @return the element to the power of (2 ^ n)
    */
   FP2Immutable sqrs(int n) {
-    FP2 result = new FP2(this.fp2);
+    FP2 result = new FP2(fp2);
     while (n-- > 0) {
       result.sqr();
     }
