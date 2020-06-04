@@ -33,7 +33,8 @@ public class DepositOptions {
   private String eth1Endpoint = null;
 
   @Option(
-      names = {"--eth1-deposits-from-storage-enabled"},
+      hidden = true,
+      names = {"--Xeth1-deposits-from-storage-enabled"},
       paramLabel = "<BOOLEAN>",
       fallbackValue = "true",
       description =

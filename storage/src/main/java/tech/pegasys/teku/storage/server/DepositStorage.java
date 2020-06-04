@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.storage.server;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -70,19 +70,17 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     try (Stream<DepositsFromBlockEvent> eventStream = database.streamDepositsFromBlocks()) {
       eventStream.forEach(depositSequencer::depositEvent);
     }
-    depositSequencer.depositsComplete();
-    ReplayDepositsResult result = depositSequencer.done();
-    if (result.getBlockNumber().isPresent()) {
-      startingBlock =
-          Optional.of(result.getBlockNumber().get().plus(UnsignedLong.ONE).bigIntegerValue());
-    } else {
-      startingBlock = Optional.of(BigInteger.valueOf(-1L));
-    }
+    ReplayDepositsResult result = depositSequencer.depositsComplete();
+    startingBlock =
+        result
+            .getBlockNumber()
+            .map(number -> number.plus(UnsignedLong.ONE).bigIntegerValue())
+            .or(() -> Optional.of(BigInteger.valueOf(-1)));
     return result;
   }
 
   private boolean shouldProcessEvent(final BigInteger blockNumber) {
-    return startingBlock.isPresent() && startingBlock.get().compareTo(blockNumber) < 0;
+    return startingBlock.map(block -> block.compareTo(blockNumber) < 0).orElse(false);
   }
 
   @Override
@@ -123,15 +121,12 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
       lastDeposit = event.getBlockNumber();
     }
 
-    public void depositsComplete() {
+    public ReplayDepositsResult depositsComplete() {
       if (genesis.isPresent() && !isGenesisDone) {
         this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
         lastDeposit = genesis.get().getBlockNumber();
         isGenesisDone = true;
       }
-    }
-
-    public ReplayDepositsResult done() {
       return new ReplayDepositsResult(lastDeposit, isGenesisDone);
     }
   }

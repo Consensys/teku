@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.api.schema;
 
 import com.google.common.primitives.UnsignedLong;
+import java.math.BigInteger;
 import java.util.Optional;
 
 public class ReplayDepositsResult {
@@ -27,6 +28,10 @@ public class ReplayDepositsResult {
 
   public Optional<UnsignedLong> getBlockNumber() {
     return blockNumber;
+  }
+
+  public BigInteger getBlockNumberOrZero() {
+    return this.getBlockNumber().orElse(UnsignedLong.ZERO).bigIntegerValue();
   }
 
   public boolean isPastMinGenesisBlock() {
