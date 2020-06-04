@@ -22,12 +22,12 @@ class Eth1DataCachePeriodCalculatorTest {
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromFollowDistance() {
     assertThat(Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToFollowDistance())
-        .isEqualTo(UnsignedLong.valueOf(374));
+        .isEqualTo(UnsignedLong.valueOf(694));
   }
 
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromCurrentTime() {
     assertThat(Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime())
-        .isEqualTo(UnsignedLong.valueOf(598));
+        .isEqualTo(UnsignedLong.valueOf(694));
   }
 }
