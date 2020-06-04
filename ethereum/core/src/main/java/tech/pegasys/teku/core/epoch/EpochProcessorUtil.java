@@ -118,15 +118,9 @@ public final class EpochProcessorUtil {
    * Processes justification and finalization
    *
    * @param state
+   * @param matchingAttestations
    * @throws EpochProcessingException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#justification-and-finalization</a>
    */
-  public static void process_justification_and_finalization(MutableBeaconState state)
-      throws EpochProcessingException {
-    process_justification_and_finalization(state, new MatchingAttestations(state));
-  }
-
   public static void process_justification_and_finalization(
       MutableBeaconState state, MatchingAttestations matchingAttestations)
       throws EpochProcessingException {
@@ -215,15 +209,9 @@ public final class EpochProcessorUtil {
    * Processes rewards and penalties
    *
    * @param state
+   * @param matchingAttestations
    * @throws EpochProcessingException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
-  public static void process_rewards_and_penalties(MutableBeaconState state)
-      throws EpochProcessingException {
-    process_rewards_and_penalties(state, new MatchingAttestations(state));
-  }
-
   public static void process_rewards_and_penalties(
       MutableBeaconState state, MatchingAttestations matchingAttestations)
       throws EpochProcessingException {

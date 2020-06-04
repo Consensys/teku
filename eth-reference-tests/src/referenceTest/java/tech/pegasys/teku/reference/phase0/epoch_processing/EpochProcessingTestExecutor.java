@@ -18,6 +18,7 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.core.epoch.EpochProcessorUtil;
+import tech.pegasys.teku.core.epoch.MatchingAttestations;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconState.Mutator;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -38,11 +39,16 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               new EpochProcessingTestExecutor(EpochProcessorUtil::process_final_updates))
           .put(
               "epoch_processing/rewards_and_penalties",
-              new EpochProcessingTestExecutor(EpochProcessorUtil::process_rewards_and_penalties))
+              new EpochProcessingTestExecutor(
+                  state ->
+                      EpochProcessorUtil.process_rewards_and_penalties(
+                          state, new MatchingAttestations(state))))
           .put(
               "epoch_processing/justification_and_finalization",
               new EpochProcessingTestExecutor(
-                  EpochProcessorUtil::process_justification_and_finalization))
+                  state ->
+                      EpochProcessorUtil.process_justification_and_finalization(
+                          state, new MatchingAttestations(state))))
           .build();
 
   private final Mutator<? extends Throwable, ? extends Throwable, ? extends Throwable> operation;
