@@ -5,6 +5,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':logging')
   implementation project(':pow')
+  implementation project(':storage:api')
   implementation project(':services:serviceutils')
   implementation project(':util')
   implementation project(':validator:client')
