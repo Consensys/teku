@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.core.epoch.MatchingAttestations;
@@ -34,7 +33,7 @@ import tech.pegasys.teku.reference.phase0.TestExecutor;
 
 public class RewardsTestExecutor implements TestExecutor {
 
-  public static final Map<String, TestExecutor> REWARDS_TEST_TYPES =
+  public static final ImmutableMap<String, TestExecutor> REWARDS_TEST_TYPES =
       ImmutableMap.of("rewards/core", new RewardsTestExecutor());
 
   @Override
