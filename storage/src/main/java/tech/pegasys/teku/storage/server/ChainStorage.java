@@ -19,18 +19,17 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   private final EventBus eventBus;
 
   private volatile Database database;
-  private volatile Optional<Store> cachedStore = Optional.empty();
+  private volatile Optional<UpdatableStore> cachedStore = Optional.empty();
 
   private ChainStorage(final EventBus eventBus, final Database database) {
     this.eventBus = eventBus;
@@ -49,7 +48,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
     eventBus.unregister(this);
   }
 
-  private synchronized Optional<Store> getStore() {
+  private synchronized Optional<UpdatableStore> getStore() {
     if (cachedStore.isEmpty()) {
       // Create store from database
       cachedStore = database.createMemoryStore();
@@ -58,14 +57,12 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
     return cachedStore;
   }
 
-  private synchronized void handleStoreUpdate(final StorageUpdateResult result) {
-    if (result.isSuccessful()) {
-      cachedStore = Optional.empty();
-    }
+  private synchronized void handleStoreUpdate() {
+    cachedStore = Optional.empty();
   }
 
   @Override
-  public SafeFuture<Optional<Store>> onStoreRequest() {
+  public SafeFuture<Optional<UpdatableStore>> onStoreRequest() {
     if (database == null) {
       return SafeFuture.failedFuture(new IllegalStateException("Database not initialized yet"));
     }
@@ -74,17 +71,16 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<StorageUpdateResult> onStorageUpdate(final StorageUpdate event) {
-    return SafeFuture.of(
+  public SafeFuture<Void> onStorageUpdate(final StorageUpdate event) {
+    return SafeFuture.fromRunnable(
         () -> {
-          StorageUpdateResult result = database.update(event);
-          handleStoreUpdate(result);
-          return result;
+          database.update(event);
+          handleStoreUpdate();
         });
   }
 
   @Override
-  public void onGenesis(final Store store) {
+  public void onGenesis(final UpdatableStore store) {
     database.storeGenesis(store);
   }
 
@@ -111,11 +107,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   @Override
   public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot) {
     return SafeFuture.completedFuture(
-        database.getLatestFinalizedRootAtSlot(slot).flatMap(database::getState));
+        database.getLatestFinalizedRootAtSlot(slot).flatMap(database::getFinalizedState));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
-    return SafeFuture.completedFuture(database.getState(blockRoot));
+    return SafeFuture.completedFuture(database.getFinalizedState(blockRoot));
   }
 }

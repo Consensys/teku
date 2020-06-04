@@ -36,11 +36,13 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.storage.Store;
-import tech.pegasys.teku.storage.Store.StoreUpdateHandler;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -58,7 +60,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
 
-  private volatile Store store;
+  private volatile UpdatableStore store;
   private volatile Optional<SignedBlockAndState> chainHead = Optional.empty();
   private volatile UnsignedLong genesisTime;
 
@@ -82,7 +84,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
-    final Store store = Store.getForkChoiceStore(genesisState);
+    final UpdatableStore store = StoreFactory.getForkChoiceStore(genesisState);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
@@ -115,7 +117,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.isEmpty();
   }
 
-  boolean setStore(Store store) {
+  boolean setStore(UpdatableStore store) {
     if (!storeInitialized.compareAndSet(false, true)) {
       return false;
     }
@@ -125,11 +127,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return true;
   }
 
-  public Store getStore() {
+  public UpdatableStore getStore() {
     return store;
   }
 
-  public Store.Transaction startStoreTransaction() {
+  public StoreTransaction startStoreTransaction() {
     return store.startTransaction(storageUpdateChannel, this);
   }
 

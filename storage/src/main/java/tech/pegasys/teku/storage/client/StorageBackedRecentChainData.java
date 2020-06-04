@@ -19,10 +19,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
@@ -86,13 +86,14 @@ public class StorageBackedRecentChainData extends RecentChainData {
             });
   }
 
-  private SafeFuture<Optional<Store>> requestInitialStore() {
+  private SafeFuture<Optional<UpdatableStore>> requestInitialStore() {
     return storageUpdateChannel
         .onStoreRequest()
         .orTimeout(Constants.STORAGE_REQUEST_TIMEOUT, TimeUnit.SECONDS);
   }
 
-  private SafeFuture<Optional<Store>> requestInitialStoreWithRetry(final AsyncRunner asyncRunner) {
+  private SafeFuture<Optional<UpdatableStore>> requestInitialStoreWithRetry(
+      final AsyncRunner asyncRunner) {
     return requestInitialStore()
         .exceptionallyCompose(
             (err) ->

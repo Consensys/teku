@@ -36,6 +36,7 @@ import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.TestMessageSignerService;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
+import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -98,6 +99,14 @@ public class ChainBuilder {
 
   public Stream<SignedBlockAndState> streamBlocksAndStates(final long fromSlot, final long toSlot) {
     return streamBlocksAndStates(UnsignedLong.valueOf(fromSlot), UnsignedLong.valueOf(toSlot));
+  }
+
+  public Stream<SignedBlockAndState> streamBlocksAndStates(final long fromSlot) {
+    return streamBlocksAndStates(UnsignedLong.valueOf(fromSlot));
+  }
+
+  public Stream<SignedBlockAndState> streamBlocksAndStates(final UnsignedLong fromSlot) {
+    return streamBlocksAndStates(fromSlot, getLatestSlot());
   }
 
   public Stream<SignedBlockAndState> streamBlocksAndStates(
@@ -295,8 +304,15 @@ public class ChainBuilder {
     final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     final MessageSignerService signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState =
-        blockProposalTestUtil.createBlockWithAttestations(
-            signer, slot, preState, parentRoot, options.getAttestations());
+        blockProposalTestUtil.createBlock(
+            signer,
+            slot,
+            preState,
+            parentRoot,
+            Optional.of(options.getAttestations()),
+            Optional.empty(),
+            Optional.empty(),
+            options.getEth1Data());
 
     blocks.put(slot, nextBlockAndState);
     return nextBlockAndState;
@@ -316,6 +332,7 @@ public class ChainBuilder {
 
   public static final class BlockOptions {
     private SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+    private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}
 
@@ -328,8 +345,17 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setEth1Data(final Eth1Data eth1Data) {
+      this.eth1Data = Optional.ofNullable(eth1Data);
+      return this;
+    }
+
     private SSZList<Attestation> getAttestations() {
       return attestations;
+    }
+
+    public Optional<Eth1Data> getEth1Data() {
+      return eth1Data;
     }
   }
 }
