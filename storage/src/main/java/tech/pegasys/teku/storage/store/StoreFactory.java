@@ -79,8 +79,10 @@ public abstract class StoreFactory {
         stateGenerator.produceStatesForBlocks(
             finalized_checkpoint.getRoot(), finalizedState, blocks.values());
 
-    // If we couldn't regenerate states, log a warning
     if (blockStates.size() < blocks.size()) {
+      // This should be an error, but keeping this as a warning now for backwards-compatibility
+      // reasons.  Some existing databases may have unpruned fork blocks, and could become unusable
+      // if we throw here.  In the future, we should convert this to an error.
       LOG.warn("Unable to regenerate some hot states from hot blocks");
 
       // Drop any blocks for which a state couldn't be generated
