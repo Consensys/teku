@@ -65,23 +65,24 @@ public class VoluntaryExitValidator {
   }
 
   private boolean passesProcessVoluntaryExitConditions(SignedVoluntaryExit exit) {
-    try {
-      BeaconState state =
-          recentChainData
-              .getBestState()
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "Unable to get best state for voluntary exit processing"));
-      Optional<BlockVoluntaryExitValidator.ExitInvalidReason> invalidReason =
-          validator.validateExit(state, exit);
-      checkArgument(
-          invalidReason.isEmpty(),
-          "process_voluntary_exit: %s",
-          invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
-      verify_voluntary_exits(state, SSZList.singleton(exit), BLSSignatureVerifier.SIMPLE);
-    } catch (IllegalArgumentException | BLSSignatureVerifier.InvalidSignatureException e) {
-      LOG.trace("VoluntaryExitValidator: Exit fails process voluntary exit conditions.", e);
+    BeaconState state =
+            recentChainData
+                    .getBestState()
+                    .orElseThrow(
+                            () ->
+                                    new IllegalStateException(
+                                            "Unable to get best state for voluntary exit processing."));
+    Optional<BlockVoluntaryExitValidator.ExitInvalidReason> invalidReason =
+            validator.validateExit(state, exit);
+
+    if (invalidReason.isPresent()) {
+      LOG.trace("VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
+              invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
+      return false;
+    }
+
+    if (!verify_voluntary_exits(state, SSZList.singleton(exit), BLSSignatureVerifier.SIMPLE)) {
+      LOG.trace("VoluntaryExitValidator: Exit fails signature verification.");
       return false;
     }
     return true;
