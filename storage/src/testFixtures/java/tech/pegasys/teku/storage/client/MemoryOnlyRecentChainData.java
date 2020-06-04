@@ -16,13 +16,13 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.eventbus.EventBus;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
@@ -49,7 +49,9 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
   }
 
   public static RecentChainData createWithStore(
-      final EventBus eventBus, final ReorgEventChannel reorgEventChannel, final Store store) {
+      final EventBus eventBus,
+      final ReorgEventChannel reorgEventChannel,
+      final UpdatableStore store) {
     final RecentChainData recentChainData =
         builder().eventBus(eventBus).reorgEventChannel(reorgEventChannel).build();
     recentChainData.setStore(store);
