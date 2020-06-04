@@ -45,7 +45,7 @@ metrics-enabled: False
 metrics-port: 8008
 metrics-interface: "127.0.0.1"
 metrics-categories: ["BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"]
-metrics-host-whitelist: ["localhost", "127.0.0.1"]
+#metrics-host-whitelist: ["localhost", "127.0.0.1"]
 
 # database
 #data-path: "."
@@ -56,4 +56,4 @@ rest-api-port: 5051
 rest-api-docs-enabled: True
 rest-api-enabled: True
 rest-api-interface: "127.0.0.1"
-rest-api-host-whitelist: ["localhost", "127.0.0.1"]
+#rest-api-host-whitelist: ["localhost", "127.0.0.1"]
