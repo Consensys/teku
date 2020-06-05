@@ -233,7 +233,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot)
-              .map(node -> new BlockSlotAndStateRoot(node.getBlockSlot(), node.getStateRoot()));
+          .map(node -> new BlockSlotAndStateRoot(node.getBlockSlot(), node.getStateRoot()));
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -243,8 +243,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   public Optional<Bytes32> blockParentRoot(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return getProtoNode(blockRoot)
-              .map(ProtoNode::getParentRoot);
+      return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -252,8 +251,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
     int blockIndex =
-            checkNotNull(
-                    protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
+        checkNotNull(
+            protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
     if (blockIndex >= protoArray.getNodes().size()) {
       return Optional.empty();
     } else {

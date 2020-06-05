@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.protoarray.StubForkChoiceStrategy;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.Store.Transaction;
@@ -46,6 +47,7 @@ public class BeaconChainUtil {
 
   private final StateTransition stateTransition = new StateTransition();
   private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
+  private final StubForkChoiceStrategy stubForkChoiceStrategy = new StubForkChoiceStrategy();
   private final RecentChainData recentChainData;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
@@ -137,7 +139,7 @@ public class BeaconChainUtil {
     setSlot(slot);
     final Transaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult importResult =
-        ForkChoiceUtil.on_block(transaction, block, stateTransition);
+        ForkChoiceUtil.on_block(transaction, block, stateTransition, stubForkChoiceStrategy);
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "

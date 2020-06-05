@@ -45,9 +45,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 
 public class ForkChoiceUtil {
 
@@ -85,15 +83,19 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
-  private static Bytes32 get_ancestor(ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UnsignedLong slot)
-          throws UnknownBlockRootException {
-    UnsignedLong blockSlot = forkChoiceStrategy.blockSlot(root)
-            .orElseThrow(() -> new UnknownBlockRootException("ProtoArray is unable to find the ProtoNode which means that the block is not from finalized ancestry."));
+  private static Bytes32 get_ancestor(
+      ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UnsignedLong slot)
+      throws UnknownBlockRootException {
+    UnsignedLong blockSlot =
+        forkChoiceStrategy
+            .blockSlot(root)
+            .orElseThrow(
+                () ->
+                    new UnknownBlockRootException(
+                        "ProtoArray is unable to find the ProtoNode which means that the block is not from finalized ancestry."));
     if (blockSlot.compareTo(slot) > 0) {
       return get_ancestor(
-              forkChoiceStrategy,
-              forkChoiceStrategy.blockParentRoot(root).orElseThrow(),
-              slot);
+          forkChoiceStrategy, forkChoiceStrategy.blockParentRoot(root).orElseThrow(), slot);
     } else if (blockSlot.equals(slot)) {
       return root;
     } else {
@@ -110,7 +112,9 @@ public class ForkChoiceUtil {
   */
 
   private static boolean should_update_justified_checkpoint(
-      ReadOnlyStore store, Checkpoint new_justified_checkpoint, ForkChoiceStrategy forkChoiceStrategy) {
+      ReadOnlyStore store,
+      Checkpoint new_justified_checkpoint,
+      ForkChoiceStrategy forkChoiceStrategy) {
     if (compute_slots_since_epoch_start(get_current_slot(store, true))
             .compareTo(UnsignedLong.valueOf(SAFE_SLOTS_TO_UPDATE_JUSTIFIED))
         < 0) {
@@ -121,7 +125,7 @@ public class ForkChoiceUtil {
         compute_start_slot_at_epoch(store.getJustifiedCheckpoint().getEpoch());
     try {
       return get_ancestor(forkChoiceStrategy, new_justified_checkpoint.getRoot(), justified_slot)
-              .equals(store.getJustifiedCheckpoint().getRoot());
+          .equals(store.getJustifiedCheckpoint().getRoot());
     } catch (UnknownBlockRootException e) {
       return false;
     }
@@ -168,15 +172,16 @@ public class ForkChoiceUtil {
    */
   @CheckReturnValue
   public static BlockImportResult on_block(
-          final MutableStore store,
-          final SignedBeaconBlock signed_block,
-          final StateTransition st,
-          final ForkChoiceStrategy forkChoiceStrategy) {
+      final MutableStore store,
+      final SignedBeaconBlock signed_block,
+      final StateTransition st,
+      final ForkChoiceStrategy forkChoiceStrategy) {
     final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
     // Return early if precondition checks fail;
-    final Optional<BlockImportResult> maybeFailure = checkOnBlockConditions(block, preState, store, forkChoiceStrategy);
+    final Optional<BlockImportResult> maybeFailure =
+        checkOnBlockConditions(block, preState, store, forkChoiceStrategy);
     if (maybeFailure.isPresent()) {
       return maybeFailure.get();
     }
@@ -231,9 +236,10 @@ public class ForkChoiceUtil {
       boolean isFinalizedAncestorOfJustified;
       try {
         Bytes32 ancestorOfJustifiedAtFinalizedSlot =
-                get_ancestor(forkChoiceStrategy, store.getJustifiedCheckpoint().getRoot(), finalized_slot);
+            get_ancestor(
+                forkChoiceStrategy, store.getJustifiedCheckpoint().getRoot(), finalized_slot);
         isFinalizedAncestorOfJustified =
-                ancestorOfJustifiedAtFinalizedSlot.equals(store.getFinalizedCheckpoint().getRoot());
+            ancestorOfJustifiedAtFinalizedSlot.equals(store.getFinalizedCheckpoint().getRoot());
       } catch (UnknownBlockRootException e) {
         isFinalizedAncestorOfJustified = false;
       }
@@ -284,10 +290,12 @@ public class ForkChoiceUtil {
   }
 
   private static boolean blockDescendsFromLatestFinalizedBlock(
-      final BeaconBlock block, final ReadOnlyStore store, final ForkChoiceStrategy forkChoiceStrategy) {
+      final BeaconBlock block,
+      final ReadOnlyStore store,
+      final ForkChoiceStrategy forkChoiceStrategy) {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
     // TODO: throw specific error here
-    final UnsignedLong  blockSlot = block.getSlot();
+    final UnsignedLong blockSlot = block.getSlot();
 
     // Make sure this block's slot is after the latest finalized slot
     final UnsignedLong finalizedEpochStartSlot = finalizedCheckpoint.getEpochStartSlot();
@@ -296,14 +304,11 @@ public class ForkChoiceUtil {
     }
 
     // Make sure this block descends from the finalized block
-    final UnsignedLong finalizedSlot = forkChoiceStrategy.blockSlot(finalizedCheckpoint.getRoot()).orElseThrow();
+    final UnsignedLong finalizedSlot =
+        forkChoiceStrategy.blockSlot(finalizedCheckpoint.getRoot()).orElseThrow();
     try {
       final Bytes32 ancestorAtFinalizedSlot =
-              get_ancestor(
-                      forkChoiceStrategy,
-                      block.getParent_root(),
-                      finalizedSlot
-              );
+          get_ancestor(forkChoiceStrategy, block.getParent_root(), finalizedSlot);
       return ancestorAtFinalizedSlot.equals(finalizedCheckpoint.getRoot());
     } catch (UnknownBlockRootException e) {
       return false;
@@ -399,7 +404,9 @@ public class ForkChoiceUtil {
   }
 
   private static AttestationProcessingResult validateOnAttestation(
-          final MutableStore store, final Attestation attestation, final ForkChoiceStrategy forkChoiceStrategy) {
+      final MutableStore store,
+      final Attestation attestation,
+      final ForkChoiceStrategy forkChoiceStrategy) {
     final Checkpoint target = attestation.getData().getTarget();
     UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store));
 
@@ -431,7 +438,9 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.UNKNOWN_BLOCK;
     }
 
-    if (forkChoiceStrategy.blockSlot(attestation.getData().getBeacon_block_root()).get()
+    if (forkChoiceStrategy
+            .blockSlot(attestation.getData().getBeacon_block_root())
+            .get()
             .compareTo(attestation.getData().getSlot())
         > 0) {
       LOG.warn(

@@ -16,13 +16,11 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -54,14 +52,20 @@ public class ForkChoice implements FinalizedCheckpointChannel {
     Store.Transaction transaction = recentChainData.startStoreTransaction();
     Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(transaction);
     transaction.commit(() -> {}, "Failed to persist validator vote changes.");
-    recentChainData.updateBestBlock(headBlockRoot, protoArrayForkChoiceStrategy.blockSlot(headBlockRoot)
-            .orElseThrow(() -> new IllegalStateException("Unable to retrieve the slot of fork choice head")));
+    recentChainData.updateBestBlock(
+        headBlockRoot,
+        protoArrayForkChoiceStrategy
+            .blockSlot(headBlockRoot)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException("Unable to retrieve the slot of fork choice head")));
     return headBlockRoot;
   }
 
   public synchronized BlockImportResult onBlock(final SignedBeaconBlock block) {
     Store.Transaction transaction = recentChainData.startStoreTransaction();
-    final BlockImportResult result = on_block(transaction, block, stateTransition, protoArrayForkChoiceStrategy);
+    final BlockImportResult result =
+        on_block(transaction, block, stateTransition, protoArrayForkChoiceStrategy);
 
     if (!result.isSuccessful()) {
       return result;

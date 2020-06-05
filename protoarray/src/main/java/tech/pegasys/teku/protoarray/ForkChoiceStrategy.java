@@ -14,13 +14,12 @@
 package tech.pegasys.teku.protoarray;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-
-import java.util.Optional;
 
 public interface ForkChoiceStrategy {
 
