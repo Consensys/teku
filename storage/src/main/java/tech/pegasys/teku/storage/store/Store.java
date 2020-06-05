@@ -11,58 +11,56 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage;
-
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+package tech.pegasys.teku.storage.store;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.client.FailedPrecommitException;
-import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-public class Store implements ReadOnlyStore {
+class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
-  private UnsignedLong time;
-  private UnsignedLong genesis_time;
-  private Checkpoint justified_checkpoint;
-  private Checkpoint finalized_checkpoint;
-  private Checkpoint best_justified_checkpoint;
-  private Map<Bytes32, SignedBeaconBlock> blocks;
-  private Map<Bytes32, BeaconState> block_states;
-  private Map<Checkpoint, BeaconState> checkpoint_states;
-  private Map<UnsignedLong, VoteTracker> votes;
+  UnsignedLong time;
+  UnsignedLong genesis_time;
+  Checkpoint justified_checkpoint;
+  Checkpoint finalized_checkpoint;
+  Checkpoint best_justified_checkpoint;
+  Map<Bytes32, SignedBeaconBlock> blocks;
+  Map<Bytes32, BeaconState> block_states;
+  Map<Checkpoint, BeaconState> checkpoint_states;
+  Map<UnsignedLong, VoteTracker> votes;
 
-  public Store(
+  final NavigableMap<UnsignedLong, Set<Bytes32>> rootsBySlotLookup = new TreeMap<>();
+
+  Store(
       final UnsignedLong time,
       final UnsignedLong genesis_time,
       final Checkpoint justified_checkpoint,
@@ -81,41 +79,45 @@ public class Store implements ReadOnlyStore {
     this.block_states = new ConcurrentHashMap<>(block_states);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
     this.votes = new ConcurrentHashMap<>(votes);
+
+    // Setup slot to root mappings
+    indexBlockRootsBySlot(rootsBySlotLookup, this.blocks.values());
   }
 
-  public static Store getForkChoiceStore(final BeaconState anchorState) {
-    final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
-    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
-    final UnsignedLong anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
-    final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
-    Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
-    Map<Bytes32, BeaconState> block_states = new HashMap<>();
-    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
-
-    blocks.put(anchorRoot, new SignedBeaconBlock(anchorBlock, BLSSignature.empty()));
-    block_states.put(anchorRoot, anchorState);
-    checkpoint_states.put(anchorCheckpoint, anchorState);
-
-    return new Store(
-        anchorState
-            .getGenesis_time()
-            .plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(anchorState.getSlot())),
-        anchorState.getGenesis_time(),
-        anchorCheckpoint,
-        anchorCheckpoint,
-        anchorCheckpoint,
-        blocks,
-        block_states,
-        checkpoint_states,
-        votes);
+  static void indexBlockRootsBySlot(
+      final Map<UnsignedLong, Set<Bytes32>> index, final Collection<SignedBeaconBlock> blocks) {
+    blocks.forEach(b -> indexBlockRootBySlot(index, b));
   }
 
-  public Transaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
+  static void indexBlockRootBySlot(
+      final Map<UnsignedLong, Set<Bytes32>> index, SignedBeaconBlock block) {
+    final Bytes32 root = block.getRoot();
+    final UnsignedLong slot = block.getSlot();
+    index.computeIfAbsent(slot, key -> new HashSet<>()).add(root);
+  }
+
+  static void removeBlockRootFromSlotIndex(
+      final Map<UnsignedLong, Set<Bytes32>> index, final UnsignedLong slot, final Bytes32 root) {
+    index.computeIfPresent(
+        slot,
+        (s, roots) -> {
+          roots.remove(root);
+          return roots.isEmpty() ? null : roots;
+        });
+  }
+
+  static void removeBlockRootFromSlotIndex(
+      final Map<UnsignedLong, Set<Bytes32>> index, SignedBeaconBlock block) {
+    removeBlockRootFromSlotIndex(index, block.getSlot(), block.getRoot());
+  }
+
+  @Override
+  public StoreTransaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
     return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP);
   }
 
-  public Transaction startTransaction(
+  @Override
+  public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
     return new Transaction(storageUpdateChannel, updateHandler);
   }
@@ -155,6 +157,18 @@ public class Store implements ReadOnlyStore {
     readLock.lock();
     try {
       return finalized_checkpoint;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
+    readLock.lock();
+    try {
+      final Checkpoint checkpoint = finalized_checkpoint;
+      final SignedBeaconBlock block = getSignedBlock(checkpoint.getRoot());
+      return new CheckpointAndBlock(checkpoint, block);
     } finally {
       readLock.unlock();
     }
@@ -281,18 +295,18 @@ public class Store implements ReadOnlyStore {
     }
   }
 
-  public class Transaction implements MutableStore {
+  class Transaction implements StoreTransaction {
 
     private final StorageUpdateChannel storageUpdateChannel;
-    private Optional<UnsignedLong> time = Optional.empty();
-    private Optional<UnsignedLong> genesis_time = Optional.empty();
-    private Optional<Checkpoint> justified_checkpoint = Optional.empty();
-    private Optional<Checkpoint> finalized_checkpoint = Optional.empty();
-    private Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
-    private Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
-    private Map<Bytes32, BeaconState> block_states = new HashMap<>();
-    private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    private Map<UnsignedLong, VoteTracker> votes = new ConcurrentHashMap<>();
+    Optional<UnsignedLong> time = Optional.empty();
+    Optional<UnsignedLong> genesis_time = Optional.empty();
+    Optional<Checkpoint> justified_checkpoint = Optional.empty();
+    Optional<Checkpoint> finalized_checkpoint = Optional.empty();
+    Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
+    Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
+    Map<Bytes32, BeaconState> block_states = new HashMap<>();
+    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    Map<UnsignedLong, VoteTracker> votes = new ConcurrentHashMap<>();
     private final StoreUpdateHandler updateHandler;
 
     Transaction(
@@ -353,47 +367,27 @@ public class Store implements ReadOnlyStore {
     }
 
     @CheckReturnValue
+    @Override
     public SafeFuture<Void> commit() {
-      final StorageUpdate updateEvent =
-          new StorageUpdate(
-              genesis_time,
-              justified_checkpoint,
-              finalized_checkpoint,
-              best_justified_checkpoint,
-              blocks,
-              block_states,
-              checkpoint_states,
-              votes);
+      final StoreTransactionUpdates updates;
+      // Lock so that we have a consistent view while calculating our updates
+      final Lock writeLock = Store.this.lock.writeLock();
+      writeLock.lock();
+      try {
+        updates = StoreTransactionUpdates.calculate(Store.this, this);
+      } finally {
+        writeLock.unlock();
+      }
+
       return storageUpdateChannel
-          .onStorageUpdate(updateEvent)
+          .onStorageUpdate(updates.createStorageUpdate())
           .thenAccept(
-              updateResult -> {
-                if (!updateResult.isSuccessful()) {
-                  throw new FailedPrecommitException(updateResult);
-                }
-                final Lock writeLock = Store.this.lock.writeLock();
+              __ -> {
+                // Propagate changes to Store
                 writeLock.lock();
                 try {
                   // Add new data
-                  time.ifPresent(value -> Store.this.time = value);
-                  genesis_time.ifPresent(value -> Store.this.genesis_time = value);
-                  justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
-                  finalized_checkpoint.ifPresent(value -> Store.this.finalized_checkpoint = value);
-                  best_justified_checkpoint.ifPresent(
-                      value -> Store.this.best_justified_checkpoint = value);
-                  Store.this.blocks.putAll(blocks);
-                  Store.this.block_states.putAll(block_states);
-                  Store.this.checkpoint_states.putAll(checkpoint_states);
-                  Store.this.votes.putAll(votes);
-                  // Prune old data
-                  updateResult.getPrunedCheckpoints().forEach(Store.this.checkpoint_states::remove);
-                  updateResult
-                      .getPrunedBlockRoots()
-                      .forEach(
-                          prunedRoot -> {
-                            Store.this.blocks.remove(prunedRoot);
-                            Store.this.block_states.remove(prunedRoot);
-                          });
+                  updates.applyToStore(Store.this);
                 } finally {
                   writeLock.unlock();
                 }
@@ -403,12 +397,9 @@ public class Store implements ReadOnlyStore {
               });
     }
 
+    @Override
     public void commit(final Runnable onSuccess, final String errorMessage) {
       commit(onSuccess, err -> LOG.error(errorMessage, err));
-    }
-
-    public void commit(final Runnable onSuccess, final Consumer<Throwable> onError) {
-      commit().finish(onSuccess, onError);
     }
 
     @Override
@@ -429,6 +420,16 @@ public class Store implements ReadOnlyStore {
     @Override
     public Checkpoint getFinalizedCheckpoint() {
       return finalized_checkpoint.orElseGet(Store.this::getFinalizedCheckpoint);
+    }
+
+    @Override
+    public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
+      return finalized_checkpoint
+          .flatMap(
+              (checkpoint) ->
+                  Optional.ofNullable(getSignedBlock(checkpoint.getRoot()))
+                      .map(block -> new CheckpointAndBlock(checkpoint, block)))
+          .orElse(Store.this.getFinalizedCheckpointAndBlock());
     }
 
     @Override
@@ -534,11 +535,5 @@ public class Store implements ReadOnlyStore {
         blocks,
         block_states,
         checkpoint_states);
-  }
-
-  public interface StoreUpdateHandler {
-    StoreUpdateHandler NOOP = finalizedCheckpoint -> {};
-
-    void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint);
   }
 }

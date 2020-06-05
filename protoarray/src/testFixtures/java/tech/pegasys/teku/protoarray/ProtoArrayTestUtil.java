@@ -21,7 +21,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.Store;
+import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class ProtoArrayTestUtil {
 
@@ -35,8 +36,8 @@ public class ProtoArrayTestUtil {
       UnsignedLong finalizedBlockSlot,
       UnsignedLong finalizedCheckpointEpoch,
       UnsignedLong justifiedCheckpointEpoch) {
-    Store store =
-        new Store(
+    UpdatableStore store =
+        StoreFactory.create(
             UnsignedLong.ONE,
             ZERO,
             new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO),
@@ -60,8 +61,8 @@ public class ProtoArrayTestUtil {
     return forkChoice;
   }
 
-  public static Store createStoreToManipulateVotes() {
-    return new Store(
+  public static UpdatableStore createStoreToManipulateVotes() {
+    return StoreFactory.create(
         UnsignedLong.ONE,
         ZERO,
         new Checkpoint(ZERO, Bytes32.ZERO),

@@ -49,12 +49,12 @@ import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ChainDataProviderTest {
@@ -295,7 +295,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void getStateAtSlot_shouldThrowWhenHeadRootMissing() {
-    final Store store = mock(Store.class);
+    final UpdatableStore store = mock(UpdatableStore.class);
     final RecentChainData storageClient = mock(RecentChainData.class);
     when(storageClient.isPreGenesis()).thenReturn(false);
     when(storageClient.isPreForkChoice()).thenReturn(true);
