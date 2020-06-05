@@ -136,9 +136,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         block.getSlot(),
         blockRoot,
         block.getParent_root(),
-        store.getBlockRoots().contains(block.getParent_root())
-            ? Optional.of(block.getParent_root())
-            : Optional.empty(),
         block.getState_root(),
         store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
         store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
@@ -167,7 +164,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     protoArrayLock.writeLock().lock();
     try {
       protoArray.onBlock(
-          blockSlot, blockRoot, parentRoot, Optional.of(parentRoot), stateRoot, justifiedEpoch, finalizedEpoch);
+          blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
     } finally {
       protoArrayLock.writeLock().unlock();
     }

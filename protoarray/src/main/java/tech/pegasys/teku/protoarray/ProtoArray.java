@@ -63,7 +63,6 @@ class ProtoArray {
    *
    * @param blockSlot
    * @param blockRoot
-   * @param optionalParentRoot
    * @param stateRoot
    * @param justifiedEpoch
    * @param finalizedEpoch
@@ -72,7 +71,6 @@ class ProtoArray {
       UnsignedLong blockSlot,
       Bytes32 blockRoot,
       Bytes32 parentRoot,
-      Optional<Bytes32> optionalParentRoot,
       Bytes32 stateRoot,
       UnsignedLong justifiedEpoch,
       UnsignedLong finalizedEpoch) {
@@ -88,7 +86,7 @@ class ProtoArray {
             stateRoot,
             blockRoot,
             parentRoot,
-            optionalParentRoot.map(indices::get),
+            Optional.ofNullable(indices.get(parentRoot)),
             justifiedEpoch,
             finalizedEpoch,
             UnsignedLong.ZERO,
