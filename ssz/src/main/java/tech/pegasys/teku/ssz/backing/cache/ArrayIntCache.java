@@ -51,23 +51,23 @@ public final class ArrayIntCache<V> implements IntCache<V> {
   }
 
   private V[] extend(int index) {
-    V[] valuesLoc = this.values;
-    int newSize = valuesLoc.length;
+    V[] valuesLocal = this.values;
+    int newSize = valuesLocal.length;
     if (index >= newSize) {
       while (index >= newSize) {
         newSize <<= 1;
       }
-      V[] newValues = Arrays.copyOf(valuesLoc, newSize);
+      V[] newValues = Arrays.copyOf(valuesLocal, newSize);
       this.values = newValues;
       return newValues;
     }
-    return valuesLoc;
+    return valuesLocal;
   }
 
   @Override
   public V getInt(int key, IntFunction<V> fallback) {
-    V[] valuesLoc = this.values;
-    V val = key >= valuesLoc.length ? null : valuesLoc[key];
+    V[] valuesLocal = this.values;
+    V val = key >= valuesLocal.length ? null : valuesLocal[key];
     if (val == null) {
       val = fallback.apply(key);
       extend(key)[key] = val;
@@ -77,14 +77,14 @@ public final class ArrayIntCache<V> implements IntCache<V> {
 
   @Override
   public Optional<V> getCached(Integer key) {
-    V[] valuesLoc = this.values;
-    return key >= valuesLoc.length ? Optional.empty() : Optional.ofNullable(valuesLoc[key]);
+    V[] valuesLocal = this.values;
+    return key >= valuesLocal.length ? Optional.empty() : Optional.ofNullable(valuesLocal[key]);
   }
 
   @Override
   public IntCache<V> copy() {
-    V[] valuesLoc = this.values;
-    return new ArrayIntCache<>(Arrays.copyOf(valuesLoc, valuesLoc.length), initSize);
+    V[] valuesLocal = this.values;
+    return new ArrayIntCache<>(Arrays.copyOf(valuesLocal, valuesLocal.length), initSize);
   }
 
   @Override
@@ -101,9 +101,9 @@ public final class ArrayIntCache<V> implements IntCache<V> {
 
   @Override
   public void invalidateInt(int key) {
-    V[] valuesLoc = this.values;
-    if (key < valuesLoc.length) {
-      valuesLoc[key] = null;
+    V[] valuesLocal = this.values;
+    if (key < valuesLocal.length) {
+      valuesLocal[key] = null;
     }
   }
 
