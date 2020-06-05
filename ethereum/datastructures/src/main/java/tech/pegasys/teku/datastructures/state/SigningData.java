@@ -25,7 +25,7 @@ import tech.pegasys.teku.util.hashtree.HashTreeUtil;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.util.hashtree.Merkleizable;
 
-public class SigningRoot implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class SigningData implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
@@ -33,7 +33,7 @@ public class SigningRoot implements Merkleizable, SimpleOffsetSerializable, SSZC
   private final Bytes32 object_root;
   private final Bytes domain;
 
-  public SigningRoot(Bytes32 object_root, Bytes domain) {
+  public SigningData(Bytes32 object_root, Bytes domain) {
     this.object_root = object_root;
     this.domain = domain;
   }
@@ -65,11 +65,11 @@ public class SigningRoot implements Merkleizable, SimpleOffsetSerializable, SSZC
       return true;
     }
 
-    if (!(obj instanceof SigningRoot)) {
+    if (!(obj instanceof SigningData)) {
       return false;
     }
 
-    SigningRoot other = (SigningRoot) obj;
+    SigningData other = (SigningData) obj;
     return Objects.equals(this.getObjectRoot(), other.getObjectRoot())
         && Objects.equals(this.getDomain(), other.getDomain());
   }

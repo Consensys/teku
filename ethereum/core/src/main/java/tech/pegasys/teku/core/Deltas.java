@@ -11,23 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.api;
-
-import static org.assertj.core.api.Assertions.assertThat;
+package tech.pegasys.teku.core;
 
 import com.google.common.primitives.UnsignedLong;
-import org.junit.jupiter.api.Test;
+import java.util.List;
 
-class Eth1DataCachePeriodCalculatorTest {
-  @Test
-  void shouldCalculateCachePeriodForMinimalConstantsFromFollowDistance() {
-    assertThat(Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToFollowDistance())
-        .isEqualTo(UnsignedLong.valueOf(470));
+public class Deltas {
+  private final List<UnsignedLong> rewards;
+  private final List<UnsignedLong> penalties;
+
+  public Deltas(final List<UnsignedLong> rewards, final List<UnsignedLong> penalties) {
+    this.rewards = rewards;
+    this.penalties = penalties;
   }
 
-  @Test
-  void shouldCalculateCachePeriodForMinimalConstantsFromCurrentTime() {
-    assertThat(Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime())
-        .isEqualTo(UnsignedLong.valueOf(694));
+  public UnsignedLong getReward(final int validatorIndex) {
+    return rewards.get(validatorIndex);
+  }
+
+  public UnsignedLong getPenalty(final int validatorIndex) {
+    return penalties.get(validatorIndex);
   }
 }

@@ -100,7 +100,7 @@ public class DepositProcessingControllerTest {
   @Test
   void fetchDepositsBlockOneBlockAtATime() {
 
-    Constants.MIN_GENESIS_DELAY = 1;
+    Constants.GENESIS_DELAY = UnsignedLong.valueOf(2);
     // calculateCandidateGenesisTimestamp will return
     // blockTime + 2
 

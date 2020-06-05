@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.blockvalidator.BatchBlockValidator;
 import tech.pegasys.teku.core.blockvalidator.BlockValidator;
 import tech.pegasys.teku.core.blockvalidator.BlockValidator.BlockValidationResult;
+import tech.pegasys.teku.core.epoch.EpochProcessor;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
@@ -134,29 +135,6 @@ public class StateTransition {
   /**
    * v0.7.1
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
-   * Processes epoch
-   *
-   * @throws EpochProcessingException
-   */
-  private static BeaconState process_epoch(BeaconState preState) throws EpochProcessingException {
-    return preState.updated(
-        state -> {
-          // Note: the lines with @ label here will be inserted here in a future phase
-          EpochProcessorUtil.process_justification_and_finalization(state);
-          EpochProcessorUtil.process_rewards_and_penalties(state);
-          EpochProcessorUtil.process_registry_updates(state);
-          // @process_reveal_deadlines
-          // @process_challenge_deadlines
-          EpochProcessorUtil.process_slashings(state);
-          // @update_period_committee
-          EpochProcessorUtil.process_final_updates(state);
-          // @after_process_final_updates
-        });
-  }
-
-  /**
-   * v0.7.1
-   * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
    * Processes slot
    */
   private static BeaconState process_slot(BeaconState preState) {
@@ -212,7 +190,7 @@ public class StateTransition {
             .plus(UnsignedLong.ONE)
             .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .equals(UnsignedLong.ZERO)) {
-          BeaconState epochState = process_epoch(state);
+          BeaconState epochState = EpochProcessor.processEpoch(state);
           reportExceptions(CompletableFuture.runAsync(() -> recordMetrics(epochState)));
           state = epochState;
         }
