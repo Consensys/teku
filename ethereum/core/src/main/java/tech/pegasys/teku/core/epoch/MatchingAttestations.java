@@ -40,17 +40,17 @@ public class MatchingAttestations {
 
   public SSZList<PendingAttestation> getMatchingSourceAttestations(final UnsignedLong epoch) {
     return matchingSourceAttestationsByEpoch.computeIfAbsent(
-        epoch, this::get_matching_source_attestations);
+        epoch, this::calculateMatchingSourceAttestations);
   }
 
   public SSZList<PendingAttestation> getMatchingTargetAttestations(final UnsignedLong epoch) {
     return matchingTargetAttestationsByEpoch.computeIfAbsent(
-        epoch, this::get_matching_target_attestations);
+        epoch, this::calculateMatchingTargetAttestations);
   }
 
   public SSZList<PendingAttestation> getMatchingHeadAttestations(final UnsignedLong epoch) {
     // Only called once so no need to cache.
-    return get_matching_head_attestations(epoch);
+    return calculateMatchingHeadAttestations(epoch);
   }
 
   /**
@@ -62,11 +62,11 @@ public class MatchingAttestations {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private SSZList<PendingAttestation> get_matching_source_attestations(UnsignedLong epoch)
+  private SSZList<PendingAttestation> calculateMatchingSourceAttestations(UnsignedLong epoch)
       throws IllegalArgumentException {
     checkArgument(
         get_current_epoch(state).equals(epoch) || get_previous_epoch(state).equals(epoch),
-        "get_matching_source_attestations");
+        "get_matching_source_attestations requested for invalid epoch");
     if (epoch.equals(get_current_epoch(state))) {
       return state.getCurrent_epoch_attestations();
     }
@@ -82,7 +82,7 @@ public class MatchingAttestations {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private SSZList<PendingAttestation> get_matching_target_attestations(UnsignedLong epoch)
+  private SSZList<PendingAttestation> calculateMatchingTargetAttestations(UnsignedLong epoch)
       throws IllegalArgumentException {
     return getMatchingSourceAttestations(epoch)
         .filter(a -> a.getData().getTarget().getRoot().equals(get_block_root(state, epoch)));
@@ -96,9 +96,9 @@ public class MatchingAttestations {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private SSZList<PendingAttestation> get_matching_head_attestations(UnsignedLong epoch)
+  private SSZList<PendingAttestation> calculateMatchingHeadAttestations(UnsignedLong epoch)
       throws IllegalArgumentException {
-    return get_matching_target_attestations(epoch)
+    return getMatchingTargetAttestations(epoch)
         .filter(
             a ->
                 a.getData()
