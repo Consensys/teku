@@ -29,6 +29,7 @@ import static tech.pegasys.teku.util.config.Constants.INACTIVITY_PENALTY_QUOTIEN
 import static tech.pegasys.teku.util.config.Constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 import static tech.pegasys.teku.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
 
+import com.google.common.base.Suppliers;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -51,7 +53,7 @@ public class RewardsAndPenaltiesCalculator {
   private final BeaconState state;
   private final MatchingAttestations matchingAttestations;
   private final List<UnsignedLong> noValues;
-  private final Map<Integer, UnsignedLong> eligibleValidatorBaseRewards;
+  private final Supplier<Map<Integer, UnsignedLong>> eligibleValidatorBaseRewards;
   private final boolean isInInactivityLeak;
 
   public RewardsAndPenaltiesCalculator(
@@ -59,8 +61,12 @@ public class RewardsAndPenaltiesCalculator {
     this.state = state;
     this.matchingAttestations = matchingAttestations;
     noValues = Collections.nCopies(state.getValidators().size(), UnsignedLong.ZERO);
-    eligibleValidatorBaseRewards = calculateEligibleValidatorBaseRewards();
-    isInInactivityLeak = get_finality_delay().compareTo(MIN_EPOCHS_TO_INACTIVITY_PENALTY) > 0;
+    eligibleValidatorBaseRewards = Suppliers.memoize(this::calculateEligibleValidatorBaseRewards);
+    isInInactivityLeak = getFinalityDelay().compareTo(MIN_EPOCHS_TO_INACTIVITY_PENALTY) > 0;
+  }
+
+  private Map<Integer, UnsignedLong> getEligibleValidatorBaseRewards() {
+    return eligibleValidatorBaseRewards.get();
   }
 
   /**
@@ -69,44 +75,44 @@ public class RewardsAndPenaltiesCalculator {
    * @param index
    * @return
    */
-  private UnsignedLong get_base_reward(int index) {
-    final UnsignedLong baseReward = eligibleValidatorBaseRewards.get(index);
-    return baseReward != null ? baseReward : calculate_base_reward(index);
+  private UnsignedLong getBaseReward(int index) {
+    final UnsignedLong baseReward = getEligibleValidatorBaseRewards().get(index);
+    return baseReward != null ? baseReward : calculateBaseReward(index);
   }
 
-  private UnsignedLong calculate_base_reward(int index) {
-    UnsignedLong total_balance_square_root = get_total_active_balance_with_root(state).getRight();
-    UnsignedLong effective_balance = state.getValidators().get(index).getEffective_balance();
-    return effective_balance
+  private UnsignedLong calculateBaseReward(int index) {
+    UnsignedLong totalBalanceSquareRoot = get_total_active_balance_with_root(state).getRight();
+    UnsignedLong effectiveBalance = state.getValidators().get(index).getEffective_balance();
+    return effectiveBalance
         .times(UnsignedLong.valueOf(BASE_REWARD_FACTOR))
-        .dividedBy(total_balance_square_root)
+        .dividedBy(totalBalanceSquareRoot)
         .dividedBy(BASE_REWARDS_PER_EPOCH);
   }
 
   private Map<Integer, UnsignedLong> calculateEligibleValidatorBaseRewards() {
-    final UnsignedLong previous_epoch = get_previous_epoch(state);
-    final UnsignedLong previous_epoch_plus_one = previous_epoch.plus(UnsignedLong.ONE);
+    final UnsignedLong previousEpoch = get_previous_epoch(state);
+    final UnsignedLong previousEpochPlusOne = previousEpoch.plus(UnsignedLong.ONE);
     return IntStream.range(0, state.getValidators().size())
         .filter(
             index -> {
               final Validator v = state.getValidators().get(index);
-              return is_active_validator(v, previous_epoch)
+              return is_active_validator(v, previousEpoch)
                   || (v.isSlashed()
-                      && previous_epoch_plus_one.compareTo(v.getWithdrawable_epoch()) < 0);
+                      && previousEpochPlusOne.compareTo(v.getWithdrawable_epoch()) < 0);
             })
         .boxed()
-        .collect(toMap(i -> i, this::calculate_base_reward));
+        .collect(toMap(i -> i, this::calculateBaseReward));
   }
 
-  private Collection<Integer> get_eligible_validator_indices() {
-    return eligibleValidatorBaseRewards.keySet();
+  private Collection<Integer> getEligibleValidatorIndices() {
+    return getEligibleValidatorBaseRewards().keySet();
   }
 
-  private UnsignedLong get_proposer_reward(int attestingIndex) {
-    return get_base_reward(attestingIndex).dividedBy(PROPOSER_REWARD_QUOTIENT);
+  private UnsignedLong getProposerReward(int attestingIndex) {
+    return getBaseReward(attestingIndex).dividedBy(PROPOSER_REWARD_QUOTIENT);
   }
 
-  private UnsignedLong get_finality_delay() {
+  private UnsignedLong getFinalityDelay() {
     return get_previous_epoch(state).minus(state.getFinalized_checkpoint().getEpoch());
   }
 
@@ -116,7 +122,7 @@ public class RewardsAndPenaltiesCalculator {
    * @param attestations
    * @return
    */
-  private Deltas get_attestation_component_deltas(SSZList<PendingAttestation> attestations) {
+  private Deltas getAttestationComponentDeltas(SSZList<PendingAttestation> attestations) {
     int validatorCount = state.getValidators().size();
     List<UnsignedLong> rewards = new ArrayList<>(validatorCount);
     List<UnsignedLong> penalties = new ArrayList<>(validatorCount);
@@ -124,26 +130,26 @@ public class RewardsAndPenaltiesCalculator {
       rewards.add(UnsignedLong.ZERO);
       penalties.add(UnsignedLong.ZERO);
     }
-    UnsignedLong total_balance = get_total_active_balance(state);
-    Set<Integer> unslashed_attesting_indices =
+    UnsignedLong totalBalance = get_total_active_balance(state);
+    Set<Integer> unslashedAttestingIndices =
         get_unslashed_attesting_indices(state, attestations, HashSet::new);
-    UnsignedLong attesting_balance = get_total_balance(state, unslashed_attesting_indices);
+    UnsignedLong attestingBalance = get_total_balance(state, unslashedAttestingIndices);
 
-    for (int index : get_eligible_validator_indices()) {
-      if (unslashed_attesting_indices.contains(index)) {
+    for (int index : getEligibleValidatorIndices()) {
+      if (unslashedAttestingIndices.contains(index)) {
         UnsignedLong increment = EFFECTIVE_BALANCE_INCREMENT;
 
         if (isInInactivityLeak) {
           // Since full base reward will be canceled out by inactivity penalty deltas,
           // optimal participation receives full base reward compensation here.
-          add(rewards, index, get_base_reward(index));
+          add(rewards, index, getBaseReward(index));
         } else {
-          UnsignedLong reward_numerator =
-              get_base_reward(index).times(attesting_balance.dividedBy(increment));
-          add(rewards, index, reward_numerator.dividedBy(total_balance.dividedBy(increment)));
+          UnsignedLong rewardNumerator =
+              getBaseReward(index).times(attestingBalance.dividedBy(increment));
+          add(rewards, index, rewardNumerator.dividedBy(totalBalance.dividedBy(increment)));
         }
       } else {
-        add(penalties, index, get_base_reward(index));
+        add(penalties, index, getBaseReward(index));
       }
     }
     return new Deltas(rewards, penalties);
@@ -155,9 +161,9 @@ public class RewardsAndPenaltiesCalculator {
    * @return
    */
   public Deltas getSourceDeltas() {
-    final SSZList<PendingAttestation> matching_source_attestations =
+    final SSZList<PendingAttestation> matchingSourceAttestations =
         matchingAttestations.getMatchingSourceAttestations(get_previous_epoch(state));
-    return get_attestation_component_deltas(matching_source_attestations);
+    return getAttestationComponentDeltas(matchingSourceAttestations);
   }
 
   /**
@@ -166,9 +172,9 @@ public class RewardsAndPenaltiesCalculator {
    * @return
    */
   public Deltas getTargetDeltas() {
-    final SSZList<PendingAttestation> matching_target_attestations =
+    final SSZList<PendingAttestation> matchingTargetAttestations =
         matchingAttestations.getMatchingTargetAttestations(get_previous_epoch(state));
-    return get_attestation_component_deltas(matching_target_attestations);
+    return getAttestationComponentDeltas(matchingTargetAttestations);
   }
 
   /**
@@ -177,9 +183,9 @@ public class RewardsAndPenaltiesCalculator {
    * @return
    */
   public Deltas getHeadDeltas() {
-    final SSZList<PendingAttestation> matching_head_attestations =
+    final SSZList<PendingAttestation> matchingHeadAttestations =
         matchingAttestations.getMatchingHeadAttestations(get_previous_epoch(state));
-    return get_attestation_component_deltas(matching_head_attestations);
+    return getAttestationComponentDeltas(matchingHeadAttestations);
   }
 
   /** Return proposer and inclusion delay micro-rewards/penalties for each validator */
@@ -189,11 +195,11 @@ public class RewardsAndPenaltiesCalculator {
     for (int i = 0; i < validatorCount; i++) {
       rewards.add(UnsignedLong.ZERO);
     }
-    SSZList<PendingAttestation> matching_source_attestations =
+    SSZList<PendingAttestation> matchingSourceAttestations =
         matchingAttestations.getMatchingSourceAttestations(get_previous_epoch(state));
-    for (int index : get_unslashed_attesting_indices(state, matching_source_attestations)) {
+    for (int index : get_unslashed_attesting_indices(state, matchingSourceAttestations)) {
       Optional<PendingAttestation> attestation =
-          matching_source_attestations.stream()
+          matchingSourceAttestations.stream()
               .filter(
                   a ->
                       get_attesting_indices(state, a.getData(), a.getAggregation_bits())
@@ -201,11 +207,10 @@ public class RewardsAndPenaltiesCalculator {
               .min(Comparator.comparing(PendingAttestation::getInclusion_delay));
       attestation.ifPresent(
           a -> {
-            add(rewards, toIntExact(a.getProposer_index().longValue()), get_proposer_reward(index));
+            add(rewards, toIntExact(a.getProposer_index().longValue()), getProposerReward(index));
 
-            UnsignedLong max_attester_reward =
-                get_base_reward(index).minus(get_proposer_reward(index));
-            add(rewards, index, max_attester_reward.dividedBy(a.getInclusion_delay()));
+            UnsignedLong maxAttesterReward = getBaseReward(index).minus(getProposerReward(index));
+            add(rewards, index, maxAttesterReward.dividedBy(a.getInclusion_delay()));
           });
     }
 
@@ -226,24 +231,24 @@ public class RewardsAndPenaltiesCalculator {
     }
 
     if (isInInactivityLeak) {
-      SSZList<PendingAttestation> matching_target_attestations =
+      SSZList<PendingAttestation> matchingTargetAttestations =
           matchingAttestations.getMatchingTargetAttestations(get_previous_epoch(state));
-      Set<Integer> matching_target_attesting_indices =
-          get_unslashed_attesting_indices(state, matching_target_attestations, HashSet::new);
-      for (int index : get_eligible_validator_indices()) {
+      Set<Integer> matchingTargetAttestingIndices =
+          get_unslashed_attesting_indices(state, matchingTargetAttestations, HashSet::new);
+      for (int index : getEligibleValidatorIndices()) {
         // If validator is performing optimally this cancels all rewards for a neutral balance
-        UnsignedLong base_reward = get_base_reward(index);
+        UnsignedLong baseReward = getBaseReward(index);
         add(
             penalties,
             index,
-            BASE_REWARDS_PER_EPOCH.times(base_reward).minus(get_proposer_reward(index)));
-        if (!matching_target_attesting_indices.contains(index)) {
-          final UnsignedLong effective_balance =
+            BASE_REWARDS_PER_EPOCH.times(baseReward).minus(getProposerReward(index)));
+        if (!matchingTargetAttestingIndices.contains(index)) {
+          final UnsignedLong effectiveBalance =
               state.getValidators().get(index).getEffective_balance();
           add(
               penalties,
               index,
-              effective_balance.times(get_finality_delay()).dividedBy(INACTIVITY_PENALTY_QUOTIENT));
+              effectiveBalance.times(getFinalityDelay()).dividedBy(INACTIVITY_PENALTY_QUOTIENT));
         }
       }
     }
