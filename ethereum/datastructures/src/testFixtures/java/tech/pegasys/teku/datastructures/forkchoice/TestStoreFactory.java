@@ -124,7 +124,6 @@ public class TestStoreFactory {
       this.block_states = block_states;
       this.checkpoint_states = checkpoint_states;
       this.votes = votes;
-      ;
     }
 
     @Override
