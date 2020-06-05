@@ -20,14 +20,14 @@ import java.util.function.IntFunction;
 /**
  * Thread-safe int indexed cache
  *
- * CAUTION: though the class is thread-safe it contains no synchronisation for performance reasons
- * When accessed concurrently the cache may result in extra cache misses and extra backing array
- * copying but this should be safe. In optimistic scenarios such overhead could be neglected
+ * <p>CAUTION: though the class is thread-safe it contains no synchronisation for performance
+ * reasons When accessed concurrently the cache may result in extra cache misses and extra backing
+ * array copying but this should be safe. In optimistic scenarios such overhead could be neglected
  *
- * Modify this class carefully to not violate thread safety!
+ * <p>Modify this class carefully to not violate thread safety!
  */
 public final class ArrayIntCache<V> implements IntCache<V> {
-  private final static int DEFAULT_INITIAL_CACHE_SIZE = 16;
+  private static final int DEFAULT_INITIAL_CACHE_SIZE = 16;
   private volatile V[] values;
   private final int initSize;
 
