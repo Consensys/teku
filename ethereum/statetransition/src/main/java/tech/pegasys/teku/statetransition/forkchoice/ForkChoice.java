@@ -26,9 +26,9 @@ import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice implements FinalizedCheckpointChannel {
 
@@ -49,7 +49,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   public synchronized Bytes32 processHead() {
-    Store.Transaction transaction = recentChainData.startStoreTransaction();
+    StoreTransaction transaction = recentChainData.startStoreTransaction();
     Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(transaction);
     transaction.commit(() -> {}, "Failed to persist validator vote changes.");
     recentChainData.updateBestBlock(
@@ -63,7 +63,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   public synchronized BlockImportResult onBlock(final SignedBeaconBlock block) {
-    Store.Transaction transaction = recentChainData.startStoreTransaction();
+    StoreTransaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult result =
         on_block(transaction, block, stateTransition, protoArrayForkChoiceStrategy);
 

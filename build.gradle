@@ -585,7 +585,7 @@ def calculateVersion() {
 
 def getCheckedOutGitCommitHash() {
   def takeFromHash = 8
-  grgit.head().id.take(takeFromHash)
+  grgit ? grgit.head().id.take(takeFromHash) : 'UNKNOWN'
 }
 
 task jacocoRootReport(type: JacocoReport) {

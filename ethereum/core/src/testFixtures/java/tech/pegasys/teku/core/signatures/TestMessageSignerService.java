@@ -52,6 +52,11 @@ public class TestMessageSignerService implements MessageSignerService {
     return sign(signingRoot);
   }
 
+  @Override
+  public SafeFuture<BLSSignature> signVoluntaryExit(final Bytes signingRoot) {
+    return sign(signingRoot);
+  }
+
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
     return SafeFuture.completedFuture(BLS.sign(blsKeyPair.getSecretKey(), signingRoot));
   }
