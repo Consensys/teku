@@ -44,6 +44,8 @@ public interface ReadOnlyStore {
    */
   UnsignedLong getLatestFinalizedBlockSlot();
 
+  SignedBlockAndState getLatestFinalizedBlockAndState();
+
   Checkpoint getBestJustifiedCheckpoint();
 
   BeaconBlock getBlock(Bytes32 blockRoot);

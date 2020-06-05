@@ -158,6 +158,13 @@ public class TestStoreFactory {
     }
 
     @Override
+    public SignedBlockAndState getLatestFinalizedBlockAndState() {
+      final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
+      final BeaconState state = getBlockState(finalized_checkpoint.getRoot());
+      return new SignedBlockAndState(block, state);
+    }
+
+    @Override
     public Checkpoint getBestJustifiedCheckpoint() {
       return best_justified_checkpoint;
     }

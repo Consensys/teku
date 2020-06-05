@@ -140,6 +140,8 @@ class StoreTransactionUpdates {
         && currentBlock.getSlot().compareTo(prevFinalizedCheckpoint.getBlockSlot()) > 0) {
       finalizedChainData.put(currentBlock.getRoot(), currentBlock);
       oldestFinalizedBlock = currentBlock;
+      // TODO - optimize state lookup.  We should walk from older slots to newer
+      //   in order to avoid expensive state calculations
       currentBlock = tx.getBlockAndState(currentBlock.getParentRoot()).orElse(null);
     }
 
@@ -218,30 +220,34 @@ class StoreTransactionUpdates {
     tx.time.ifPresent(value -> store.time = value);
     tx.genesis_time.ifPresent(value -> store.genesis_time = value);
     tx.justified_checkpoint.ifPresent(value -> store.justified_checkpoint = value);
-    tx.finalized_checkpoint.ifPresent(value -> store.finalized_checkpoint = value);
+    newFinalizedCheckpoint.ifPresent(value -> store.finalized_checkpoint = value.getCheckpoint());
     tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);
     store.blocks.putAll(hotBlocks);
     store.block_states.putAll(hotStates);
     store.checkpoint_states.putAll(checkpointStates);
     store.votes.putAll(tx.votes);
+    newFinalizedCheckpoint.ifPresent(
+        value -> {
+          final SignedBeaconBlock finalizedBlock = value.getBlock();
+          final BeaconState finalizedState = tx.getBlockState(value.getRoot());
+          store.finalizedBlockAndState = new SignedBlockAndState(finalizedBlock, finalizedState);
+        });
+
     // Track roots by slot
     indexBlockRootsBySlot(store.rootsBySlotLookup, hotBlocks.values());
 
-    // Prune old data if we updated our finalized epoch
-    if (newFinalizedCheckpoint.isPresent()) {
-      // Prune stale checkpoint states
-      staleCheckpointStates.forEach(store.checkpoint_states::remove);
-      // Prune blocks and states
-      prunedHotBlockRoots.forEach(
-          (slot, roots) -> {
-            roots.forEach(
-                (root) -> {
-                  store.blocks.remove(root);
-                  store.block_states.remove(root);
-                  removeBlockRootFromSlotIndex(store.rootsBySlotLookup, slot, root);
-                });
-          });
-    }
+    // Prune stale checkpoint states
+    staleCheckpointStates.forEach(store.checkpoint_states::remove);
+    // Prune blocks and states
+    prunedHotBlockRoots.forEach(
+        (slot, roots) -> {
+          roots.forEach(
+              (root) -> {
+                store.blocks.remove(root);
+                store.block_states.remove(root);
+                removeBlockRootFromSlotIndex(store.rootsBySlotLookup, slot, root);
+              });
+        });
   }
 
   private Set<Bytes32> getPrunedRoots() {
