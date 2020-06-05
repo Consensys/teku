@@ -35,6 +35,11 @@ import tech.pegasys.teku.util.config.Constants;
 public class TestStoreFactory {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
+  public ReadOnlyStore createGenesisStore() {
+    final BeaconState genesisStore = createRandomGenesisState();
+    return getForkChoiceStore(StoreImpl::new, genesisStore);
+  }
+
   public MutableStore createMutableGenesisStore() {
     final BeaconState genesisStore = createRandomGenesisState();
     return getForkChoiceStore(MutableStoreImpl::new, genesisStore);
