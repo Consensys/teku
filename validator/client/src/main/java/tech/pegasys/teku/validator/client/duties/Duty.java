@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client.duties;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface Duty {
-  SafeFuture<?> performDuty();
+  SafeFuture<DutyResult> performDuty();
 
-  String describe();
+  String getProducedType();
 }

@@ -76,7 +76,8 @@ public class BlockFactory {
     }
 
     // Collect attestations to include
-    SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(newSlot);
+    final BeaconState blockSlotState = stateTransition.process_slots(previousState, newSlot);
+    SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(blockSlotState);
     // Collect slashing to include
     final SSZList<ProposerSlashing> proposerSlashings =
         BeaconBlockBodyLists.createProposerSlashings();
@@ -88,9 +89,9 @@ public class BlockFactory {
         BeaconBlockBodyLists.createVoluntaryExits();
 
     // Collect deposits
-    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState);
-
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
+    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
+
     final Bytes32 parentRoot = previousBlock.hash_tree_root();
 
     return blockCreator

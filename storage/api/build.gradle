@@ -1,0 +1,5 @@
+dependencies {
+    implementation project(':util')
+
+    implementation 'org.apache.tuweni:tuweni-bytes'
+}

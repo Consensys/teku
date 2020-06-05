@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.networking.eth2.gossip.AttestationTopicSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
@@ -69,6 +71,7 @@ class ValidatorApiHandlerTest {
   private final StateTransition stateTransition = mock(StateTransition.class);
   private final BlockFactory blockFactory = mock(BlockFactory.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
   private final EventBus eventBus = mock(EventBus.class);
@@ -80,6 +83,7 @@ class ValidatorApiHandlerTest {
           stateTransition,
           blockFactory,
           attestationPool,
+          attestationManager,
           attestationTopicSubscriptions,
           eventBus);
 
@@ -296,7 +300,8 @@ class ValidatorApiHandlerTest {
   public void createAggregate_shouldReturnAggregateFromAttestationPool() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
-    when(attestationPool.createAggregateFor(attestationData)).thenReturn(aggregate);
+    when(attestationPool.createAggregateFor(attestationData))
+        .thenReturn(aggregate.map(ValidateableAttestation::fromSingle));
 
     assertThat(validatorApiHandler.createAggregate(attestationData))
         .isCompletedWithValue(aggregate);
@@ -333,8 +338,7 @@ class ValidatorApiHandlerTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationPool).add(attestation);
-    verify(eventBus).post(attestation);
+    verify(attestationManager).onAttestation(ValidateableAttestation.fromSingle(attestation));
   }
 
   @Test
@@ -351,8 +355,8 @@ class ValidatorApiHandlerTest {
         dataStructureUtil.randomSignedAggregateAndProof();
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
-    verify(attestationPool).add(aggregateAndProof.getMessage().getAggregate());
-    verify(eventBus).post(aggregateAndProof);
+    verify(attestationManager)
+        .onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof));
   }
 
   private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(

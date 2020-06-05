@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 
@@ -37,9 +38,9 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
  * <p>Note that the resulting aggregate will be invalid if attestations with different
  * AttestationData are added.
  */
-class MatchingDataAttestationGroup implements Iterable<Attestation> {
+class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> {
 
-  private final NavigableMap<Integer, Set<Attestation>> attestationsByValidatorCount =
+  private final NavigableMap<Integer, Set<ValidateableAttestation>> attestationsByValidatorCount =
       new TreeMap<>(Comparator.reverseOrder()); // Most validators first
   private final AttestationData attestationData;
 
@@ -57,9 +58,11 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
    *
    * @param attestation the attestation to add
    */
-  public void add(final Attestation attestation) {
+  public void add(final ValidateableAttestation attestation) {
     attestationsByValidatorCount
-        .computeIfAbsent(attestation.getAggregation_bits().getBitCount(), count -> new HashSet<>())
+        .computeIfAbsent(
+            attestation.getAttestation().getAggregation_bits().getBitCount(),
+            count -> new HashSet<>())
         .add(attestation);
   }
 
@@ -74,11 +77,11 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
    * @return an iterator including attestations for every validator included in this group.
    */
   @Override
-  public Iterator<Attestation> iterator() {
+  public Iterator<ValidateableAttestation> iterator() {
     return new AggregatingIterator();
   }
 
-  public Stream<Attestation> stream() {
+  public Stream<ValidateableAttestation> stream() {
     return StreamSupport.stream(spliterator(), false);
   }
 
@@ -101,20 +104,23 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
    * @param attestation the attestation to logically remove from the pool.
    */
   public void remove(final Attestation attestation) {
-    final Collection<Set<Attestation>> attestationSets = attestationsByValidatorCount.values();
-    for (Iterator<Set<Attestation>> i = attestationSets.iterator(); i.hasNext(); ) {
-      final Set<Attestation> candidates = i.next();
+    final Collection<Set<ValidateableAttestation>> attestationSets =
+        attestationsByValidatorCount.values();
+    for (Iterator<Set<ValidateableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
+      final Set<ValidateableAttestation> candidates = i.next();
       candidates.removeIf(
           candidate ->
-              attestation.getAggregation_bits().isSuperSetOf(candidate.getAggregation_bits()));
+              attestation
+                  .getAggregation_bits()
+                  .isSuperSetOf(candidate.getAttestation().getAggregation_bits()));
       if (candidates.isEmpty()) {
         i.remove();
       }
     }
   }
 
-  private class AggregatingIterator implements Iterator<Attestation> {
-    private final Set<Attestation> includedAttestations = new HashSet<>();
+  private class AggregatingIterator implements Iterator<ValidateableAttestation> {
+    private final Set<ValidateableAttestation> includedAttestations = new HashSet<>();
 
     @Override
     public boolean hasNext() {
@@ -122,7 +128,7 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
     }
 
     @Override
-    public Attestation next() {
+    public ValidateableAttestation next() {
       final AggregateAttestationBuilder builder = new AggregateAttestationBuilder(attestationData);
       streamRemainingAttestations()
           .forEach(
@@ -137,7 +143,7 @@ class MatchingDataAttestationGroup implements Iterable<Attestation> {
       return builder.buildAggregate();
     }
 
-    public Stream<Attestation> streamRemainingAttestations() {
+    public Stream<ValidateableAttestation> streamRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(candidate -> !includedAttestations.contains(candidate));

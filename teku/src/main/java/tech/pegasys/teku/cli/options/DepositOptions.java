@@ -33,12 +33,14 @@ public class DepositOptions {
   private String eth1Endpoint = null;
 
   @Option(
-      names = {"--eth1-enabled"},
+      hidden = true,
+      names = {"--Xeth1-deposits-from-storage-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Whether to connect to the ETH1 chain",
       fallbackValue = "true",
+      description =
+          "On startup, use eth1 deposits from storage before loading from the remote endpoint.",
       arity = "0..1")
-  private boolean eth1Enabled = true;
+  private boolean eth1DepositsFromStorageEnabled = false;
 
   public Eth1Address getEth1DepositContractAddress() {
     return eth1DepositContractAddress;
@@ -48,7 +50,7 @@ public class DepositOptions {
     return eth1Endpoint;
   }
 
-  public boolean isEth1Enabled() {
-    return eth1Enabled;
+  public boolean isEth1DepositsFromStorageEnabled() {
+    return eth1DepositsFromStorageEnabled;
   }
 }

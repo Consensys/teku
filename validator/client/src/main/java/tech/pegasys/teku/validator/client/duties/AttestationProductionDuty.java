@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
 
 import com.google.common.primitives.UnsignedLong;
@@ -68,29 +69,29 @@ public class AttestationProductionDuty implements Duty {
   }
 
   @Override
-  public SafeFuture<?> performDuty() {
+  public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating attestations at slot {}", slot);
     if (validatorsByCommitteeIndex.isEmpty()) {
-      return SafeFuture.COMPLETE;
+      return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
     return forkProvider.getForkInfo().thenCompose(this::produceAttestations);
   }
 
   @Override
-  public String describe() {
-    return "Attestation production for slot " + slot;
+  public String getProducedType() {
+    return "attestation";
   }
 
-  private SafeFuture<Void> produceAttestations(final ForkInfo forkInfo) {
-    return SafeFuture.allOf(
+  private SafeFuture<DutyResult> produceAttestations(final ForkInfo forkInfo) {
+    return DutyResult.combine(
         validatorsByCommitteeIndex.entrySet().stream()
             .map(
                 entry ->
                     produceAttestationsForCommittee(forkInfo, entry.getKey(), entry.getValue()))
-            .toArray(SafeFuture[]::new));
+            .collect(toList()));
   }
 
-  private SafeFuture<Void> produceAttestationsForCommittee(
+  private SafeFuture<DutyResult> produceAttestationsForCommittee(
       final ForkInfo forkInfo, final int committeeIndex, final Committee committee) {
     final SafeFuture<Optional<Attestation>> unsignedAttestationFuture =
         validatorApiChannel.createUnsignedAttestation(slot, committeeIndex);
@@ -111,13 +112,14 @@ public class AttestationProductionDuty implements Duty {
                     }));
   }
 
-  private SafeFuture<Void> signAttestationsForCommittee(
+  private SafeFuture<DutyResult> signAttestationsForCommittee(
       final ForkInfo forkInfo, final Committee validators, final Attestation attestation) {
-    return validators.forEach(
-        validator -> signAttestationForValidator(forkInfo, attestation, validator));
+    return DutyResult.combine(
+        validators.forEach(
+            validator -> signAttestationForValidator(forkInfo, attestation, validator)));
   }
 
-  private SafeFuture<Void> signAttestationForValidator(
+  private SafeFuture<DutyResult> signAttestationForValidator(
       final ForkInfo forkInfo,
       final Attestation attestation,
       final ValidatorWithCommitteePosition validator) {
@@ -125,7 +127,8 @@ public class AttestationProductionDuty implements Duty {
         .getSigner()
         .signAttestationData(attestation.getData(), forkInfo)
         .thenApply(signature -> createSignedAttestation(attestation, validator, signature))
-        .thenAccept(validatorApiChannel::sendSignedAttestation);
+        .thenAccept(validatorApiChannel::sendSignedAttestation)
+        .thenApply(__ -> DutyResult.success(attestation.getData().getBeacon_block_root()));
   }
 
   private Attestation createSignedAttestation(
@@ -145,9 +148,9 @@ public class AttestationProductionDuty implements Duty {
       validators.add(new ValidatorWithCommitteePosition(validator, committeePosition));
     }
 
-    public synchronized SafeFuture<Void> forEach(
-        final Function<ValidatorWithCommitteePosition, SafeFuture<Void>> action) {
-      return SafeFuture.allOf(validators.stream().map(action).toArray(SafeFuture[]::new));
+    public synchronized <T> List<SafeFuture<T>> forEach(
+        final Function<ValidatorWithCommitteePosition, SafeFuture<T>> action) {
+      return validators.stream().map(action).collect(toList());
     }
   }
 

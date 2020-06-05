@@ -49,8 +49,10 @@ public class TekuConfigurationBuilder {
   private int validatorExternalSignerTimeout;
   private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
+  private boolean eth1DepositsFromStorageEnabled;
   private boolean logColorEnabled;
   private boolean logIncludeEventsEnabled;
+  private boolean logIncludeValidatorDutiesEnabled;
   private LoggingDestination logDestination;
   private String logFile;
   private String logFileNamePattern;
@@ -72,7 +74,6 @@ public class TekuConfigurationBuilder {
   private String restApiInterface;
   private List<String> restApiHostWhitelist;
   private NetworkDefinition network;
-  private boolean eth1Enabled;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -218,11 +219,6 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setEth1Enabled(final boolean eth1Enabled) {
-    this.eth1Enabled = eth1Enabled;
-    return this;
-  }
-
   public TekuConfigurationBuilder setEth1DepositContractAddress(
       final Eth1Address eth1DepositContractAddress) {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
@@ -234,6 +230,12 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setEth1DepositsFromStorageEnabled(
+      final boolean eth1DepositsFromStorageEnabled) {
+    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
+    return this;
+  }
+
   public TekuConfigurationBuilder setLogColorEnabled(final boolean logColorEnabled) {
     this.logColorEnabled = logColorEnabled;
     return this;
@@ -242,6 +244,12 @@ public class TekuConfigurationBuilder {
   public TekuConfigurationBuilder setLogIncludeEventsEnabled(
       final boolean logIncludeEventsEnabled) {
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setLogIncludeValidatorDutiesEnabled(
+      final boolean logIncludeValidatorDutiesEnabled) {
+    this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
     return this;
   }
 
@@ -401,11 +409,12 @@ public class TekuConfigurationBuilder {
         validatorExternalSignerPublicKeys,
         validatorExternalSignerUrl,
         validatorExternalSignerTimeout,
-        eth1Enabled,
         eth1DepositContractAddress,
         eth1Endpoint,
+        eth1DepositsFromStorageEnabled,
         logColorEnabled,
         logIncludeEventsEnabled,
+        logIncludeValidatorDutiesEnabled,
         logDestination,
         logFile,
         logFileNamePattern,

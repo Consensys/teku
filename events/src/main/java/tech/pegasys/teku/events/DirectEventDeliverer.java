@@ -48,10 +48,13 @@ class DirectEventDeliverer<T> extends EventDeliverer<T> {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   protected void deliverTo(final T subscriber, final Method method, final Object[] args) {
     // The response will be null as the method is void so we can just ignore the result.
-    executeMethod(subscriber, method, args);
+    final SafeFuture<Object> result = executeMethod(subscriber, method, args);
+    if (result != null) {
+      result.finish(
+          () -> {}, error -> exceptionHandler.handleException(error, subscriber, method, args));
+    }
   }
 
   @Override
@@ -67,12 +70,10 @@ class DirectEventDeliverer<T> extends EventDeliverer<T> {
       return (SafeFuture<X>) method.invoke(subscriber, args);
     } catch (IllegalAccessException e) {
       incrementCounter(failedEventCounter, subscriber, method);
-      exceptionHandler.handleException(e, subscriber, method, args);
       return SafeFuture.failedFuture(e);
     } catch (InvocationTargetException e) {
       incrementCounter(failedEventCounter, subscriber, method);
-      exceptionHandler.handleException(e.getTargetException(), subscriber, method, args);
-      return SafeFuture.failedFuture(e);
+      return SafeFuture.failedFuture(e.getTargetException());
     } finally {
       incrementCounter(consumedEventCounter, subscriber, method);
     }

@@ -20,17 +20,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
 import com.google.common.primitives.UnsignedLong;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
-import io.reactivex.subjects.PublishSubject;
 import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
+import org.mockito.Mockito;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -43,23 +42,17 @@ public class DepositProcessingControllerTest {
   private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
   private final DepositFetcher depositFetcher = mock(DepositFetcher.class);
   private final Eth1BlockFetcher eth1BlockFetcher = mock(Eth1BlockFetcher.class);
+  private final Eth1HeadTracker headTracker = Mockito.mock(Eth1HeadTracker.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DepositProcessingController depositProcessingController =
       new DepositProcessingController(
-          eth1Provider, eth1EventsChannel, asyncRunner, depositFetcher, eth1BlockFetcher);
-  private final PublishSubject<EthBlock.Block> blockPublisher = mockFlowablePublisher();
-
-  @Test
-  void restartOnSubscriptionFailure() {
-    blockPublisher.onError(new RuntimeException("Nope"));
-    depositProcessingController.startSubscription(BigInteger.ONE);
-    verify(eth1Provider).getLatestBlockFlowable();
-
-    asyncRunner.executeQueuedActions();
-
-    verify(eth1Provider, times(2)).getLatestBlockFlowable();
-  }
+          eth1Provider,
+          eth1EventsChannel,
+          asyncRunner,
+          depositFetcher,
+          eth1BlockFetcher,
+          headTracker);
 
   @Test
   void doesAnotherRequestWhenTheLatestCanonicalBlockGetsUpdatedDuringCurrentRequest() {
@@ -177,23 +170,16 @@ public class DepositProcessingControllerTest {
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
     when(block.getHash()).thenReturn(blockHash);
-    when(eth1Provider.getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(blockNumber)))
+    when(eth1Provider.getGuaranteedEth1Block(UnsignedLong.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(block));
   }
 
   private void pushLatestCanonicalBlockWithNumber(long latestBlockNumber) {
-    EthBlock.Block block = mock(EthBlock.Block.class);
-    when(block.getNumber())
-        .thenReturn(
-            BigInteger.valueOf(latestBlockNumber).add(ETH1_FOLLOW_DISTANCE.bigIntegerValue()));
-    blockPublisher.onNext(block);
-  }
-
-  private PublishSubject<EthBlock.Block> mockFlowablePublisher() {
-    PublishSubject<EthBlock.Block> ps = PublishSubject.create();
-    Flowable<EthBlock.Block> blockFlowable = ps.toFlowable(BackpressureStrategy.LATEST);
-    when(eth1Provider.getLatestBlockFlowable()).thenReturn(blockFlowable);
-    return ps;
+    final ArgumentCaptor<HeadUpdatedSubscriber> captor =
+        ArgumentCaptor.forClass(HeadUpdatedSubscriber.class);
+    verify(headTracker).subscribe(captor.capture());
+    final HeadUpdatedSubscriber subscriber = captor.getValue();
+    subscriber.onHeadUpdated(UnsignedLong.valueOf(latestBlockNumber));
   }
 
   private ArgumentMatcher<MinGenesisTimeBlockEvent> isEvent(

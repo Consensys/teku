@@ -15,12 +15,12 @@ package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import static tech.pegasys.teku.util.async.FutureUtil.ignoreFuture;
 
+import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
-import io.libp2p.core.multistream.Mode;
 import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
-import io.libp2p.core.multistream.ProtocolMatcher;
+import io.libp2p.core.multistream.ProtocolDescriptor;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -76,15 +76,15 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         .thenAccept(
             __ ->
                 streamFuture.completeExceptionally(
-                    new StreamTimeoutException("Timed out waiting to initialize stream")))
+                    new StreamTimeoutException(
+                        "Timed out waiting to initialize stream for method " + rpcMethod.getId())))
         .reportExceptions();
 
     // Try to initiate stream
     SafeFuture.of(
             connection
                 .muxerSession()
-                .createStream(
-                    Multistream.create(this.toInitiator(rpcMethod.getId())).toStreamHandler())
+                .createStream(Multistream.create(this).toStreamHandler())
                 .getController())
         .thenCompose(
             ctr -> {
@@ -112,14 +112,8 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
   @NotNull
   @Override
-  public String getAnnounce() {
-    return rpcMethod.getId();
-  }
-
-  @NotNull
-  @Override
-  public ProtocolMatcher getMatcher() {
-    return new ProtocolMatcher(Mode.STRICT, getAnnounce(), null);
+  public ProtocolDescriptor getProtocolDescriptor() {
+    return new ProtocolDescriptor(rpcMethod.getId());
   }
 
   @NotNull
@@ -209,7 +203,11 @@ public class RpcHandler implements ProtocolBinding<Controller> {
           .handle(
               (res, err) -> {
                 if (err != null) {
-                  LOG.error("Unhandled exception while processing rpc input", err);
+                  if (Throwables.getRootCause(err) instanceof StreamClosedException) {
+                    LOG.debug("Stream closed while processing rpc input", err);
+                  } else {
+                    LOG.error("Unhandled exception while processing rpc input", err);
+                  }
                 }
                 try {
                   inputStream.close();

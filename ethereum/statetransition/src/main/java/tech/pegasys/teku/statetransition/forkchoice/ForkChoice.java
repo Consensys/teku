@@ -20,16 +20,16 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice implements FinalizedCheckpointChannel {
 
@@ -50,7 +50,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   public synchronized Bytes32 processHead() {
-    Store.Transaction transaction = recentChainData.startStoreTransaction();
+    StoreTransaction transaction = recentChainData.startStoreTransaction();
     Bytes32 headBlockRoot = protoArrayForkChoiceStrategy.findHead(transaction);
     transaction.commit(() -> {}, "Failed to persist validator vote changes.");
     BeaconBlock headBlock = recentChainData.getStore().getBlock(headBlockRoot);
@@ -59,7 +59,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   public synchronized BlockImportResult onBlock(final SignedBeaconBlock block) {
-    Store.Transaction transaction = recentChainData.startStoreTransaction();
+    StoreTransaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult result = on_block(transaction, block, stateTransition);
 
     if (!result.isSuccessful()) {
@@ -72,7 +72,7 @@ public class ForkChoice implements FinalizedCheckpointChannel {
   }
 
   public AttestationProcessingResult onAttestation(
-      final MutableStore store, final DelayableAttestation attestation) {
+      final MutableStore store, final ValidateableAttestation attestation) {
     return on_attestation(store, attestation, stateTransition, protoArrayForkChoiceStrategy);
   }
 

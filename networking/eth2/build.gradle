@@ -9,7 +9,9 @@ dependencies {
   implementation project(':logging')
   implementation project(':ssz')
   implementation project(':storage')
+  implementation project(':storage:api')
   implementation project(':util')
+  implementation project(':services:serviceutils')
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
@@ -41,6 +43,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation testFixtures(project(':events'))
   testFixturesImplementation testFixtures(project(':storage'))
+  testFixturesImplementation project(':services:serviceutils')
 
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
   testFixturesImplementation 'org.mockito:mockito-core'

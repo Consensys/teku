@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory;
@@ -23,6 +24,11 @@ import tech.pegasys.teku.util.Waiter;
 
 public class DiscoveryNetworkIntegrationTest {
   private final DiscoveryNetworkFactory discoveryNetworkFactory = new DiscoveryNetworkFactory();
+
+  @AfterEach
+  public void tearDown() {
+    discoveryNetworkFactory.stopAll();
+  }
 
   @Test
   public void shouldConnectToStaticPeers() throws Exception {

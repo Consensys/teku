@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
 import static java.lang.StrictMath.toIntExact;
+import static tech.pegasys.teku.core.BlockProcessorUtil.getVoteCount;
+import static tech.pegasys.teku.core.BlockProcessorUtil.isEnoughVotesToUpdateEth1Data;
 import static tech.pegasys.teku.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 
@@ -97,12 +100,22 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
 
-  public SSZList<Deposit> getDeposits(BeaconState state) {
-    UnsignedLong eth1DepositCount = state.getEth1_data().getDeposit_count();
+  public SSZList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
+    UnsignedLong eth1DepositCount;
+    if (isEnoughVotesToUpdateEth1Data(getVoteCount(state, eth1Data) + 1)) {
+      eth1DepositCount = eth1Data.getDeposit_count();
+    } else {
+      eth1DepositCount = state.getEth1_data().getDeposit_count();
+    }
 
-    UnsignedLong fromDepositIndex = state.getEth1_deposit_index();
+    UnsignedLong eth1DepositIndex = state.getEth1_deposit_index();
+
+    // We need to have all the deposits that can be included in the state available to ensure
+    // the generated proofs are valid
+    checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
+
     UnsignedLong latestDepositIndexWithMaxBlock =
-        fromDepositIndex.plus(UnsignedLong.valueOf(MAX_DEPOSITS));
+        eth1DepositIndex.plus(UnsignedLong.valueOf(MAX_DEPOSITS));
 
     UnsignedLong toDepositIndex =
         latestDepositIndexWithMaxBlock.compareTo(eth1DepositCount) > 0
@@ -110,9 +123,21 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
             : latestDepositIndexWithMaxBlock;
 
     return SSZList.createMutable(
-        getDepositsWithProof(fromDepositIndex, toDepositIndex, eth1DepositCount),
+        getDepositsWithProof(eth1DepositIndex, toDepositIndex, eth1DepositCount),
         MAX_DEPOSITS,
         Deposit.class);
+  }
+
+  private void checkRequiredDepositsAvailable(
+      final UnsignedLong eth1DepositCount, final UnsignedLong eth1DepositIndex) {
+    // Note that eth1_deposit_index in the state is actually actually the number of deposits
+    // included, so always one bigger than the index of the last included deposit,
+    // hence lastKey().plus(ONE).
+    final UnsignedLong maxPossibleResultingDepositIndex =
+        depositNavigableMap.isEmpty() ? eth1DepositIndex : depositNavigableMap.lastKey().plus(ONE);
+    if (maxPossibleResultingDepositIndex.compareTo(eth1DepositCount) < 0) {
+      throw new MissingDepositsException(maxPossibleResultingDepositIndex, eth1DepositCount);
+    }
   }
 
   public int getDepositMapSize() {

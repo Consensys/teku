@@ -39,11 +39,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
+import tech.pegasys.teku.core.BlockAttestationDataValidator;
 import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.DelayableAttestation;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -57,14 +58,16 @@ import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
+import tech.pegasys.teku.statetransition.util.FutureItems;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -72,12 +75,10 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.teku.sync.AttestationManager;
-import tech.pegasys.teku.sync.BlockPropagationManager;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.sync.BlockManager;
 import tech.pegasys.teku.sync.DefaultSyncService;
 import tech.pegasys.teku.sync.FetchRecentBlocksService;
-import tech.pegasys.teku.sync.FutureItems;
-import tech.pegasys.teku.sync.PendingPool;
 import tech.pegasys.teku.sync.SyncManager;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
@@ -208,7 +209,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
-    initAttestationPropagationManager();
+    initAttestationManager();
     initP2PNetwork();
     initSyncManager();
     initSyncStateTracker();
@@ -282,6 +283,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             stateTransition,
             blockFactory,
             attestationPool,
+            attestationManager,
             attestationTopicSubscriber,
             eventBus);
     eventChannels
@@ -297,11 +299,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData));
   }
 
-  private void initAttestationPropagationManager() {
-    final PendingPool<DelayableAttestation> pendingAttestations =
+  private void initAttestationManager() {
+    final PendingPool<ValidateableAttestation> pendingAttestations =
         PendingPool.createForAttestations();
-    final FutureItems<DelayableAttestation> futureAttestations =
-        new FutureItems<>(DelayableAttestation::getEarliestSlotForForkChoiceProcessing);
+    final FutureItems<ValidateableAttestation> futureAttestations =
+        new FutureItems<>(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
     final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
         new ForkChoiceAttestationProcessor(recentChainData, forkChoice);
     attestationManager =
@@ -351,6 +353,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
+              .gossipedAttestationConsumer(attestationManager::onAttestation)
+              .processedAttestationSubscriptionProvider(
+                  attestationManager::subscribeToProcessedAttestations)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
@@ -377,7 +382,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool = new AggregatingAttestationPool();
+    attestationPool = new AggregatingAttestationPool(new BlockAttestationDataValidator());
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
   }
 
@@ -409,8 +414,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           new FutureItems<>(SignedBeaconBlock::getSlot);
       final FetchRecentBlocksService recentBlockFetcher =
           FetchRecentBlocksService.create(p2pNetwork, pendingBlocks);
-      BlockPropagationManager blockPropagationManager =
-          BlockPropagationManager.create(
+      BlockManager blockManager =
+          BlockManager.create(
               eventBus,
               pendingBlocks,
               futureBlocks,
@@ -418,9 +423,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               recentChainData,
               blockImporter);
       SyncManager syncManager = SyncManager.create(p2pNetwork, recentChainData, blockImporter);
-      syncService = new DefaultSyncService(blockPropagationManager, syncManager, recentChainData);
+      syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
       eventChannels
-          .subscribe(SlotEventsChannel.class, blockPropagationManager)
+          .subscribe(SlotEventsChannel.class, blockManager)
           .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     }
   }
@@ -455,7 +460,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
     final boolean nextSlotDue = isNextSlotDue(currentTime);
 
-    final Store.Transaction transaction = recentChainData.startStoreTransaction();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     on_tick(transaction, currentTime);
     transaction.commit().join();
 
@@ -505,7 +510,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       this.eventBus.post(new BroadcastAggregatesEvent(nodeSlot.getValue()));
       nodeSlot.inc();
     } catch (InterruptedException e) {
-      LOG.fatal("onTick: {}", e.toString(), e);
+      LOG.error("onTick: {}", e.toString(), e);
     }
   }
 

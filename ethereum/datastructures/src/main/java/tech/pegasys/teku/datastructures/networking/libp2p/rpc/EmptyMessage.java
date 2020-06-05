@@ -20,6 +20,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class EmptyMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
+  public static final EmptyMessage EMPTY_MESSAGE = new EmptyMessage();
 
   @Override
   public int getSSZFieldCount() {
