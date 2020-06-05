@@ -237,9 +237,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
-    new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem);
     eventChannels.subscribe(
-        SlotEventsChannel.class, new EpochMetrics(metricsSystem, recentChainData));
+        SlotEventsChannel.class, new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem));
   }
 
   public void initDepositProvider() {

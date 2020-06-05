@@ -16,7 +16,7 @@ package tech.pegasys.teku.datastructures.blocks;
 import com.google.common.primitives.UnsignedLong;
 
 public class NodeSlot {
-  private UnsignedLong value;
+  private volatile UnsignedLong value;
 
   public NodeSlot(UnsignedLong value) {
     this.value = value;
