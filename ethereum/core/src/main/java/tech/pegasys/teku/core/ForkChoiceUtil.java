@@ -335,7 +335,7 @@ public class ForkChoiceUtil {
     IndexedAttestation indexed_attestation;
     try {
       indexed_attestation = get_indexed_attestation(target_state, attestation);
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalArgumentException|IndexOutOfBoundsException e) {
       LOG.warn("on_attestation: Attestation is not valid: ", e);
       return Optional.empty();
     }
