@@ -76,4 +76,27 @@ class BLSTest {
 
     assertTrue(BLS.fastAggregateVerify(publicKeys, message, aggregatedSignature));
   }
+
+  @Test
+  void succeedsWhenPubkeyAndSignatureBothTheIdentityIsOK() {
+    // Public key is the point at infinity (the identity)
+    BLSPublicKey pubkey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes.fromHexString(
+                "0x"
+                    + "c0000000000000000000000000000000"
+                    + "00000000000000000000000000000000"
+                    + "00000000000000000000000000000000"));
+    // Signature key is the point at infinity (the identity)
+    BLSSignature signature =
+        BLSSignature.fromBytes(
+            Bytes.fromHexString(
+                "0x"
+                    + "c000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000000000000000000000000000000000000000000000000000000000000"
+                    + "0000000000000000000000000000000000000000000000000000000000000000"));
+    // Any message should verify
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    assertTrue(BLS.verify(pubkey, message, signature));
+  }
 }
