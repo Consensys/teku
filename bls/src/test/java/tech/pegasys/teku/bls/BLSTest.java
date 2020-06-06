@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
 class BLSTest {
@@ -75,5 +76,40 @@ class BLSTest {
     BLSSignature aggregatedSignature = BLS.aggregate(signatures);
 
     assertTrue(BLS.fastAggregateVerify(publicKeys, message, aggregatedSignature));
+  }
+
+  static final BLSPublicKey infinityG1 =
+      BLSPublicKey.fromBytesCompressed(
+          Bytes.fromHexString(
+              "0x"
+                  + "c0000000000000000000000000000000"
+                  + "00000000000000000000000000000000"
+                  + "00000000000000000000000000000000"));
+  static final BLSSignature infinityG2 =
+      BLSSignature.fromBytes(
+          Bytes.fromHexString(
+              "0x"
+                  + "c000000000000000000000000000000000000000000000000000000000000000"
+                  + "0000000000000000000000000000000000000000000000000000000000000000"
+                  + "0000000000000000000000000000000000000000000000000000000000000000"));
+  static final BLSSecretKey zeroSK = BLSSecretKey.fromBytes(Bytes32.ZERO);
+
+  @Test
+  void succeedsWhenPubkeyAndSignatureBothTheIdentityIsOK() {
+    // Any message should verify
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    assertTrue(BLS.verify(infinityG1, message, infinityG2));
+  }
+
+  @Test
+  void succeedsWhenZeroSecretKeyGivesInfinitePublicKey() {
+    assertEquals(infinityG1, new BLSPublicKey(zeroSK));
+  }
+
+  @Test
+  void succeedsWhenInfinitePublicKeyGivesInfiniteSignature() {
+    // Any message should result in the signature at infinity
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    assertEquals(infinityG2, BLS.sign(zeroSK, message));
   }
 }
