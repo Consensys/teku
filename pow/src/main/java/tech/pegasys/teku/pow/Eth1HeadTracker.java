@@ -56,7 +56,8 @@ public class Eth1HeadTracker {
         .thenAccept(this::onLatestBlockHead)
         .exceptionally(
             error -> {
-              LOG.warn("Failed to get latest ETH1 chain head. Will retry.", error);
+              LOG.warn("Failed to get latest ETH1 chain head. Will retry.");
+              LOG.debug("Failed to get latest ETH1 chain head. Will retry.", error);
               return null;
             })
         .always(

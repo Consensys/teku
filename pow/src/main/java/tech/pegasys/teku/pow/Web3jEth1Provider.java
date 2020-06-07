@@ -58,7 +58,8 @@ public class Web3jEth1Provider implements Eth1Provider {
     return getEth1Block(blockHash)
         .exceptionallyCompose(
             (err) -> {
-              LOG.warn("Retrying Eth1 request for block: {}", blockHash, err);
+              LOG.warn("Retrying Eth1 request for block: {}", blockHash);
+              LOG.debug("Retrying Eth1 request for block: {}", blockHash, err);
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
@@ -71,7 +72,8 @@ public class Web3jEth1Provider implements Eth1Provider {
     return getEth1Block(blockNumber)
         .exceptionallyCompose(
             (err) -> {
-              LOG.warn("Retrying Eth1 request for block: {}", blockNumber, err);
+              LOG.warn("Retrying Eth1 request for block: {}", blockNumber);
+              LOG.debug("Retrying Eth1 request for block: {}", blockNumber, err);
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)

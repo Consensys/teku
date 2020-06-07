@@ -97,6 +97,10 @@ public class DepositFetcher {
               LOG.warn(
                   "Failed to request deposit events for block numbers in the range ({}, {}). Retrying.",
                   fromBlockNumber,
+                  toBlockNumber);
+              LOG.debug(
+                  "Failed to request deposit events for block numbers in the range ({}, {}). Retrying.",
+                  fromBlockNumber,
                   toBlockNumber,
                   err);
 
