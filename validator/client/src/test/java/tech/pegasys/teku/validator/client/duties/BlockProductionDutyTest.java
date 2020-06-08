@@ -72,7 +72,7 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT.longValue());
     when(signer.createRandaoReveal(compute_epoch_at_slot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.empty()))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
 
@@ -100,7 +100,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     when(signer.createRandaoReveal(compute_epoch_at_slot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.empty()))
         .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
@@ -111,7 +111,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     when(signer.createRandaoReveal(compute_epoch_at_slot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.empty()))
         .thenReturn(completedFuture(Optional.empty()));
 
     performAndReportDuty();
@@ -128,7 +128,7 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT.longValue());
     when(signer.createRandaoReveal(compute_epoch_at_slot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.empty()))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(failedFuture(error));
 
