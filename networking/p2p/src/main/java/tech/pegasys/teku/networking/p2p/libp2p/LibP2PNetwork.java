@@ -42,6 +42,7 @@ import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Base64;
@@ -223,7 +224,15 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private Multiaddr getAdvertisedAddr(NetworkConfig config, final NodeId nodeId) {
     try {
-      final InetSocketAddress resolvedAddress = MultiaddrUtil.getResolvedInetSocketAddress(config);
+      final InetSocketAddress advertisedAddress =
+          new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort());
+      final InetSocketAddress resolvedAddress;
+      if (advertisedAddress.getAddress().isAnyLocalAddress()) {
+        resolvedAddress =
+            new InetSocketAddress(InetAddress.getLocalHost(), advertisedAddress.getPort());
+      } else {
+        resolvedAddress = advertisedAddress;
+      }
       return MultiaddrUtil.fromInetSocketAddress(resolvedAddress, nodeId);
     } catch (UnknownHostException err) {
       throw new RuntimeException(

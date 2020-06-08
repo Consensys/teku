@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
-import io.libp2p.core.multiformats.Multiaddr;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoverySystem;
 import org.ethereum.beacon.discovery.DiscoverySystemBuilder;
+import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
@@ -36,12 +34,9 @@ import tech.pegasys.teku.util.async.SafeFuture;
 public class DiscV5Service extends Service implements DiscoveryService {
 
   private final DiscoverySystem discoverySystem;
-  private final Multiaddr advertisedAddr;
 
-  private DiscV5Service(final DiscoverySystem discoverySystem, NetworkConfig config) {
+  private DiscV5Service(final DiscoverySystem discoverySystem) {
     this.discoverySystem = discoverySystem;
-    final byte[] nodeId = discoverySystem.getLocalNodeRecord().getNodeId().toArray();
-    this.advertisedAddr = getAdvertisedAddr(config, nodeId);
   }
 
   public static DiscoveryService create(NetworkConfig p2pConfig) {
@@ -62,7 +57,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
                     .address(advertisedAddress, advertisedPort)
                     .build())
             .build();
-    return new DiscV5Service(discoveryManager, p2pConfig);
+    return new DiscV5Service(discoveryManager);
   }
 
   @Override
@@ -93,17 +88,17 @@ public class DiscV5Service extends Service implements DiscoveryService {
 
   @Override
   public Optional<String> getDiscoveryAddress() {
-    return Optional.of(advertisedAddr.toString());
-  }
-
-  private Multiaddr getAdvertisedAddr(NetworkConfig config, final byte[] nodeId) {
-    try {
-      final InetSocketAddress resolvedAddress = MultiaddrUtil.getResolvedInetSocketAddress(config);
-      return MultiaddrUtil.fromInetSocketAddress(resolvedAddress, nodeId);
-    } catch (UnknownHostException err) {
-      throw new RuntimeException(
-          "Unable to start discovery node due to failed attempt at obtaining host address", err);
+    final NodeRecord nodeRecord = discoverySystem.getLocalNodeRecord();
+    if (nodeRecord.getUdpAddress().isEmpty()) {
+      return Optional.empty();
     }
+    final DiscoveryPeer discoveryPeer =
+        new DiscoveryPeer(
+            (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
+            nodeRecord.getUdpAddress().get(),
+            Optional.empty());
+
+    return Optional.of(MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString());
   }
 
   @Override
