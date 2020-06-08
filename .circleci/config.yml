@@ -308,7 +308,7 @@ jobs:
       - persist_to_workspace:
           root: ~/project
           paths:
-            - ./
+            - ./openapi.json
 
   publishAPIDoc:
     executor: node_executor
@@ -331,7 +331,7 @@ jobs:
           name: Install dependencies
           working_directory: ./docs
           command: |
-            npm install
+            npm ci
       - save_cache:
           paths:
             - ./docs/node_modules
@@ -344,12 +344,38 @@ jobs:
       - deploy:
           name: Commit and push doc changes
           command: |
-            git add docs
-            git commit -m "Automated update of JSON specs and version files" \
-                       -m "[skip ci] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
-                       -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
-            git push --set-upstream origin ${CIRCLE_BRANCH}
-            git push origin
+    - deploy:
+        name: Commit and push docs changes
+        command: |
+          # publishing happens by pushing files to gh-pages branch
+          # retrieve branch to publish to from CIrcle CI env vars and fallback on test-gh-pages
+          # if no var defined
+          [ -n "$BRANCH_OVERRIDE" ] && readonly BRANCH="$BRANCH_OVERRIDE" || readonly BRANCH='test-gh-pages'
+
+          # switch to the publishing branch
+          git checkout "$BRANCH"
+
+          # copy the content of the docs folder built on the previous job and attached
+          # using workspace on temp location
+          # cp with T option to override existing content, specially usefull for latest
+          cp -aT /tmp/workspace/docs/. .
+
+          # add a readme to make sure devs understand that this publishing branch is generated
+          # by CI (use template readme), mv replaces the current readme that is only for source dir
+          mv TARGET_README.md README.md
+
+          # add all new copied content of the workspace to git
+          git add .
+
+          # commit with infos on the triggering task and branch
+          # use [skip ci] to prevent CI from runnning on this branch as no CI is configured
+          git commit -m "Automated SDK documentation update" \
+                     -m "[ci skip] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
+                     -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
+
+          # push changes to the Github Pages publishing branch on origin repos
+          git push --set-upstream origin $BRANCH
+          git push origin
 
 workflows:
   version: 2
