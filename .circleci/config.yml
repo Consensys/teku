@@ -448,7 +448,9 @@ workflows:
       - publishAPIDoc:
           filters:
             branches:
-              only: master
+              only:
+                - master
+                - 1826-api-doc-on-CI # just to test the CI
             tags: # stable doc is published only on tags to prevent confusion on the doc site.
               only: /.*/
           requires:
