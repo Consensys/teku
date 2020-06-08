@@ -46,7 +46,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
       final int committeeIndex, final UnsignedLong aggregationSlot) {
     recentChainData
         .getBestState()
-        // Not point aggregating for historic slots and we can't calculate the subnet ID
+        // No point aggregating for historic slots and we can't calculate the subnet ID
         .filter(state -> state.getSlot().compareTo(aggregationSlot) <= 0)
         .ifPresent(
             state -> subscribeToCommitteeForAggregation(state, committeeIndex, aggregationSlot));
