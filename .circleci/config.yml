@@ -302,7 +302,7 @@ jobs:
             kill $TEKU_PID
             exit $EXIT_CODE
       - store_artifacts:
-          path: openapi.json
+          path: ./docs/openapi.json
       - store_artifacts:
           path: teku_output.log
       - persist_to_workspace:
