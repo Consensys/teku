@@ -20,8 +20,7 @@ public class Version {
   public final String version;
 
   @JsonCreator
-  public Version(
-      @JsonProperty("version") final String version) {
+  public Version(@JsonProperty("version") final String version) {
     this.version = version;
   }
 }

@@ -14,6 +14,11 @@
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import io.libp2p.core.multiformats.Multiaddr;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoverySystem;
 import org.ethereum.beacon.discovery.DiscoverySystemBuilder;
@@ -25,16 +30,8 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.util.async.SafeFuture;
-
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 public class DiscV5Service extends Service implements DiscoveryService {
 
@@ -45,11 +42,10 @@ public class DiscV5Service extends Service implements DiscoveryService {
     this.discoverySystem = discoverySystem;
     final byte[] nodeId = discoverySystem.getLocalNodeRecord().getNodeId().toArray();
     this.advertisedAddr = getAdvertisedAddr(config, nodeId);
-
   }
 
   public static DiscoveryService create(NetworkConfig p2pConfig) {
-    final Bytes privateKey =Bytes.wrap(p2pConfig.getPrivateKey().raw());
+    final Bytes privateKey = Bytes.wrap(p2pConfig.getPrivateKey().raw());
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenPort = p2pConfig.getListenPort();
     final String advertisedAddress = p2pConfig.getAdvertisedIp();

@@ -127,7 +127,10 @@ class BeaconRestApiTest {
 
   @Test
   public void ShouldHaveV1VersionEndpoint() {
-    verify(app).get(eq(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE), any(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.class));
+    verify(app)
+        .get(
+            eq(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE),
+            any(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.class));
   }
 
   @Test

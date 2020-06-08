@@ -20,8 +20,7 @@ public class VersionResponse {
   public final Version data;
 
   @JsonCreator
-  public VersionResponse(
-      @JsonProperty("data") final Version data) {
+  public VersionResponse(@JsonProperty("data") final Version data) {
     this.data = data;
   }
 }

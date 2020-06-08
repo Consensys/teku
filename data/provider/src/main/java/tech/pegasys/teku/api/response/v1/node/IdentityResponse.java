@@ -20,7 +20,7 @@ public class IdentityResponse {
   public final Identity data;
 
   @JsonCreator
-  public IdentityResponse(@JsonProperty("data")final Identity data) {
+  public IdentityResponse(@JsonProperty("data") final Identity data) {
     this.data = data;
   }
 }

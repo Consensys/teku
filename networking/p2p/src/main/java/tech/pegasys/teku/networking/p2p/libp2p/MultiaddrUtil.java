@@ -18,12 +18,11 @@ import static io.libp2p.crypto.keys.Secp256k1Kt.unmarshalSecp256k1PublicKey;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
+import io.libp2p.etc.encode.Base58;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-
-import io.libp2p.etc.encode.Base58;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -49,7 +48,8 @@ public class MultiaddrUtil {
     return addPeerId(fromInetSocketAddress(address), nodeId);
   }
 
-  public static InetSocketAddress getResolvedInetSocketAddress(NetworkConfig config) throws UnknownHostException {
+  public static InetSocketAddress getResolvedInetSocketAddress(NetworkConfig config)
+      throws UnknownHostException {
     final InetSocketAddress advertisedAddress =
         new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort());
     final InetSocketAddress resolvedAddress;
