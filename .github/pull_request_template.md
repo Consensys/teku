@@ -6,3 +6,7 @@
 ## Fixed Issue(s)
 <!-- Please link to fixed issue(s) here using format: fixes #<issue number> -->
 <!-- Example: "fixes #2" -->
+
+## Documentation
+
+- [ ] No documentation changes required or `documentation` label has been added to the PR.
