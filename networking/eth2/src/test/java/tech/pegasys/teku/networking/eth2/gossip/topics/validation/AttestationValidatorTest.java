@@ -108,7 +108,7 @@ class AttestationValidatorTest {
     final Attestation invalidAttestation =
         new Attestation(
             invalidAggregationBits, attestation.getData(), attestation.getAggregate_signature());
-    assertThat(validate(invalidAttestation)).isEqualTo(IGNORE);
+    assertThat(validate(invalidAttestation)).isEqualTo(REJECT);
   }
 
   @Test
@@ -172,7 +172,7 @@ class AttestationValidatorTest {
                     recentChainData.getBestBlockAndState().orElseThrow()))
             .get(0);
 
-    assertThat(validate(attestation)).isEqualTo(IGNORE);
+    assertThat(validate(attestation)).isEqualTo(REJECT);
   }
 
   @Test

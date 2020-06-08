@@ -25,6 +25,7 @@ import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorM
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
 import com.google.common.eventbus.EventBus;
@@ -290,7 +291,7 @@ class SignedAggregateAndProofValidatorTest {
         .isFalse();
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
-        .isEqualTo(IGNORE);
+        .isEqualTo(REJECT);
   }
 
   @Test
