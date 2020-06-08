@@ -22,4 +22,3 @@ if(tag){
   versions['stable'] = { spec: tag, source: tag };
   fs.writeFileSync(versionsJSONFile, JSON.stringify(versions,null,1));
 }
-  
