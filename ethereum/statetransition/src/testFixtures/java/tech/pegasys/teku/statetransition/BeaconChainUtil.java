@@ -53,16 +53,18 @@ public class BeaconChainUtil {
   private final boolean signDeposits;
 
   private BeaconChainUtil(
-      final List<BLSKeyPair> validatorKeys,
-      final RecentChainData recentChainData,
-      boolean signDeposits) {
+          final List<BLSKeyPair> validatorKeys,
+          final RecentChainData recentChainData,
+          final ForkChoice forkChoice,
+          boolean signDeposits) {
     this.validatorKeys = validatorKeys;
     this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
-    this.forkChoice = new ForkChoice(recentChainData, new StateTransition());
+    this.forkChoice = forkChoice;
   }
 
-  public static BeaconChainUtil create(
+
+    public static BeaconChainUtil create(
       final int validatorCount, final RecentChainData storageClient) {
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
@@ -71,14 +73,22 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-    return create(storageClient, validatorKeys, true);
+    return create(storageClient, validatorKeys, new ForkChoice(storageClient, new StateTransition()),true);
+  }
+
+  public static BeaconChainUtil create(
+          final RecentChainData storageClient,
+          final List<BLSKeyPair> validatorKeys,
+          final boolean signDeposits) {
+    return new BeaconChainUtil(validatorKeys, storageClient, new ForkChoice(storageClient, new StateTransition()), signDeposits);
   }
 
   public static BeaconChainUtil create(
       final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
+      final ForkChoice forkChoice,
       final boolean signDeposits) {
-    return new BeaconChainUtil(validatorKeys, storageClient, signDeposits);
+    return new BeaconChainUtil(validatorKeys, storageClient, forkChoice, signDeposits);
   }
 
   public static void initializeStorage(
@@ -179,8 +189,7 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-    recentChainData.updateBestBlock(
-        block.getMessage().hash_tree_root(), block.getMessage().getSlot());
+    forkChoice.processHead();
     return importResult.getBlock();
   }
 
