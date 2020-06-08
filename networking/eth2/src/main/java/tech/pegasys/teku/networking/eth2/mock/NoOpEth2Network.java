@@ -31,6 +31,6 @@ public class NoOpEth2Network extends MockP2PNetwork<Eth2Peer> implements Eth2Net
 
   @Override
   public MetadataMessage getMetadata() {
-    return null;
+    return MetadataMessage.createDefault();
   }
 }

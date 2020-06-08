@@ -34,12 +34,11 @@ public class MultiaddrUtil {
     return addPeerId(fromInetSocketAddress(peer.getNodeAddress(), "udp"), getNodeId(peer));
   }
 
-  public static Multiaddr fromInetSocketAddress(final InetSocketAddress address) {
+  static Multiaddr fromInetSocketAddress(final InetSocketAddress address) {
     return fromInetSocketAddress(address, "tcp");
   }
 
-  public static Multiaddr fromInetSocketAddress(
-      final InetSocketAddress address, final String protocol) {
+  static Multiaddr fromInetSocketAddress(final InetSocketAddress address, final String protocol) {
     final String addrString =
         String.format(
             "/%s/%s/%s/%d",
