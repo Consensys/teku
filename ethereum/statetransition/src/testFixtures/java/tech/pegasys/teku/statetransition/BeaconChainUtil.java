@@ -38,8 +38,10 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.StubForkChoiceStrategy;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -50,8 +52,8 @@ public class BeaconChainUtil {
 
   private final StateTransition stateTransition = new StateTransition();
   private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
-  private final StubForkChoiceStrategy stubForkChoiceStrategy = new StubForkChoiceStrategy();
   private final RecentChainData recentChainData;
+  private final ForkChoice forkChoice;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
 
@@ -62,6 +64,7 @@ public class BeaconChainUtil {
     this.validatorKeys = validatorKeys;
     this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
+    this.forkChoice = new ForkChoice(recentChainData, new StateTransition());
   }
 
   public static BeaconChainUtil create(
@@ -171,9 +174,8 @@ public class BeaconChainUtil {
     final SignedBeaconBlock block =
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult importResult =
-        ForkChoiceUtil.on_block(transaction, block, stateTransition, stubForkChoiceStrategy);
+        forkChoice.onBlock(block);
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "
@@ -182,11 +184,6 @@ public class BeaconChainUtil {
               + slot
               + ": "
               + block);
-    }
-    final SafeFuture<Void> result = transaction.commit();
-    if (!result.isDone() || result.isCompletedExceptionally()) {
-      throw new IllegalStateException(
-          "Transaction did not commit immediately. Are you using a disk storage backed ChainStorageClient without having storage running?");
     }
     recentChainData.updateBestBlock(
         block.getMessage().hash_tree_root(), block.getMessage().getSlot());

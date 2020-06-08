@@ -37,7 +37,8 @@ public class ForkChoice implements FinalizedCheckpointChannel {
 
   private ProtoArrayForkChoiceStrategy protoArrayForkChoiceStrategy;
 
-  public ForkChoice(final RecentChainData recentChainData, final StateTransition stateTransition) {
+  public ForkChoice(final RecentChainData recentChainData,
+                    final StateTransition stateTransition) {
     this.recentChainData = recentChainData;
     this.stateTransition = stateTransition;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
