@@ -41,7 +41,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -63,7 +62,8 @@ public class BlockImporterTest {
   private final BeaconChainUtil otherChain =
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
-  private final BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
+  private final BlockImporter blockImporter =
+      new BlockImporter(recentChainData, forkChoice, localEventBus);
 
   @BeforeAll
   public static void init() {
