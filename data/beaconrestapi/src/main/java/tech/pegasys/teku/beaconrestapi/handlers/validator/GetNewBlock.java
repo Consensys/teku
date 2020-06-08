@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -73,7 +74,8 @@ public class GetNewBlock implements Handler {
         @OpenApiParam(
             name = RANDAO_REVEAL,
             description = "`BLSSignature Hex` BLS12-381 signature for the current epoch.",
-            required = true)
+            required = true),
+        @OpenApiParam(name = GRAFFITI, description = "`Bytes32 Hex` Graffiti.")
       },
       description =
           "Create and return an unsigned beacon block at the specified slot. "
