@@ -69,10 +69,12 @@ public class TekuConfiguration {
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
+  private final boolean eth1DepositsFromStorageEnabled;
 
   // Logging
   private final boolean logColorEnabled;
   private final boolean logIncludeEventsEnabled;
+  private final boolean logIncludeValidatorDutiesEnabled;
   private final LoggingDestination logDestination;
   private final String logFile;
   private final String logFileNamePattern;
@@ -136,8 +138,10 @@ public class TekuConfiguration {
       final int validatorExternalSignerTimeout,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
+      final boolean eth1DepositsFromStorageEnabled,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
+      final boolean logIncludeValidatorDutiesEnabled,
       final LoggingDestination logDestination,
       final String logFile,
       final String logFileNamePattern,
@@ -187,8 +191,10 @@ public class TekuConfiguration {
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
+    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.logColorEnabled = logColorEnabled;
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
+    this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
     this.logDestination = logDestination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
@@ -348,12 +354,20 @@ public class TekuConfiguration {
     return eth1Endpoint;
   }
 
+  public boolean isEth1DepositsFromStorageEnabled() {
+    return eth1DepositsFromStorageEnabled;
+  }
+
   public boolean isLogColorEnabled() {
     return logColorEnabled;
   }
 
   public boolean isLogIncludeEventsEnabled() {
     return logIncludeEventsEnabled;
+  }
+
+  public boolean isLogIncludeValidatorDutiesEnabled() {
+    return logIncludeValidatorDutiesEnabled;
   }
 
   public LoggingDestination getLogDestination() {

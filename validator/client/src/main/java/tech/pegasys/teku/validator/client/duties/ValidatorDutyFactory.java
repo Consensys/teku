@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
+
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -38,6 +40,6 @@ public class ValidatorDutyFactory {
   }
 
   public AggregationDuty createAggregationDuty(final UnsignedLong slot) {
-    return new AggregationDuty(slot, validatorApiChannel, forkProvider);
+    return new AggregationDuty(slot, validatorApiChannel, forkProvider, VALIDATOR_LOGGER);
   }
 }

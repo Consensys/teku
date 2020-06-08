@@ -26,12 +26,14 @@ import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -58,6 +60,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private BlockGossipManager blockGossipManager;
   private AttestationGossipManager attestationGossipManager;
   private AggregateGossipManager aggregateGossipManager;
+  private VoluntaryExitGossipManager voluntaryExitGossipManager;
   private long discoveryNetworkAttestationSubnetsSubscription;
 
   public ActiveEth2Network(
@@ -85,7 +88,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     // Set the current fork info prior to discovery starting up.
     final ForkInfo currentForkInfo =
         recentChainData
-            .getCurrentForkInfo()
+            .getHeadForkInfo()
             .orElseThrow(
                 () ->
                     new IllegalStateException("Can not start Eth2Network before genesis is known"));
@@ -99,7 +102,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
     SignedAggregateAndProofValidator aggregateValidator =
         new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
-    final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
+    final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
+    VoluntaryExitValidator exitValidator = new VoluntaryExitValidator(recentChainData);
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
@@ -124,6 +128,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
             aggregateValidator,
             gossipedAttestationConsumer);
 
+    voluntaryExitGossipManager =
+        new VoluntaryExitGossipManager(discoveryNetwork, gossipEncoding, forkInfo, exitValidator);
+
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
             discoveryNetwork::setLongTermAttestationSubnetSubscriptions);
@@ -143,6 +150,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
+    voluntaryExitGossipManager.shutdown();
     attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
     super.stop();
   }

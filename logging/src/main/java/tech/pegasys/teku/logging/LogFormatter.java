@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.client;
+package tech.pegasys.teku.logging;
 
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class FailedPrecommitException extends RuntimeException {
-
-  public FailedPrecommitException(final StorageUpdateResult result) {
-    super(result.getError());
+public class LogFormatter {
+  public static String formatHashRoot(final Bytes32 root) {
+    final String hash = root.toUnprefixedHexString();
+    return String.format("%s..%s", hash.substring(0, 6), hash.substring(hash.length() - 4));
   }
 }
