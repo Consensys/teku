@@ -52,13 +52,13 @@ public class GetIdentity implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Retrieves data about the node's network presence.",
+      summary = "Retrieves data about the node's network identity.",
       tags = {TAG_V1_NODE},
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = IdentityResponse.class),
-            description = "An object network identity of the node."),
+            description = "The identifying information of the node."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })

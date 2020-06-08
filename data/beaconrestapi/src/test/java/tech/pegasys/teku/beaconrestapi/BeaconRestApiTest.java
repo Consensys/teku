@@ -76,57 +76,57 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void RestApiShouldHaveServerPortSet() {
+  public void shouldHaveServerPortSet() {
     verify(server).setServerPort(THE_PORT);
   }
 
   @Test
-  public void RestApiShouldHaveGenesisTimeEndpoint() {
+  public void shouldHaveGenesisTimeEndpoint() {
     verify(app).get(eq(GetGenesisTime.ROUTE), any(GetGenesisTime.class));
   }
 
   @Test
-  public void RestApiShouldHaveVersionEndpoint() {
+  public void shouldHaveVersionEndpoint() {
     verify(app).get(eq(GetVersion.ROUTE), any(GetVersion.class));
   }
 
   @Test
-  public void RestApiShouldHavePeerIdEndpoint() {
+  public void shouldHavePeerIdEndpoint() {
     verify(app).get(eq(GetPeerId.ROUTE), any(GetPeerId.class));
   }
 
   @Test
-  public void restApiShouldHaveBeaconHeadEndpoint() {
+  public void shouldHaveBeaconHeadEndpoint() {
     verify(app).get(eq(GetHead.ROUTE), any(GetHead.class));
   }
 
   @Test
-  public void RestApiShouldHavePeersEndpoint() {
+  public void shouldHavePeersEndpoint() {
     verify(app).get(eq(GetPeers.ROUTE), any(GetPeers.class));
   }
 
   @Test
-  public void RestApiShouldHaveChainHeadEndpoint() {
+  public void shouldHaveChainHeadEndpoint() {
     verify(app).get(eq(GetChainHead.ROUTE), any(GetChainHead.class));
   }
 
   @Test
-  public void RestApiShouldHaveBeaconStateEndpoint() {
+  public void shouldHaveBeaconStateEndpoint() {
     verify(app).get(eq(GetState.ROUTE), any(GetState.class));
   }
 
   @Test
-  public void RestApiShouldHaveSyncingEndpoint() {
+  public void shouldHaveSyncingEndpoint() {
     verify(app).get(eq(GetSyncing.ROUTE), any(GetSyncing.class));
   }
 
   @Test
-  public void RestApiShouldHaveBeaconValidatorsEndpoint() {
+  public void shouldHaveBeaconValidatorsEndpoint() {
     verify(app).get(eq(GetValidators.ROUTE), any(GetValidators.class));
   }
 
   @Test
-  public void ShouldHaveV1VersionEndpoint() {
+  public void shouldHaveV1VersionEndpoint() {
     verify(app)
         .get(
             eq(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE),
@@ -134,62 +134,62 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void ShouldHaveV1IdentityEndpoint() {
+  public void shouldHaveV1IdentityEndpoint() {
     verify(app).get(eq(GetIdentity.ROUTE), any(GetIdentity.class));
   }
 
   @Test
-  public void RestApiShouldHaveBeaconStateRootEndpoint() {
+  public void shouldHaveBeaconStateRootEndpoint() {
     verify(app).get(eq(GetStateRoot.ROUTE), any(GetStateRoot.class));
   }
 
   @Test
-  public void RestApiShouldHaveForkEndpoint() {
+  public void shouldHaveForkEndpoint() {
     verify(app).get(eq(GetFork.ROUTE), any(GetFork.class));
   }
 
   @Test
-  public void RestApiShouldHaveNetworkEnrEndpoint() {
+  public void shouldHaveNetworkEnrEndpoint() {
     verify(app).get(eq(GetEthereumNameRecord.ROUTE), any(GetEthereumNameRecord.class));
   }
 
   @Test
-  public void RestApiShouldHaveNetworkListenAddressesEndpoint() {
+  public void shouldHaveNetworkListenAddressesEndpoint() {
     verify(app).get(eq(GetListenAddresses.ROUTE), any(GetListenAddresses.class));
   }
 
   @Test
-  public void RestApiShouldHaveNetworkPeerCountEndpoint() {
+  public void shouldHaveNetworkPeerCountEndpoint() {
     verify(app).get(eq(GetPeerCount.ROUTE), any(GetPeerCount.class));
   }
 
   @Test
-  public void RestApiShouldHaveNetworkListenPortEndpoint() {
+  public void shouldHaveNetworkListenPortEndpoint() {
     verify(app).get(eq(GetListenPort.ROUTE), any(GetListenPort.class));
   }
 
   @Test
-  public void RestApiShouldHaveBeaconValidatorsPostEndpoint() {
+  public void shouldHaveBeaconValidatorsPostEndpoint() {
     verify(app).post(eq(PostValidators.ROUTE), any(PostValidators.class));
   }
 
   @Test
-  public void RestApiShouldHaveValidatorBlockEndpoint() {
+  public void shouldHaveValidatorBlockEndpoint() {
     verify(app).post(eq(PostBlock.ROUTE), any(PostBlock.class));
   }
 
   @Test
-  public void RestApiShouldHaveValidatorDutiesEndpoint() {
+  public void shouldHaveValidatorDutiesEndpoint() {
     verify(app).post(eq(PostDuties.ROUTE), any(PostDuties.class));
   }
 
   @Test
-  public void RestApiShouldHaveCustomNotFoundError() {
+  public void shouldHaveCustomNotFoundError() {
     verify(app, never()).error(eq(SC_NOT_FOUND), any());
   }
 
   @Test
-  public void RestApiShouldHaveBeforeHandler() {
+  public void shouldHaveBeforeHandler() {
     verify(app).before(any());
   }
 }
