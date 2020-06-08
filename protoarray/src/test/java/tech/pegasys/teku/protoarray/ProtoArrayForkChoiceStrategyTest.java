@@ -31,22 +31,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ProtoArrayForkChoiceStrategyTest {
 
   private Map<Bytes32, Integer> indices;
   private List<UnsignedLong> oldBalances;
   private List<UnsignedLong> newBalances;
-  private StoreTransaction store;
+  private MutableStore store;
 
   @BeforeEach
   void setUp() {
     indices = new HashMap<>();
     oldBalances = new ArrayList<>();
     newBalances = new ArrayList<>();
-    store = createStoreToManipulateVotes().startTransaction(new StubStorageUpdateChannel());
+    store = createStoreToManipulateVotes();
   }
 
   @Test

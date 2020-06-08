@@ -28,15 +28,13 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 
 public class NoVotesTest {
 
   @Test
   void noVotesTest() {
-    StoreTransaction store =
-        createStoreToManipulateVotes().startTransaction(new StubStorageUpdateChannel());
+    MutableStore store = createStoreToManipulateVotes();
 
     ProtoArrayForkChoiceStrategy forkChoice =
         createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
