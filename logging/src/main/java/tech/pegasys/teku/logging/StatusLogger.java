@@ -30,6 +30,10 @@ public class StatusLogger {
     this.log = LogManager.getLogger(name);
   }
 
+  public void fatalError(final String description, final Throwable cause) {
+    log.fatal("Exiting due to fatal error in {}", description, cause);
+  }
+
   public void specificationFailure(final String description, final Throwable cause) {
     log.warn("Spec failed for {}: {}", description, cause, cause);
   }
