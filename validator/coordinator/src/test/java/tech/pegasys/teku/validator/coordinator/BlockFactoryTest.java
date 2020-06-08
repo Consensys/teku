@@ -70,7 +70,7 @@ class BlockFactoryTest {
 
   @BeforeEach
   void setUp() {
-    when(depositProvider.getDeposits(any())).thenReturn(deposits);
+    when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any())).thenReturn(attestations);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     beaconChainUtil.initializeStorage();

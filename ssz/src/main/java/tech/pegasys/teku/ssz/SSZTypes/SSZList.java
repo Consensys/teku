@@ -59,6 +59,10 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
     return new SSZArrayCollection<>(1, obj, false);
   }
 
+  static <T> SSZList<T> empty(Class<T> clazz) {
+    return new SSZArrayCollection<>(clazz, 0, false);
+  }
+
   default SSZList<T> reversed() {
     SSZMutableList<T> ret = createMutable(getElementType(), getMaxSize());
     for (int i = size() - 1; i >= 0; i--) {
