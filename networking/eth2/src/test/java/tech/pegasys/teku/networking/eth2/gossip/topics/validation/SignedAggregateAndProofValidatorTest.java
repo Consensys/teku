@@ -30,6 +30,7 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Validat
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -128,7 +129,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(INVALID);
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
@@ -140,7 +141,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(SAVED_FOR_FUTURE);
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
@@ -152,7 +153,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedBlockAndState target = beaconChainUtil.createBlockAndStateAtSlot(ONE, true);
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(target.toUnsigned());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(SAVED_FOR_FUTURE);
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
@@ -169,7 +170,7 @@ class SignedAggregateAndProofValidatorTest {
             .selectionProof(dataStructureUtil.randomSignature())
             .generate();
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(SAVED_FOR_FUTURE);
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
@@ -365,7 +366,7 @@ class SignedAggregateAndProofValidatorTest {
 
   private void whenAttestationIsValid(final SignedAggregateAndProof aggregate) {
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(VALID);
   }
 
