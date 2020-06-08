@@ -174,7 +174,7 @@ class SignedAggregateAndProofValidatorTest {
         .thenReturn(SAVE_FOR_FUTURE);
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
-        .isEqualTo(IGNORE);
+        .isEqualTo(REJECT);
   }
 
   @Test
@@ -316,7 +316,7 @@ class SignedAggregateAndProofValidatorTest {
     }
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
-        .isEqualTo(IGNORE);
+        .isEqualTo(REJECT);
   }
 
   @Test
@@ -331,7 +331,7 @@ class SignedAggregateAndProofValidatorTest {
     whenAttestationIsValid(aggregate);
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(aggregate)))
-        .isEqualTo(IGNORE);
+        .isEqualTo(REJECT);
   }
 
   @Test
@@ -345,7 +345,7 @@ class SignedAggregateAndProofValidatorTest {
     whenAttestationIsValid(validAggregate);
 
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(invalidAggregate)))
-        .isEqualTo(IGNORE);
+        .isEqualTo(REJECT);
     assertThat(validator.validate(ValidateableAttestation.fromAggregate(validAggregate)))
         .isEqualTo(ACCEPT);
   }

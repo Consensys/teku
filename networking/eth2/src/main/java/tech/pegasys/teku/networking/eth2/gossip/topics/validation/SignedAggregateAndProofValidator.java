@@ -19,9 +19,9 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_sign
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
@@ -78,7 +78,8 @@ public class SignedAggregateAndProofValidator {
 
     final InternalValidationResult aggregateInternalValidationResult =
         attestationValidator.singleOrAggregateAttestationChecks(aggregate);
-    if (aggregateInternalValidationResult != ACCEPT) {
+    if (aggregateInternalValidationResult == REJECT
+        || aggregateInternalValidationResult == IGNORE) {
       LOG.trace("Rejecting aggregate because attestation failed validation");
       return aggregateInternalValidationResult;
     }
@@ -86,7 +87,7 @@ public class SignedAggregateAndProofValidator {
     final Optional<BeaconState> maybeState =
         recentChainData.getBlockState(aggregate.getData().getBeacon_block_root());
     if (maybeState.isEmpty()) {
-      return REJECT;
+      return SAVE_FOR_FUTURE;
     }
     final BeaconState state = maybeState.get();
     final BLSPublicKey aggregatorPublicKey =

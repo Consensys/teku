@@ -125,8 +125,7 @@ public class AttestationValidator {
     final Optional<BeaconState> maybeState =
         recentChainData.getBlockState(attestation.getData().getBeacon_block_root());
     if (maybeState.isEmpty()) {
-      return REJECT; // If we saved these attestations for the future they would become a DOS
-      // vector.
+      return SAVE_FOR_FUTURE;
     }
 
     final BeaconState state = maybeState.get();

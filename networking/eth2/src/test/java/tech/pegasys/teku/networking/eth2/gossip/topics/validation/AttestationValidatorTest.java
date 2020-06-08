@@ -256,7 +256,7 @@ class AttestationValidatorTest {
         attestationGenerator.attestationWithInvalidSignature(
             recentChainData.getBestBlockAndState().orElseThrow());
 
-    assertThat(validate(attestation)).isEqualTo(IGNORE);
+    assertThat(validate(attestation)).isEqualTo(REJECT);
   }
 
   @Test
@@ -266,7 +266,7 @@ class AttestationValidatorTest {
     beaconChainUtil.setSlot(ONE);
     final Attestation attestation = attestationGenerator.validAttestation(unknownBlockAndState);
 
-    assertThat(validate(attestation)).isEqualTo(REJECT);
+    assertThat(validate(attestation)).isEqualTo(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -277,7 +277,7 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromSingle(attestation), expectedSubnetId + 1))
-        .isEqualTo(IGNORE);
+        .isEqualTo(REJECT);
     assertThat(
             validator.validate(ValidateableAttestation.fromSingle(attestation), expectedSubnetId))
         .isEqualTo(ACCEPT);

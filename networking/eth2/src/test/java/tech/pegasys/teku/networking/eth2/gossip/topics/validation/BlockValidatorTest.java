@@ -139,7 +139,7 @@ public class BlockValidatorTest {
         new SignedBeaconBlock(block, blockSignature);
 
     InternalValidationResult result = blockValidator.validate(invalidProposerSignedBlock);
-    assertThat(result).isEqualTo(InternalValidationResult.IGNORE);
+    assertThat(result).isEqualTo(InternalValidationResult.REJECT);
   }
 
   @Test
@@ -152,6 +152,6 @@ public class BlockValidatorTest {
             beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(), BLSSignature.random(0));
 
     InternalValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(InternalValidationResult.IGNORE);
+    assertThat(result).isEqualTo(InternalValidationResult.REJECT);
   }
 }
