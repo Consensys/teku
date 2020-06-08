@@ -41,7 +41,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -72,7 +72,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final UnsignedLong TEN = UnsignedLong.valueOf(10);
 
   // Mocks
-  protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
+  protected final Eth2Network eth2Network = mock(Eth2Network.class);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
@@ -113,7 +113,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         new DataProvider(
             recentChainData,
             combinedChainDataClient,
-            p2PNetwork,
+            eth2Network,
             syncService,
             validatorApiChannel,
             blockImporter);

@@ -5,6 +5,19 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
+ - Anyone using `/node/version` should switch to use
+   the new endpoint, as `/node/version` will be removed in a future release.
+
+## 0.11.4
+
+### Breaking Changes
+
+
+
+### Additions and Improvements
+
+- Added `/v1/node/version` and `/v1/node/identity` REST endpoints. Anyone using `/node/version` should switch to use
+the new endpoint, as `/node/version` will be removed in a future release.
 
 ## 0.11.3
 

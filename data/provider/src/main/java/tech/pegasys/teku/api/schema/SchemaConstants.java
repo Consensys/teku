@@ -19,4 +19,5 @@ public class SchemaConstants {
   public static final String DESCRIPTION_BYTES96 = "Bytes96 hexadecimal";
   public static final String DESCRIPTION_BYTES48 = "Bytes48 hexadecimal";
   public static final String DESCRIPTION_BYTES_SSZ = "SSZ hexadecimal";
+  public static final String DESCRIPTION_BYTE_DATA = "Bytes hexadecimal";
 }

@@ -88,6 +88,8 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
    */
   Optional<String> getEnr();
 
+  Optional<String> getDiscoveryAddress();
+
   /**
    * starts the p2p network layer
    *
