@@ -17,6 +17,7 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
@@ -29,12 +30,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
@@ -59,12 +60,13 @@ public class AttestationValidator {
   public ValidationResult validate(
       final ValidateableAttestation validateableAttestation, final int receivedOnSubnetId) {
     Attestation attestation = validateableAttestation.getAttestation();
-    ValidationResult validationResult = singleAttestationChecks(attestation, receivedOnSubnetId);
+    ValidationResult validationResult = singleAttestationChecks(attestation);
     if (validationResult != VALID) {
       return validationResult;
     }
 
-    validationResult = singleOrAggregateAttestationChecks(attestation);
+    validationResult =
+        singleOrAggregateAttestationChecks(attestation, OptionalInt.of(receivedOnSubnetId));
     if (validationResult != VALID) {
       return validationResult;
     }
@@ -81,13 +83,7 @@ public class AttestationValidator {
     return VALID;
   }
 
-  private ValidationResult singleAttestationChecks(
-      final Attestation attestation, final int receivedOnSubnetId) {
-    // The attestation's committee index (attestation.data.index) is for the correct subnet.
-    if (CommitteeUtil.getSubnetId(attestation) != receivedOnSubnetId) {
-      return INVALID;
-    }
-
+  private ValidationResult singleAttestationChecks(final Attestation attestation) {
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
     if (attestation.getAggregation_bits().getBitCount() != 1) {
@@ -102,7 +98,8 @@ public class AttestationValidator {
     return VALID;
   }
 
-  ValidationResult singleOrAggregateAttestationChecks(final Attestation attestation) {
+  ValidationResult singleOrAggregateAttestationChecks(
+      final Attestation attestation, final OptionalInt receivedOnSubnetId) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
@@ -127,6 +124,12 @@ public class AttestationValidator {
     }
 
     final BeaconState state = maybeState.get();
+
+    // The attestation's committee index (attestation.data.index) is for the correct subnet.
+    if (receivedOnSubnetId.isPresent()
+        && computeSubnetForAttestation(state, attestation) != receivedOnSubnetId.getAsInt()) {
+      return INVALID;
+    }
 
     final List<Integer> committee =
         get_beacon_committee(

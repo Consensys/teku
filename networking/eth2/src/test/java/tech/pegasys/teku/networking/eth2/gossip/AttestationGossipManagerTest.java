@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
@@ -20,7 +21,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
@@ -52,39 +52,43 @@ public class AttestationGossipManagerTest {
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
   private AttestationGossipManager attestationGossipManager;
+  private final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
+      new AttestationSubnetSubscriptions(
+          gossipNetwork,
+          gossipEncoding,
+          attestationValidator,
+          recentChainData,
+          gossipedAttestationConsumer);
 
   @BeforeEach
   public void setup() {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
     doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
-    AttestationSubnetSubscriptions attestationSubnetSubscriptions =
-        new AttestationSubnetSubscriptions(
-            gossipNetwork,
-            gossipEncoding,
-            attestationValidator,
-            recentChainData,
-            gossipedAttestationConsumer);
     attestationGossipManager =
         new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions);
   }
 
   @Test
   public void onNewAttestation_afterMatchingAssignment() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final Attestation attestation2 =
+        new Attestation(
+            dataStructureUtil.randomBitlist(),
+            dataStructureUtil.randomAttestationData(UnsignedLong.valueOf(13)),
+            dataStructureUtil.randomSignature());
+    final int subnetId = computeSubnetId(attestation);
+    // Sanity check the attestations are for the same subnet
+    assertThat(computeSubnetId(attestation2)).isEqualTo(subnetId);
     // Setup committee assignment
-    final int committeeIndex = 2;
-    attestationGossipManager.subscribeToSubnetId(committeeIndex);
+    attestationGossipManager.subscribeToSubnetId(subnetId);
 
     // Post new attestation
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    setCommitteeIndex(attestation, committeeIndex);
     final Bytes serialized = gossipEncoding.encode(attestation);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation));
 
     verify(topicChannel).gossip(serialized);
 
     // We should process attestations for different committees on the same subnet
-    final Attestation attestation2 = dataStructureUtil.randomAttestation();
-    setCommitteeIndex(attestation2, committeeIndex + ATTESTATION_SUBNET_COUNT);
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation2));
 
@@ -93,13 +97,12 @@ public class AttestationGossipManagerTest {
 
   @Test
   public void onNewAttestation_noMatchingAssignment() {
-    // Setup committee assignment
-    final int committeeIndex = 2;
-    attestationGossipManager.subscribeToSubnetId(committeeIndex);
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final int subnetId = computeSubnetId(attestation);
+    // Subscribed to different subnet
+    attestationGossipManager.subscribeToSubnetId(subnetId + 1);
 
     // Post new attestation
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    setCommitteeIndex(attestation, committeeIndex + 1);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation));
 
     verifyNoInteractions(topicChannel);
@@ -107,39 +110,31 @@ public class AttestationGossipManagerTest {
 
   @Test
   public void onNewAttestation_afterDismissal() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final Attestation attestation2 = dataStructureUtil.randomAttestation();
     // Setup committee assignment
-    final int committeeIndex = 2;
-    final int dismissedIndex = 3;
-    attestationGossipManager.subscribeToSubnetId(committeeIndex);
+    final int subnetId = computeSubnetId(attestation2);
+    final int dismissedSubnetId = computeSubnetId(attestation);
+    attestationGossipManager.subscribeToSubnetId(subnetId);
 
     // Unassign
-    attestationGossipManager.unsubscribeFromSubnetId(dismissedIndex);
+    attestationGossipManager.unsubscribeFromSubnetId(dismissedSubnetId);
 
     // Attestation for dismissed assignment should be ignored
-    final Attestation attestation = dataStructureUtil.randomAttestation();
-    setCommitteeIndex(attestation, dismissedIndex);
     final Bytes serialized = gossipEncoding.encode(attestation);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation));
 
     verify(topicChannel, never()).gossip(serialized);
 
     // Attestation for remaining assignment should be processed
-    final Attestation attestation2 = dataStructureUtil.randomAttestation();
-    setCommitteeIndex(attestation2, committeeIndex);
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation2));
 
     verify(topicChannel).gossip(serialized2);
   }
 
-  public void setCommitteeIndex(final Attestation attestation, final int committeeIndex) {
-    final AttestationData data = attestation.getData();
-    attestation.setData(
-        new AttestationData(
-            data.getSlot(),
-            UnsignedLong.valueOf(committeeIndex),
-            data.getBeacon_block_root(),
-            data.getSource(),
-            data.getTarget()));
+  private Integer computeSubnetId(final Attestation attestation) {
+    return CommitteeUtil.computeSubnetForAttestation(
+        recentChainData.getBestState().orElseThrow(), attestation);
   }
 }

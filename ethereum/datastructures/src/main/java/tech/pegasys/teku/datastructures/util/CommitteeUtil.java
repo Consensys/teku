@@ -276,15 +276,35 @@ public class CommitteeUtil {
     return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo) == 0;
   }
 
-  public static int getSubnetId(final Attestation attestation) {
-    return committeeIndexToSubnetId(attestation.getData().getIndex());
+  /**
+   * Compute the correct subnet for an attestation for Phase 0.
+   *
+   * <p>Note, this mimics expected Phase 1 behavior where attestations will be mapped to their shard
+   * subnet.
+   *
+   * @param state
+   * @param attestation
+   * @return
+   */
+  public static int computeSubnetForAttestation(
+      final BeaconState state, final Attestation attestation) {
+    final UnsignedLong attestationSlot = attestation.getData().getSlot();
+    final UnsignedLong committeeIndex = attestation.getData().getIndex();
+    return computeSubnetForCommittee(state, attestationSlot, committeeIndex);
   }
 
-  public static int committeeIndexToSubnetId(final UnsignedLong committeeIndex) {
-    return committeeIndexToSubnetId(toIntExact(committeeIndex.longValue()));
-  }
-
-  public static int committeeIndexToSubnetId(final int committeeIndex) {
-    return committeeIndex % ATTESTATION_SUBNET_COUNT;
+  public static int computeSubnetForCommittee(
+      final BeaconState state,
+      final UnsignedLong attestationSlot,
+      final UnsignedLong committeeIndex) {
+    final UnsignedLong slotsSinceEpochStart =
+        attestationSlot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    final UnsignedLong committeesSinceEpochStart =
+        get_committee_count_at_slot(state, attestationSlot).times(slotsSinceEpochStart);
+    return toIntExact(
+        committeesSinceEpochStart
+            .plus(committeeIndex)
+            .mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT))
+            .longValue());
   }
 }

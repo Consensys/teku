@@ -45,9 +45,10 @@ public class Eth1DataCacheTest {
   public static final UnsignedLong IN_RANGE_TIMESTAMP_1 = UnsignedLong.valueOf(51_000);
   public static final UnsignedLong IN_RANGE_TIMESTAMP_2 = UnsignedLong.valueOf(52_000);
   public static final UnsignedLong IN_RANGE_TIMESTAMP_3 = UnsignedLong.valueOf(53_000);
+  private static final int STATE_DEPOSIT_COUNT = 10;
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Eth1Data stateEth1Data = dataStructureUtil.randomEth1Data();
+  private final Eth1Data stateEth1Data = createEth1Data(STATE_DEPOSIT_COUNT);
   private final Eth1VotingPeriod eth1VotingPeriod = mock(Eth1VotingPeriod.class);
 
   private Eth1DataCache eth1DataCache;
@@ -69,7 +70,7 @@ public class Eth1DataCacheTest {
 
   @Test
   void shouldUseDepositDataFromPreviousBlockWhenNoDepositBlockAddedAsLatestBlock() {
-    final Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
+    final Eth1Data eth1Data = createEth1Data(STATE_DEPOSIT_COUNT);
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data);
     eth1DataCache.onEth1Block(emptyBlockHash, IN_RANGE_TIMESTAMP_2);
@@ -81,8 +82,8 @@ public class Eth1DataCacheTest {
   @Test
   void shouldUseDepositFromPreviousBlockWhenNoDepositBlockAddedBetweenDeposits() {
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
-    final Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
-    final Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    final Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT + 1);
+    final Eth1Data eth1Data2 = createEth1Data(eth1Data1.getDeposit_count());
     final Eth1Data emptyBlockData = eth1Data1.withBlockHash(emptyBlockHash);
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_3, eth1Data2);
@@ -102,8 +103,8 @@ public class Eth1DataCacheTest {
 
   @Test
   void shouldAcceptEmptyBlocksWhenAllPreviousDepositsHaveBeenPruned() {
-    final Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
-    final Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    final Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    final Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
     final Bytes32 emptyBlockHash = dataStructureUtil.randomBytes32();
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1.minus(CACHE_DURATION), eth1Data1);
 
@@ -122,8 +123,8 @@ public class Eth1DataCacheTest {
 
   @Test
   void majorityVoteWins() {
-    Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
-    Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
 
     // Both Eth1Data timestamp inside the spec range
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
@@ -135,8 +136,8 @@ public class Eth1DataCacheTest {
 
   @Test
   void smallestDistanceWinsIfNoMajority() {
-    Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
-    Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
 
     BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2);
 
@@ -148,8 +149,8 @@ public class Eth1DataCacheTest {
 
   @Test
   void oldVoteDoesNotCount() {
-    Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
-    Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
 
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
     eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_START.minus(ONE), eth1Data2);
@@ -160,20 +161,32 @@ public class Eth1DataCacheTest {
 
   @Test
   void tooRecentVoteDoesNotCount() {
-    Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
-    Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
 
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
     eth1DataCache.onBlockWithDeposit(VOTING_PERIOD_END.plus(ONE), eth1Data2);
 
-    BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2);
+    BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2, eth1Data2);
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
+  }
+
+  @Test
+  void voteWithFewerDepositsThanCurrentStateDoesNotCount() {
+    Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT - 1);
+
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
+    eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
+
+    BeaconState beaconState = createBeaconStateWithVotes(eth1Data1, eth1Data2, eth1Data2);
     assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(eth1Data1);
   }
 
   @Test
   void noValidVotesInThisPeriod_eth1ChainLive() {
-    final Eth1Data eth1Data1 = dataStructureUtil.randomEth1Data();
-    final Eth1Data eth1Data2 = dataStructureUtil.randomEth1Data();
+    final Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
+    final Eth1Data eth1Data2 = createEth1Data(STATE_DEPOSIT_COUNT);
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_1, eth1Data1);
     eth1DataCache.onBlockWithDeposit(IN_RANGE_TIMESTAMP_2, eth1Data2);
 
@@ -185,7 +198,7 @@ public class Eth1DataCacheTest {
 
   @Test
   void noValidVotesInThisPeriod_eth1ChainNotLive() {
-    BeaconState beaconState = createBeaconStateWithVotes(dataStructureUtil.randomEth1Data());
+    BeaconState beaconState = createBeaconStateWithVotes(createEth1Data(STATE_DEPOSIT_COUNT));
     assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(stateEth1Data);
   }
 
@@ -196,19 +209,19 @@ public class Eth1DataCacheTest {
     final UnsignedLong newBlockTimestamp = oldBlockTimestamp.plus(CACHE_DURATION).plus(ONE);
     final UnsignedLong newerBlockTimestamp = newBlockTimestamp.plus(CACHE_DURATION);
 
-    eth1DataCache.onBlockWithDeposit(olderBlockTimestamp, dataStructureUtil.randomEth1Data());
-    eth1DataCache.onBlockWithDeposit(oldBlockTimestamp, dataStructureUtil.randomEth1Data());
+    eth1DataCache.onBlockWithDeposit(olderBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
+    eth1DataCache.onBlockWithDeposit(oldBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
     assertThat(eth1DataCache.size()).isEqualTo(2);
 
     // Push both old blocks out of the cache period
-    eth1DataCache.onBlockWithDeposit(newBlockTimestamp, dataStructureUtil.randomEth1Data());
+    eth1DataCache.onBlockWithDeposit(newBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
     // But only the oldest block gets pruned because we need at least one event prior to the cache
     // period so empty blocks right at the start of the period can lookup the
     assertThat(eth1DataCache.size()).isEqualTo(2);
 
     // Third block is close enough to the second that they are both kept.
     // newBlockTimestamp is now exactly at the start of the cache period so we can remove oldBlock
-    eth1DataCache.onBlockWithDeposit(newerBlockTimestamp, dataStructureUtil.randomEth1Data());
+    eth1DataCache.onBlockWithDeposit(newerBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
     assertThat(eth1DataCache.size()).isEqualTo(2);
   }
 
@@ -221,5 +234,14 @@ public class Eth1DataCacheTest {
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
     when(beaconState.getEth1_data()).thenReturn(stateEth1Data);
     return beaconState;
+  }
+
+  private Eth1Data createEth1Data(final int depositCount) {
+    return createEth1Data(UnsignedLong.valueOf(depositCount));
+  }
+
+  private Eth1Data createEth1Data(final UnsignedLong depositCount) {
+    return new Eth1Data(
+        dataStructureUtil.randomBytes32(), depositCount, dataStructureUtil.randomBytes32());
   }
 }

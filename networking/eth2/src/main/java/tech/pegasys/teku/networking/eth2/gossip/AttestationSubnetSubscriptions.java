@@ -16,7 +16,9 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.SingleAttestationTopicHandler;
@@ -47,8 +49,8 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     this.gossipedAttestationConsumer = gossipedAttestationConsumer;
   }
 
-  public synchronized Optional<TopicChannel> getChannel(final int subnetId) {
-    return Optional.ofNullable(subnetIdToTopicChannel.get(subnetId));
+  public synchronized Optional<TopicChannel> getChannel(final Attestation attestation) {
+    return computeSubnetForAttestation(attestation).map(subnetIdToTopicChannel::get);
   }
 
   public synchronized void subscribeToSubnetId(final int subnetId) {
@@ -68,6 +70,12 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
         new SingleAttestationTopicHandler(
             gossipEncoding, forkInfo, subnetId, attestationValidator, gossipedAttestationConsumer);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+  }
+
+  private Optional<Integer> computeSubnetForAttestation(final Attestation attestation) {
+    return recentChainData
+        .getStateInEffectAtSlot(attestation.getData().getSlot())
+        .map(state -> CommitteeUtil.computeSubnetForAttestation(state, attestation));
   }
 
   @Override

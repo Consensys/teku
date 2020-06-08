@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.util.Waiter.ensureConditionRemainsMet;
 import static tech.pegasys.teku.util.Waiter.waitFor;
 
@@ -240,12 +241,11 @@ public class GossipMessageHandlerIntegrationTest {
         ValidateableAttestation.fromSingle(
             attestationGenerator.validAttestation(bestBlockAndState));
 
-    node1
-        .network()
-        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
-    node2
-        .network()
-        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
+    final int subnetId =
+        computeSubnetForAttestation(
+            bestBlockAndState.getState(), validAttestation.getAttestation());
+    node1.network().subscribeToAttestationSubnetId(subnetId);
+    node2.network().subscribeToAttestationSubnetId(subnetId);
 
     waitForTopicRegistration();
 
@@ -303,12 +303,11 @@ public class GossipMessageHandlerIntegrationTest {
         ValidateableAttestation.fromSingle(
             attestationGenerator.validAttestation(bestBlockAndState));
 
-    node1
-        .network()
-        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
-    node2
-        .network()
-        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
+    final int subnetId =
+        computeSubnetForAttestation(
+            bestBlockAndState.getState(), validAttestation.getAttestation());
+    node1.network().subscribeToAttestationSubnetId(subnetId);
+    node2.network().subscribeToAttestationSubnetId(subnetId);
 
     waitForTopicRegistration();
 
@@ -319,12 +318,8 @@ public class GossipMessageHandlerIntegrationTest {
     assertThat(node2attestations.size()).isEqualTo(1);
     assertThat(node2attestations.get(0)).isEqualTo(validAttestation);
 
-    node1
-        .network()
-        .unsubscribeFromAttestationSubnetId(validAttestation.getData().getIndex().intValue());
-    node2
-        .network()
-        .unsubscribeFromAttestationSubnetId(validAttestation.getData().getIndex().intValue());
+    node1.network().unsubscribeFromAttestationSubnetId(subnetId);
+    node2.network().unsubscribeFromAttestationSubnetId(subnetId);
 
     waitForTopicDeregistration();
 

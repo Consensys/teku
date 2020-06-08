@@ -22,30 +22,36 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptionsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private AttestationSubnetSubscriptions subnetSubscriptions;
+  private final RecentChainData recentChainData =
+      MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final GossipedAttestationConsumer attestationConsumer =
       mock(GossipedAttestationConsumer.class);
 
+  private AttestationSubnetSubscriptions subnetSubscriptions;
+
   @BeforeEach
   void setUp() {
-    final RecentChainData recentChainData = mock(RecentChainData.class);
-    when(recentChainData.getHeadForkInfo())
-        .thenReturn(Optional.of(dataStructureUtil.randomForkInfo()));
+    BeaconChainUtil.create(0, recentChainData).initializeStorage();
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
             gossipNetwork,
@@ -59,59 +65,71 @@ public class AttestationSubnetSubscriptionsTest {
 
   @Test
   void getChannelReturnsEmptyIfNotSubscribedToSubnet() {
-    int COMMITTEE_INDEX = 1;
-    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX);
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX)).isNotEqualTo(Optional.empty());
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX + 1)).isEqualTo(Optional.empty());
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final Attestation attestation2 = dataStructureUtil.randomAttestation();
+    int subnetId = computeSubnetId(attestation);
+    assertThat(computeSubnetId(attestation2)).isNotEqualTo(subnetId); // Sanity check
+    subnetSubscriptions.subscribeToSubnetId(subnetId);
+    assertThat(subnetSubscriptions.getChannel(attestation)).isNotEqualTo(Optional.empty());
+    assertThat(subnetSubscriptions.getChannel(attestation2)).isEqualTo(Optional.empty());
   }
 
   @Test
   void getChannelReturnsTheChannelFromSubnet() {
-    int COMMITTEE_INDEX = 1;
-    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX);
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX)).isNotEqualTo(Optional.empty());
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    int subnetId = computeSubnetId(attestation);
+    subnetSubscriptions.subscribeToSubnetId(subnetId);
+    assertThat(subnetSubscriptions.getChannel(attestation)).isNotEqualTo(Optional.empty());
   }
 
   @Test
   void shouldSubscribeToCommitteesOnDifferentSubnets() {
+    final Attestation attestation1 = dataStructureUtil.randomAttestation();
+    final Attestation attestation2 = dataStructureUtil.randomAttestation();
+    int subnetId1 = computeSubnetId(attestation1);
+    int subnetId2 = computeSubnetId(attestation2);
+    assertThat(subnetId1).isNotEqualTo(subnetId2); // Sanity check
+
     TopicChannel topicChannel1 = mock(TopicChannel.class);
     TopicChannel topicChannel2 = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("committee_index1"), any())).thenReturn(topicChannel1);
-    when(gossipNetwork.subscribe(contains("committee_index2"), any())).thenReturn(topicChannel2);
+    when(gossipNetwork.subscribe(contains("committee_index" + subnetId1), any()))
+        .thenReturn(topicChannel1);
+    when(gossipNetwork.subscribe(contains("committee_index" + subnetId2), any()))
+        .thenReturn(topicChannel2);
 
-    int COMMITTEE_INDEX_1 = 1;
-    int COMMITTEE_INDEX_2 = 2;
-
-    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX_1);
-    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX_2);
+    subnetSubscriptions.subscribeToSubnetId(subnetId1);
+    subnetSubscriptions.subscribeToSubnetId(subnetId2);
 
     verifyNoInteractions(topicChannel2);
 
-    verify(gossipNetwork).subscribe(argThat(i -> i.contains("committee_index1")), any());
-    verify(gossipNetwork).subscribe(argThat(i -> i.contains("committee_index2")), any());
+    verify(gossipNetwork).subscribe(argThat(i -> i.contains("committee_index" + subnetId1)), any());
+    verify(gossipNetwork).subscribe(argThat(i -> i.contains("committee_index" + subnetId2)), any());
 
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_1))
-        .isEqualTo(Optional.of(topicChannel1));
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_2))
-        .isEqualTo(Optional.of(topicChannel2));
+    assertThat(subnetSubscriptions.getChannel(attestation1)).isEqualTo(Optional.of(topicChannel1));
+    assertThat(subnetSubscriptions.getChannel(attestation2)).isEqualTo(Optional.of(topicChannel2));
   }
 
   @Test
   void shouldUnsubscribeFromOnlyCommitteeOnSubnet() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final int subnetId = computeSubnetId(attestation);
     TopicChannel topicChannel = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("committee_index1"), any())).thenReturn(topicChannel);
+    when(gossipNetwork.subscribe(contains("committee_index" + subnetId), any()))
+        .thenReturn(topicChannel);
 
-    int COMMITTEE_INDEX_1 = 1;
-
-    subnetSubscriptions.subscribeToSubnetId(COMMITTEE_INDEX_1);
+    subnetSubscriptions.subscribeToSubnetId(subnetId);
 
     verify(gossipNetwork).subscribe(any(), any());
 
-    assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_1))
-        .isEqualTo(Optional.of(topicChannel));
+    assertThat(subnetSubscriptions.getChannel(attestation)).isEqualTo(Optional.of(topicChannel));
 
-    subnetSubscriptions.unsubscribeFromSubnetId(COMMITTEE_INDEX_1);
+    subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
 
     verify(topicChannel).close();
+  }
+
+  private int computeSubnetId(final Attestation attestation) {
+    return CommitteeUtil.computeSubnetForAttestation(
+        recentChainData.getBestState().orElseThrow(), attestation);
   }
 }

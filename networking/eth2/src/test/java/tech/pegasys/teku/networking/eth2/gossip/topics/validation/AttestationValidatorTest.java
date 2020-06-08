@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
@@ -36,8 +37,8 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -270,9 +271,9 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsSentOnTheWrongSubnet() {
-    final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
-    final int expectedSubnetId = CommitteeUtil.getSubnetId(attestation);
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromSingle(attestation), expectedSubnetId + 1))
@@ -283,8 +284,10 @@ class AttestationValidatorTest {
   }
 
   private ValidationResult validate(final Attestation attestation) {
+    final BeaconState state = recentChainData.getBestState().orElseThrow();
     return validator.validate(
-        ValidateableAttestation.fromSingle(attestation), CommitteeUtil.getSubnetId(attestation));
+        ValidateableAttestation.fromSingle(attestation),
+        computeSubnetForAttestation(state, attestation));
   }
 
   private boolean hasSameValidators(final Attestation attestation1, final Attestation attestation) {
