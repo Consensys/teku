@@ -9,4 +9,4 @@
 
 ## Documentation
 
-- [ ] No documentation changes required or `documentation` label has been added to the PR.
+- [ ] I thought about documentation and added the `documentation` label to this PR if updates are required.
