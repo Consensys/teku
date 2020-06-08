@@ -18,6 +18,7 @@ import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
@@ -265,7 +266,7 @@ class AttestationValidatorTest {
     beaconChainUtil.setSlot(ONE);
     final Attestation attestation = attestationGenerator.validAttestation(unknownBlockAndState);
 
-    assertThat(validate(attestation)).isEqualTo(SAVE_FOR_FUTURE);
+    assertThat(validate(attestation)).isEqualTo(REJECT);
   }
 
   @Test

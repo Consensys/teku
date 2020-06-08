@@ -85,7 +85,7 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(ValidationResult.Invalid);
+    assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(eventBus).post(new GossipedBlockEvent(block));
   }
 
