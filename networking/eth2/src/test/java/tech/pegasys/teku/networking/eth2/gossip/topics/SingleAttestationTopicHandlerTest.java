@@ -124,6 +124,6 @@ public class SingleAttestationTopicHandlerTest {
         new SingleAttestationTopicHandler(
             gossipEncoding, forkInfo, 0, attestationValidator, gossipedAttestationConsumer);
     assertThat(topicHandler.getTopic())
-        .isEqualTo("/eth2/11223344/committee_index0_beacon_attestation/ssz_snappy");
+        .isEqualTo("/eth2/11223344/beacon_attestation_0/ssz_snappy");
   }
 }
