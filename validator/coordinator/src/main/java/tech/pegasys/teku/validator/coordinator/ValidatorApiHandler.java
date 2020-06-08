@@ -34,6 +34,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.CommitteeAssignmentUtil;
@@ -139,7 +140,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      final UnsignedLong slot, final BLSSignature randaoReveal) {
+      final UnsignedLong slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -147,7 +148,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         slot.minus(UnsignedLong.ONE),
         blockAndState ->
             blockFactory.createUnsignedBlock(
-                blockAndState.getState(), blockAndState.getBlock(), slot, randaoReveal));
+                blockAndState.getState(), blockAndState.getBlock(), slot, randaoReveal, graffiti));
   }
 
   private <T> SafeFuture<Optional<T>> createFromBlockAndState(
