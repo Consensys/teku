@@ -83,6 +83,12 @@ public class DepositProcessingController {
     return depositFetcher.fetchDepositsInRange(BigInteger.ZERO, toBlockNumber);
   }
 
+  // inclusive
+  public synchronized SafeFuture<Void> fetchDepositsInRange(
+      final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
+    return depositFetcher.fetchDepositsInRange(fromBlockNumber, toBlockNumber);
+  }
+
   private synchronized void onNewCanonicalBlockNumber(UnsignedLong newCanonicalBlockNumber) {
     this.latestCanonicalBlockNumber = newCanonicalBlockNumber.bigIntegerValue();
     fetchLatestSubscriptionDeposits();

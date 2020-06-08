@@ -28,4 +28,6 @@ public interface MessageSignerService {
   SafeFuture<BLSSignature> signAggregateAndProof(Bytes signingRoot);
 
   SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
+
+  SafeFuture<BLSSignature> signVoluntaryExit(Bytes signingRoot);
 }
