@@ -23,6 +23,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
 import com.google.common.base.Throwables;
@@ -36,6 +37,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -94,9 +97,10 @@ public class GetNewBlock implements Handler {
       final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
       UnsignedLong slot = getParameterValueAsUnsignedLong(queryParamMap, SLOT);
+      Optional<Bytes32> graffiti = getOptionalParameterValueAsBytes32(queryParamMap, GRAFFITI);
       ctx.result(
           provider
-              .getUnsignedBeaconBlockAtSlot(slot, randao)
+              .getUnsignedBeaconBlockAtSlot(slot, randao, graffiti)
               .thenApplyChecked(
                   maybeBlock -> {
                     if (maybeBlock.isEmpty()) {
@@ -108,6 +112,15 @@ public class GetNewBlock implements Handler {
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+    }
+  }
+
+  private Optional<Bytes32> getOptionalParameterValueAsBytes32(
+      Map<String, List<String>> queryParamMap, final String key) {
+    if (queryParamMap.containsKey(key)) {
+      return Optional.of(getParameterValueAsBytes32(queryParamMap, key));
+    } else {
+      return Optional.empty();
     }
   }
 

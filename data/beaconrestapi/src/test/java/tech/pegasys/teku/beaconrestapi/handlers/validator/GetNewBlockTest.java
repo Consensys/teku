@@ -71,7 +71,7 @@ public class GetNewBlockTest {
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
 
@@ -94,6 +94,24 @@ public class GetNewBlockTest {
   }
 
   @Test
+  void shouldReturnBlockWithoutGraffiti() throws Exception {
+    final Map<String, List<String>> params =
+        Map.of(
+            RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
+    Optional<BeaconBlock> optionalBeaconBlock =
+        Optional.of(
+            new BeaconBlock(dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
+    when(context.queryParamMap()).thenReturn(params);
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
+        .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
+    handler.handle(context);
+
+    verify(context).result(args.capture());
+    SafeFuture<String> result = args.getValue();
+    assertThat(result).isCompletedWithValue(jsonProvider.objectToJSON(optionalBeaconBlock.get()));
+  }
+
+  @Test
   void shouldReturnBlockWithGraffiti() throws Exception {
     final Map<String, List<String>> params =
         Map.of(
@@ -107,7 +125,7 @@ public class GetNewBlockTest {
         Optional.of(
             new BeaconBlock(dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.of(graffiti)))
         .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
     handler.handle(context);
 
@@ -128,7 +146,7 @@ public class GetNewBlockTest {
             RestApiConstants.GRAFFITI,
             List.of(graffiti.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.of(graffiti)))
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
 
@@ -145,7 +163,7 @@ public class GetNewBlockTest {
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("TEST")));
     handler.handle(context);
 
@@ -162,7 +180,7 @@ public class GetNewBlockTest {
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("TEST")));
     handler.handle(context);
 
