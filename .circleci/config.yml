@@ -340,24 +340,21 @@ jobs:
             mv TARGET_README.md README.md
       - restore_cache:
           keys:
-            - node-cache-{{ checksum "docs/package-lock.json" }}
+            - node-cache-{{ checksum "package-lock.json" }}
       - run:
           name: Install dependencies
-          working_directory: ./docs
           command: |
             npm ci
       - save_cache:
           paths:
             - ~/.npm
-          key: node-cache-{{ checksum "docs/package-lock.json" }}
+          key: node-cache-{{ checksum "package-lock.json" }}
       - run:
           name: Generate API doc site files
-          working_directory: ./docs
           command: |
             npm run generate-versions -- --spec=openapi.json --tag=${CIRCLE_TAG}
       - run:
           name: Clean gh-pages branch
-          working_directory: ./docs
           command: |
             # remove files used to build the doc version but it's not usefull to have them in
             # the final gh-pages branch
