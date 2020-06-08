@@ -101,4 +101,18 @@ class MultiaddrUtilTest {
             "/ip4/127.0.0.1/tcp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");
     assertThat(MultiaddrUtil.fromDiscoveryPeer(peer)).isEqualTo(expectedMultiAddr);
   }
+
+  @Test
+  public void fromDiscoveryPeerAsUdp_shouldConvertDiscoveryPeer() throws Exception {
+    final DiscoveryPeer peer =
+        new DiscoveryPeer(
+            Bytes.fromHexString(
+                "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
+            new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
+            ENR_FORK_ID);
+    final Multiaddr expectedMultiAddr =
+        Multiaddr.fromString(
+            "/ip4/127.0.0.1/udp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");
+    assertThat(MultiaddrUtil.fromDiscoveryPeerAsUdp(peer)).isEqualTo(expectedMultiAddr);
+  }
 }
