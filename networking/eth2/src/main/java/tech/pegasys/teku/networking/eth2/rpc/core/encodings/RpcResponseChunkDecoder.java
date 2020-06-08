@@ -18,21 +18,21 @@ import static java.lang.Integer.min;
 import io.libp2p.etc.types.ByteBufExtKt;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.compression.SnappyFrameDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Netty decoder which decodes ssz_snappy or raw ssz Eth2 RPC response chunks from inbound response
  * stream
  */
-public class RpcResponseChunkDecoder extends SnappyFrameDecoder {
+public class RpcResponseChunkDecoder extends RpcBytesToMessageDecoder<RpcResponseChunk> {
 
   private final boolean compressed;
   private int respCode;
   private long remainingRawLength = 0;
   private boolean decodePayload = false;
+  private final SnappyFrameDecoder snappyFrameDecoder = new SnappyFrameDecoder();
   private final List<ByteBuf> rawDataFrames = new ArrayList<>();
 
   /**
@@ -42,16 +42,15 @@ public class RpcResponseChunkDecoder extends SnappyFrameDecoder {
    *     is plain ssz
    */
   public RpcResponseChunkDecoder(boolean compressed) {
-    super(true);
     this.compressed = compressed;
   }
 
   @Override
-  protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+  protected Optional<RpcResponseChunk> decodeOneImpl(ByteBuf in) {
     if (!decodePayload) {
       if (in.readableBytes() < 2) {
         // wait for more byte to read resp code and length fields
-        return;
+        return Optional.empty();
       }
       int rollbackIndex = in.readerIndex();
 
@@ -60,26 +59,26 @@ public class RpcResponseChunkDecoder extends SnappyFrameDecoder {
       if (length < 0) {
         // wait for more byte to read length field
         in.readerIndex(rollbackIndex);
-        return;
+        return Optional.empty();
       }
       this.respCode = respCode;
       this.remainingRawLength = length;
       decodePayload = true;
     } else {
-      ArrayList<Object> rawOut = new ArrayList<>();
+      Optional<ByteBuf> rawOut;
       if (compressed) {
-        super.decode(ctx, in, rawOut);
+        rawOut = snappyFrameDecoder.decodeOneImpl(in);
       } else {
-        rawOut.add(in.readSlice(min(in.readableBytes(), (int) remainingRawLength)).retain());
+        rawOut = Optional.of(in.readSlice(min(in.readableBytes(), (int) remainingRawLength)).retain());
       }
 
       if (remainingRawLength == 0) {
         // special case for chunk with 0 length
-        rawOut.add(Unpooled.EMPTY_BUFFER);
+        rawOut = Optional.of(Unpooled.EMPTY_BUFFER);
       }
 
-      if (!rawOut.isEmpty()) {
-        ByteBuf rawBuf = (ByteBuf) rawOut.get(0);
+      if (rawOut.isPresent()) {
+        ByteBuf rawBuf = rawOut.get();
         rawDataFrames.add(rawBuf);
         remainingRawLength -= rawBuf.readableBytes();
         if (remainingRawLength < 0) {
@@ -88,10 +87,11 @@ public class RpcResponseChunkDecoder extends SnappyFrameDecoder {
         if (remainingRawLength == 0) {
           ByteBuf rawChunkPayload = Unpooled.wrappedBuffer(rawDataFrames.toArray(new ByteBuf[0]));
           rawDataFrames.clear();
-          out.add(new RpcResponseChunk(respCode, rawChunkPayload));
           decodePayload = false;
+          return Optional.of(new RpcResponseChunk(respCode, rawChunkPayload));
         }
       }
     }
+    return Optional.empty();
   }
 }

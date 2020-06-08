@@ -32,7 +32,7 @@ import java.util.Optional;
  * that checksum validation brings, please use the {@link #SnappyFrameDecoder(boolean)} constructor
  * with the argument set to {@code true}.
  */
-public class SnappyFrameDecoder {
+public class SnappyFrameDecoder extends RpcBytesToMessageDecoder<ByteBuf>{
 
   private enum ChunkType {
     STREAM_IDENTIFIER,
@@ -70,11 +70,8 @@ public class SnappyFrameDecoder {
     this.validateChecksums = validateChecksums;
   }
 
-  protected Optional<ByteBuf> decodeFrame(ByteBuf in) throws Exception {
-
-  }
-
-  protected Optional<ByteBuf> decode(ByteBuf in) throws Exception {
+  @Override
+  protected Optional<ByteBuf> decodeOneImpl(ByteBuf in) {
     if (corrupted) {
       in.skipBytes(in.readableBytes());
       return Optional.empty();

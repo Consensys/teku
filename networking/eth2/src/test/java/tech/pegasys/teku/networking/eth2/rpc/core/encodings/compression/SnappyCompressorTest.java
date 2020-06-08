@@ -17,16 +17,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.SnappyFramedCompressor.MAX_FRAME_CONTENT_SIZE;
 
-import io.libp2p.etc.types.BufferExtKt;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.embedded.EmbeddedChannel;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,9 +35,7 @@ import org.xerial.snappy.SnappyFramedOutputStream;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcResponseChunk;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcResponseChunkDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.SnappyFrameDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
@@ -188,116 +186,106 @@ public class SnappyCompressorTest {
   }
 
   @Test
-  void snappyNettyDecoderTest() throws Exception {
+  void byteBufTests() {
+    ByteBuf buf1 = Unpooled.wrappedBuffer(new byte[10]);
+    ByteBuf buf2 = Unpooled.wrappedBuffer(new byte[6]);
+    ByteBuf bufWrapped = Unpooled.wrappedBuffer(buf1, buf2);
+    bufWrapped.skipBytes(13);
+    System.out.println("" + buf1.refCnt() + ", " + buf2.refCnt() + ": " + bufWrapped.refCnt());
+    buf1.release();
+    buf2.release();
+    //    bufWrapped.release();
+    System.out.println("" + buf1.refCnt() + ", " + buf2.refCnt() + ": " + bufWrapped.refCnt());
+    bufWrapped.release();
+
+    bufWrapped = null;
+  }
+
+  private byte[] generateRawSnappyData(int len, boolean compressable) {
     var rnd = new Random(777);
+    byte[] ret = new byte[len];
+    if (!compressable) {
+      rnd.nextBytes(ret);
+    } else {
+      for (int i = 0; i < len / 128; i++) {
+        byte[] rndBytes = new byte[64];
+        rnd.nextBytes(rndBytes);
+        System.arraycopy(rndBytes, 0, ret, i * 128, rndBytes.length);
+      }
+    }
+    return ret;
+  }
 
-    byte[] chunk1RawBytes = new byte[100 * 1024];
-    rnd.nextBytes(chunk1RawBytes);
-    byte[] chunk1CompressedBytes = compress(chunk1RawBytes);
+  @Test
+  void snappyNettyDecoderTest() throws Exception {
 
-    byte[] chunk2RawBytes = new byte[10 * 1024];
-    rnd.nextBytes(chunk2RawBytes);
-    byte[] chunk2CompressedBytes = compress(chunk2RawBytes);
+    byte[] chunk1RawBytes = generateRawSnappyData(100 * 1024, false);
+    byte[] chunk1CompressedBytes = compress(chunk1RawBytes); // uncompressed frame
 
-    byte[] chunk3RawBytes = new byte[0];
+    byte[] chunk2RawBytes = generateRawSnappyData(100 * 1024, true);
+    byte[] chunk2CompressedBytes = compress(chunk2RawBytes); // uncompressed frame
+
+    byte[] chunk3RawBytes = generateRawSnappyData(10 * 1024, false);
     byte[] chunk3CompressedBytes = compress(chunk3RawBytes);
 
-    byte[] chunk4RawBytes = new byte[1024];
-    rnd.nextBytes(chunk4RawBytes);
-    byte[] chunk4CompressedBytes = compress(chunk4RawBytes);
+    byte[] chunk4RawBytes = generateRawSnappyData(10 * 1024, true);
+    byte[] chunk4CompressedBytes = compress(chunk3RawBytes);
 
-    ByteBuf chunk1Buf =
+    byte[] chunk5RawBytes = generateRawSnappyData(1024, true);
+    byte[] chunk5CompressedBytes = compress(chunk4RawBytes);
+
+    byte[] extraData = new byte[4];
+
+    List<byte[]> chunkRawList = List
+        .of(chunk1RawBytes, chunk2RawBytes, chunk3RawBytes, chunk4RawBytes, chunk5RawBytes);
+    List<byte[]> chunkCompressedList = List
+        .of(chunk1CompressedBytes, chunk2CompressedBytes, chunk3CompressedBytes, chunk4CompressedBytes, chunk5CompressedBytes);
+
+    SnappyFrameDecoder decoder = new SnappyFrameDecoder();
+
+    Consumer<List<ByteBuf>> testDecoder = (List<ByteBuf> in) -> {
+
+    };
+
+    ByteBuf byteBuf4 = Unpooled.wrappedBuffer(chunk4CompressedBytes);
+    Optional<ByteBuf> plainDecoded4 = decoder.decodeOneMessage(byteBuf4);
+    assertThat(plainDecoded4).isNotEmpty().get().matches(b -> b.readableBytes() == chunk4RawBytes.length);
+
+    plainDecoded4.get().release();
+    byteBuf4.release();
+
+    assertThat(byteBuf4.refCnt()).isEqualTo(0);
+    assertThat(plainDecoded4.get().refCnt()).isEqualTo(0);
+
+    ByteBuf byteBuf =
         Unpooled.wrappedBuffer(
-            new byte[] {0},
-            ProtobufEncoder.encodeVarInt(chunk1RawBytes.length).toArray(),
-            chunk1CompressedBytes);
-    ByteBuf chunk2Buf =
-        Unpooled.wrappedBuffer(
-            new byte[] {0},
-            ProtobufEncoder.encodeVarInt(chunk2RawBytes.length).toArray(),
-            chunk2CompressedBytes);
-    ByteBuf chunk3Buf =
-        Unpooled.wrappedBuffer(
-            new byte[] {0},
-            ProtobufEncoder.encodeVarInt(chunk3RawBytes.length).toArray(),
-            chunk3CompressedBytes);
-    ByteBuf chunk4Buf =
-        Unpooled.wrappedBuffer(
-            new byte[] {1},
-            ProtobufEncoder.encodeVarInt(chunk4RawBytes.length).toArray(),
-            chunk4CompressedBytes);
+            Unpooled.wrappedBuffer(chunk1CompressedBytes),
+            Unpooled.wrappedBuffer(chunk2CompressedBytes),
+            Unpooled.wrappedBuffer(chunk3CompressedBytes),
+            Unpooled.wrappedBuffer(chunk4CompressedBytes),
+            Unpooled.wrappedBuffer(new byte[4]));
 
-    Consumer<EmbeddedChannel> check =
-        channel -> {
-          {
-            RpcResponseChunk inbound = channel.readInbound();
-            assertThat(inbound.getRespCode()).isEqualTo(0);
-            assertThat(BufferExtKt.toByteArray(inbound.getContent()))
-                .containsExactly(chunk1RawBytes);
-          }
-          {
-            RpcResponseChunk inbound = channel.readInbound();
-            assertThat(inbound.getRespCode()).isEqualTo(0);
-            assertThat(BufferExtKt.toByteArray(inbound.getContent()))
-                .containsExactly(chunk2RawBytes);
-          }
-          {
-            RpcResponseChunk inbound = channel.readInbound();
-            assertThat(inbound.getRespCode()).isEqualTo(0);
-            assertThat(BufferExtKt.toByteArray(inbound.getContent()))
-                .containsExactly(chunk3RawBytes);
-          }
-          {
-            RpcResponseChunk inbound = channel.readInbound();
-            assertThat(inbound.getRespCode()).isEqualTo(1);
-            assertThat(BufferExtKt.toByteArray(inbound.getContent()))
-                .containsExactly(chunk4RawBytes);
-          }
-        };
+    Optional<ByteBuf> f1_1 = decoder.decodeOneMessage(byteBuf);
+    Optional<ByteBuf> f1_2 = decoder.decodeOneMessage(byteBuf);
+    Optional<ByteBuf> f2 = decoder.decodeOneMessage(byteBuf);
+    Optional<ByteBuf> f4 = decoder.decodeOneMessage(byteBuf);
 
-    {
-      EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
-      channel.writeInbound(Unpooled.wrappedBuffer(chunk1Buf, chunk2Buf, chunk3Buf, chunk4Buf));
-      check.accept(channel);
-    }
+    assertThat(f1_1).isNotEmpty();
+    assertThat(f1_2).isNotEmpty();
+    assertThat(f1_1.get().readableBytes() + f1_2.get().readableBytes() == chunk1RawBytes.length);
+    assertThat(f2).isNotEmpty().get().matches(b -> b.readableBytes() == chunk2RawBytes.length);
+    assertThat(f4).isNotEmpty().get().matches(b -> b.readableBytes() == chunk4RawBytes.length);
+    assertThat(byteBuf.readableBytes()).isEqualTo(4);
 
-    {
-      EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
-      channel.writeInbound(
-          chunk1Buf.retainedSlice(),
-          chunk2Buf.retainedSlice(),
-          chunk3Buf.retainedSlice(),
-          chunk4Buf.retainedSlice());
-      check.accept(channel);
-    }
-
-    {
-      EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
-
-      channel.writeInbound(
-          chunk1Buf.retainedSlice(0, 1),
-          chunk1Buf.retainedSlice(1, 1),
-          chunk1Buf.retainedSlice(2, 1),
-          chunk1Buf.retainedSlice(3, 1),
-          chunk1Buf.retainedSlice(4, 1),
-          chunk1Buf.retainedSlice(5, 1000),
-          chunk1Buf.retainedSlice(1005, chunk1Buf.readableBytes() - 1005),
-          chunk2Buf.retainedSlice(),
-          chunk3Buf.retainedSlice(),
-          chunk4Buf.retainedSlice());
-      check.accept(channel);
-    }
-
-    {
-      EmbeddedChannel channel = new EmbeddedChannel(new RpcResponseChunkDecoder(true));
-
-      channel.writeInbound(
-          chunk1Buf.retainedSlice(),
-          chunk2Buf.retainedSlice(),
-          chunk3Buf.retainedSlice(),
-          chunk4Buf.retainedSlice(0, 100),
-          chunk4Buf.retainedSlice(100, chunk4Buf.readableBytes() - 100));
-      check.accept(channel);
-    }
+    f1_1.get().release();
+    f1_2.get().release();
+    f2.get().release();
+    f4.get().release();
+    byteBuf.release();
+    assertThat(byteBuf.refCnt()).isEqualTo(0);
+    assertThat(f1_1.get().refCnt()).isEqualTo(0);
+    assertThat(f1_2.get().refCnt()).isEqualTo(0);
+    assertThat(f2.get().refCnt()).isEqualTo(0);
+    assertThat(f4.get().refCnt()).isEqualTo(0);
   }
 }
