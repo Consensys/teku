@@ -21,7 +21,11 @@ import io.libp2p.core.multiformats.Multiaddr;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
+import io.libp2p.etc.encode.Base58;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class MultiaddrUtil {
@@ -45,8 +49,30 @@ public class MultiaddrUtil {
     return addPeerId(fromInetSocketAddress(address), nodeId);
   }
 
+  public static InetSocketAddress getResolvedInetSocketAddress(NetworkConfig config) throws UnknownHostException {
+    final InetSocketAddress advertisedAddress =
+        new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort());
+    final InetSocketAddress resolvedAddress;
+    if (advertisedAddress.getAddress().isAnyLocalAddress()) {
+      resolvedAddress =
+          new InetSocketAddress(InetAddress.getLocalHost(), advertisedAddress.getPort());
+    } else {
+      resolvedAddress = advertisedAddress;
+    }
+    return resolvedAddress;
+  }
+
+  public static Multiaddr fromInetSocketAddress(
+      final InetSocketAddress address, final byte[] nodeId) {
+    return addPeerId(fromInetSocketAddress(address), nodeId);
+  }
+
   private static Multiaddr addPeerId(final Multiaddr addr, final NodeId nodeId) {
     return new Multiaddr(addr, Multiaddr.fromString("/p2p/" + nodeId.toBase58()));
+  }
+
+  private static Multiaddr addPeerId(final Multiaddr addr, final byte[] nodeId) {
+    return new Multiaddr(addr, Multiaddr.fromString("/p2p/" + Base58.INSTANCE.encode(nodeId)));
   }
 
   private static LibP2PNodeId getNodeId(final DiscoveryPeer peer) {

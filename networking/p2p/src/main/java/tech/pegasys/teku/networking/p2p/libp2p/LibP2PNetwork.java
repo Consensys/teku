@@ -224,15 +224,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private Multiaddr getAdvertisedAddr(NetworkConfig config, final NodeId nodeId) {
     try {
-      final InetSocketAddress advertisedAddress =
-          new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort());
-      final InetSocketAddress resolvedAddress;
-      if (advertisedAddress.getAddress().isAnyLocalAddress()) {
-        resolvedAddress =
-            new InetSocketAddress(InetAddress.getLocalHost(), advertisedAddress.getPort());
-      } else {
-        resolvedAddress = advertisedAddress;
-      }
+      final InetSocketAddress resolvedAddress = MultiaddrUtil.getResolvedInetSocketAddress(config);
       return MultiaddrUtil.fromInetSocketAddress(resolvedAddress, nodeId);
     } catch (UnknownHostException err) {
       throw new RuntimeException(
@@ -318,6 +310,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   @Override
   public Optional<String> getEnr() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<String> getDiscoveryAddress() {
     return Optional.empty();
   }
 

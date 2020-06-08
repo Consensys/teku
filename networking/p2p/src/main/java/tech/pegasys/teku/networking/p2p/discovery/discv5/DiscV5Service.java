@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
+import io.libp2p.core.multiformats.Multiaddr;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoverySystem;
 import org.ethereum.beacon.discovery.DiscoverySystemBuilder;
@@ -25,24 +23,38 @@ import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
+import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
+import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.util.async.SafeFuture;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public class DiscV5Service extends Service implements DiscoveryService {
 
   private final DiscoverySystem discoverySystem;
+  private final Multiaddr advertisedAddr;
 
-  public DiscV5Service(final DiscoverySystem discoverySystem) {
+  private DiscV5Service(final DiscoverySystem discoverySystem, NetworkConfig config) {
     this.discoverySystem = discoverySystem;
+    final byte[] nodeId = discoverySystem.getLocalNodeRecord().getNodeId().toArray();
+    this.advertisedAddr = getAdvertisedAddr(config, nodeId);
+
   }
 
-  public static DiscoveryService create(
-      final Bytes privateKey,
-      final String listenAddress,
-      final int listenPort,
-      final String advertisedAddress,
-      final int advertisedPort,
-      final List<String> bootnodes) {
+  public static DiscoveryService create(NetworkConfig p2pConfig) {
+    final Bytes privateKey =Bytes.wrap(p2pConfig.getPrivateKey().raw());
+    final String listenAddress = p2pConfig.getNetworkInterface();
+    final int listenPort = p2pConfig.getListenPort();
+    final String advertisedAddress = p2pConfig.getAdvertisedIp();
+    final int advertisedPort = p2pConfig.getAdvertisedPort();
+    final List<String> bootnodes = p2pConfig.getBootnodes();
     final DiscoverySystem discoveryManager =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
@@ -54,7 +66,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
                     .address(advertisedAddress, advertisedPort)
                     .build())
             .build();
-    return new DiscV5Service(discoveryManager);
+    return new DiscV5Service(discoveryManager, p2pConfig);
   }
 
   @Override
@@ -81,6 +93,21 @@ public class DiscV5Service extends Service implements DiscoveryService {
   @Override
   public Optional<String> getEnr() {
     return Optional.of(discoverySystem.getLocalNodeRecord().asEnr());
+  }
+
+  @Override
+  public Optional<String> getDiscoveryAddress() {
+    return Optional.of(advertisedAddr.toString());
+  }
+
+  private Multiaddr getAdvertisedAddr(NetworkConfig config, final byte[] nodeId) {
+    try {
+      final InetSocketAddress resolvedAddress = MultiaddrUtil.getResolvedInetSocketAddress(config);
+      return MultiaddrUtil.fromInetSocketAddress(resolvedAddress, nodeId);
+    } catch (UnknownHostException err) {
+      throw new RuntimeException(
+          "Unable to start discovery node due to failed attempt at obtaining host address", err);
+    }
   }
 
   @Override

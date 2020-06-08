@@ -43,6 +43,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -122,6 +123,16 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveBeaconValidatorsEndpoint() {
     verify(app).get(eq(GetValidators.ROUTE), any(GetValidators.class));
+  }
+
+  @Test
+  public void ShouldHaveV1VersionEndpoint() {
+    verify(app).get(eq(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE), any(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.class));
+  }
+
+  @Test
+  public void ShouldHaveV1IdentityEndpoint() {
+    verify(app).get(eq(GetIdentity.ROUTE), any(GetIdentity.class));
   }
 
   @Test

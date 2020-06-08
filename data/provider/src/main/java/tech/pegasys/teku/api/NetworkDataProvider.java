@@ -16,12 +16,15 @@ package tech.pegasys.teku.api;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.api.schema.Metadata;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class NetworkDataProvider {
   private final P2PNetwork<?> p2pNetwork;
+  private final MetadataMessagesFactory metadataMessageFactory = new MetadataMessagesFactory();
 
   public NetworkDataProvider(final P2PNetwork<?> p2pNetwork) {
     this.p2pNetwork = p2pNetwork;
@@ -76,11 +79,16 @@ public class NetworkDataProvider {
     return p2pNetwork.getListenPort();
   }
 
-  P2PNetwork<?> getP2pNetwork() {
-    return p2pNetwork;
-  }
-
   public List<String> getListeningAddresses() {
     return List.of(p2pNetwork.getNodeAddress());
+  }
+
+  public List<String> getDiscoveryAddresses() {
+    Optional<String> discoveryAddressOptional = p2pNetwork.getDiscoveryAddress();
+    return discoveryAddressOptional.map(List::of).orElseGet(List::of);
+  }
+
+  public Metadata getMetadata() {
+    return new Metadata(metadataMessageFactory.createMetadataMessage());
   }
 }

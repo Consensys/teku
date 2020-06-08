@@ -11,26 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.discovery;
+package tech.pegasys.teku.api.response.v1.node;
 
-import java.util.Optional;
-import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.util.async.SafeFuture;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public interface DiscoveryService {
+public class Version {
+  public final String version;
 
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
-
-  Stream<DiscoveryPeer> streamKnownPeers();
-
-  SafeFuture<Void> searchForPeers();
-
-  Optional<String> getEnr();
-
-  Optional<String> getDiscoveryAddress();
-
-  void updateCustomENRField(String fieldName, Bytes value);
+  @JsonCreator
+  public Version(
+      @JsonProperty("version") final String version) {
+    this.version = version;
+  }
 }
