@@ -44,7 +44,7 @@ executors:
 
   node_executor:
     docker:
-      - image: circleci/node:12.9.0-stretch
+      - image: circleci/node:14-buster
 
 commands:
   prepare:
@@ -293,7 +293,7 @@ jobs:
             TEKU_PID=$!
 
             EXIT_CODE=0
-            wget --timeout=30 --retry-connrefused --output-document=openapi.json http://localhost:5051/swagger-docs
+            wget --timeout=30 --retry-connrefused --output-document=./docs/openapi.json http://localhost:5051/swagger-docs
             if [ $? != 0 ]; then
               rm openapi.json
               EXIT_CODE=1
@@ -308,25 +308,39 @@ jobs:
       - persist_to_workspace:
           root: ~/project
           paths:
-            - ./openapi.json
+            - ./docs/openapi.json
 
   publishAPIDoc:
     executor: node_executor
     steps:
+      # This job requires that we checkout current branch first to have all the repos.
+      # it will not be used directly as we have the saved workspace
+      # but will enable to checkout gh-pages branch.
       - checkout
       - attach_workspace:
-          at: ~/project
-      - add_ssh_keys:
-          fingerprints:
-            - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
+          at: /tmp/workspace
       - run:
-          name: Set Git user params
+          name: checkout gh pages branch and copy files from workspace
           command: |
-            git config --global user.name $CIRCLE_USERNAME
-            git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
+            # publishing happens by pushing files to gh-pages branch
+            # retrieve branch to publish to from CIrcle CI env vars and fallback on test-gh-pages
+            # if no var defined
+            [ -n "$BRANCH_OVERRIDE" ] && readonly BRANCH="$BRANCH_OVERRIDE" || readonly BRANCH='test-gh-pages'
+
+            # switch to the publishing branch
+            git checkout "$BRANCH"
+
+            # copy the content of the docs folder built on the previous job and attached
+            # using workspace on temp location
+            # cp with T option to override existing content, specially usefull for latest
+            cp -aT /tmp/workspace/docs/. .
+
+            # add a readme to make sure devs understand that this publishing branch is generated
+            # by CI (use template readme), mv replaces the current readme that is only for source dir
+            mv TARGET_README.md README.md
       - restore_cache:
           keys:
-            - deps-{{ checksum "./docs/package.json" }}
+            - node-cache-{{ checksum "./docs/package-lock.json" }}
       - run:
           name: Install dependencies
           working_directory: ./docs
@@ -335,47 +349,45 @@ jobs:
       - save_cache:
           paths:
             - ./docs/node_modules
-          key: deps-{{ checksum "./docs/package.json" }}
+          key: node-cache-{{ checksum "./docs/package-lock.json" }}
       - run:
           name: Generate API doc site files
           working_directory: ./docs
           command: |
-            npm run generate-versions -- --spec=../openapi.json --tag=${CIRCLE_TAG}
-      - deploy:
-          name: Commit and push doc changes
+            npm run generate-versions -- --spec=openapi.json --tag=${CIRCLE_TAG}
+      - run:
+          name: Clean gh-pages branch
+          working_directory: ./docs
           command: |
-    - deploy:
-        name: Commit and push docs changes
-        command: |
-          # publishing happens by pushing files to gh-pages branch
-          # retrieve branch to publish to from CIrcle CI env vars and fallback on test-gh-pages
-          # if no var defined
-          [ -n "$BRANCH_OVERRIDE" ] && readonly BRANCH="$BRANCH_OVERRIDE" || readonly BRANCH='test-gh-pages'
+            # remove files used to build the doc version but it's not usefull to have them in
+            # the final gh-pages branch
+            rm openapi.json
+            rm package.json
+            rm package-lock.json
+            rm generate-versions.js
+      - add_ssh_keys:
+          fingerprints:
+            - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
+      - run:
+          name: Set Git user params
+          command: |
+            git config --global user.name $CIRCLE_USERNAME
+            git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
+      - deploy:
+          name: Commit and push docs changes
+          command: |
+            # add all generated and copied content to git
+            git add .
 
-          # switch to the publishing branch
-          git checkout "$BRANCH"
+            # commit with infos on the triggering task and branch
+            # use [skip ci] to prevent CI from runnning on this branch as no CI is configured
+            git commit -m "Automated REST API documentation update" \
+                       -m "[ci skip] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
+                       -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
 
-          # copy the content of the docs folder built on the previous job and attached
-          # using workspace on temp location
-          # cp with T option to override existing content, specially usefull for latest
-          cp -aT /tmp/workspace/docs/. .
-
-          # add a readme to make sure devs understand that this publishing branch is generated
-          # by CI (use template readme), mv replaces the current readme that is only for source dir
-          mv TARGET_README.md README.md
-
-          # add all new copied content of the workspace to git
-          git add .
-
-          # commit with infos on the triggering task and branch
-          # use [skip ci] to prevent CI from runnning on this branch as no CI is configured
-          git commit -m "Automated SDK documentation update" \
-                     -m "[ci skip] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
-                     -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
-
-          # push changes to the Github Pages publishing branch on origin repos
-          git push --set-upstream origin $BRANCH
-          git push origin
+            # push changes to the Github Pages publishing branch on origin repos
+            git push --set-upstream origin $BRANCH
+            git push origin
 
 workflows:
   version: 2
@@ -433,17 +445,20 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
-      # - publishAPIDoc:
-      #     requires:
-      #       - extractAPISpec
-      #       - unitTests
-      #       - integrationTests
-      #       - acceptanceTests
-      #       - referenceTests
-      #       - docker
-      #     filters:
-      #       branches:
-      #         only: master
+      - publishAPIDoc:
+          filters:
+            branches:
+              only: master
+            tags: # stable doc is published only on tags to prevent confusion on the doc site.
+              only: /.*/
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+            - extractAPISpec
+
 #  nightly:
 #    triggers:
 #      - schedule:
