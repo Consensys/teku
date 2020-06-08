@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.validator;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -26,15 +27,20 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -48,6 +54,11 @@ public class GetNewBlockTest {
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private GetNewBlock handler;
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
+
+  @SuppressWarnings("unchecked")
+  final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @BeforeEach
   public void setup() {
@@ -60,11 +71,11 @@ public class GetNewBlockTest {
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
 
-    // Exeception should just be propagated up via the future
+    // Exception should just be propagated up via the future
     verify(context, never()).status(anyInt());
     verify(context)
         .result(
@@ -83,16 +94,80 @@ public class GetNewBlockTest {
   }
 
   @Test
+  void shouldReturnBlockWithoutGraffiti() throws Exception {
+    final Map<String, List<String>> params =
+        Map.of(
+            RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
+    Optional<BeaconBlock> optionalBeaconBlock =
+        Optional.of(
+            new BeaconBlock(dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
+    when(context.queryParamMap()).thenReturn(params);
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
+        .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
+    handler.handle(context);
+
+    verify(context).result(args.capture());
+    SafeFuture<String> result = args.getValue();
+    assertThat(result).isCompletedWithValue(jsonProvider.objectToJSON(optionalBeaconBlock.get()));
+  }
+
+  @Test
+  void shouldReturnBlockWithGraffiti() throws Exception {
+    final Map<String, List<String>> params =
+        Map.of(
+            RestApiConstants.SLOT,
+            List.of("1"),
+            RANDAO_REVEAL,
+            List.of(signature.toHexString()),
+            RestApiConstants.GRAFFITI,
+            List.of(graffiti.toHexString()));
+    Optional<BeaconBlock> optionalBeaconBlock =
+        Optional.of(
+            new BeaconBlock(dataStructureUtil.randomBeaconBlock(dataStructureUtil.randomLong())));
+    when(context.queryParamMap()).thenReturn(params);
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.of(graffiti)))
+        .thenReturn(SafeFuture.completedFuture(optionalBeaconBlock));
+    handler.handle(context);
+
+    verify(context).result(args.capture());
+    SafeFuture<String> result = args.getValue();
+    assertThat(result).isCompletedWithValue(jsonProvider.objectToJSON(optionalBeaconBlock.get()));
+  }
+
+  @Test
+  void shouldPropagateChainDataUnavailableExceptionToGlobalExceptionHandlerWithGraffiti()
+      throws Exception {
+    final Map<String, List<String>> params =
+        Map.of(
+            RestApiConstants.SLOT,
+            List.of("1"),
+            RANDAO_REVEAL,
+            List.of(signature.toHexString()),
+            RestApiConstants.GRAFFITI,
+            List.of(graffiti.toHexString()));
+    when(context.queryParamMap()).thenReturn(params);
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.of(graffiti)))
+        .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
+    handler.handle(context);
+
+    // Exception should just be propagated up via the future
+    verify(context, never()).status(anyInt());
+    verify(context)
+        .result(
+            argThat((ArgumentMatcher<SafeFuture<?>>) CompletableFuture::isCompletedExceptionally));
+  }
+
+  @Test
   void shouldReturnServerErrorWhenRuntimeExceptionReceived() throws Exception {
     final Map<String, List<String>> params =
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("TEST")));
     handler.handle(context);
 
-    // Exeception should just be propagated up via the future
+    // Exception should just be propagated up via the future
     verify(context, never()).status(anyInt());
     verify(context)
         .result(
@@ -105,7 +180,7 @@ public class GetNewBlockTest {
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("TEST")));
     handler.handle(context);
 
