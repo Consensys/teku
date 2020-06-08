@@ -120,7 +120,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Invalid);
-    verify(gossipedAttestationConsumer).accept(attestation);
+    verify(gossipedAttestationConsumer, never()).accept(attestation);
   }
 
   @Test
