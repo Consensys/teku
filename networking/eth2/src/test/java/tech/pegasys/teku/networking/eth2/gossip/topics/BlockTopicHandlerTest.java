@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,8 +62,8 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(true);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Valid);
     verify(eventBus).post(new GossipedBlockEvent(block));
   }
 
@@ -73,8 +74,8 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(recentChainData.getBestSlot());
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(eventBus).post(new GossipedBlockEvent(block));
   }
 
@@ -83,8 +84,8 @@ public class BlockTopicHandlerTest {
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = gossipEncoding.encode(block);
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Invalid);
     verify(eventBus).post(new GossipedBlockEvent(block));
   }
 
@@ -92,8 +93,8 @@ public class BlockTopicHandlerTest {
   public void handleMessage_invalidBlock_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Invalid);
   }
 
   @Test
@@ -103,8 +104,8 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Invalid);
     verify(eventBus, never()).post(new GossipedBlockEvent(block));
   }
 

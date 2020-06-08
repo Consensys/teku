@@ -19,8 +19,9 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_sign
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
@@ -61,7 +62,7 @@ public class SignedAggregateAndProofValidator {
     this.recentChainData = recentChainData;
   }
 
-  public ValidationResult validate(final ValidateableAttestation attestation) {
+  public InternalValidationResult validate(final ValidateableAttestation attestation) {
     final SignedAggregateAndProof signedAggregate = attestation.getSignedAggregateAndProof();
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
     final Attestation aggregate = aggregateAndProof.getAggregate();
@@ -72,20 +73,20 @@ public class SignedAggregateAndProofValidator {
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
     if (receivedValidAggregations.contains(aggregatorIndexAndEpoch)) {
       LOG.trace("Rejecting duplicate aggregate");
-      return INVALID;
+      return IGNORE;
     }
 
-    final ValidationResult aggregateValidationResult =
+    final InternalValidationResult aggregateInternalValidationResult =
         attestationValidator.singleOrAggregateAttestationChecks(aggregate);
-    if (aggregateValidationResult == INVALID) {
+    if (aggregateInternalValidationResult != ACCEPT) {
       LOG.trace("Rejecting aggregate because attestation failed validation");
-      return aggregateValidationResult;
+      return aggregateInternalValidationResult;
     }
 
     final Optional<BeaconState> maybeState =
         recentChainData.getBlockState(aggregate.getData().getBeacon_block_root());
     if (maybeState.isEmpty()) {
-      return SAVED_FOR_FUTURE;
+      return REJECT;
     }
     final BeaconState state = maybeState.get();
     final BLSPublicKey aggregatorPublicKey =
@@ -94,7 +95,7 @@ public class SignedAggregateAndProofValidator {
     if (!isSelectionProofValid(
         aggregateSlot, state, aggregatorPublicKey, aggregateAndProof.getSelection_proof())) {
       LOG.trace("Rejecting aggregate with incorrect selection proof");
-      return INVALID;
+      return REJECT;
     }
 
     final List<Integer> beaconCommittee =
@@ -104,25 +105,25 @@ public class SignedAggregateAndProofValidator {
     if (!isAggregator(aggregateAndProof.getSelection_proof(), aggregatorModulo)) {
       LOG.trace(
           "Rejecting aggregate because selection proof does not select validator as aggregator");
-      return INVALID;
+      return REJECT;
     }
     if (!beaconCommittee.contains(toIntExact(aggregateAndProof.getIndex().longValue()))) {
       LOG.trace(
           "Rejecting aggregate because attester is not in committee. Should have been one of {}",
           beaconCommittee);
-      return INVALID;
+      return REJECT;
     }
 
     if (!isSignatureValid(signedAggregate, state, aggregatorPublicKey)) {
       LOG.trace("Rejecting aggregate with invalid signature");
-      return INVALID;
+      return REJECT;
     }
 
     if (!receivedValidAggregations.add(aggregatorIndexAndEpoch)) {
       LOG.trace("Rejecting duplicate aggregate");
-      return INVALID;
+      return IGNORE;
     }
-    return aggregateValidationResult;
+    return aggregateInternalValidationResult;
   }
 
   private boolean isSignatureValid(

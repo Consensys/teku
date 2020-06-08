@@ -13,8 +13,23 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-public enum ValidationResult {
-  VALID,
-  SAVED_FOR_FUTURE,
-  INVALID
+public enum InternalValidationResult {
+  ACCEPT,
+  SAVE_FOR_FUTURE,
+  IGNORE,
+  REJECT;
+
+  public io.libp2p.core.pubsub.ValidationResult getGossipSubValidationResult() {
+    switch (this) {
+      case SAVE_FOR_FUTURE:
+      case IGNORE:
+        return io.libp2p.core.pubsub.ValidationResult.Ignore;
+      case REJECT:
+        return io.libp2p.core.pubsub.ValidationResult.Invalid;
+      case ACCEPT:
+        return io.libp2p.core.pubsub.ValidationResult.Valid;
+      default:
+        throw new UnsupportedOperationException("Enum missing value");
+    }
+  }
 }

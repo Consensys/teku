@@ -15,8 +15,8 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.statetransition.BeaconChainUtil.initializeStorage;
 
 import com.google.common.eventbus.EventBus;
@@ -75,7 +75,7 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit =
         voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
-    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(VALID);
+    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -91,9 +91,9 @@ public class VoluntaryExitValidatorTest {
     SignedVoluntaryExit exit3 =
         voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
 
-    assertThat(voluntaryExitValidator.validate(exit1)).isEqualTo(VALID);
-    assertThat(voluntaryExitValidator.validate(exit2)).isEqualTo(INVALID);
-    assertThat(voluntaryExitValidator.validate(exit3)).isEqualTo(INVALID);
+    assertThat(voluntaryExitValidator.validate(exit1)).isEqualTo(ACCEPT);
+    assertThat(voluntaryExitValidator.validate(exit2)).isEqualTo(IGNORE);
+    assertThat(voluntaryExitValidator.validate(exit3)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -103,7 +103,7 @@ public class VoluntaryExitValidatorTest {
     SignedVoluntaryExit exit1 =
         voluntaryExitGenerator.withInvalidSignature(
             recentChainData.getBestState().orElseThrow(), 3);
-    assertThat(voluntaryExitValidator.validate(exit1)).isEqualTo(INVALID);
+    assertThat(voluntaryExitValidator.validate(exit1)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -123,7 +123,7 @@ public class VoluntaryExitValidatorTest {
     recentChainData.initializeFromGenesis(genesisState);
     SignedVoluntaryExit exit =
         voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 10, false);
-    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
+    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -132,7 +132,7 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit =
         voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 20, false);
-    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
+    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -146,7 +146,7 @@ public class VoluntaryExitValidatorTest {
 
     SignedVoluntaryExit exit2 =
         voluntaryExitGenerator.valid(recentChainData.getBestState().orElseThrow(), 3);
-    assertThat(voluntaryExitValidator.validate(exit2)).isEqualTo(INVALID);
+    assertThat(voluntaryExitValidator.validate(exit2)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -160,7 +160,7 @@ public class VoluntaryExitValidatorTest {
 
     SignedVoluntaryExit exit =
         voluntaryExitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 4, 3);
-    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
+    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -175,6 +175,6 @@ public class VoluntaryExitValidatorTest {
 
     SignedVoluntaryExit exit =
         voluntaryExitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 0, 3);
-    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(INVALID);
+    assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(IGNORE);
   }
 }

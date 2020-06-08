@@ -51,8 +51,8 @@ public class BlockValidatorTest {
     beaconChainUtil.setSlot(nextSlot);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
-    ValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(ValidationResult.VALID);
+    InternalValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(InternalValidationResult.ACCEPT);
   }
 
   @Test
@@ -61,11 +61,11 @@ public class BlockValidatorTest {
     beaconChainUtil.setSlot(nextSlot);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
-    ValidationResult result1 = blockValidator.validate(block);
-    assertThat(result1).isEqualTo(ValidationResult.VALID);
+    InternalValidationResult result1 = blockValidator.validate(block);
+    assertThat(result1).isEqualTo(InternalValidationResult.ACCEPT);
 
-    ValidationResult result2 = blockValidator.validate(block);
-    assertThat(result2).isEqualTo(ValidationResult.INVALID);
+    InternalValidationResult result2 = blockValidator.validate(block);
+    assertThat(result2).isEqualTo(InternalValidationResult.IGNORE);
   }
 
   @Test
@@ -73,8 +73,8 @@ public class BlockValidatorTest {
     final UnsignedLong nextSlot = recentChainData.getBestSlot().plus(ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
-    ValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(ValidationResult.SAVED_FOR_FUTURE);
+    InternalValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -98,8 +98,8 @@ public class BlockValidatorTest {
             .join();
     final SignedBeaconBlock blockWithNoParent = new SignedBeaconBlock(block, blockSignature);
 
-    ValidationResult result = blockValidator.validate(blockWithNoParent);
-    assertThat(result).isEqualTo(ValidationResult.SAVED_FOR_FUTURE);
+    InternalValidationResult result = blockValidator.validate(blockWithNoParent);
+    assertThat(result).isEqualTo(InternalValidationResult.SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -110,8 +110,8 @@ public class BlockValidatorTest {
     beaconChainUtil.finalizeChainAtEpoch(finalizedEpoch);
     beaconChainUtil.setSlot(recentChainData.getBestSlot());
 
-    ValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(ValidationResult.INVALID);
+    InternalValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(InternalValidationResult.IGNORE);
   }
 
   @Test
@@ -138,8 +138,8 @@ public class BlockValidatorTest {
     final SignedBeaconBlock invalidProposerSignedBlock =
         new SignedBeaconBlock(block, blockSignature);
 
-    ValidationResult result = blockValidator.validate(invalidProposerSignedBlock);
-    assertThat(result).isEqualTo(ValidationResult.INVALID);
+    InternalValidationResult result = blockValidator.validate(invalidProposerSignedBlock);
+    assertThat(result).isEqualTo(InternalValidationResult.IGNORE);
   }
 
   @Test
@@ -151,7 +151,7 @@ public class BlockValidatorTest {
         new SignedBeaconBlock(
             beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(), BLSSignature.random(0));
 
-    ValidationResult result = blockValidator.validate(block);
-    assertThat(result).isEqualTo(ValidationResult.INVALID);
+    InternalValidationResult result = blockValidator.validate(block);
+    assertThat(result).isEqualTo(InternalValidationResult.IGNORE);
   }
 }
