@@ -28,12 +28,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
+import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
 
@@ -51,7 +52,7 @@ public class StorageBackedRecentChainDataTest {
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<Store>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<UpdatableStore>> storeRequestFuture = new SafeFuture<>();
     when(storageUpdateChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
@@ -70,7 +71,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
+    final UpdatableStore genesisStore = StoreFactory.getForkChoiceStore(INITIAL_STATE);
     storeRequestFuture.complete(Optional.of(genesisStore));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -81,7 +82,7 @@ public class StorageBackedRecentChainDataTest {
   @Test
   public void storageBackedClient_storeInitializeViaNewGenesisState()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<Store>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<UpdatableStore>> storeRequestFuture = new SafeFuture<>();
     when(storageUpdateChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
@@ -105,7 +106,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.get().getStore()).isNull();
 
     // Now set the genesis state
-    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
+    final UpdatableStore genesisStore = StoreFactory.getForkChoiceStore(INITIAL_STATE);
     client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -115,7 +116,7 @@ public class StorageBackedRecentChainDataTest {
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequestAfterTimeout()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<Store>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<UpdatableStore>> storeRequestFuture = new SafeFuture<>();
     when(storageUpdateChannel.onStoreRequest())
         .thenReturn(SafeFuture.failedFuture(new TimeoutException()))
         .thenReturn(storeRequestFuture);
@@ -138,7 +139,7 @@ public class StorageBackedRecentChainDataTest {
     asyncRunner.executeQueuedActions();
 
     // Now set the genesis state
-    final Store genesisStore = Store.getForkChoiceStore(INITIAL_STATE);
+    final UpdatableStore genesisStore = StoreFactory.getForkChoiceStore(INITIAL_STATE);
     storeRequestFuture.complete(Optional.of(genesisStore));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
