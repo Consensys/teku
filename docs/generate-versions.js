@@ -11,7 +11,7 @@ const targetSpec = `${tag ? tag : 'latest'}.json`
 // copy of spec file and rename
 fs.copyFile(spec, targetSpec, (err) => {
   if (err) throw err;
-  console.log(`${spec} copied to ${tatgetSpec}`)
+  console.log(`${spec} copied to ${targetSpec}`)
 });
 
 const versionsJSONFile = './versions.json'

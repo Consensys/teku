@@ -340,7 +340,7 @@ jobs:
             mv TARGET_README.md README.md
       - restore_cache:
           keys:
-            - node-cache-{{ checksum "./docs/package-lock.json" }}
+            - node-cache-{{ checksum "docs/package-lock.json" }}
       - run:
           name: Install dependencies
           working_directory: ./docs
@@ -348,8 +348,8 @@ jobs:
             npm ci
       - save_cache:
           paths:
-            - ./docs/node_modules
-          key: node-cache-{{ checksum "./docs/package-lock.json" }}
+            - ~/.npm
+          key: node-cache-{{ checksum "docs/package-lock.json" }}
       - run:
           name: Generate API doc site files
           working_directory: ./docs
