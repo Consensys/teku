@@ -135,11 +135,12 @@ public class StateGenerator {
             new ArrayList<>(blockTree.getChildren(branchBlock.getRoot()));
         // Save branches for later processing
         if (children.size() > 1) {
+          // Only cache the current state if there are other branches we need to come back to later
           branchStateCache.put(branchBlock.getRoot(), branchBlockState);
-          children.stream().skip(1).forEach(branchesToProcess::push);
+          children.subList(1, children.size()).forEach(branchesToProcess::push);
         }
         // Continue processing the first child
-        branchBlock = children.stream().findFirst().orElse(null);
+        branchBlock = children.size() > 0 ? children.get(0) : null;
         preState = branchBlockState;
       }
     }

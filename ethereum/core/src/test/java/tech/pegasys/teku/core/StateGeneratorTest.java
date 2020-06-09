@@ -15,6 +15,7 @@ package tech.pegasys.teku.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -137,21 +138,28 @@ public class StateGeneratorTest {
 
     chainBuilder.generateBlocksUpToSlot(10);
     // Fork chain skips a block
-    final SignedBlockAndState fork2Base = fork.generateBlockAtSlot(7);
+    final SignedBlockAndState forkBase = fork.generateBlockAtSlot(7);
     final ChainBuilder fork2 = fork.fork();
+    final ChainBuilder fork3 = fork.fork();
+    final ChainBuilder fork4 = fork.fork();
     fork2.generateBlockAtSlot(9);
+    fork3.generateBlockAtSlot(10);
+    fork3.generateBlockAtSlot(11);
     fork.generateBlocksUpToSlot(10);
 
     final List<SignedBlockAndState> newBlocksAndStates =
-        chainBuilder
-            .streamBlocksAndStates(
-                baseBlock.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
+        Streams.concat(
+                chainBuilder.streamBlocksAndStates(
+                    baseBlock.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot()),
+                fork.streamBlocksAndStates(
+                    baseBlock.getSlot().plus(UnsignedLong.ONE), fork.getLatestSlot()),
+                fork2.streamBlocksAndStates(
+                    forkBase.getSlot().plus(UnsignedLong.ONE), fork2.getLatestSlot()),
+                fork3.streamBlocksAndStates(
+                    forkBase.getSlot().plus(UnsignedLong.ONE), fork3.getLatestSlot()),
+                fork4.streamBlocksAndStates(
+                    forkBase.getSlot().plus(UnsignedLong.ONE), fork4.getLatestSlot()))
             .collect(Collectors.toList());
-    fork.streamBlocksAndStates(baseBlock.getSlot().plus(UnsignedLong.ONE), fork.getLatestSlot())
-        .forEach(newBlocksAndStates::add);
-    fork2
-        .streamBlocksAndStates(fork2Base.getSlot().plus(UnsignedLong.ONE), fork2.getLatestSlot())
-        .forEach(newBlocksAndStates::add);
 
     testRegenerateAllStates(cacheSize, baseBlock, newBlocksAndStates);
   }
