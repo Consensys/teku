@@ -22,6 +22,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -115,32 +116,23 @@ public class StateGenerator {
     final Map<Bytes32, BeaconState> branchStateCache =
         LimitedMap.create(maxCachedStates, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
 
-    final Deque<SignedBeaconBlock> branchesToProcess = new ArrayDeque<>();
+    final Deque<SignedBeaconBlock> toProcess = new ArrayDeque<>();
     final SignedBeaconBlock rootBlock = blockTree.getRootBlock();
-    blockTree.getChildren(rootBlock).forEach(branchesToProcess::push);
+    blockTree.getChildren(rootBlock).forEach(toProcess::push);
 
-    while (!branchesToProcess.isEmpty()) {
-      SignedBeaconBlock branchBlock = branchesToProcess.pop();
+    while (!toProcess.isEmpty()) {
+      SignedBeaconBlock currentBlock = toProcess.pop();
       BeaconState preState =
           branchStateCache.computeIfAbsent(
-              branchBlock.getParent_root(),
+              currentBlock.getParent_root(),
               root -> regenerateStateForBlock(root, branchStateCache));
-      while (branchBlock != null) {
-        // Produce state for the current branch block
-        final BeaconState branchBlockState = processBlock(preState, branchBlock);
-        stateHandler.handle(branchBlock.getRoot(), branchBlockState);
 
-        // Process children
-        final List<SignedBeaconBlock> children =
-            new ArrayList<>(blockTree.getChildren(branchBlock.getRoot()));
-        // Save branches for later processing
-        if (children.size() > 1) {
-          branchStateCache.put(branchBlock.getRoot(), branchBlockState);
-          children.stream().skip(1).forEach(branchesToProcess::push);
-        }
-        // Continue processing the first child
-        branchBlock = children.stream().findFirst().orElse(null);
-        preState = branchBlockState;
+      final BeaconState currentState = processBlock(preState, currentBlock);
+      stateHandler.handle(currentBlock.getRoot(), currentState);
+      final Set<SignedBeaconBlock> children = blockTree.getChildren(currentBlock.getRoot());
+      if (children.size() > 0) {
+        branchStateCache.put(currentBlock.getRoot(), currentState);
+        children.forEach(toProcess::push);
       }
     }
   }
