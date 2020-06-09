@@ -139,7 +139,7 @@ public class AttestationValidator {
 
     // The signature of attestation is valid.
     final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
-    if (!is_valid_indexed_attestation(state, indexedAttestation)) {
+    if (!is_valid_indexed_attestation(state, indexedAttestation).isSuccessful()) {
       return REJECT;
     }
     return ACCEPT;
