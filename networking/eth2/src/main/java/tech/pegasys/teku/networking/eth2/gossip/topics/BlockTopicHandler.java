@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import com.google.common.eventbus.EventBus;
+import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -23,7 +24,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class BlockTopicHandler implements Eth2TopicHandler<SignedBeaconBlock> {
@@ -47,31 +48,33 @@ public class BlockTopicHandler implements Eth2TopicHandler<SignedBeaconBlock> {
   }
 
   @Override
-  public boolean handleMessage(final Bytes bytes) {
+  public ValidationResult handleMessage(final Bytes bytes) {
     try {
       SignedBeaconBlock block = deserialize(bytes);
-      final ValidationResult validationResult = validateData(block);
-      switch (validationResult) {
-        case INVALID:
+      final InternalValidationResult internalValidationResult = validateData(block);
+      switch (internalValidationResult) {
+        case REJECT:
+        case IGNORE:
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
-          return false;
-        case SAVED_FOR_FUTURE:
+          break;
+        case SAVE_FOR_FUTURE:
           LOG.trace("Deferring message for topic: {}", this::getTopic);
           eventBus.post(createEvent(block));
-          return false;
-        case VALID:
+          break;
+        case ACCEPT:
           eventBus.post(createEvent(block));
-          return true;
+          break;
         default:
           throw new UnsupportedOperationException(
-              "Unexpected validation result: " + validationResult);
+              "Unexpected validation result: " + internalValidationResult);
       }
+      return internalValidationResult.getGossipSubValidationResult();
     } catch (DecodingException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
-      return false;
+      return ValidationResult.Invalid;
     } catch (Throwable e) {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
-      return false;
+      return ValidationResult.Invalid;
     }
   }
 
@@ -99,7 +102,7 @@ public class BlockTopicHandler implements Eth2TopicHandler<SignedBeaconBlock> {
     return forkDigest;
   }
 
-  public ValidationResult validateData(final SignedBeaconBlock block) {
+  public InternalValidationResult validateData(final SignedBeaconBlock block) {
     return blockValidator.validate(block);
   }
 }
