@@ -226,14 +226,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   @Override
   public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
-    return blockSlotAndStateRoot(blockRoot).map(BlockSlotAndStateRoot::getBlockSlot);
-  }
-
-  public Optional<BlockSlotAndStateRoot> blockSlotAndStateRoot(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return getProtoNode(blockRoot)
-          .map(node -> new BlockSlotAndStateRoot(node.getBlockSlot(), node.getStateRoot()));
+      return getProtoNode(blockRoot).map(ProtoNode::getBlockSlot);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -341,23 +336,5 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       }
     }
     return deltas;
-  }
-
-  public static class BlockSlotAndStateRoot {
-    private final UnsignedLong blockSlot;
-    private final Bytes32 stateRoot;
-
-    public BlockSlotAndStateRoot(UnsignedLong blockSlot, Bytes32 stateRoot) {
-      this.blockSlot = blockSlot;
-      this.stateRoot = stateRoot;
-    }
-
-    public UnsignedLong getBlockSlot() {
-      return blockSlot;
-    }
-
-    public Bytes32 getStateRoot() {
-      return stateRoot;
-    }
   }
 }
