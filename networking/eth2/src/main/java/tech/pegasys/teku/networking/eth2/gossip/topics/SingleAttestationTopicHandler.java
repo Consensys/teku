@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -22,7 +23,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestation> {
@@ -48,32 +49,34 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
   }
 
   @Override
-  public boolean handleMessage(final Bytes bytes) {
+  public ValidationResult handleMessage(final Bytes bytes) {
     try {
       ValidateableAttestation attestation = ValidateableAttestation.fromSingle(deserialize(bytes));
-      final ValidationResult validationResult = validateData(attestation);
-      switch (validationResult) {
-        case INVALID:
+      final InternalValidationResult internalValidationResult = validateData(attestation);
+      switch (internalValidationResult) {
+        case REJECT:
+        case IGNORE:
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
-          return false;
-        case SAVED_FOR_FUTURE:
+          break;
+        case SAVE_FOR_FUTURE:
           LOG.trace("Deferring message for topic: {}", this::getTopic);
           gossipedAttestationConsumer.accept(attestation);
-          return false;
-        case VALID:
+          break;
+        case ACCEPT:
           attestation.markGossiped();
           gossipedAttestationConsumer.accept(attestation);
-          return true;
+          break;
         default:
           throw new UnsupportedOperationException(
-              "Unexpected validation result: " + validationResult);
+              "Unexpected validation result: " + internalValidationResult);
       }
+      return internalValidationResult.getGossipSubValidationResult();
     } catch (DecodingException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
-      return false;
+      return ValidationResult.Invalid;
     } catch (Throwable e) {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
-      return false;
+      return ValidationResult.Invalid;
     }
   }
 
@@ -97,7 +100,7 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
     return forkDigest;
   }
 
-  private ValidationResult validateData(final ValidateableAttestation attestation) {
+  private InternalValidationResult validateData(final ValidateableAttestation attestation) {
     return validator.validate(attestation, subnetId);
   }
 }
