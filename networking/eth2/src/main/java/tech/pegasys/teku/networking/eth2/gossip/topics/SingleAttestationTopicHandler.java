@@ -87,7 +87,7 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
 
   @Override
   public String getTopicName() {
-    return "committee_index" + subnetId + "_beacon_attestation";
+    return "beacon_attestation_" + subnetId;
   }
 
   @Override
