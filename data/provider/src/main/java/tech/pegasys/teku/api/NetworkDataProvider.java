@@ -16,15 +16,16 @@ package tech.pegasys.teku.api;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.api.schema.Metadata;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class NetworkDataProvider {
-  private final P2PNetwork<?> p2pNetwork;
+  private final Eth2Network network;
 
-  public NetworkDataProvider(final P2PNetwork<?> p2pNetwork) {
-    this.p2pNetwork = p2pNetwork;
+  public NetworkDataProvider(final Eth2Network network) {
+    this.network = network;
   }
 
   /**
@@ -33,7 +34,7 @@ public class NetworkDataProvider {
    * @return if discovery is in use, returns the Ethereum Node Record (base64).
    */
   public Optional<String> getEnr() {
-    return p2pNetwork.getEnr();
+    return network.getEnr();
   }
 
   /**
@@ -42,7 +43,7 @@ public class NetworkDataProvider {
    * @return the node id (base58)
    */
   public String getNodeIdAsBase58() {
-    return p2pNetwork.getNodeId().toBase58();
+    return network.getNodeId().toBase58();
   }
 
   /**
@@ -51,7 +52,7 @@ public class NetworkDataProvider {
    * @return the current list of network peers (base58)
    */
   public List<String> getPeersAsBase58() {
-    return p2pNetwork
+    return network
         .streamPeers()
         .map(Peer::getId)
         .map(NodeId::toBase58)
@@ -64,7 +65,7 @@ public class NetworkDataProvider {
    * @return the the number of peers currently connected to the client
    */
   public long getPeerCount() {
-    return p2pNetwork.streamPeers().count();
+    return network.streamPeers().count();
   }
 
   /**
@@ -73,14 +74,19 @@ public class NetworkDataProvider {
    * @return the port this client is listening on
    */
   public int getListenPort() {
-    return p2pNetwork.getListenPort();
-  }
-
-  P2PNetwork<?> getP2pNetwork() {
-    return p2pNetwork;
+    return network.getListenPort();
   }
 
   public List<String> getListeningAddresses() {
-    return List.of(p2pNetwork.getNodeAddress());
+    return List.of(network.getNodeAddress());
+  }
+
+  public List<String> getDiscoveryAddresses() {
+    Optional<String> discoveryAddressOptional = network.getDiscoveryAddress();
+    return discoveryAddressOptional.map(List::of).orElseGet(List::of);
+  }
+
+  public Metadata getMetadata() {
+    return new Metadata(network.getMetadata());
   }
 }

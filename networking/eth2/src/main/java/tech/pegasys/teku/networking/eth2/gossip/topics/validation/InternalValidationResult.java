@@ -11,19 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2;
+package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import io.libp2p.core.pubsub.ValidationResult;
 
-public interface Eth2Network extends P2PNetwork<Eth2Peer> {
+public enum InternalValidationResult {
+  ACCEPT(ValidationResult.Valid),
+  SAVE_FOR_FUTURE(ValidationResult.Ignore),
+  IGNORE(ValidationResult.Ignore),
+  REJECT(ValidationResult.Invalid);
 
-  void subscribeToAttestationSubnetId(final int subnetId);
+  private final ValidationResult gossipSubValidationResult;
 
-  void unsubscribeFromAttestationSubnetId(final int subnetId);
+  InternalValidationResult(ValidationResult validationResult) {
+    this.gossipSubValidationResult = validationResult;
+  }
 
-  void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices);
-
-  MetadataMessage getMetadata();
+  public ValidationResult getGossipSubValidationResult() {
+    return this.gossipSubValidationResult;
+  }
 }

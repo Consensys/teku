@@ -11,19 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2;
+package tech.pegasys.teku.api.response.v1.node;
 
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public interface Eth2Network extends P2PNetwork<Eth2Peer> {
+public class IdentityResponse {
+  public final Identity data;
 
-  void subscribeToAttestationSubnetId(final int subnetId);
-
-  void unsubscribeFromAttestationSubnetId(final int subnetId);
-
-  void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices);
-
-  MetadataMessage getMetadata();
+  @JsonCreator
+  public IdentityResponse(@JsonProperty("data") final Identity data) {
+    this.data = data;
+  }
 }
