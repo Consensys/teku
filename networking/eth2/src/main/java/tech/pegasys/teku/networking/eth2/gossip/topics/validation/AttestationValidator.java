@@ -121,7 +121,7 @@ public class AttestationValidator {
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
     // It must pass validation to be in the store.
-    // If it's not in the store, it must not have passed validation.
+    // If it's not in the store, it may not have been processed yet so save for future.
     final Optional<BeaconState> maybeState =
         recentChainData.getBlockState(attestation.getData().getBeacon_block_root());
     if (maybeState.isEmpty()) {
