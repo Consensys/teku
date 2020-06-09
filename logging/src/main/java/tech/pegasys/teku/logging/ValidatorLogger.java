@@ -87,4 +87,14 @@ public class ValidatorLogger {
                 + " because there was nothing to aggregate",
             Color.YELLOW));
   }
+
+  public void producedInvalidAttestation(final UnsignedLong slot, final String reason) {
+    log.error(
+        print(PREFIX + "Produced invalid attestation for slot " + slot + ": " + reason, Color.RED));
+  }
+
+  public void producedInvalidAggregate(final UnsignedLong slot, final String reason) {
+    log.error(
+        print(PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
+  }
 }
