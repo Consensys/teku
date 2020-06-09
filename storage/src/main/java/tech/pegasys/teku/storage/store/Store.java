@@ -35,7 +35,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateGenerator;
+import tech.pegasys.teku.core.StateGenerator.StateHandler;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -71,8 +73,9 @@ class Store implements UpdatableStore {
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final Map<Bytes32, BeaconState> block_states,
+      final StateProvider blockStateProvider,
       final Map<Checkpoint, BeaconState> checkpoint_states,
+      final BeaconState latestFinalizedBlockState,
       final Map<UnsignedLong, VoteTracker> votes,
       final int stateCacheSize) {
     this.time = time;
@@ -83,13 +86,15 @@ class Store implements UpdatableStore {
     this.blocks = new ConcurrentHashMap<>(blocks);
     this.block_states =
         ConcurrentLimitedMap.create(stateCacheSize, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    this.block_states.putAll(block_states);
+    blockStateProvider.provide(this.block_states::put);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
     this.votes = new ConcurrentHashMap<>(votes);
 
+    // Track latest finalized block
     final SignedBeaconBlock finalizedBlock = blocks.get(finalized_checkpoint.getRoot());
-    final BeaconState finalizedBlockState = block_states.get(finalized_checkpoint.getRoot());
-    this.finalizedBlockAndState = new SignedBlockAndState(finalizedBlock, finalizedBlockState);
+    this.finalizedBlockAndState =
+        new SignedBlockAndState(finalizedBlock, latestFinalizedBlockState);
+    block_states.put(finalizedBlock.getRoot(), latestFinalizedBlockState);
 
     // Setup slot to root mappings
     indexBlockRootsBySlot(rootsBySlotLookup, this.blocks.values());
@@ -334,13 +339,12 @@ class Store implements UpdatableStore {
     }
 
     // Regenerate state
-    final StateGenerator stateGenerator = new StateGenerator();
-    final Map<Bytes32, BeaconState> regeneratedStates =
-        stateGenerator.produceStatesForBlocks(
-            baseBlock.getRoot(), baseBlock.getState(), blocks.values());
+    final BlockTree tree =
+        BlockTree.builder().rootBlock(baseBlock.getBlock()).blocks(blocks.values()).build();
+    final StateGenerator stateGenerator = new StateGenerator(tree, baseBlock.getState());
+    final BeaconState regeneratedState = stateGenerator.regenerateStateForBlock(blockRoot);
 
     // Save regenerated state
-    final BeaconState regeneratedState = regeneratedStates.get(blockRoot);
     if (regeneratedState == null) {
       throw new IllegalStateException("Unable to generate state for block " + blockRoot);
     }
@@ -611,5 +615,11 @@ class Store implements UpdatableStore {
         best_justified_checkpoint,
         blocks,
         checkpoint_states);
+  }
+
+  interface StateProvider {
+    StateProvider NOOP = stateHandler -> {};
+
+    void provide(StateHandler stateHandler);
   }
 }

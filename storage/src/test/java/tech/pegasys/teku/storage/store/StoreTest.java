@@ -34,6 +34,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.store.Store.StateProvider;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -55,8 +56,9 @@ class StoreTest {
             genesisCheckpoint,
             genesisCheckpoint,
             Map.of(genesis.getRoot(), genesis.getBlock()),
-            Map.of(genesis.getRoot(), genesis.getState()),
+            StateProvider.NOOP,
             Map.of(genesisCheckpoint, genesis.getState()),
+            genesis.getState(),
             Collections.emptyMap(),
             stateCacheSize);
 
