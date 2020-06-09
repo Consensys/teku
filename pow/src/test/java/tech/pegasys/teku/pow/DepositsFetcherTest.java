@@ -42,11 +42,17 @@ public class DepositsFetcherTest {
   private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
   private final DepositContract depositContract = mock(DepositContract.class);
   private final Eth1BlockFetcher eth1BlockFetcher = mock(Eth1BlockFetcher.class);
+  private final Eth1StatusLogger eth1StatusLogger = mock(Eth1StatusLogger.class);
   private final AsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final DepositFetcher depositFetcher =
       new DepositFetcher(
-          eth1Provider, eth1EventsChannel, depositContract, eth1BlockFetcher, asyncRunner);
+          eth1Provider,
+          eth1EventsChannel,
+          depositContract,
+          eth1BlockFetcher,
+          asyncRunner,
+          eth1StatusLogger);
 
   @Test
   void depositsInConsecutiveBlocks() {

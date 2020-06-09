@@ -25,6 +25,7 @@ import tech.pegasys.teku.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.pow.Eth1DepositManager;
 import tech.pegasys.teku.pow.Eth1HeadTracker;
 import tech.pegasys.teku.pow.Eth1Provider;
+import tech.pegasys.teku.pow.Eth1StatusLogger;
 import tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder;
 import tech.pegasys.teku.pow.ThrottlingEth1Provider;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
@@ -41,6 +42,7 @@ public class PowchainService extends Service {
 
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
+  private final Eth1StatusLogger eth1StatusLogger = new Eth1StatusLogger(30000);
 
   public PowchainService(final ServiceConfig config) {
     TekuConfiguration tekuConfig = config.getConfig();
@@ -51,7 +53,8 @@ public class PowchainService extends Service {
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
-            new Web3jEth1Provider(web3j, asyncRunner), MAXIMUM_CONCURRENT_ETH1_REQUESTS);
+            new Web3jEth1Provider(web3j, asyncRunner, eth1StatusLogger),
+            MAXIMUM_CONCURRENT_ETH1_REQUESTS);
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(
@@ -74,9 +77,10 @@ public class PowchainService extends Service {
             eth1EventsChannel,
             depositContractAccessor.getContract(),
             eth1BlockFetcher,
-            asyncRunner);
+            asyncRunner,
+            eth1StatusLogger);
 
-    headTracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
+    headTracker = new Eth1HeadTracker(asyncRunner, eth1Provider, eth1StatusLogger);
     final DepositProcessingController depositProcessingController =
         new DepositProcessingController(
             eth1Provider,
@@ -93,7 +97,8 @@ public class PowchainService extends Service {
             eth1EventsChannel,
             eth1DepositStorageChannel,
             depositProcessingController,
-            new MinimumGenesisTimeBlockFinder(eth1Provider));
+            new MinimumGenesisTimeBlockFinder(eth1Provider),
+            eth1StatusLogger);
   }
 
   @Override

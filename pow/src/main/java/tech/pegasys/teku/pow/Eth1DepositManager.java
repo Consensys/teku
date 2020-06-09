@@ -39,6 +39,7 @@ public class Eth1DepositManager {
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
+  private final Eth1StatusLogger eth1StatusLogger;
 
   public Eth1DepositManager(
       final Eth1Provider eth1Provider,
@@ -46,13 +47,15 @@ public class Eth1DepositManager {
       final Eth1EventsChannel eth1EventsChannel,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
       final DepositProcessingController depositProcessingController,
-      final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder) {
+      final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
+      final Eth1StatusLogger eth1StatusLogger) {
     this.eth1Provider = eth1Provider;
     this.asyncRunner = asyncRunner;
     this.eth1EventsChannel = eth1EventsChannel;
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
+    this.eth1StatusLogger = eth1StatusLogger;
   }
 
   public void start() {
@@ -144,11 +147,12 @@ public class Eth1DepositManager {
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
             (err) -> {
-              LOG.warn(
+              LOG.debug(
                   "Eth1DepositManager failed to get the head of Eth1: {}. Retrying in {} seconds.",
                   err.getMessage(),
                   Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
                   err);
+              eth1StatusLogger.incrementFail();
 
               return asyncRunner
                   .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)

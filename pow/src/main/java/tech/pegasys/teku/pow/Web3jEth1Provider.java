@@ -32,10 +32,13 @@ public class Web3jEth1Provider implements Eth1Provider {
 
   private final Web3j web3j;
   private final AsyncRunner asyncRunner;
+  private final Eth1StatusLogger eth1StatusLogger;
 
-  public Web3jEth1Provider(Web3j web3j, AsyncRunner asyncRunner) {
+  public Web3jEth1Provider(
+      Web3j web3j, AsyncRunner asyncRunner, Eth1StatusLogger eth1StatusLogger) {
     this.web3j = web3j;
     this.asyncRunner = asyncRunner;
+    this.eth1StatusLogger = eth1StatusLogger;
   }
 
   @Override
@@ -58,7 +61,8 @@ public class Web3jEth1Provider implements Eth1Provider {
     return getEth1Block(blockHash)
         .exceptionallyCompose(
             (err) -> {
-              LOG.warn("Retrying Eth1 request for block: {}", blockHash, err);
+              LOG.debug("Retrying Eth1 request for block: {}", blockHash, err);
+              eth1StatusLogger.incrementFail();
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
@@ -71,7 +75,8 @@ public class Web3jEth1Provider implements Eth1Provider {
     return getEth1Block(blockNumber)
         .exceptionallyCompose(
             (err) -> {
-              LOG.warn("Retrying Eth1 request for block: {}", blockNumber, err);
+              LOG.debug("Retrying Eth1 request for block: {}", blockNumber, err);
+              eth1StatusLogger.incrementFail();
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)

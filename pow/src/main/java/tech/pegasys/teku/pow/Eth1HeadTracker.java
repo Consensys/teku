@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
 import com.google.common.primitives.UnsignedLong;
@@ -32,12 +33,18 @@ public class Eth1HeadTracker {
   private final AsyncRunner asyncRunner;
   private final Eth1Provider eth1Provider;
   private Optional<UnsignedLong> headAtFollowDistance = Optional.empty();
+  private final Eth1StatusLogger eth1StatusLogger;
+  private boolean reachedHead;
 
   private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.create(true);
 
-  public Eth1HeadTracker(final AsyncRunner asyncRunner, final Eth1Provider eth1Provider) {
+  public Eth1HeadTracker(
+      final AsyncRunner asyncRunner,
+      final Eth1Provider eth1Provider,
+      final Eth1StatusLogger eth1StatusLogger) {
     this.asyncRunner = asyncRunner;
     this.eth1Provider = eth1Provider;
+    this.eth1StatusLogger = eth1StatusLogger;
   }
 
   public void start() {
@@ -56,7 +63,8 @@ public class Eth1HeadTracker {
         .thenAccept(this::onLatestBlockHead)
         .exceptionally(
             error -> {
-              LOG.warn("Failed to get latest ETH1 chain head. Will retry.", error);
+              LOG.debug("Failed to get latest ETH1 chain head. Will retry.", error);
+              eth1StatusLogger.incrementFail();
               return null;
             })
         .always(
@@ -82,6 +90,10 @@ public class Eth1HeadTracker {
     if (headAtFollowDistance
         .map(current -> current.compareTo(newHeadAtFollowDistance) < 0)
         .orElse(true)) {
+      if (!reachedHead) {
+        STATUS_LOG.eth1AtHead();
+        reachedHead = true;
+      }
       headAtFollowDistance = Optional.of(newHeadAtFollowDistance);
       LOG.debug("ETH1 block at follow distance updated to {}", newHeadAtFollowDistance);
       subscribers.deliver(HeadUpdatedSubscriber::onHeadUpdated, newHeadAtFollowDistance);
