@@ -23,9 +23,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.SAVED_FOR_FUTURE;
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.UNKNOWN_BLOCK;
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SAVED_FOR_FUTURE;
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -35,13 +35,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -166,7 +166,7 @@ class AttestationManagerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromSingle(dataStructureUtil.randomAttestation());
     when(attestationProcessor.processAttestation(any()))
-        .thenReturn(AttestationProcessingResult.INVALID);
+        .thenReturn(AttestationProcessingResult.invalid("Didn't like it"));
     attestationManager.onAttestation(attestation);
 
     verifyAttestationProcessed(attestation);
@@ -180,7 +180,7 @@ class AttestationManagerTest {
     final ValidateableAttestation aggregateAndProof =
         ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
     when(attestationProcessor.processAttestation(any()))
-        .thenReturn(AttestationProcessingResult.INVALID);
+        .thenReturn(AttestationProcessingResult.invalid("Don't wanna"));
     attestationManager.onAttestation(aggregateAndProof);
 
     verifyAttestationProcessed(aggregateAndProof);
