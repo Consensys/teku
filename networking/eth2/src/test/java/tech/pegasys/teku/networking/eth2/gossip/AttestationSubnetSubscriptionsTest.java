@@ -76,8 +76,10 @@ public class AttestationSubnetSubscriptionsTest {
   void shouldSubscribeToCommitteesOnDifferentSubnets() {
     TopicChannel topicChannel1 = mock(TopicChannel.class);
     TopicChannel topicChannel2 = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("beacon_attestation_1"), any())).thenReturn(topicChannel1);
-    when(gossipNetwork.subscribe(contains("beacon_attestation_2"), any())).thenReturn(topicChannel2);
+    when(gossipNetwork.subscribe(contains("beacon_attestation_1"), any()))
+        .thenReturn(topicChannel1);
+    when(gossipNetwork.subscribe(contains("beacon_attestation_2"), any()))
+        .thenReturn(topicChannel2);
 
     int COMMITTEE_INDEX_1 = 1;
     int COMMITTEE_INDEX_2 = 2;
