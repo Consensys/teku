@@ -328,7 +328,7 @@ jobs:
           name: checkout gh pages branch and copy files from workspace
           command: |
             # publishing happens by pushing files to gh-pages branch
-            # retrieve branch to publish to from CIrcle CI env vars and fallback on test-gh-pages
+            # retrieve branch to publish to from Circle CI env vars and fallback on test-gh-pages
             # if no var defined
             [ -n "$BRANCH_OVERRIDE" ] && readonly BRANCH="$BRANCH_OVERRIDE" || readonly BRANCH='test-gh-pages'
 
