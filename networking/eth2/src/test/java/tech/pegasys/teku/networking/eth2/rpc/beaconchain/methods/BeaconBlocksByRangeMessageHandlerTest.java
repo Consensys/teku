@@ -225,7 +225,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @Test
   public void shouldStopAtBestSlot() {
     final int startBlock = 15;
-    final UnsignedLong count = UnsignedLong.MAX_VALUE;
+    final UnsignedLong count = UnsignedLong.valueOf(Constants.MAX_REQUEST_BLOCKS);
     final int skip = 5;
 
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
