@@ -71,7 +71,7 @@ public class ValidatorOptions {
       converter = GraffitiConverter.class,
       paramLabel = "<GRAFFITI STRING>",
       description =
-          "Graffiti to include during block creation. (gets converted to bytes and padded to Bytes32)",
+          "Graffiti to include during block creation (gets converted to bytes and padded to Bytes32).",
       arity = "1")
   private Bytes32 graffiti;
 

@@ -27,7 +27,7 @@ public class GraffitiConverter implements CommandLine.ITypeConverter<Bytes32> {
               + value
               + "' converts to "
               + input.length
-              + " bytes. Only a maximum of 32 bytes can be used as graffiti."));
+              + " bytes. A maximum of 32 bytes can be used as graffiti."));
     }
 
     byte[] bytes = new byte[32];
