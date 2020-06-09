@@ -96,7 +96,8 @@ public class PeerManagerTest {
     peerManager.onConnectedPeer(peer);
     assertThat(connectedPeers).containsExactly(peer);
 
-    Assertions.assertThrows(PeerAlreadyConnectedException.class, () -> peerManager.onConnectedPeer(peer));
+    Assertions.assertThrows(
+        PeerAlreadyConnectedException.class, () -> peerManager.onConnectedPeer(peer));
 
     assertThat(connectedPeers).containsExactly(peer);
   }
