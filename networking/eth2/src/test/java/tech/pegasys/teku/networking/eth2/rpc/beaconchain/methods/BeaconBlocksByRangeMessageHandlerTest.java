@@ -37,8 +37,10 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRang
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 
 class BeaconBlocksByRangeMessageHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -265,6 +267,28 @@ class BeaconBlocksByRangeMessageHandlerTest {
         listener);
 
     verify(listener).completeWithErrorResponse(INVALID_STEP);
+    verifyNoMoreInteractions(listener);
+    verifyNoMoreInteractions(combinedChainDataClient);
+  }
+
+  @Test
+  public void shouldRejectRequestWhenCountIsGreaterThanMaxRequestBlocks() {
+    final int startBlock = 15;
+    final UnsignedLong count = UnsignedLong.valueOf(Constants.MAX_REQUEST_BLOCKS + 1);
+    final int skip = 1;
+
+    final SignedBeaconBlock headBlock = BLOCKS.get(5);
+
+    final UnsignedLong bestSlot = UnsignedLong.valueOf(20);
+    withCanonicalHeadBlock(headBlock, bestSlot);
+
+    handler.onIncomingMessage(
+        peer,
+        new BeaconBlocksByRangeRequestMessage(
+            UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
+        listener);
+
+    verify(listener).completeWithErrorResponse(RpcException.TOO_MANY_BLOCKS_REQUESTED);
     verifyNoMoreInteractions(listener);
     verifyNoMoreInteractions(combinedChainDataClient);
   }

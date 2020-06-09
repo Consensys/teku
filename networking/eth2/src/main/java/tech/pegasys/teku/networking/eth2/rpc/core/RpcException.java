@@ -39,6 +39,8 @@ public class RpcException extends Exception {
       new RpcException(INVALID_REQUEST_CODE, "Message was truncated");
   public static final RpcException PAYLOAD_TRUNCATED =
       new RpcException(INVALID_REQUEST_CODE, "Message payload smaller than expected");
+  public static final RpcException TOO_MANY_BLOCKS_REQUESTED =
+      new RpcException(INVALID_REQUEST_CODE, "Requested too many blocks");
 
   // Constraint violation
   public static final RpcException CHUNK_TOO_LONG =

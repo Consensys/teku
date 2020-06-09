@@ -23,6 +23,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
+import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconBlocksByRootRequestMessageEncoder
     implements RpcPayloadEncoder<BeaconBlocksByRootRequestMessage> {
@@ -42,6 +43,9 @@ public class BeaconBlocksByRootRequestMessageEncoder
     final List<Bytes32> blockRoots = new ArrayList<>();
     for (int i = 0; i < message.size(); i += Bytes32.SIZE) {
       blockRoots.add(Bytes32.wrap(message.slice(i, Bytes32.SIZE)));
+      if (blockRoots.size() > Constants.MAX_REQUEST_BLOCKS) {
+        throw RpcException.TOO_MANY_BLOCKS_REQUESTED;
+      }
     }
     return new BeaconBlocksByRootRequestMessage(blockRoots);
   }

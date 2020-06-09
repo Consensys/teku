@@ -20,11 +20,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContainer {
 
   private final SSZMutableList<Bytes32> blockRoots =
-      SSZList.createMutable(Bytes32.class, Integer.MAX_VALUE);
+      SSZList.createMutable(Bytes32.class, Constants.MAX_REQUEST_BLOCKS);
 
   public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
     this.blockRoots.addAll(blockRoots);

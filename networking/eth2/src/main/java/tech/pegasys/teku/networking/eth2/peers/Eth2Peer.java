@@ -45,6 +45,7 @@ import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -145,6 +146,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public SafeFuture<Void> requestBlocksByRoot(
       final List<Bytes32> blockRoots, final ResponseListener<SignedBeaconBlock> listener) {
+    if (blockRoots.size() > Constants.MAX_REQUEST_BLOCKS) {
+      throw new UnsupportedOperationException("Attempting to request more than MAX_REQUEST_BLOCKS");
+    }
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
@@ -169,6 +173,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       final UnsignedLong count,
       final UnsignedLong step,
       final ResponseListener<SignedBeaconBlock> listener) {
+    if (count.compareTo(UnsignedLong.valueOf(Constants.MAX_REQUEST_BLOCKS)) > 0) {
+      throw new UnsupportedOperationException("Attempting to request more than MAX_REQUEST_BLOCKS");
+    }
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     return requestStream(

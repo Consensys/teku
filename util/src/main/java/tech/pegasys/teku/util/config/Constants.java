@@ -116,6 +116,7 @@ public class Constants {
 
   // Sync
   public static UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
+  public static int MAX_REQUEST_BLOCKS = 1024;
 
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");

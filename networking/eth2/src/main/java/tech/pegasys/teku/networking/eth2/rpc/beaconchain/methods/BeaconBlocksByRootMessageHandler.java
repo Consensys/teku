@@ -13,17 +13,24 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+
 import org.apache.logging.log4j.LogManager;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconBlocksByRootMessageHandler
     extends PeerRequiredLocalMessageHandler<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
+
+  static final RpcException TOO_MANY_BLOCKS_REQUESTED =
+      new RpcException(INVALID_REQUEST_CODE, "Requested too many blocks");
 
   private final RecentChainData storageClient;
 
@@ -38,6 +45,10 @@ public class BeaconBlocksByRootMessageHandler
       final ResponseCallback<SignedBeaconBlock> callback) {
     LOG.trace(
         "Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message.getBlockRoots());
+    if (message.getBlockRoots().size() > Constants.MAX_REQUEST_BLOCKS) {
+      callback.completeWithErrorResponse(TOO_MANY_BLOCKS_REQUESTED);
+      return;
+    }
     if (storageClient.getStore() != null) {
       message
           .getBlockRoots()
