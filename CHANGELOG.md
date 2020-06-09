@@ -18,6 +18,7 @@ we recommend most users use the latest `master` branch of Teku.
 
 - Added `/v1/node/version` and `/v1/node/identity` REST endpoints. Anyone using `/node/version` should switch to use
 the new endpoint, as `/node/version` will be removed in a future release.
+- Added `--validators-graffiti="GRAFFITI"` command line option to allow graffiti to be used in block production.
 
 ## 0.11.3
 

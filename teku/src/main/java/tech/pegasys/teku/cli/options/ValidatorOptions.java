@@ -15,7 +15,9 @@ package tech.pegasys.teku.cli.options;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.util.cli.GraffitiConverter;
 
 public class ValidatorOptions {
 
@@ -64,6 +66,15 @@ public class ValidatorOptions {
       arity = "1")
   private int validatorExternalSignerTimeout = 1000;
 
+  @Option(
+      names = {"--validators-graffiti"},
+      converter = GraffitiConverter.class,
+      paramLabel = "<GRAFFITI STRING>",
+      description =
+          "Graffiti to include during block creation. (gets converted to bytes and padded to Bytes32)",
+      arity = "1")
+  private Bytes32 graffiti;
+
   public String getValidatorKeyFile() {
     return validatorKeyFile;
   }
@@ -86,5 +97,9 @@ public class ValidatorOptions {
 
   public int getValidatorExternalSignerTimeout() {
     return validatorExternalSignerTimeout;
+  }
+
+  public Bytes32 getGraffiti() {
+    return graffiti;
   }
 }
