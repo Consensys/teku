@@ -286,6 +286,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setInteropEnabled(true)
         .setEth1DepositContractAddress(address)
         .setEth1Endpoint("http://localhost:8545")
+        .setEth1DepositsFromStorageEnabled(true)
         .setMetricsEnabled(false)
         .setMetricsPort(8008)
         .setMetricsInterface("127.0.0.1")
