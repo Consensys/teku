@@ -16,9 +16,10 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -93,7 +94,7 @@ class AttestationValidatorTest {
   public void shouldReturnValidForValidAttestation() {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
-    assertThat(validate(attestation)).isEqualTo(VALID);
+    assertThat(validate(attestation)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -107,7 +108,7 @@ class AttestationValidatorTest {
     final Attestation invalidAttestation =
         new Attestation(
             invalidAggregationBits, attestation.getData(), attestation.getAggregate_signature());
-    assertThat(validate(invalidAttestation)).isEqualTo(INVALID);
+    assertThat(validate(invalidAttestation)).isEqualTo(REJECT);
   }
 
   @Test
@@ -121,7 +122,7 @@ class AttestationValidatorTest {
     // Add one more second to get past the MAXIMUM_GOSSIP_CLOCK_DISPARITY
     beaconChainUtil.setTime(recentChainData.getStore().getTime().plus(ONE));
 
-    assertThat(validate(attestation)).isEqualTo(INVALID);
+    assertThat(validate(attestation)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -134,7 +135,7 @@ class AttestationValidatorTest {
     final UnsignedLong slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
     beaconChainUtil.setSlot(slot);
 
-    assertThat(validate(attestation)).isEqualTo(VALID);
+    assertThat(validate(attestation)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -146,7 +147,7 @@ class AttestationValidatorTest {
 
     beaconChainUtil.setSlot(ZERO);
 
-    assertThat(validate(attestation)).isEqualTo(SAVED_FOR_FUTURE);
+    assertThat(validate(attestation)).isEqualTo(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -160,7 +161,7 @@ class AttestationValidatorTest {
     // precision.  Alternatively we might consider using system time, not store time.
     beaconChainUtil.setSlot(ONE);
 
-    assertThat(validate(attestation)).isEqualTo(VALID);
+    assertThat(validate(attestation)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -171,7 +172,7 @@ class AttestationValidatorTest {
                     recentChainData.getBestBlockAndState().orElseThrow()))
             .get(0);
 
-    assertThat(validate(attestation)).isEqualTo(INVALID);
+    assertThat(validate(attestation)).isEqualTo(REJECT);
   }
 
   @Test
@@ -195,8 +196,8 @@ class AttestationValidatorTest {
         .isEqualTo(attestation2.getData().getTarget().getEpoch());
     assertThat(attestation1.getAggregation_bits()).isEqualTo(attestation2.getAggregation_bits());
 
-    assertThat(validate(attestation1)).isEqualTo(VALID);
-    assertThat(validate(attestation2)).isEqualTo(INVALID);
+    assertThat(validate(attestation1)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation2)).isEqualTo(IGNORE);
   }
 
   @Test
@@ -222,8 +223,8 @@ class AttestationValidatorTest {
         .isNotEqualTo(attestation2.getData().getTarget().getEpoch());
     assertThat(attestation1.getAggregation_bits()).isEqualTo(attestation2.getAggregation_bits());
 
-    assertThat(validate(attestation1)).isEqualTo(VALID);
-    assertThat(validate(attestation2)).isEqualTo(VALID);
+    assertThat(validate(attestation1)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation2)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -245,8 +246,8 @@ class AttestationValidatorTest {
     assertThat(attestation1.getData().getSlot()).isEqualTo(attestation2.getData().getSlot());
     assertThat(attestation1.getAggregation_bits()).isNotEqualTo(attestation2.getAggregation_bits());
 
-    assertThat(validate(attestation1)).isEqualTo(VALID);
-    assertThat(validate(attestation2)).isEqualTo(VALID);
+    assertThat(validate(attestation1)).isEqualTo(ACCEPT);
+    assertThat(validate(attestation2)).isEqualTo(ACCEPT);
   }
 
   @Test
@@ -255,7 +256,7 @@ class AttestationValidatorTest {
         attestationGenerator.attestationWithInvalidSignature(
             recentChainData.getBestBlockAndState().orElseThrow());
 
-    assertThat(validate(attestation)).isEqualTo(INVALID);
+    assertThat(validate(attestation)).isEqualTo(REJECT);
   }
 
   @Test
@@ -265,7 +266,7 @@ class AttestationValidatorTest {
     beaconChainUtil.setSlot(ONE);
     final Attestation attestation = attestationGenerator.validAttestation(unknownBlockAndState);
 
-    assertThat(validate(attestation)).isEqualTo(SAVED_FOR_FUTURE);
+    assertThat(validate(attestation)).isEqualTo(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -276,13 +277,13 @@ class AttestationValidatorTest {
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromSingle(attestation), expectedSubnetId + 1))
-        .isEqualTo(INVALID);
+        .isEqualTo(REJECT);
     assertThat(
             validator.validate(ValidateableAttestation.fromSingle(attestation), expectedSubnetId))
-        .isEqualTo(VALID);
+        .isEqualTo(ACCEPT);
   }
 
-  private ValidationResult validate(final Attestation attestation) {
+  private InternalValidationResult validate(final Attestation attestation) {
     return validator.validate(
         ValidateableAttestation.fromSingle(attestation), CommitteeUtil.getSubnetId(attestation));
   }
