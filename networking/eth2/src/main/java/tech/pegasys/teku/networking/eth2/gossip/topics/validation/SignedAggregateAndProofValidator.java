@@ -33,6 +33,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -50,7 +51,10 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class SignedAggregateAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
-  private final Set<AggregatorIndexAndEpoch> receivedValidAggregations =
+  private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
+      ConcurrentLimitedSet.create(
+          VALID_AGGREGATE_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+  private final Set<Bytes32> receivedValidAggregations =
       ConcurrentLimitedSet.create(
           VALID_AGGREGATE_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final AttestationValidator attestationValidator;
@@ -62,6 +66,10 @@ public class SignedAggregateAndProofValidator {
     this.recentChainData = recentChainData;
   }
 
+  public void addSeenAggregate(final ValidateableAttestation attestation) {
+    receivedValidAggregations.add(attestation.hash_tree_root());
+  }
+
   public InternalValidationResult validate(final ValidateableAttestation attestation) {
     final SignedAggregateAndProof signedAggregate = attestation.getSignedAggregateAndProof();
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
@@ -71,8 +79,13 @@ public class SignedAggregateAndProofValidator {
     final AggregatorIndexAndEpoch aggregatorIndexAndEpoch =
         new AggregatorIndexAndEpoch(
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
-    if (receivedValidAggregations.contains(aggregatorIndexAndEpoch)) {
-      LOG.trace("Rejecting duplicate aggregate");
+    if (receivedAggregatorIndexAndEpochs.contains(aggregatorIndexAndEpoch)) {
+      LOG.trace("Ignoring duplicate aggregate");
+      return IGNORE;
+    }
+
+    if (receivedValidAggregations.contains(attestation.hash_tree_root())) {
+      LOG.trace("Ignoring duplicate aggregate");
       return IGNORE;
     }
 
@@ -120,10 +133,16 @@ public class SignedAggregateAndProofValidator {
       return REJECT;
     }
 
-    if (!receivedValidAggregations.add(aggregatorIndexAndEpoch)) {
-      LOG.trace("Rejecting duplicate aggregate");
+    if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
+      LOG.trace("Ignoring duplicate aggregate");
       return IGNORE;
     }
+
+    if (!receivedValidAggregations.add(attestation.hash_tree_root())) {
+      LOG.trace("Ignoring duplicate aggregate");
+      return IGNORE;
+    }
+
     return aggregateInternalValidationResult;
   }
 

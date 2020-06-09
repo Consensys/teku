@@ -27,12 +27,16 @@ import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.events.Subscribers;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
   private final EventBus eventBus;
+
+  private Subscribers<VerifiedBlockAttestationsListener>
+      attestationsFromVerifiedBlockSubscriberSubscribers = Subscribers.create(true);
 
   public BlockImporter(
       final RecentChainData recentChainData, final ForkChoice forkChoice, final EventBus eventBus) {
@@ -65,6 +69,8 @@ public class BlockImporter {
 
       final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
       eventBus.post(new ImportedBlockEvent(block));
+      attestationsFromVerifiedBlockSubscriberSubscribers.forEach(
+          s -> s.accept(block.getMessage().getBody().getAttestations()));
       record.ifPresent(eventBus::post);
 
       return result;
@@ -93,5 +99,10 @@ public class BlockImporter {
               + blockProposedEvent,
           result.getFailureCause().orElse(null));
     }
+  }
+
+  public void subscribeToVerifiedBlockAttestations(
+      VerifiedBlockAttestationsListener verifiedBlockAttestationsListener) {
+    attestationsFromVerifiedBlockSubscriberSubscribers.subscribe(verifiedBlockAttestationsListener);
   }
 }

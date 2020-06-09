@@ -306,7 +306,7 @@ class ValidatorApiHandlerTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
     when(attestationPool.createAggregateFor(attestationData))
-        .thenReturn(aggregate.map(ValidateableAttestation::fromSingle));
+        .thenReturn(aggregate.map(ValidateableAttestation::fromAttestation));
 
     assertThat(validatorApiHandler.createAggregate(attestationData))
         .isCompletedWithValue(aggregate);
@@ -344,7 +344,7 @@ class ValidatorApiHandlerTest {
     when(attestationManager.onAttestation(any())).thenReturn(SUCCESSFUL);
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationManager).onAttestation(ValidateableAttestation.fromSingle(attestation));
+    verify(attestationManager).onAttestation(ValidateableAttestation.fromAttestation(attestation));
   }
 
   @Test
@@ -363,7 +363,7 @@ class ValidatorApiHandlerTest {
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
     verify(attestationManager)
-        .onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof));
+        .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
   }
 
   private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(
