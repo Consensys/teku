@@ -18,7 +18,10 @@ import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Method;
+import java.nio.channels.ClosedChannelException;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.events.ChannelExceptionHandler;
 import tech.pegasys.teku.logging.StatusLogger;
 
@@ -27,16 +30,17 @@ public final class TekuDefaultExceptionHandler
         ChannelExceptionHandler,
         UncaughtExceptionHandler,
         Function<Throwable, Void> {
+  private static final Logger LOG = LogManager.getLogger();
 
-  private final StatusLogger log;
+  private final StatusLogger statusLog;
 
   public TekuDefaultExceptionHandler() {
     this(StatusLogger.STATUS_LOG);
   }
 
   @VisibleForTesting
-  TekuDefaultExceptionHandler(final StatusLogger log) {
-    this.log = log;
+  TekuDefaultExceptionHandler(final StatusLogger statusLog) {
+    this.statusLog = statusLog;
   }
 
   @Override
@@ -77,14 +81,20 @@ public final class TekuDefaultExceptionHandler
   }
 
   private void handleException(final Throwable exception, final String subscriberDescription) {
-    if (isSpecFailure(exception)) {
-      log.specificationFailure(subscriberDescription, exception);
-    } else {
-      log.unexpectedFailure(subscriberDescription, exception);
-    }
     if (exception instanceof OutOfMemoryError) {
+      statusLog.fatalError(subscriberDescription, exception);
       System.exit(2);
+    } else if (isExpectedNettyError(exception)) {
+      LOG.debug("Channel unexpectedly closed", exception);
+    } else if (isSpecFailure(exception)) {
+      statusLog.specificationFailure(subscriberDescription, exception);
+    } else {
+      statusLog.unexpectedFailure(subscriberDescription, exception);
     }
+  }
+
+  private boolean isExpectedNettyError(final Throwable exception) {
+    return exception instanceof ClosedChannelException;
   }
 
   private static boolean isSpecFailure(final Throwable exception) {
