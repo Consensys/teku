@@ -23,8 +23,7 @@ import io.javalin.http.Context;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetEthereumNameRecordTest {
@@ -32,15 +31,15 @@ public class GetEthereumNameRecordTest {
   private final Context context = mock(Context.class);
 
   @SuppressWarnings("unchecked")
-  private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
+  private final Eth2Network eth2Network = mock(Eth2Network.class);
 
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldReturnEmptyStringWhenDiscoveryNotInUse() throws Exception {
-    NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    NetworkDataProvider network = new NetworkDataProvider(eth2Network);
     GetEthereumNameRecord handler = new GetEthereumNameRecord(network, jsonProvider);
-    when(p2pNetwork.getEnr()).thenReturn(Optional.empty());
+    when(eth2Network.getEnr()).thenReturn(Optional.empty());
     handler.handle(context);
 
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
@@ -49,9 +48,9 @@ public class GetEthereumNameRecordTest {
 
   @Test
   public void shouldReturnPopulatedStringWhenDiscoveryIsInUse() throws Exception {
-    NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    NetworkDataProvider network = new NetworkDataProvider(eth2Network);
     GetEthereumNameRecord handler = new GetEthereumNameRecord(network, jsonProvider);
-    when(p2pNetwork.getEnr()).thenReturn(Optional.of(ENR));
+    when(eth2Network.getEnr()).thenReturn(Optional.of(ENR));
     handler.handle(context);
 
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
