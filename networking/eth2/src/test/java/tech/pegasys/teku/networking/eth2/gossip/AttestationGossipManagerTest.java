@@ -56,7 +56,7 @@ public class AttestationGossipManagerTest {
   @BeforeEach
   public void setup() {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
-    doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
+    doReturn(topicChannel).when(gossipNetwork).subscribe(contains("beacon_attestation"), any());
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             gossipNetwork,
