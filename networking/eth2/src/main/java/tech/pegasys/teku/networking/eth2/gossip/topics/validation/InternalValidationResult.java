@@ -11,21 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.results;
+package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import java.util.function.Supplier;
+import io.libp2p.core.pubsub.ValidationResult;
 
-public enum AttestationProcessingResult {
-  SUCCESSFUL,
-  UNKNOWN_BLOCK,
-  SAVED_FOR_FUTURE,
-  INVALID;
+public enum InternalValidationResult {
+  ACCEPT(ValidationResult.Valid),
+  SAVE_FOR_FUTURE(ValidationResult.Ignore),
+  IGNORE(ValidationResult.Ignore),
+  REJECT(ValidationResult.Invalid);
 
-  public AttestationProcessingResult ifSuccessful(Supplier<AttestationProcessingResult> nextStep) {
-    return isSuccessful() ? nextStep.get() : this;
+  private final ValidationResult gossipSubValidationResult;
+
+  InternalValidationResult(ValidationResult validationResult) {
+    this.gossipSubValidationResult = validationResult;
   }
 
-  public boolean isSuccessful() {
-    return this == SUCCESSFUL;
+  public ValidationResult getGossipSubValidationResult() {
+    return this.gossipSubValidationResult;
   }
 }

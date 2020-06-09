@@ -36,8 +36,9 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
 
   private static SafeFuture<ValidationResult> VALIDATION_FAILED =
       SafeFuture.completedFuture(ValidationResult.Invalid);
-  private static SafeFuture<ValidationResult> VALIDATION_SUCCEEDED =
-      SafeFuture.completedFuture(ValidationResult.Valid);
+  private static SafeFuture<ValidationResult> VALIDATION_IGNORED =
+      SafeFuture.completedFuture(ValidationResult.Ignore);
+
   private static final int MAX_SENT_MESSAGES = 2048;
 
   private final Topic topic;
@@ -67,12 +68,12 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", topic, bytes.size());
-      return VALIDATION_FAILED;
+      return VALIDATION_IGNORED;
     }
     LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
 
-    final boolean result = handler.handleMessage(bytes);
-    return result ? VALIDATION_SUCCEEDED : VALIDATION_FAILED;
+    final ValidationResult result = handler.handleMessage(bytes);
+    return SafeFuture.completedFuture(result);
   }
 
   public void gossip(Bytes bytes) {
