@@ -18,6 +18,10 @@ we recommend most users use the latest `master` branch of Teku.
 
 - Added `/v1/node/version` and `/v1/node/identity` REST endpoints. Anyone using `/node/version` should switch to use
 the new endpoint, as `/node/version` will be removed in a future release.
+- Eth1 deposits now load on startup from the local database, then sync to the eth1 provider once loading is complete.
+  A hidden flag has been added to disable this functionality if it causes any issues - `--Xeth1-deposits-from-storage-enabled=false`.
+  Local storage requirements will increase slightly due to the need to store each deposit block 
+  event from the eth1 provider so that it can be replayed during restarts.
 
 ## 0.11.3
 
