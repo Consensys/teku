@@ -239,11 +239,10 @@ class Store implements UpdatableStore {
   @Override
   public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
     final SignedBeaconBlock block = getSignedBlock(blockRoot);
-    final Optional<BeaconState> state = getOrGenerateBlockState(blockRoot);
-    if (block == null || state.isEmpty()) {
+    if (block == null) {
       return Optional.empty();
     }
-    return Optional.of(new SignedBlockAndState(block, state.get()));
+    return getOrGenerateBlockState(blockRoot).map((state) -> new SignedBlockAndState(block, state));
   }
 
   @Override
