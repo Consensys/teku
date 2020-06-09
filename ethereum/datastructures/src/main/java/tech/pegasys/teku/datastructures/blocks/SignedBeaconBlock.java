@@ -84,7 +84,7 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
   /**
    * Get the state root of the BeaconBlock that is being signed.
    *
-   * @return The hashed tree rroot of the {@code BeaconBlock} being signed.
+   * @return The hashed tree root of the {@code BeaconBlock} being signed.
    */
   public Bytes32 getStateRoot() {
     return message.getState_root();

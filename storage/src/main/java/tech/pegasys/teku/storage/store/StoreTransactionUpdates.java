@@ -48,7 +48,7 @@ class StoreTransactionUpdates {
   private final Map<Bytes32, SignedBlockAndState> finalizedChainData;
   private final Map<UnsignedLong, Set<Bytes32>> prunedHotBlockRoots;
   private final Map<Checkpoint, BeaconState> checkpointStates;
-  private final Set<Checkpoint> staleCheckpointStates;
+  private final Set<Checkpoint> prunedCheckpointStates;
   private final Optional<CheckpointAndBlock> newFinalizedCheckpoint;
   private final Map<Bytes32, BeaconState> hotStates;
 
@@ -59,7 +59,7 @@ class StoreTransactionUpdates {
       final Map<Bytes32, SignedBlockAndState> finalizedChainData,
       final Map<UnsignedLong, Set<Bytes32>> prunedHotBlockRoots,
       final Map<Checkpoint, BeaconState> checkpointStates,
-      final Set<Checkpoint> staleCheckpointStates,
+      final Set<Checkpoint> prunedCheckpointStates,
       final Optional<CheckpointAndBlock> newFinalizedCheckpoint) {
     this.tx = tx;
     this.hotBlocks = hotBlocks;
@@ -67,7 +67,7 @@ class StoreTransactionUpdates {
     this.finalizedChainData = finalizedChainData;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.checkpointStates = checkpointStates;
-    this.staleCheckpointStates = staleCheckpointStates;
+    this.prunedCheckpointStates = prunedCheckpointStates;
     this.newFinalizedCheckpoint = newFinalizedCheckpoint;
   }
 
@@ -220,7 +220,7 @@ class StoreTransactionUpdates {
         getPrunedRoots(),
         finalizedChainData,
         checkpointStates,
-        staleCheckpointStates,
+        prunedCheckpointStates,
         tx.votes);
   }
 
@@ -246,7 +246,7 @@ class StoreTransactionUpdates {
     indexBlockRootsBySlot(store.rootsBySlotLookup, hotBlocks.values());
 
     // Prune stale checkpoint states
-    staleCheckpointStates.forEach(store.checkpoint_states::remove);
+    prunedCheckpointStates.forEach(store.checkpoint_states::remove);
     // Prune blocks and states
     prunedHotBlockRoots.forEach(
         (slot, roots) -> {
