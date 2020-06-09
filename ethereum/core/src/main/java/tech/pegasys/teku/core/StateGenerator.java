@@ -82,13 +82,13 @@ public class StateGenerator {
 
     // Process blocks in order
     Collections.reverse(blocks);
-    BeaconState currentState = baseState;
-    SignedBeaconBlock currentBlock = blocks.get(0);
+    BeaconState prevState = baseState;
+    SignedBeaconBlock currentBlock = null;
+    BeaconState currentState = null;
     for (int i = 0; i < blocks.size(); i++) {
-      final SignedBeaconBlock nextBlock = blocks.get(i);
-      final BeaconState nextState = processBlock(currentState, nextBlock);
-      currentBlock = nextBlock;
-      currentState = nextState;
+      currentBlock = blocks.get(i);
+      currentState = processBlock(prevState, currentBlock);
+      prevState = currentState;
     }
 
     // Validate result and return
@@ -96,10 +96,10 @@ public class StateGenerator {
       final String msg =
           String.format(
               "Failed to regenerate state for block root %s.  Generated state root %s does not match expected state root %s",
-              blockRoot, currentState.hash_tree_root(), currentBlock.getStateRoot());
+              blockRoot, prevState.hash_tree_root(), currentBlock.getStateRoot());
       throw new IllegalStateException(msg);
     }
-    return currentState;
+    return prevState;
   }
 
   /**
