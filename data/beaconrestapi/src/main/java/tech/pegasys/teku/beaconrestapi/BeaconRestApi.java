@@ -56,6 +56,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation;
@@ -82,6 +83,7 @@ public class BeaconRestApi {
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
+    addV1NodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
   }
@@ -184,6 +186,13 @@ public class BeaconRestApi {
 
   private void addAdminHandlers() {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
+  }
+
+  private void addV1NodeHandlers(final DataProvider provider) {
+    app.get(GetIdentity.ROUTE, new GetIdentity(provider, jsonProvider));
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion(jsonProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {

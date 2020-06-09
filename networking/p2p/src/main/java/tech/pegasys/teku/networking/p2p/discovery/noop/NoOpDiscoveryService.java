@@ -48,5 +48,10 @@ public class NoOpDiscoveryService implements DiscoveryService {
   }
 
   @Override
+  public Optional<String> getDiscoveryAddress() {
+    return Optional.empty();
+  }
+
+  @Override
   public void updateCustomENRField(String fieldName, Bytes value) {}
 }

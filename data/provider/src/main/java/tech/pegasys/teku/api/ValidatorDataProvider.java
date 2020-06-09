@@ -70,7 +70,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
-      UnsignedLong slot, BLSSignature randao) {
+      UnsignedLong slot, BLSSignature randao, Optional<Bytes32> graffiti) {
     if (slot == null) {
       throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }
@@ -86,7 +86,8 @@ public class ValidatorDataProvider {
     }
 
     return validatorApiChannel
-        .createUnsignedBlock(slot, tech.pegasys.teku.bls.BLSSignature.fromBytes(randao.getBytes()))
+        .createUnsignedBlock(
+            slot, tech.pegasys.teku.bls.BLSSignature.fromBytes(randao.getBytes()), graffiti)
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 

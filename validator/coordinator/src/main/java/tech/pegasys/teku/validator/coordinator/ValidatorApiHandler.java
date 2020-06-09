@@ -20,6 +20,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_p
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
@@ -34,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.CommitteeAssignmentUtil;
@@ -139,7 +141,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      final UnsignedLong slot, final BLSSignature randaoReveal) {
+      final UnsignedLong slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -147,7 +149,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         slot.minus(UnsignedLong.ONE),
         blockAndState ->
             blockFactory.createUnsignedBlock(
-                blockAndState.getState(), blockAndState.getBlock(), slot, randaoReveal));
+                blockAndState.getState(), blockAndState.getBlock(), slot, randaoReveal, graffiti));
   }
 
   private <T> SafeFuture<Optional<T>> createFromBlockAndState(
@@ -221,12 +223,22 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
-    attestationManager.onAttestation(ValidateableAttestation.fromSingle(attestation));
+    attestationManager
+        .onAttestation(ValidateableAttestation.fromSingle(attestation))
+        .ifUnsuccessful(
+            reason ->
+                VALIDATOR_LOGGER.producedInvalidAttestation(
+                    attestation.getData().getSlot(), reason));
   }
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    attestationManager.onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof));
+    attestationManager
+        .onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof))
+        .ifUnsuccessful(
+            reason ->
+                VALIDATOR_LOGGER.producedInvalidAggregate(
+                    aggregateAndProof.getMessage().getAggregate().getData().getSlot(), reason));
   }
 
   @Override

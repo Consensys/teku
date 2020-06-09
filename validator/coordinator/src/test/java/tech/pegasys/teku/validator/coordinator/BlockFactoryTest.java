@@ -23,6 +23,7 @@ import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.creat
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +102,8 @@ class BlockFactoryTest {
     final BeaconBlock previousBlock = recentChainData.getBlockByRoot(bestBlockRoot).orElseThrow();
     final BeaconState previousState = recentChainData.getBlockState(bestBlockRoot).orElseThrow();
     final BeaconBlock block =
-        blockFactory.createUnsignedBlock(previousState, previousBlock, newSlot, randaoReveal);
+        blockFactory.createUnsignedBlock(
+            previousState, previousBlock, newSlot, randaoReveal, Optional.empty());
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
