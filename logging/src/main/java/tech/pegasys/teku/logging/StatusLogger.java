@@ -30,6 +30,10 @@ public class StatusLogger {
     this.log = LogManager.getLogger(name);
   }
 
+  public void onStartup(final String version) {
+    log.info("Teku version: {}", version);
+  }
+
   public void fatalError(final String description, final Throwable cause) {
     log.fatal("Exiting due to fatal error in {}", description, cause);
   }
