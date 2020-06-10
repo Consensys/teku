@@ -13,16 +13,21 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.Signer;
 
 public class Validator {
   private final BLSPublicKey publicKey;
   private final Signer signer;
+  private final Optional<Bytes32> graffiti;
 
-  public Validator(final BLSPublicKey publicKey, final Signer signer) {
+  public Validator(
+      final BLSPublicKey publicKey, final Signer signer, final Optional<Bytes32> graffiti) {
     this.publicKey = publicKey;
     this.signer = signer;
+    this.graffiti = graffiti;
   }
 
   public BLSPublicKey getPublicKey() {
@@ -31,5 +36,9 @@ public class Validator {
 
   public Signer getSigner() {
     return signer;
+  }
+
+  public Optional<Bytes32> getGraffiti() {
+    return graffiti;
   }
 }
