@@ -45,12 +45,12 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     this.validatorKeyPassword = validatorKeyPassword;
     this.withdrawalKeyPassword = withdrawalKeyPassword;
     this.outputPath = outputPath;
+    createKeystoreDirectory();
   }
 
   @Override
   public void writeKeys(final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey)
       throws UncheckedIOException, KeyStoreValidationException {
-    final Path keystoreDirectory = createKeystoreDirectory(validatorKey);
 
     final KeyStoreData validatorKeyStoreData =
         generateKeystoreData(validatorKey, validatorKeyPassword);
@@ -58,22 +58,20 @@ public class EncryptedKeystoreWriter implements KeysWriter {
         generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
 
     final String validatorFileName =
-        "validator_" + shortPublicKey(validatorKey.getPublicKey()) + ".json";
+        shortPublicKey(validatorKey.getPublicKey()) + "_validator.json";
     final String withdrawalFileName =
-        "withdrawal_" + shortPublicKey(withdrawalKey.getPublicKey()) + ".json";
+        shortPublicKey(withdrawalKey.getPublicKey()) + "_withdrawal.json";
 
-    saveKeyStore(keystoreDirectory.resolve(validatorFileName), validatorKeyStoreData);
-    saveKeyStore(keystoreDirectory.resolve(withdrawalFileName), withdrawalKeyStoreData);
+    saveKeyStore(outputPath.resolve(validatorFileName), validatorKeyStoreData);
+    saveKeyStore(outputPath.resolve(withdrawalFileName), withdrawalKeyStoreData);
   }
 
-  private Path createKeystoreDirectory(final BLSKeyPair validatorKey) {
-    final Path keystoreDirectory =
-        outputPath.resolve("validator_" + shortPublicKey(validatorKey.getPublicKey()));
+  private void createKeystoreDirectory() {
     try {
-      return Files.createDirectories(keystoreDirectory);
+      Files.createDirectories(outputPath);
     } catch (IOException e) {
       STATUS_LOG.validatorDepositEncryptedKeystoreWriterFailure(
-          "Error: Unable to create directory [{}] : {}", keystoreDirectory, e.getMessage());
+          "Error: Unable to create directory [{}] : {}", outputPath, e.getMessage());
       throw new UncheckedIOException(e);
     }
   }

@@ -56,39 +56,17 @@ class EncryptedKeystoreWriterTest {
     keysWriter.writeKeys(new BLSKeyPair(validator1SecretKey), new BLSKeyPair(withdrawal1SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(
-            "validator_"
-                + trimPublicKey(validator1PubKey)
-                + "/validator_"
-                + trimPublicKey(validator1PubKey)
-                + ".json"),
-        validator1SecretKey);
+        tempDir.resolve(trimPublicKey(validator1PubKey) + "_validator.json"), validator1SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(
-            "validator_"
-                + trimPublicKey(validator1PubKey)
-                + "/withdrawal_"
-                + trimPublicKey(withdrawal1PubKey)
-                + ".json"),
+        tempDir.resolve(trimPublicKey(withdrawal1PubKey) + "_withdrawal.json"),
         withdrawal1SecretKey);
 
     keysWriter.writeKeys(new BLSKeyPair(validator2SecretKey), new BLSKeyPair(withdrawal2SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(
-            "validator_"
-                + trimPublicKey(validator2PubKey)
-                + "/validator_"
-                + trimPublicKey(validator2PubKey)
-                + ".json"),
-        validator2SecretKey);
+        tempDir.resolve(trimPublicKey(validator2PubKey) + "_validator.json"), validator2SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(
-            "validator_"
-                + trimPublicKey(validator2PubKey)
-                + "/withdrawal_"
-                + trimPublicKey(withdrawal2PubKey)
-                + ".json"),
+        tempDir.resolve(trimPublicKey(withdrawal2PubKey) + "_withdrawal.json"),
         withdrawal2SecretKey);
   }
 
