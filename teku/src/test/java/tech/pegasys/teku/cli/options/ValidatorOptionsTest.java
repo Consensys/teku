@@ -26,11 +26,12 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final Bytes32 graffiti =
-      Bytes32.fromHexString("0x542045204b205500000000000000000000000000000000000000000000000000");
 
   @Test
   public void shouldReadFromConfigurationFile() throws MalformedURLException {
+    // from config file ("T E K U") UTF8 -> bytes32 -> as hex string
+    final Bytes32 graffiti =
+        Bytes32.fromHexString("0x542045204b205500000000000000000000000000000000000000000000000000");
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final TekuConfiguration config = getTekuConfigurationFromFile("validatorOptions_config.yaml");
 
