@@ -72,7 +72,8 @@ public class SingleAttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(blockAndState));
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(ACCEPT);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
@@ -86,7 +87,8 @@ public class SingleAttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(blockAndState));
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(IGNORE);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
@@ -100,7 +102,8 @@ public class SingleAttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(blockAndState));
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVE_FOR_FUTURE);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
@@ -114,7 +117,8 @@ public class SingleAttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(blockAndState));
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(REJECT);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
@@ -139,6 +143,7 @@ public class SingleAttestationTopicHandlerTest {
     final SingleAttestationTopicHandler topicHandler =
         new SingleAttestationTopicHandler(
             gossipEncoding, forkInfo, 0, attestationValidator, gossipedAttestationConsumer);
-    assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_attestation_0/ssz_snappy");
+    assertThat(topicHandler.getTopic())
+        .isEqualTo("/eth2/11223344/committee_index0_beacon_attestation/ssz_snappy");
   }
 }

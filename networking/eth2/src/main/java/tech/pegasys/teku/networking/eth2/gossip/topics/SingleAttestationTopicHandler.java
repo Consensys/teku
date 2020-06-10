@@ -51,7 +51,8 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
   @Override
   public ValidationResult handleMessage(final Bytes bytes) {
     try {
-      ValidateableAttestation attestation = ValidateableAttestation.fromSingle(deserialize(bytes));
+      ValidateableAttestation attestation =
+          ValidateableAttestation.fromAttestation(deserialize(bytes));
       final InternalValidationResult internalValidationResult = validateData(attestation);
       switch (internalValidationResult) {
         case REJECT:
@@ -87,7 +88,7 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
 
   @Override
   public String getTopicName() {
-    return "beacon_attestation_" + subnetId;
+    return "committee_index" + subnetId + "_beacon_attestation";
   }
 
   @Override
