@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.BlockAttestationDataValidator;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -48,9 +48,9 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
   private final NavigableMap<UnsignedLong, Set<Bytes>> dataHashBySlot = new TreeMap<>();
-  private final BlockAttestationDataValidator attestationDataValidator;
+  private final AttestationDataStateTransitionValidator attestationDataValidator;
 
-  public AggregatingAttestationPool(final BlockAttestationDataValidator attestationDataValidator) {
+  public AggregatingAttestationPool(final AttestationDataStateTransitionValidator attestationDataValidator) {
     this.attestationDataValidator = attestationDataValidator;
   }
 

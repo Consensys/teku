@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.core.operationstatetransitionvalidators;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.util.config.Constants;
 
-public class BlockAttestationDataValidator {
+public class AttestationDataStateTransitionValidator {
 
   public Optional<AttestationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {

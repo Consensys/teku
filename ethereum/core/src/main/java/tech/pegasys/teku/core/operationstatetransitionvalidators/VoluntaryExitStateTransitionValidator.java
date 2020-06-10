@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.core.operationstatetransitionvalidators;
 
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 
-public class BlockVoluntaryExitValidator {
+public class VoluntaryExitStateTransitionValidator {
 
   public Optional<ExitInvalidReason> validateExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {

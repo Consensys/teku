@@ -25,7 +25,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.core.BlockVoluntaryExitValidator;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -40,7 +40,7 @@ public class VoluntaryExitValidator {
   private final Set<UnsignedLong> receivedValidExitSet =
       ConcurrentLimitedSet.create(
           VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-  private final BlockVoluntaryExitValidator validator = new BlockVoluntaryExitValidator();
+  private final VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
 
   public VoluntaryExitValidator(RecentChainData recentChainData) {
     this.recentChainData = recentChainData;
@@ -72,13 +72,13 @@ public class VoluntaryExitValidator {
                 () ->
                     new IllegalStateException(
                         "Unable to get best state for voluntary exit processing."));
-    Optional<BlockVoluntaryExitValidator.ExitInvalidReason> invalidReason =
+    Optional<VoluntaryExitStateTransitionValidator.ExitInvalidReason> invalidReason =
         validator.validateExit(state, exit);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
           "VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
-          invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
+          invalidReason.map(VoluntaryExitStateTransitionValidator.ExitInvalidReason::describe).orElse(""));
       return false;
     }
 
