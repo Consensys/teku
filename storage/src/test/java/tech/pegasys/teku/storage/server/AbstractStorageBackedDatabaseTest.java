@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.storage.server;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.io.Files;
 import com.google.common.primitives.UnsignedLong;
@@ -90,7 +90,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     database = setupDatabase(tempDir.toFile(), storageMode);
 
     final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
-    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
+    assertStoresMatch(memoryStore, store);
   }
 
   @Test
@@ -146,7 +146,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     database = setupDatabase(tempDir.toFile(), storageMode);
 
     final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
-    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
+    assertStoresMatch(memoryStore, store);
   }
 
   @Test
