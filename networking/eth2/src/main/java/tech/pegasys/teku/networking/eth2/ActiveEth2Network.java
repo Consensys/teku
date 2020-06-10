@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
@@ -56,6 +58,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final AttestationSubnetService attestationSubnetService;
   private final GossipedAttestationConsumer gossipedAttestationConsumer;
   private final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
+  private final VerifiedBlockAttestationsSubscriptionProvider
+      verifiedBlockAttestationsSubscriptionProvider;
   private final Set<Integer> pendingSubnetSubscriptions = new HashSet<>();
 
   private BlockGossipManager blockGossipManager;
@@ -72,7 +76,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final GossipEncoding gossipEncoding,
       final AttestationSubnetService attestationSubnetService,
       final GossipedAttestationConsumer gossipedAttestationConsumer,
-      final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
+      final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
+      final VerifiedBlockAttestationsSubscriptionProvider
+          verifiedBlockAttestationsSubscriptionProvider) {
     super(discoveryNetwork);
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
@@ -82,6 +88,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     this.attestationSubnetService = attestationSubnetService;
     this.gossipedAttestationConsumer = gossipedAttestationConsumer;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
+    this.verifiedBlockAttestationsSubscriptionProvider =
+        verifiedBlockAttestationsSubscriptionProvider;
   }
 
   @Override
@@ -141,6 +149,13 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     processedAttestationSubscriptionProvider.subscribe(attestationGossipManager::onNewAttestation);
     processedAttestationSubscriptionProvider.subscribe(aggregateGossipManager::onNewAggregate);
+
+    verifiedBlockAttestationsSubscriptionProvider.subscribe(
+        (attestations) ->
+            attestations.forEach(
+                attestation ->
+                    aggregateValidator.addSeenAggregate(
+                        ValidateableAttestation.fromAttestation(attestation))));
   }
 
   @Override

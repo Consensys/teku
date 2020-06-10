@@ -186,7 +186,7 @@ class AggregatingAttestationPoolTest {
     IntStream.of(validators).forEach(bitlist::setBit);
     final Attestation attestation =
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
-    aggregatingPool.add(ValidateableAttestation.fromSingle(attestation));
+    aggregatingPool.add(ValidateableAttestation.fromAttestation(attestation));
     return attestation;
   }
 }

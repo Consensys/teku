@@ -50,7 +50,7 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
   public ValidationResult handleMessage(final Bytes bytes) {
     try {
       ValidateableAttestation attestation =
-          ValidateableAttestation.fromAggregate(deserialize(bytes));
+          ValidateableAttestation.fromSignedAggregate(deserialize(bytes));
       final InternalValidationResult internalValidationResult = validateData(attestation);
       switch (internalValidationResult) {
         case REJECT:

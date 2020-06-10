@@ -361,6 +361,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                               reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToProcessedAttestations)
+              .verifiedBlockAttestationsProvider(
+                  blockImporter::subscribeToVerifiedBlockAttestations)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
