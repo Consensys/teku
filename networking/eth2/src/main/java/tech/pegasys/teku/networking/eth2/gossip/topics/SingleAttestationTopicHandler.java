@@ -51,7 +51,8 @@ public class SingleAttestationTopicHandler implements Eth2TopicHandler<Attestati
   @Override
   public ValidationResult handleMessage(final Bytes bytes) {
     try {
-      ValidateableAttestation attestation = ValidateableAttestation.fromSingle(deserialize(bytes));
+      ValidateableAttestation attestation =
+          ValidateableAttestation.fromAttestation(deserialize(bytes));
       final InternalValidationResult internalValidationResult = validateData(attestation);
       switch (internalValidationResult) {
         case REJECT:
