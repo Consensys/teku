@@ -35,13 +35,17 @@ public class Eth1VotingPeriod {
     return secondsBeforeCurrentVotingPeriodStartTime(
         slot,
         genesisTime,
-        ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
+        ETH1_FOLLOW_DISTANCE
+            .times(UnsignedLong.valueOf(SECONDS_PER_ETH1_BLOCK))
+            .times(UnsignedLong.valueOf(2)));
   }
 
   public UnsignedLong getSpecRangeUpperBound(
       final UnsignedLong slot, final UnsignedLong genesisTime) {
     return secondsBeforeCurrentVotingPeriodStartTime(
-        slot, genesisTime, ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK));
+        slot,
+        genesisTime,
+        ETH1_FOLLOW_DISTANCE.times(UnsignedLong.valueOf(SECONDS_PER_ETH1_BLOCK)));
   }
 
   private UnsignedLong secondsBeforeCurrentVotingPeriodStartTime(

@@ -63,9 +63,7 @@ public class Eth1HeadTracker {
             () ->
                 asyncRunner
                     .runAfterDelay(
-                        this::pollLatestHead,
-                        Constants.SECONDS_PER_ETH1_BLOCK.longValue(),
-                        TimeUnit.SECONDS)
+                        this::pollLatestHead, Constants.SECONDS_PER_ETH1_BLOCK, TimeUnit.SECONDS)
                     .finish(
                         () -> {},
                         error ->

@@ -46,7 +46,7 @@ class Eth1VotingPeriodTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(3);
+    Constants.SECONDS_PER_ETH1_BLOCK = 3;
     Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(5);
     Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
     Constants.SLOTS_PER_EPOCH = 6;

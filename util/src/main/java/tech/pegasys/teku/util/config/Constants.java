@@ -101,7 +101,7 @@ public class Constants {
 
   // Honest Validator
   public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
-  public static UnsignedLong SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(14L);
+  public static int SECONDS_PER_ETH1_BLOCK = 14;
 
   // Deposit
   public static String DEPOSIT_NORMAL = "normal";
