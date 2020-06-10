@@ -60,21 +60,21 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void metricsHostWhitelist_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--metrics-host-whitelist");
+        getTekuConfigurationFromArguments("--metrics-host-allowlist");
     assertThat(tekuConfiguration.getMetricsHostWhitelist()).isEmpty();
   }
 
   @Test
   public void metricsHostWhitelist_shouldSupportWhitelistingMultipleHosts() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--metrics-host-whitelist", "my.host,their.host");
+        getTekuConfigurationFromArguments("--metrics-host-allowlist", "my.host,their.host");
     assertThat(tekuConfiguration.getMetricsHostWhitelist()).containsOnly("my.host", "their.host");
   }
 
   @Test
   public void metricsHostWhitelist_shouldSupportWhitelistingAllHosts() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--metrics-host-whitelist", "*");
+        getTekuConfigurationFromArguments("--metrics-host-allowlist", "*");
     assertThat(tekuConfiguration.getMetricsHostWhitelist()).containsOnly("*");
   }
 
