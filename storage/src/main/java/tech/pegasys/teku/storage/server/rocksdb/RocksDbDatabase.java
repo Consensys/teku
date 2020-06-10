@@ -226,20 +226,15 @@ public class RocksDbDatabase implements Database {
 
     switch (stateStorageMode) {
       case ARCHIVE:
-        final Bytes32 finalizedRoot = dao.getFinalizedCheckpoint().get().getRoot();
-        final SignedBeaconBlock latestFinalizedBlock =
-            dao.getFinalizedBlock(finalizedRoot).orElseThrow();
-        final BeaconState latestFinalizedState =
-            dao.getLatestFinalizedState()
-                .orElseThrow(() -> new IllegalStateException("Missing latest finalized state"));
+        // Get previously finalized block to build on top of
+        final Bytes32 baseBlockRoot = dao.getFinalizedCheckpoint().get().getRoot();
+        final SignedBeaconBlock baseBlock = dao.getFinalizedBlock(baseBlockRoot).orElseThrow();
+        final BeaconState baseState = dao.getLatestFinalizedState().orElseThrow();
 
         final BlockTree blockTree =
-            BlockTree.builder()
-                .rootBlock(latestFinalizedBlock)
-                .blocks(finalizedBlocks.values())
-                .build();
+            BlockTree.builder().rootBlock(baseBlock).blocks(finalizedBlocks.values()).build();
         final StateGenerator stateGenerator =
-            StateGenerator.create(blockTree, latestFinalizedState, finalizedStates);
+            StateGenerator.create(blockTree, baseState, finalizedStates);
         stateGenerator.regenerateAllStates(updater::addFinalizedState);
         break;
       case PRUNE:
