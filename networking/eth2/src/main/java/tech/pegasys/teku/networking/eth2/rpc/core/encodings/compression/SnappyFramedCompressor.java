@@ -54,7 +54,7 @@ public class SnappyFramedCompressor implements Compressor {
     while (true) {
       Optional<ByteBuf> byteBuf;
       try {
-        byteBuf = snappyFrameDecoder.decodeOneImpl(input);
+        byteBuf = snappyFrameDecoder.decodeOneMessage(input);
       } catch (Exception e) {
         throw new CompressionException("Error in Snappy decompressor", e);
       }
