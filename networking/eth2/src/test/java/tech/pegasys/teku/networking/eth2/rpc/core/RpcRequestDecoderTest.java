@@ -16,29 +16,50 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.netty.buffer.ByteBuf;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 
 class RpcRequestDecoderTest extends RpcDecoderTestBase {
 
-  private final RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder =
-      METHOD.createRequestDecoder();
-
   @Test
   public void shouldParseSingleResponseReceivedInSinglePacket() throws Exception {
-    final BeaconBlocksByRootRequestMessage request =
-        decoder.decodeRequest(inputStream(LENGTH_PREFIX, MESSAGE_DATA));
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA)) {
+      RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder =
+          METHOD.createRequestDecoder();
 
-    assertThat(request).isEqualTo(MESSAGE);
+      Optional<BeaconBlocksByRootRequestMessage> msgMaybe = Optional.empty();
+      for (ByteBuf bufSlice : bufSlices) {
+        assertThat(msgMaybe).isEmpty();
+        msgMaybe = decoder.decodeRequest(bufSlice);
+        bufSlice.release();
+      }
+      decoder.complete();
+      for (ByteBuf bufSlice : bufSlices) {
+        assertThat(bufSlice.refCnt()).isEqualTo(0);
+      }
+
+      assertThat(msgMaybe).hasValue(MESSAGE);
+    }
   }
 
   @Test
-  public void shouldThrowErrorIfMessagesHaveTrailingData() {
-    assertThatThrownBy(
-            () ->
-                decoder.decodeRequest(
-                    inputStream(LENGTH_PREFIX, MESSAGE_DATA, Bytes.fromHexString("0x1234"))))
-        .isEqualTo(RpcException.EXTRA_DATA_APPENDED);
+  public void shouldThrowErrorIfMessagesHaveTrailingData()  throws Exception {
+    for (Iterable<ByteBuf> bufSlices :
+        testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA, Bytes.fromHexString("0x1234"))) {
+
+      RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder = METHOD.createRequestDecoder();
+
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf bufSlice : bufSlices) {
+                  decoder.decodeRequest(bufSlice);
+                }
+                decoder.complete();
+              })
+          .isEqualTo(RpcException.EXTRA_DATA_APPENDED);
+      }
   }
 }
