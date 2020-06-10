@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.protoarray;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
@@ -245,9 +244,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
-    return Optional.ofNullable(
-            protoArray.getIndices().get(blockRoot))
-            .flatMap(blockIndex -> {
+    return Optional.ofNullable(protoArray.getIndices().get(blockRoot))
+        .flatMap(
+            blockIndex -> {
               if (blockIndex < protoArray.getNodes().size()) {
                 return Optional.of(protoArray.getNodes().get(blockIndex));
               }
