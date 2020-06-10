@@ -17,5 +17,5 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public interface VerifiedBlockAttestationsListener {
-  void accept(SSZList<Attestation> attestations);
+  void onAttestationsFromBlock(SSZList<Attestation> attestations);
 }
