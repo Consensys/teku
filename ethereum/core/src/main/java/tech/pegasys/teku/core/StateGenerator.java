@@ -33,8 +33,8 @@ import tech.pegasys.teku.util.collections.LimitedMap;
 public class StateGenerator {
   private static final int DEFAULT_STATE_CACHE_SIZE = 50;
 
-  final BlockTree blockTree;
-  final BeaconState rootState;
+  private final BlockTree blockTree;
+  private final BeaconState rootState;
 
   public StateGenerator(final BlockTree blockTree, final BeaconState rootState) {
     checkArgument(
@@ -63,16 +63,16 @@ public class StateGenerator {
 
     // Walk from target block towards root of the tree, stopping when we find an available state
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
-    Optional<SignedBeaconBlock> block = blockTree.getBlock(blockRoot);
+    Optional<SignedBeaconBlock> curBlock = blockTree.getBlock(blockRoot);
     BeaconState baseState = null;
-    while (block.isPresent()) {
-      final Bytes32 root = block.get().getRoot();
-      baseState = root.equals(rootBlockHash) ? rootState : stateCache.get(block.get().getRoot());
+    while (curBlock.isPresent()) {
+      final Bytes32 root = curBlock.get().getRoot();
+      baseState = root.equals(rootBlockHash) ? rootState : stateCache.get(curBlock.get().getRoot());
       if (baseState != null) {
         break;
       }
-      blocks.add(block.get());
-      block = blockTree.getBlock(block.get().getParent_root());
+      blocks.add(curBlock.get());
+      curBlock = blockTree.getBlock(curBlock.get().getParent_root());
     }
     checkArgument(
         blocks.size() > 0,
@@ -81,25 +81,22 @@ public class StateGenerator {
         getClass().getSimpleName());
 
     // Process blocks in order
-    Collections.reverse(blocks);
-    BeaconState prevState = baseState;
-    SignedBeaconBlock currentBlock = null;
-    BeaconState currentState = null;
-    for (int i = 0; i < blocks.size(); i++) {
-      currentBlock = blocks.get(i);
-      currentState = processBlock(prevState, currentBlock);
-      prevState = currentState;
+    BeaconState state = baseState;
+    SignedBeaconBlock block = null;
+    for (int i = blocks.size() - 1; i >= 0; i--) {
+      block = blocks.get(i);
+      state = processBlock(state, block);
     }
 
     // Validate result and return
-    if (!currentBlock.getStateRoot().equals(currentState.hash_tree_root())) {
+    if (!block.getStateRoot().equals(state.hash_tree_root())) {
       final String msg =
           String.format(
               "Failed to regenerate state for block root %s.  Generated state root %s does not match expected state root %s",
-              blockRoot, prevState.hash_tree_root(), currentBlock.getStateRoot());
+              blockRoot, state.hash_tree_root(), block.getStateRoot());
       throw new IllegalStateException(msg);
     }
-    return prevState;
+    return state;
   }
 
   /**
@@ -140,7 +137,7 @@ public class StateGenerator {
           children.subList(1, children.size()).forEach(branchesToProcess::push);
         }
         // Continue processing the first child
-        branchBlock = children.size() > 0 ? children.get(0) : null;
+        branchBlock = children.isEmpty() ? null : children.get(0);
         preState = branchBlockState;
       }
     }
