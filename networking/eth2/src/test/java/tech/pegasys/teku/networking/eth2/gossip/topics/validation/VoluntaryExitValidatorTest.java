@@ -55,7 +55,7 @@ public class VoluntaryExitValidatorTest {
   static void beforeAll() {
     Constants.SLOTS_PER_EPOCH = 2;
     Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
-    Constants.PERSISTENT_COMMITTEE_PERIOD = 2;
+    Constants.SHARD_COMMITTEE_PERIOD = UnsignedLong.valueOf(2);
   }
 
   @AfterAll

@@ -144,7 +144,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(IGNORE);
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))

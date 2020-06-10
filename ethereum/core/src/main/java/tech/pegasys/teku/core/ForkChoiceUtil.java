@@ -397,8 +397,8 @@ public class ForkChoiceUtil {
     if (!target
         .getRoot()
         .equals(get_ancestor(store, attestation.getData().getBeacon_block_root(), target_slot))) {
-      LOG.warn("on_attestation: LMD vote must be consistent with FFG vote target");
-      return INVALID;
+      return AttestationProcessingResult.invalid(
+          "LMD vote must be consistent with FFG vote target");
     }
 
     return SUCCESSFUL;
