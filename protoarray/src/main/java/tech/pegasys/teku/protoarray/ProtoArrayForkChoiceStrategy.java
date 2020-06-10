@@ -245,14 +245,14 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
-    int blockIndex =
-        checkNotNull(
-            protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
-    if (blockIndex >= protoArray.getNodes().size()) {
-      return Optional.empty();
-    } else {
-      return Optional.of(protoArray.getNodes().get(blockIndex));
-    }
+    return Optional.ofNullable(
+            protoArray.getIndices().get(blockRoot))
+            .flatMap(blockIndex -> {
+              if (blockIndex < protoArray.getNodes().size()) {
+                return Optional.of(protoArray.getNodes().get(blockIndex));
+              }
+              return Optional.empty();
+            });
   }
 
   /**
