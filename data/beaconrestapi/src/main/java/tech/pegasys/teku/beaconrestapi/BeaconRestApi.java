@@ -76,7 +76,7 @@ public class BeaconRestApi {
   private void initialize(final DataProvider dataProvider, final TekuConfiguration configuration) {
     app.server().setServerPort(configuration.getRestApiPort());
 
-    addHostWhitelistHandler(configuration);
+    addHostAllowlistHandler(configuration);
 
     addExceptionHandlers();
     addAdminHandlers();
@@ -88,7 +88,7 @@ public class BeaconRestApi {
     addCustomErrorPages(configuration);
   }
 
-  private void addHostWhitelistHandler(final TekuConfiguration configuration) {
+  private void addHostAllowlistHandler(final TekuConfiguration configuration) {
     app.before(
         (ctx) -> {
           String header = ctx.host();

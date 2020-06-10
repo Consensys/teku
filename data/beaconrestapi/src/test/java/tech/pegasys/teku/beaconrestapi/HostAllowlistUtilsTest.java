@@ -33,14 +33,14 @@ class HostAllowlistUtilsTest {
   }
 
   @Test
-  public void hostIsInWhitelist_shouldBeTrueIfInList() {
+  public void hostIsInAllowlist_shouldBeTrueIfInList() {
     assertThat(hostIsInAllowlist(List.of("A", "B"), "A")).isTrue();
     assertThat(hostIsInAllowlist(List.of("A", "B"), "B")).isTrue();
     assertThat(hostIsInAllowlist(List.of("A", "MIXed.CASE"), "miXED.caSE")).isTrue();
   }
 
   @Test
-  public void hostIsInWhitelist_shouldBeFalseIfNotInList() {
+  public void hostIsInAllowlist_shouldBeFalseIfNotInList() {
     assertThat(hostIsInAllowlist(List.of("A", "B"), "C")).isFalse();
     assertThat(hostIsInAllowlist(List.of("A", "B"), "AA")).isFalse();
     assertThat(hostIsInAllowlist(List.of("A.B.C", "B"), "A")).isFalse();

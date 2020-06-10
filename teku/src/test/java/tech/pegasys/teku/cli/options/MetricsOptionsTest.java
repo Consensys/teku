@@ -72,7 +72,7 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void metricsHostAllowlist_shouldSupportWhitelistingAllHosts() {
+  public void metricsHostAllowlist_shouldSupportAllowingAllHosts() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--metrics-host-allowlist", "*");
     assertThat(tekuConfiguration.getMetricsHostAllowlist()).containsOnly("*");
