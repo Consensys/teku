@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.util;
 
-import static java.lang.Math.random;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
@@ -215,6 +214,20 @@ public final class DataStructureUtil {
 
   public AttesterSlashing randomAttesterSlashing() {
     return new AttesterSlashing(randomIndexedAttestation(), randomIndexedAttestation());
+  }
+
+  public List<SignedBeaconBlock> randomSignedBeaconBlockSequence(
+      final SignedBeaconBlock parent, final int count) {
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    SignedBeaconBlock parentBlock = parent;
+    for (int i = 0; i < count; i++) {
+      final long nextSlot = parentBlock.getSlot().plus(UnsignedLong.ONE).longValue();
+      final Bytes32 parentRoot = parentBlock.getRoot();
+      final SignedBeaconBlock block = randomSignedBeaconBlock(nextSlot, parentRoot, false);
+      blocks.add(block);
+      parentBlock = block;
+    }
+    return blocks;
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum) {
