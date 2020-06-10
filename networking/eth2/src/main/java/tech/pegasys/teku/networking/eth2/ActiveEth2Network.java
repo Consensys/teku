@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
+import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
@@ -37,6 +39,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubsc
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -68,6 +71,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private AttestationGossipManager attestationGossipManager;
   private AggregateGossipManager aggregateGossipManager;
   private VoluntaryExitGossipManager voluntaryExitGossipManager;
+  private ProposerSlashingGossipManager proposerSlashingGossipManager;
   private long discoveryNetworkAttestationSubnetsSubscription;
 
   public ActiveEth2Network(
@@ -120,6 +124,13 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
             new VoluntaryExitStateTransitionValidator(),
             new VoluntaryExitSignatureVerifier());
 
+    ProposerSlashingValidator proposerSlashingValidator =
+            new ProposerSlashingValidator(
+                    recentChainData,
+                    new ProposerSlashingStateTransitionValidator(),
+                    new ProposerSlashingSignatureVerifier()
+            );
+
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             discoveryNetwork,
@@ -145,6 +156,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(discoveryNetwork, gossipEncoding, forkInfo, exitValidator);
+
+    proposerSlashingGossipManager =
+            new ProposerSlashingGossipManager(discoveryNetwork, gossipEncoding, forkInfo, proposerSlashingValidator);
 
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
@@ -173,6 +187,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
     voluntaryExitGossipManager.shutdown();
+    proposerSlashingGossipManager.shutdown();
     attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
     super.stop();
   }

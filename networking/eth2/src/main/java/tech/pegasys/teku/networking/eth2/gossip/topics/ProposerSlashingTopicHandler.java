@@ -38,7 +38,7 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
   public ProposerSlashingTopicHandler(
           final GossipEncoding gossipEncoding,
           final ForkInfo forkInfo,
-          final VoluntaryExitValidator validator) {
+          final ProposerSlashingValidator validator) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
@@ -47,8 +47,8 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
   @Override
   public ValidationResult handleMessage(final Bytes bytes) {
     try {
-      SignedVoluntaryExit signedVoluntaryExit = deserialize(bytes);
-      final InternalValidationResult internalValidationResult = validateData(signedVoluntaryExit);
+      ProposerSlashing proposerSlashing = deserialize(bytes);
+      final InternalValidationResult internalValidationResult = validateData(proposerSlashing);
       switch (internalValidationResult) {
         case REJECT:
         case IGNORE:
@@ -81,8 +81,8 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
   }
 
   @Override
-  public Class<SignedVoluntaryExit> getValueType() {
-    return SignedVoluntaryExit.class;
+  public Class<ProposerSlashing> getValueType() {
+    return ProposerSlashing.class;
   }
 
   @Override
@@ -90,7 +90,7 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
     return forkDigest;
   }
 
-  protected InternalValidationResult validateData(final SignedVoluntaryExit signedVoluntaryExit) {
-    return validator.validate(signedVoluntaryExit);
+  protected InternalValidationResult validateData(final ProposerSlashing proposerSlashing) {
+    return validator.validate(proposerSlashing);
   }
 }
