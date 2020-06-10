@@ -17,6 +17,8 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SUCCE
 import static tech.pegasys.teku.util.bytes.ByteUtil.toByteExactUnsigned;
 
 import io.netty.buffer.ByteBuf;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,16 +42,31 @@ public class RpcResponseDecoder<T> {
     this.errorDecoder = encoding.createDecoder(String.class);
   }
 
-  public Optional<T> decodeNextResponse(final ByteBuf data) throws RpcException {
-    return decodeNextResponse(data, Optional.empty());
+  public List<T> decodeNextResponses(final ByteBuf data) throws RpcException {
+    return decodeNextResponses(data, Optional.empty());
   }
 
-  public Optional<T> decodeNextResponse(
+  public List<T> decodeNextResponses(
       final ByteBuf data, final FirstByteReceivedListener firstByteReceivedListener)
       throws RpcException {
-    return decodeNextResponse(data, Optional.of(firstByteReceivedListener));
+    return decodeNextResponses(data, Optional.of(firstByteReceivedListener));
   }
 
+  private List<T> decodeNextResponses(
+      final ByteBuf data, Optional<FirstByteReceivedListener> firstByteListener)
+      throws RpcException {
+    List<T> ret = new ArrayList<>();
+    while (true) {
+      Optional<T> responseMaybe = decodeNextResponse(data, firstByteListener);
+      if (responseMaybe.isPresent()) {
+        ret.add(responseMaybe.get());
+      } else {
+        break;
+      }
+    }
+
+    return ret;
+  }
   private Optional<T> decodeNextResponse(
       final ByteBuf data, Optional<FirstByteReceivedListener> firstByteListener)
       throws RpcException {

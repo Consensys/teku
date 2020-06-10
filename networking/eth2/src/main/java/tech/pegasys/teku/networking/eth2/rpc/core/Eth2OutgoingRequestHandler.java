@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,25 +80,18 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     try {
       this.rpcStream = rpcStream;
 
-      Optional<TResponse> maybeResponse =
-          responseDecoder.decodeNextResponse(data, this::onFirstByteReceived);
-      while (!isClosed.get() && maybeResponse.isPresent()) {
-        final TResponse response = maybeResponse.get();
-        responseProcessor.processResponse(response);
+      List<TResponse> maybeResponses =
+          responseDecoder.decodeNextResponses(data, this::onFirstByteReceived);
+      if (!isClosed.get()) {
+        maybeResponses.forEach(responseProcessor::processResponse);
 
-        final int chunksReceived = currentChunkCount.incrementAndGet();
+        final int chunksReceived = currentChunkCount.addAndGet(maybeResponses.size());
         if (chunksReceived > maximumResponseChunks) {
           cancelRequest(rpcStream, RpcException.EXTRA_DATA_APPENDED);
-          break;
         } else {
           ensureNextResponseArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
         }
-
-        // Get next response
-        maybeResponse = responseDecoder.decodeNextResponse(data);
       }
-
-      completeRequest(rpcStream);
     } catch (final RpcException e) {
       cancelRequest(rpcStream, e);
     } catch (final Throwable t) {
@@ -111,6 +104,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   public void complete(NodeId nodeId, RpcStream rpcStream) {
     try {
       responseDecoder.complete();
+      completeRequest(rpcStream);
     } catch (RpcException e) {
       cancelRequest(rpcStream, e);
     }

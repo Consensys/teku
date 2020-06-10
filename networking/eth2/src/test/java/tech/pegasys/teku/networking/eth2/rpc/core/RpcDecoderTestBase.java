@@ -55,10 +55,11 @@ public class RpcDecoderTestBase {
   protected static final Bytes MESSAGE_DATA = COMPRESSOR.compress(MESSAGE_PLAIN_DATA);
   protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_PLAIN_DATA.size());
   protected static final String ERROR_MESSAGE = "Bad request";
-  protected static final Bytes ERROR_MESSAGE_DATA =
+  protected static final Bytes ERROR_MESSAGE_PLAIN_DATA =
       Bytes.wrap(ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8));
+  protected static final Bytes ERROR_MESSAGE_DATA = COMPRESSOR.compress(ERROR_MESSAGE_PLAIN_DATA);
   protected static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
-      getLengthPrefix(ERROR_MESSAGE_DATA.size());
+      getLengthPrefix(ERROR_MESSAGE_PLAIN_DATA.size());
 
   protected static final AsyncRunner asyncRunner = new StubAsyncRunner();
   protected static final PeerLookup peerLookup = mock(PeerLookup.class);
