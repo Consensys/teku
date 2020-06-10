@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -206,7 +205,7 @@ public class RocksDbDatabase implements Database {
 
       // Update finalized blocks and states
       putFinalizedStates(updater, update.getFinalizedBlocks(), update.getFinalizedStates());
-      update.getFinalizedBlocks().forEach(updater::addFinalizedBlock);
+      update.getFinalizedBlocks().values().forEach(updater::addFinalizedBlock);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
       // Delete data
@@ -219,7 +218,7 @@ public class RocksDbDatabase implements Database {
 
   private void putFinalizedStates(
       Updater updater,
-      final Collection<SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
     if (finalizedBlocks.isEmpty()) {
       return;
@@ -235,7 +234,10 @@ public class RocksDbDatabase implements Database {
                 .orElseThrow(() -> new IllegalStateException("Missing latest finalized state"));
 
         final BlockTree blockTree =
-            BlockTree.builder().rootBlock(latestFinalizedBlock).blocks(finalizedBlocks).build();
+            BlockTree.builder()
+                .rootBlock(latestFinalizedBlock)
+                .blocks(finalizedBlocks.values())
+                .build();
         final StateGenerator stateGenerator =
             StateGenerator.create(blockTree, latestFinalizedState, finalizedStates);
         stateGenerator.regenerateAllStates(updater::addFinalizedState);
