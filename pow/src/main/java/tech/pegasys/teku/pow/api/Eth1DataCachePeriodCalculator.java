@@ -32,7 +32,7 @@ public class Eth1DataCachePeriodCalculator {
 
     // We need 2 * ETH1_FOLLOW_DISTANCE prior to that but this assumes our current time is from a
     // block already ETH1_FOLLOW_DISTANCE behind head.
-    cacheDurationSeconds += Long.valueOf(SECONDS_PER_ETH1_BLOCK) * ETH1_FOLLOW_DISTANCE.longValue();
+    cacheDurationSeconds += ETH1_FOLLOW_DISTANCE.longValue() * SECONDS_PER_ETH1_BLOCK;
 
     // And we want to be able to create blocks for at least the past epoch
     cacheDurationSeconds += SLOTS_PER_EPOCH * SECONDS_PER_SLOT;
