@@ -11,21 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.results;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import java.util.function.Supplier;
+import tech.pegasys.teku.statetransition.blockimport.VerifiedBlockAttestationsListener;
 
-public enum AttestationProcessingResult {
-  SUCCESSFUL,
-  UNKNOWN_BLOCK,
-  SAVED_FOR_FUTURE,
-  INVALID;
-
-  public AttestationProcessingResult ifSuccessful(Supplier<AttestationProcessingResult> nextStep) {
-    return isSuccessful() ? nextStep.get() : this;
-  }
-
-  public boolean isSuccessful() {
-    return this == SUCCESSFUL;
-  }
+public interface VerifiedBlockAttestationsSubscriptionProvider {
+  void subscribe(VerifiedBlockAttestationsListener verifiedBlockAttestationsListener);
 }

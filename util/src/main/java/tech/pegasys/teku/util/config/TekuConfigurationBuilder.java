@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class TekuConfigurationBuilder {
   private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
@@ -74,6 +75,7 @@ public class TekuConfigurationBuilder {
   private String restApiInterface;
   private List<String> restApiHostWhitelist;
   private NetworkDefinition network;
+  private Bytes32 graffiti;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -354,6 +356,11 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setGraffiti(final Bytes32 graffiti) {
+    this.graffiti = graffiti;
+    return this;
+  }
+
   public TekuConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
@@ -434,7 +441,8 @@ public class TekuConfigurationBuilder {
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface,
-        restApiHostWhitelist);
+        restApiHostWhitelist,
+        graffiti);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

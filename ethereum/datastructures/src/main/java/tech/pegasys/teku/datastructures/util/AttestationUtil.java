@@ -138,12 +138,12 @@ public class AttestationUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
-  public static boolean is_valid_indexed_attestation(
+  public static AttestationProcessingResult is_valid_indexed_attestation(
       BeaconState state, IndexedAttestation indexed_attestation) {
     return is_valid_indexed_attestation(state, indexed_attestation, BLSSignatureVerifier.SIMPLE);
   }
 
-  public static boolean is_valid_indexed_attestation(
+  public static AttestationProcessingResult is_valid_indexed_attestation(
       BeaconState state,
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
@@ -152,8 +152,7 @@ public class AttestationUtil {
     List<UnsignedLong> bit_0_indices_sorted =
         attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
     if (!attesting_indices.equals(bit_0_indices_sorted)) {
-      LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
-      return false;
+      return AttestationProcessingResult.invalid("Attesting indices are not sorted");
     }
 
     List<BLSPublicKey> pubkeys =
@@ -169,9 +168,9 @@ public class AttestationUtil {
 
     if (!signatureVerifier.verify(pubkeys, signing_root, signature)) {
       LOG.debug("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
-      return false;
+      return AttestationProcessingResult.invalid("Signature is invalid");
     }
-    return true;
+    return AttestationProcessingResult.SUCCESSFUL;
   }
 
   // Set bits of the newAttestation on the oldBitlist

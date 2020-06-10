@@ -353,9 +353,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
-              .gossipedAttestationConsumer(attestationManager::onAttestation)
+              .gossipedAttestationConsumer(
+                  attestation ->
+                      attestationManager
+                          .onAttestation(attestation)
+                          .ifInvalid(
+                              reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToProcessedAttestations)
+              .verifiedBlockAttestationsProvider(
+                  blockImporter::subscribeToVerifiedBlockAttestations)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
