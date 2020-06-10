@@ -69,8 +69,9 @@ public class BlockImporter {
 
       final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
       eventBus.post(new ImportedBlockEvent(block));
-      attestationsFromVerifiedBlockSubscriberSubscribers.forEach(
-          s -> s.accept(block.getMessage().getBody().getAttestations()));
+      attestationsFromVerifiedBlockSubscriberSubscribers.deliver(
+              VerifiedBlockAttestationsListener::accept,
+              block.getMessage().getBody().getAttestations());
       record.ifPresent(eventBus::post);
 
       return result;
