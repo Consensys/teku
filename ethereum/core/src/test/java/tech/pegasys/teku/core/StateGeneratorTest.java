@@ -184,6 +184,18 @@ public class StateGeneratorTest {
       final SignedBlockAndState rootBlockAndState,
       final List<SignedBlockAndState> descendantBlocksAndStates,
       final List<SignedBeaconBlock> unconnectedBlocks) {
+    testRegenerateAllStates(
+        cacheSize, rootBlockAndState, descendantBlocksAndStates, unconnectedBlocks, false);
+    testRegenerateAllStates(
+        cacheSize, rootBlockAndState, descendantBlocksAndStates, unconnectedBlocks, true);
+  }
+
+  private void testRegenerateAllStates(
+      final int cacheSize,
+      final SignedBlockAndState rootBlockAndState,
+      final List<SignedBlockAndState> descendantBlocksAndStates,
+      final List<SignedBeaconBlock> unconnectedBlocks,
+      final boolean supplyAllKnownStates) {
     final List<SignedBeaconBlock> descendantBlocks =
         descendantBlocksAndStates.stream()
             .map(SignedBlockAndState::getBlock)
@@ -199,7 +211,10 @@ public class StateGeneratorTest {
             .blocks(descendantBlocks)
             .blocks(unconnectedBlocks)
             .build();
-    final StateGenerator generator = StateGenerator.create(blockTree, rootBlockAndState.getState());
+    final StateGenerator generator =
+        supplyAllKnownStates
+            ? StateGenerator.create(blockTree, rootBlockAndState.getState(), expectedResult)
+            : StateGenerator.create(blockTree, rootBlockAndState.getState());
 
     // Regenerate all states and collect results
     final List<StateAndBlockRoot> results = new ArrayList<>();
@@ -215,7 +230,19 @@ public class StateGeneratorTest {
     assertThat(resultMap.size()).isEqualTo(results.size());
     // Check that our expectations are met
     assertThat(resultMap.size()).isEqualTo(expectedResult.size());
-    assertThat(resultMap).isEqualToComparingFieldByField(expectedResult);
+    assertThat(resultMap).containsExactlyEntriesOf(expectedResult);
+    // Check states were / were not regenerated as expected
+    if (supplyAllKnownStates) {
+      // No states should be regenerated - they should all match the known state
+      for (Bytes32 root : expectedResult.keySet()) {
+        assertThat(resultMap.get(root) == expectedResult.get(root)).isTrue();
+      }
+    } else if (cacheSize == 0) {
+      // All states should be regenerated and should not match the known states
+      for (Bytes32 root : expectedResult.keySet()) {
+        assertThat(resultMap.get(root) == expectedResult.get(root)).isFalse();
+      }
+    }
 
     // Test generating each expected state 1 by 1
     for (SignedBlockAndState descendant : descendantBlocksAndStates) {
