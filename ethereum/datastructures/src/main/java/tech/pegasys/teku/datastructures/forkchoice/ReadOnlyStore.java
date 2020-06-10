@@ -44,6 +44,8 @@ public interface ReadOnlyStore {
    */
   UnsignedLong getLatestFinalizedBlockSlot();
 
+  SignedBlockAndState getLatestFinalizedBlockAndState();
+
   Checkpoint getBestJustifiedCheckpoint();
 
   BeaconBlock getBlock(Bytes32 blockRoot);
@@ -57,8 +59,6 @@ public interface ReadOnlyStore {
   Set<Bytes32> getBlockRoots();
 
   BeaconState getBlockState(Bytes32 blockRoot);
-
-  boolean containsBlockState(Bytes32 blockRoot);
 
   BeaconState getCheckpointState(Checkpoint checkpoint);
 

@@ -19,13 +19,14 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.libp2p.core.pubsub.ValidationResult;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class AggregateTopicHandlerTest {
@@ -42,36 +43,52 @@ public class AggregateTopicHandlerTest {
   @Test
   public void handleMessage_validAggregate() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(ValidationResult.VALID);
+        ValidateableAttestation.fromSignedAggregate(
+            dataStructureUtil.randomSignedAggregateAndProof());
+    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.ACCEPT);
 
-    final boolean result =
+    final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
-    assertThat(result).isTrue();
+    assertThat(result).isEqualTo(ValidationResult.Valid);
     verify(attestationConsumer).accept(aggregate);
   }
 
   @Test
   public void handleMessage_savedForFuture() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(ValidationResult.SAVED_FOR_FUTURE);
+        ValidateableAttestation.fromSignedAggregate(
+            dataStructureUtil.randomSignedAggregateAndProof());
+    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
 
-    final boolean result =
+    final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
-    assertThat(result).isFalse();
+    assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(attestationConsumer).accept(aggregate);
+  }
+
+  @Test
+  public void handleMessage_ignoredAggregate() {
+    final ValidateableAttestation aggregate =
+        ValidateableAttestation.fromSignedAggregate(
+            dataStructureUtil.randomSignedAggregateAndProof());
+    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.IGNORE);
+
+    final ValidationResult result =
+        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+    assertThat(result).isEqualTo(ValidationResult.Ignore);
+    verify(attestationConsumer, never()).accept(aggregate);
   }
 
   @Test
   public void handleMessage_invalidAggregate() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(ValidationResult.INVALID);
+        ValidateableAttestation.fromSignedAggregate(
+            dataStructureUtil.randomSignedAggregateAndProof());
+    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.REJECT);
 
-    final boolean result =
+    final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
-    assertThat(result).isFalse();
+    assertThat(result).isEqualTo(ValidationResult.Invalid);
     verify(attestationConsumer, never()).accept(aggregate);
   }
 

@@ -33,7 +33,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -56,7 +56,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
-  protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
+  protected final Eth2Network eth2Network = mock(Eth2Network.class);
   protected StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   protected RecentChainData recentChainData = mock(RecentChainData.class);
   protected final SyncService syncService = mock(SyncService.class);
@@ -75,7 +75,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
         new DataProvider(
             recentChainData,
             combinedChainDataClient,
-            p2PNetwork,
+            eth2Network,
             syncService,
             validatorApiChannel,
             blockImporter);

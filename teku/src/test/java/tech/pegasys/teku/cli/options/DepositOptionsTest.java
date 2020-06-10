@@ -31,7 +31,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.isEth1Enabled()).isTrue();
     assertThat(config.getEth1DepositContractAddress()).isEqualTo(address);
     assertThat(config.getEth1Endpoint()).isEqualTo("http://example.com:1234/path/");
-    assertThat(config.isEth1DepositsFromStorageEnabled()).isTrue();
+    assertThat(config.isEth1DepositsFromStorageEnabled()).isFalse();
   }
 
   @Test
@@ -55,7 +55,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldDisableLoadFromStorageByDefault() {
     final TekuConfiguration tekuConfigurationFromArguments = getTekuConfigurationFromArguments();
-    assertThat(tekuConfigurationFromArguments.isEth1DepositsFromStorageEnabled()).isFalse();
+    assertThat(tekuConfigurationFromArguments.isEth1DepositsFromStorageEnabled()).isTrue();
   }
 
   @Test

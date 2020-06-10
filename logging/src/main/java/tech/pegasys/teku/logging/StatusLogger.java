@@ -30,6 +30,14 @@ public class StatusLogger {
     this.log = LogManager.getLogger(name);
   }
 
+  public void onStartup(final String version) {
+    log.info("Teku version: {}", version);
+  }
+
+  public void fatalError(final String description, final Throwable cause) {
+    log.fatal("Exiting due to fatal error in {}", description, cause);
+  }
+
   public void specificationFailure(final String description, final Throwable cause) {
     log.warn("Spec failed for {}: {}", description, cause, cause);
   }
@@ -99,7 +107,7 @@ public class StatusLogger {
   }
 
   public void minGenesisTimeReached() {
-    log.info("Minimum genesis time reached");
+    log.info("ETH1 block satisfying minimum genesis time found");
   }
 
   public void dataPathSet(final String dataPath) {

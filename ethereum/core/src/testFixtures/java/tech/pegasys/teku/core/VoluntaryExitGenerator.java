@@ -73,7 +73,8 @@ public class VoluntaryExitGenerator {
   }
 
   // It is easy to miss to update the state to a slot where validator can finally exit. This check
-  // is to ensure that the passed state slot is high enough to make sure that doesn't happen.
+  // is to
+  // ensure that the passed state slot is high enough to make sure that doesn't happen.
   private void checkForValidatorHavingBeenActiveLongEnough(BeaconState state, int validatorIndex) {
     if (state
             .getValidators()

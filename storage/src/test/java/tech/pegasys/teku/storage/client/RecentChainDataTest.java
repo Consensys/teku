@@ -277,16 +277,16 @@ class RecentChainDataTest {
 
   @Test
   public void startStoreTransaction_mutateFinalizedCheckpoint() throws StateTransitionException {
-    preGenesisStorageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
+    final BeaconState genesisState = chainBuilder.getStateAtSlot(Constants.GENESIS_SLOT);
+    preGenesisStorageClient.initializeFromGenesis(genesisState);
 
     final Checkpoint originalCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
 
     // Add a new finalized checkpoint
     final SignedBlockAndState newBlock = advanceChain(preGenesisStorageClient);
-    final UnsignedLong finalizedEpoch =
-        ChainProperties.computeBestEpochFinalizableAtSlot(newBlock.getSlot());
-    final Checkpoint newCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
+    final UnsignedLong finalizedEpoch = originalCheckpoint.getEpoch().plus(UnsignedLong.ONE);
+    final Checkpoint newCheckpoint = new Checkpoint(finalizedEpoch, newBlock.getRoot());
     assertThat(originalCheckpoint).isNotEqualTo(newCheckpoint); // Sanity check
 
     final StoreTransaction tx = preGenesisStorageClient.startStoreTransaction();

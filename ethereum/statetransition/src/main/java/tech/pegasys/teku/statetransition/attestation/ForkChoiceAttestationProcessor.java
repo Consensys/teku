@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;

@@ -59,7 +59,7 @@ class AggregateAttestationBuilder {
 
   public ValidateableAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
-    return ValidateableAttestation.fromSingle(
+    return ValidateableAttestation.fromAttestation(
         new Attestation(
             currentAggregateBits,
             attestationData,

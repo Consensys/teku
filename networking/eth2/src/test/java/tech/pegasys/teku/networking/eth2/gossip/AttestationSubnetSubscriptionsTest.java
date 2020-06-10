@@ -92,9 +92,9 @@ public class AttestationSubnetSubscriptionsTest {
 
     TopicChannel topicChannel1 = mock(TopicChannel.class);
     TopicChannel topicChannel2 = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("committee_index" + subnetId1), any()))
+    when(gossipNetwork.subscribe(contains("beacon_attestation_" + subnetId1), any()))
         .thenReturn(topicChannel1);
-    when(gossipNetwork.subscribe(contains("committee_index" + subnetId2), any()))
+    when(gossipNetwork.subscribe(contains("beacon_attestation_" + subnetId2), any()))
         .thenReturn(topicChannel2);
 
     subnetSubscriptions.subscribeToSubnetId(subnetId1);
@@ -102,8 +102,10 @@ public class AttestationSubnetSubscriptionsTest {
 
     verifyNoInteractions(topicChannel2);
 
-    verify(gossipNetwork).subscribe(argThat(i -> i.contains("committee_index" + subnetId1)), any());
-    verify(gossipNetwork).subscribe(argThat(i -> i.contains("committee_index" + subnetId2)), any());
+    verify(gossipNetwork)
+        .subscribe(argThat(i -> i.contains("beacon_attestation_" + subnetId1)), any());
+    verify(gossipNetwork)
+        .subscribe(argThat(i -> i.contains("beacon_attestation_" + subnetId2)), any());
 
     assertThat(subnetSubscriptions.getChannel(attestation1)).isEqualTo(Optional.of(topicChannel1));
     assertThat(subnetSubscriptions.getChannel(attestation2)).isEqualTo(Optional.of(topicChannel2));
@@ -114,7 +116,7 @@ public class AttestationSubnetSubscriptionsTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     final int subnetId = computeSubnetId(attestation);
     TopicChannel topicChannel = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("committee_index" + subnetId), any()))
+    when(gossipNetwork.subscribe(contains("beacon_attestation_" + subnetId), any()))
         .thenReturn(topicChannel);
 
     subnetSubscriptions.subscribeToSubnetId(subnetId);

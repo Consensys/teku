@@ -100,14 +100,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private static DiscoveryService createDiscoveryService(final NetworkConfig p2pConfig) {
     final DiscoveryService discoveryService;
     if (p2pConfig.isDiscoveryEnabled()) {
-      discoveryService =
-          DiscV5Service.create(
-              Bytes.wrap(p2pConfig.getPrivateKey().raw()),
-              p2pConfig.getNetworkInterface(),
-              p2pConfig.getListenPort(),
-              p2pConfig.getAdvertisedIp(),
-              p2pConfig.getAdvertisedPort(),
-              p2pConfig.getBootnodes());
+      discoveryService = DiscV5Service.create(p2pConfig);
     } else {
       discoveryService = new NoOpDiscoveryService();
     }
@@ -144,6 +137,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   @Override
   public Optional<String> getEnr() {
     return discoveryService.getEnr();
+  }
+
+  @Override
+  public Optional<String> getDiscoveryAddress() {
+    return discoveryService.getDiscoveryAddress();
   }
 
   public void setLongTermAttestationSubnetSubscriptions(Iterable<Integer> subnetIds) {
