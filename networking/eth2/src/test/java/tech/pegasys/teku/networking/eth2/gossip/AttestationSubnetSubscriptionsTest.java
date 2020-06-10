@@ -102,8 +102,10 @@ public class AttestationSubnetSubscriptionsTest {
 
     verifyNoInteractions(topicChannel2);
 
-    verify(gossipNetwork).subscribe(argThat(i -> i.contains("beacon_attestation_1" + subnetId1)), any());
-    verify(gossipNetwork).subscribe(argThat(i -> i.contains("beacon_attestation_2" + subnetId2)), any());
+    verify(gossipNetwork)
+        .subscribe(argThat(i -> i.contains("beacon_attestation_1" + subnetId1)), any());
+    verify(gossipNetwork)
+        .subscribe(argThat(i -> i.contains("beacon_attestation_2" + subnetId2)), any());
 
     assertThat(subnetSubscriptions.getChannel(attestation1)).isEqualTo(Optional.of(topicChannel1));
     assertThat(subnetSubscriptions.getChannel(attestation2)).isEqualTo(Optional.of(topicChannel2));
