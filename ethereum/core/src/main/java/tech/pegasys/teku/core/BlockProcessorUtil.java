@@ -295,8 +295,8 @@ public final class BlockProcessorUtil {
     // For each proposer_slashing in block.body.proposer_slashings:
     for (ProposerSlashing proposerSlashing : proposerSlashings) {
 
-      boolean slashingSignatureValid = slashingSignatureVerifier
-              .verifySignature(state, proposerSlashing, signatureVerifier);
+      boolean slashingSignatureValid =
+          slashingSignatureVerifier.verifySignature(state, proposerSlashing, signatureVerifier);
       if (!slashingSignatureValid) {
         LOG.trace("Proposer slashing signature is invalid {}", proposerSlashing);
         return false;
