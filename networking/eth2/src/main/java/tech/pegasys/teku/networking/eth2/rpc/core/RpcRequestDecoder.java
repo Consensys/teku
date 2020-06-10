@@ -55,6 +55,6 @@ public class RpcRequestDecoder<T extends RpcRequest> {
 
   public void complete() throws RpcException {
     decoder.complete();
-    if (!complete) throw RpcException.PAYLOAD_TRUNCATED;
+    if (!complete) throw RpcException.PAYLOAD_TRUNCATED();
   }
 }

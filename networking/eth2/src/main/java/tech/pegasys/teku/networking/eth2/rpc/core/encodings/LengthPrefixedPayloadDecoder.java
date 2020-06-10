@@ -73,7 +73,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
     }
     if (payloadLength.isPresent()) {
       // the chunk was not completely read
-      throw RpcException.PAYLOAD_TRUNCATED;
+      throw RpcException.PAYLOAD_TRUNCATED();
     }
   }
 
@@ -108,7 +108,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
     } else {
       ByteBuf uncompressedPayload = uncompressedPayloadMaybe.get();
       if (uncompressedPayload.readableBytes() < uncompressedPayloadSize) {
-        throw RpcException.PAYLOAD_TRUNCATED;
+        throw RpcException.PAYLOAD_TRUNCATED();
       }
       return Optional.of(uncompressedPayload);
       }
