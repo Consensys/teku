@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import io.netty.buffer.ByteBuf;
 import java.io.InputStream;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 
@@ -29,23 +29,23 @@ public interface Compressor {
    */
   Bytes compress(final Bytes data);
 
-  /**
-   * Returns the uncompressed data.
-   *
-   * @param data The data to uncompress.
-   * @param uncompressedPayloadSize The expected size of the uncompressed payload
-   * @return The uncompressed data.
-   */
-  default Bytes uncompress(final Bytes data, final int uncompressedPayloadSize)
-      throws CompressionException {
-    try (final InputStream byteStream = new ByteArrayInputStream(data.toArrayUnsafe())) {
-      // Read everything
-      return uncompress(byteStream, uncompressedPayloadSize);
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "Unexpected error encountered while preparing to uncompress bytes", e);
-    }
-  }
+//  /**
+//   * Returns the uncompressed data.
+//   *
+//   * @param data The data to uncompress.
+//   * @param uncompressedPayloadSize The expected size of the uncompressed payload
+//   * @return The uncompressed data.
+//   */
+//  default Bytes uncompress(final Bytes data, final int uncompressedPayloadSize)
+//      throws CompressionException {
+//    try (final InputStream byteStream = new ByteArrayInputStream(data.toArrayUnsafe())) {
+//      // Read everything
+//      return uncompress(byteStream, uncompressedPayloadSize);
+//    } catch (IOException e) {
+//      throw new RuntimeException(
+//          "Unexpected error encountered while preparing to uncompress bytes", e);
+//    }
+//  }
 
   /**
    * Uncompress a value expected to be {@code uncompressedPayloadSize} bytes.
@@ -54,7 +54,7 @@ public interface Compressor {
    * @param uncompressedPayloadSize The expected size of the uncompressed payload
    * @return The uncompressed bytes read from the underlying inputStream {@code input} stream.
    */
-  Bytes uncompress(final InputStream input, final int uncompressedPayloadSize)
+  Optional<ByteBuf> uncompress(final ByteBuf input, final int uncompressedPayloadSize)
       throws CompressionException;
 
   /**

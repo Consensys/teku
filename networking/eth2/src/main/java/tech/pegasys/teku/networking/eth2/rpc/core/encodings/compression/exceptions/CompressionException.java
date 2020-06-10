@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions;
 
-public class CompressionException extends Exception {
+public class CompressionException extends RuntimeException {
 
   public CompressionException(final String message, final Throwable cause) {
     super(message, cause);

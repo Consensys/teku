@@ -13,13 +13,14 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.compression.Snappy;
 import java.util.Optional;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractRpcByteBufDecoder;
 
 /**
  * Uncompresses a {@link ByteBuf} encoded with the Snappy framing format.
@@ -32,7 +33,7 @@ import java.util.Optional;
  * that checksum validation brings, please use the {@link #SnappyFrameDecoder(boolean)} constructor
  * with the argument set to {@code true}.
  */
-public class SnappyFrameDecoder extends RpcBytesToMessageDecoder<ByteBuf>{
+public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
 
   private enum ChunkType {
     STREAM_IDENTIFIER,

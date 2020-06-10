@@ -13,18 +13,18 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
-import com.google.common.io.ByteStreams;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.xerial.snappy.SnappyFramedInputStream;
 import org.xerial.snappy.SnappyFramedOutputStream;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
-import tech.pegasys.teku.util.iostreams.DelegatingInputStream;
 
 /** Implements snappy compression using the "framed" / streaming format. */
 public class SnappyFramedCompressor implements Compressor {
@@ -32,6 +32,8 @@ public class SnappyFramedCompressor implements Compressor {
   // See:
   // https://github.com/google/snappy/blob/251d935d5096da77c4fef26ea41b019430da5572/framing_format.txt#L104-L106
   static final int MAX_FRAME_CONTENT_SIZE = 65536;
+  private SnappyFrameDecoder snappyFrameDecoder = new SnappyFrameDecoder();
+  private List<ByteBuf> decodedSnappyFrames = new ArrayList<>();
 
   @Override
   public Bytes compress(final Bytes data) {
@@ -47,36 +49,34 @@ public class SnappyFramedCompressor implements Compressor {
   }
 
   @Override
-  public Bytes uncompress(final InputStream input, final int uncompressedPayloadSize)
+  public synchronized Optional<ByteBuf> uncompress(ByteBuf input, int uncompressedPayloadSize)
       throws CompressionException {
-    // This is a bit of a hack - but we don't want to close the underlying stream when
-    // we close the SnappyFramedInputStream
-    final UncloseableInputStream unclosableStream = new UncloseableInputStream(input);
-    // Limit the max number of bytes we're allowed to read
-    final InputStream limitedStream =
-        ByteStreams.limit(unclosableStream, getMaxCompressedLength(uncompressedPayloadSize));
-
-    try (final InputStream snappyIn = new SnappyFramedInputStream(limitedStream)) {
-      final Bytes uncompressed = Bytes.wrap(snappyIn.readNBytes(uncompressedPayloadSize));
-
-      // Validate payload is of expected size
-      if (uncompressed.size() < uncompressedPayloadSize) {
-        throw new PayloadSmallerThanExpectedException(
-            String.format(
-                "Expected %d bytes but only uncompressed %d bytes",
-                uncompressedPayloadSize, uncompressed.size()));
+    while (true) {
+      Optional<ByteBuf> byteBuf;
+      try {
+        byteBuf = snappyFrameDecoder.decodeOneImpl(input);
+      } catch (Exception e) {
+        throw new CompressionException("Error in Snappy decompressor", e);
       }
-      if (snappyIn.available() > 0) {
+      if (byteBuf.isEmpty()) break;
+      decodedSnappyFrames.add(byteBuf.get());
+      int decodedFramesLength = decodedSnappyFrames.stream().mapToInt(ByteBuf::readableBytes).sum();
+      if (decodedFramesLength == uncompressedPayloadSize) {
+        // wrapped ByteBuf takes ownership of the underlying buffers
+        ByteBuf ret = Unpooled.wrappedBuffer(decodedSnappyFrames.toArray(new ByteBuf[0]));
+        decodedSnappyFrames.clear();
+        snappyFrameDecoder.complete();
+        return Optional.of(ret);
+      } else if (decodedFramesLength > uncompressedPayloadSize) {
         throw new PayloadLargerThanExpectedException(
-            String.format(
-                "Expected %d bytes, but at least %d extra bytes are appended",
-                uncompressedPayloadSize, snappyIn.available()));
+            "Decoded snappy frames len is "
+                + decodedFramesLength
+                + " while expecting "
+                + uncompressedPayloadSize);
       }
-
-      return uncompressed;
-    } catch (IOException e) {
-      throw new CompressionException("Unable to uncompress data", e);
     }
+
+    return Optional.empty();
   }
 
   @Override
@@ -85,17 +85,5 @@ public class SnappyFramedCompressor implements Compressor {
     // See:
     // https://github.com/google/snappy/blob/537f4ad6240e586970fe554614542e9717df7902/snappy.cc#L98
     return 32 + uncompressedLength + uncompressedLength / 6;
-  }
-
-  private static class UncloseableInputStream extends DelegatingInputStream {
-
-    public UncloseableInputStream(final InputStream wrapped) {
-      super(wrapped);
-    }
-
-    @Override
-    public void close() {
-      // Don't close wrapped input stream
-    }
   }
 }

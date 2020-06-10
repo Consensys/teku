@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
-import java.io.IOException;
-import java.io.InputStream;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 
 public class NoopCompressor implements Compressor {
+
+  NoopFrameDecoder decoder;
 
   @Override
   public Bytes compress(final Bytes data) {
@@ -26,18 +29,27 @@ public class NoopCompressor implements Compressor {
   }
 
   @Override
-  public Bytes uncompress(final Bytes data, final int uncompressedPayloadSize) {
-    return data;
-  }
-
-  @Override
-  public Bytes uncompress(final InputStream input, final int uncompressedPayloadSize)
+  public Optional<ByteBuf> uncompress(ByteBuf input, int uncompressedPayloadSize)
       throws CompressionException {
-    try {
-      return Bytes.wrap(input.readNBytes(uncompressedPayloadSize));
-    } catch (IOException e) {
-      throw new CompressionException("Unable to uncompress data", e);
+    if (decoder == null) {
+      decoder = new NoopFrameDecoder(uncompressedPayloadSize);
+    } else if (uncompressedPayloadSize != decoder.getExpectedBytes()) {
+      throw new CompressionException(
+          "Illegal state: requesting "
+              + uncompressedPayloadSize
+              + " bytes while previous bytes of expected size "
+              + decoder.getExpectedBytes()
+              + " not yet returned");
     }
+    Optional<ByteBuf> ret =
+        uncompressedPayloadSize > 0
+            ? decoder.decodeOneImpl(input)
+            : Optional.of(Unpooled.EMPTY_BUFFER);
+
+    if (ret.isPresent()) {
+      decoder = null;
+    }
+    return ret;
   }
 
   @Override

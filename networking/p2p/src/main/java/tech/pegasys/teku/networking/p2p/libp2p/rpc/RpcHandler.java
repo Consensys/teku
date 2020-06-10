@@ -24,10 +24,6 @@ import io.libp2p.core.multistream.ProtocolDescriptor;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -136,10 +132,6 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     private RpcRequestHandler rpcRequestHandler;
     private RpcStream rpcStream;
 
-    private final PipedOutputStream outputStream;
-    private final InputStream inputStream;
-    private boolean outputStreamClosed = false;
-
     protected final SafeFuture<Controller> activeFuture = new SafeFuture<>();
 
     private Controller(
@@ -147,15 +139,6 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       this.nodeId = nodeId;
       this.p2pChannel = p2pChannel;
       this.asyncRunner = asyncRunner;
-
-      try {
-        outputStream = new PipedOutputStream();
-        inputStream = new PipedInputStream(outputStream, 2048);
-      } catch (IOException e) {
-        // We should never hits this
-        // This exception should only be thrown if input and output are incorrectly connected
-        throw new IllegalStateException(e);
-      }
     }
 
     @Override
@@ -170,23 +153,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf msg) {
-      if (outputStreamClosed) {
-        // Discard any data if output stream has been closed
-        return;
-      }
-      try {
-        // TODO - we may want to optimize this to pass on ByteBuf's directly and manage their
-        //  garbage collection rather than immediately copying these bytes
-        final Bytes bytes = Bytes.wrapByteBuf(msg);
-        outputStream.write(bytes.toArray());
-        // TODO temporary workaround for BC-419
-        outputStream.flush();
-      } catch (IOException e) {
-        // We should only hit this if the connected input pipe has been closed,
-        // which means we're done processing this stream of data
-        LOG.debug("Caught exception while delivering bytes to input stream, closing channel.", e);
-        close();
-      }
+      rpcRequestHandler.processData(nodeId, rpcStream, msg);
     }
 
     public void setRequestHandler(RpcRequestHandler rpcRequestHandler) {
@@ -195,28 +162,17 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       }
       this.rpcRequestHandler = rpcRequestHandler;
 
-      activeFuture
-          .thenCompose(
-              __ ->
-                  asyncRunner.runAsync(
-                      () -> rpcRequestHandler.processInput(nodeId, rpcStream, inputStream)))
-          .handle(
-              (res, err) -> {
-                if (err != null) {
-                  if (Throwables.getRootCause(err) instanceof StreamClosedException) {
-                    LOG.debug("Stream closed while processing rpc input", err);
-                  } else {
-                    LOG.error("Unhandled exception while processing rpc input", err);
-                  }
-                }
-                try {
-                  inputStream.close();
-                } catch (IOException e) {
-                  throw new RuntimeException(e);
-                }
-                return null;
-              })
-          .reportExceptions();
+      activeFuture.finish(
+          () -> {},
+          err -> {
+            if (err != null) {
+              if (Throwables.getRootCause(err) instanceof StreamClosedException) {
+                LOG.debug("Stream closed while processing rpc input", err);
+              } else {
+                LOG.error("Unhandled exception while processing rpc input", err);
+              }
+            }
+          });
     }
 
     @Override
@@ -232,36 +188,21 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       close();
     }
 
-    private void close() {
-      SafeFuture.of(p2pChannel.closeFuture())
-          .whenComplete(
-              (res, err) -> {
-                if (err != null) {
-                  LOG.warn("Failed to close p2pChannel.", err);
-                }
-                closeOutputStream();
-              })
-          .reportExceptions();
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+      rpcRequestHandler.complete(nodeId, rpcStream);
+    }
 
+    private void close() {
       if (rpcStream != null) {
         rpcStream.close().reportExceptions();
       }
+
       // We're listening for the result of the close future above, so we can ignore this future
       ignoreFuture(p2pChannel.close());
 
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());
-    }
-
-    private void closeOutputStream() {
-      if (!outputStreamClosed) {
-        outputStreamClosed = true;
-        try {
-          outputStream.close();
-        } catch (IOException e) {
-          throw new IllegalStateException(e);
-        }
-      }
     }
   }
 }

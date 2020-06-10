@@ -13,20 +13,19 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
-import java.io.InputStream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.NoopCompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.SnappyFramedCompressor;
 
 public interface RpcEncoding {
+
   RpcEncoding SSZ =
-      new LengthPrefixedEncoding(
-          "ssz", RpcPayloadEncoders.createSszEncoders(), new NoopCompressor());
+          new LengthPrefixedEncoding(
+              "ssz", RpcPayloadEncoders.createSszEncoders(), new NoopCompressor());
 
   RpcEncoding SSZ_SNAPPY =
-      new LengthPrefixedEncoding(
-          "ssz_snappy", RpcPayloadEncoders.createSszEncoders(), new SnappyFramedCompressor());
+          new LengthPrefixedEncoding(
+              "ssz_snappy", RpcPayloadEncoders.createSszEncoders(), new SnappyFramedCompressor());
 
   /**
    * Encodes a payload with its encoding-dependent header
@@ -46,8 +45,7 @@ public interface RpcEncoding {
    * @param payloadType The type of payload to decode
    * @return The decoded payload
    */
-  <T> T decodePayload(final InputStream inputStream, final Class<T> payloadType)
-      throws RpcException;
+  <T> RpcByteBufDecoder<T> createDecoder(final Class<T> payloadType);
 
   String getName();
 }

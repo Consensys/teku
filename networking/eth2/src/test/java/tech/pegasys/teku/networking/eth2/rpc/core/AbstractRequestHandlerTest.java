@@ -96,7 +96,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
         new Thread(
             () -> {
               try {
-                reqHandler.processInput(nodeId, rpcStream, inputStream);
+                reqHandler.processData(nodeId, rpcStream, inputStream);
               } catch (Throwable t) {
                 LOG.warn("Caught error while processing input: ", t);
               } finally {

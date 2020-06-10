@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import java.io.InputStream;
+import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -76,34 +76,26 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
-  public void processInput(
-      final NodeId nodeId, final RpcStream rpcStream, final InputStream input) {
+  public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
     try {
       this.rpcStream = rpcStream;
 
       Optional<TResponse> maybeResponse =
-          responseDecoder.decodeNextResponse(input, this::onFirstByteReceived);
+          responseDecoder.decodeNextResponse(data, this::onFirstByteReceived);
       while (!isClosed.get() && maybeResponse.isPresent()) {
         final TResponse response = maybeResponse.get();
         responseProcessor.processResponse(response);
 
         final int chunksReceived = currentChunkCount.incrementAndGet();
-        if (chunksReceived >= maximumResponseChunks) {
-          // Make sure there aren't any trailing unconsumed bytes
-          if (input.available() > 0) {
-            LOG.debug(
-                "Encountered unconsumed data after last expected response chunk was processed.");
-            cancelRequest(rpcStream, RpcException.EXTRA_DATA_APPENDED);
-          } else {
-            completeRequest(rpcStream);
-          }
+        if (chunksReceived > maximumResponseChunks) {
+          cancelRequest(rpcStream, RpcException.EXTRA_DATA_APPENDED);
           break;
         } else {
           ensureNextResponseArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
         }
 
         // Get next response
-        maybeResponse = responseDecoder.decodeNextResponse(input);
+        maybeResponse = responseDecoder.decodeNextResponse(data);
       }
 
       completeRequest(rpcStream);
@@ -112,6 +104,15 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     } catch (final Throwable t) {
       LOG.error("Encountered error while processing response", t);
       cancelRequest(rpcStream, t);
+    }
+  }
+
+  @Override
+  public void complete(NodeId nodeId, RpcStream rpcStream) {
+    try {
+      responseDecoder.complete();
+    } catch (RpcException e) {
+      cancelRequest(rpcStream, e);
     }
   }
 
