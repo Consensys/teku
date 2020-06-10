@@ -30,52 +30,51 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class BlockAttestationDataValidator {
 
-  public Optional<AttestationInvalidReason> validateAttestation(
+  public Optional<InvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
     return firstOf(
         () ->
             check(
                 data.getIndex().compareTo(get_committee_count_at_slot(state, data.getSlot())) < 0,
-                AttestationInvalidReason.COMMITTEE_INDEX_TOO_HIGH),
+                InvalidReason.COMMITTEE_INDEX_TOO_HIGH),
         () ->
             check(
                 data.getTarget().getEpoch().equals(get_previous_epoch(state))
                     || data.getTarget().getEpoch().equals(get_current_epoch(state)),
-                AttestationInvalidReason.NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH),
+                InvalidReason.NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH),
         () ->
             check(
                 data.getTarget().getEpoch().equals(compute_epoch_at_slot(data.getSlot())),
-                AttestationInvalidReason.SLOT_NOT_IN_EPOCH),
+                InvalidReason.SLOT_NOT_IN_EPOCH),
         () ->
             check(
                 data.getSlot()
                         .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
                         .compareTo(state.getSlot())
                     <= 0,
-                AttestationInvalidReason.SUBMITTED_TOO_QUICKLY),
+                InvalidReason.SUBMITTED_TOO_QUICKLY),
         () ->
             check(
                 state
                         .getSlot()
                         .compareTo(data.getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
                     <= 0,
-                AttestationInvalidReason.SUBMITTED_TOO_LATE),
+                InvalidReason.SUBMITTED_TOO_LATE),
         () -> {
           if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
             return check(
                 data.getSource().equals(state.getCurrent_justified_checkpoint()),
-                AttestationInvalidReason.INCORRECT_CURRENT_JUSTIFIED_CHECKPOINT);
+                InvalidReason.INCORRECT_CURRENT_JUSTIFIED_CHECKPOINT);
           } else {
             return check(
                 data.getSource().equals(state.getPrevious_justified_checkpoint()),
-                AttestationInvalidReason.INCORRECT_PREVIOUS_JUSTIFIED_CHECKPOINT);
+                InvalidReason.INCORRECT_PREVIOUS_JUSTIFIED_CHECKPOINT);
           }
         });
   }
 
   @SafeVarargs
-  private Optional<AttestationInvalidReason> firstOf(
-      final Supplier<Optional<AttestationInvalidReason>>... checks) {
+  private Optional<InvalidReason> firstOf(final Supplier<Optional<InvalidReason>>... checks) {
     return Stream.of(checks)
         .map(Supplier::get)
         .filter(Optional::isPresent)
@@ -84,12 +83,11 @@ public class BlockAttestationDataValidator {
   }
 
   @CheckReturnValue
-  private Optional<AttestationInvalidReason> check(
-      final boolean isValid, final AttestationInvalidReason check) {
+  private Optional<InvalidReason> check(final boolean isValid, final InvalidReason check) {
     return !isValid ? Optional.of(check) : Optional.empty();
   }
 
-  public enum AttestationInvalidReason {
+  public enum InvalidReason {
     COMMITTEE_INDEX_TOO_HIGH("CommitteeIndex too high"),
     NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH("Attestation not from current or previous epoch"),
     SLOT_NOT_IN_EPOCH("Attestation slot not in specified epoch"),
@@ -102,7 +100,7 @@ public class BlockAttestationDataValidator {
 
     private final String description;
 
-    AttestationInvalidReason(final String description) {
+    InvalidReason(final String description) {
       this.description = description;
     }
 

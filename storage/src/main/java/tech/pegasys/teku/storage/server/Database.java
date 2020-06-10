@@ -21,16 +21,17 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.storage.events.StorageUpdateResult;
 
 public interface Database extends AutoCloseable {
 
-  void storeGenesis(UpdatableStore store);
+  void storeGenesis(Store store);
 
-  void update(StorageUpdate event);
+  StorageUpdateResult update(StorageUpdate event);
 
-  Optional<UpdatableStore> createMemoryStore();
+  Optional<Store> createMemoryStore();
 
   /**
    * Return the root of the finalized block at this slot if such a block exists.
@@ -50,13 +51,7 @@ public interface Database extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
-  /**
-   * Given a block root, returns the corresponding finalized state, if this state is available.
-   *
-   * @param root A block root.
-   * @return The finalized state corresponding to the given block root.
-   */
-  Optional<BeaconState> getFinalizedState(Bytes32 root);
+  Optional<BeaconState> getState(Bytes32 root);
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 

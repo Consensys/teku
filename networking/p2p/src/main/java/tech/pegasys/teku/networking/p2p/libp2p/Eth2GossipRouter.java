@@ -11,19 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.networking.p2p.libp2p;
 
-import java.util.Optional;
-import tech.pegasys.teku.storage.Store;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
-import tech.pegasys.teku.util.async.SafeFuture;
+import io.libp2p.pubsub.gossip.GossipRouter;
+import java.util.Base64;
+import org.apache.tuweni.crypto.Hash;
+import org.jetbrains.annotations.NotNull;
+import pubsub.pb.Rpc.Message;
 
-public interface StorageUpdateChannel {
+/** Customization of a standard Libp2p Gossip router for Eth2 spec */
+public class Eth2GossipRouter extends GossipRouter {
 
-  SafeFuture<Optional<Store>> onStoreRequest();
-
-  SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event);
-
-  void onGenesis(Store store);
+  @NotNull
+  @Override
+  protected String getMessageId(@NotNull Message msg) {
+    return Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(Hash.sha2_256(msg.getData().toByteArray()));
+  }
 }

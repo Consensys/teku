@@ -13,31 +13,42 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.StorageUpdateResult;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-public class DatabaseBackedStorageUpdateChannel implements StorageUpdateChannel {
+public class TrackingStorageUpdateChannel implements StorageUpdateChannel {
   private final Database database;
+  private final List<StorageUpdateResult> updateResults = new ArrayList<>();
 
-  public DatabaseBackedStorageUpdateChannel(final Database database) {
+  public TrackingStorageUpdateChannel(final Database database) {
     this.database = database;
   }
 
+  public List<StorageUpdateResult> getStorageUpdates() {
+    return updateResults;
+  }
+
   @Override
-  public SafeFuture<Optional<UpdatableStore>> onStoreRequest() {
+  public SafeFuture<Optional<Store>> onStoreRequest() {
     return SafeFuture.completedFuture(database.createMemoryStore());
   }
 
   @Override
-  public SafeFuture<Void> onStorageUpdate(StorageUpdate event) {
-    return SafeFuture.fromRunnable(() -> database.update(event));
+  public SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event) {
+    return SafeFuture.of(
+        () -> {
+          final StorageUpdateResult result = database.update(event);
+          updateResults.add(result);
+          return result;
+        });
   }
 
   @Override
-  public void onGenesis(UpdatableStore store) {
-    database.storeGenesis(store);
-  }
+  public void onGenesis(Store store) {}
 }

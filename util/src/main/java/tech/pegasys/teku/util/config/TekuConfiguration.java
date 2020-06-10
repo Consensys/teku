@@ -69,7 +69,6 @@ public class TekuConfiguration {
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
-  private final boolean eth1DepositsFromStorageEnabled;
 
   // Logging
   private final boolean logColorEnabled;
@@ -138,7 +137,6 @@ public class TekuConfiguration {
       final int validatorExternalSignerTimeout,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
-      final boolean eth1DepositsFromStorageEnabled,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
       final boolean logIncludeValidatorDutiesEnabled,
@@ -191,7 +189,6 @@ public class TekuConfiguration {
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
-    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.logColorEnabled = logColorEnabled;
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
     this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
@@ -352,10 +349,6 @@ public class TekuConfiguration {
 
   public String getEth1Endpoint() {
     return eth1Endpoint;
-  }
-
-  public boolean isEth1DepositsFromStorageEnabled() {
-    return eth1DepositsFromStorageEnabled;
   }
 
   public boolean isLogColorEnabled() {

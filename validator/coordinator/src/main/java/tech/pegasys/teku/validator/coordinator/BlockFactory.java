@@ -89,9 +89,9 @@ public class BlockFactory {
         BeaconBlockBodyLists.createVoluntaryExits();
 
     // Collect deposits
-    Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
-    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
+    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState);
 
+    Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
     final Bytes32 parentRoot = previousBlock.hash_tree_root();
 
     return blockCreator

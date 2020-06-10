@@ -22,7 +22,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
-import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.storage.Store;
 
 public class GetForkIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
@@ -36,7 +36,7 @@ public class GetForkIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
 
   @Test
   public void shouldReturnNoContentIfBestBlockStateIsMissing() throws Exception {
-    final UpdatableStore store = mock(UpdatableStore.class);
+    final Store store = mock(Store.class);
     when(recentChainData.getStore()).thenReturn(store);
     when(recentChainData.getBestState()).thenReturn(Optional.empty());
 

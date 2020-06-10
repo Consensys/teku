@@ -37,9 +37,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class BeaconBlocksByRootIntegrationTest {
@@ -194,7 +194,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(1, dataStructureUtil.randomBytes32(), full);
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final StoreTransaction transaction = storageClient1.startStoreTransaction();
+    final Transaction transaction = storageClient1.startStoreTransaction();
     transaction.putBlockAndState(block, state);
     assertThat(transaction.commit()).isCompleted();
     return block;

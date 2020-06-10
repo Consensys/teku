@@ -48,9 +48,7 @@ public class StorageService extends Service {
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
           depositStorage =
               DepositStorage.create(
-                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class),
-                  database,
-                  serviceConfig.getConfig().isEth1DepositsFromStorageEnabled());
+                  serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class), database);
 
           serviceConfig
               .getEventChannels()

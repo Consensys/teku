@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -49,7 +48,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
 
   @BeforeEach
   public void beforeEach() {
-    depositStorage = DepositStorage.create(eventsChannel, database, true);
+    depositStorage = DepositStorage.create(eventsChannel, database);
     depositStorage.start();
   }
 
@@ -64,24 +63,8 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
 
     assertThat(eventsChannel.getOrderedList()).containsExactly(genesis_100, block_101);
     assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
-    assertThat(future.get().getBlockNumber())
-        .isEqualTo(block_101.getBlockNumber().bigIntegerValue());
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(block_101.getBlockNumber());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
-  }
-
-  @Test
-  public void shouldNotLoadFromStorageIfDisabled() throws ExecutionException, InterruptedException {
-    depositStorage = DepositStorage.create(eventsChannel, database, false);
-    depositStorage.start();
-
-    database.addMinGenesisTimeBlock(genesis_100);
-    database.addDepositsFromBlockEvent(block_101);
-    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
-    assertThat(future.isDone()).isTrue();
-
-    assertThat(eventsChannel.getOrderedList()).isEmpty();
-    assertThat(future.get().getBlockNumber()).isEqualTo(BigInteger.ZERO);
-    assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
   @Test
@@ -95,8 +78,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     assertThat(eventsChannel.getOrderedList()).containsExactly(block_99, genesis_100, block_101);
     assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
 
-    assertThat(future.get().getBlockNumber())
-        .isEqualTo(block_101.getBlockNumber().bigIntegerValue());
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(block_101.getBlockNumber());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
@@ -109,8 +91,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     assertThat(future.isDone()).isTrue();
     assertThat(eventsChannel.getOrderedList()).containsExactly(block_100, block_101);
     assertThat(eventsChannel.getGenesis()).isNull();
-    assertThat(future.get().getBlockNumber())
-        .isEqualTo(block_101.getBlockNumber().bigIntegerValue());
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(block_101.getBlockNumber());
     assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
@@ -125,8 +106,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     assertThat(eventsChannel.getOrderedList()).containsExactly(block_100, genesis_100);
     assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
 
-    assertThat(future.get().getBlockNumber())
-        .isEqualTo(genesis_100.getBlockNumber().bigIntegerValue());
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(genesis_100.getBlockNumber());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
@@ -139,8 +119,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     assertThat(eventsChannel.getOrderedList()).containsExactly(genesis_100);
     assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
 
-    assertThat(future.get().getBlockNumber())
-        .isEqualTo(genesis_100.getBlockNumber().bigIntegerValue());
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(genesis_100.getBlockNumber());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
@@ -154,8 +133,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     assertThat(eventsChannel.getOrderedList()).containsExactly(block_99, genesis_100);
     assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
 
-    assertThat(future.get().getBlockNumber())
-        .isEqualTo(genesis_100.getBlockNumber().bigIntegerValue());
+    assertThat(future.get().getBlockNumber().get()).isEqualTo(genesis_100.getBlockNumber());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 

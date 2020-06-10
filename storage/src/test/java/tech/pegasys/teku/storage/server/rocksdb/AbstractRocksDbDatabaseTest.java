@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
@@ -38,11 +38,11 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     database.storeGenesis(store);
     database.close();
 
-    final SignedBlockAndState newValue = chainBuilder.generateBlockAtSlot(1);
+    final Checkpoint newValue = checkpoint3;
     // Sanity check
-    assertThat(store.getBlockState(newValue.getRoot())).isNull();
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putBlockAndState(newValue);
+    assertThat(store.getFinalizedCheckpoint()).isNotEqualTo(checkpoint3);
+    final Transaction transaction = store.startTransaction(storageUpdateChannel);
+    transaction.setFinalizedCheckpoint(newValue);
 
     final SafeFuture<Void> result = transaction.commit();
     assertThatThrownBy(result::get).hasCauseInstanceOf(IllegalStateException.class);
@@ -88,16 +88,16 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     // Store genesis
     database.storeGenesis(store);
     // Add a new finalized block to supersede genesis
-    final SignedBlockAndState newBlock = chainBuilder.generateBlockAtSlot(1);
+    final SignedBlockAndState newBlock = chainBuilder.getBlockAndStateAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final Transaction transaction = store.startTransaction(storageUpdateChannel);
     transaction.putBlockAndState(newBlock);
     transaction.setFinalizedCheckpoint(newCheckpoint);
     transaction.commit().reportExceptions();
     // Close db
     database.close();
 
-    assertThatThrownBy(() -> database.getFinalizedState(genesisCheckpoint.getRoot()))
+    assertThatThrownBy(() -> database.getState(genesisCheckpoint.getRoot()))
         .isInstanceOf(IllegalStateException.class);
   }
 }

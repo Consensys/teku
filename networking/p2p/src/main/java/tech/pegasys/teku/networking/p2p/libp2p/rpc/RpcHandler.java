@@ -18,9 +18,10 @@ import static tech.pegasys.teku.util.async.FutureUtil.ignoreFuture;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
+import io.libp2p.core.multistream.Mode;
 import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
-import io.libp2p.core.multistream.ProtocolDescriptor;
+import io.libp2p.core.multistream.ProtocolMatcher;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -84,7 +85,8 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     SafeFuture.of(
             connection
                 .muxerSession()
-                .createStream(Multistream.create(this).toStreamHandler())
+                .createStream(
+                    Multistream.create(this.toInitiator(rpcMethod.getId())).toStreamHandler())
                 .getController())
         .thenCompose(
             ctr -> {
@@ -112,8 +114,14 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
   @NotNull
   @Override
-  public ProtocolDescriptor getProtocolDescriptor() {
-    return new ProtocolDescriptor(rpcMethod.getId());
+  public String getAnnounce() {
+    return rpcMethod.getId();
+  }
+
+  @NotNull
+  @Override
+  public ProtocolMatcher getMatcher() {
+    return new ProtocolMatcher(Mode.STRICT, getAnnounce(), null);
   }
 
   @NotNull

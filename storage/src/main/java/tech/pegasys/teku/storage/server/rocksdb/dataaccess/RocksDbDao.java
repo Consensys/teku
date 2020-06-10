@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 
 /**
  * A RocksDB "data access object" interface to abstract interactions with underlying database.
@@ -41,6 +43,8 @@ public interface RocksDbDao extends AutoCloseable {
 
   Optional<Checkpoint> getFinalizedCheckpoint();
 
+  Optional<UnsignedLong> getHighestFinalizedSlot();
+
   Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot);
 
   Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot);
@@ -49,13 +53,17 @@ public interface RocksDbDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
 
-  Optional<BeaconState> getFinalizedState(final Bytes32 root);
+  Optional<BeaconState> getHotState(final Bytes32 root);
 
-  Optional<BeaconState> getLatestFinalizedState();
+  Optional<BeaconState> getFinalizedState(final Bytes32 root);
 
   Map<Bytes32, SignedBeaconBlock> getHotBlocks();
 
+  Map<Bytes32, BeaconState> getHotStates();
+
   Map<Checkpoint, BeaconState> getCheckpointStates();
+
+  Stream<ColumnEntry<Checkpoint, BeaconState>> streamCheckpointStates();
 
   Map<UnsignedLong, VoteTracker> getVotes();
 
@@ -86,15 +94,26 @@ public interface RocksDbDao extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
 
+    void addHotState(final Bytes32 blockRoot, final BeaconState state);
+
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
     void addVotes(final Map<UnsignedLong, VoteTracker> states);
 
     void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
 
+    void addHotStates(final Map<Bytes32, BeaconState> states);
+
     void deleteCheckpointState(final Checkpoint checkpoint);
 
-    void deleteHotBlock(final Bytes32 blockRoot);
+    /**
+     * Prune hot blocks and associated states at slots less than the given slot. Blocks at the
+     * height of {@code slot} are not pruned.
+     *
+     * @param slot The oldest slot that we want to keep in hot storage
+     * @return A list of pruned block roots
+     */
+    Set<Bytes32> pruneHotBlocksAtSlotsOlderThan(final UnsignedLong slot);
 
     void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
 

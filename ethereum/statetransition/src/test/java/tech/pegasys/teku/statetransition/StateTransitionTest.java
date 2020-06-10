@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.statetransition;
 
-import java.util.Optional;
-import tech.pegasys.teku.storage.Store;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
-import tech.pegasys.teku.util.async.SafeFuture;
+import org.apache.tuweni.junit.BouncyCastleExtension;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-public interface StorageUpdateChannel {
+@Disabled
+@ExtendWith(BouncyCastleExtension.class)
+class StateTransitionTest {
 
-  SafeFuture<Optional<Store>> onStoreRequest();
-
-  SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event);
-
-  void onGenesis(Store store);
+  @Test
+  void testUpdateRecentBlockHashes() throws Exception {
+    // todo
+  }
 }

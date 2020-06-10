@@ -30,7 +30,7 @@ import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.storage.Store;
 
 public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
@@ -50,7 +50,7 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
   public void shouldReturnNoContentWhenBestBlockRootMissing() throws Exception {
     final UnsignedLong epoch = UnsignedLong.ONE;
 
-    final UpdatableStore store = mock(UpdatableStore.class);
+    final Store store = mock(Store.class);
     when(recentChainData.getStore()).thenReturn(store);
     when(recentChainData.getFinalizedEpoch()).thenReturn(epoch);
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());

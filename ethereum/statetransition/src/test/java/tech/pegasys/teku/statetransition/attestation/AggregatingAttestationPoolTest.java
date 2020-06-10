@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.BlockAttestationDataValidator;
-import tech.pegasys.teku.core.BlockAttestationDataValidator.AttestationInvalidReason;
+import tech.pegasys.teku.core.BlockAttestationDataValidator.InvalidReason;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -98,7 +98,7 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 3);
 
     when(attestationDataValidator.validateAttestation(any(), any()))
-        .thenReturn(Optional.of(AttestationInvalidReason.SLOT_NOT_IN_EPOCH));
+        .thenReturn(Optional.of(InvalidReason.SLOT_NOT_IN_EPOCH));
 
     assertThat(aggregatingPool.getAttestationsForBlock(dataStructureUtil.randomBeaconState()))
         .isEmpty();
@@ -115,7 +115,7 @@ class AggregatingAttestationPoolTest {
 
     final BeaconState state = dataStructureUtil.randomBeaconState();
     when(attestationDataValidator.validateAttestation(state, attestation1.getData()))
-        .thenReturn(Optional.of(AttestationInvalidReason.SLOT_NOT_IN_EPOCH));
+        .thenReturn(Optional.of(InvalidReason.SLOT_NOT_IN_EPOCH));
     when(attestationDataValidator.validateAttestation(state, attestation2.getData()))
         .thenReturn(Optional.empty());
     when(attestationDataValidator.validateAttestation(state, attestation3.getData()))

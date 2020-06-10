@@ -44,9 +44,9 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.storage.Store.Transaction;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BlockImporterTest {
@@ -117,7 +117,7 @@ public class BlockImporterTest {
 
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
 
-    localChain.createAndImportBlockAtSlotWithAttestations(currentSlot, aggregatedAttestations);
+    localChain.createAndImportBlockAtSlot(currentSlot, aggregatedAttestations);
   }
 
   @Test
@@ -143,8 +143,7 @@ public class BlockImporterTest {
 
     assertThatCode(
             () -> {
-              localChain.createAndImportBlockAtSlotWithAttestations(
-                  currentSlotFinal, aggregatedAttestations);
+              localChain.createAndImportBlockAtSlot(currentSlotFinal, aggregatedAttestations);
             })
         .hasMessageContaining("signature");
   }
@@ -162,7 +161,7 @@ public class BlockImporterTest {
     }
 
     // Update finalized epoch
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    final Transaction tx = recentChainData.startStoreTransaction();
     final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UnsignedLong bestEpoch = compute_epoch_at_slot(recentChainData.getBestSlot());
     assertThat(bestEpoch.longValue()).isEqualTo(Constants.GENESIS_EPOCH + 1L);
@@ -188,7 +187,7 @@ public class BlockImporterTest {
     }
 
     // Update finalized epoch
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    final Transaction tx = recentChainData.startStoreTransaction();
     final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UnsignedLong bestEpoch = compute_epoch_at_slot(recentChainData.getBestSlot());
     assertThat(bestEpoch.longValue()).isEqualTo(Constants.GENESIS_EPOCH + 1L);
@@ -196,9 +195,11 @@ public class BlockImporterTest {
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
 
-    // Import a block prior to the latest finalized block
+    // This block does not descend from the latest finalized block, but we know about it and so
+    // we mark the import as successful without trying to re-import which would trigger a
+    // DOES_NOT_DESCEND_FROM_LATEST_FINALIZED error
     final BlockImportResult result = blockImporter.importBlock(blocks.get(1));
-    assertImportFailed(result, FailureReason.UNKNOWN_PARENT);
+    assertSuccessfulResult(result);
   }
 
   @Test
@@ -265,7 +266,7 @@ public class BlockImporterTest {
       localChain.createAndImportBlockAtSlot(currentSlot);
     }
     // Update finalized epoch
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    final Transaction tx = recentChainData.startStoreTransaction();
     final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UnsignedLong bestEpoch = compute_epoch_at_slot(recentChainData.getBestSlot());
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
@@ -277,7 +278,7 @@ public class BlockImporterTest {
     final BeaconBlockAndState blockAndState = otherStorage.getBestBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final SignedBeaconBlock block =
-        otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));
+        otherChain.createAndImportBlockAtSlot(currentSlot, List.of(attestation));
 
     final BlockImportResult result = blockImporter.importBlock(block);
     assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);

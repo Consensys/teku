@@ -23,7 +23,6 @@ import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
-import io.libp2p.core.pubsub.ValidationResult;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.tuweni.bytes.Bytes;
@@ -49,9 +48,9 @@ public class GossipHandlerTest {
   public void apply_valid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
-    assertThat(result).isCompletedWithValue(ValidationResult.Valid);
+    assertThat(result).isCompletedWithValue(true);
   }
 
   @Test
@@ -59,18 +58,18 @@ public class GossipHandlerTest {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
     when(topicHandler.handleMessage(any())).thenReturn(false);
-    final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
-    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    assertThat(result).isCompletedWithValue(false);
   }
 
   @Test
   public void apply_exceedsMaxSize() {
     final Bytes data = Bytes.wrap(new byte[GOSSIP_MAX_SIZE + 1]);
     final MockMessageApi message = new MockMessageApi(data, topic);
-    final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
-    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    assertThat(result).isCompletedWithValue(false);
     verify(topicHandler, never()).handleMessage(any());
   }
 
@@ -81,9 +80,9 @@ public class GossipHandlerTest {
     final MockMessageApi message = new MockMessageApi(data, topic);
 
     gossipHandler.apply(message);
-    final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
-    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    assertThat(result).isCompletedWithValue(false);
     verify(topicHandler).handleMessage(any());
   }
 
@@ -132,9 +131,9 @@ public class GossipHandlerTest {
 
     gossipHandler.gossip(data);
     gossipHandler.apply(message);
-    final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
-    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    assertThat(result).isCompletedWithValue(false);
     verify(topicHandler, never()).handleMessage(any());
   }
 

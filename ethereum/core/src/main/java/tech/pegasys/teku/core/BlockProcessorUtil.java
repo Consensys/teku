@@ -28,13 +28,16 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_val
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.slash_validator;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
+import static tech.pegasys.teku.util.config.Constants.SHARD_COMMITTEE_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.collect.Sets;
@@ -54,13 +57,11 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
-import tech.pegasys.teku.core.BlockAttestationDataValidator.AttestationInvalidReason;
-import tech.pegasys.teku.core.BlockVoluntaryExitValidator.ExitInvalidReason;
+import tech.pegasys.teku.core.BlockAttestationDataValidator.InvalidReason;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -184,18 +185,13 @@ public final class BlockProcessorUtil {
    */
   public static void process_eth1_data(MutableBeaconState state, BeaconBlockBody body) {
     state.getEth1_data_votes().add(body.getEth1_data());
-    long vote_count = getVoteCount(state, body.getEth1_data());
-    if (isEnoughVotesToUpdateEth1Data(vote_count)) {
+    long vote_count =
+        state.getEth1_data_votes().stream()
+            .filter(item -> item.equals(body.getEth1_data()))
+            .count();
+    if (vote_count * 2 > EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH) {
       state.setEth1_data(body.getEth1_data());
     }
-  }
-
-  public static boolean isEnoughVotesToUpdateEth1Data(long voteCount) {
-    return voteCount * 2 > EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH;
-  }
-
-  public static long getVoteCount(BeaconState state, Eth1Data eth1Data) {
-    return state.getEth1_data_votes().stream().filter(item -> item.equals(eth1Data)).count();
   }
 
   /**
@@ -408,12 +404,11 @@ public final class BlockProcessorUtil {
 
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
-        final Optional<AttestationInvalidReason> invalidReason =
-            validator.validateAttestation(state, data);
+        final Optional<InvalidReason> invalidReason = validator.validateAttestation(state, data);
         checkArgument(
             invalidReason.isEmpty(),
             "process_attestations: %s",
-            invalidReason.map(AttestationInvalidReason::describe).orElse(""));
+            invalidReason.map(InvalidReason::describe).orElse(""));
 
         List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
         checkArgument(
@@ -490,30 +485,49 @@ public final class BlockProcessorUtil {
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
 
-    process_voluntary_exits_no_validation(state, exits);
-    boolean signatureValid = verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
-    if (!signatureValid) {
-      throw new BlockProcessingException("Exit signature is invalid");
+    try {
+      process_voluntary_exits_no_validation(state, exits);
+      verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
+    } catch (InvalidSignatureException e) {
+      throw new BlockProcessingException(e);
     }
   }
 
   public static void process_voluntary_exits_no_validation(
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
-    BlockVoluntaryExitValidator validator = new BlockVoluntaryExitValidator();
     try {
 
       // For each exit in block.body.voluntaryExits:
       for (SignedVoluntaryExit signedExit : exits) {
-        Optional<ExitInvalidReason> invalidReason = validator.validateExit(state, signedExit);
+        final VoluntaryExit exit = signedExit.getMessage();
         checkArgument(
-            invalidReason.isEmpty(),
-            "process_voluntary_exits: %s",
-            invalidReason.map(ExitInvalidReason::describe).orElse(""));
+            UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
+                > 0,
+            "process_voluntary_exits: Invalid validator index");
+
+        final Validator validator =
+            state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
+        checkArgument(
+            is_active_validator(validator, get_current_epoch(state)),
+            "process_voluntary_exits: Verify the validator is active");
+
+        checkArgument(
+            validator.getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
+            "process_voluntary_exits: Verify exit has not been initiated");
+
+        checkArgument(
+            get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
+            "process_voluntary_exits: Exits must specify an epoch when they become valid; they are not valid before then");
+
+        checkArgument(
+            get_current_epoch(state)
+                    .compareTo(validator.getActivation_epoch().plus(SHARD_COMMITTEE_PERIOD))
+                >= 0,
+            "process_voluntary_exits: Verify the validator has been active long enough");
 
         // - Run initiate_validator_exit(state, exit.validator_index)
-        initiate_validator_exit(
-            state, toIntExact(signedExit.getMessage().getValidator_index().longValue()));
+        initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -521,10 +535,9 @@ public final class BlockProcessorUtil {
     }
   }
 
-  public static boolean verify_voluntary_exits(
-      BeaconState state,
-      SSZList<SignedVoluntaryExit> exits,
-      BLSSignatureVerifier signatureVerifier) {
+  public static void verify_voluntary_exits(
+      BeaconState state, SSZList<SignedVoluntaryExit> exits, BLSSignatureVerifier signatureVerifier)
+      throws InvalidSignatureException {
     for (SignedVoluntaryExit signedExit : exits) {
       final VoluntaryExit exit = signedExit.getMessage();
 
@@ -537,13 +550,11 @@ public final class BlockProcessorUtil {
 
       final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
       final Bytes signing_root = compute_signing_root(exit, domain);
-      boolean exitSignatureValid =
-          signatureVerifier.verify(publicKey, signing_root, signedExit.getSignature());
-      if (!exitSignatureValid) {
-        LOG.trace("Exit signature is invalid {}", signedExit);
-        return false;
-      }
+      signatureVerifier.verifyAndThrow(
+          publicKey,
+          signing_root,
+          signedExit.getSignature(),
+          "process_voluntary_exits: Verify signature");
     }
-    return true;
   }
 }

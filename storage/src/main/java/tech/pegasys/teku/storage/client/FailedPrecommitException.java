@@ -11,19 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.storage.client;
 
-import java.util.Optional;
-import tech.pegasys.teku.storage.Store;
-import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.StorageUpdateResult;
-import tech.pegasys.teku.util.async.SafeFuture;
 
-public interface StorageUpdateChannel {
+public class FailedPrecommitException extends RuntimeException {
 
-  SafeFuture<Optional<Store>> onStoreRequest();
-
-  SafeFuture<StorageUpdateResult> onStorageUpdate(StorageUpdate event);
-
-  void onGenesis(Store store);
+  public FailedPrecommitException(final StorageUpdateResult result) {
+    super(result.getError());
+  }
 }

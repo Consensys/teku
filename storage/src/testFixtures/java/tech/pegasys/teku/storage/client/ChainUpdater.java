@@ -18,7 +18,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.storage.Store.Transaction;
 
 public class ChainUpdater {
 
@@ -57,7 +57,7 @@ public class ChainUpdater {
         chainBuilder.getLatestBlockAndStateAtEpochBoundary(epoch);
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    final Transaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(checkpoint);
     tx.commit().reportExceptions();
 
@@ -95,7 +95,7 @@ public class ChainUpdater {
   }
 
   public void saveBlock(final SignedBlockAndState block) {
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    final Transaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block.getBlock(), block.getState());
     tx.commit().reportExceptions();
   }

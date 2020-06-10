@@ -18,7 +18,6 @@ import static tech.pegasys.teku.util.config.Constants.GOSSIP_MAX_SIZE;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
-import io.libp2p.core.pubsub.ValidationResult;
 import io.netty.buffer.Unpooled;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -31,13 +30,11 @@ import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 
-public class GossipHandler implements Function<MessageApi, CompletableFuture<ValidationResult>> {
+public class GossipHandler implements Function<MessageApi, CompletableFuture<Boolean>> {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static SafeFuture<ValidationResult> VALIDATION_FAILED =
-      SafeFuture.completedFuture(ValidationResult.Invalid);
-  private static SafeFuture<ValidationResult> VALIDATION_SUCCEEDED =
-      SafeFuture.completedFuture(ValidationResult.Valid);
+  private static SafeFuture<Boolean> VALIDATION_FAILED = SafeFuture.completedFuture(false);
+  private static SafeFuture<Boolean> VALIDATION_SUCCEEDED = SafeFuture.completedFuture(true);
   private static final int MAX_SENT_MESSAGES = 2048;
 
   private final Topic topic;
@@ -54,7 +51,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
   }
 
   @Override
-  public SafeFuture<ValidationResult> apply(final MessageApi message) {
+  public SafeFuture<Boolean> apply(final MessageApi message) {
     final int messageSize = message.getData().capacity();
     if (messageSize > GOSSIP_MAX_SIZE) {
       LOG.trace(

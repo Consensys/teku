@@ -83,7 +83,7 @@ public class Generator {
           currentSlot = currentSlot.plus(UnsignedLong.ONE);
 
           final SignedBeaconBlock block =
-              localChain.createAndImportBlockAtSlotWithAttestations(
+              localChain.createAndImportBlockAtSlot(
                   currentSlot, AttestationGenerator.groupAndAggregateAttestations(attestations));
           writer.accept(block);
           final BeaconState postState =

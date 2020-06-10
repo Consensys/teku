@@ -215,10 +215,10 @@ public class RocksDbInstance implements RocksDbAccessor {
       assertOpen();
       try {
         this.rocksDbTx.commit();
-      } catch (RocksDBException e) {
-        throw new DatabaseStorageException("Failed to commit transaction", e);
-      } finally {
         close();
+      } catch (RocksDBException e) {
+        rollback();
+        throw new DatabaseStorageException("Failed to commit transaction", e);
       }
     }
 
@@ -227,10 +227,9 @@ public class RocksDbInstance implements RocksDbAccessor {
       assertOpen();
       try {
         this.rocksDbTx.rollback();
+        close();
       } catch (RocksDBException e) {
         throw new DatabaseStorageException("Failed to rollback transaction", e);
-      } finally {
-        close();
       }
     }
 
