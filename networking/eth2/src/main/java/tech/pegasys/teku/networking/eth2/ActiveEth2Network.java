@@ -21,6 +21,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -112,7 +114,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     SignedAggregateAndProofValidator aggregateValidator =
         new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
-    VoluntaryExitValidator exitValidator = new VoluntaryExitValidator(recentChainData);
+    VoluntaryExitValidator exitValidator = new VoluntaryExitValidator(
+            recentChainData,
+            new VoluntaryExitStateTransitionValidator(),
+            new VoluntaryExitSignatureVerifier()
+    );
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(

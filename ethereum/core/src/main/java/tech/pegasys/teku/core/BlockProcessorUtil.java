@@ -53,10 +53,20 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
+<<<<<<< HEAD
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
+=======
+import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.AttestationDataStateTransitionValidator.AttestationInvalidReason;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.VoluntaryExitStateTransitionValidator.ExitInvalidReason;
+>>>>>>> 539d90289... Refactor exit validator to be more testable
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -503,20 +513,9 @@ public final class BlockProcessorUtil {
       BeaconState state,
       SSZList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
+    VoluntaryExitSignatureVerifier verifier = new VoluntaryExitSignatureVerifier();
     for (SignedVoluntaryExit signedExit : exits) {
-      final VoluntaryExit exit = signedExit.getMessage();
-
-      BLSPublicKey publicKey =
-          BeaconStateCache.getTransitionCaches(state)
-              .getValidatorsPubKeys()
-              .get(
-                  exit.getValidator_index(),
-                  idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
-
-      final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
-      final Bytes signing_root = compute_signing_root(exit, domain);
-      boolean exitSignatureValid =
-          signatureVerifier.verify(publicKey, signing_root, signedExit.getSignature());
+      boolean exitSignatureValid = verifier.verifySignature(state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         LOG.trace("Exit signature is invalid {}", signedExit);
         return false;
