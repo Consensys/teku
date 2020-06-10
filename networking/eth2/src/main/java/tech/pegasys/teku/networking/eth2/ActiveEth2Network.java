@@ -114,11 +114,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     SignedAggregateAndProofValidator aggregateValidator =
         new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
-    VoluntaryExitValidator exitValidator = new VoluntaryExitValidator(
+    VoluntaryExitValidator exitValidator =
+        new VoluntaryExitValidator(
             recentChainData,
             new VoluntaryExitStateTransitionValidator(),
-            new VoluntaryExitSignatureVerifier()
-    );
+            new VoluntaryExitSignatureVerifier());
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(

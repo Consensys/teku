@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static tech.pegasys.teku.core.BlockProcessorUtil.verify_voluntary_exits;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
@@ -44,9 +43,10 @@ public class VoluntaryExitValidator {
   private final VoluntaryExitStateTransitionValidator stateTransitionValidator;
   private final VoluntaryExitSignatureVerifier signatureVerifier;
 
-  public VoluntaryExitValidator(RecentChainData recentChainData,
-                                VoluntaryExitStateTransitionValidator stateTransitionValidator,
-                                VoluntaryExitSignatureVerifier signatureVerifier) {
+  public VoluntaryExitValidator(
+      RecentChainData recentChainData,
+      VoluntaryExitStateTransitionValidator stateTransitionValidator,
+      VoluntaryExitSignatureVerifier signatureVerifier) {
     this.recentChainData = recentChainData;
     this.stateTransitionValidator = stateTransitionValidator;
     this.signatureVerifier = signatureVerifier;

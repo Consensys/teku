@@ -18,47 +18,30 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.statetransition.BeaconChainUtil.initializeStorage;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.core.VoluntaryExitGenerator;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationstatetransitionvalidators.VoluntaryExitStateTransitionValidator;
-import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.DepositGenerator;
-import tech.pegasys.teku.datastructures.util.MockStartBeaconStateGenerator;
-import tech.pegasys.teku.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.config.Constants;
 
 public class VoluntaryExitValidatorTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-  private final VoluntaryExitGenerator voluntaryExitGenerator =
-      new VoluntaryExitGenerator(VALIDATOR_KEYS);
 
   private RecentChainData recentChainData;
   private BeaconChainUtil beaconChainUtil;
@@ -74,7 +57,8 @@ public class VoluntaryExitValidatorTest {
 
     stateTransitionValidator = mock(VoluntaryExitStateTransitionValidator.class);
     signatureVerifier = mock(VoluntaryExitSignatureVerifier.class);
-    voluntaryExitValidator = new VoluntaryExitValidator(recentChainData, stateTransitionValidator, signatureVerifier);
+    voluntaryExitValidator =
+        new VoluntaryExitValidator(recentChainData, stateTransitionValidator, signatureVerifier);
   }
 
   @Test
@@ -82,12 +66,11 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(stateTransitionValidator.validateExit(
-            recentChainData.getBestState().orElseThrow(), exit))
-            .thenReturn(Optional.empty());
+    when(stateTransitionValidator.validateExit(recentChainData.getBestState().orElseThrow(), exit))
+        .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
-            .thenReturn(true);
+        .thenReturn(true);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(ACCEPT);
   }
 
@@ -102,10 +85,12 @@ public class VoluntaryExitValidatorTest {
 
     when(stateTransitionValidator.validateExit(
             eq(recentChainData.getBestState().orElseThrow()), any()))
-            .thenReturn(Optional.empty());
+        .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
-            eq(recentChainData.getBestState().orElseThrow()), any(), eq(BLSSignatureVerifier.SIMPLE)))
-            .thenReturn(true);
+            eq(recentChainData.getBestState().orElseThrow()),
+            any(),
+            eq(BLSSignatureVerifier.SIMPLE)))
+        .thenReturn(true);
 
     assertThat(voluntaryExitValidator.validate(exit1)).isEqualTo(ACCEPT);
     assertThat(voluntaryExitValidator.validate(exit2)).isEqualTo(IGNORE);
@@ -117,12 +102,12 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(stateTransitionValidator.validateExit(
-            recentChainData.getBestState().orElseThrow(), exit))
-            .thenReturn(Optional.of(VoluntaryExitStateTransitionValidator.ExitInvalidReason.EXIT_INITIATED));
+    when(stateTransitionValidator.validateExit(recentChainData.getBestState().orElseThrow(), exit))
+        .thenReturn(
+            Optional.of(VoluntaryExitStateTransitionValidator.ExitInvalidReason.EXIT_INITIATED));
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
-            .thenReturn(true);
+        .thenReturn(true);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(REJECT);
   }
 
@@ -131,12 +116,11 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(stateTransitionValidator.validateExit(
-            recentChainData.getBestState().orElseThrow(), exit))
-            .thenReturn(Optional.empty());
+    when(stateTransitionValidator.validateExit(recentChainData.getBestState().orElseThrow(), exit))
+        .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
-            .thenReturn(false);
+        .thenReturn(false);
     assertThat(voluntaryExitValidator.validate(exit)).isEqualTo(REJECT);
   }
 }
