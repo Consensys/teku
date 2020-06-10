@@ -30,6 +30,7 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.MetricsEndpoint;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.ServiceController;
+import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.SystemTimeProvider;
@@ -58,6 +59,7 @@ public class BeaconNode {
             config.getLogFile(),
             config.getLogFileNamePattern()));
 
+    STATUS_LOG.onStartup(VersionProvider.VERSION);
     this.metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =

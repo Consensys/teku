@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
@@ -207,6 +208,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   @Override
   public void setLongTermAttestationSubnetSubscriptions(final Iterable<Integer> subnetIndices) {
     attestationSubnetService.updateSubscriptions(subnetIndices);
+  }
+
+  @Override
+  public MetadataMessage getMetadata() {
+    return peerManager.getMetadataMessage();
   }
 
   @VisibleForTesting

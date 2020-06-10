@@ -74,6 +74,7 @@ import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public final class BlockProcessorUtil {
@@ -356,12 +357,8 @@ public final class BlockProcessorUtil {
             is_slashable_attestation_data(attestation_1.getData(), attestation_2.getData()),
             "process_attester_slashings: Verify if attestations are slashable");
 
-        checkArgument(
-            is_valid_indexed_attestation(state, attestation_1),
-            "process_attester_slashings: Is valid indexed attestation 1");
-        checkArgument(
-            is_valid_indexed_attestation(state, attestation_2),
-            "process_attester_slashings: Is valid indexed attestation 2");
+        checkAttestationIsValid(state, 1, attestation_1);
+        checkAttestationIsValid(state, 2, attestation_2);
         boolean slashed_any = false;
 
         Set<UnsignedLong> indices =
@@ -384,6 +381,18 @@ public final class BlockProcessorUtil {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
+  }
+
+  private static void checkAttestationIsValid(
+      final BeaconState state, final int attesationIndex, final IndexedAttestation attestation) {
+    final AttestationProcessingResult validation1 =
+        is_valid_indexed_attestation(state, attestation);
+    checkArgument(
+        validation1.isSuccessful(),
+        "process_attester_slashings: Indexed attestation "
+            + attesationIndex
+            + " invalid: "
+            + validation1.getInvalidReason());
   }
 
   /**
@@ -443,16 +452,15 @@ public final class BlockProcessorUtil {
       BeaconState state, SSZList<Attestation> attestations, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
 
-    Optional<Attestation> invalidAttestation =
+    Optional<AttestationProcessingResult> processResult =
         attestations.stream()
-            .parallel()
-            .filter(
-                a ->
-                    !is_valid_indexed_attestation(
-                        state, get_indexed_attestation(state, a), signatureVerifier))
+            .map(attesation -> get_indexed_attestation(state, attesation))
+            .map(attestation -> is_valid_indexed_attestation(state, attestation, signatureVerifier))
+            .filter(result -> !result.isSuccessful())
             .findAny();
-    if (invalidAttestation.isPresent()) {
-      throw new BlockProcessingException("Invalid attestation: " + invalidAttestation.get());
+    if (processResult.isPresent()) {
+      throw new BlockProcessingException(
+          "Invalid attestation: " + processResult.get().getInvalidReason());
     }
   }
 

@@ -1,0 +1,53 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.cli.options;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+
+public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+  @Test
+  public void shouldReadFromConfigurationFile() throws MalformedURLException {
+    // from config file ("T E K U") UTF8 -> bytes32 -> as hex string
+    final Bytes32 graffiti =
+        Bytes32.fromHexString("0x542045204b205500000000000000000000000000000000000000000000000000");
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final TekuConfiguration config = getTekuConfigurationFromFile("validatorOptions_config.yaml");
+
+    assertThat(config.getValidatorsKeyFile()).isEqualTo("the-unencrypted-file");
+    assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
+    assertThat(config.getValidatorKeystorePasswordFiles())
+        .containsExactly("a.password", "b.password");
+    assertThat(config.getValidatorExternalSignerPublicKeys()).containsExactly(publicKey);
+    assertThat(config.getValidatorExternalSignerUrl()).isEqualTo(new URL("https://signer.url/"));
+    assertThat(config.getValidatorExternalSignerTimeout()).isEqualTo(1234);
+    assertThat(config.getGraffiti()).isEqualTo(graffiti);
+  }
+
+  @Test
+  public void graffiti_shouldBeEmptyByDefault() {
+    ValidatorOptions options = new ValidatorOptions();
+    assertThat(options.getGraffiti()).isNull();
+  }
+}

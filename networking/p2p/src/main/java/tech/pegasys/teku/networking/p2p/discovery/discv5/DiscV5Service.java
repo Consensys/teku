@@ -19,12 +19,15 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoverySystem;
 import org.ethereum.beacon.discovery.DiscoverySystemBuilder;
+import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
+import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
+import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -32,17 +35,17 @@ public class DiscV5Service extends Service implements DiscoveryService {
 
   private final DiscoverySystem discoverySystem;
 
-  public DiscV5Service(final DiscoverySystem discoverySystem) {
+  private DiscV5Service(final DiscoverySystem discoverySystem) {
     this.discoverySystem = discoverySystem;
   }
 
-  public static DiscoveryService create(
-      final Bytes privateKey,
-      final String listenAddress,
-      final int listenPort,
-      final String advertisedAddress,
-      final int advertisedPort,
-      final List<String> bootnodes) {
+  public static DiscoveryService create(NetworkConfig p2pConfig) {
+    final Bytes privateKey = Bytes.wrap(p2pConfig.getPrivateKey().raw());
+    final String listenAddress = p2pConfig.getNetworkInterface();
+    final int listenPort = p2pConfig.getListenPort();
+    final String advertisedAddress = p2pConfig.getAdvertisedIp();
+    final int advertisedPort = p2pConfig.getAdvertisedPort();
+    final List<String> bootnodes = p2pConfig.getBootnodes();
     final DiscoverySystem discoveryManager =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
@@ -81,6 +84,21 @@ public class DiscV5Service extends Service implements DiscoveryService {
   @Override
   public Optional<String> getEnr() {
     return Optional.of(discoverySystem.getLocalNodeRecord().asEnr());
+  }
+
+  @Override
+  public Optional<String> getDiscoveryAddress() {
+    final NodeRecord nodeRecord = discoverySystem.getLocalNodeRecord();
+    if (nodeRecord.getUdpAddress().isEmpty()) {
+      return Optional.empty();
+    }
+    final DiscoveryPeer discoveryPeer =
+        new DiscoveryPeer(
+            (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
+            nodeRecord.getUdpAddress().get(),
+            Optional.empty());
+
+    return Optional.of(MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString());
   }
 
   @Override

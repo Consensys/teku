@@ -1,5 +1,6 @@
 dependencies {
   api project(':ssz')
+  api project(':util')
 
   implementation project(':bls')
   implementation project(':logging')
