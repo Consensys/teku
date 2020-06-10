@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
@@ -131,7 +132,7 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void shouldRecreateOriginalGenesisStore() {
     final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
-    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
+    assertStoresMatch(memoryStore, store);
   }
 
   @Test
@@ -603,7 +604,6 @@ public abstract class AbstractDatabaseTest {
     assertHotBlocksAndStates(store, expectedHotBlocksAndStates);
     final SignedBlockAndState prunedForkBlock = forkChain.getBlockAndStateAtSlot(hotSlot);
     assertThat(store.containsBlock(prunedForkBlock.getRoot())).isFalse();
-    assertThat(store.containsBlockState(prunedForkBlock.getRoot())).isFalse();
 
     // Check finalized data
     final List<SignedBeaconBlock> expectedFinalizedBlocks =
