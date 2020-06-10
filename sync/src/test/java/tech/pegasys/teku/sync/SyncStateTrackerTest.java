@@ -89,8 +89,28 @@ class SyncStateTrackerTest {
   }
 
   @Test
-  public void shouldNotReturnToStartupWhenSyncCompletes() {
+  public void shouldReturnToStartupModeWhenSyncCompletesIfPeerRequirementNotMet() {
     syncSubscriber.onSyncingChange(true);
+    assertSyncState(SyncState.SYNCING);
+    syncSubscriber.onSyncingChange(false);
+    assertSyncState(SyncState.START_UP);
+  }
+
+  @Test
+  public void shouldBeInSyncWhenSyncCompletesIfPeerRequirementMet() {
+    syncSubscriber.onSyncingChange(true);
+    assertSyncState(SyncState.SYNCING);
+    when(network.getPeerCount()).thenReturn(STARTUP_TARGET_PEER_COUNT);
+    peerSubscriber.onConnected(new StubPeer());
+    syncSubscriber.onSyncingChange(false);
+    assertSyncState(SyncState.IN_SYNC);
+  }
+
+  @Test
+  public void shouldBeInSyncWhenSyncCompletesIfTimeoutReached() {
+    syncSubscriber.onSyncingChange(true);
+    assertSyncState(SyncState.SYNCING);
+    asyncRunner.executeQueuedActions();
     syncSubscriber.onSyncingChange(false);
     assertSyncState(SyncState.IN_SYNC);
   }
