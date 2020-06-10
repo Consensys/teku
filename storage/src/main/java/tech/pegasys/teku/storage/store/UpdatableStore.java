@@ -14,20 +14,20 @@
 package tech.pegasys.teku.storage.store;
 
 import java.util.function.Consumer;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.datastructures.forkchoice.MutablePrunableStore;
+import tech.pegasys.teku.datastructures.forkchoice.PrunableStore;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-public interface UpdatableStore extends ReadOnlyStore {
+public interface UpdatableStore extends PrunableStore {
 
   StoreTransaction startTransaction(final StorageUpdateChannel storageUpdateChannel);
 
   StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler);
 
-  interface StoreTransaction extends MutableStore {
+  interface StoreTransaction extends MutablePrunableStore {
     SafeFuture<Void> commit();
 
     void commit(final Runnable onSuccess, final String errorMessage);

@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,13 +36,31 @@ public class StateGenerator {
 
   private final BlockTree blockTree;
   private final BeaconState rootState;
+  private final Map<Bytes32, BeaconState> knownStates = new HashMap<>();
 
-  public StateGenerator(final BlockTree blockTree, final BeaconState rootState) {
+  private StateGenerator(
+      final BlockTree blockTree,
+      final BeaconState rootState,
+      final Map<Bytes32, BeaconState> knownStates) {
+    final SignedBeaconBlock rootBlock = blockTree.getRootBlock();
     checkArgument(
-        blockTree.getRootBlock().getStateRoot().equals(rootState.hash_tree_root()),
-        "Base state must match the base block of the blockTree");
+        rootBlock.getStateRoot().equals(rootState.hash_tree_root()),
+        "Root state must match the root block of the blockTree");
     this.blockTree = blockTree;
     this.rootState = rootState;
+    this.knownStates.putAll(knownStates);
+    this.knownStates.put(rootBlock.getRoot(), rootState);
+  }
+
+  public static StateGenerator create(final BlockTree blockTree, final BeaconState rootState) {
+    return new StateGenerator(blockTree, rootState, Collections.emptyMap());
+  }
+
+  public static StateGenerator create(
+      final BlockTree blockTree,
+      final BeaconState rootState,
+      final Map<Bytes32, BeaconState> knownStates) {
+    return new StateGenerator(blockTree, rootState, knownStates);
   }
 
   /**
@@ -51,11 +70,11 @@ public class StateGenerator {
    * @return
    */
   public BeaconState regenerateStateForBlock(final Bytes32 blockRoot) {
-    return regenerateStateForBlock(blockRoot, Collections.emptyMap());
+    return regenerateStateForBlock(blockRoot, new StateCache(0));
   }
 
   private BeaconState regenerateStateForBlock(
-      final Bytes32 blockRoot, final Map<Bytes32, BeaconState> stateCache) {
+      final Bytes32 blockRoot, final StateCache stateCache) {
     final Bytes32 rootBlockHash = blockTree.getRootBlock().getRoot();
     if (rootBlockHash.equals(blockRoot)) {
       return rootState;
@@ -64,11 +83,11 @@ public class StateGenerator {
     // Walk from target block towards root of the tree, stopping when we find an available state
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     Optional<SignedBeaconBlock> curBlock = blockTree.getBlock(blockRoot);
-    BeaconState baseState = null;
+    Optional<BeaconState> baseState = Optional.empty();
     while (curBlock.isPresent()) {
       final Bytes32 root = curBlock.get().getRoot();
-      baseState = root.equals(rootBlockHash) ? rootState : stateCache.get(curBlock.get().getRoot());
-      if (baseState != null) {
+      baseState = stateCache.get(root);
+      if (baseState.isPresent()) {
         break;
       }
       blocks.add(curBlock.get());
@@ -81,7 +100,7 @@ public class StateGenerator {
         getClass().getSimpleName());
 
     // Process blocks in order
-    BeaconState state = baseState;
+    BeaconState state = baseState.orElseThrow();
     SignedBeaconBlock block = null;
     for (int i = blocks.size() - 1; i >= 0; i--) {
       block = blocks.get(i);
@@ -109,8 +128,7 @@ public class StateGenerator {
   }
 
   void regenerateAllStates(final StateHandler stateHandler, final int maxCachedStates) {
-    final Map<Bytes32, BeaconState> branchStateCache =
-        LimitedMap.create(maxCachedStates, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    final StateCache stateCache = new StateCache(maxCachedStates);
 
     final Deque<SignedBeaconBlock> branchesToProcess = new ArrayDeque<>();
     final SignedBeaconBlock rootBlock = blockTree.getRootBlock();
@@ -118,10 +136,7 @@ public class StateGenerator {
 
     while (!branchesToProcess.isEmpty()) {
       SignedBeaconBlock branchBlock = branchesToProcess.pop();
-      BeaconState preState =
-          branchStateCache.computeIfAbsent(
-              branchBlock.getParent_root(),
-              root -> regenerateStateForBlock(root, branchStateCache));
+      BeaconState preState = stateCache.getOrRegenerate(branchBlock.getParent_root());
       while (branchBlock != null) {
         // Produce state for the current branch block
         final BeaconState branchBlockState = processBlock(preState, branchBlock);
@@ -133,7 +148,7 @@ public class StateGenerator {
         // Save branches for later processing
         if (children.size() > 1) {
           // Only cache the current state if there are other branches we need to come back to later
-          branchStateCache.put(branchBlock.getRoot(), branchBlockState);
+          stateCache.put(branchBlock.getRoot(), branchBlockState);
           children.subList(1, children.size()).forEach(branchesToProcess::push);
         }
         // Continue processing the first child
@@ -164,5 +179,28 @@ public class StateGenerator {
 
   public interface StateHandler {
     void handle(final Bytes32 blockRoot, final BeaconState state);
+  }
+
+  private class StateCache {
+    private final Map<Bytes32, BeaconState> cache;
+
+    public StateCache(final int maxCachedStates) {
+      this.cache = LimitedMap.create(maxCachedStates, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    }
+
+    public BeaconState getOrRegenerate(final Bytes32 blockRoot) {
+      return Optional.ofNullable(knownStates.get(blockRoot))
+          .orElseGet(
+              () -> cache.computeIfAbsent(blockRoot, root -> regenerateStateForBlock(root, this)));
+    }
+
+    public Optional<BeaconState> get(final Bytes32 blockRoot) {
+      return Optional.ofNullable(knownStates.get(blockRoot))
+          .or(() -> Optional.ofNullable(cache.get(blockRoot)));
+    }
+
+    public void put(final Bytes32 blockRoot, final BeaconState state) {
+      cache.put(blockRoot, state);
+    }
   }
 }

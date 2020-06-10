@@ -199,7 +199,7 @@ public class StateGeneratorTest {
             .blocks(descendantBlocks)
             .blocks(unconnectedBlocks)
             .build();
-    final StateGenerator generator = new StateGenerator(blockTree, rootBlockAndState.getState());
+    final StateGenerator generator = StateGenerator.create(blockTree, rootBlockAndState.getState());
 
     // Regenerate all states and collect results
     final List<StateAndBlockRoot> results = new ArrayList<>();

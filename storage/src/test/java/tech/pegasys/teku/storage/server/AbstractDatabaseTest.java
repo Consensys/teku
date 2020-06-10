@@ -43,6 +43,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
+import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -518,6 +519,35 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
+  public void handleFinalizationWhenCacheLimitsExceeded() throws StateTransitionException {
+    database = setupDatabase(StateStorageMode.ARCHIVE);
+    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
+    database.storeGenesis(store);
+
+    final int startSlot = genesisBlockAndState.getSlot().intValue();
+    final int minFinalSlot = startSlot + StoreFactory.STATE_CACHE_SIZE + 10;
+    final UnsignedLong finalizedEpoch =
+        ChainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
+    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+
+    chainBuilder.generateBlocksUpToSlot(finalizedSlot);
+    final Checkpoint finalizedCheckpoint =
+        chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
+
+    // Save all blocks and states in a single transaction
+    final List<SignedBlockAndState> newBlocks =
+        chainBuilder.streamBlocksAndStates(startSlot).collect(toList());
+    add(newBlocks);
+    // Then finalize
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    tx.commit().reportExceptions();
+
+    // All finalized blocks and states should be available
+    assertFinalizedBlocksAndStatesAvailable(newBlocks);
+  }
+
+  @Test
   public void shouldRecordFinalizedBlocksAndStates_pruneMode() throws StateTransitionException {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE, false);
   }
@@ -622,7 +652,7 @@ public abstract class AbstractDatabaseTest {
             primaryChain
                 .streamBlocksAndStates(0, 7)
                 .collect(toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
-        assertStatesAvailable(expectedStates);
+        assertFinalizedStatesAvailable(expectedStates);
         break;
       case PRUNE:
         // Check pruned states
@@ -631,6 +661,18 @@ public abstract class AbstractDatabaseTest {
         assertStatesUnavailable(unavailableRoots);
         break;
     }
+  }
+
+  protected void assertFinalizedBlocksAndStatesAvailable(
+      final List<SignedBlockAndState> blocksAndStates) {
+    final List<SignedBeaconBlock> blocks =
+        blocksAndStates.stream().map(SignedBlockAndState::getBlock).collect(toList());
+    final Map<Bytes32, BeaconState> states =
+        blocksAndStates.stream()
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
+    assertBlocksFinalized(blocks);
+    assertBlocksAvailable(blocks);
+    assertFinalizedStatesAvailable(states);
   }
 
   protected void assertBlocksFinalized(final List<SignedBeaconBlock> blocks) {
@@ -719,7 +761,7 @@ public abstract class AbstractDatabaseTest {
         .containsAll(blocksAndStates.stream().map(SignedBlockAndState::getState).collect(toList()));
   }
 
-  protected void assertStatesAvailable(final Map<Bytes32, BeaconState> states) {
+  protected void assertFinalizedStatesAvailable(final Map<Bytes32, BeaconState> states) {
     for (Bytes32 root : states.keySet()) {
       assertThat(database.getFinalizedState(root)).contains(states.get(root));
     }
@@ -736,6 +778,13 @@ public abstract class AbstractDatabaseTest {
     for (Bytes32 root : roots) {
       Optional<SignedBeaconBlock> bb = database.getSignedBlock(root);
       assertThat(bb).isEmpty();
+    }
+  }
+
+  protected void assertBlocksAvailable(final Collection<SignedBeaconBlock> blocks) {
+    for (SignedBeaconBlock expectedBlock : blocks) {
+      Optional<SignedBeaconBlock> actualBlock = database.getSignedBlock(expectedBlock.getRoot());
+      assertThat(actualBlock).contains(expectedBlock);
     }
   }
 

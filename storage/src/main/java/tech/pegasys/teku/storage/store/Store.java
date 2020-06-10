@@ -271,6 +271,16 @@ class Store implements UpdatableStore {
   }
 
   @Override
+  public Optional<BeaconState> getBlockStateIfAvailable(final Bytes32 blockRoot) {
+    readLock.lock();
+    try {
+      return Optional.ofNullable(block_states.get(blockRoot));
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public BeaconState getCheckpointState(Checkpoint checkpoint) {
     readLock.lock();
     try {
@@ -301,7 +311,7 @@ class Store implements UpdatableStore {
   }
 
   private Optional<BeaconState> getOrGenerateBlockState(final Bytes32 blockRoot) {
-    Optional<BeaconState> state = getState(blockRoot);
+    Optional<BeaconState> state = getBlockStateIfAvailable(blockRoot);
     if (state.isPresent()) {
       return state;
     }
@@ -316,7 +326,7 @@ class Store implements UpdatableStore {
     final Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     SignedBeaconBlock block = blockForState;
     while (block != null) {
-      final Optional<BeaconState> blockState = getState(block.getRoot());
+      final Optional<BeaconState> blockState = getBlockStateIfAvailable(block.getRoot());
       if (blockState.isPresent()) {
         // We found a base state
         baseBlock = new SignedBlockAndState(block, blockState.get());
@@ -340,7 +350,7 @@ class Store implements UpdatableStore {
     // Regenerate state
     final BlockTree tree =
         BlockTree.builder().rootBlock(baseBlock.getBlock()).blocks(blocks.values()).build();
-    final StateGenerator stateGenerator = new StateGenerator(tree, baseBlock.getState());
+    final StateGenerator stateGenerator = StateGenerator.create(tree, baseBlock.getState());
     final BeaconState regeneratedState = stateGenerator.regenerateStateForBlock(blockRoot);
 
     // Save regenerated state
@@ -350,15 +360,6 @@ class Store implements UpdatableStore {
     putState(blockRoot, regeneratedState);
 
     return Optional.of(regeneratedState);
-  }
-
-  private Optional<BeaconState> getState(final Bytes32 blockRoot) {
-    readLock.lock();
-    try {
-      return Optional.ofNullable(block_states.get(blockRoot));
-    } finally {
-      readLock.unlock();
-    }
   }
 
   private void putState(final Bytes32 blockRoot, final BeaconState state) {
@@ -562,6 +563,12 @@ class Store implements UpdatableStore {
     @Override
     public BeaconState getBlockState(final Bytes32 blockRoot) {
       return either(blockRoot, block_states::get, Store.this::getBlockState);
+    }
+
+    @Override
+    public Optional<BeaconState> getBlockStateIfAvailable(final Bytes32 blockRoot) {
+      return Optional.ofNullable(block_states.get(blockRoot))
+          .or(() -> Store.this.getBlockStateIfAvailable(blockRoot));
     }
 
     @Override

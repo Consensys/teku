@@ -19,10 +19,13 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.StateGenerator;
+import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -201,22 +204,47 @@ public class RocksDbDatabase implements Database {
       updater.addHotBlocks(update.getHotBlocks());
       updater.addVotes(update.getVotes());
 
+      // Update finalized blocks and states
+      putFinalizedStates(updater, update.getFinalizedBlocks(), update.getFinalizedStates());
+      update.getFinalizedBlocks().forEach(updater::addFinalizedBlock);
+      update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
+
       // Delete data
       update.getDeletedCheckpointStates().forEach(updater::deleteCheckpointState);
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
 
-      update
-          .getFinalizedBlocksAndStates()
-          .forEach(
-              (root, blockAndState) -> {
-                if (update.getFinalizedCheckpoint().get().getRoot().equals(root)) {
-                  updater.setLatestFinalizedState(blockAndState.getState());
-                }
-                updater.addFinalizedBlock(blockAndState.getBlock());
-                putFinalizedState(updater, root, blockAndState.getState());
-              });
-
       updater.commit();
+    }
+  }
+
+  private void putFinalizedStates(
+      Updater updater,
+      final Collection<SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, BeaconState> finalizedStates) {
+    if (finalizedBlocks.isEmpty()) {
+      return;
+    }
+
+    switch (stateStorageMode) {
+      case ARCHIVE:
+        final Bytes32 finalizedRoot = dao.getFinalizedCheckpoint().get().getRoot();
+        final SignedBeaconBlock latestFinalizedBlock =
+            dao.getFinalizedBlock(finalizedRoot).orElseThrow();
+        final BeaconState latestFinalizedState =
+            dao.getLatestFinalizedState()
+                .orElseThrow(() -> new IllegalStateException("Missing latest finalized state"));
+
+        final BlockTree blockTree =
+            BlockTree.builder().rootBlock(latestFinalizedBlock).blocks(finalizedBlocks).build();
+        final StateGenerator stateGenerator =
+            StateGenerator.create(blockTree, latestFinalizedState, finalizedStates);
+        stateGenerator.regenerateAllStates(updater::addFinalizedState);
+        break;
+      case PRUNE:
+        // Don't persist finalized state
+        break;
+      default:
+        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
     }
   }
 

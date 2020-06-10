@@ -159,7 +159,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
     switch (storageMode) {
       case ARCHIVE:
-        assertStatesAvailable(historicalStates);
+        assertFinalizedStatesAvailable(historicalStates);
         break;
       case PRUNE:
         assertStatesUnavailable(historicalStates.keySet());
