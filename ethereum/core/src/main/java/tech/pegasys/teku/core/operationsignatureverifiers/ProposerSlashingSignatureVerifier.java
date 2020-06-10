@@ -46,7 +46,7 @@ public class ProposerSlashingSignatureVerifier {
                 header1.getProposer_index(),
                 idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
 
-    if (signatureVerifier.verify(
+    if (!signatureVerifier.verify(
         publicKey,
         compute_signing_root(
             header1,
@@ -56,7 +56,7 @@ public class ProposerSlashingSignatureVerifier {
       return false;
     }
 
-    if (signatureVerifier.verify(
+    if (!signatureVerifier.verify(
         publicKey,
         compute_signing_root(
             header2,

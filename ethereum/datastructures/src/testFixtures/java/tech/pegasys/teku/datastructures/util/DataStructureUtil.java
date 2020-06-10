@@ -96,7 +96,7 @@ public final class DataStructureUtil {
   }
 
   public long randomLong() {
-    return new Random(nextSeed()).nextInt();
+    return new Random(nextSeed()).nextLong();
   }
 
   public UnsignedLong randomUnsignedLong() {
