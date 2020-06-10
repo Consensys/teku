@@ -46,7 +46,7 @@ public class ServiceController extends Service {
     SafeFuture<?> startupFuture = iterator.next().start();
     while (iterator.hasNext()) {
       final Service nextService = iterator.next();
-      startupFuture = startupFuture.thenRun(nextService::start);
+      startupFuture = startupFuture.thenCompose(__ -> nextService.start());
     }
     return startupFuture;
   }
