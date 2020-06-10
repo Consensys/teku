@@ -85,7 +85,7 @@ public class SignedAggregateAndProofValidator {
     }
 
     if (receivedValidAggregations.contains(attestation.hash_tree_root())) {
-      LOG.trace("Ignoring duplicate aggregate");
+      LOG.trace("Ignoring duplicate aggregate based on hash tree root");
       return IGNORE;
     }
 
@@ -139,7 +139,7 @@ public class SignedAggregateAndProofValidator {
     }
 
     if (!receivedValidAggregations.add(attestation.hash_tree_root())) {
-      LOG.trace("Ignoring duplicate aggregate");
+      LOG.trace("Ignoring duplicate aggregate based on hash tree root");
       return IGNORE;
     }
 
