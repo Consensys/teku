@@ -314,6 +314,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
             validatorOptions.getValidatorExternalSignerPublicKeys())
         .setValidatorExternalSignerUrl(validatorOptions.getValidatorExternalSignerUrl())
         .setValidatorExternalSignerTimeout(validatorOptions.getValidatorExternalSignerTimeout())
+        .setGraffiti(validatorOptions.getGraffiti())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
         .setEth1Endpoint(depositOptions.getEth1Endpoint())
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
