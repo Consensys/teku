@@ -58,29 +58,29 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void metricsHostWhitelist_shouldNotRequireAValue() {
+  public void metricsHostAllowlist_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--metrics-host-allowlist");
-    assertThat(tekuConfiguration.getMetricsHostWhitelist()).isEmpty();
+    assertThat(tekuConfiguration.getMetricsHostAllowlist()).isEmpty();
   }
 
   @Test
-  public void metricsHostWhitelist_shouldSupportWhitelistingMultipleHosts() {
+  public void metricsHostAllowlist_shouldSupportAllowingMultipleHosts() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--metrics-host-allowlist", "my.host,their.host");
-    assertThat(tekuConfiguration.getMetricsHostWhitelist()).containsOnly("my.host", "their.host");
+    assertThat(tekuConfiguration.getMetricsHostAllowlist()).containsOnly("my.host", "their.host");
   }
 
   @Test
-  public void metricsHostWhitelist_shouldSupportWhitelistingAllHosts() {
+  public void metricsHostAllowlist_shouldSupportWhitelistingAllHosts() {
     final TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--metrics-host-allowlist", "*");
-    assertThat(tekuConfiguration.getMetricsHostWhitelist()).containsOnly("*");
+    assertThat(tekuConfiguration.getMetricsHostAllowlist()).containsOnly("*");
   }
 
   @Test
-  public void metricsHostWhitelist_shouldDefaultToLocalhost() {
-    assertThat(getTekuConfigurationFromArguments().getMetricsHostWhitelist())
+  public void metricsHostAllowlist_shouldDefaultToLocalhost() {
+    assertThat(getTekuConfigurationFromArguments().getMetricsHostAllowlist())
         .containsOnly("localhost", "127.0.0.1");
   }
 }
