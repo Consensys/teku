@@ -78,7 +78,7 @@ class AttestationManagerTest {
   @Test
   public void shouldProcessAttestationsThatAreReadyImmediately() {
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(dataStructureUtil.randomAttestation());
+        ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
     when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
     attestationManager.onAttestation(attestation);
 
@@ -91,7 +91,8 @@ class AttestationManagerTest {
   @Test
   public void shouldProcessAggregatesThatAreReadyImmediately() {
     final ValidateableAttestation aggregate =
-        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
+        ValidateableAttestation.fromSignedAggregate(
+            dataStructureUtil.randomSignedAggregateAndProof());
     when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
     attestationManager.onAttestation(aggregate);
 
@@ -104,7 +105,7 @@ class AttestationManagerTest {
   @Test
   public void shouldAddAttestationsThatHaveNotYetReachedTargetSlotToFutureItemsAndPool() {
     ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationFromSlot(100));
+        ValidateableAttestation.fromAttestation(attestationFromSlot(100));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     when(attestationProcessor.processAttestation(any())).thenReturn(SAVED_FOR_FUTURE);
     attestationManager.onAttestation(attestation);
@@ -133,7 +134,7 @@ class AttestationManagerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     final Bytes32 requiredBlockRoot = block.getMessage().hash_tree_root();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationFromSlot(1, requiredBlockRoot));
+        ValidateableAttestation.fromAttestation(attestationFromSlot(1, requiredBlockRoot));
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(UNKNOWN_BLOCK)
         .thenReturn(SUCCESSFUL);
@@ -164,7 +165,7 @@ class AttestationManagerTest {
   @Test
   public void shouldNotPublishProcessedAttestationEventWhenAttestationIsInvalid() {
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(dataStructureUtil.randomAttestation());
+        ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(AttestationProcessingResult.invalid("Didn't like it"));
     attestationManager.onAttestation(attestation);
@@ -178,7 +179,8 @@ class AttestationManagerTest {
   @Test
   public void shouldNotPublishProcessedAggregationEventWhenAttestationIsInvalid() {
     final ValidateableAttestation aggregateAndProof =
-        ValidateableAttestation.fromAggregate(dataStructureUtil.randomSignedAggregateAndProof());
+        ValidateableAttestation.fromSignedAggregate(
+            dataStructureUtil.randomSignedAggregateAndProof());
     when(attestationProcessor.processAttestation(any()))
         .thenReturn(AttestationProcessingResult.invalid("Don't wanna"));
     attestationManager.onAttestation(aggregateAndProof);

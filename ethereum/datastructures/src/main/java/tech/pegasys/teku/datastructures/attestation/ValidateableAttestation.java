@@ -34,11 +34,11 @@ public class ValidateableAttestation {
 
   private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
 
-  public static ValidateableAttestation fromSingle(Attestation attestation) {
+  public static ValidateableAttestation fromAttestation(Attestation attestation) {
     return new ValidateableAttestation(attestation, Optional.empty());
   }
 
-  public static ValidateableAttestation fromAggregate(SignedAggregateAndProof attestation) {
+  public static ValidateableAttestation fromSignedAggregate(SignedAggregateAndProof attestation) {
     return new ValidateableAttestation(
         attestation.getMessage().getAggregate(), Optional.of(attestation));
   }
