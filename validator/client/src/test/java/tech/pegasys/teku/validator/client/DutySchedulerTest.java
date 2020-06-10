@@ -62,8 +62,10 @@ class DutySchedulerTest {
       Set.of(VALIDATOR1_KEY, VALIDATOR2_KEY);
   private final Signer validator1Signer = mock(Signer.class);
   private final Signer validator2Signer = mock(Signer.class);
-  private final Validator validator1 = new Validator(VALIDATOR1_KEY, validator1Signer);
-  private final Validator validator2 = new Validator(VALIDATOR2_KEY, validator2Signer);
+  private final Validator validator1 =
+      new Validator(VALIDATOR1_KEY, validator1Signer, Optional.empty());
+  private final Validator validator2 =
+      new Validator(VALIDATOR2_KEY, validator2Signer, Optional.empty());
 
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);

@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 /** Configuration of an instance of Teku. */
@@ -65,6 +66,7 @@ public class TekuConfiguration {
   private final List<String> validatorExternalSignerPublicKeys;
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
+  private final Bytes32 graffiti;
 
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
@@ -161,7 +163,8 @@ public class TekuConfiguration {
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
       final String restApiInterface,
-      final List<String> restApiHostWhitelist) {
+      final List<String> restApiHostWhitelist,
+      final Bytes32 graffiti) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -215,6 +218,7 @@ public class TekuConfiguration {
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostWhitelist = restApiHostWhitelist;
+    this.graffiti = graffiti;
   }
 
   public String getConstants() {
@@ -448,6 +452,10 @@ public class TekuConfiguration {
 
   public List<String> getRestApiHostWhitelist() {
     return restApiHostWhitelist;
+  }
+
+  public Bytes32 getGraffiti() {
+    return graffiti;
   }
 
   public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
