@@ -43,7 +43,7 @@ public class NoopCompressor implements Compressor {
     }
     Optional<ByteBuf> ret =
         uncompressedPayloadSize > 0
-            ? decoder.decodeOneImpl(input)
+            ? decoder.decodeOneMessage(input)
             : Optional.of(Unpooled.EMPTY_BUFFER);
 
     if (ret.isPresent()) {
