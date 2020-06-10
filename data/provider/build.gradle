@@ -7,7 +7,7 @@ dependencies {
     implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
-    implementation project(':networking:p2p')
+    implementation project(':networking:eth2')
     implementation project(':services:serviceutils')
     implementation project(':ssz')
     implementation project(':storage')

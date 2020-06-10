@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.core;
 
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.INVALID;
-import static tech.pegasys.teku.core.results.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -33,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.core.results.AttestationProcessingResult;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -45,6 +43,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
 public class ForkChoiceUtil {
@@ -281,7 +280,7 @@ public class ForkChoiceUtil {
    * scheduling it for later processing in such case.
    *
    * @param store
-   * @param attestation
+   * @param validateableAttestation
    * @param stateTransition
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
@@ -298,25 +297,14 @@ public class ForkChoiceUtil {
 
     return validateOnAttestation(store, attestation)
         .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
+        .ifSuccessful(() -> indexAndValidateAttestation(store, validateableAttestation, target))
+        .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(
             () -> {
-              Optional<IndexedAttestation> maybeIndexedAttestation =
-                  indexAndValidateAttestation(store, attestation, target);
-
-              if (maybeIndexedAttestation.isEmpty()) {
-                return INVALID;
-              }
-
-              IndexedAttestation indexedAttestation = maybeIndexedAttestation.get();
-              validateableAttestation.setIndexedAttestation(indexedAttestation);
-              AttestationProcessingResult result =
-                  checkIfAttestationShouldBeSavedForFuture(store, attestation);
-
-              if (result.isSuccessful()) {
-                forkChoiceStrategy.onAttestation(store, indexedAttestation);
-              }
-
-              return result;
+              IndexedAttestation indexedAttestation =
+                  validateableAttestation.getIndexedAttestation();
+              forkChoiceStrategy.onAttestation(store, indexedAttestation);
+              return SUCCESSFUL;
             });
   }
 
@@ -328,24 +316,24 @@ public class ForkChoiceUtil {
    * @param target
    * @return
    */
-  private static Optional<IndexedAttestation> indexAndValidateAttestation(
-      MutableStore store, Attestation attestation, Checkpoint target) {
+  private static AttestationProcessingResult indexAndValidateAttestation(
+      MutableStore store, ValidateableAttestation attestation, Checkpoint target) {
     BeaconState target_state = store.getCheckpointState(target);
 
     // Get state at the `target` to validate attestation and calculate the committees
     IndexedAttestation indexed_attestation;
     try {
-      indexed_attestation = get_indexed_attestation(target_state, attestation);
+      indexed_attestation = get_indexed_attestation(target_state, attestation.getAttestation());
     } catch (IllegalArgumentException e) {
-      LOG.warn("on_attestation: Attestation is not valid: ", e);
-      return Optional.empty();
+      LOG.debug("on_attestation: Attestation is not valid: ", e);
+      return AttestationProcessingResult.invalid(e.getMessage());
     }
-    if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
-      LOG.warn("on_attestation: Attestation is not valid");
-      return Optional.empty();
-    }
-
-    return Optional.of(indexed_attestation);
+    return is_valid_indexed_attestation(target_state, indexed_attestation)
+        .ifSuccessful(
+            () -> {
+              attestation.setIndexedAttestation(indexed_attestation);
+              return SUCCESSFUL;
+            });
   }
 
   private static AttestationProcessingResult storeTargetCheckpointState(
@@ -355,8 +343,10 @@ public class ForkChoiceUtil {
     try {
       storeCheckpointState(store, stateTransition, target, targetRootState);
     } catch (SlotProcessingException | EpochProcessingException e) {
-      LOG.warn("on_attestation: Attestation failed state transition. ", e);
-      return AttestationProcessingResult.INVALID;
+      LOG.error(
+          "on_attestation: Unexpected state transition error when computing checkpoint state. ", e);
+      return AttestationProcessingResult.invalid(
+          "Attestation failed state transition: " + e.getMessage());
     }
     return SUCCESSFUL;
   }
@@ -373,13 +363,12 @@ public class ForkChoiceUtil {
             : UnsignedLong.valueOf(GENESIS_EPOCH);
 
     if (!target.getEpoch().equals(previous_epoch) && !target.getEpoch().equals(current_epoch)) {
-      LOG.warn("on_attestation: Attestations must be from the current or previous epoch");
-      return AttestationProcessingResult.INVALID;
+      return AttestationProcessingResult.invalid(
+          "Attestations must be from the current or previous epoch");
     }
 
     if (!target.getEpoch().equals(compute_epoch_at_slot(attestation.getData().getSlot()))) {
-      LOG.warn("on_attestation: Attestation slot must be within specified epoch");
-      return AttestationProcessingResult.INVALID;
+      return AttestationProcessingResult.invalid("Attestation slot must be within specified epoch");
     }
 
     if (!store.getBlockRoots().contains(target.getRoot())) {
@@ -399,9 +388,8 @@ public class ForkChoiceUtil {
             .getSlot()
             .compareTo(attestation.getData().getSlot())
         > 0) {
-      LOG.warn(
-          "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
-      return AttestationProcessingResult.INVALID;
+      return AttestationProcessingResult.invalid(
+          "Attestations must not be for blocks in the future. If not, the attestation should not be considered");
     }
 
     // LMD vote must be consistent with FFG vote target

@@ -19,9 +19,10 @@ import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
@@ -57,48 +58,48 @@ public class AttestationValidator {
     this.recentChainData = recentChainData;
   }
 
-  public ValidationResult validate(
+  public InternalValidationResult validate(
       final ValidateableAttestation validateableAttestation, final int receivedOnSubnetId) {
     Attestation attestation = validateableAttestation.getAttestation();
-    ValidationResult validationResult = singleAttestationChecks(attestation);
-    if (validationResult != VALID) {
-      return validationResult;
+    InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
+    if (internalValidationResult != ACCEPT) {
+      return internalValidationResult;
     }
 
-    validationResult =
+    internalValidationResult =
         singleOrAggregateAttestationChecks(attestation, OptionalInt.of(receivedOnSubnetId));
-    if (validationResult != VALID) {
-      return validationResult;
+    if (internalValidationResult != ACCEPT) {
+      return internalValidationResult;
     }
 
     return addAndCheckFirstValidAttestation(attestation);
   }
 
-  private ValidationResult addAndCheckFirstValidAttestation(final Attestation attestation) {
+  private InternalValidationResult addAndCheckFirstValidAttestation(final Attestation attestation) {
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.
     if (!receivedValidAttestations.add(getValidatorAndTargetEpoch(attestation))) {
-      return INVALID;
+      return IGNORE;
     }
-    return VALID;
+    return ACCEPT;
   }
 
-  private ValidationResult singleAttestationChecks(final Attestation attestation) {
+  private InternalValidationResult singleAttestationChecks(final Attestation attestation) {
     // The attestation is unaggregated -- that is, it has exactly one participating validator
     // (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
     if (attestation.getAggregation_bits().getBitCount() != 1) {
-      return INVALID;
+      return REJECT;
     }
 
     // The attestation is the first valid attestation received for the participating validator for
     // the slot, attestation.data.slot.
     if (receivedValidAttestations.contains(getValidatorAndTargetEpoch(attestation))) {
-      return INVALID;
+      return IGNORE;
     }
-    return VALID;
+    return ACCEPT;
   }
 
-  ValidationResult singleOrAggregateAttestationChecks(
+  InternalValidationResult singleOrAggregateAttestationChecks(
       final Attestation attestation, final OptionalInt receivedOnSubnetId) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
@@ -108,10 +109,10 @@ public class AttestationValidator {
     final UnsignedLong currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
-      return INVALID;
+      return IGNORE;
     }
     if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(attestation, currentTimeMillis)) {
-      return SAVED_FOR_FUTURE;
+      return SAVE_FOR_FUTURE;
     }
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
@@ -120,7 +121,7 @@ public class AttestationValidator {
     final Optional<BeaconState> maybeState =
         recentChainData.getBlockState(attestation.getData().getBeacon_block_root());
     if (maybeState.isEmpty()) {
-      return SAVED_FOR_FUTURE;
+      return SAVE_FOR_FUTURE;
     }
 
     final BeaconState state = maybeState.get();
@@ -128,22 +129,22 @@ public class AttestationValidator {
     // The attestation's committee index (attestation.data.index) is for the correct subnet.
     if (receivedOnSubnetId.isPresent()
         && computeSubnetForAttestation(state, attestation) != receivedOnSubnetId.getAsInt()) {
-      return INVALID;
+      return REJECT;
     }
 
     final List<Integer> committee =
         get_beacon_committee(
             state, attestation.getData().getSlot(), attestation.getData().getIndex());
     if (committee.size() != attestation.getAggregation_bits().getCurrentSize()) {
-      return INVALID;
+      return REJECT;
     }
 
     // The signature of attestation is valid.
     final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
-    if (!is_valid_indexed_attestation(state, indexedAttestation)) {
-      return INVALID;
+    if (!is_valid_indexed_attestation(state, indexedAttestation).isSuccessful()) {
+      return REJECT;
     }
-    return VALID;
+    return ACCEPT;
   }
 
   private ValidatorAndTargetEpoch getValidatorAndTargetEpoch(final Attestation attestation) {

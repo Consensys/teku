@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 /** Configuration of an instance of Teku. */
@@ -65,10 +66,12 @@ public class TekuConfiguration {
   private final List<String> validatorExternalSignerPublicKeys;
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
+  private final Bytes32 graffiti;
 
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
+  private final boolean eth1DepositsFromStorageEnabled;
 
   // Logging
   private final boolean logColorEnabled;
@@ -137,6 +140,7 @@ public class TekuConfiguration {
       final int validatorExternalSignerTimeout,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
+      final boolean eth1DepositsFromStorageEnabled,
       final boolean logColorEnabled,
       final boolean logIncludeEventsEnabled,
       final boolean logIncludeValidatorDutiesEnabled,
@@ -159,7 +163,8 @@ public class TekuConfiguration {
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
       final String restApiInterface,
-      final List<String> restApiHostWhitelist) {
+      final List<String> restApiHostWhitelist,
+      final Bytes32 graffiti) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -189,6 +194,7 @@ public class TekuConfiguration {
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
+    this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     this.logColorEnabled = logColorEnabled;
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
     this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
@@ -212,6 +218,7 @@ public class TekuConfiguration {
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostWhitelist = restApiHostWhitelist;
+    this.graffiti = graffiti;
   }
 
   public String getConstants() {
@@ -351,6 +358,10 @@ public class TekuConfiguration {
     return eth1Endpoint;
   }
 
+  public boolean isEth1DepositsFromStorageEnabled() {
+    return eth1DepositsFromStorageEnabled;
+  }
+
   public boolean isLogColorEnabled() {
     return logColorEnabled;
   }
@@ -441,6 +452,10 @@ public class TekuConfiguration {
 
   public List<String> getRestApiHostWhitelist() {
     return restApiHostWhitelist;
+  }
+
+  public Bytes32 getGraffiti() {
+    return graffiti;
   }
 
   public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {

@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
@@ -83,6 +84,22 @@ public class PeerManagerTest {
 
     assertThat(connectedPeers).containsExactly(peer);
     assertThat(connectedPeersB).containsExactly(peer);
+  }
+
+  @Test
+  public void subscribeConnect_shouldRejectConnectionThatAlreadyExists() {
+    final List<Peer> connectedPeers = new ArrayList<>();
+    peerManager.subscribeConnect(connectedPeers::add);
+
+    final Peer peer = mock(Peer.class);
+    when(peer.getId()).thenReturn(new MockNodeId(1));
+    peerManager.onConnectedPeer(peer);
+    assertThat(connectedPeers).containsExactly(peer);
+
+    Assertions.assertThrows(
+        PeerAlreadyConnectedException.class, () -> peerManager.onConnectedPeer(peer));
+
+    assertThat(connectedPeers).containsExactly(peer);
   }
 
   @Test

@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import com.google.common.eventbus.EventBus;
@@ -214,7 +215,7 @@ class ValidatorApiHandlerTest {
     when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
-            UnsignedLong.ONE, dataStructureUtil.randomSignature());
+            UnsignedLong.ONE, dataStructureUtil.randomSignature(), Optional.empty());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -235,11 +236,15 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UnsignedLong.ONE)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(previousBlockAndState)));
     when(blockFactory.createUnsignedBlock(
-            previousState, previousBlockAndState.getBlock(), newSlot, randaoReveal))
+            previousState,
+            previousBlockAndState.getBlock(),
+            newSlot,
+            randaoReveal,
+            Optional.empty()))
         .thenReturn(createdBlock);
 
     final SafeFuture<Optional<BeaconBlock>> result =
-        validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal);
+        validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty());
 
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
@@ -301,7 +306,7 @@ class ValidatorApiHandlerTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
     when(attestationPool.createAggregateFor(attestationData))
-        .thenReturn(aggregate.map(ValidateableAttestation::fromSingle));
+        .thenReturn(aggregate.map(ValidateableAttestation::fromAttestation));
 
     assertThat(validatorApiHandler.createAggregate(attestationData))
         .isCompletedWithValue(aggregate);
@@ -336,9 +341,10 @@ class ValidatorApiHandlerTest {
   @Test
   public void sendSignedAttestation_shouldAddAttestationToAggregatorAndEventBus() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
+    when(attestationManager.onAttestation(any())).thenReturn(SUCCESSFUL);
     validatorApiHandler.sendSignedAttestation(attestation);
 
-    verify(attestationManager).onAttestation(ValidateableAttestation.fromSingle(attestation));
+    verify(attestationManager).onAttestation(ValidateableAttestation.fromAttestation(attestation));
   }
 
   @Test
@@ -353,10 +359,11 @@ class ValidatorApiHandlerTest {
   public void sendAggregateAndProof_shouldPostAggregateAndProof() {
     final SignedAggregateAndProof aggregateAndProof =
         dataStructureUtil.randomSignedAggregateAndProof();
+    when(attestationManager.onAttestation(any())).thenReturn(SUCCESSFUL);
     validatorApiHandler.sendAggregateAndProof(aggregateAndProof);
 
     verify(attestationManager)
-        .onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof));
+        .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
   }
 
   private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(

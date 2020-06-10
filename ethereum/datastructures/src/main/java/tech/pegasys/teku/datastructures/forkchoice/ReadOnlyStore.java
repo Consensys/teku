@@ -22,6 +22,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 
 public interface ReadOnlyStore {
 
@@ -33,6 +34,8 @@ public interface ReadOnlyStore {
 
   Checkpoint getFinalizedCheckpoint();
 
+  CheckpointAndBlock getFinalizedCheckpointAndBlock();
+
   /**
    * Return the slot of the latest finalized block. This slot may be at or prior to the epoch
    * boundary slot which this block finalizes.
@@ -40,6 +43,8 @@ public interface ReadOnlyStore {
    * @return the slot of the latest finalized block.
    */
   UnsignedLong getLatestFinalizedBlockSlot();
+
+  SignedBlockAndState getLatestFinalizedBlockAndState();
 
   Checkpoint getBestJustifiedCheckpoint();
 
@@ -54,8 +59,6 @@ public interface ReadOnlyStore {
   Set<Bytes32> getBlockRoots();
 
   BeaconState getBlockState(Bytes32 blockRoot);
-
-  boolean containsBlockState(Bytes32 blockRoot);
 
   BeaconState getCheckpointState(Checkpoint checkpoint);
 

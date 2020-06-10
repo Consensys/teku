@@ -11,13 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.client;
+package tech.pegasys.teku.api.response.v1.node;
 
-import tech.pegasys.teku.storage.events.StorageUpdateResult;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class FailedPrecommitException extends RuntimeException {
+public class VersionResponse {
+  public final Version data;
 
-  public FailedPrecommitException(final StorageUpdateResult result) {
-    super(result.getError());
+  @JsonCreator
+  public VersionResponse(@JsonProperty("data") final Version data) {
+    this.data = data;
   }
 }

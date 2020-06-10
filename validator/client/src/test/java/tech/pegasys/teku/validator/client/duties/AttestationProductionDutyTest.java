@@ -321,7 +321,7 @@ class AttestationProductionDutyTest {
 
   public Validator createValidator() {
     final Signer signer = mock(Signer.class);
-    return new Validator(dataStructureUtil.randomPublicKey(), signer);
+    return new Validator(dataStructureUtil.randomPublicKey(), signer, Optional.empty());
   }
 
   public Attestation expectSignAttestation(

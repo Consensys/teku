@@ -31,6 +31,7 @@ import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -58,6 +59,8 @@ public class PowchainService extends Service {
 
     final Eth1EventsChannel eth1EventsChannel =
         config.getEventChannels().getPublisher(Eth1EventsChannel.class);
+    final Eth1DepositStorageChannel eth1DepositStorageChannel =
+        config.getEventChannels().getPublisher(Eth1DepositStorageChannel.class);
     final Eth1BlockFetcher eth1BlockFetcher =
         new Eth1BlockFetcher(
             eth1EventsChannel,
@@ -88,6 +91,7 @@ public class PowchainService extends Service {
             eth1Provider,
             asyncRunner,
             eth1EventsChannel,
+            eth1DepositStorageChannel,
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(eth1Provider));
   }

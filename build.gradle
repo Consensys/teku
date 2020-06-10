@@ -287,7 +287,8 @@ application {
       "-Dteku.home=TEKU_HOME",
       // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
       // happens during shutdown is not logged.
-      "-Dlog4j.shutdownHookEnabled=false"
+      "-Dlog4j.shutdownHookEnabled=false",
+      "-XX:+HeapDumpOnOutOfMemoryError"
   ]
 }
 
@@ -585,7 +586,7 @@ def calculateVersion() {
 
 def getCheckedOutGitCommitHash() {
   def takeFromHash = 8
-  grgit.head().id.take(takeFromHash)
+  grgit ? grgit.head().id.take(takeFromHash) : 'UNKNOWN'
 }
 
 task jacocoRootReport(type: JacocoReport) {

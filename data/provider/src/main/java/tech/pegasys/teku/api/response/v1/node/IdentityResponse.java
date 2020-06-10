@@ -11,10 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.api.response.v1.node;
 
-public enum ValidationResult {
-  VALID,
-  SAVED_FOR_FUTURE,
-  INVALID
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public class IdentityResponse {
+  public final Identity data;
+
+  @JsonCreator
+  public IdentityResponse(@JsonProperty("data") final Identity data) {
+    this.data = data;
+  }
 }

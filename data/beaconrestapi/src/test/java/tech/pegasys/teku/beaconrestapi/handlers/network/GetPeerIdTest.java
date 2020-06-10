@@ -23,10 +23,9 @@ import io.javalin.http.Context;
 import io.libp2p.core.PeerId;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetPeerIdTest {
@@ -34,16 +33,16 @@ public class GetPeerIdTest {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @SuppressWarnings("unchecked")
-  private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
+  private final Eth2Network eth2Network = mock(Eth2Network.class);
 
   @Test
   public void shouldReturnPeerId() throws Exception {
-    NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    NetworkDataProvider network = new NetworkDataProvider(eth2Network);
     final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
     final NodeId nodeId1 = new LibP2PNodeId(peerId1);
     final GetPeerId handler = new GetPeerId(network, jsonProvider);
 
-    when(p2pNetwork.getNodeId()).thenReturn(nodeId1);
+    when(eth2Network.getNodeId()).thenReturn(nodeId1);
     handler.handle(context);
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(jsonProvider.objectToJSON(nodeId1.toBase58()));

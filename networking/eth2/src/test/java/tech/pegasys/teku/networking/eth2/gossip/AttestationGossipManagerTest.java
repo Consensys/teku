@@ -63,7 +63,7 @@ public class AttestationGossipManagerTest {
   @BeforeEach
   public void setup() {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
-    doReturn(topicChannel).when(gossipNetwork).subscribe(contains("committee_index"), any());
+    doReturn(topicChannel).when(gossipNetwork).subscribe(contains("beacon_attestation"), any());
     attestationGossipManager =
         new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions);
   }
@@ -84,13 +84,14 @@ public class AttestationGossipManagerTest {
 
     // Post new attestation
     final Bytes serialized = gossipEncoding.encode(attestation);
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
 
     verify(topicChannel).gossip(serialized);
 
     // We should process attestations for different committees on the same subnet
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation2));
+    attestationGossipManager.onNewAttestation(
+        ValidateableAttestation.fromAttestation(attestation2));
 
     verify(topicChannel).gossip(serialized2);
   }
@@ -103,7 +104,7 @@ public class AttestationGossipManagerTest {
     attestationGossipManager.subscribeToSubnetId(subnetId + 1);
 
     // Post new attestation
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
 
     verifyNoInteractions(topicChannel);
   }
@@ -122,13 +123,14 @@ public class AttestationGossipManagerTest {
 
     // Attestation for dismissed assignment should be ignored
     final Bytes serialized = gossipEncoding.encode(attestation);
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation));
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
 
     verify(topicChannel, never()).gossip(serialized);
 
     // Attestation for remaining assignment should be processed
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
-    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromSingle(attestation2));
+    attestationGossipManager.onNewAttestation(
+        ValidateableAttestation.fromAttestation(attestation2));
 
     verify(topicChannel).gossip(serialized2);
   }

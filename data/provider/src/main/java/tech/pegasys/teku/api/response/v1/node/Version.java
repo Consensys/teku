@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition;
+package tech.pegasys.teku.api.response.v1.node;
 
-import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Disabled
-@ExtendWith(BouncyCastleExtension.class)
-class StateTransitionTest {
+public class Version {
+  public final String version;
 
-  @Test
-  void testUpdateRecentBlockHashes() throws Exception {
-    // todo
+  @JsonCreator
+  public Version(@JsonProperty("version") final String version) {
+    this.version = version;
   }
 }

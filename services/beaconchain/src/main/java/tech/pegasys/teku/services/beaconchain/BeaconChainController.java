@@ -68,7 +68,6 @@ import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
-import tech.pegasys.teku.storage.Store;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -76,6 +75,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.BlockManager;
 import tech.pegasys.teku.sync.DefaultSyncService;
 import tech.pegasys.teku.sync.FetchRecentBlocksService;
@@ -353,9 +353,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
-              .gossipedAttestationConsumer(attestationManager::onAttestation)
+              .gossipedAttestationConsumer(
+                  attestation ->
+                      attestationManager
+                          .onAttestation(attestation)
+                          .ifInvalid(
+                              reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToProcessedAttestations)
+              .verifiedBlockAttestationsProvider(
+                  blockImporter::subscribeToVerifiedBlockAttestations)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
@@ -460,7 +467,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
     final boolean nextSlotDue = isNextSlotDue(currentTime);
 
-    final Store.Transaction transaction = recentChainData.startStoreTransaction();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     on_tick(transaction, currentTime);
     transaction.commit().join();
 

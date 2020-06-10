@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.BlockProposalUtil;
@@ -63,7 +64,8 @@ public class BlockFactory {
       final BeaconState previousState,
       final BeaconBlock previousBlock,
       final UnsignedLong newSlot,
-      final BLSSignature randaoReveal)
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> optionalGraffiti)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
 
     // Process empty slots up to the one before the new block slot
@@ -89,9 +91,9 @@ public class BlockFactory {
         BeaconBlockBodyLists.createVoluntaryExits();
 
     // Collect deposits
-    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState);
-
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);
+    final SSZList<Deposit> deposits = depositProvider.getDeposits(blockPreState, eth1Data);
+
     final Bytes32 parentRoot = previousBlock.hash_tree_root();
 
     return blockCreator
@@ -102,7 +104,7 @@ public class BlockFactory {
             blockPreState,
             parentRoot,
             eth1Data,
-            graffiti,
+            optionalGraffiti.orElse(graffiti),
             attestations,
             proposerSlashings,
             attesterSlashings,
