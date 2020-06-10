@@ -18,13 +18,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ProposerSlashingValidator;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSlashing> {
@@ -36,9 +34,9 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
   private final Bytes4 forkDigest;
 
   public ProposerSlashingTopicHandler(
-          final GossipEncoding gossipEncoding,
-          final ForkInfo forkInfo,
-          final ProposerSlashingValidator validator) {
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
+      final ProposerSlashingValidator validator) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
@@ -58,7 +56,7 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
           break;
         default:
           throw new UnsupportedOperationException(
-                  "Unexpected validation result: " + internalValidationResult);
+              "Unexpected validation result: " + internalValidationResult);
       }
       return internalValidationResult.getGossipSubValidationResult();
     } catch (DecodingException e) {

@@ -125,11 +125,10 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
             new VoluntaryExitSignatureVerifier());
 
     ProposerSlashingValidator proposerSlashingValidator =
-            new ProposerSlashingValidator(
-                    recentChainData,
-                    new ProposerSlashingStateTransitionValidator(),
-                    new ProposerSlashingSignatureVerifier()
-            );
+        new ProposerSlashingValidator(
+            recentChainData,
+            new ProposerSlashingStateTransitionValidator(),
+            new ProposerSlashingSignatureVerifier());
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
@@ -158,7 +157,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new VoluntaryExitGossipManager(discoveryNetwork, gossipEncoding, forkInfo, exitValidator);
 
     proposerSlashingGossipManager =
-            new ProposerSlashingGossipManager(discoveryNetwork, gossipEncoding, forkInfo, proposerSlashingValidator);
+        new ProposerSlashingGossipManager(
+            discoveryNetwork, gossipEncoding, forkInfo, proposerSlashingValidator);
 
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(

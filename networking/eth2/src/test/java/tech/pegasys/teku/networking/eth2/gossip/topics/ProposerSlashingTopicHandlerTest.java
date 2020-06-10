@@ -25,14 +25,11 @@ import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.VoluntaryExitGenerator;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ProposerSlashingValidator;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -48,7 +45,8 @@ public class ProposerSlashingTopicHandlerTest {
   private final ProposerSlashingValidator validator = mock(ProposerSlashingValidator.class);
 
   private ProposerSlashingTopicHandler topicHandler =
-          new ProposerSlashingTopicHandler(gossipEncoding, dataStructureUtil.randomForkInfo(), validator);
+      new ProposerSlashingTopicHandler(
+          gossipEncoding, dataStructureUtil.randomForkInfo(), validator);
 
   @BeforeEach
   public void setup() {
@@ -96,7 +94,7 @@ public class ProposerSlashingTopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final ProposerSlashingTopicHandler topicHandler =
-            new ProposerSlashingTopicHandler(gossipEncoding, forkInfo, validator);
+        new ProposerSlashingTopicHandler(gossipEncoding, forkInfo, validator);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/proposer_slashing/ssz_snappy");
   }
 }
