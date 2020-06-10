@@ -80,7 +80,7 @@ public class SimpleBlockValidator implements BlockValidator {
         BlockProcessorUtil.verify_randao(preState, blockMessage, signatureVerifier);
 
         if (!BlockProcessorUtil.verify_proposer_slashings(
-                preState, blockBody.getProposer_slashings(), signatureVerifier)) {
+            preState, blockBody.getProposer_slashings(), signatureVerifier)) {
           return SafeFuture.completedFuture(new BlockValidationResult(false));
         }
 
@@ -88,7 +88,6 @@ public class SimpleBlockValidator implements BlockValidator {
             preState, blockBody.getVoluntary_exits(), signatureVerifier)) {
           return SafeFuture.completedFuture(new BlockValidationResult(false));
         }
-
       }
       return SafeFuture.completedFuture(new BlockValidationResult(true));
     } catch (BlockProcessingException | InvalidSignatureException e) {

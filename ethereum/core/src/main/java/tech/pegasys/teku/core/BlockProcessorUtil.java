@@ -51,14 +51,14 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
+import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationstatetransitionvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.core.operationstatetransitionvalidators.AttestationDataStateTransitionValidator.AttestationInvalidReason;
-import tech.pegasys.teku.core.operationstatetransitionvalidators.ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.core.operationstatetransitionvalidators.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.core.operationstatetransitionvalidators.ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.core.operationstatetransitionvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.core.operationstatetransitionvalidators.VoluntaryExitStateTransitionValidator.ExitInvalidReason;
-import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -251,7 +251,8 @@ public final class BlockProcessorUtil {
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
     process_proposer_slashings_no_validation(state, proposerSlashings);
-    boolean signaturesValid =  verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
+    boolean signaturesValid =
+        verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
     if (!signaturesValid) {
       throw new BlockProcessingException("Slashing signature is invalid");
     }
@@ -260,18 +261,23 @@ public final class BlockProcessorUtil {
   public static void process_proposer_slashings_no_validation(
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
-    ProposerSlashingStateTransitionValidator validator = new ProposerSlashingStateTransitionValidator();
+    ProposerSlashingStateTransitionValidator validator =
+        new ProposerSlashingStateTransitionValidator();
 
     try {
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposerSlashing : proposerSlashings) {
-        Optional<ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason> invalidReason = validator.validateSlashing(state, proposerSlashing);
+        Optional<ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason>
+            invalidReason = validator.validateSlashing(state, proposerSlashing);
         checkArgument(
-                invalidReason.isEmpty(),
-                "process_proposer_slashings: %s",
-                invalidReason.map(ProposerSlashingInvalidReason::describe).orElse(""));
+            invalidReason.isEmpty(),
+            "process_proposer_slashings: %s",
+            invalidReason.map(ProposerSlashingInvalidReason::describe).orElse(""));
 
-        slash_validator(state, toIntExact(proposerSlashing.getHeader_1().getMessage().getProposer_index().longValue()));
+        slash_validator(
+            state,
+            toIntExact(
+                proposerSlashing.getHeader_1().getMessage().getProposer_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -283,7 +289,8 @@ public final class BlockProcessorUtil {
       BeaconState state,
       SSZList<ProposerSlashing> proposerSlashings,
       BLSSignatureVerifier signatureVerifier) {
-    ProposerSlashingSignatureVerifier slashingSignatureVerifier = new ProposerSlashingSignatureVerifier();
+    ProposerSlashingSignatureVerifier slashingSignatureVerifier =
+        new ProposerSlashingSignatureVerifier();
 
     // For each proposer_slashing in block.body.proposer_slashings:
     for (ProposerSlashing proposerSlashing : proposerSlashings) {
@@ -373,7 +380,8 @@ public final class BlockProcessorUtil {
   public static void process_attestations_no_validation(
       MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
-      final AttestationDataStateTransitionValidator validator = new AttestationDataStateTransitionValidator();
+      final AttestationDataStateTransitionValidator validator =
+          new AttestationDataStateTransitionValidator();
 
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();

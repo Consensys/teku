@@ -50,7 +50,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final NavigableMap<UnsignedLong, Set<Bytes>> dataHashBySlot = new TreeMap<>();
   private final AttestationDataStateTransitionValidator attestationDataValidator;
 
-  public AggregatingAttestationPool(final AttestationDataStateTransitionValidator attestationDataValidator) {
+  public AggregatingAttestationPool(
+      final AttestationDataStateTransitionValidator attestationDataValidator) {
     this.attestationDataValidator = attestationDataValidator;
   }
 

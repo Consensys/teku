@@ -40,7 +40,8 @@ public class VoluntaryExitValidator {
   private final Set<UnsignedLong> receivedValidExitSet =
       ConcurrentLimitedSet.create(
           VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-  private final VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
+  private final VoluntaryExitStateTransitionValidator validator =
+      new VoluntaryExitStateTransitionValidator();
 
   public VoluntaryExitValidator(RecentChainData recentChainData) {
     this.recentChainData = recentChainData;
@@ -78,7 +79,9 @@ public class VoluntaryExitValidator {
     if (invalidReason.isPresent()) {
       LOG.trace(
           "VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
-          invalidReason.map(VoluntaryExitStateTransitionValidator.ExitInvalidReason::describe).orElse(""));
+          invalidReason
+              .map(VoluntaryExitStateTransitionValidator.ExitInvalidReason::describe)
+              .orElse(""));
       return false;
     }
 
