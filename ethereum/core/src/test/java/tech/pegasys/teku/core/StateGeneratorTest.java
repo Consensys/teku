@@ -230,7 +230,7 @@ public class StateGeneratorTest {
     assertThat(resultMap.size()).isEqualTo(results.size());
     // Check that our expectations are met
     assertThat(resultMap.size()).isEqualTo(expectedResult.size());
-    assertThat(resultMap).containsExactlyEntriesOf(expectedResult);
+    assertThat(resultMap).containsExactlyInAnyOrderEntriesOf(expectedResult);
     // Check states were / were not regenerated as expected
     if (supplyAllKnownStates) {
       // No states should be regenerated - they should all match the known state
