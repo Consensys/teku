@@ -107,7 +107,7 @@ public class StatusLogger {
   }
 
   public void minGenesisTimeReached() {
-    log.info("Minimum genesis time reached");
+    log.info("ETH1 block satisfying minimum genesis time found");
   }
 
   public void dataPathSet(final String dataPath) {
