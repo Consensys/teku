@@ -66,14 +66,14 @@ public class TekuConfigurationBuilder {
   private int metricsPort;
   private String metricsInterface;
   private List<String> metricsCategories;
-  private List<String> metricsHostWhitelist;
+  private List<String> metricsHostAllowlist;
   private String dataPath;
   private StateStorageMode dataStorageMode;
   private int restApiPort;
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
   private String restApiInterface;
-  private List<String> restApiHostWhitelist;
+  private List<String> restApiHostAllowlist;
   private NetworkDefinition network;
   private Bytes32 graffiti;
 
@@ -316,8 +316,8 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setMetricsHostWhitelist(final List<String> metricsHostWhitelist) {
-    this.metricsHostWhitelist = metricsHostWhitelist;
+  public TekuConfigurationBuilder setMetricsHostAllowlist(final List<String> metricsHostAllowlist) {
+    this.metricsHostAllowlist = metricsHostAllowlist;
     return this;
   }
 
@@ -351,8 +351,8 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setRestApiHostWhitelist(final List<String> restApiHostWhitelist) {
-    this.restApiHostWhitelist = restApiHostWhitelist;
+  public TekuConfigurationBuilder setRestApiHostAllowlist(final List<String> restApiHostAllowlist) {
+    this.restApiHostAllowlist = restApiHostAllowlist;
     return this;
   }
 
@@ -434,14 +434,14 @@ public class TekuConfigurationBuilder {
         metricsPort,
         metricsInterface,
         metricsCategories,
-        metricsHostWhitelist,
+        metricsHostAllowlist,
         dataPath,
         dataStorageMode,
         restApiPort,
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface,
-        restApiHostWhitelist,
+        restApiHostAllowlist,
         graffiti);
   }
 
