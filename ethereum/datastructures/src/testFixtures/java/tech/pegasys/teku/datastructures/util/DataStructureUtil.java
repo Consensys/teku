@@ -213,7 +213,8 @@ public final class DataStructureUtil {
   }
 
   public AttesterSlashing randomAttesterSlashing() {
-    return new AttesterSlashing(randomIndexedAttestation(), randomIndexedAttestation());
+    IndexedAttestation attestation = randomIndexedAttestation();
+    return new AttesterSlashing(attestation, attestation);
   }
 
   public List<SignedBeaconBlock> randomSignedBeaconBlockSequence(
