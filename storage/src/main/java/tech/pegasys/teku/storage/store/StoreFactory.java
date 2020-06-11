@@ -79,7 +79,7 @@ public abstract class StoreFactory {
     final SignedBeaconBlock finalizedBlock = blocks.get(finalized_checkpoint.getRoot());
     final BlockTree tree =
         BlockTree.builder().rootBlock(finalizedBlock).blocks(blocks.values()).build();
-    final StateGenerator stateGenerator = new StateGenerator(tree, latestFinalizedBlockState);
+    final StateGenerator stateGenerator = StateGenerator.create(tree, latestFinalizedBlockState);
     final StateProvider stateProvider = stateGenerator::regenerateAllStates;
 
     if (tree.getBlockCount() < blocks.size()) {
