@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.protoarray;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
@@ -31,4 +33,19 @@ public class StubForkChoiceStrategy implements ForkChoiceStrategy {
 
   @Override
   public void onBlock(final ReadOnlyStore store, final BeaconBlock block) {}
+
+  @Override
+  public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Bytes32> blockParentRoot(Bytes32 blockRoot) {
+    return Optional.empty();
+  }
+
+  @Override
+  public boolean contains(Bytes32 blockRoot) {
+    return false;
+  }
 }
