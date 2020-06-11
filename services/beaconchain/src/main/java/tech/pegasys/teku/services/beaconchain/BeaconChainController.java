@@ -515,7 +515,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       this.eventBus.post(new BroadcastAggregatesEvent(nodeSlot.getValue()));
       nodeSlot.inc();
     } catch (InterruptedException e) {
-      LOG.error("onTick: {}", e.toString(), e);
+      LOG.debug("onTick: {}", e.toString(), e);
     }
   }
 
