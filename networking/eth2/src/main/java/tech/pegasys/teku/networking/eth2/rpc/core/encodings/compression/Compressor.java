@@ -57,6 +57,8 @@ public interface Compressor {
   Optional<ByteBuf> uncompress(final ByteBuf input, final int uncompressedPayloadSize)
       throws CompressionException;
 
+  void uncompressComplete() throws CompressionException;
+
   /**
    * Returns a maximum estimate of the size of a compressed payload given the uncompressed payload
    * size.

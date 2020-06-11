@@ -53,6 +53,11 @@ public class NoopCompressor implements Compressor {
   }
 
   @Override
+  public void uncompressComplete() throws CompressionException {
+    decoder.complete();
+  }
+
+  @Override
   public int getMaxCompressedLength(final int uncompressedLength) {
     return uncompressedLength;
   }

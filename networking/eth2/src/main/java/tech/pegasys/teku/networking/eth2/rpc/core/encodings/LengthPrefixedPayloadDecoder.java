@@ -78,6 +78,9 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
     if (varIntDecoder != null) {
       varIntDecoder.complete();
     }
+
+    compressor.uncompressComplete();
+
     if (payloadLength.isPresent()) {
       // the chunk was not completely read
       throw RpcException.PAYLOAD_TRUNCATED();

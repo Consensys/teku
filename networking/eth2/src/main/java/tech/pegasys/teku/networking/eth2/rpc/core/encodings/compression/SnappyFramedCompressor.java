@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.util.ReferenceCounted;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -25,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.SnappyFramedOutputStream;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
 /** Implements snappy compression using the "framed" / streaming format. */
 public class SnappyFramedCompressor implements Compressor {
@@ -77,6 +79,17 @@ public class SnappyFramedCompressor implements Compressor {
     }
 
     return Optional.empty();
+  }
+
+  @Override
+  public void uncompressComplete() throws CompressionException {
+    boolean unreturnedFrames = !decodedSnappyFrames.isEmpty();
+    decodedSnappyFrames.forEach(ReferenceCounted::release);
+    decodedSnappyFrames.clear();
+    snappyFrameDecoder.complete();
+    if (unreturnedFrames) {
+      throw new PayloadSmallerThanExpectedException("Unread uncompressed frames on complete");
+    }
   }
 
   @Override
