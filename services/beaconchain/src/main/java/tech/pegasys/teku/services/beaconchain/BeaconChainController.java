@@ -31,6 +31,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,6 +47,9 @@ import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransition
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -65,6 +70,8 @@ import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesE
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
+import tech.pegasys.teku.statetransition.operationpools.OperationPool;
+import tech.pegasys.teku.statetransition.operationpools.OperationPools;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
@@ -123,6 +130,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationManager attestationManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
+  private volatile OperationPools operationPools;
 
   private SyncStateTracker syncStateTracker;
 
@@ -200,6 +208,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
+    initOperationPools();
     initStateTransition();
     initForkChoice();
     initBlockImporter();
@@ -215,6 +224,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncStateTracker();
     initValidatorApiHandler();
     initRestAPI();
+  }
+
+  private void initOperationPools() {
+    LOG.debug("BeaconChainController.initOperationPools()");
+    operationPools = new OperationPools();
   }
 
   private void initCombinedChainDataClient() {
