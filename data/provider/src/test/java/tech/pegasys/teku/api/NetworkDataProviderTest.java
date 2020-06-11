@@ -21,19 +21,19 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public class NetworkDataProviderTest {
 
   @SuppressWarnings("unchecked")
-  private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
+  private final Eth2Network p2pNetwork = mock(Eth2Network.class);
 
   @Test
   void getPeerCount_shouldReturnTotalPeers() {
     final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final Peer peer1 = mock(Peer.class);
-    final Peer peer2 = mock(Peer.class);
+    final Eth2Peer peer1 = mock(Eth2Peer.class);
+    final Eth2Peer peer2 = mock(Eth2Peer.class);
     when(p2pNetwork.streamPeers()).thenReturn(Stream.of(peer1, peer2));
 
     assertThat(network.getPeerCount()).isEqualTo(2);

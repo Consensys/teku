@@ -84,7 +84,7 @@ public class GenesisCommand {
     @Option(
         names = {"-o", "--output-file"},
         paramLabel = "<FILENAME>",
-        description = "Path/filename of the output file")
+        description = "Path/filename of the output file\nDefault: stdout")
     private String outputFile = null;
 
     @Option(

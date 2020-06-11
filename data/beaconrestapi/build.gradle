@@ -4,7 +4,7 @@ dependencies {
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
     implementation project(':logging')
-    implementation project(':networking:p2p')
+    implementation project(':networking:eth2')
     implementation project(':services:serviceutils')
     implementation project(':storage')
     implementation project(':sync')

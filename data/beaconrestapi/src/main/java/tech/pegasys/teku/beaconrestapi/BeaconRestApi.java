@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static tech.pegasys.teku.beaconrestapi.HostWhitelistUtils.isHostAuthorized;
+import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
 
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
@@ -56,6 +56,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation;
@@ -75,22 +76,23 @@ public class BeaconRestApi {
   private void initialize(final DataProvider dataProvider, final TekuConfiguration configuration) {
     app.server().setServerPort(configuration.getRestApiPort());
 
-    addHostWhitelistHandler(configuration);
+    addHostAllowlistHandler(configuration);
 
     addExceptionHandlers();
     addAdminHandlers();
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
+    addV1NodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
   }
 
-  private void addHostWhitelistHandler(final TekuConfiguration configuration) {
+  private void addHostAllowlistHandler(final TekuConfiguration configuration) {
     app.before(
         (ctx) -> {
           String header = ctx.host();
-          if (!isHostAuthorized(configuration.getRestApiHostWhitelist(), header)) {
+          if (!isHostAuthorized(configuration.getRestApiHostAllowlist(), header)) {
             LOG.debug("Host not authorized " + header);
             throw new ForbiddenResponse("Host not authorized");
           }
@@ -184,6 +186,13 @@ public class BeaconRestApi {
 
   private void addAdminHandlers() {
     app.put(PutLogLevel.ROUTE, new PutLogLevel(jsonProvider));
+  }
+
+  private void addV1NodeHandlers(final DataProvider provider) {
+    app.get(GetIdentity.ROUTE, new GetIdentity(provider, jsonProvider));
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion(jsonProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {

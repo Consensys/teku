@@ -22,8 +22,7 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetListenPortTest {
@@ -31,15 +30,15 @@ public class GetListenPortTest {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @SuppressWarnings("unchecked")
-  private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
+  private final Eth2Network eth2Network = mock(Eth2Network.class);
 
   @Test
   public void shouldReturnListenPort() throws Exception {
-    NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    NetworkDataProvider network = new NetworkDataProvider(eth2Network);
     final int port = 9876;
     final GetListenPort handler = new GetListenPort(network, jsonProvider);
 
-    when(p2pNetwork.getListenPort()).thenReturn(port);
+    when(eth2Network.getListenPort()).thenReturn(port);
     handler.handle(context);
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(jsonProvider.objectToJSON(port));

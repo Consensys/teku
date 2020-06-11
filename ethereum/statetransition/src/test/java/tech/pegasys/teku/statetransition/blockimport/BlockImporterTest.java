@@ -266,9 +266,9 @@ public class BlockImporterTest {
     }
     // Update finalized epoch
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
-    final UnsignedLong bestEpoch = compute_epoch_at_slot(recentChainData.getBestSlot());
-    final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
+    final Bytes32 finalizedRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UnsignedLong finalizedEpoch = UnsignedLong.ONE;
+    final Checkpoint finalized = new Checkpoint(finalizedEpoch, finalizedRoot);
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
 
@@ -280,7 +280,7 @@ public class BlockImporterTest {
         otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));
 
     final BlockImportResult result = blockImporter.importBlock(block);
-    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
+    assertImportFailed(result, FailureReason.UNKNOWN_PARENT);
   }
 
   @Test

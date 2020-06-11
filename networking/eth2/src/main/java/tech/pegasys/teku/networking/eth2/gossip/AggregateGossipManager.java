@@ -27,6 +27,7 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 public class AggregateGossipManager {
   private final GossipEncoding gossipEncoding;
   private final TopicChannel channel;
+  private final SignedAggregateAndProofValidator validator;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -36,6 +37,7 @@ public class AggregateGossipManager {
       final ForkInfo forkInfo,
       final SignedAggregateAndProofValidator validator,
       final GossipedAttestationConsumer gossipedAttestationConsumer) {
+    this.validator = validator;
     this.gossipEncoding = gossipEncoding;
     final AggregateAttestationTopicHandler aggregateAttestationTopicHandler =
         new AggregateAttestationTopicHandler(
@@ -49,6 +51,7 @@ public class AggregateGossipManager {
     if (!validateableAttestation.isAggregate() || !validateableAttestation.markGossiped()) {
       return;
     }
+    validator.addSeenAggregate(validateableAttestation);
     final Bytes data = gossipEncoding.encode(validateableAttestation.getSignedAggregateAndProof());
     channel.gossip(data);
   }

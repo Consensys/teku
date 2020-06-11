@@ -314,6 +314,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
             validatorOptions.getValidatorExternalSignerPublicKeys())
         .setValidatorExternalSignerUrl(validatorOptions.getValidatorExternalSignerUrl())
         .setValidatorExternalSignerTimeout(validatorOptions.getValidatorExternalSignerTimeout())
+        .setGraffiti(validatorOptions.getGraffiti())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
         .setEth1Endpoint(depositOptions.getEth1Endpoint())
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())
@@ -332,14 +333,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
-        .setMetricsHostWhitelist(metricsOptions.getMetricsHostWhitelist())
+        .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
         .setDataPath(dataOptions.getDataPath())
         .setDataStorageMode(dataOptions.getDataStorageMode())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
-        .setRestApiHostWhitelist(beaconRestApiOptions.getRestApiHostWhitelist())
+        .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
         .build();
   }
 }

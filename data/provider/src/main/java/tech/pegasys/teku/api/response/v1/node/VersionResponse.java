@@ -11,21 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.results;
+package tech.pegasys.teku.api.response.v1.node;
 
-import java.util.function.Supplier;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public enum AttestationProcessingResult {
-  SUCCESSFUL,
-  UNKNOWN_BLOCK,
-  SAVED_FOR_FUTURE,
-  INVALID;
+public class VersionResponse {
+  public final Version data;
 
-  public AttestationProcessingResult ifSuccessful(Supplier<AttestationProcessingResult> nextStep) {
-    return isSuccessful() ? nextStep.get() : this;
-  }
-
-  public boolean isSuccessful() {
-    return this == SUCCESSFUL;
+  @JsonCreator
+  public VersionResponse(@JsonProperty("data") final Version data) {
+    this.data = data;
   }
 }

@@ -20,6 +20,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_p
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
@@ -222,12 +223,22 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
-    attestationManager.onAttestation(ValidateableAttestation.fromSingle(attestation));
+    attestationManager
+        .onAttestation(ValidateableAttestation.fromAttestation(attestation))
+        .ifInvalid(
+            reason ->
+                VALIDATOR_LOGGER.producedInvalidAttestation(
+                    attestation.getData().getSlot(), reason));
   }
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    attestationManager.onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof));
+    attestationManager
+        .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof))
+        .ifInvalid(
+            reason ->
+                VALIDATOR_LOGGER.producedInvalidAggregate(
+                    aggregateAndProof.getMessage().getAggregate().getData().getSlot(), reason));
   }
 
   @Override

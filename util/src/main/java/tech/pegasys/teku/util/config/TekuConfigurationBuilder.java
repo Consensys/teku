@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class TekuConfigurationBuilder {
   private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
@@ -65,15 +66,16 @@ public class TekuConfigurationBuilder {
   private int metricsPort;
   private String metricsInterface;
   private List<String> metricsCategories;
-  private List<String> metricsHostWhitelist;
+  private List<String> metricsHostAllowlist;
   private String dataPath;
   private StateStorageMode dataStorageMode;
   private int restApiPort;
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
   private String restApiInterface;
-  private List<String> restApiHostWhitelist;
+  private List<String> restApiHostAllowlist;
   private NetworkDefinition network;
+  private Bytes32 graffiti;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -314,8 +316,8 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setMetricsHostWhitelist(final List<String> metricsHostWhitelist) {
-    this.metricsHostWhitelist = metricsHostWhitelist;
+  public TekuConfigurationBuilder setMetricsHostAllowlist(final List<String> metricsHostAllowlist) {
+    this.metricsHostAllowlist = metricsHostAllowlist;
     return this;
   }
 
@@ -349,8 +351,13 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setRestApiHostWhitelist(final List<String> restApiHostWhitelist) {
-    this.restApiHostWhitelist = restApiHostWhitelist;
+  public TekuConfigurationBuilder setRestApiHostAllowlist(final List<String> restApiHostAllowlist) {
+    this.restApiHostAllowlist = restApiHostAllowlist;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setGraffiti(final Bytes32 graffiti) {
+    this.graffiti = graffiti;
     return this;
   }
 
@@ -427,14 +434,15 @@ public class TekuConfigurationBuilder {
         metricsPort,
         metricsInterface,
         metricsCategories,
-        metricsHostWhitelist,
+        metricsHostAllowlist,
         dataPath,
         dataStorageMode,
         restApiPort,
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface,
-        restApiHostWhitelist);
+        restApiHostAllowlist,
+        graffiti);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

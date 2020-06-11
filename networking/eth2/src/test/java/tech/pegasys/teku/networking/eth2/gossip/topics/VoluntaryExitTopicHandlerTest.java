@@ -16,10 +16,11 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 
 import com.google.common.eventbus.EventBus;
+import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,28 +58,28 @@ public class VoluntaryExitTopicHandlerTest {
   public void handleMessage_validExit() {
     final SignedVoluntaryExit exit =
         exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
-    when(validator.validate(exit)).thenReturn(VALID);
+    when(validator.validate(exit)).thenReturn(ACCEPT);
     Bytes serialized = gossipEncoding.encode(exit);
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(true);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Valid);
   }
 
   @Test
   public void handleMessage_invalidExit() {
     final SignedVoluntaryExit exit =
         exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
-    when(validator.validate(exit)).thenReturn(INVALID);
+    when(validator.validate(exit)).thenReturn(IGNORE);
     Bytes serialized = gossipEncoding.encode(exit);
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Ignore);
   }
 
   @Test
   public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Invalid);
   }
 
   @Test

@@ -40,9 +40,27 @@ dependencyManagement {
     dependency 'org.webjars:swagger-ui:3.24.3'
     dependency 'io.github.classgraph:classgraph:4.8.34'
 
+    dependencySet(group: 'io.netty', version: '4.1.50.Final') {
+      entry 'netty-all'
+    }
+
     dependencySet(group: 'io.vertx', version: '3.8.3') {
       entry 'vertx-codegen'
-      entry 'vertx-core'
+      entry('vertx-core') {
+        // We include netty-all so omit the separated jars
+        exclude 'io.netty:netty-common'
+        exclude 'io.netty:netty-transport'
+        exclude 'io.netty:netty-buffer'
+        exclude 'io.netty:netty-resolver'
+        exclude 'io.netty:netty-resolver-dns'
+        exclude 'io.netty:netty-handler'
+        exclude 'io.netty:netty-codec'
+        exclude 'io.netty:netty-codec-dns'
+        exclude 'io.netty:netty-codec-socks'
+        exclude 'io.netty:netty-codec-http'
+        exclude 'io.netty:netty-codec-http2'
+        exclude 'io.netty:netty-handler-proxy'
+      }
       entry 'vertx-unit'
       entry 'vertx-web'
     }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -20,7 +21,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
@@ -42,26 +43,28 @@ public class VoluntaryExitTopicHandler implements Eth2TopicHandler<SignedVolunta
   }
 
   @Override
-  public boolean handleMessage(final Bytes bytes) {
+  public ValidationResult handleMessage(final Bytes bytes) {
     try {
       SignedVoluntaryExit signedVoluntaryExit = deserialize(bytes);
-      final ValidationResult validationResult = validateData(signedVoluntaryExit);
-      switch (validationResult) {
-        case INVALID:
+      final InternalValidationResult internalValidationResult = validateData(signedVoluntaryExit);
+      switch (internalValidationResult) {
+        case REJECT:
+        case IGNORE:
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
-          return false;
-        case VALID:
-          return true;
+          break;
+        case ACCEPT:
+          break;
         default:
           throw new UnsupportedOperationException(
-              "Unexpected validation result: " + validationResult);
+              "Unexpected validation result: " + internalValidationResult);
       }
+      return internalValidationResult.getGossipSubValidationResult();
     } catch (DecodingException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
-      return false;
+      return ValidationResult.Invalid;
     } catch (Throwable e) {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
-      return false;
+      return ValidationResult.Invalid;
     }
   }
 
@@ -85,7 +88,7 @@ public class VoluntaryExitTopicHandler implements Eth2TopicHandler<SignedVolunta
     return forkDigest;
   }
 
-  protected ValidationResult validateData(final SignedVoluntaryExit signedVoluntaryExit) {
+  protected InternalValidationResult validateData(final SignedVoluntaryExit signedVoluntaryExit) {
     return validator.validate(signedVoluntaryExit);
   }
 }

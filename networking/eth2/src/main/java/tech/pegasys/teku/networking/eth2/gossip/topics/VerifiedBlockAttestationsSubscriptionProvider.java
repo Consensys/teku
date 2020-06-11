@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-public enum ValidationResult {
-  VALID,
-  SAVED_FOR_FUTURE,
-  INVALID
+import tech.pegasys.teku.statetransition.blockimport.VerifiedBlockAttestationsListener;
+
+public interface VerifiedBlockAttestationsSubscriptionProvider {
+  void subscribe(VerifiedBlockAttestationsListener verifiedBlockAttestationsListener);
 }

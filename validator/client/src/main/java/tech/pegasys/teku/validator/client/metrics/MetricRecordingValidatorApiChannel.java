@@ -137,8 +137,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UnsignedLong slot, final BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
     return countRequest(
-        delegate.createUnsignedBlock(slot, randaoReveal, Optional.empty()),
-        unsignedBlockRequestsCounter);
+        delegate.createUnsignedBlock(slot, randaoReveal, graffiti), unsignedBlockRequestsCounter);
   }
 
   @Override

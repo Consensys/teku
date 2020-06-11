@@ -18,6 +18,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
+import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -42,6 +43,11 @@ class BeaconChainEventAdapter implements SlotEventsChannel, ReorgEventChannel {
   @Subscribe
   public void onAggregationEvent(BroadcastAggregatesEvent event) {
     validatorTimingChannel.onAttestationAggregationDue(event.getSlot());
+  }
+
+  @Subscribe
+  public void onImportedBlockEvent(ImportedBlockEvent event) {
+    validatorTimingChannel.onBlockImportedForSlot(event.getBlock().getSlot());
   }
 
   @Override

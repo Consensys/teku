@@ -85,7 +85,7 @@ class MatchingDataAttestationGroupTest {
 
     final Attestation expected =
         aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation());
-    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.fromSingle(expected));
+    assertThat(group).containsExactlyInAnyOrder(ValidateableAttestation.fromAttestation(expected));
   }
 
   @Test
@@ -96,7 +96,7 @@ class MatchingDataAttestationGroupTest {
 
     assertThat(group)
         .containsExactly(
-            ValidateableAttestation.fromSingle(
+            ValidateableAttestation.fromAttestation(
                 aggregateAttestations(
                     bigAttestation.getAttestation(), littleAttestation.getAttestation())),
             mediumAttestation);
@@ -127,7 +127,7 @@ class MatchingDataAttestationGroupTest {
   private ValidateableAttestation createAttestation(final int... validators) {
     final Bitlist aggregationBits = new Bitlist(10, MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(aggregationBits::setBit);
-    return ValidateableAttestation.fromSingle(
+    return ValidateableAttestation.fromAttestation(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
   }
 }
