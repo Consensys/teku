@@ -63,13 +63,12 @@ public class MetricsOptions {
   private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
 
   @Option(
-      names = {"--metrics-host-whitelist"},
+      names = {"--metrics-host-allowlist", "--metrics-host-whitelist"},
       paramLabel = "<hostname>",
-      description =
-          "Comma separated list of hostnames to whitelist for access, or * to accept any host",
+      description = "Comma separated list of hostnames to allow, or * to allow any host",
       split = ",",
       arity = "0..*")
-  private final List<String> metricsHostWhitelist = Arrays.asList("127.0.0.1", "localhost");
+  private final List<String> metricsHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
 
   public boolean isMetricsEnabled() {
     return metricsEnabled;
@@ -87,7 +86,7 @@ public class MetricsOptions {
     return metricsCategories.stream().map(Object::toString).collect(Collectors.toList());
   }
 
-  public List<String> getMetricsHostWhitelist() {
-    return metricsHostWhitelist;
+  public List<String> getMetricsHostAllowlist() {
+    return metricsHostAllowlist;
   }
 }
