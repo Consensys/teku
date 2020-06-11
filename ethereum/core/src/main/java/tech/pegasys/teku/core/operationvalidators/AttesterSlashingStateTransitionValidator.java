@@ -37,10 +37,9 @@ public class AttesterSlashingStateTransitionValidator {
 
   private List<UnsignedLong> indicesToSlash;
 
-  public Optional<OperationInvalidReason> validateSlashing(
-      final BeaconState state,
-      final AttesterSlashing attesterSlashing,
-      final Optional<Set<UnsignedLong>> intersectingIndices) {
+  private Optional<OperationInvalidReason> validateSlashing(
+          final BeaconState state,
+          final AttesterSlashing attesterSlashing) {
     indicesToSlash = new ArrayList<>();
     IndexedAttestation attestation_1 = attesterSlashing.getAttestation_1();
     IndexedAttestation attestation_2 = attesterSlashing.getAttestation_2();
@@ -60,16 +59,9 @@ public class AttesterSlashingStateTransitionValidator {
         () -> {
           boolean slashed_any = false;
 
-          Set<UnsignedLong> indices =
-              intersectingIndices.orElse(
-                  Sets.intersection(
-                      new TreeSet<>(
-                          attestation_1
-                              .getAttesting_indices()
-                              .asList()), // TreeSet as must be sorted
-                      new HashSet<>(attestation_2.getAttesting_indices().asList())));
+          Set<UnsignedLong> intersectingIndices = attesterSlashing.getIntersectingValidatorIndices();
 
-          for (UnsignedLong index : indices) {
+          for (UnsignedLong index : intersectingIndices) {
             if (is_slashable_validator(
                 state.getValidators().get(toIntExact(index.longValue())),
                 get_current_epoch(state))) {
@@ -80,11 +72,6 @@ public class AttesterSlashingStateTransitionValidator {
 
           return check(slashed_any, AttesterSlashingInvalidReason.NO_ONE_SLASHED);
         });
-  }
-
-  public Optional<OperationInvalidReason> validateSlashing(
-      final BeaconState state, final AttesterSlashing attesterSlashing) {
-    return validateSlashing(state, attesterSlashing, Optional.empty());
   }
 
   public List<UnsignedLong> getIndicesToSlash() {
