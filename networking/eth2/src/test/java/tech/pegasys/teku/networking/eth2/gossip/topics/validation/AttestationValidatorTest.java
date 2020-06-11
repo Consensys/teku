@@ -276,16 +276,18 @@ class AttestationValidatorTest {
     final int expectedSubnetId = CommitteeUtil.getSubnetId(attestation);
     assertThat(
             validator.validate(
-                ValidateableAttestation.fromSingle(attestation), expectedSubnetId + 1))
+                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId + 1))
         .isEqualTo(REJECT);
     assertThat(
-            validator.validate(ValidateableAttestation.fromSingle(attestation), expectedSubnetId))
+            validator.validate(
+                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
         .isEqualTo(ACCEPT);
   }
 
   private InternalValidationResult validate(final Attestation attestation) {
     return validator.validate(
-        ValidateableAttestation.fromSingle(attestation), CommitteeUtil.getSubnetId(attestation));
+        ValidateableAttestation.fromAttestation(attestation),
+        CommitteeUtil.getSubnetId(attestation));
   }
 
   private boolean hasSameValidators(final Attestation attestation1, final Attestation attestation) {

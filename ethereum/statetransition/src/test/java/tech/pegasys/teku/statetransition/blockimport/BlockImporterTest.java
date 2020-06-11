@@ -53,15 +53,15 @@ public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
+  private final ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
   private final BeaconChainUtil localChain =
-      BeaconChainUtil.create(recentChainData, validatorKeys, false);
+      BeaconChainUtil.create(recentChainData, validatorKeys, forkChoice, false);
 
   private final EventBus otherEventBus = mock(EventBus.class);
   private final RecentChainData otherStorage = MemoryOnlyRecentChainData.create(otherEventBus);
   private final BeaconChainUtil otherChain =
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
-  private final ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
   private final BlockImporter blockImporter =
       new BlockImporter(recentChainData, forkChoice, localEventBus);
 
@@ -266,9 +266,9 @@ public class BlockImporterTest {
     }
     // Update finalized epoch
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    final Bytes32 bestRoot = recentChainData.getBestBlockRoot().orElseThrow();
-    final UnsignedLong bestEpoch = compute_epoch_at_slot(recentChainData.getBestSlot());
-    final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
+    final Bytes32 finalizedRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UnsignedLong finalizedEpoch = UnsignedLong.ONE;
+    final Checkpoint finalized = new Checkpoint(finalizedEpoch, finalizedRoot);
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
 
@@ -280,7 +280,7 @@ public class BlockImporterTest {
         otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));
 
     final BlockImportResult result = blockImporter.importBlock(block);
-    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
+    assertImportFailed(result, FailureReason.UNKNOWN_PARENT);
   }
 
   @Test

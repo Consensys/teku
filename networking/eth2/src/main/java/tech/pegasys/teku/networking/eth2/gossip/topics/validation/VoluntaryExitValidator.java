@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static tech.pegasys.teku.core.BlockProcessorUtil.verify_voluntary_exits;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
@@ -25,10 +24,11 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.core.BlockVoluntaryExitValidator;
+import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
+import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
+import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
@@ -40,10 +40,16 @@ public class VoluntaryExitValidator {
   private final Set<UnsignedLong> receivedValidExitSet =
       ConcurrentLimitedSet.create(
           VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-  private final BlockVoluntaryExitValidator validator = new BlockVoluntaryExitValidator();
+  private final VoluntaryExitStateTransitionValidator stateTransitionValidator;
+  private final VoluntaryExitSignatureVerifier signatureVerifier;
 
-  public VoluntaryExitValidator(RecentChainData recentChainData) {
+  public VoluntaryExitValidator(
+      RecentChainData recentChainData,
+      VoluntaryExitStateTransitionValidator stateTransitionValidator,
+      VoluntaryExitSignatureVerifier signatureVerifier) {
     this.recentChainData = recentChainData;
+    this.stateTransitionValidator = stateTransitionValidator;
+    this.signatureVerifier = signatureVerifier;
   }
 
   public InternalValidationResult validate(SignedVoluntaryExit exit) {
@@ -72,17 +78,19 @@ public class VoluntaryExitValidator {
                 () ->
                     new IllegalStateException(
                         "Unable to get best state for voluntary exit processing."));
-    Optional<BlockVoluntaryExitValidator.ExitInvalidReason> invalidReason =
-        validator.validateExit(state, exit);
+
+    Optional<OperationInvalidReason> invalidReason =
+        stateTransitionValidator.validateExit(state, exit);
+    stateTransitionValidator.validateExit(state, exit);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
           "VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
-          invalidReason.map(BlockVoluntaryExitValidator.ExitInvalidReason::describe).orElse(""));
+          invalidReason.get().describe());
       return false;
     }
 
-    if (!verify_voluntary_exits(state, SSZList.singleton(exit), BLSSignatureVerifier.SIMPLE)) {
+    if (!signatureVerifier.verifySignature(state, exit, BLSSignatureVerifier.SIMPLE)) {
       LOG.trace("VoluntaryExitValidator: Exit fails signature verification.");
       return false;
     }

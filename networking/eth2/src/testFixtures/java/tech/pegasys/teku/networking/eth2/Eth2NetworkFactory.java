@@ -40,6 +40,7 @@ import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.blockimport.VerifiedBlockAttestationsListener;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -89,6 +91,8 @@ public class Eth2NetworkFactory {
     protected RecentChainData recentChainData;
     protected GossipedAttestationConsumer gossipedAttestationConsumer;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
+    protected VerifiedBlockAttestationsSubscriptionProvider
+        verifiedBlockAttestationsSubscriptionProvider;
     protected Function<RpcMethod, Stream<RpcMethod>> rpcMethodsModifier = Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
@@ -177,7 +181,8 @@ public class Eth2NetworkFactory {
             gossipEncoding,
             attestationSubnetService,
             gossipedAttestationConsumer,
-            processedAttestationSubscriptionProvider);
+            processedAttestationSubscriptionProvider,
+            verifiedBlockAttestationsSubscriptionProvider);
       }
     }
 
@@ -227,6 +232,10 @@ public class Eth2NetworkFactory {
         Subscribers<ProcessedAttestationListener> subscribers = Subscribers.create(false);
         processedAttestationSubscriptionProvider = subscribers::subscribe;
       }
+      if (verifiedBlockAttestationsSubscriptionProvider == null) {
+        Subscribers<VerifiedBlockAttestationsListener> subscribers = Subscribers.create(false);
+        verifiedBlockAttestationsSubscriptionProvider = subscribers::subscribe;
+      }
     }
 
     public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
@@ -269,6 +278,15 @@ public class Eth2NetworkFactory {
         final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
       checkNotNull(processedAttestationSubscriptionProvider);
       this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder verifiedBlockAttestationsSubscriptionProvider(
+        final VerifiedBlockAttestationsSubscriptionProvider
+            verifiedBlockAttestationsSubscriptionProvider) {
+      checkNotNull(verifiedBlockAttestationsSubscriptionProvider);
+      this.verifiedBlockAttestationsSubscriptionProvider =
+          verifiedBlockAttestationsSubscriptionProvider;
       return this;
     }
 

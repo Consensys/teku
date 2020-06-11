@@ -21,7 +21,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
-public class RestApiHostWhitelistIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
   public void shouldReturnForbiddenIfHostNotAuthorized() throws Exception {
@@ -29,7 +29,7 @@ public class RestApiHostWhitelistIntegrationTest extends AbstractDataBackedRestA
         TekuConfiguration.builder()
             .setRestApiPort(0)
             .setRestApiDocsEnabled(false)
-            .setRestApiHostWhitelist(List.of("not.authorized.host"))
+            .setRestApiHostAllowlist(List.of("not.authorized.host"))
             .build();
     startPreGenesisRestAPIWithConfig(config);
 
