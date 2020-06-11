@@ -37,7 +37,7 @@ public class AttesterSlashingStateTransitionValidator {
 
   private List<UnsignedLong> indicesToSlash;
 
-  private Optional<OperationInvalidReason> validateSlashing(
+  public Optional<OperationInvalidReason> validateSlashing(
           final BeaconState state,
           final AttesterSlashing attesterSlashing) {
     indicesToSlash = new ArrayList<>();

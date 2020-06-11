@@ -57,10 +57,9 @@ public class AttesterSlashingValidatorTest {
   @Test
   public void shouldAcceptValidAttesterSlashing() throws Exception {
     beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(stateTransitionValidator.validateSlashing(
-            eq(recentChainData.getBestState().orElseThrow()), eq(slashing), any()))
+            recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
     assertThat(attesterSlashingValidator.validate(slashing)).isEqualTo(ACCEPT);
   }
@@ -68,10 +67,9 @@ public class AttesterSlashingValidatorTest {
   @Test
   public void shouldRejectInvalidAttesterSlashing() throws Exception {
     beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(stateTransitionValidator.validateSlashing(
-            eq(recentChainData.getBestState().orElseThrow()), eq(slashing), any()))
+            recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(
             Optional.of(
                 AttesterSlashingStateTransitionValidator.AttesterSlashingInvalidReason
@@ -82,7 +80,6 @@ public class AttesterSlashingValidatorTest {
   @Test
   public void shouldIgnoreAttesterSlashingForTheSameAttesters() throws Exception {
     beaconChainUtil.initializeStorage();
-    beaconChainUtil.createAndImportBlockAtSlot(6);
     AttesterSlashing slashing1 = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing slashing2 =
         new AttesterSlashing(slashing1.getAttestation_1(), slashing1.getAttestation_2());

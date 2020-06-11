@@ -52,17 +52,16 @@ public class AttesterSlashingValidator {
   }
 
   public InternalValidationResult validate(AttesterSlashing slashing) {
-    Set<UnsignedLong> intersectingIndices = getIntersectingIndices(slashing);
-    if (!includesUnseenIndexToSlash(intersectingIndices)) {
+    if (!includesUnseenIndexToSlash(slashing.getIntersectingValidatorIndices())) {
       LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
       return IGNORE;
     }
 
-    if (!passesProcessAttesterSlashingConditions(slashing, intersectingIndices)) {
+    if (!passesProcessAttesterSlashingConditions(slashing)) {
       return REJECT;
     }
 
-    if (seenIndices.addAll(intersectingIndices)) {
+    if (seenIndices.addAll(slashing.getIntersectingValidatorIndices())) {
       return ACCEPT;
     } else {
       LOG.trace("AttesterSlashingValidator: Slashing is not the first one for any validator.");
@@ -71,7 +70,7 @@ public class AttesterSlashingValidator {
   }
 
   private boolean passesProcessAttesterSlashingConditions(
-      AttesterSlashing slashing, Set<UnsignedLong> intersectingIndices) {
+      AttesterSlashing slashing) {
     BeaconState state =
         recentChainData
             .getBestState()
@@ -80,7 +79,7 @@ public class AttesterSlashingValidator {
                     new IllegalStateException(
                         "Unable to get best state for attester slashing processing."));
     Optional<OperationInvalidReason> invalidReason =
-        transitionValidator.validateSlashing(state, slashing, Optional.of(intersectingIndices));
+        transitionValidator.validateSlashing(state, slashing);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
@@ -89,15 +88,6 @@ public class AttesterSlashingValidator {
       return false;
     }
     return true;
-  }
-
-  private Set<UnsignedLong> getIntersectingIndices(AttesterSlashing attesterSlashing) {
-    IndexedAttestation attestation_1 = attesterSlashing.getAttestation_1();
-    IndexedAttestation attestation_2 = attesterSlashing.getAttestation_2();
-
-    return Sets.intersection(
-        new TreeSet<>(attestation_1.getAttesting_indices().asList()), // TreeSet as must be sorted
-        new HashSet<>(attestation_2.getAttesting_indices().asList()));
   }
 
   private boolean includesUnseenIndexToSlash(Set<UnsignedLong> intersectingIndices) {
