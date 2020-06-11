@@ -41,7 +41,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.operationstatetransitionvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;

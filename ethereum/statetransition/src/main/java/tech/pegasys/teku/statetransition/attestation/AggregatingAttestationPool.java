@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.operationstatetransitionvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.operations.Attestation;

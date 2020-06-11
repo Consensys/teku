@@ -25,7 +25,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.core.operationstatetransitionvalidators.VoluntaryExitStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;

@@ -1,4 +1,4 @@
-package tech.pegasys.teku.core.operationstatetransitionvalidators;
+package tech.pegasys.teku.core.operationvalidators;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 

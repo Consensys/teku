@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.operationstatetransitionvalidators;
+package tech.pegasys.teku.core.operationvalidators;
 
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.core.operationstatetransitionvalidators.OperationInvalidReason.check;
-import static tech.pegasys.teku.core.operationstatetransitionvalidators.OperationInvalidReason.firstOf;
+import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.check;
+import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.firstOf;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -23,9 +23,7 @@ import static tech.pegasys.teku.util.config.Constants.PERSISTENT_COMMITTEE_PERIO
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-import javax.annotation.CheckReturnValue;
+
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
