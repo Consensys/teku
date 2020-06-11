@@ -62,7 +62,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       TekuConfiguration.builder()
           .setRestApiPort(0)
           .setRestApiDocsEnabled(false)
-          .setRestApiHostWhitelist(List.of("127.0.0.1", "localhost"))
+          .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
   protected static final UnsignedLong SIX = UnsignedLong.valueOf(6);
