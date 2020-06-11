@@ -24,9 +24,9 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
-import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -79,8 +79,9 @@ public class VoluntaryExitValidator {
                     new IllegalStateException(
                         "Unable to get best state for voluntary exit processing."));
 
-    Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validateExit(state, exit);
+    Optional<OperationInvalidReason> invalidReason =
         stateTransitionValidator.validateExit(state, exit);
+    stateTransitionValidator.validateExit(state, exit);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
