@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
+import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -37,7 +38,7 @@ public class ProposerSlashingValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
-  private final Set<UnsignedLong> receivedValidExitSet =
+  private final Set<UnsignedLong> receivedValidSlashingForProposerSet =
       ConcurrentLimitedSet.create(
           VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final ProposerSlashingStateTransitionValidator transitionValidator;
@@ -62,7 +63,7 @@ public class ProposerSlashingValidator {
       return REJECT;
     }
 
-    if (receivedValidExitSet.add(slashing.getHeader_1().getMessage().getProposer_index())) {
+    if (receivedValidSlashingForProposerSet.add(slashing.getHeader_1().getMessage().getProposer_index())) {
       return ACCEPT;
     } else {
       LOG.trace("ProposerSlashingValidator: Slashing is not the first one for the given validator.");
@@ -78,13 +79,13 @@ public class ProposerSlashingValidator {
                 () ->
                     new IllegalStateException(
                         "Unable to get best state for proposer slashing processing."));
-    Optional<ProposerSlashingInvalidReason> invalidReason =
+    Optional<OperationInvalidReason> invalidReason =
         transitionValidator.validateSlashing(state, slashing);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
           "ProposerSlashingValidator: Slashing fails process proposer slashing conditions {}.",
-          invalidReason.map(ProposerSlashingInvalidReason::describe).orElse(""));
+          invalidReason.get().describe());
       return false;
     }
 
@@ -96,6 +97,6 @@ public class ProposerSlashingValidator {
   }
 
   private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {
-    return !receivedValidExitSet.contains(slashing.getHeader_1().getMessage().getProposer_index());
+    return !receivedValidSlashingForProposerSet.contains(slashing.getHeader_1().getMessage().getProposer_index());
   }
 }
