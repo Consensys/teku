@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.bls.mikuli.G1Point;
 import tech.pegasys.teku.bls.mikuli.PublicKey;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
@@ -119,6 +120,10 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   public PublicKey getPublicKey() {
     return publicKey;
+  }
+
+  public G1Point getPoint() {
+    return publicKey.g1Point();
   }
 
   /**
