@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -27,20 +28,24 @@ public class Eth1StatusLogger {
   private final AtomicBoolean timerActive = new AtomicBoolean(false);
   private Instant startInstant;
   private ScheduledExecutorService executor;
+  private ScheduledFuture<?> scheduledFuture;
 
   private void start() {
     this.startInstant = Instant.now();
     this.timerActive.set(true);
     this.executor = Executors.newScheduledThreadPool(1);
-    executor.scheduleAtFixedRate(
-        () ->
-            STATUS_LOG.eth1ServiceDown(Duration.between(startInstant, Instant.now()).getSeconds()),
-        LOG_INTERVAL,
-        LOG_INTERVAL,
-        TimeUnit.MILLISECONDS);
+    scheduledFuture =
+        executor.scheduleAtFixedRate(
+            () ->
+                STATUS_LOG.eth1ServiceDown(
+                    Duration.between(startInstant, Instant.now()).getSeconds()),
+            LOG_INTERVAL,
+            LOG_INTERVAL,
+            TimeUnit.MILLISECONDS);
   }
 
   private void stop() {
+    this.scheduledFuture.isCancelled();
     this.executor.shutdownNow();
     this.executor = null;
     this.timerActive.set(false);
