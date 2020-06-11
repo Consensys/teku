@@ -17,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.netty.buffer.ByteBuf;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -26,14 +27,14 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
 
   @Test
   public void shouldParseSingleResponseReceivedInSinglePacket() throws Exception {
-    for (Iterable<ByteBuf> bufSlices : testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA)) {
-      RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder =
-          METHOD.createRequestDecoder();
+    List<List<ByteBuf>> testByteBufSlices = testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA);
 
-      Optional<BeaconBlocksByRootRequestMessage> msgMaybe = Optional.empty();
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder = METHOD.createRequestDecoder();
+
+      List<BeaconBlocksByRootRequestMessage> msgs = new ArrayList<>();
       for (ByteBuf bufSlice : bufSlices) {
-        assertThat(msgMaybe).isEmpty();
-        msgMaybe = decoder.decodeRequest(bufSlice);
+        decoder.decodeRequest(bufSlice).ifPresent(msgs::add);
         bufSlice.release();
       }
       decoder.complete();
@@ -41,14 +42,18 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
         assertThat(bufSlice.refCnt()).isEqualTo(0);
       }
 
-      assertThat(msgMaybe).hasValue(MESSAGE);
+      assertThat(msgs).containsExactly(MESSAGE);
     }
   }
 
   @Test
-  public void shouldThrowErrorIfMessagesHaveTrailingData()  throws Exception {
-    for (Iterable<ByteBuf> bufSlices :
-        testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA, Bytes.fromHexString("0x1234"))) {
+  public void shouldThrowErrorIfMessagesHaveTrailingData() throws Exception {
+    List<List<ByteBuf>> testByteBufSlices =
+        testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA, Bytes.fromHexString("0x1234"));
+    //    testByteBufSlices = testByteBufSlices.subList(8, 9);
+
+    for (int i = 0; i < testByteBufSlices.size(); i++) {
+      List<ByteBuf> bufSlices = testByteBufSlices.get(i);
 
       RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder = METHOD.createRequestDecoder();
 
@@ -60,6 +65,6 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
                 decoder.complete();
               })
           .isEqualTo(RpcException.EXTRA_DATA_APPENDED);
-      }
+    }
   }
 }
