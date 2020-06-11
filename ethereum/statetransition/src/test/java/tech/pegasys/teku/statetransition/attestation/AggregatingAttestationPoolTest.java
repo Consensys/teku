@@ -27,8 +27,8 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.BlockAttestationDataValidator;
-import tech.pegasys.teku.core.BlockAttestationDataValidator.AttestationInvalidReason;
+import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator.AttestationInvalidReason;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -41,8 +41,8 @@ class AggregatingAttestationPoolTest {
 
   public static final UnsignedLong SLOT = UnsignedLong.valueOf(1234);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final BlockAttestationDataValidator attestationDataValidator =
-      mock(BlockAttestationDataValidator.class);
+  private final AttestationDataStateTransitionValidator attestationDataValidator =
+      mock(AttestationDataStateTransitionValidator.class);
 
   private final AggregatingAttestationPool aggregatingPool =
       new AggregatingAttestationPool(attestationDataValidator);

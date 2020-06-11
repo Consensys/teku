@@ -29,7 +29,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.process_depo
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.slash_validator;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
@@ -41,7 +40,6 @@ import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -50,13 +48,15 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
-import tech.pegasys.teku.core.BlockAttestationDataValidator.AttestationInvalidReason;
-import tech.pegasys.teku.core.BlockVoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
+import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
+import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -248,48 +248,34 @@ public final class BlockProcessorUtil {
   public static void process_proposer_slashings(
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
-    try {
-      process_proposer_slashings_no_validation(state, proposerSlashings);
-      verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
-    } catch (InvalidSignatureException e) {
-      throw new BlockProcessingException(e);
+    process_proposer_slashings_no_validation(state, proposerSlashings);
+    boolean signaturesValid =
+        verify_proposer_slashings(state, proposerSlashings, BLSSignatureVerifier.SIMPLE);
+    if (!signaturesValid) {
+      throw new BlockProcessingException("Slashing signature is invalid");
     }
   }
 
   public static void process_proposer_slashings_no_validation(
       MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
       throws BlockProcessingException {
+    ProposerSlashingStateTransitionValidator validator =
+        new ProposerSlashingStateTransitionValidator();
+
     try {
       // For each proposer_slashing in block.body.proposer_slashings:
-      for (ProposerSlashing proposer_slashing : proposerSlashings) {
-        final BeaconBlockHeader header1 = proposer_slashing.getHeader_1().getMessage();
-        final BeaconBlockHeader header2 = proposer_slashing.getHeader_2().getMessage();
-
+      for (ProposerSlashing proposerSlashing : proposerSlashings) {
+        Optional<OperationInvalidReason> invalidReason =
+            validator.validateSlashing(state, proposerSlashing);
         checkArgument(
-            header1.getSlot().equals(header2.getSlot()),
-            "process_proposer_slashings: Verify header slots match");
+            invalidReason.isEmpty(),
+            "process_proposer_slashings: %s",
+            invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-        checkArgument(
-            header1.getProposer_index().equals(header2.getProposer_index()),
-            "process_proposer_slashings: Verify header proposer indices match");
-
-        checkArgument(
-            !Objects.equals(proposer_slashing.getHeader_1(), proposer_slashing.getHeader_2()),
-            "process_proposer_slashings: Verify the headers are different");
-
-        checkArgument(
-            UnsignedLong.valueOf(state.getValidators().size())
-                    .compareTo(header1.getProposer_index())
-                > 0,
-            "process_proposer_slashings: Invalid proposer index");
-
-        final Validator proposer =
-            state.getValidators().get(toIntExact(header1.getProposer_index().longValue()));
-        checkArgument(
-            is_slashable_validator(proposer, get_current_epoch(state)),
-            "process_proposer_slashings: Verify the proposer is slashable");
-
-        slash_validator(state, toIntExact(header1.getProposer_index().longValue()));
+        slash_validator(
+            state,
+            toIntExact(
+                proposerSlashing.getHeader_1().getMessage().getProposer_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -297,41 +283,24 @@ public final class BlockProcessorUtil {
     }
   }
 
-  public static void verify_proposer_slashings(
+  public static boolean verify_proposer_slashings(
       BeaconState state,
       SSZList<ProposerSlashing> proposerSlashings,
-      BLSSignatureVerifier signatureVerifier)
-      throws BlockProcessingException, InvalidSignatureException {
+      BLSSignatureVerifier signatureVerifier) {
+    ProposerSlashingSignatureVerifier slashingSignatureVerifier =
+        new ProposerSlashingSignatureVerifier();
 
     // For each proposer_slashing in block.body.proposer_slashings:
-    for (ProposerSlashing proposer_slashing : proposerSlashings) {
-      final BeaconBlockHeader header1 = proposer_slashing.getHeader_1().getMessage();
-      final BeaconBlockHeader header2 = proposer_slashing.getHeader_2().getMessage();
-      BLSPublicKey publicKey =
-          BeaconStateCache.getTransitionCaches(state)
-              .getValidatorsPubKeys()
-              .get(
-                  header1.getProposer_index(),
-                  idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
+    for (ProposerSlashing proposerSlashing : proposerSlashings) {
 
-      if (!BLS.verify(
-          publicKey,
-          compute_signing_root(
-              header1,
-              get_domain(state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header1.getSlot()))),
-          proposer_slashing.getHeader_1().getSignature())) {
-        throw new BlockProcessingException(
-            "process_proposer_slashings: Verify signatures are valid 1");
+      boolean slashingSignatureValid =
+          slashingSignatureVerifier.verifySignature(state, proposerSlashing, signatureVerifier);
+      if (!slashingSignatureValid) {
+        LOG.trace("Proposer slashing signature is invalid {}", proposerSlashing);
+        return false;
       }
-
-      signatureVerifier.verifyAndThrow(
-          publicKey,
-          compute_signing_root(
-              header2,
-              get_domain(state, DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(header2.getSlot()))),
-          proposer_slashing.getHeader_2().getSignature(),
-          "process_proposer_slashings: Verify signatures are valid 2");
     }
+    return true;
   }
 
   /**
@@ -413,16 +382,17 @@ public final class BlockProcessorUtil {
   public static void process_attestations_no_validation(
       MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
-      final BlockAttestationDataValidator validator = new BlockAttestationDataValidator();
+      final AttestationDataStateTransitionValidator validator =
+          new AttestationDataStateTransitionValidator();
 
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
-        final Optional<AttestationInvalidReason> invalidReason =
+        final Optional<OperationInvalidReason> invalidReason =
             validator.validateAttestation(state, data);
         checkArgument(
             invalidReason.isEmpty(),
             "process_attestations: %s",
-            invalidReason.map(AttestationInvalidReason::describe).orElse(""));
+            invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
         List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
         checkArgument(
@@ -499,8 +469,8 @@ public final class BlockProcessorUtil {
       throws BlockProcessingException {
 
     process_voluntary_exits_no_validation(state, exits);
-    boolean signatureValid = verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
-    if (!signatureValid) {
+    boolean signaturesValid = verify_voluntary_exits(state, exits, BLSSignatureVerifier.SIMPLE);
+    if (!signaturesValid) {
       throw new BlockProcessingException("Exit signature is invalid");
     }
   }
@@ -508,16 +478,16 @@ public final class BlockProcessorUtil {
   public static void process_voluntary_exits_no_validation(
       MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
-    BlockVoluntaryExitValidator validator = new BlockVoluntaryExitValidator();
+    VoluntaryExitStateTransitionValidator validator = new VoluntaryExitStateTransitionValidator();
     try {
 
       // For each exit in block.body.voluntaryExits:
       for (SignedVoluntaryExit signedExit : exits) {
-        Optional<ExitInvalidReason> invalidReason = validator.validateExit(state, signedExit);
+        Optional<OperationInvalidReason> invalidReason = validator.validateExit(state, signedExit);
         checkArgument(
             invalidReason.isEmpty(),
             "process_voluntary_exits: %s",
-            invalidReason.map(ExitInvalidReason::describe).orElse(""));
+            invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
         // - Run initiate_validator_exit(state, exit.validator_index)
         initiate_validator_exit(

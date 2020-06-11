@@ -76,10 +76,8 @@ public class AttestationSubnetSubscriptionsTest {
   void shouldSubscribeToCommitteesOnDifferentSubnets() {
     TopicChannel topicChannel1 = mock(TopicChannel.class);
     TopicChannel topicChannel2 = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("beacon_attestation_1"), any()))
-        .thenReturn(topicChannel1);
-    when(gossipNetwork.subscribe(contains("beacon_attestation_2"), any()))
-        .thenReturn(topicChannel2);
+    when(gossipNetwork.subscribe(contains("committee_index1"), any())).thenReturn(topicChannel1);
+    when(gossipNetwork.subscribe(contains("committee_index2"), any())).thenReturn(topicChannel2);
 
     int COMMITTEE_INDEX_1 = 1;
     int COMMITTEE_INDEX_2 = 2;
@@ -89,8 +87,8 @@ public class AttestationSubnetSubscriptionsTest {
 
     verifyNoInteractions(topicChannel2);
 
-    verify(gossipNetwork).subscribe(argThat(i -> i.contains("beacon_attestation_1")), any());
-    verify(gossipNetwork).subscribe(argThat(i -> i.contains("beacon_attestation_2")), any());
+    verify(gossipNetwork).subscribe(argThat(i -> i.contains("committee_index1")), any());
+    verify(gossipNetwork).subscribe(argThat(i -> i.contains("committee_index2")), any());
 
     assertThat(subnetSubscriptions.getChannel(COMMITTEE_INDEX_1))
         .isEqualTo(Optional.of(topicChannel1));
@@ -101,7 +99,7 @@ public class AttestationSubnetSubscriptionsTest {
   @Test
   void shouldUnsubscribeFromOnlyCommitteeOnSubnet() {
     TopicChannel topicChannel = mock(TopicChannel.class);
-    when(gossipNetwork.subscribe(contains("beacon_attestation_1"), any())).thenReturn(topicChannel);
+    when(gossipNetwork.subscribe(contains("committee_index1"), any())).thenReturn(topicChannel);
 
     int COMMITTEE_INDEX_1 = 1;
 

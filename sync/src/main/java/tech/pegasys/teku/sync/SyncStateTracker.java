@@ -15,6 +15,8 @@ package tech.pegasys.teku.sync;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -22,6 +24,7 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class SyncStateTracker extends Service {
+  private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final SyncService syncService;
   private final P2PNetwork<? extends Peer> network;
@@ -69,9 +72,14 @@ public class SyncStateTracker extends Service {
 
   @Override
   protected synchronized SafeFuture<?> doStart() {
+    LOG.debug(
+        "Starting sync state tracker with initial state: {}, target peer count: {}, startup timeout: {}",
+        currentState,
+        startupTargetPeerCount,
+        startupTimeout);
     peerConnectedSubscriptionId = network.subscribeConnect(peer -> onPeerConnected());
     asyncRunner
-        .runAfterDelay(this::markStartupComplete, startupTimeout.toMillis(), TimeUnit.MILLISECONDS)
+        .runAfterDelay(this::onStartupTimeout, startupTimeout.toMillis(), TimeUnit.MILLISECONDS)
         .reportExceptions();
     syncSubscriptionId = syncService.subscribeToSyncChanges(this::onSyncingChanged);
     return SafeFuture.COMPLETE;
@@ -85,18 +93,27 @@ public class SyncStateTracker extends Service {
   }
 
   private synchronized void onSyncingChanged(final boolean active) {
-    startingUp = false;
     syncActive = active;
     updateCurrentState();
   }
 
   private synchronized void markStartupComplete() {
     startingUp = false;
+    network.unsubscribeConnect(peerConnectedSubscriptionId);
     updateCurrentState();
+  }
+
+  private synchronized void onStartupTimeout() {
+    if (!startingUp) {
+      return;
+    }
+    LOG.debug("Startup timeout reached");
+    markStartupComplete();
   }
 
   private synchronized void onPeerConnected() {
     if (network.getPeerCount() >= startupTargetPeerCount) {
+      LOG.debug("Target peer count ({}) was reached", startupTargetPeerCount);
       markStartupComplete();
     }
   }
