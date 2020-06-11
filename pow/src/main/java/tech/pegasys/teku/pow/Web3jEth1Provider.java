@@ -62,7 +62,7 @@ public class Web3jEth1Provider implements Eth1Provider {
         .exceptionallyCompose(
             (err) -> {
               LOG.debug("Retrying Eth1 request for block: {}", blockHash, err);
-              eth1StatusLogger.incrementFail();
+              eth1StatusLogger.fail();
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
@@ -76,7 +76,7 @@ public class Web3jEth1Provider implements Eth1Provider {
         .exceptionallyCompose(
             (err) -> {
               LOG.debug("Retrying Eth1 request for block: {}", blockNumber, err);
-              eth1StatusLogger.incrementFail();
+              eth1StatusLogger.fail();
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)

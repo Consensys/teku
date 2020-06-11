@@ -15,51 +15,47 @@ package tech.pegasys.teku.pow;
 
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Eth1StatusLogger {
-  private final AtomicBoolean timerActive = new AtomicBoolean();
-  private final AtomicInteger failCount = new AtomicInteger(0);
-  private final long interval;
-  private final TimerTask timerTask;
-  private Timer timer;
-
-  public Eth1StatusLogger(final long interval) {
-    this.interval = interval;
-    this.timerTask =
-        new TimerTask() {
-          @Override
-          public void run() {
-            if (failCount.get() > 1) {
-              STATUS_LOG.eth1ServiceDown(Eth1StatusLogger.this.interval);
-              failCount.set(0);
-            } else {
-              stop();
-            }
-          }
-        };
-  }
+  private static final int LOG_INTERVAL = 30000;
+  private final AtomicBoolean timerActive = new AtomicBoolean(false);
+  private Instant startInstant;
+  private ScheduledExecutorService executor;
 
   private void start() {
-    this.timer = new Timer();
-    this.timer.scheduleAtFixedRate(timerTask, interval / 2, interval);
+    this.startInstant = Instant.now();
     this.timerActive.set(true);
+    this.executor = Executors.newScheduledThreadPool(1);
+    executor.scheduleAtFixedRate(
+        () ->
+            STATUS_LOG.eth1ServiceDown(Duration.between(startInstant, Instant.now()).getSeconds()),
+        LOG_INTERVAL,
+        LOG_INTERVAL,
+        TimeUnit.MILLISECONDS);
   }
 
   private void stop() {
-    this.timer.cancel();
+    this.executor.shutdownNow();
+    this.executor = null;
     this.timerActive.set(false);
-    this.failCount.set(0);
-    this.timer = null;
+    this.startInstant = null;
   }
 
-  synchronized void incrementFail() {
+  synchronized void fail() {
     if (!this.timerActive.get()) {
       start();
     }
-    failCount.incrementAndGet();
+  }
+
+  synchronized void success() {
+    if (this.timerActive.get()) {
+      stop();
+    }
   }
 }

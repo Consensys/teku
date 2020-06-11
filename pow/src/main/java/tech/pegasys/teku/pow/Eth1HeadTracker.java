@@ -34,7 +34,7 @@ public class Eth1HeadTracker {
   private final Eth1Provider eth1Provider;
   private Optional<UnsignedLong> headAtFollowDistance = Optional.empty();
   private final Eth1StatusLogger eth1StatusLogger;
-  private boolean reachedHead;
+  private final AtomicBoolean reachedHead = new AtomicBoolean(false);
 
   private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.create(true);
 
@@ -64,7 +64,7 @@ public class Eth1HeadTracker {
         .exceptionally(
             error -> {
               LOG.debug("Failed to get latest ETH1 chain head. Will retry.", error);
-              eth1StatusLogger.incrementFail();
+              eth1StatusLogger.fail();
               return null;
             })
         .always(
@@ -90,9 +90,9 @@ public class Eth1HeadTracker {
     if (headAtFollowDistance
         .map(current -> current.compareTo(newHeadAtFollowDistance) < 0)
         .orElse(true)) {
-      if (!reachedHead) {
+      if (!reachedHead.get()) {
         STATUS_LOG.eth1AtHead();
-        reachedHead = true;
+        reachedHead.set(true);
       }
       headAtFollowDistance = Optional.of(newHeadAtFollowDistance);
       LOG.debug("ETH1 block at follow distance updated to {}", newHeadAtFollowDistance);

@@ -102,7 +102,7 @@ public class DepositFetcher {
                   fromBlockNumber,
                   toBlockNumber,
                   err);
-              eth1StatusLogger.incrementFail();
+              eth1StatusLogger.fail();
 
               return asyncRunner.runAfterDelay(
                   () -> getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber),

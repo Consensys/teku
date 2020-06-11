@@ -152,7 +152,7 @@ public class Eth1DepositManager {
                   err.getMessage(),
                   Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
                   err);
-              eth1StatusLogger.incrementFail();
+              eth1StatusLogger.fail();
 
               return asyncRunner
                   .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
