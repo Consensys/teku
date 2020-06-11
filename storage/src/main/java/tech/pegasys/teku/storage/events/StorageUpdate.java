@@ -14,12 +14,12 @@
 package tech.pegasys.teku.storage.events;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -27,11 +27,10 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 public class StorageUpdate {
 
   private final Optional<UnsignedLong> genesisTime;
+  private final Optional<FinalizedChainData> finalizedChainData;
   private final Optional<Checkpoint> justifiedCheckpoint;
-  private final Optional<Checkpoint> finalizedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
-  private final Map<Bytes32, SignedBlockAndState> finalizedChainData;
   private final Map<Checkpoint, BeaconState> checkpointStates;
   private final Map<UnsignedLong, VoteTracker> votes;
   private final Set<Checkpoint> deletedCheckpointStates;
@@ -39,22 +38,20 @@ public class StorageUpdate {
 
   public StorageUpdate(
       final Optional<UnsignedLong> genesisTime,
+      final Optional<FinalizedChainData> finalizedChainData,
       final Optional<Checkpoint> justifiedCheckpoint,
-      final Optional<Checkpoint> finalizedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
       final Set<Bytes32> deletedHotBlocks,
-      final Map<Bytes32, SignedBlockAndState> finalizedChainData,
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Set<Checkpoint> deletedCheckpointStates,
       final Map<UnsignedLong, VoteTracker> votes) {
     this.genesisTime = genesisTime;
+    this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
-    this.finalizedCheckpoint = finalizedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
     this.deletedHotBlocks = deletedHotBlocks;
-    this.finalizedChainData = finalizedChainData;
     this.checkpointStates = checkpointStates;
     this.deletedCheckpointStates = deletedCheckpointStates;
     this.votes = votes;
@@ -63,11 +60,10 @@ public class StorageUpdate {
   public boolean isEmpty() {
     return genesisTime.isEmpty()
         && justifiedCheckpoint.isEmpty()
-        && finalizedCheckpoint.isEmpty()
+        && finalizedChainData.isEmpty()
         && bestJustifiedCheckpoint.isEmpty()
         && hotBlocks.isEmpty()
         && deletedHotBlocks.isEmpty()
-        && finalizedChainData.isEmpty()
         && checkpointStates.isEmpty()
         && deletedCheckpointStates.isEmpty()
         && votes.isEmpty();
@@ -82,7 +78,7 @@ public class StorageUpdate {
   }
 
   public Optional<Checkpoint> getFinalizedCheckpoint() {
-    return finalizedCheckpoint;
+    return finalizedChainData.map(FinalizedChainData::getFinalizedCheckpoint);
   }
 
   public Optional<Checkpoint> getBestJustifiedCheckpoint() {
@@ -97,8 +93,16 @@ public class StorageUpdate {
     return deletedHotBlocks;
   }
 
-  public Map<Bytes32, SignedBlockAndState> getFinalizedBlocksAndStates() {
-    return finalizedChainData;
+  public Map<Bytes32, SignedBeaconBlock> getFinalizedBlocks() {
+    return finalizedChainData.map(FinalizedChainData::getBlocks).orElse(Collections.emptyMap());
+  }
+
+  public Map<Bytes32, BeaconState> getFinalizedStates() {
+    return finalizedChainData.map(FinalizedChainData::getStates).orElse(Collections.emptyMap());
+  }
+
+  public Optional<BeaconState> getLatestFinalizedState() {
+    return finalizedChainData.map(FinalizedChainData::getLatestFinalizedState);
   }
 
   public Map<Checkpoint, BeaconState> getCheckpointStates() {

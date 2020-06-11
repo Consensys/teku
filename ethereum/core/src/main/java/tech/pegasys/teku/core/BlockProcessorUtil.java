@@ -30,7 +30,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.slash_valida
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_RANDAO;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
@@ -48,11 +47,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
+import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
@@ -68,9 +67,7 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
@@ -503,20 +500,9 @@ public final class BlockProcessorUtil {
       BeaconState state,
       SSZList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
+    VoluntaryExitSignatureVerifier verifier = new VoluntaryExitSignatureVerifier();
     for (SignedVoluntaryExit signedExit : exits) {
-      final VoluntaryExit exit = signedExit.getMessage();
-
-      BLSPublicKey publicKey =
-          BeaconStateCache.getTransitionCaches(state)
-              .getValidatorsPubKeys()
-              .get(
-                  exit.getValidator_index(),
-                  idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
-
-      final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
-      final Bytes signing_root = compute_signing_root(exit, domain);
-      boolean exitSignatureValid =
-          signatureVerifier.verify(publicKey, signing_root, signedExit.getSignature());
+      boolean exitSignatureValid = verifier.verifySignature(state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         LOG.trace("Exit signature is invalid {}", signedExit);
         return false;
