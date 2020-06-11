@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.protoarray;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
@@ -135,9 +134,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     protoArray.onBlock(
         block.getSlot(),
         blockRoot,
-        store.getBlockRoots().contains(block.getParent_root())
-            ? Optional.of(block.getParent_root())
-            : Optional.empty(),
+        block.getParent_root(),
         block.getState_root(),
         store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
         store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
@@ -166,7 +163,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     protoArrayLock.writeLock().lock();
     try {
       protoArray.onBlock(
-          blockSlot, blockRoot, Optional.of(parentRoot), stateRoot, justifiedEpoch, finalizedEpoch);
+          blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
     } finally {
       protoArrayLock.writeLock().unlock();
     }
@@ -216,7 +213,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
-  public boolean containsBlock(Bytes32 blockRoot) {
+  @Override
+  public boolean contains(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return protoArray.getIndices().containsKey(blockRoot);
@@ -225,25 +223,35 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
+  @Override
   public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
-    return blockSlotAndStateRoot(blockRoot).map(BlockSlotAndStateRoot::getBlockSlot);
-  }
-
-  public Optional<BlockSlotAndStateRoot> blockSlotAndStateRoot(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      int blockIndex =
-          checkNotNull(
-              protoArray.getIndices().get(blockRoot), "ProtoArrayForkChoice: Unknown block root");
-      if (blockIndex >= protoArray.getNodes().size()) {
-        return Optional.empty();
-      } else {
-        ProtoNode node = protoArray.getNodes().get(blockIndex);
-        return Optional.of(new BlockSlotAndStateRoot(node.getBlockSlot(), node.getStateRoot()));
-      }
+      return getProtoNode(blockRoot).map(ProtoNode::getBlockSlot);
     } finally {
       protoArrayLock.readLock().unlock();
     }
+  }
+
+  @Override
+  public Optional<Bytes32> blockParentRoot(Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  private Optional<ProtoNode> getProtoNode(Bytes32 blockRoot) {
+    return Optional.ofNullable(protoArray.getIndices().get(blockRoot))
+        .flatMap(
+            blockIndex -> {
+              if (blockIndex < protoArray.getNodes().size()) {
+                return Optional.of(protoArray.getNodes().get(blockIndex));
+              }
+              return Optional.empty();
+            });
   }
 
   /**
@@ -327,23 +335,5 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       }
     }
     return deltas;
-  }
-
-  public static class BlockSlotAndStateRoot {
-    private final UnsignedLong blockSlot;
-    private final Bytes32 stateRoot;
-
-    public BlockSlotAndStateRoot(UnsignedLong blockSlot, Bytes32 stateRoot) {
-      this.blockSlot = blockSlot;
-      this.stateRoot = stateRoot;
-    }
-
-    public UnsignedLong getBlockSlot() {
-      return blockSlot;
-    }
-
-    public Bytes32 getStateRoot() {
-      return stateRoot;
-    }
   }
 }
