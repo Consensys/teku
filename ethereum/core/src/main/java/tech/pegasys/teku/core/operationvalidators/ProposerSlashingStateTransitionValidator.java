@@ -73,6 +73,7 @@ public class ProposerSlashingStateTransitionValidator {
       this.description = description;
     }
 
+    @Override
     public String describe() {
       return description;
     }

@@ -90,6 +90,7 @@ public class AttestationDataStateTransitionValidator {
       this.description = description;
     }
 
+    @Override
     public String describe() {
       return description;
     }

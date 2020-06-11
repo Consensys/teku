@@ -81,6 +81,7 @@ public class VoluntaryExitStateTransitionValidator {
       this.description = description;
     }
 
+    @Override
     public String describe() {
       return description;
     }
