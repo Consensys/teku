@@ -23,7 +23,6 @@ import static tech.pegasys.teku.util.config.Constants.PERSISTENT_COMMITTEE_PERIO
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;

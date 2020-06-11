@@ -54,12 +54,9 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
-import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator.AttestationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
-import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
-import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator.ExitInvalidReason;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
@@ -268,8 +265,8 @@ public final class BlockProcessorUtil {
     try {
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposerSlashing : proposerSlashings) {
-        Optional<OperationInvalidReason>
-            invalidReason = validator.validateSlashing(state, proposerSlashing);
+        Optional<OperationInvalidReason> invalidReason =
+            validator.validateSlashing(state, proposerSlashing);
         checkArgument(
             invalidReason.isEmpty(),
             "process_proposer_slashings: %s",

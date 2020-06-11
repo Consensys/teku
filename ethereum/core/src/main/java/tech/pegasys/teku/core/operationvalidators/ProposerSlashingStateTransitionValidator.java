@@ -22,7 +22,6 @@ import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import java.util.Optional;
-
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;

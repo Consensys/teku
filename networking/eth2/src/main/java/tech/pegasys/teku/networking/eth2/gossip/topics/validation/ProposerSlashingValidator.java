@@ -27,7 +27,6 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
-import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -55,7 +54,8 @@ public class ProposerSlashingValidator {
 
   public InternalValidationResult validate(ProposerSlashing slashing) {
     if (!isFirstValidSlashingForValidator(slashing)) {
-      LOG.trace("ProposerSlashingValidator: Slashing is not the first one for the given validator.");
+      LOG.trace(
+          "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
       return IGNORE;
     }
 
@@ -63,10 +63,12 @@ public class ProposerSlashingValidator {
       return REJECT;
     }
 
-    if (receivedValidSlashingForProposerSet.add(slashing.getHeader_1().getMessage().getProposer_index())) {
+    if (receivedValidSlashingForProposerSet.add(
+        slashing.getHeader_1().getMessage().getProposer_index())) {
       return ACCEPT;
     } else {
-      LOG.trace("ProposerSlashingValidator: Slashing is not the first one for the given validator.");
+      LOG.trace(
+          "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
       return IGNORE;
     }
   }
@@ -97,6 +99,7 @@ public class ProposerSlashingValidator {
   }
 
   private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {
-    return !receivedValidSlashingForProposerSet.contains(slashing.getHeader_1().getMessage().getProposer_index());
+    return !receivedValidSlashingForProposerSet.contains(
+        slashing.getHeader_1().getMessage().getProposer_index());
   }
 }
