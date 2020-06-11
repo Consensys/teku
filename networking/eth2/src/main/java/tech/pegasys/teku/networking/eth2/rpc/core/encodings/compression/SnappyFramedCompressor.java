@@ -35,7 +35,9 @@ public class SnappyFramedCompressor implements Compressor {
   // https://github.com/google/snappy/blob/251d935d5096da77c4fef26ea41b019430da5572/framing_format.txt#L104-L106
   static final int MAX_FRAME_CONTENT_SIZE = 65536;
   private SnappyFrameDecoder snappyFrameDecoder = new SnappyFrameDecoder();
+  private int frameCompressedSize = 0;
   private List<ByteBuf> decodedSnappyFrames = new ArrayList<>();
+  private boolean broken = false;
 
   @Override
   public Bytes compress(final Bytes data) {
@@ -53,14 +55,28 @@ public class SnappyFramedCompressor implements Compressor {
   @Override
   public synchronized Optional<ByteBuf> uncompress(ByteBuf input, int uncompressedPayloadSize)
       throws CompressionException {
+    if (broken) {
+      throw new CompressionException("Compressed stream is broken");
+    }
+
     while (true) {
+      try {
       Optional<ByteBuf> byteBuf;
       try {
+        frameCompressedSize += input.readableBytes();
+        if (frameCompressedSize > getMaxCompressedLength(uncompressedPayloadSize)) {
+          throw new CompressionException(
+              "Total compressed frame size exceeded upper boundary for Snappy format: "
+                  + frameCompressedSize
+                  + ">"
+                  + getMaxCompressedLength(uncompressedPayloadSize));
+        }
         byteBuf = snappyFrameDecoder.decodeOneMessage(input);
       } catch (Exception e) {
         throw new CompressionException("Error in Snappy decompressor", e);
       }
       if (byteBuf.isEmpty()) break;
+      frameCompressedSize = 0;
       decodedSnappyFrames.add(byteBuf.get());
       int decodedFramesLength = decodedSnappyFrames.stream().mapToInt(ByteBuf::readableBytes).sum();
       if (decodedFramesLength == uncompressedPayloadSize) {
@@ -75,6 +91,15 @@ public class SnappyFramedCompressor implements Compressor {
                 + decodedFramesLength
                 + " while expecting "
                 + uncompressedPayloadSize);
+      }
+      } catch (Exception e) {
+        broken = true;
+        try {
+          snappyFrameDecoder.complete();
+        } catch (Exception ex) {}
+        decodedSnappyFrames.forEach(ReferenceCounted::release);
+        decodedSnappyFrames.clear();
+        throw e;
       }
     }
 
