@@ -594,7 +594,7 @@ class Store implements UpdatableStore {
 
     @Override
     public UnsignedLong getLatestFinalizedBlockSlot() {
-      return getBlock(getFinalizedCheckpoint().getRoot()).getSlot();
+      return getLatestFinalizedBlockAndState().getSlot();
     }
 
     @Override
