@@ -21,11 +21,11 @@ public interface RpcEncoding {
 
   RpcEncoding SSZ =
           new LengthPrefixedEncoding(
-              "ssz", RpcPayloadEncoders.createSszEncoders(), new NoopCompressor());
+              "ssz", RpcPayloadEncoders.createSszEncoders(), NoopCompressor::new);
 
   RpcEncoding SSZ_SNAPPY =
           new LengthPrefixedEncoding(
-              "ssz_snappy", RpcPayloadEncoders.createSszEncoders(), new SnappyFramedCompressor());
+              "ssz_snappy", RpcPayloadEncoders.createSszEncoders(), SnappyFramedCompressor::new);
 
   /**
    * Encodes a payload with its encoding-dependent header

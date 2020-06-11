@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -38,7 +39,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
 
   private final String name;
   private final RpcPayloadEncoders payloadEncoders;
-  private final Compressor compressor;
+  private final Supplier<Compressor> compressor;
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   private static <T> RpcByteBufDecoder<T>  getEmptyMessageDecoder() {
@@ -46,7 +47,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   }
 
   LengthPrefixedEncoding(
-      final String name, final RpcPayloadEncoders payloadEncoders, final Compressor compressor) {
+      final String name, final RpcPayloadEncoders payloadEncoders, final Supplier<Compressor> compressor) {
     this.name = name;
     this.payloadEncoders = payloadEncoders;
     this.compressor = compressor;
@@ -69,14 +70,14 @@ public class LengthPrefixedEncoding implements RpcEncoding {
     if (payloadType.equals(EmptyMessage.class)) {
       return getEmptyMessageDecoder();
     } else {
-      return new LengthPrefixedPayloadDecoder<>(payloadEncoders.getEncoder(payloadType), compressor);
+      return new LengthPrefixedPayloadDecoder<>(payloadEncoders.getEncoder(payloadType), compressor.get());
     }
   }
 
   private Bytes encodeMessageWithLength(final Bytes payload) {
     final Bytes header = ProtobufEncoder.encodeVarInt(payload.size());
     final Bytes compressedPayload;
-    compressedPayload = compressor.compress(payload);
+    compressedPayload = compressor.get().compress(payload);
     return Bytes.concatenate(header, compressedPayload);
   }
 
