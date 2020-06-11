@@ -98,7 +98,10 @@ public class BeaconBlocksByRangeMessageHandler
 
   private SafeFuture<RequestState> sendNextBlock(final RequestState requestState) {
     SafeFuture<Optional<SignedBeaconBlock>> blockFuture = loadNextBlock(requestState);
-    // Avoid risk of
+    // Avoid risk of StackOverflowException by iterating when the block future is already complete
+    // Using thenCompose on the completed future would execute immediately and recurse back into
+    // this method to send the next block.  When not already complete, thenCompose is executed
+    // on a separate thread so doesn't recurse on the same stack.
     while (blockFuture.isDone() && !blockFuture.isCompletedExceptionally()) {
       final boolean complete = handleLoadedBlock(requestState, blockFuture.join());
       if (complete) {
