@@ -292,7 +292,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setMetricsInterface("127.0.0.1")
         .setMetricsCategories(
             Arrays.asList("BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"))
-        .setMetricsHostWhitelist(List.of("127.0.0.1", "localhost"))
+        .setMetricsHostAllowlist(List.of("127.0.0.1", "localhost"))
         .setLogColorEnabled(true)
         .setLogDestination(DEFAULT_BOTH)
         .setLogFile(DEFAULT_LOG_FILE)
@@ -307,7 +307,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
         .setRestApiInterface("127.0.0.1")
-        .setRestApiHostWhitelist(List.of("127.0.0.1", "localhost"));
+        .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"));
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
