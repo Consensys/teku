@@ -19,11 +19,8 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
-
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
@@ -68,8 +65,7 @@ public class AttesterSlashingValidator {
     }
   }
 
-  private boolean passesProcessAttesterSlashingConditions(
-      AttesterSlashing slashing) {
+  private boolean passesProcessAttesterSlashingConditions(AttesterSlashing slashing) {
     BeaconState state =
         recentChainData
             .getBestState()
@@ -78,7 +74,7 @@ public class AttesterSlashingValidator {
                     new IllegalStateException(
                         "Unable to get best state for attester slashing processing."));
     Optional<OperationInvalidReason> invalidReason =
-            transitionValidator.validateSlashing(state, slashing );
+        transitionValidator.validateSlashing(state, slashing);
 
     if (invalidReason.isPresent()) {
       LOG.trace(

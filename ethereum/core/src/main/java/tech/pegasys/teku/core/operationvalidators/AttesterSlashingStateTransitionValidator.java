@@ -21,14 +21,10 @@ import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_ind
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
 
-import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -36,22 +32,21 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 public class AttesterSlashingStateTransitionValidator {
 
   public Optional<OperationInvalidReason> validateSlashing(
-          final BeaconState state,
-          final AttesterSlashing attesterSlashing,
-          final List<UnsignedLong> indicesToSlash) {
+      final BeaconState state,
+      final AttesterSlashing attesterSlashing,
+      final List<UnsignedLong> indicesToSlash) {
     return validateSlashing(state, attesterSlashing, Optional.of(indicesToSlash));
   }
 
   public Optional<OperationInvalidReason> validateSlashing(
-          final BeaconState state,
-          final AttesterSlashing attesterSlashing) {
+      final BeaconState state, final AttesterSlashing attesterSlashing) {
     return validateSlashing(state, attesterSlashing, Optional.empty());
   }
 
   private Optional<OperationInvalidReason> validateSlashing(
-          final BeaconState state,
-          final AttesterSlashing attesterSlashing,
-          final Optional<List<UnsignedLong>> maybeIndicesToSlash) {
+      final BeaconState state,
+      final AttesterSlashing attesterSlashing,
+      final Optional<List<UnsignedLong>> maybeIndicesToSlash) {
     IndexedAttestation attestation_1 = attesterSlashing.getAttestation_1();
     IndexedAttestation attestation_2 = attesterSlashing.getAttestation_2();
     return firstOf(
@@ -70,7 +65,8 @@ public class AttesterSlashingStateTransitionValidator {
         () -> {
           boolean slashed_any = false;
 
-          Set<UnsignedLong> intersectingIndices = attesterSlashing.getIntersectingValidatorIndices();
+          Set<UnsignedLong> intersectingIndices =
+              attesterSlashing.getIntersectingValidatorIndices();
 
           for (UnsignedLong index : intersectingIndices) {
             if (is_slashable_validator(

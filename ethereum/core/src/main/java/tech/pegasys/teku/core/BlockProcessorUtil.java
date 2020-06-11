@@ -34,7 +34,6 @@ import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -323,8 +322,8 @@ public final class BlockProcessorUtil {
             "process_attester_slashings: %s",
             invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-        indicesToSlash
-            .forEach(indexToSlash -> slash_validator(state, toIntExact(indexToSlash.longValue())));
+        indicesToSlash.forEach(
+            indexToSlash -> slash_validator(state, toIntExact(indexToSlash.longValue())));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());

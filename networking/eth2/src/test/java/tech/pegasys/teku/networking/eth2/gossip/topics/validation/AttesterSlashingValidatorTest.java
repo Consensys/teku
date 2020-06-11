@@ -22,18 +22,12 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 
-import com.google.common.eventbus.EventBus;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttesterSlashingValidatorTest {
@@ -44,7 +38,8 @@ public class AttesterSlashingValidatorTest {
 
   @BeforeEach
   void beforeEach() {
-    when(recentChainData.getBestState()).thenReturn(Optional.of(dataStructureUtil.randomBeaconState()));
+    when(recentChainData.getBestState())
+        .thenReturn(Optional.of(dataStructureUtil.randomBeaconState()));
     stateTransitionValidator = mock(AttesterSlashingStateTransitionValidator.class);
     attesterSlashingValidator =
         new AttesterSlashingValidator(recentChainData, stateTransitionValidator);
