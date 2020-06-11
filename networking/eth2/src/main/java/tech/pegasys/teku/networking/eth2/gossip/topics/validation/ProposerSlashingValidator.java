@@ -54,7 +54,7 @@ public class ProposerSlashingValidator {
 
   public InternalValidationResult validate(ProposerSlashing slashing) {
     if (!isFirstValidSlashingForValidator(slashing)) {
-      LOG.trace("ProposerSlashingValidator: Exit is not the first one for the given validator.");
+      LOG.trace("ProposerSlashingValidator: Slashing is not the first one for the given validator.");
       return IGNORE;
     }
 
@@ -65,7 +65,7 @@ public class ProposerSlashingValidator {
     if (receivedValidExitSet.add(slashing.getHeader_1().getMessage().getProposer_index())) {
       return ACCEPT;
     } else {
-      LOG.trace("ProposerSlashingValidator: Exit is not the first one for the given validator.");
+      LOG.trace("ProposerSlashingValidator: Slashing is not the first one for the given validator.");
       return IGNORE;
     }
   }
