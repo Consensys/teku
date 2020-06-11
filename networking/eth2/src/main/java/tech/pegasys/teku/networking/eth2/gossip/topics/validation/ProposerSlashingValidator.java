@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static tech.pegasys.teku.core.BlockProcessorUtil.verify_voluntary_exits;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
@@ -25,72 +24,82 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
-import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 
-public class VoluntaryExitValidator {
+public class ProposerSlashingValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
-  private final Set<UnsignedLong> receivedValidExitSet =
+  private final Set<UnsignedLong> receivedValidSlashingForProposerSet =
       ConcurrentLimitedSet.create(
           VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-  private final VoluntaryExitStateTransitionValidator validator =
-      new VoluntaryExitStateTransitionValidator();
+  private final ProposerSlashingStateTransitionValidator transitionValidator;
+  private final ProposerSlashingSignatureVerifier signatureValidator;
 
-  public VoluntaryExitValidator(RecentChainData recentChainData) {
+  public ProposerSlashingValidator(
+      RecentChainData recentChainData,
+      ProposerSlashingStateTransitionValidator proposerSlashingStateTransitionValidator,
+      ProposerSlashingSignatureVerifier proposerSlashingSignatureVerifier) {
     this.recentChainData = recentChainData;
+    this.transitionValidator = proposerSlashingStateTransitionValidator;
+    this.signatureValidator = proposerSlashingSignatureVerifier;
   }
 
-  public InternalValidationResult validate(SignedVoluntaryExit exit) {
-    if (!isFirstValidExitForValidator(exit)) {
-      LOG.trace("VoluntaryExitValidator: Exit is not the first one for the given validator.");
+  public InternalValidationResult validate(ProposerSlashing slashing) {
+    if (!isFirstValidSlashingForValidator(slashing)) {
+      LOG.trace(
+          "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
       return IGNORE;
     }
 
-    if (!passesProcessVoluntaryExitConditions(exit)) {
+    if (!passesProcessProposerSlashingConditions(slashing)) {
       return REJECT;
     }
 
-    if (receivedValidExitSet.add(exit.getMessage().getValidator_index())) {
+    if (receivedValidSlashingForProposerSet.add(
+        slashing.getHeader_1().getMessage().getProposer_index())) {
       return ACCEPT;
     } else {
-      LOG.trace("VoluntaryExitValidator: Exit is not the first one for the given validator.");
+      LOG.trace(
+          "ProposerSlashingValidator: Slashing is not the first one for the given validator.");
       return IGNORE;
     }
   }
 
-  private boolean passesProcessVoluntaryExitConditions(SignedVoluntaryExit exit) {
+  private boolean passesProcessProposerSlashingConditions(ProposerSlashing slashing) {
     BeaconState state =
         recentChainData
             .getBestState()
             .orElseThrow(
                 () ->
                     new IllegalStateException(
-                        "Unable to get best state for voluntary exit processing."));
-    Optional<OperationInvalidReason> invalidReason = validator.validateExit(state, exit);
+                        "Unable to get best state for proposer slashing processing."));
+    Optional<OperationInvalidReason> invalidReason =
+        transitionValidator.validateSlashing(state, slashing);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
-          "VoluntaryExitValidator: Exit fails process voluntary exit conditions {}.",
+          "ProposerSlashingValidator: Slashing fails process proposer slashing conditions {}.",
           invalidReason.get().describe());
       return false;
     }
 
-    if (!verify_voluntary_exits(state, SSZList.singleton(exit), BLSSignatureVerifier.SIMPLE)) {
-      LOG.trace("VoluntaryExitValidator: Exit fails signature verification.");
+    if (!signatureValidator.verifySignature(state, slashing, BLSSignatureVerifier.SIMPLE)) {
+      LOG.trace("ProposerSlashingValidator: Slashing fails signature verification.");
       return false;
     }
     return true;
   }
 
-  private boolean isFirstValidExitForValidator(SignedVoluntaryExit exit) {
-    return !receivedValidExitSet.contains(exit.getMessage().getValidator_index());
+  private boolean isFirstValidSlashingForValidator(ProposerSlashing slashing) {
+    return !receivedValidSlashingForProposerSet.contains(
+        slashing.getHeader_1().getMessage().getProposer_index());
   }
 }

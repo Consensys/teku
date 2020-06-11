@@ -11,9 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.core.operationvalidators;
 
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.check;
+import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.firstOf;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -21,17 +23,14 @@ import static tech.pegasys.teku.util.config.Constants.PERSISTENT_COMMITTEE_PERIO
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-import javax.annotation.CheckReturnValue;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 
-public class BlockVoluntaryExitValidator {
+public class VoluntaryExitStateTransitionValidator {
 
-  public Optional<ExitInvalidReason> validateExit(
+  public Optional<OperationInvalidReason> validateExit(
       final BeaconState state, final SignedVoluntaryExit signedExit) {
     VoluntaryExit exit = signedExit.getMessage();
     return firstOf(
@@ -68,22 +67,7 @@ public class BlockVoluntaryExitValidator {
     return state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
   }
 
-  @SafeVarargs
-  private Optional<ExitInvalidReason> firstOf(
-      final Supplier<Optional<ExitInvalidReason>>... checks) {
-    return Stream.of(checks)
-        .map(Supplier::get)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .findFirst();
-  }
-
-  @CheckReturnValue
-  private Optional<ExitInvalidReason> check(final boolean isValid, final ExitInvalidReason check) {
-    return !isValid ? Optional.of(check) : Optional.empty();
-  }
-
-  public enum ExitInvalidReason {
+  public enum ExitInvalidReason implements OperationInvalidReason {
     INVALID_VALIDATOR_INDEX("Invalid validator index"),
     VALIDATOR_INACTIVE("Validator is not active"),
     EXIT_INITIATED("Validator has already initiated exit"),
@@ -96,6 +80,7 @@ public class BlockVoluntaryExitValidator {
       this.description = description;
     }
 
+    @Override
     public String describe() {
       return description;
     }
