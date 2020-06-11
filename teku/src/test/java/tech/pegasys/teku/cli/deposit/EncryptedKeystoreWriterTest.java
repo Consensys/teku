@@ -44,9 +44,7 @@ class EncryptedKeystoreWriterTest {
           Bytes.fromHexString(
               "0x000000000000000000000000000000000610B84CD68FB0FAB2F04A2A05EE01CD5F7374EB8EA93E26DB9C61DD2704B5BD"));
   private static final String validator1PubKey = new BLSPublicKey(validator1SecretKey).toString();
-  private static final String withdrawal1PubKey = new BLSPublicKey(withdrawal1SecretKey).toString();
   private static final String validator2PubKey = new BLSPublicKey(validator2SecretKey).toString();
-  private static final String withdrawal2PubKey = new BLSPublicKey(withdrawal2SecretKey).toString();
 
   private static final String PASSWORD = "test123";
 
@@ -58,7 +56,7 @@ class EncryptedKeystoreWriterTest {
     assertKeyStoreCreatedAndCanBeDecrypted(
         tempDir.resolve(trimPublicKey(validator1PubKey) + "_validator.json"), validator1SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(trimPublicKey(withdrawal1PubKey) + "_withdrawal.json"),
+        tempDir.resolve(trimPublicKey(validator1PubKey) + "_withdrawal.json"),
         withdrawal1SecretKey);
 
     keysWriter.writeKeys(new BLSKeyPair(validator2SecretKey), new BLSKeyPair(withdrawal2SecretKey));
@@ -66,7 +64,7 @@ class EncryptedKeystoreWriterTest {
     assertKeyStoreCreatedAndCanBeDecrypted(
         tempDir.resolve(trimPublicKey(validator2PubKey) + "_validator.json"), validator2SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve(trimPublicKey(withdrawal2PubKey) + "_withdrawal.json"),
+        tempDir.resolve(trimPublicKey(validator2PubKey) + "_withdrawal.json"),
         withdrawal2SecretKey);
   }
 
