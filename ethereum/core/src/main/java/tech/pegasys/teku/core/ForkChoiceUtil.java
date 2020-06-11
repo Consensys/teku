@@ -290,7 +290,7 @@ public class ForkChoiceUtil {
       UnsignedLong slot,
       Bytes32 ancestorRoot) {
     return get_ancestor(forkChoiceStrategy, root, slot)
-        .map(ancestorAtFinalizedSlot -> ancestorAtFinalizedSlot.equals(ancestorRoot))
+        .map(ancestorAtSlot -> ancestorAtSlot.equals(ancestorRoot))
         .orElse(false);
   }
 
