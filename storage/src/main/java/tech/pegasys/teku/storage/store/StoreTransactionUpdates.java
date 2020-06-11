@@ -159,7 +159,7 @@ class StoreTransactionUpdates {
 
   private static Map<Bytes32, BeaconState> collectFinalizedStates(
       final Store.Transaction tx, final Set<SignedBeaconBlock> finalizedBlocks) {
-    final HashMap<Bytes32, BeaconState> states = new HashMap<>();
+    final Map<Bytes32, BeaconState> states = new HashMap<>();
     for (SignedBeaconBlock finalizedBlock : finalizedBlocks) {
       final Bytes32 blockRoot = finalizedBlock.getRoot();
       tx.getBlockStateIfAvailable(finalizedBlock.getRoot())

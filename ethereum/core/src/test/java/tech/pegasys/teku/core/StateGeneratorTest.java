@@ -235,12 +235,12 @@ public class StateGeneratorTest {
     if (supplyAllKnownStates) {
       // No states should be regenerated - they should all match the known state
       for (Bytes32 root : expectedResult.keySet()) {
-        assertThat(resultMap.get(root) == expectedResult.get(root)).isTrue();
+        assertThat(resultMap.get(root)).isSameAs(expectedResult.get(root));
       }
     } else if (cacheSize == 0) {
       // All states should be regenerated and should not match the known states
       for (Bytes32 root : expectedResult.keySet()) {
-        assertThat(resultMap.get(root) == expectedResult.get(root)).isFalse();
+        assertThat(resultMap.get(root)).isNotSameAs(expectedResult.get(root));
       }
     }
 
