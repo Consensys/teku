@@ -37,18 +37,14 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttesterSlashingValidatorTest {
-  private static final List<BLSKeyPair> VALIDATOR_KEYS =
-      new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private RecentChainData recentChainData = mock(RecentChainData.class);
-  private BeaconChainUtil beaconChainUtil;
   private AttesterSlashingValidator attesterSlashingValidator;
   private AttesterSlashingStateTransitionValidator stateTransitionValidator;
 
   @BeforeEach
   void beforeEach() {
     when(recentChainData.getBestState()).thenReturn(Optional.of(dataStructureUtil.randomBeaconState()));
-    beaconChainUtil = BeaconChainUtil.create(recentChainData, VALIDATOR_KEYS, true);
     stateTransitionValidator = mock(AttesterSlashingStateTransitionValidator.class);
     attesterSlashingValidator =
         new AttesterSlashingValidator(recentChainData, stateTransitionValidator);
