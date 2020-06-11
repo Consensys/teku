@@ -98,7 +98,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    *
    * @param signature A Mikuli Signature
    */
-  BLSSignature(Signature signature) {
+  public BLSSignature(Signature signature) {
     this.signature = signature;
   }
 

@@ -97,7 +97,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    *
    * @param publicKey A Mikuli PublicKey
    */
-  BLSPublicKey(PublicKey publicKey) {
+  public BLSPublicKey(PublicKey publicKey) {
     this.publicKey = publicKey;
   }
 
