@@ -20,12 +20,12 @@ import com.google.common.collect.Iterables;
 import java.util.List;
 import java.util.Optional;
 
-public class HostWhitelistUtils {
+public class HostAllowlistUtils {
 
-  static boolean isHostAuthorized(final List<String> whitelist, String hostHeader) {
+  static boolean isHostAuthorized(final List<String> allowlist, String hostHeader) {
     Optional<String> optionalHost = getAndValidateHostHeader(hostHeader);
-    if (whitelist.contains("*")
-        || (optionalHost.isPresent() && hostIsInWhitelist(whitelist, optionalHost.get()))) {
+    if (allowlist.contains("*")
+        || (optionalHost.isPresent() && hostIsInAllowlist(allowlist, optionalHost.get()))) {
       return true;
     } else {
       return false;
@@ -44,8 +44,8 @@ public class HostWhitelistUtils {
     return Optional.ofNullable(Iterables.get(splitHostHeader, 0));
   }
 
-  static boolean hostIsInWhitelist(final List<String> whitelist, final String hostHeader) {
-    return whitelist.stream()
-        .anyMatch(whitelistEntry -> whitelistEntry.toLowerCase().equals(hostHeader.toLowerCase()));
+  static boolean hostIsInAllowlist(final List<String> allowlist, final String hostHeader) {
+    return allowlist.stream()
+        .anyMatch(allowlistEntry -> allowlistEntry.toLowerCase().equals(hostHeader.toLowerCase()));
   }
 }
