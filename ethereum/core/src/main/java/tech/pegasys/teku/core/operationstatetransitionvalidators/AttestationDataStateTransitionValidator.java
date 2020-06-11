@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.operationstatetransitionvalidators;
 
+import static tech.pegasys.teku.core.operationstatetransitionvalidators.OperationInvalidReason.check;
+import static tech.pegasys.teku.core.operationstatetransitionvalidators.OperationInvalidReason.firstOf;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
@@ -30,7 +32,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationDataStateTransitionValidator {
 
-  public Optional<AttestationInvalidReason> validateAttestation(
+  public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
     return firstOf(
         () ->
@@ -73,23 +75,7 @@ public class AttestationDataStateTransitionValidator {
         });
   }
 
-  @SafeVarargs
-  private Optional<AttestationInvalidReason> firstOf(
-      final Supplier<Optional<AttestationInvalidReason>>... checks) {
-    return Stream.of(checks)
-        .map(Supplier::get)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .findFirst();
-  }
-
-  @CheckReturnValue
-  private Optional<AttestationInvalidReason> check(
-      final boolean isValid, final AttestationInvalidReason check) {
-    return !isValid ? Optional.of(check) : Optional.empty();
-  }
-
-  public enum AttestationInvalidReason {
+  public enum AttestationInvalidReason implements OperationInvalidReason {
     COMMITTEE_INDEX_TOO_HIGH("CommitteeIndex too high"),
     NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH("Attestation not from current or previous epoch"),
     SLOT_NOT_IN_EPOCH("Attestation slot not in specified epoch"),

@@ -14,6 +14,8 @@
 package tech.pegasys.teku.core.operationstatetransitionvalidators;
 
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.teku.core.operationstatetransitionvalidators.OperationInvalidReason.check;
+import static tech.pegasys.teku.core.operationstatetransitionvalidators.OperationInvalidReason.firstOf;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
 
@@ -29,7 +31,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class ProposerSlashingStateTransitionValidator {
 
-  public Optional<ProposerSlashingInvalidReason> validateSlashing(
+  public Optional<OperationInvalidReason> validateSlashing(
       final BeaconState state, final ProposerSlashing proposerSlashing) {
     final BeaconBlockHeader header1 = proposerSlashing.getHeader_1().getMessage();
     final BeaconBlockHeader header2 = proposerSlashing.getHeader_2().getMessage();
@@ -60,23 +62,7 @@ public class ProposerSlashingStateTransitionValidator {
                 ProposerSlashingInvalidReason.PROPOSER_NOT_SLASHABLE));
   }
 
-  @SafeVarargs
-  private Optional<ProposerSlashingInvalidReason> firstOf(
-      final Supplier<Optional<ProposerSlashingInvalidReason>>... checks) {
-    return Stream.of(checks)
-        .map(Supplier::get)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .findFirst();
-  }
-
-  @CheckReturnValue
-  private Optional<ProposerSlashingInvalidReason> check(
-      final boolean isValid, final ProposerSlashingInvalidReason check) {
-    return !isValid ? Optional.of(check) : Optional.empty();
-  }
-
-  public enum ProposerSlashingInvalidReason {
+  public enum ProposerSlashingInvalidReason implements OperationInvalidReason {
     HEADER_SLOTS_DIFFERENT("Header slots don't match"),
     PROPOSER_INDICES_DIFFERENT("Header proposer indices don't match"),
     SAME_HEADER("Headers are not different"),
