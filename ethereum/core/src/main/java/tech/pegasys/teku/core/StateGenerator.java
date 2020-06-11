@@ -13,64 +13,153 @@
 
 package tech.pegasys.teku.core;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedMap;
 
+/** Utility for regenerating block states given a block tree and a root state. */
 public class StateGenerator {
+  private static final int DEFAULT_STATE_CACHE_SIZE = 50;
+
+  private final BlockTree blockTree;
+  private final Map<Bytes32, BeaconState> knownStates = new HashMap<>();
+
+  private StateGenerator(
+      final BlockTree blockTree,
+      final BeaconState rootState,
+      final Map<Bytes32, BeaconState> knownStates) {
+    final SignedBeaconBlock rootBlock = blockTree.getRootBlock();
+    checkArgument(
+        rootBlock.getStateRoot().equals(rootState.hash_tree_root()),
+        "Root state must match the root block of the blockTree");
+    this.blockTree = blockTree;
+    this.knownStates.putAll(knownStates);
+    this.knownStates.put(rootBlock.getRoot(), rootState);
+  }
+
+  public static StateGenerator create(final BlockTree blockTree, final BeaconState rootState) {
+    return new StateGenerator(blockTree, rootState, Collections.emptyMap());
+  }
+
+  public static StateGenerator create(
+      final BlockTree blockTree,
+      final BeaconState rootState,
+      final Map<Bytes32, BeaconState> knownStates) {
+    return new StateGenerator(blockTree, rootState, knownStates);
+  }
+
   /**
-   * Given a base state and a set of subsequent blocks, processes the given blocks on top of the
-   * base state to produce the states belonging to each block.
+   * Regenerate a state for a single block.
    *
-   * @param baseStateBlockRoot The block root corresponding to the base state.
-   * @param baseState The base state to build on top of.
-   * @param newBlocks A list of blocks to process on top of the base state.
-   * @return A map from blockRoot to state containing the base state and all other states that could
-   *     be successfully generated. Any blocks that do not descend from the base state will be
-   *     ignored.
+   * @param blockRoot The root of the block
+   * @return
    */
-  public Map<Bytes32, BeaconState> produceStatesForBlocks(
-      final Bytes32 baseStateBlockRoot,
-      final BeaconState baseState,
-      final Collection<SignedBeaconBlock> newBlocks) {
-    final Map<Bytes32, BeaconState> statesByRoot = new HashMap<>();
+  public BeaconState regenerateStateForBlock(final Bytes32 blockRoot) {
+    return regenerateStateForBlock(blockRoot, new StateCache(0, knownStates));
+  }
 
-    // Initialize states with the base state
-    statesByRoot.put(baseStateBlockRoot, baseState);
-
-    // Index blocks by parent root
-    final Map<Bytes32, List<SignedBeaconBlock>> blocksByParent = new HashMap<>();
-    for (SignedBeaconBlock currentBlock : newBlocks) {
-      final List<SignedBeaconBlock> blockList =
-          blocksByParent.computeIfAbsent(currentBlock.getParent_root(), (key) -> new ArrayList<>());
-      blockList.add(currentBlock);
+  private BeaconState regenerateStateForBlock(
+      final Bytes32 blockRoot, final StateCache stateCache) {
+    final Optional<BeaconState> knownState = stateCache.get(blockRoot);
+    if (knownState.isPresent()) {
+      return knownState.get();
     }
 
-    // Generate states
-    final Deque<Bytes32> parentRoots = new ArrayDeque<>();
-    parentRoots.push(baseStateBlockRoot);
-    while (!parentRoots.isEmpty()) {
-      final Bytes32 parentRoot = parentRoots.pop();
-      final BeaconState parentState = statesByRoot.get(parentRoot);
-      final List<SignedBeaconBlock> blocks =
-          blocksByParent.computeIfAbsent(parentRoot, (key) -> Collections.emptyList());
-      for (SignedBeaconBlock block : blocks) {
-        final Bytes32 blockRoot = block.getMessage().hash_tree_root();
-        final BeaconState state = processBlock(parentState, block);
-        statesByRoot.put(blockRoot, state);
-        parentRoots.push(blockRoot);
+    // Walk from target block towards root of the tree, stopping when we find an available state
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    Optional<SignedBeaconBlock> curBlock = blockTree.getBlock(blockRoot);
+    Optional<BeaconState> baseState = Optional.empty();
+    while (curBlock.isPresent()) {
+      final Bytes32 root = curBlock.get().getRoot();
+      baseState = stateCache.get(root);
+      if (baseState.isPresent()) {
+        break;
+      }
+      blocks.add(curBlock.get());
+      curBlock = blockTree.getBlock(curBlock.get().getParent_root());
+    }
+    checkArgument(
+        blocks.size() > 0,
+        "Block %s does not belong to this %s.",
+        blockRoot,
+        getClass().getSimpleName());
+
+    // Process blocks in order
+    BeaconState state = baseState.orElseThrow();
+    SignedBeaconBlock block = null;
+    for (int i = blocks.size() - 1; i >= 0; i--) {
+      block = blocks.get(i);
+      state = processBlock(state, block);
+    }
+
+    // Validate result and return
+    if (!block.getStateRoot().equals(state.hash_tree_root())) {
+      final String msg =
+          String.format(
+              "Failed to regenerate state for block root %s.  Generated state root %s does not match expected state root %s",
+              blockRoot, state.hash_tree_root(), block.getStateRoot());
+      throw new IllegalStateException(msg);
+    }
+    return state;
+  }
+
+  /**
+   * Regenerate all states in the block tree.
+   *
+   * @param stateHandler A handler to process each state as it is generated.
+   */
+  public void regenerateAllStates(final StateHandler stateHandler) {
+    regenerateAllStates(stateHandler, DEFAULT_STATE_CACHE_SIZE);
+  }
+
+  void regenerateAllStates(final StateHandler stateHandler, final int maxCachedStates) {
+    final StateCache stateCache = new StateCache(maxCachedStates, knownStates);
+
+    final Deque<SignedBeaconBlock> branchesToProcess = new ArrayDeque<>();
+    final SignedBeaconBlock rootBlock = blockTree.getRootBlock();
+    blockTree.getChildren(rootBlock).forEach(branchesToProcess::push);
+
+    while (!branchesToProcess.isEmpty()) {
+      SignedBeaconBlock branchBlock = branchesToProcess.pop();
+      BeaconState preState =
+          stateCache.getOrGenerate(
+              branchBlock.getParent_root(), root -> regenerateStateForBlock(root, stateCache));
+      while (branchBlock != null) {
+        // Produce state for the current branch block
+        final BeaconState state = preState;
+        final SignedBeaconBlock block = branchBlock;
+        final BeaconState branchBlockState =
+            stateCache.get(branchBlock.getRoot()).orElseGet(() -> processBlock(state, block));
+        stateHandler.handle(branchBlock.getRoot(), branchBlockState);
+
+        // Process children
+        final List<SignedBeaconBlock> children =
+            new ArrayList<>(blockTree.getChildren(branchBlock.getRoot()));
+        // Save branches for later processing
+        if (children.size() > 1) {
+          // Only cache the current state if there are other branches we need to come back to later
+          stateCache.put(branchBlock.getRoot(), branchBlockState);
+          children.subList(1, children.size()).forEach(branchesToProcess::push);
+        }
+        // Continue processing the first child
+        branchBlock = children.isEmpty() ? null : children.get(0);
+        preState = branchBlockState;
       }
     }
-
-    return statesByRoot;
   }
 
   private BeaconState processBlock(final BeaconState preState, final SignedBeaconBlock block) {
@@ -90,5 +179,43 @@ public class StateGenerator {
   private String getFailedStateGenerationError(final SignedBeaconBlock block) {
     return String.format(
         "Unable to produce state for block at slot %s (%s)", block.getSlot(), block.getRoot());
+  }
+
+  public interface StateHandler {
+    void handle(final Bytes32 blockRoot, final BeaconState state);
+  }
+
+  private static class StateCache {
+    private final Map<Bytes32, BeaconState> cache;
+    private final Map<Bytes32, BeaconState> knownStates;
+
+    public StateCache(final int maxCachedStates, final Map<Bytes32, BeaconState> knownStates) {
+      this.cache = LimitedMap.create(maxCachedStates, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      this.knownStates = knownStates;
+    }
+
+    /**
+     * Get the state or generate and cache it.
+     *
+     * @param blockRoot The block root the state corresponds to
+     * @param stateSupplier A state generator that will be invoked if the state isn't found
+     * @return
+     */
+    public BeaconState getOrGenerate(
+        final Bytes32 blockRoot, Function<Bytes32, BeaconState> stateSupplier) {
+      return Optional.ofNullable(knownStates.get(blockRoot))
+          .orElseGet(() -> cache.computeIfAbsent(blockRoot, stateSupplier));
+    }
+
+    public Optional<BeaconState> get(final Bytes32 blockRoot) {
+      return Optional.ofNullable(knownStates.get(blockRoot))
+          .or(() -> Optional.ofNullable(cache.get(blockRoot)));
+    }
+
+    public void put(final Bytes32 blockRoot, final BeaconState state) {
+      if (!knownStates.containsKey(blockRoot)) {
+        cache.put(blockRoot, state);
+      }
+    }
   }
 }

@@ -26,6 +26,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -51,6 +52,8 @@ public class Eth2NetworkBuilder {
   private RecentChainData recentChainData;
   private GossipedAttestationConsumer gossipedAttestationConsumer;
   private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
+  private VerifiedBlockAttestationsSubscriptionProvider
+      verifiedBlockAttestationsSubscriptionProvider;
   private StorageQueryChannel historicalChainData;
   private MetricsSystem metricsSystem;
   private List<RpcMethod> rpcMethods = new ArrayList<>();
@@ -102,7 +105,8 @@ public class Eth2NetworkBuilder {
         gossipEncoding,
         attestationSubnetService,
         gossipedAttestationConsumer,
-        processedAttestationSubscriptionProvider);
+        processedAttestationSubscriptionProvider,
+        verifiedBlockAttestationsSubscriptionProvider);
   }
 
   protected DiscoveryNetwork<?> buildNetwork() {
@@ -161,6 +165,15 @@ public class Eth2NetworkBuilder {
       final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
     checkNotNull(processedAttestationSubscriptionProvider);
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
+    return this;
+  }
+
+  public Eth2NetworkBuilder verifiedBlockAttestationsProvider(
+      final VerifiedBlockAttestationsSubscriptionProvider
+          verifiedBlockAttestationsSubscriptionProvider) {
+    checkNotNull(verifiedBlockAttestationsSubscriptionProvider);
+    this.verifiedBlockAttestationsSubscriptionProvider =
+        verifiedBlockAttestationsSubscriptionProvider;
     return this;
   }
 

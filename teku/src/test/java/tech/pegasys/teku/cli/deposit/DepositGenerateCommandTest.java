@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -190,27 +191,58 @@ class DepositGenerateCommandTest {
             withdrawalPasswordOptions);
     depositGenerateCommand.run();
 
-    // assert that sub directories exist
-    final File[] subDirectories = outputPath.toFile().listFiles();
-    assertThat(subDirectories).hasSize(VALIDATORS_COUNT);
-    Arrays.stream(subDirectories).forEach(file -> assertThat(file).isDirectory());
+    // assert that files exist: 2 per validator
+    final File[] keystoreFiles = outputPath.toFile().listFiles();
+    assertThat(keystoreFiles).hasSize(VALIDATORS_COUNT * 2);
+    // all files should have the same password
+    assertKeyStoreFilesExistAndAreEncryptedWithPassword(outputPath);
 
-    for (final File subDirectory : subDirectories) {
-      assertKeyStoreFilesExist(subDirectory.toPath());
-    }
+    // select only withdrawal files
+    FilenameFilter withdrawalFilter =
+        new FilenameFilter() {
+          @Override
+          public boolean accept(File dir, String name) {
+            String lowercaseName = name.toLowerCase();
+            if (lowercaseName.contains("withdrawal")) {
+              return true;
+            } else {
+              return false;
+            }
+          }
+        };
+
+    // assert that files exist: 1 withdrawal file per validator
+    final File[] withdrawalFiles = outputPath.toFile().listFiles(withdrawalFilter);
+    assertThat(withdrawalFiles).hasSize(VALIDATORS_COUNT);
+    Arrays.stream(withdrawalFiles).forEach(file -> assertThat(file).isFile());
+
+    // select only validator files
+    FilenameFilter validatorFilter =
+        new FilenameFilter() {
+          @Override
+          public boolean accept(File dir, String name) {
+            String lowercaseName = name.toLowerCase();
+            if (lowercaseName.contains("validator")) {
+              return true;
+            } else {
+              return false;
+            }
+          }
+        };
+
+    // assert that files exist: 1 validator file per validator
+    final File[] validatorFiles = outputPath.toFile().listFiles(validatorFilter);
+    assertThat(validatorFiles).hasSize(VALIDATORS_COUNT);
+    Arrays.stream(validatorFiles).forEach(file -> assertThat(file).isFile());
   }
 
-  private void assertKeyStoreFilesExist(final Path parentDir) {
+  private void assertKeyStoreFilesExistAndAreEncryptedWithPassword(final Path parentDir) {
     final File[] keyStoreFiles = parentDir.toFile().listFiles();
-    assertThat(keyStoreFiles).hasSize(2);
-
-    assertThat(
-            KeyStore.validatePassword(
-                EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(keyStoreFiles[0].toPath())))
-        .isTrue();
-    assertThat(
-            KeyStore.validatePassword(
-                EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(keyStoreFiles[1].toPath())))
-        .isTrue();
+    for (File file : keyStoreFiles) {
+      assertThat(
+              KeyStore.validatePassword(
+                  EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toPath())))
+          .isTrue();
+    }
   }
 }
