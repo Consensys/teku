@@ -20,7 +20,7 @@ import picocli.CommandLine.Mixin;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
-    name = "generate-and-register",
+    name = "generate",
     description = "Register validators by generating new keys",
     mixinStandardHelpOptions = true,
     showDefaultValues = true,
