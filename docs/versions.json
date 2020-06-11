@@ -1,5 +1,0 @@
-{
-  "latest":{"spec":"latest","source":"master"},
-  "stable":{"spec":"0.10.0","source":"0.10.0"},
-  "0.10.0":{"spec":"0.10.0","source":"0.10.0"}
-}
