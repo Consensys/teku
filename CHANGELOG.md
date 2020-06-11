@@ -7,6 +7,8 @@ we recommend most users use the latest `master` branch of Teku.
 
  - Anyone using `/node/version` should switch to use
    the new endpoint, as `/node/version` will be removed in a future release.
+ - `--metrics-host-whitelist` CLI option will be renamed `--metrics-host-allowlist` (currently both are supported)
+ - `--rest-api-host-whitelist` CLI option will be renamed `--rest-api-host-allowlist` (currently both are supported)
 
 ## 0.11.4
 

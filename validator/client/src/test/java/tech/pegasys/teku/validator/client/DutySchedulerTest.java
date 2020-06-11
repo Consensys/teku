@@ -195,6 +195,27 @@ class DutySchedulerTest {
   }
 
   @Test
+  public void shouldRefetchDutiesAfterBlockImportedFromTwoOrMoreEpochsBefore() {
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(5)));
+
+    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(5), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(6), VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+
+    dutyScheduler.onBlockImportedForSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(4)));
+
+    // Duties are invalidated but not yet re-requested as we might be importing a batch of blocks
+    verifyNoMoreInteractions(validatorApiChannel);
+
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(5)).plus(ONE));
+    // Re-requests epoch 6 which may have been changed by the new block
+    verify(validatorApiChannel, times(2)).getDuties(UnsignedLong.valueOf(6), VALIDATOR_KEYS);
+    // Epoch 5 is unchanged so not re-requested
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
   public void shouldScheduleBlockProposalDuty() {
     final UnsignedLong blockProposerSlot = UnsignedLong.valueOf(5);
     final ValidatorDuties validator1Duties =

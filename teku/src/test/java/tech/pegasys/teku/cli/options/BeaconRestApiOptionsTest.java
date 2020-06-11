@@ -46,29 +46,29 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void restApiHostWhitelist_shouldNotRequireAValue() {
+  public void restApiHostAllowlist_shouldNotRequireAValue() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-host-whitelist");
-    assertThat(tekuConfiguration.getRestApiHostWhitelist()).isEmpty();
+        getTekuConfigurationFromArguments("--rest-api-host-allowlist");
+    assertThat(tekuConfiguration.getRestApiHostAllowlist()).isEmpty();
   }
 
   @Test
-  public void restApiHostWhitelist_shouldSupportWhitelistingMultipleHosts() {
+  public void restApiHostAllowlist_shouldSupportAllowingMultipleHosts() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-host-whitelist", "my.host,their.host");
-    assertThat(tekuConfiguration.getRestApiHostWhitelist()).containsOnly("my.host", "their.host");
+        getTekuConfigurationFromArguments("--rest-api-host-allowlist", "my.host,their.host");
+    assertThat(tekuConfiguration.getRestApiHostAllowlist()).containsOnly("my.host", "their.host");
   }
 
   @Test
-  public void restApiHostWhitelist_shouldSupportWhitelistingAllHosts() {
+  public void restApiHostAllowlist_shouldSupportAllowingAllHosts() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-host-whitelist", "*");
-    assertThat(tekuConfiguration.getRestApiHostWhitelist()).containsOnly("*");
+        getTekuConfigurationFromArguments("--rest-api-host-allowlist", "*");
+    assertThat(tekuConfiguration.getRestApiHostAllowlist()).containsOnly("*");
   }
 
   @Test
-  public void restApiHostWhitelist_shouldDefaultToLocalhost() {
-    assertThat(getTekuConfigurationFromArguments().getRestApiHostWhitelist())
+  public void restApiHostAllowlist_shouldDefaultToLocalhost() {
+    assertThat(getTekuConfigurationFromArguments().getRestApiHostAllowlist())
         .containsOnly("localhost", "127.0.0.1");
   }
 }

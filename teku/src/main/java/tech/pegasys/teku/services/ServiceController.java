@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -29,10 +30,11 @@ public class ServiceController extends Service {
   private final List<Service> services = new ArrayList<>();
 
   public ServiceController(final ServiceConfig config) {
-    services.add(new TimerService(config));
-    services.add(new BeaconChainService(config));
+    // Note services will be started in the order they are added here.
     services.add(new StorageService(config));
+    services.add(new BeaconChainService(config));
     services.add(ValidatorClientService.create(config));
+    services.add(new TimerService(config));
     if (!config.getConfig().isInteropEnabled() && config.getConfig().isEth1Enabled()) {
       services.add(new PowchainService(config));
     }
@@ -40,8 +42,13 @@ public class ServiceController extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.allOfFailFast(
-        services.stream().map(Service::start).toArray(SafeFuture[]::new));
+    final Iterator<Service> iterator = services.iterator();
+    SafeFuture<?> startupFuture = iterator.next().start();
+    while (iterator.hasNext()) {
+      final Service nextService = iterator.next();
+      startupFuture = startupFuture.thenCompose(__ -> nextService.start());
+    }
+    return startupFuture;
   }
 
   @Override

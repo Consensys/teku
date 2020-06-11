@@ -11,20 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.statetransition.blockimport;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public interface ValidatorTimingChannel {
-  void onSlot(UnsignedLong slot);
-
-  void onChainReorg(final UnsignedLong newSlot);
-
-  void onBlockProductionDue(UnsignedLong slot);
-
-  void onAttestationCreationDue(UnsignedLong slot);
-
-  void onAttestationAggregationDue(UnsignedLong slot);
-
-  void onBlockImportedForSlot(UnsignedLong slot);
+public interface VerifiedBlockAttestationsListener {
+  void onAttestationsFromBlock(SSZList<Attestation> attestations);
 }
