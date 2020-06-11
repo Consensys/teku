@@ -46,6 +46,7 @@ public abstract class AbstractRpcByteBufDecoder<TMessage>
   @Override
   public void complete() {
     if (compositeByteBuf.isReadable()) {
+      compositeByteBuf.release();
       throw new PayloadSmallerThanExpectedException(
           "Rpc stream complete, but unprocessed data left: " + compositeByteBuf.readableBytes());
     }
