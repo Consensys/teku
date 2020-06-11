@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorKeys;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
@@ -48,6 +49,13 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   @Mixin private RegisterParams registerParams;
   @Mixin private GenerateParams generateParams;
 
+  @Option(
+      names = {"--Xconfirm-enabled"},
+      arity = "1",
+      defaultValue = "true",
+      hidden = true)
+  private boolean displayConfirmation = true;
+
   public DepositGenerateAndRegisterCommand() {
     this.shutdownFunction =
         System::exit; // required because web3j use non-daemon threads which halts the program
@@ -65,9 +73,10 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
 
   @Override
   public void run() {
-    final GenerateAction generateAction = generateParams.createGenerateAction();
+    final GenerateAction generateAction = generateParams.createGenerateAction(displayConfirmation);
 
-    try (final RegisterAction registerAction = registerParams.createRegisterAction()) {
+    try (final RegisterAction registerAction =
+        registerParams.createRegisterAction(displayConfirmation)) {
       registerAction.displayConfirmation(generateParams.getValidatorCount());
       final List<SafeFuture<TransactionReceipt>> transactionReceipts =
           generateAction

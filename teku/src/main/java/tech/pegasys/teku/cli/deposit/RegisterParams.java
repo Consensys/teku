@@ -72,13 +72,6 @@ public class RegisterParams {
           "Deposit amount in Gwei. Defaults to the amount required to activate a validator on the specified network.")
   private UnsignedLong amount;
 
-  @Option(
-      names = {"--Xconfirm-enabled"},
-      arity = "1",
-      defaultValue = "true",
-      hidden = true)
-  private boolean displayConfirmation = true;
-
   private final IntConsumer shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
 
@@ -99,7 +92,7 @@ public class RegisterParams {
     this.consoleAdapter = consoleAdapter;
   }
 
-  public RegisterAction createRegisterAction() {
+  public RegisterAction createRegisterAction(final boolean displayConfirmation) {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
     Constants.setConstants(networkDefinition.getConstants());
     return new RegisterAction(
@@ -161,10 +154,6 @@ public class RegisterParams {
           "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
           e);
     }
-  }
-
-  public boolean shouldDisplayConfirmation() {
-    return displayConfirmation;
   }
 
   private static class UnsignedLongConverter implements CommandLine.ITypeConverter<UnsignedLong> {

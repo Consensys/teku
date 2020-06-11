@@ -66,6 +66,13 @@ public class DepositRegisterCommand implements Runnable {
       description = "Public withdrawal key for the validator")
   private String withdrawalKey;
 
+  @Option(
+      names = {"--Xconfirm-enabled"},
+      arity = "1",
+      defaultValue = "true",
+      hidden = true)
+  private boolean displayConfirmation = true;
+
   DepositRegisterCommand() {
     // required because web3j use non-daemon threads which halts the program
     this.shutdownFunction = System::exit;
@@ -92,7 +99,8 @@ public class DepositRegisterCommand implements Runnable {
   public void run() {
     final BLSKeyPair validatorKey = getValidatorKey();
 
-    try (final RegisterAction registerAction = registerParams.createRegisterAction()) {
+    try (final RegisterAction registerAction =
+        registerParams.createRegisterAction(displayConfirmation)) {
       final BLSPublicKey withdrawalPublicKey =
           BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(this.withdrawalKey));
       registerAction.displayConfirmation(1);

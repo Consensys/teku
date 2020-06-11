@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.function.Consumer;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Option;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
@@ -36,6 +37,13 @@ public class DepositGenerateCommand implements Runnable {
 
   @Mixin private GenerateParams generateParams;
 
+  @Option(
+      names = {"--Xconfirm-enabled"},
+      arity = "1",
+      defaultValue = "true",
+      hidden = true)
+  private boolean displayConfirmation = true;
+
   public DepositGenerateCommand() {
     this.shutdownFunction =
         System::exit; // required because web3j use non-daemon threads which halts the program
@@ -50,7 +58,7 @@ public class DepositGenerateCommand implements Runnable {
 
   @Override
   public void run() {
-    final GenerateAction generateAction = generateParams.createGenerateAction();
+    final GenerateAction generateAction = generateParams.createGenerateAction(displayConfirmation);
     generateAction.generateKeys();
     shutdownFunction.accept(0);
   }

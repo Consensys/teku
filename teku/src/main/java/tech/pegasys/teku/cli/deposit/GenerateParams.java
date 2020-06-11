@@ -73,14 +73,14 @@ public class GenerateParams {
     this.consoleAdapter = consoleAdapter;
   }
 
-  public GenerateAction createGenerateAction() {
+  public GenerateAction createGenerateAction(final boolean displayConfirmation) {
     return new GenerateAction(
         validatorCount,
         outputPath,
         encryptKeys,
         validatorPasswordOptions,
         withdrawalPasswordOptions,
-        true,
+        displayConfirmation,
         consoleAdapter,
         spec,
         envSupplier);
