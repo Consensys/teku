@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.deposit;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,7 +72,7 @@ class DepositRegisterCommandTest {
     registerAction = mock(RegisterAction.class);
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
-    when(registerParams.createRegisterAction()).thenReturn(registerAction);
+    when(registerParams.createRegisterAction(anyBoolean())).thenReturn(registerAction);
     when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
