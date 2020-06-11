@@ -54,7 +54,7 @@ public class DepositRegisterCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
   private final Function<String, String> envSupplier;
   @Spec private CommandSpec spec;
-  @Mixin private RegisterParams params;
+  @Mixin private RegisterParams registerParams;
 
   @ArgGroup(exclusive = true, multiplicity = "1")
   private ValidatorKeyOptions validatorKeyOptions;
@@ -77,13 +77,13 @@ public class DepositRegisterCommand implements Runnable {
       final Consumer<Integer> shutdownFunction,
       final Function<String, String> envSupplier,
       final CommandSpec spec,
-      final RegisterParams params,
+      final RegisterParams registerParams,
       final ValidatorKeyOptions validatorKeyOptions,
       final String withdrawalKey) {
     this.shutdownFunction = shutdownFunction;
     this.envSupplier = envSupplier;
     this.spec = spec;
-    this.params = params;
+    this.registerParams = registerParams;
     this.validatorKeyOptions = validatorKeyOptions;
     this.withdrawalKey = withdrawalKey;
   }
@@ -92,7 +92,7 @@ public class DepositRegisterCommand implements Runnable {
   public void run() {
     final BLSKeyPair validatorKey = getValidatorKey();
 
-    try (final RegisterAction registerAction = params.createRegisterAction()) {
+    try (final RegisterAction registerAction = registerParams.createRegisterAction()) {
       final BLSPublicKey withdrawalPublicKey =
           BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(this.withdrawalKey));
       registerAction.displayConfirmation(1);
