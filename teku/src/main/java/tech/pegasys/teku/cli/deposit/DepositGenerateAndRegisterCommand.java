@@ -44,7 +44,7 @@ import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.crypto.SecureRandomProvider;
 
 @Command(
-    name = "generate",
+    name = "generate-and-register",
     description =
         "Register validators by generating new keys and sending deposit transactions to an Ethereum 1 node",
     mixinStandardHelpOptions = true,
@@ -56,7 +56,7 @@ import tech.pegasys.teku.util.crypto.SecureRandomProvider;
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
-public class DepositGenerateCommand implements Runnable {
+public class DepositGenerateAndRegisterCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
   private final Function<String, String> envSupplier;
@@ -95,7 +95,7 @@ public class DepositGenerateCommand implements Runnable {
   @ArgGroup(heading = "Non-interactive password options for withdrawal keystores:%n")
   private WithdrawalPasswordOptions withdrawalPasswordOptions;
 
-  public DepositGenerateCommand() {
+  public DepositGenerateAndRegisterCommand() {
     this.shutdownFunction =
         System::exit; // required because web3j use non-daemon threads which halts the program
     this.envSupplier = System::getenv;
@@ -103,7 +103,7 @@ public class DepositGenerateCommand implements Runnable {
   }
 
   @VisibleForTesting
-  DepositGenerateCommand(
+  DepositGenerateAndRegisterCommand(
       final Consumer<Integer> shutdownFunction,
       final ConsoleAdapter consoleAdapter,
       final Function<String, String> envSupplier,

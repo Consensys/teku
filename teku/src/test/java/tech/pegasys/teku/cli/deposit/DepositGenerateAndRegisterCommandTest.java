@@ -35,10 +35,10 @@ import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
-import tech.pegasys.teku.cli.deposit.DepositGenerateCommand.ValidatorPasswordOptions;
-import tech.pegasys.teku.cli.deposit.DepositGenerateCommand.WithdrawalPasswordOptions;
+import tech.pegasys.teku.cli.deposit.DepositGenerateAndRegisterCommand.ValidatorPasswordOptions;
+import tech.pegasys.teku.cli.deposit.DepositGenerateAndRegisterCommand.WithdrawalPasswordOptions;
 
-class DepositGenerateCommandTest {
+class DepositGenerateAndRegisterCommandTest {
   private static final int VALIDATORS_COUNT = 2;
   private static final String EXPECTED_PASSWORD = "testpassword";
   private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
@@ -176,8 +176,8 @@ class DepositGenerateCommandTest {
       final Path outputPath,
       final ValidatorPasswordOptions validatorPasswordOptions,
       final WithdrawalPasswordOptions withdrawalPasswordOptions) {
-    final DepositGenerateCommand depositGenerateCommand =
-        new DepositGenerateCommand(
+    final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
+        new DepositGenerateAndRegisterCommand(
             shutdownFunction,
             consoleAdapter,
             envSupplier,
@@ -188,7 +188,7 @@ class DepositGenerateCommandTest {
             ENCRYPTED_KEYSTORE_ENABLED,
             validatorPasswordOptions,
             withdrawalPasswordOptions);
-    depositGenerateCommand.run();
+    depositGenerateAndRegisterCommand.run();
 
     // assert that sub directories exist
     final File[] subDirectories = outputPath.toFile().listFiles();

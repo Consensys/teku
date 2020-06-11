@@ -33,7 +33,7 @@ public class TekuDepositSender extends Node {
   public String sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
     container.setCommand(
         "validator",
-        "generate",
+        "generate-and-register",
         "--network",
         "minimal",
         "--Xconfirm-enabled",
