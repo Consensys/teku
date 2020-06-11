@@ -35,12 +35,23 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class AttesterSlashingStateTransitionValidator {
 
-  private List<UnsignedLong> indicesToSlash;
+  public Optional<OperationInvalidReason> validateSlashing(
+          final BeaconState state,
+          final AttesterSlashing attesterSlashing,
+          final List<UnsignedLong> indicesToSlash) {
+    return validateSlashing(state, attesterSlashing, Optional.of(indicesToSlash));
+  }
 
   public Optional<OperationInvalidReason> validateSlashing(
           final BeaconState state,
           final AttesterSlashing attesterSlashing) {
-    indicesToSlash = new ArrayList<>();
+    return validateSlashing(state, attesterSlashing, Optional.empty());
+  }
+
+  private Optional<OperationInvalidReason> validateSlashing(
+          final BeaconState state,
+          final AttesterSlashing attesterSlashing,
+          final Optional<List<UnsignedLong>> maybeIndicesToSlash) {
     IndexedAttestation attestation_1 = attesterSlashing.getAttestation_1();
     IndexedAttestation attestation_2 = attesterSlashing.getAttestation_2();
     return firstOf(
@@ -65,17 +76,13 @@ public class AttesterSlashingStateTransitionValidator {
             if (is_slashable_validator(
                 state.getValidators().get(toIntExact(index.longValue())),
                 get_current_epoch(state))) {
-              indicesToSlash.add(index);
+              maybeIndicesToSlash.ifPresent(indicesToSlash -> indicesToSlash.add(index));
               slashed_any = true;
             }
           }
 
           return check(slashed_any, AttesterSlashingInvalidReason.NO_ONE_SLASHED);
         });
-  }
-
-  public List<UnsignedLong> getIndicesToSlash() {
-    return indicesToSlash;
   }
 
   public enum AttesterSlashingInvalidReason implements OperationInvalidReason {

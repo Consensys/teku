@@ -40,14 +40,14 @@ public class AttesterSlashingValidatorTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 25);
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private RecentChainData recentChainData;
+  private RecentChainData recentChainData = mock(RecentChainData.class);
   private BeaconChainUtil beaconChainUtil;
   private AttesterSlashingValidator attesterSlashingValidator;
   private AttesterSlashingStateTransitionValidator stateTransitionValidator;
 
   @BeforeEach
   void beforeEach() {
-    recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
+    when(recentChainData.getBestState()).thenReturn(Optional.of(dataStructureUtil.randomBeaconState()));
     beaconChainUtil = BeaconChainUtil.create(recentChainData, VALIDATOR_KEYS, true);
     stateTransitionValidator = mock(AttesterSlashingStateTransitionValidator.class);
     attesterSlashingValidator =
@@ -55,8 +55,7 @@ public class AttesterSlashingValidatorTest {
   }
 
   @Test
-  public void shouldAcceptValidAttesterSlashing() throws Exception {
-    beaconChainUtil.initializeStorage();
+  public void shouldAcceptValidAttesterSlashing() {
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(stateTransitionValidator.validateSlashing(
             recentChainData.getBestState().orElseThrow(), slashing))
@@ -65,8 +64,7 @@ public class AttesterSlashingValidatorTest {
   }
 
   @Test
-  public void shouldRejectInvalidAttesterSlashing() throws Exception {
-    beaconChainUtil.initializeStorage();
+  public void shouldRejectInvalidAttesterSlashing() {
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
     when(stateTransitionValidator.validateSlashing(
             recentChainData.getBestState().orElseThrow(), slashing))
@@ -78,8 +76,7 @@ public class AttesterSlashingValidatorTest {
   }
 
   @Test
-  public void shouldIgnoreAttesterSlashingForTheSameAttesters() throws Exception {
-    beaconChainUtil.initializeStorage();
+  public void shouldIgnoreAttesterSlashingForTheSameAttesters() {
     AttesterSlashing slashing1 = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing slashing2 =
         new AttesterSlashing(slashing1.getAttestation_1(), slashing1.getAttestation_2());

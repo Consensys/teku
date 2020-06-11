@@ -18,18 +18,17 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
-import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashSet;
+
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
@@ -79,7 +78,7 @@ public class AttesterSlashingValidator {
                     new IllegalStateException(
                         "Unable to get best state for attester slashing processing."));
     Optional<OperationInvalidReason> invalidReason =
-        transitionValidator.validateSlashing(state, slashing);
+            transitionValidator.validateSlashing(state, slashing );
 
     if (invalidReason.isPresent()) {
       LOG.trace(
