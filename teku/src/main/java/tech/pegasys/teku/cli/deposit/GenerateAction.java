@@ -22,7 +22,11 @@ import java.io.File;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
@@ -32,6 +36,7 @@ import tech.pegasys.teku.util.crypto.SecureRandomProvider;
 public class GenerateAction {
   private static final String VALIDATOR_PASSWORD_PROMPT = "Validator Keystore";
   private static final String WITHDRAWAL_PASSWORD_PROMPT = "Withdrawal Keystore";
+  private final int validatorCount;
   private final String outputPath;
   private final boolean encryptKeys;
   private final ValidatorPasswordOptions validatorPasswordOptions;
@@ -43,6 +48,7 @@ public class GenerateAction {
   private final Function<String, String> envSupplier;
 
   public GenerateAction(
+      final int validatorCount,
       final String outputPath,
       final boolean encryptKeys,
       final ValidatorPasswordOptions validatorPasswordOptions,
@@ -51,6 +57,7 @@ public class GenerateAction {
       final ConsoleAdapter consoleAdapter,
       final CommandSpec commandSpec,
       final Function<String, String> envSupplier) {
+    this.validatorCount = validatorCount;
     this.outputPath = outputPath;
     this.encryptKeys = encryptKeys;
     this.validatorPasswordOptions = validatorPasswordOptions;
@@ -62,8 +69,16 @@ public class GenerateAction {
     this.srng = SecureRandomProvider.createSecureRandom();
   }
 
-  public ValidatorKeys generateKeys() {
+  public List<ValidatorKeys> generateKeys() {
+    return generateKeysStream().collect(Collectors.toList());
+  }
+
+  public Stream<ValidatorKeys> generateKeysStream() {
     final KeysWriter keysWriter = getKeysWriter();
+    return IntStream.range(0, validatorCount).mapToObj(ignore -> generateKey(keysWriter));
+  }
+
+  private ValidatorKeys generateKey(final KeysWriter keysWriter) {
     final BLSKeyPair validatorKey = BLSKeyPair.random(srng);
     final BLSKeyPair withdrawalKey = BLSKeyPair.random(srng);
     keysWriter.writeKeys(validatorKey, withdrawalKey);

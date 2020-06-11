@@ -51,10 +51,7 @@ public class DepositGenerateCommand implements Runnable {
   @Override
   public void run() {
     final GenerateAction generateAction = generateParams.createGenerateAction();
-    for (int i = 0; i < generateParams.getValidatorCount(); i++) {
-      generateAction.generateKeys();
-    }
-
+    generateAction.generateKeys();
     shutdownFunction.accept(0);
   }
 }

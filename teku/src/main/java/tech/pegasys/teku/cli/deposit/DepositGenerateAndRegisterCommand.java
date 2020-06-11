@@ -16,10 +16,12 @@ package tech.pegasys.teku.cli.deposit;
 import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -64,22 +66,27 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   @Override
   public void run() {
     final GenerateAction generateAction = generateParams.createGenerateAction();
+
     try (final RegisterAction registerAction = registerParams.createRegisterAction()) {
       registerAction.displayConfirmation(generateParams.getValidatorCount());
-      final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
-      for (int i = 0; i < generateParams.getValidatorCount(); i++) {
-        final ValidatorKeys validatorKeys = generateAction.generateKeys();
-        final SafeFuture<TransactionReceipt> transactionReceiptSafeFuture =
-            registerAction.sendDeposit(
-                validatorKeys.getValidatorKey(), validatorKeys.getWithdrawalKey().getPublicKey());
-        futures.add(transactionReceiptSafeFuture);
-      }
-
-      SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
+      final List<SafeFuture<TransactionReceipt>> transactionReceipts =
+          generateAction
+              .generateKeysStream()
+              .map(registerValidator(registerAction))
+              .collect(Collectors.toList());
+      SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
       SUB_COMMAND_LOG.sendDepositFailure(t);
       shutdownFunction.accept(1);
     }
     shutdownFunction.accept(0);
+  }
+
+  @NotNull
+  private Function<ValidatorKeys, SafeFuture<TransactionReceipt>> registerValidator(
+      final RegisterAction registerAction) {
+    return validatorKey ->
+        registerAction.sendDeposit(
+            validatorKey.getValidatorKey(), validatorKey.getWithdrawalKey().getPublicKey());
   }
 }

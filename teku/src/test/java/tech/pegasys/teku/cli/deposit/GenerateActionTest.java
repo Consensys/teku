@@ -39,6 +39,7 @@ import tech.pegasys.teku.cli.deposit.GenerateAction.WithdrawalPasswordOptions;
 
 class GenerateActionTest {
 
+  private static final int VALIDATORS_COUNT = 2;
   private static final String EXPECTED_PASSWORD = "testpassword";
   private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
   private static final Function<String, String> envSupplier =
@@ -174,6 +175,7 @@ class GenerateActionTest {
       final WithdrawalPasswordOptions withdrawalPasswordOptions) {
     final GenerateAction generateAction =
         new GenerateAction(
+            VALIDATORS_COUNT,
             outputPath.toString(),
             ENCRYPTED_KEYSTORE_ENABLED,
             validatorPasswordOptions,
@@ -186,7 +188,7 @@ class GenerateActionTest {
 
     // assert that sub directories exist
     final File[] subDirectories = outputPath.toFile().listFiles();
-    assertThat(subDirectories).hasSize(1);
+    assertThat(subDirectories).hasSize(VALIDATORS_COUNT);
     Arrays.stream(subDirectories).forEach(file -> assertThat(file).isDirectory());
 
     for (final File subDirectory : subDirectories) {

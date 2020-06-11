@@ -75,6 +75,7 @@ public class GenerateParams {
 
   public GenerateAction createGenerateAction() {
     return new GenerateAction(
+        validatorCount,
         outputPath,
         encryptKeys,
         validatorPasswordOptions,
