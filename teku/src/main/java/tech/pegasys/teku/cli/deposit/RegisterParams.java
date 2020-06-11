@@ -36,7 +36,7 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
-public class CommonParams {
+public class RegisterParams {
 
   @Spec private CommandSpec spec;
 
@@ -82,13 +82,13 @@ public class CommonParams {
   private final IntConsumer shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
 
-  CommonParams() {
+  RegisterParams() {
     this.shutdownFunction = System::exit;
     this.consoleAdapter = new ConsoleAdapter();
   }
 
   @VisibleForTesting
-  public CommonParams(
+  public RegisterParams(
       final CommandSpec commandSpec,
       final Eth1PrivateKeyOptions eth1PrivateKeyOptions,
       final IntConsumer shutdownFunction,

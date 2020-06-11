@@ -54,7 +54,7 @@ public class DepositRegisterCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
   private final Function<String, String> envSupplier;
   @Spec private CommandSpec spec;
-  @Mixin private CommonParams params;
+  @Mixin private RegisterParams params;
 
   @ArgGroup(exclusive = true, multiplicity = "1")
   private ValidatorKeyOptions validatorKeyOptions;
@@ -77,7 +77,7 @@ public class DepositRegisterCommand implements Runnable {
       final Consumer<Integer> shutdownFunction,
       final Function<String, String> envSupplier,
       final CommandSpec spec,
-      final CommonParams params,
+      final RegisterParams params,
       final ValidatorKeyOptions validatorKeyOptions,
       final String withdrawalKey) {
     this.shutdownFunction = shutdownFunction;

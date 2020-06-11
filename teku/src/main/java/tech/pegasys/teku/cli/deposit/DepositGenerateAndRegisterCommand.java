@@ -64,7 +64,7 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   private static final String WITHDRAWAL_PASSWORD_PROMPT = "Withdrawal Keystore";
 
   @Spec private CommandSpec spec;
-  @Mixin private CommonParams params;
+  @Mixin private RegisterParams params;
 
   @Option(
       names = {"--number-of-validators"},
@@ -108,7 +108,7 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
       final ConsoleAdapter consoleAdapter,
       final Function<String, String> envSupplier,
       final CommandSpec spec,
-      final CommonParams params,
+      final RegisterParams params,
       final int validatorCount,
       final String outputPath,
       final boolean encryptKeys,

@@ -47,13 +47,13 @@ class DepositGenerateAndRegisterCommandTest {
   private static final boolean ENCRYPTED_KEYSTORE_ENABLED = true;
   private static final Consumer<Integer> shutdownFunction = status -> {};
   private ConsoleAdapter consoleAdapter;
-  private CommonParams commonParams;
+  private RegisterParams registerParams;
   private CommandSpec commandSpec;
 
   @BeforeEach
   void setUp() {
     consoleAdapter = mock(ConsoleAdapter.class);
-    commonParams = mock(CommonParams.class);
+    registerParams = mock(RegisterParams.class);
     commandSpec = mock(CommandSpec.class);
     final CommandLine commandLine = mock(CommandLine.class);
     final RegisterAction registerAction = mock(RegisterAction.class);
@@ -62,7 +62,7 @@ class DepositGenerateAndRegisterCommandTest {
     when(consoleAdapter.isConsoleAvailable()).thenReturn(true);
     when(consoleAdapter.readPassword(anyString(), any()))
         .thenReturn(EXPECTED_PASSWORD.toCharArray());
-    when(commonParams.createRegisterAction()).thenReturn(registerAction);
+    when(registerParams.createRegisterAction()).thenReturn(registerAction);
     when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
@@ -182,7 +182,7 @@ class DepositGenerateAndRegisterCommandTest {
             consoleAdapter,
             envSupplier,
             commandSpec,
-            commonParams,
+            registerParams,
             VALIDATORS_COUNT,
             outputPath.toString(),
             ENCRYPTED_KEYSTORE_ENABLED,

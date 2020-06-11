@@ -59,19 +59,19 @@ class DepositRegisterCommandTest {
   private static final KdfParam KDF_PARAM = new SCryptParam(32, 262144, 1, 8, SALT);
   private static final KeyStoreData VALIDATOR_KEYSTORE =
       KeyStore.encrypt(BLS_PRIVATE_KEY, BLS_PUB_KEY, PASSWORD, "", KDF_PARAM, CIPHER);
-  private CommonParams commonParams;
+  private RegisterParams registerParams;
   private CommandLine.Model.CommandSpec commandSpec;
   private RegisterAction registerAction;
 
   @BeforeEach
   void setUp() {
-    commonParams = mock(CommonParams.class);
+    registerParams = mock(RegisterParams.class);
     commandSpec = mock(CommandLine.Model.CommandSpec.class);
     final CommandLine commandLine = mock(CommandLine.class);
     registerAction = mock(RegisterAction.class);
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
-    when(commonParams.createRegisterAction()).thenReturn(registerAction);
+    when(registerParams.createRegisterAction()).thenReturn(registerAction);
     when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
@@ -88,7 +88,7 @@ class DepositRegisterCommandTest {
 
     final DepositRegisterCommand depositRegisterCommand =
         new DepositRegisterCommand(
-            shutdownFunction, envSupplier, commandSpec, commonParams, validatorKeyOptions, "");
+            shutdownFunction, envSupplier, commandSpec, registerParams, validatorKeyOptions, "");
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
@@ -105,7 +105,7 @@ class DepositRegisterCommandTest {
 
     final DepositRegisterCommand depositRegisterCommand =
         new DepositRegisterCommand(
-            shutdownFunction, envSupplier, commandSpec, commonParams, validatorKeyOptions, "");
+            shutdownFunction, envSupplier, commandSpec, registerParams, validatorKeyOptions, "");
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
