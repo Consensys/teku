@@ -56,7 +56,7 @@ public final class G1Point implements Group<G1Point> {
     return new G1Point(scaleWithCofactor(point));
   }
 
-  static G1Point fromBytes(Bytes bytes) {
+  public static G1Point fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 49, "Expected 49 bytes, received %s.", bytes.size());
     return new G1Point(ECP.fromBytes(bytes.toArrayUnsafe()));
   }
@@ -135,7 +135,7 @@ public final class G1Point implements Group<G1Point> {
    * @param point the point to be scaled
    * @return a scaled point
    */
-  private static ECP scaleWithCofactor(ECP point) {
+  public static ECP scaleWithCofactor(ECP point) {
 
     // The G1 cofactor
     String cofactorHex =
@@ -160,7 +160,7 @@ public final class G1Point implements Group<G1Point> {
    *
    * @param point the ecp point
    */
-  G1Point(ECP point) {
+  public G1Point(ECP point) {
     this.point = point;
   }
 
@@ -182,7 +182,7 @@ public final class G1Point implements Group<G1Point> {
     return new G1Point(newPoint);
   }
 
-  ECP getPoint() {
+  public ECP getPoint() {
     return point;
   }
 
@@ -225,7 +225,7 @@ public final class G1Point implements Group<G1Point> {
   }
 
   /**
-   * Verify that the given point is in the correct subgroup for G2 by multiplying by the group
+   * Verify that the given point is in the correct subgroup for G1 by multiplying by the group
    * order.
    *
    * <p>There is a potentially more efficient way to do this described in
@@ -234,12 +234,12 @@ public final class G1Point implements Group<G1Point> {
    * @param point The elliptic curve point
    * @return True if the point is in G2; false otherwise
    */
-  static boolean isInGroup(ECP point) {
+  public static boolean isInGroup(ECP point) {
     ECP orderCheck = point.mul(new BIG(ROM.CURVE_Order));
     return orderCheck.is_infinity();
   }
 
-  ECP ecpPoint() {
+  public ECP ecpPoint() {
     return point;
   }
 

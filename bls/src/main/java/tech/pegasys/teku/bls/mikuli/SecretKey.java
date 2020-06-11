@@ -47,11 +47,11 @@ public final class SecretKey {
 
   private final Scalar scalarValue;
 
-  SecretKey(Scalar value) {
+  public SecretKey(Scalar value) {
     this.scalarValue = value;
   }
 
-  G2Point sign(G2Point message) {
+  public G2Point sign(G2Point message) {
     return message.mul(scalarValue);
   }
 
@@ -61,8 +61,13 @@ public final class SecretKey {
     return Bytes.wrap(bytea);
   }
 
-  Scalar getScalarValue() {
+  public Scalar getScalarValue() {
     return scalarValue;
+  }
+
+  /** Overwrites the key with zeros so that it is no longer in memory */
+  public void destroy() {
+    scalarValue.destroy();
   }
 
   @Override

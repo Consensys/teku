@@ -16,15 +16,12 @@ package tech.pegasys.teku.bls.mikuli;
 import java.security.SecureRandom;
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ECP;
-import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.milagro.amcl.RAND;
 
 /** KeyPair represents a public and private key. */
 public final class KeyPair {
 
-  private static final BIG curveOrder = new BIG(ROM.CURVE_Order);
-  static final G1Point g1Generator = new G1Point(ECP.generator());
+  private static final BIG curveOrder = Util.curveOrder.value();
 
   /**
    * Generate a new random key pair
@@ -36,14 +33,18 @@ public final class KeyPair {
     byte[] b = new byte[128];
     srng.nextBytes(b);
     rng.seed(128, b);
-    Scalar secret = new Scalar(BIG.randomnum(curveOrder, rng));
+    // secret key must be between 1 and (curveOrder - 1) inclusive
+    BIG bigSecret = BIG.randomnum(curveOrder.minus(new BIG(1)), rng);
+    bigSecret.plus(new BIG(1));
 
-    SecretKey secretKey = new SecretKey(secret);
+    SecretKey secretKey = new SecretKey(new Scalar(bigSecret));
     return new KeyPair(secretKey);
   }
 
   /**
    * Generate a new random key pair given entropy
+   *
+   * <p>Use this only for testing.
    *
    * @param entropy to seed the key pair generation
    * @return a new random key pair
@@ -51,9 +52,11 @@ public final class KeyPair {
   public static KeyPair random(int entropy) {
     RAND rng = new RAND();
     rng.sirand(entropy);
-    Scalar secret = new Scalar(BIG.randomnum(curveOrder, rng));
+    // secret key must be between 1 and (curveOrder - 1) inclusive
+    BIG bigSecret = BIG.randomnum(curveOrder.minus(new BIG(1)), rng);
+    bigSecret.plus(new BIG(1));
 
-    SecretKey secretKey = new SecretKey(secret);
+    SecretKey secretKey = new SecretKey(new Scalar(bigSecret));
     return new KeyPair(secretKey);
   }
 

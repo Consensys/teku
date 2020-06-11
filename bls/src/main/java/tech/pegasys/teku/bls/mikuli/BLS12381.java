@@ -289,7 +289,7 @@ public final class BLS12381 {
               ? semiSig.getMsgPubKeyPairing()
               : pairProd.mul(semiSig.getMsgPubKeyPairing());
     }
-    GTPoint sigPair = AtePairing.pairNoExp(KeyPair.g1Generator, sigSum);
+    GTPoint sigPair = AtePairing.pairNoExp(Util.g1Generator, sigSum);
     return AtePairing.fexp(sigPair).equals(AtePairing.fexp(pairProd));
   }
 

@@ -14,11 +14,16 @@
 package tech.pegasys.teku.bls.mikuli;
 
 import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.milagro.amcl.BLS381.ECP;
+import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 
 class Util {
 
-  static final BIG P = new BIG(ROM.Modulus);
+  public static final BIG P = new BIG(ROM.Modulus);
+  public static final Scalar curveOrder = new Scalar(new BIG(ROM.CURVE_Order));
+  public static final G1Point g1Generator = new G1Point(ECP.generator());
+  public static final G2Point g2Generator = new G2Point(ECP2.generator());
 
   /**
    * Calculate (y_im * 2) // q (which corresponds to the a1 flag in the Eth2 BLS spec)
