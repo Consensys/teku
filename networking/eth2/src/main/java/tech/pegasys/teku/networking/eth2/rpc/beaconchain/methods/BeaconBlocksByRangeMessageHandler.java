@@ -32,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -73,7 +74,11 @@ public class BeaconBlocksByRangeMessageHandler
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
                 callback.completeWithErrorResponse((RpcException) rootCause);
               } else {
-                LOG.error("Failed to process blocks by range request", error);
+                if (rootCause instanceof StreamClosedException) {
+                  LOG.trace("Stream closed while sending requested blocks", error);
+                } else {
+                  LOG.error("Failed to process blocks by range request", error);
+                }
                 callback.completeWithUnexpectedError(error);
               }
             });
@@ -92,17 +97,37 @@ public class BeaconBlocksByRangeMessageHandler
   }
 
   private SafeFuture<RequestState> sendNextBlock(final RequestState requestState) {
-    return combinedChainDataClient
-        .getBlockAtSlotExact(requestState.currentSlot, requestState.headBlockRoot)
-        .thenCompose(
-            maybeBlock -> {
-              maybeBlock.ifPresent(requestState::sendBlock);
-              if (requestState.isComplete()) {
-                return completedFuture(requestState);
-              }
-              requestState.incrementCurrentSlot();
-              return sendNextBlock(requestState);
-            });
+    SafeFuture<Optional<SignedBeaconBlock>> blockFuture = loadNextBlock(requestState);
+    // Avoid risk of
+    while (blockFuture.isDone() && !blockFuture.isCompletedExceptionally()) {
+      final boolean complete = handleLoadedBlock(requestState, blockFuture.join());
+      if (complete) {
+        return completedFuture(requestState);
+      }
+      blockFuture = loadNextBlock(requestState);
+    }
+    return blockFuture.thenCompose(
+        maybeBlock ->
+            handleLoadedBlock(requestState, maybeBlock)
+                ? completedFuture(requestState)
+                : sendNextBlock(requestState));
+  }
+
+  /** Sends the block and returns true if the request is now complete. */
+  private boolean handleLoadedBlock(
+      final RequestState requestState, final Optional<SignedBeaconBlock> block) {
+    block.ifPresent(requestState::sendBlock);
+    if (requestState.isComplete()) {
+      return true;
+    } else {
+      requestState.incrementCurrentSlot();
+      return false;
+    }
+  }
+
+  private SafeFuture<Optional<SignedBeaconBlock>> loadNextBlock(final RequestState requestState) {
+    return combinedChainDataClient.getBlockAtSlotExact(
+        requestState.currentSlot, requestState.headBlockRoot);
   }
 
   private static class RequestState {
