@@ -72,7 +72,12 @@ public class ForkChoice implements FinalizedCheckpointChannel {
     }
 
     transaction.commit().join();
-    protoArrayForkChoiceStrategy.onBlock(recentChainData.getStore(), block.getMessage());
+    result
+        .getBlockProcessingRecord()
+        .ifPresent(
+            record ->
+                protoArrayForkChoiceStrategy.onBlock(block.getMessage(), record.getPostState()));
+
     return result;
   }
 
