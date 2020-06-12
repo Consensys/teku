@@ -25,7 +25,6 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -34,10 +33,8 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.operationpools.OperationPool;
-import tech.pegasys.teku.statetransition.operationpools.OperationPools;
 
 public class BlockFactory {
   private final BlockProposalUtil blockCreator;
@@ -93,11 +90,14 @@ public class BlockFactory {
     SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(blockSlotState);
 
     // Collect slashings to include
-    final SSZList<ProposerSlashing> proposerSlashings = proposerSlashingPool.getItemsForBlock(blockSlotState);
-    final SSZList<AttesterSlashing> attesterSlashings = attesterSlashingPool.getItemsForBlock(blockSlotState);
+    final SSZList<ProposerSlashing> proposerSlashings =
+        proposerSlashingPool.getItemsForBlock(blockSlotState);
+    final SSZList<AttesterSlashing> attesterSlashings =
+        attesterSlashingPool.getItemsForBlock(blockSlotState);
 
     // Collect exits to include
-    final SSZList<SignedVoluntaryExit> voluntaryExits = voluntaryExitPool.getItemsForBlock(blockSlotState);
+    final SSZList<SignedVoluntaryExit> voluntaryExits =
+        voluntaryExitPool.getItemsForBlock(blockSlotState);
 
     // Collect deposits
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);

@@ -83,8 +83,7 @@ public class VoluntaryExitValidatorTest {
     SignedVoluntaryExit exit2 = new SignedVoluntaryExit(exit1.getMessage(), exit1.getSignature());
     SignedVoluntaryExit exit3 = new SignedVoluntaryExit(exit2.getMessage(), exit2.getSignature());
 
-    when(stateTransitionValidator.validate(
-            eq(recentChainData.getBestState().orElseThrow()), any()))
+    when(stateTransitionValidator.validate(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             eq(recentChainData.getBestState().orElseThrow()),

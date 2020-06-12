@@ -40,9 +40,9 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
@@ -80,7 +80,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private VoluntaryExitGossipManager voluntaryExitGossipManager;
   private ProposerSlashingGossipManager proposerSlashingGossipManager;
   private AttesterSlashingGossipManager attesterSlashingGossipManager;
-  
+
   private long discoveryNetworkAttestationSubnetsSubscription;
 
   // Upstream consumers
@@ -180,23 +180,27 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
-                discoveryNetwork,
-                gossipEncoding,
-                forkInfo,
-                exitValidator,
-                gossipedVoluntaryExitConsumer);
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            exitValidator,
+            gossipedVoluntaryExitConsumer);
 
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
-                discoveryNetwork,
-                gossipEncoding,
-                forkInfo,
-                proposerSlashingValidator,
-                gossipedProposerSlashingConsumer);
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            proposerSlashingValidator,
+            gossipedProposerSlashingConsumer);
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
-            discoveryNetwork, gossipEncoding, forkInfo, attesterSlashingValidator, gossipedAttesterSlashingConsumer);
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            attesterSlashingValidator,
+            gossipedAttesterSlashingConsumer);
 
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(

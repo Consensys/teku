@@ -28,7 +28,8 @@ import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 
-public class VoluntaryExitStateTransitionValidator implements OperationStateTransitionValidator<SignedVoluntaryExit> {
+public class VoluntaryExitStateTransitionValidator
+    implements OperationStateTransitionValidator<SignedVoluntaryExit> {
 
   @Override
   public Optional<OperationInvalidReason> validate(

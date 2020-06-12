@@ -43,8 +43,11 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttestationGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
+  @SuppressWarnings("unchecked")
   private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
       mock(GossipedOperationConsumer.class);
+
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));

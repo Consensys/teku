@@ -39,6 +39,8 @@ public class AttestationSubnetSubscriptionsTest {
   private AttestationSubnetSubscriptions subnetSubscriptions;
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+
+  @SuppressWarnings("unchecked")
   private final GossipedOperationConsumer<ValidateableAttestation> attestationConsumer =
       mock(GossipedOperationConsumer.class);
 

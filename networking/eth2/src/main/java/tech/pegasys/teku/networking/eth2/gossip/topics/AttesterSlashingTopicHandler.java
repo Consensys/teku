@@ -39,7 +39,7 @@ public class AttesterSlashingTopicHandler implements Eth2TopicHandler<AttesterSl
       final ForkInfo forkInfo,
       final AttesterSlashingValidator validator,
       final GossipedOperationConsumer<AttesterSlashing> consumer) {
-      this.gossipEncoding = gossipEncoding;
+    this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
     this.consumer = consumer;

@@ -27,7 +27,8 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.util.config.Constants;
 
-public class AttestationDataStateTransitionValidator implements OperationStateTransitionValidator<AttestationData> {
+public class AttestationDataStateTransitionValidator
+    implements OperationStateTransitionValidator<AttestationData> {
 
   @Override
   public Optional<OperationInvalidReason> validate(

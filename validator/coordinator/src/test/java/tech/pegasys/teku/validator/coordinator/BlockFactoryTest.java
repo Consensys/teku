@@ -36,15 +36,20 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.operationpools.OperationPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+@SuppressWarnings("unchecked")
 class BlockFactoryTest {
 
   public static final Eth1Data ETH1_DATA = new Eth1Data();
@@ -53,6 +58,9 @@ class BlockFactoryTest {
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, recentChainData);
   private final AggregatingAttestationPool attestationsPool =
       mock(AggregatingAttestationPool.class);
+  private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
+  private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final StateTransition stateTransition = new StateTransition();
@@ -65,6 +73,9 @@ class BlockFactoryTest {
           new BlockProposalUtil(stateTransition),
           stateTransition,
           attestationsPool,
+          attesterSlashingPool,
+          proposerSlashingPool,
+          voluntaryExitPool,
           depositProvider,
           eth1DataCache,
           graffiti);

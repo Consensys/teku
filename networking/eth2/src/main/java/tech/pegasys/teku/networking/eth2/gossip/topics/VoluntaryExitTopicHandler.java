@@ -35,10 +35,10 @@ public class VoluntaryExitTopicHandler implements Eth2TopicHandler<SignedVolunta
   private final GossipedOperationConsumer<SignedVoluntaryExit> consumer;
 
   public VoluntaryExitTopicHandler(
-          final GossipEncoding gossipEncoding,
-          final ForkInfo forkInfo,
-          final VoluntaryExitValidator validator,
-          final GossipedOperationConsumer<SignedVoluntaryExit> consumer) {
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
+      final VoluntaryExitValidator validator,
+      final GossipedOperationConsumer<SignedVoluntaryExit> consumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;

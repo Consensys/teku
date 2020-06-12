@@ -38,6 +38,11 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class VoluntaryExitTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
+
+  @SuppressWarnings("unchecked")
+  private final GossipedOperationConsumer<SignedVoluntaryExit> consumer =
+      mock(GossipedOperationConsumer.class);
+
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
@@ -47,7 +52,8 @@ public class VoluntaryExitTopicHandlerTest {
   private final VoluntaryExitValidator validator = mock(VoluntaryExitValidator.class);
 
   private VoluntaryExitTopicHandler topicHandler =
-      new VoluntaryExitTopicHandler(gossipEncoding, dataStructureUtil.randomForkInfo(), validator);
+      new VoluntaryExitTopicHandler(
+          gossipEncoding, dataStructureUtil.randomForkInfo(), validator, consumer);
 
   @BeforeEach
   public void setup() {
@@ -88,7 +94,7 @@ public class VoluntaryExitTopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final VoluntaryExitTopicHandler topicHandler =
-        new VoluntaryExitTopicHandler(gossipEncoding, forkInfo, validator);
+        new VoluntaryExitTopicHandler(gossipEncoding, forkInfo, validator, consumer);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/voluntary_exit/ssz_snappy");
   }
 }

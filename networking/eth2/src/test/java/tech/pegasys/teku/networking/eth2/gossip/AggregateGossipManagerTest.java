@@ -40,6 +40,8 @@ public class AggregateGossipManagerTest {
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
+
+  @SuppressWarnings("unchecked")
   private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
       mock(GossipedOperationConsumer.class);
 

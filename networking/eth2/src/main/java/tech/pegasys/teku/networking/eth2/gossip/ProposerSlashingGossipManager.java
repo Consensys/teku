@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -30,13 +29,14 @@ public class ProposerSlashingGossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public ProposerSlashingGossipManager(
-          final GossipNetwork gossipNetwork,
-          final GossipEncoding gossipEncoding,
-          final ForkInfo forkInfo,
-          final ProposerSlashingValidator proposerSlashingValidator,
-          final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
+      final GossipNetwork gossipNetwork,
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
+      final ProposerSlashingValidator proposerSlashingValidator,
+      final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
     final ProposerSlashingTopicHandler topicHandler =
-        new ProposerSlashingTopicHandler(gossipEncoding, forkInfo, proposerSlashingValidator, gossipedProposerSlashingConsumer);
+        new ProposerSlashingTopicHandler(
+            gossipEncoding, forkInfo, proposerSlashingValidator, gossipedProposerSlashingConsumer);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

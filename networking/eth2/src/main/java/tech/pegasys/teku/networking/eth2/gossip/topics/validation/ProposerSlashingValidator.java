@@ -81,8 +81,7 @@ public class ProposerSlashingValidator {
                 () ->
                     new IllegalStateException(
                         "Unable to get best state for proposer slashing processing."));
-    Optional<OperationInvalidReason> invalidReason =
-        transitionValidator.validate(state, slashing);
+    Optional<OperationInvalidReason> invalidReason = transitionValidator.validate(state, slashing);
 
     if (invalidReason.isPresent()) {
       LOG.trace(

@@ -38,7 +38,11 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttesterSlashingTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
-  private final GossipedOperationConsumer<AttesterSlashing> consumer = mock(GossipedOperationConsumer.class);
+
+  @SuppressWarnings("unchecked")
+  private final GossipedOperationConsumer<AttesterSlashing> consumer =
+      mock(GossipedOperationConsumer.class);
+
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);

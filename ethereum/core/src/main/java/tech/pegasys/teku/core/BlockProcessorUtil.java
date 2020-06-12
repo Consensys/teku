@@ -315,7 +315,7 @@ public final class BlockProcessorUtil {
       for (AttesterSlashing attesterSlashing : attesterSlashings) {
         List<UnsignedLong> indicesToSlash = new ArrayList<>();
         final Optional<OperationInvalidReason> invalidReason =
-            validator.validateSlashing(state, attesterSlashing, indicesToSlash);
+            validator.validate(state, attesterSlashing, indicesToSlash);
 
         checkArgument(
             invalidReason.isEmpty(),
@@ -354,8 +354,7 @@ public final class BlockProcessorUtil {
 
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
-        final Optional<OperationInvalidReason> invalidReason =
-            validator.validate(state, data);
+        final Optional<OperationInvalidReason> invalidReason = validator.validate(state, data);
         checkArgument(
             invalidReason.isEmpty(),
             "process_attestations: %s",

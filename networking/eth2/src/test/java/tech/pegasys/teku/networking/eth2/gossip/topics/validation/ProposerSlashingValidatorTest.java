@@ -63,8 +63,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validate(
-            recentChainData.getBestState().orElseThrow(), slashing))
+    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
@@ -77,8 +76,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validate(
-            recentChainData.getBestState().orElseThrow(), slashing))
+    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(
             Optional.of(
                 ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason
@@ -94,8 +92,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validate(
-            recentChainData.getBestState().orElseThrow(), slashing))
+    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), slashing, BLSSignatureVerifier.SIMPLE))
@@ -110,8 +107,7 @@ public class ProposerSlashingValidatorTest {
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 =
         new ProposerSlashing(slashing1.getHeader_1(), slashing1.getHeader_2());
-    when(stateTransitionValidator.validate(
-            eq(recentChainData.getBestState().orElseThrow()), any()))
+    when(stateTransitionValidator.validate(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             eq(recentChainData.getBestState().orElseThrow()),

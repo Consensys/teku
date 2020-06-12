@@ -181,18 +181,18 @@ public class Eth2NetworkFactory {
                 config);
 
         return new ActiveEth2Network(
-                network,
-                eth2PeerManager,
-                eventBus,
-                recentChainData,
-                gossipEncoding,
-                attestationSubnetService,
-                gossipedAttestationConsumer,
-                gossipedAttesterSlashingConsumer,
-                gossipedProposerSlashingConsumer,
-                gossipedVoluntaryExitConsumer,
-                processedAttestationSubscriptionProvider,
-                verifiedBlockAttestationsSubscriptionProvider);
+            network,
+            eth2PeerManager,
+            eventBus,
+            recentChainData,
+            gossipEncoding,
+            attestationSubnetService,
+            gossipedAttestationConsumer,
+            gossipedAttesterSlashingConsumer,
+            gossipedProposerSlashingConsumer,
+            gossipedVoluntaryExitConsumer,
+            processedAttestationSubscriptionProvider,
+            verifiedBlockAttestationsSubscriptionProvider);
       }
     }
 
@@ -285,21 +285,21 @@ public class Eth2NetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder gossipedAttesterSlashingConsumer(
-            final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
+        final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
       checkNotNull(gossipedAttesterSlashingConsumer);
       this.gossipedAttesterSlashingConsumer = gossipedAttesterSlashingConsumer;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedProposerSlashingConsumer(
-            final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
+        final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
       checkNotNull(gossipedProposerSlashingConsumer);
       this.gossipedProposerSlashingConsumer = gossipedProposerSlashingConsumer;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedVoluntaryExitConsumer(
-            final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
+        final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
       checkNotNull(gossipedVoluntaryExitConsumer);
       this.gossipedVoluntaryExitConsumer = gossipedVoluntaryExitConsumer;
       return this;

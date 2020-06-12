@@ -42,6 +42,7 @@ import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -129,9 +130,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationManager attestationManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
-  private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
-  private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
+  private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
+  private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
 
   private SyncStateTracker syncStateTracker;
 
@@ -229,28 +230,22 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initRestAPI();
   }
 
-//  private void initAttesterSlashingPool() {
-//    LOG.debug("BeaconChainController.initAttesterSlashingPool()");
-//    attesterSlashingPool = new OperationPool<>(
-//    AttesterSlashing.class,
-//    new AttesterSlashingStateTransitionValidator()
-//    );
-//  }
+  private void initAttesterSlashingPool() {
+    LOG.debug("BeaconChainController.initAttesterSlashingPool()");
+    attesterSlashingPool =
+        new OperationPool<>(AttesterSlashing.class, new AttesterSlashingStateTransitionValidator());
+  }
 
   private void initProposerSlashingPool() {
     LOG.debug("BeaconChainController.initProposerSlashingPool()");
-    proposerSlashingPool = new OperationPool<>(
-            ProposerSlashing.class,
-            new ProposerSlashingStateTransitionValidator()
-    );
+    proposerSlashingPool =
+        new OperationPool<>(ProposerSlashing.class, new ProposerSlashingStateTransitionValidator());
   }
 
   private void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
-    voluntaryExitPool = new OperationPool<>(
-            SignedVoluntaryExit.class,
-            new VoluntaryExitStateTransitionValidator()
-    );
+    voluntaryExitPool =
+        new OperationPool<>(SignedVoluntaryExit.class, new VoluntaryExitStateTransitionValidator());
   }
 
   private void initCombinedChainDataClient() {
@@ -303,16 +298,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
-            new BlockFactory(
-                    new BlockProposalUtil(stateTransition),
-                    stateTransition,
-                    attestationPool,
-                    attesterSlashingPool,
-                    proposerSlashingPool,
-                    voluntaryExitPool,
-                    depositProvider,
-                    eth1DataCache,
-                    VersionProvider.getDefaultGraffiti());
+        new BlockFactory(
+            new BlockProposalUtil(stateTransition),
+            stateTransition,
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool,
+            depositProvider,
+            eth1DataCache,
+            VersionProvider.getDefaultGraffiti());
     final AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(p2pNetwork);
     final ValidatorApiHandler validatorApiHandler =
@@ -387,29 +382,29 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
 
       this.p2pNetwork =
-              Eth2NetworkBuilder.create()
-                      .config(p2pConfig)
-                      .eth2Config(eth2Config)
-                      .eventBus(eventBus)
-                      .recentChainData(recentChainData)
-                      .gossipedAttestationConsumer(
-                              attestation ->
-                                      attestationManager
-                                              .onAttestation(attestation)
-                                              .ifInvalid(
-                                                      reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
-                      .gossipedAttesterSlashingConsumer(attesterSlashingPool::add)
-                      .gossipedProposerSlashingConsumer(proposerSlashingPool::add)
-                      .gossipedVoluntaryExitConsumer(voluntaryExitPool::add)
-                      .processedAttestationSubscriptionProvider(
-                              attestationManager::subscribeToProcessedAttestations)
-                      .verifiedBlockAttestationsProvider(
-                              blockImporter::subscribeToVerifiedBlockAttestations)
-                      .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
-                      .metricsSystem(metricsSystem)
-                      .timeProvider(timeProvider)
-                      .asyncRunner(asyncRunner)
-                      .build();
+          Eth2NetworkBuilder.create()
+              .config(p2pConfig)
+              .eth2Config(eth2Config)
+              .eventBus(eventBus)
+              .recentChainData(recentChainData)
+              .gossipedAttestationConsumer(
+                  attestation ->
+                      attestationManager
+                          .onAttestation(attestation)
+                          .ifInvalid(
+                              reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
+              .gossipedAttesterSlashingConsumer(attesterSlashingPool::add)
+              .gossipedProposerSlashingConsumer(proposerSlashingPool::add)
+              .gossipedVoluntaryExitConsumer(voluntaryExitPool::add)
+              .processedAttestationSubscriptionProvider(
+                  attestationManager::subscribeToProcessedAttestations)
+              .verifiedBlockAttestationsProvider(
+                  blockImporter::subscribeToVerifiedBlockAttestations)
+              .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
+              .metricsSystem(metricsSystem)
+              .timeProvider(timeProvider)
+              .asyncRunner(asyncRunner)
+              .build();
     }
   }
 

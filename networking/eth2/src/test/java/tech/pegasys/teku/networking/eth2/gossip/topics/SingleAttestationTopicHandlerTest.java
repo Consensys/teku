@@ -49,8 +49,11 @@ public class SingleAttestationTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
+
+  @SuppressWarnings("unchecked")
   private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
       mock(GossipedOperationConsumer.class);
+
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
