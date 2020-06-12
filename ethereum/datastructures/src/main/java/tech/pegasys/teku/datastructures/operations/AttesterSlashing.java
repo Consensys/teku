@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+
+import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
@@ -38,6 +40,8 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable,
 
   private final IndexedAttestation attestation_1;
   private final IndexedAttestation attestation_2;
+
+  @Label("sos-ignore")
   private final Supplier<Set<UnsignedLong>> intersectingIndices;
 
   public AttesterSlashing(IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
