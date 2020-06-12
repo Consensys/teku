@@ -90,7 +90,7 @@ public class Eth1HeadTracker {
     if (headAtFollowDistance
         .map(current -> current.compareTo(newHeadAtFollowDistance) < 0)
         .orElse(true)) {
-      if (!reachedHead.get()) {
+      if (reachedHead.compareAndSet(false, true)) {
         STATUS_LOG.eth1AtHead();
         reachedHead.set(true);
       }
