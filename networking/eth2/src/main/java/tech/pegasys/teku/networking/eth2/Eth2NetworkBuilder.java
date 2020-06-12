@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.upstreamconsumers.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
@@ -179,6 +179,27 @@ public class Eth2NetworkBuilder {
 
   public Eth2NetworkBuilder gossipedAttestationConsumer(
       final GossipedAttestationConsumer gossipedAttestationConsumer) {
+    checkNotNull(gossipedAttestationConsumer);
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+    return this;
+  }
+
+  public Eth2NetworkBuilder gossipedVoluntaryExitConsumer(
+          final GossipedAttestationConsumer gossipedAttestationConsumer) {
+    checkNotNull(gossipedAttestationConsumer);
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+    return this;
+  }
+
+  public Eth2NetworkBuilder gossipedProposerSlashingConsumer(
+          final GossipedAttestationConsumer gossipedAttestationConsumer) {
+    checkNotNull(gossipedAttestationConsumer);
+    this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+    return this;
+  }
+
+  public Eth2NetworkBuilder gossipedAttesterSlashingConsumer(
+          final GossipedAttestationConsumer gossipedAttestationConsumer) {
     checkNotNull(gossipedAttestationConsumer);
     this.gossipedAttestationConsumer = gossipedAttestationConsumer;
     return this;

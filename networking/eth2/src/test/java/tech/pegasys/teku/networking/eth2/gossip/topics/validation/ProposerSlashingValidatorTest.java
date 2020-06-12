@@ -63,7 +63,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validateSlashing(
+    when(stateTransitionValidator.validate(
             recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
@@ -77,7 +77,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validateSlashing(
+    when(stateTransitionValidator.validate(
             recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(
             Optional.of(
@@ -94,7 +94,7 @@ public class ProposerSlashingValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
-    when(stateTransitionValidator.validateSlashing(
+    when(stateTransitionValidator.validate(
             recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
@@ -110,7 +110,7 @@ public class ProposerSlashingValidatorTest {
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
     ProposerSlashing slashing2 =
         new ProposerSlashing(slashing1.getHeader_1(), slashing1.getHeader_2());
-    when(stateTransitionValidator.validateSlashing(
+    when(stateTransitionValidator.validate(
             eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(

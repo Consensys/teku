@@ -31,8 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,12 +42,15 @@ import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -130,7 +131,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationManager attestationManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
-  private volatile OperationPools operationPools;
+  private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
+  private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
 
   private SyncStateTracker syncStateTracker;
 
@@ -208,7 +211,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
-    initOperationPools();
+    initAttesterSlashingPool();
+    initProposerSlashingPool();
+    initVoluntaryExitPool();
     initStateTransition();
     initForkChoice();
     initBlockImporter();
@@ -226,9 +231,28 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initRestAPI();
   }
 
-  private void initOperationPools() {
-    LOG.debug("BeaconChainController.initOperationPools()");
-    operationPools = new OperationPools();
+//  private void initAttesterSlashingPool() {
+//    LOG.debug("BeaconChainController.initAttesterSlashingPool()");
+//    attesterSlashingPool = new OperationPool<>(
+//    AttesterSlashing.class,
+//    new AttesterSlashingStateTransitionValidator()
+//    );
+//  }
+
+  private void initProposerSlashingPool() {
+    LOG.debug("BeaconChainController.initProposerSlashingPool()");
+    proposerSlashingPool = new OperationPool<>(
+            ProposerSlashing.class,
+            new ProposerSlashingStateTransitionValidator()
+    );
+  }
+
+  private void initVoluntaryExitPool() {
+    LOG.debug("BeaconChainController.initVoluntaryExitPool()");
+    voluntaryExitPool = new OperationPool<>(
+            SignedVoluntaryExit.class,
+            new VoluntaryExitStateTransitionValidator()
+    );
   }
 
   private void initCombinedChainDataClient() {

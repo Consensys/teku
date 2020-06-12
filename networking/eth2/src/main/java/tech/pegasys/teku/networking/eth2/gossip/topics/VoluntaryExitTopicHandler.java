@@ -21,6 +21,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.upstreamconsumers.GossipedVoluntaryExitConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -32,14 +33,17 @@ public class VoluntaryExitTopicHandler implements Eth2TopicHandler<SignedVolunta
   private final VoluntaryExitValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
+  private final GossipedOperationConsumer<SignedVoluntaryExit> consumer;
 
   public VoluntaryExitTopicHandler(
-      final GossipEncoding gossipEncoding,
-      final ForkInfo forkInfo,
-      final VoluntaryExitValidator validator) {
+          final GossipEncoding gossipEncoding,
+          final ForkInfo forkInfo,
+          final VoluntaryExitValidator validator,
+          final GossipedOperationConsumer<SignedVoluntaryExit> consumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
+    this.consumer = consumer;
   }
 
   @Override

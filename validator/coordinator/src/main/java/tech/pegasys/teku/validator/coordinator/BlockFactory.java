@@ -36,13 +36,16 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.operationpools.OperationPool;
 import tech.pegasys.teku.statetransition.operationpools.OperationPools;
 
 public class BlockFactory {
   private final BlockProposalUtil blockCreator;
   private final StateTransition stateTransition;
   private final AggregatingAttestationPool attestationPool;
-  private final OperationPools operationPools;
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private final OperationPool<ProposerSlashing> proposerSlashingPool;
+  private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
@@ -51,14 +54,18 @@ public class BlockFactory {
       final BlockProposalUtil blockCreator,
       final StateTransition stateTransition,
       final AggregatingAttestationPool attestationPool,
-      final OperationPools operationPools,
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<AttesterSlashing> attesterSlashingPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti) {
     this.blockCreator = blockCreator;
     this.stateTransition = stateTransition;
     this.attestationPool = attestationPool;
-    this.operationPools = operationPools;
+    this.voluntaryExitPool = voluntaryExitPool;
+    this.proposerSlashingPool = proposerSlashingPool;
+    this.attesterSlashingPool = attesterSlashingPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
@@ -84,15 +91,13 @@ public class BlockFactory {
     // Collect attestations to include
     final BeaconState blockSlotState = stateTransition.process_slots(previousState, newSlot);
     SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(blockSlotState);
-    // Collect slashing to include
-    final SSZList<ProposerSlashing> proposerSlashings =
-            operationPools.getPool(ProposerSlashing.class).getItemsForBlock();
 
-    final SSZList<AttesterSlashing> attesterSlashings =
-            operationPools.getPool(AttesterSlashing.class).getItemsForBlock();
+    // Collect slashings to include
+    final SSZList<ProposerSlashing> proposerSlashings = proposerSlashingPool.getItemsForBlock(blockSlotState);
+    final SSZList<AttesterSlashing> attesterSlashings = attesterSlashingPool.getItemsForBlock(blockSlotState);
 
-    final SSZList<SignedVoluntaryExit> voluntaryExits =
-            operationPools.getPool(SignedVoluntaryExit.class).getItemsForBlock();
+    // Collect exits to include
+    final SSZList<SignedVoluntaryExit> voluntaryExits = voluntaryExitPool.getItemsForBlock(blockSlotState);
 
     // Collect deposits
     Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockPreState);

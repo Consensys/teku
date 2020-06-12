@@ -33,13 +33,13 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
   private final SignedAggregateAndProofValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final GossipedAttestationConsumer gossipedAttestationConsumer;
+  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
 
   public AggregateAttestationTopicHandler(
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final SignedAggregateAndProofValidator validator,
-      final GossipedAttestationConsumer gossipedAttestationConsumer) {
+      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;

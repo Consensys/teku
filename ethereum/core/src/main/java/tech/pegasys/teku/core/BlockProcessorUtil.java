@@ -258,7 +258,7 @@ public final class BlockProcessorUtil {
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposerSlashing : proposerSlashings) {
         Optional<OperationInvalidReason> invalidReason =
-            validator.validateSlashing(state, proposerSlashing);
+            validator.validate(state, proposerSlashing);
         checkArgument(
             invalidReason.isEmpty(),
             "process_proposer_slashings: %s",
@@ -355,7 +355,7 @@ public final class BlockProcessorUtil {
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
         final Optional<OperationInvalidReason> invalidReason =
-            validator.validateAttestation(state, data);
+            validator.validate(state, data);
         checkArgument(
             invalidReason.isEmpty(),
             "process_attestations: %s",
@@ -450,7 +450,7 @@ public final class BlockProcessorUtil {
 
       // For each exit in block.body.voluntaryExits:
       for (SignedVoluntaryExit signedExit : exits) {
-        Optional<OperationInvalidReason> invalidReason = validator.validateExit(state, signedExit);
+        Optional<OperationInvalidReason> invalidReason = validator.validate(state, signedExit);
         checkArgument(
             invalidReason.isEmpty(),
             "process_voluntary_exits: %s",

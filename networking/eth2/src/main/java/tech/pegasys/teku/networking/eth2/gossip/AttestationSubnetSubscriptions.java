@@ -16,10 +16,12 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.SingleAttestationTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -30,7 +32,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipEncoding gossipEncoding;
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
-  private final GossipedAttestationConsumer gossipedAttestationConsumer;
+  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
 
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
@@ -39,7 +41,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
       final GossipEncoding gossipEncoding,
       final AttestationValidator attestationValidator,
       final RecentChainData recentChainData,
-      final GossipedAttestationConsumer gossipedAttestationConsumer) {
+      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
     this.recentChainData = recentChainData;
