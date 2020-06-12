@@ -14,12 +14,15 @@
 package tech.pegasys.teku.pow;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.Request;
+import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
@@ -49,8 +52,7 @@ public class Web3jEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<EthBlock.Block> getEth1Block(String blockHash) {
     LOG.trace("Getting eth1 block {}", blockHash);
-    return SafeFuture.of(web3j.ethGetBlockByHash(blockHash, false).sendAsync())
-        .thenApply(EthBlock::getBlock);
+    return sendAsync(web3j.ethGetBlockByHash(blockHash, false)).thenApply(EthBlock::getBlock);
   }
 
   @Override
@@ -80,8 +82,18 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   private SafeFuture<EthBlock.Block> getEth1Block(DefaultBlockParameter blockParameter) {
-    return SafeFuture.of(web3j.ethGetBlockByNumber(blockParameter, false).sendAsync())
+    return sendAsync(web3j.ethGetBlockByNumber(blockParameter, false))
         .thenApply(EthBlock::getBlock);
+  }
+
+  @SuppressWarnings("rawtypes")
+  private <S, T extends Response> SafeFuture<T> sendAsync(Request<S, T> request) {
+    try {
+      return SafeFuture.of(request.sendAsync());
+    } catch (RejectedExecutionException ex) {
+      LOG.debug("shutting down, ignoring error", ex);
+      return new SafeFuture<>();
+    }
   }
 
   @Override
