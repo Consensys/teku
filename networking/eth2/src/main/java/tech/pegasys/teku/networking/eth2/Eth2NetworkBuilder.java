@@ -135,6 +135,10 @@ public class Eth2NetworkBuilder {
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
     assertNotNull("timeProvider", timeProvider);
+    assertNotNull("gossipedAttestationConsumer", gossipedAttestationConsumer);
+    assertNotNull("gossipedAttesterSlashingConsumer", gossipedAttesterSlashingConsumer);
+    assertNotNull("gossipedProposerSlashingConsumer", gossipedProposerSlashingConsumer);
+    assertNotNull("gossipedVoluntaryExitConsumer", gossipedVoluntaryExitConsumer);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
