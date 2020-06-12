@@ -80,7 +80,7 @@ public class OperationPoolTest {
   @Test
   void testDoNotIncludeInvalidatedItemsFromPool() {
     OperationStateTransitionValidator<ProposerSlashing> validator =
-            mock(OperationStateTransitionValidator.class);
+        mock(OperationStateTransitionValidator.class);
     OperationPool<ProposerSlashing> pool = new OperationPool<>(ProposerSlashing.class, validator);
 
     ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
@@ -90,8 +90,10 @@ public class OperationPoolTest {
     pool.add(slashing2);
 
     when(validator.validate(any(), eq(slashing1)))
-            .thenReturn(Optional.of(ProposerSlashingStateTransitionValidator
-                    .ProposerSlashingInvalidReason.HEADER_SLOTS_DIFFERENT));
+        .thenReturn(
+            Optional.of(
+                ProposerSlashingStateTransitionValidator.ProposerSlashingInvalidReason
+                    .HEADER_SLOTS_DIFFERENT));
     when(validator.validate(any(), eq(slashing2))).thenReturn(Optional.empty());
     assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
   }
