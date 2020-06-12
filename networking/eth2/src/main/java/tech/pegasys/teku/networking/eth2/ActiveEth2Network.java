@@ -188,7 +188,11 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
-            discoveryNetwork, gossipEncoding, forkInfo, proposerSlashingValidator);
+                discoveryNetwork,
+                gossipEncoding,
+                forkInfo,
+                proposerSlashingValidator,
+                gossipedProposerSlashingConsumer);
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(

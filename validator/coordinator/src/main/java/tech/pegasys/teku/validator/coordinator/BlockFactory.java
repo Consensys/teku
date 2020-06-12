@@ -43,9 +43,9 @@ public class BlockFactory {
   private final BlockProposalUtil blockCreator;
   private final StateTransition stateTransition;
   private final AggregatingAttestationPool attestationPool;
-  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
-  private final OperationPool<ProposerSlashing> proposerSlashingPool;
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
+  private final OperationPool<ProposerSlashing> proposerSlashingPool;
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
@@ -54,18 +54,18 @@ public class BlockFactory {
       final BlockProposalUtil blockCreator,
       final StateTransition stateTransition,
       final AggregatingAttestationPool attestationPool,
-      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
-      final OperationPool<ProposerSlashing> proposerSlashingPool,
       final OperationPool<AttesterSlashing> attesterSlashingPool,
+      final OperationPool<ProposerSlashing> proposerSlashingPool,
+      final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti) {
     this.blockCreator = blockCreator;
     this.stateTransition = stateTransition;
     this.attestationPool = attestationPool;
-    this.voluntaryExitPool = voluntaryExitPool;
-    this.proposerSlashingPool = proposerSlashingPool;
     this.attesterSlashingPool = attesterSlashingPool;
+    this.proposerSlashingPool = proposerSlashingPool;
+    this.voluntaryExitPool = voluntaryExitPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;

@@ -50,7 +50,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -72,7 +71,6 @@ import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestation
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.operationpools.OperationPool;
-import tech.pegasys.teku.statetransition.operationpools.OperationPools;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
@@ -305,13 +303,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
-        new BlockFactory(
-            new BlockProposalUtil(stateTransition),
-            stateTransition,
-            attestationPool,
-            depositProvider,
-            eth1DataCache,
-            VersionProvider.getDefaultGraffiti());
+            new BlockFactory(
+                    new BlockProposalUtil(stateTransition),
+                    stateTransition,
+                    attestationPool,
+                    attesterSlashingPool,
+                    proposerSlashingPool,
+                    voluntaryExitPool,
+                    depositProvider,
+                    eth1DataCache,
+                    VersionProvider.getDefaultGraffiti());
     final AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(p2pNetwork);
     final ValidatorApiHandler validatorApiHandler =
@@ -386,26 +387,29 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
 
       this.p2pNetwork =
-          Eth2NetworkBuilder.create()
-              .config(p2pConfig)
-              .eth2Config(eth2Config)
-              .eventBus(eventBus)
-              .recentChainData(recentChainData)
-              .gossipedAttestationConsumer(
-                  attestation ->
-                      attestationManager
-                          .onAttestation(attestation)
-                          .ifInvalid(
-                              reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
-              .processedAttestationSubscriptionProvider(
-                  attestationManager::subscribeToProcessedAttestations)
-              .verifiedBlockAttestationsProvider(
-                  blockImporter::subscribeToVerifiedBlockAttestations)
-              .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
-              .metricsSystem(metricsSystem)
-              .timeProvider(timeProvider)
-              .asyncRunner(asyncRunner)
-              .build();
+              Eth2NetworkBuilder.create()
+                      .config(p2pConfig)
+                      .eth2Config(eth2Config)
+                      .eventBus(eventBus)
+                      .recentChainData(recentChainData)
+                      .gossipedAttestationConsumer(
+                              attestation ->
+                                      attestationManager
+                                              .onAttestation(attestation)
+                                              .ifInvalid(
+                                                      reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
+                      .gossipedAttesterSlashingConsumer(attesterSlashingPool::add)
+                      .gossipedProposerSlashingConsumer(proposerSlashingPool::add)
+                      .gossipedVoluntaryExitConsumer(voluntaryExitPool::add)
+                      .processedAttestationSubscriptionProvider(
+                              attestationManager::subscribeToProcessedAttestations)
+                      .verifiedBlockAttestationsProvider(
+                              blockImporter::subscribeToVerifiedBlockAttestations)
+                      .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
+                      .metricsSystem(metricsSystem)
+                      .timeProvider(timeProvider)
+                      .asyncRunner(asyncRunner)
+                      .build();
     }
   }
 

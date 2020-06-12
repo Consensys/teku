@@ -37,8 +37,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.upstreamconsumers.GossipedAttestationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
@@ -89,7 +93,10 @@ public class Eth2NetworkFactory {
     protected AsyncRunner asyncRunner;
     protected EventBus eventBus;
     protected RecentChainData recentChainData;
-    protected GossipedAttestationConsumer gossipedAttestationConsumer;
+    protected GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
+    protected GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
+    protected GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
+    protected GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
         verifiedBlockAttestationsSubscriptionProvider;
@@ -174,15 +181,18 @@ public class Eth2NetworkFactory {
                 config);
 
         return new ActiveEth2Network(
-            network,
-            eth2PeerManager,
-            eventBus,
-            recentChainData,
-            gossipEncoding,
-            attestationSubnetService,
-            gossipedAttestationConsumer,
-            processedAttestationSubscriptionProvider,
-            verifiedBlockAttestationsSubscriptionProvider);
+                network,
+                eth2PeerManager,
+                eventBus,
+                recentChainData,
+                gossipEncoding,
+                attestationSubnetService,
+                gossipedAttestationConsumer,
+                gossipedAttesterSlashingConsumer,
+                gossipedProposerSlashingConsumer,
+                gossipedVoluntaryExitConsumer,
+                processedAttestationSubscriptionProvider,
+                verifiedBlockAttestationsSubscriptionProvider);
       }
     }
 
@@ -268,9 +278,30 @@ public class Eth2NetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder gossipedAttestationConsumer(
-        final GossipedAttestationConsumer gossipedAttestationConsumer) {
+        final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
       checkNotNull(gossipedAttestationConsumer);
       this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedAttesterSlashingConsumer(
+            final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
+      checkNotNull(gossipedAttesterSlashingConsumer);
+      this.gossipedAttesterSlashingConsumer = gossipedAttesterSlashingConsumer;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedProposerSlashingConsumer(
+            final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
+      checkNotNull(gossipedProposerSlashingConsumer);
+      this.gossipedProposerSlashingConsumer = gossipedProposerSlashingConsumer;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedVoluntaryExitConsumer(
+            final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
+      checkNotNull(gossipedVoluntaryExitConsumer);
+      this.gossipedVoluntaryExitConsumer = gossipedVoluntaryExitConsumer;
       return this;
     }
 

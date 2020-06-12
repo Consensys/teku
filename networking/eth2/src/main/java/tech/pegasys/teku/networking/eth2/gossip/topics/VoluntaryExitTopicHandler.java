@@ -21,7 +21,6 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.upstreamconsumers.GossipedVoluntaryExitConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -57,6 +56,7 @@ public class VoluntaryExitTopicHandler implements Eth2TopicHandler<SignedVolunta
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
           break;
         case ACCEPT:
+          consumer.accept(signedVoluntaryExit);
           break;
         default:
           throw new UnsupportedOperationException(
