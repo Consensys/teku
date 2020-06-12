@@ -51,9 +51,12 @@ public class DepositGenerateCommand implements Runnable {
 
   @VisibleForTesting
   DepositGenerateCommand(
-      final Consumer<Integer> shutdownFunction, final GenerateParams generateParams) {
+      final Consumer<Integer> shutdownFunction,
+      final GenerateParams generateParams,
+      final boolean displayConfirmation) {
     this.shutdownFunction = shutdownFunction;
     this.generateParams = generateParams;
+    this.displayConfirmation = displayConfirmation;
   }
 
   @Override

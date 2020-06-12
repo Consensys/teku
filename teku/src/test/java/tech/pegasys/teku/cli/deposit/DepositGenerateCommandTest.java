@@ -13,10 +13,44 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.function.Consumer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DepositGenerateCommandTest {
+  private static final Consumer<Integer> shutdownFunction = status -> {};
+  private GenerateParams generateParams;
+  private GenerateAction generateAction;
+
+  @BeforeEach
+  void setUp() {
+    generateParams = mock(GenerateParams.class);
+    generateAction = mock(GenerateAction.class);
+    when(generateParams.createGenerateAction(anyBoolean())).thenReturn(generateAction);
+  }
 
   @Test
-  public void noop() {}
+  public void generatesKeysWithDisplayConfirmation() {
+    final DepositGenerateCommand depositGenerateCommand =
+        new DepositGenerateCommand(shutdownFunction, generateParams, true);
+
+    depositGenerateCommand.run();
+    verify(generateParams).createGenerateAction(true);
+    verify(generateAction).generateKeys();
+  }
+
+  @Test
+  public void generatesKeysWithoutDisplayConfirmation() {
+    final DepositGenerateCommand depositGenerateCommand =
+        new DepositGenerateCommand(shutdownFunction, generateParams, false);
+
+    depositGenerateCommand.run();
+    verify(generateParams).createGenerateAction(false);
+    verify(generateAction).generateKeys();
+  }
 }

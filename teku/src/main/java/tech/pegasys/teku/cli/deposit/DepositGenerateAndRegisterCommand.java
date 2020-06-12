@@ -65,10 +65,12 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   DepositGenerateAndRegisterCommand(
       final Consumer<Integer> shutdownFunction,
       final RegisterParams registerParams,
-      final GenerateParams generateParams) {
+      final GenerateParams generateParams,
+      final boolean displayConfirmation) {
     this.shutdownFunction = shutdownFunction;
     this.registerParams = registerParams;
     this.generateParams = generateParams;
+    this.displayConfirmation = displayConfirmation;
   }
 
   @Override
