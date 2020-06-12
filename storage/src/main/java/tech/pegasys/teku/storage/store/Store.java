@@ -93,7 +93,7 @@ class Store implements UpdatableStore {
       final Map<Checkpoint, BeaconState> checkpoint_states,
       final BeaconState latestFinalizedBlockState,
       final Map<UnsignedLong, VoteTracker> votes,
-      final int stateCacheSize) {
+      final StorePruningOptions pruningOptions) {
     this.metricsSystem = metricsSystem;
     final LabelledMetric<Counter> stateRequestCounter =
         metricsSystem.createLabelledCounter(
@@ -111,7 +111,8 @@ class Store implements UpdatableStore {
     this.best_justified_checkpoint = best_justified_checkpoint;
     this.blocks = new ConcurrentHashMap<>(blocks);
     this.block_states =
-        ConcurrentLimitedMap.create(stateCacheSize, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+        ConcurrentLimitedMap.create(
+            pruningOptions.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
 
     // Track latest finalized block

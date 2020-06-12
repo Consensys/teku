@@ -55,6 +55,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.StorePruningOptions;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
@@ -529,7 +530,7 @@ public abstract class AbstractDatabaseTest {
     initGenesis();
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
-    final int minFinalSlot = startSlot + StoreFactory.STATE_CACHE_SIZE + 10;
+    final int minFinalSlot = startSlot + StorePruningOptions.DEFAULT_STATE_CACHE_SIZE + 10;
     final UnsignedLong finalizedEpoch =
         ChainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);

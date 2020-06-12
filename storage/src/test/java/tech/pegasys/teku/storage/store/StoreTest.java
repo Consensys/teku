@@ -48,7 +48,8 @@ class StoreTest {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
     // Create a new store with a small state cache
-    final int stateCacheSize = 10;
+    final int cacheSize = 10;
+    final StorePruningOptions pruningOptions = StorePruningOptions.create(cacheSize, cacheSize);
     final Store store =
         new Store(
             new StubMetricsSystem(),
@@ -62,11 +63,10 @@ class StoreTest {
             Map.of(genesisCheckpoint, genesis.getState()),
             genesis.getState(),
             Collections.emptyMap(),
-            stateCacheSize);
+            pruningOptions);
 
     // Generate enough blocks to exceed our cache limit
-    final List<SignedBlockAndState> blocks =
-        chainBuilder.generateBlocksUpToSlot(3 * stateCacheSize);
+    final List<SignedBlockAndState> blocks = chainBuilder.generateBlocksUpToSlot(3 * cacheSize);
     addBlocks(store, blocks);
 
     // Request states in order
