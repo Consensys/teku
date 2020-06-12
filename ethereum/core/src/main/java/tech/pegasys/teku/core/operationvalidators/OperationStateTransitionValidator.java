@@ -16,6 +16,7 @@ package tech.pegasys.teku.core.operationvalidators;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
+@FunctionalInterface
 public interface OperationStateTransitionValidator<T> {
 
   Optional<OperationInvalidReason> validate(final BeaconState state, final T operation);

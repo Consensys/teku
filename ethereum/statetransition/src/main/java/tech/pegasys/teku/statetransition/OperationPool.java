@@ -34,9 +34,9 @@ public class OperationPool<T> {
           ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS,
           AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
 
-  private Set<T> operations = new HashSet<>();
-  private OperationStateTransitionValidator<T> operationValidator;
-  private Class<T> clazz;
+  private final Set<T> operations = new HashSet<>();
+  private final OperationStateTransitionValidator<T> operationValidator;
+  private final Class<T> clazz;
 
   public OperationPool(Class<T> clazz, OperationStateTransitionValidator<T> operationValidator) {
     this.clazz = clazz;

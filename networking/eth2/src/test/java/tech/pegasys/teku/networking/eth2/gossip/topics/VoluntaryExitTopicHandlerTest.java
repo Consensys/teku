@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
@@ -68,6 +69,7 @@ public class VoluntaryExitTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(exit);
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Valid);
+    verify(consumer).forward(exit);
   }
 
   @Test
