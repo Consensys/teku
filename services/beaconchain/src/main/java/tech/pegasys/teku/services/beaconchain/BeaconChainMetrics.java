@@ -116,13 +116,13 @@ public class BeaconChainMetrics implements SlotEventsChannel {
             metricsSystem,
             TekuMetricCategory.BEACON,
             "current_live_validators",
-            "Number of active validators that successfully included attestation on chain for previous epoch");
+            "Number of active validators that successfully included attestation on chain for current epoch");
     currentActiveValidators =
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "current_active_validators",
-            "Number of active validators");
+            "Number of active validators in the current epoch");
     previousActiveValidators =
         SettableGauge.create(
             metricsSystem,
