@@ -196,7 +196,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
-            discoveryNetwork, gossipEncoding, forkInfo, attesterSlashingValidator);
+            discoveryNetwork, gossipEncoding, forkInfo, attesterSlashingValidator, gossipedAttesterSlashingConsumer);
 
     discoveryNetworkAttestationSubnetsSubscription =
         attestationSubnetService.subscribeToUpdates(
