@@ -22,7 +22,7 @@ import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
     name = "generate",
-    description = "Register validators by generating new keys",
+    description = "Generate validator keys",
     mixinStandardHelpOptions = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
