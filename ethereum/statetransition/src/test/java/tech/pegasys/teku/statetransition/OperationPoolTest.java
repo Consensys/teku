@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
@@ -22,6 +23,7 @@ import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.creat
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.operationvalidators.OperationStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
@@ -60,7 +62,7 @@ public class OperationPoolTest {
   }
 
   @Test
-  void testRemoveItemsFromPool() {
+  void testRemoveAllItemsFromPool() {
     OperationStateTransitionValidator<AttesterSlashing> validator =
         mock(OperationStateTransitionValidator.class);
     OperationPool<AttesterSlashing> pool = new OperationPool<>(AttesterSlashing.class, validator);
@@ -73,5 +75,24 @@ public class OperationPoolTest {
     }
     pool.removeAll(slashingsInBlock);
     assertThat(pool.getItemsForBlock(state)).isEmpty();
+  }
+
+  @Test
+  void testDoNotIncludeInvalidatedItemsFromPool() {
+    OperationStateTransitionValidator<ProposerSlashing> validator =
+            mock(OperationStateTransitionValidator.class);
+    OperationPool<ProposerSlashing> pool = new OperationPool<>(ProposerSlashing.class, validator);
+
+    ProposerSlashing slashing1 = dataStructureUtil.randomProposerSlashing();
+    ProposerSlashing slashing2 = dataStructureUtil.randomProposerSlashing();
+
+    pool.add(slashing1);
+    pool.add(slashing2);
+
+    when(validator.validate(any(), eq(slashing1)))
+            .thenReturn(Optional.of(ProposerSlashingStateTransitionValidator
+                    .ProposerSlashingInvalidReason.HEADER_SLOTS_DIFFERENT));
+    when(validator.validate(any(), eq(slashing2))).thenReturn(Optional.empty());
+    assertThat(pool.getItemsForBlock(state)).containsOnly(slashing2);
   }
 }
