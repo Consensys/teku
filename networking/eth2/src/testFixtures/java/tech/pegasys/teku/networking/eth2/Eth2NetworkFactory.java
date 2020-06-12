@@ -248,6 +248,18 @@ public class Eth2NetworkFactory {
             Subscribers.create(false);
         verifiedBlockAttestationsSubscriptionProvider = subscribers::subscribe;
       }
+      if (gossipedAttestationConsumer == null) {
+        gossipedAttestationConsumer = GossipedOperationConsumer.noop();
+      }
+      if (gossipedAttesterSlashingConsumer == null) {
+        gossipedAttesterSlashingConsumer = GossipedOperationConsumer.noop();
+      }
+      if (gossipedProposerSlashingConsumer == null) {
+        gossipedProposerSlashingConsumer = GossipedOperationConsumer.noop();
+      }
+      if (gossipedVoluntaryExitConsumer == null) {
+        gossipedVoluntaryExitConsumer = GossipedOperationConsumer.noop();
+      }
     }
 
     public Eth2P2PNetworkBuilder rpcEncoding(final RpcEncoding rpcEncoding) {
