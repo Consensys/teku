@@ -63,7 +63,7 @@ public class MetricsOptions {
   private Set<MetricCategory> metricsCategories = DEFAULT_METRICS_CATEGORIES;
 
   @Option(
-      names = {"--metrics-host-allowlist", "--metrics-host-whitelist"},
+      names = {"--metrics-host-allowlist"},
       paramLabel = "<hostname>",
       description = "Comma separated list of hostnames to allow, or * to allow any host",
       split = ",",
