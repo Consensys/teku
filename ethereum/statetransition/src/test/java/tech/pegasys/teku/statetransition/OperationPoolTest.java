@@ -39,7 +39,7 @@ public class OperationPoolTest {
   BeaconState state = mock(BeaconState.class);
 
   @Test
-  void testEmptyPool() {
+  void emptyPoolShouldReturnEmptyList() {
     OperationStateTransitionValidator<ProposerSlashing> validator =
         mock(OperationStateTransitionValidator.class);
     OperationPool<ProposerSlashing> pool = new OperationPool<>(ProposerSlashing.class, validator);
@@ -48,7 +48,7 @@ public class OperationPoolTest {
   }
 
   @Test
-  void testAddMaxItemsToPool() {
+  void shouldAddMaxItemsToPool() {
     OperationStateTransitionValidator<SignedVoluntaryExit> validator =
         mock(OperationStateTransitionValidator.class);
     OperationPool<SignedVoluntaryExit> pool =
@@ -62,7 +62,7 @@ public class OperationPoolTest {
   }
 
   @Test
-  void testRemoveAllItemsFromPool() {
+  void shouldRemoveAllItemsFromPool() {
     OperationStateTransitionValidator<AttesterSlashing> validator =
         mock(OperationStateTransitionValidator.class);
     OperationPool<AttesterSlashing> pool = new OperationPool<>(AttesterSlashing.class, validator);
@@ -78,7 +78,7 @@ public class OperationPoolTest {
   }
 
   @Test
-  void testDoNotIncludeInvalidatedItemsFromPool() {
+  void shouldNotIncludeInvalidatedItemsFromPool() {
     OperationStateTransitionValidator<ProposerSlashing> validator =
         mock(OperationStateTransitionValidator.class);
     OperationPool<ProposerSlashing> pool = new OperationPool<>(ProposerSlashing.class, validator);
