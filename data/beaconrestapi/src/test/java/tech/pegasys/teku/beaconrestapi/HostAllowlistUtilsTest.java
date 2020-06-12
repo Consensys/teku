@@ -14,14 +14,14 @@
 package tech.pegasys.teku.beaconrestapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.beaconrestapi.HostWhitelistUtils.getAndValidateHostHeader;
-import static tech.pegasys.teku.beaconrestapi.HostWhitelistUtils.hostIsInWhitelist;
-import static tech.pegasys.teku.beaconrestapi.HostWhitelistUtils.isHostAuthorized;
+import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.getAndValidateHostHeader;
+import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.hostIsInAllowlist;
+import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class HostWhitelistUtilsTest {
+class HostAllowlistUtilsTest {
   private static final String BAD_HOST = "too.many:colons:5051";
 
   @Test
@@ -33,17 +33,17 @@ class HostWhitelistUtilsTest {
   }
 
   @Test
-  public void hostIsInWhitelist_shouldBeTrueIfInList() {
-    assertThat(hostIsInWhitelist(List.of("A", "B"), "A")).isTrue();
-    assertThat(hostIsInWhitelist(List.of("A", "B"), "B")).isTrue();
-    assertThat(hostIsInWhitelist(List.of("A", "MIXed.CASE"), "miXED.caSE")).isTrue();
+  public void hostIsInAllowlist_shouldBeTrueIfInList() {
+    assertThat(hostIsInAllowlist(List.of("A", "B"), "A")).isTrue();
+    assertThat(hostIsInAllowlist(List.of("A", "B"), "B")).isTrue();
+    assertThat(hostIsInAllowlist(List.of("A", "MIXed.CASE"), "miXED.caSE")).isTrue();
   }
 
   @Test
-  public void hostIsInWhitelist_shouldBeFalseIfNotInList() {
-    assertThat(hostIsInWhitelist(List.of("A", "B"), "C")).isFalse();
-    assertThat(hostIsInWhitelist(List.of("A", "B"), "AA")).isFalse();
-    assertThat(hostIsInWhitelist(List.of("A.B.C", "B"), "A")).isFalse();
+  public void hostIsInAllowlist_shouldBeFalseIfNotInList() {
+    assertThat(hostIsInAllowlist(List.of("A", "B"), "C")).isFalse();
+    assertThat(hostIsInAllowlist(List.of("A", "B"), "AA")).isFalse();
+    assertThat(hostIsInAllowlist(List.of("A.B.C", "B"), "A")).isFalse();
   }
 
   @Test

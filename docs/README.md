@@ -1,8 +1,10 @@
-# Teku REST API documentation
+# Generated REST API documentation sources
 
-OpenAPI documentation for Pegasys Teku Ethereum 2.0 beacon chain client REST API.
+This directory contains base files to generate REST API doc with CI.
 
-This documentation is generated from Teku OpenAPI JSON spec and rendered with
-[ReDoc](https://github.com/Redocly/redoc).
+- index.html is the root file that will be copied to gh-pages
+- TARGET_README.md is the readme that will be renamed and copied to the gh-pages branch
+- README.md will not be copied, it's this file.
+- .circleci directory contains a configuration for CircleCI that does nothing but prevents CI to fail.
 
-The rendered REST API documentation is available at https://pegasyseng.github.io/teku/
+The actual up to date generated doc is available at https://pegasyseng.github.io/teku/
