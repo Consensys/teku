@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.statetransition.blockimport.VerifiedBlockOperationsListener;
 
 public interface VerifiedBlockAttestationsSubscriptionProvider {
-  void subscribe(VerifiedBlockOperationsListener verifiedBlockOperationsListener);
+  void subscribe(VerifiedBlockOperationsListener<Attestation> verifiedBlockOperationsListener);
 }

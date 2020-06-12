@@ -38,6 +38,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
@@ -243,7 +244,8 @@ public class Eth2NetworkFactory {
         processedAttestationSubscriptionProvider = subscribers::subscribe;
       }
       if (verifiedBlockAttestationsSubscriptionProvider == null) {
-        Subscribers<VerifiedBlockOperationsListener> subscribers = Subscribers.create(false);
+        Subscribers<VerifiedBlockOperationsListener<Attestation>> subscribers =
+            Subscribers.create(false);
         verifiedBlockAttestationsSubscriptionProvider = subscribers::subscribe;
       }
     }

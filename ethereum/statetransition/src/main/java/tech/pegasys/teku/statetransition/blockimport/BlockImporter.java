@@ -39,14 +39,14 @@ public class BlockImporter {
   private final ForkChoice forkChoice;
   private final EventBus eventBus;
 
-  private Subscribers<VerifiedBlockOperationsListener<Attestation>>
-          attestationSubscribers = Subscribers.create(true);
+  private Subscribers<VerifiedBlockOperationsListener<Attestation>> attestationSubscribers =
+      Subscribers.create(true);
   private Subscribers<VerifiedBlockOperationsListener<AttesterSlashing>>
-          attesterSlashingSubscribers = Subscribers.create(true);
+      attesterSlashingSubscribers = Subscribers.create(true);
   private Subscribers<VerifiedBlockOperationsListener<ProposerSlashing>>
-          proposerSlashingSubscribers = Subscribers.create(true);
+      proposerSlashingSubscribers = Subscribers.create(true);
   private Subscribers<VerifiedBlockOperationsListener<SignedVoluntaryExit>>
-          voluntaryExitSubscribers = Subscribers.create(true);
+      voluntaryExitSubscribers = Subscribers.create(true);
 
   public BlockImporter(
       final RecentChainData recentChainData, final ForkChoice forkChoice, final EventBus eventBus) {
@@ -112,17 +112,17 @@ public class BlockImporter {
 
   private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {
     attestationSubscribers.deliver(
-            VerifiedBlockOperationsListener::onOperationsFromBlock,
-            block.getMessage().getBody().getAttestations());
+        VerifiedBlockOperationsListener::onOperationsFromBlock,
+        block.getMessage().getBody().getAttestations());
     attesterSlashingSubscribers.deliver(
-            VerifiedBlockOperationsListener::onOperationsFromBlock,
-            block.getMessage().getBody().getAttester_slashings());
+        VerifiedBlockOperationsListener::onOperationsFromBlock,
+        block.getMessage().getBody().getAttester_slashings());
     proposerSlashingSubscribers.deliver(
-            VerifiedBlockOperationsListener::onOperationsFromBlock,
-            block.getMessage().getBody().getProposer_slashings());
+        VerifiedBlockOperationsListener::onOperationsFromBlock,
+        block.getMessage().getBody().getProposer_slashings());
     voluntaryExitSubscribers.deliver(
-            VerifiedBlockOperationsListener::onOperationsFromBlock,
-            block.getMessage().getBody().getVoluntary_exits());
+        VerifiedBlockOperationsListener::onOperationsFromBlock,
+        block.getMessage().getBody().getVoluntary_exits());
   }
 
   public void subscribeToVerifiedBlockAttestations(
@@ -131,17 +131,17 @@ public class BlockImporter {
   }
 
   public void subscribeToVerifiedBlockAttesterSlashings(
-          VerifiedBlockOperationsListener<AttesterSlashing> verifiedBlockAttesterSlashingsListener) {
+      VerifiedBlockOperationsListener<AttesterSlashing> verifiedBlockAttesterSlashingsListener) {
     attesterSlashingSubscribers.subscribe(verifiedBlockAttesterSlashingsListener);
   }
 
   public void subscribeToVerifiedBlockProposerSlashings(
-          VerifiedBlockOperationsListener<ProposerSlashing> verifiedBlockProposerSlashingsListener) {
+      VerifiedBlockOperationsListener<ProposerSlashing> verifiedBlockProposerSlashingsListener) {
     proposerSlashingSubscribers.subscribe(verifiedBlockProposerSlashingsListener);
   }
 
   public void subscribeToVerifiedBlockVoluntaryExits(
-          VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
+      VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
   }
 }
