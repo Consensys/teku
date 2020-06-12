@@ -46,7 +46,7 @@ public class DepositGenerateCommand implements Runnable {
 
   public DepositGenerateCommand() {
     this.shutdownFunction =
-        System::exit; // required because web3j use non-daemon threads which halts the program
+        System::exit; // required because web3j uses non-daemon threads which halts the program
   }
 
   @VisibleForTesting
