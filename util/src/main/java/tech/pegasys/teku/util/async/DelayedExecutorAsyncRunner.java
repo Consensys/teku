@@ -18,10 +18,14 @@ import static tech.pegasys.teku.util.async.SafeFuture.propagateResult;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class DelayedExecutorAsyncRunner implements AsyncRunner {
+  private static final Logger LOG = LogManager.getLogger();
   private final ExecutorFactory executorFactory;
 
   private DelayedExecutorAsyncRunner(ExecutorFactory executorFactory) {
@@ -55,6 +59,8 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
     final SafeFuture<U> result = new SafeFuture<>();
     try {
       executor.execute(() -> propagateResult(action.get(), result));
+    } catch (RejectedExecutionException ex) {
+      LOG.debug("shutting down ", ex);
     } catch (final Throwable t) {
       result.completeExceptionally(t);
     }
