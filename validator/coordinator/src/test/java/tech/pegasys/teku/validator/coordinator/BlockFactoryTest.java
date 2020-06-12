@@ -19,7 +19,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttestations;
+import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createDeposits;
+import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createProposerSlashings;
+import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createVoluntaryExits;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -66,6 +69,9 @@ class BlockFactoryTest {
   private final StateTransition stateTransition = new StateTransition();
   private final SSZMutableList<Deposit> deposits = createDeposits();
   private final SSZMutableList<Attestation> attestations = createAttestations();
+  private final SSZMutableList<AttesterSlashing> attesterSlashings = createAttesterSlashings();
+  private final SSZMutableList<ProposerSlashing> proposerSlashings = createProposerSlashings();
+  private final SSZMutableList<SignedVoluntaryExit> voluntaryExits = createVoluntaryExits();
 
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final BlockFactory blockFactory =
@@ -84,6 +90,9 @@ class BlockFactoryTest {
   void setUp() {
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any())).thenReturn(attestations);
+    when(attesterSlashingPool.getItemsForBlock(any())).thenReturn(attesterSlashings);
+    when(proposerSlashingPool.getItemsForBlock(any())).thenReturn(proposerSlashings);
+    when(voluntaryExitPool.getItemsForBlock(any())).thenReturn(voluntaryExits);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     beaconChainUtil.initializeStorage();
   }
