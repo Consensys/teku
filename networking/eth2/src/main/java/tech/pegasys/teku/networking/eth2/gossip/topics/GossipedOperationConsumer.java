@@ -14,5 +14,5 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 public interface GossipedOperationConsumer<T> {
-  void accept(T operation);
+  void forward(T operation);
 }

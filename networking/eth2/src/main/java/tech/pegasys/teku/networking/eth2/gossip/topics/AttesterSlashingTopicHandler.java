@@ -56,7 +56,7 @@ public class AttesterSlashingTopicHandler implements Eth2TopicHandler<AttesterSl
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
           break;
         case ACCEPT:
-          consumer.accept(attesterSlashing);
+          consumer.forward(attesterSlashing);
           break;
         default:
           throw new UnsupportedOperationException(

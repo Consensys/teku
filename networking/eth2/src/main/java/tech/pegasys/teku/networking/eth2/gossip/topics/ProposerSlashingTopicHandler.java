@@ -56,7 +56,7 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
           break;
         case ACCEPT:
-          consumer.accept(proposerSlashing);
+          consumer.forward(proposerSlashing);
           break;
         default:
           throw new UnsupportedOperationException(

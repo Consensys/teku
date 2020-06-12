@@ -59,11 +59,11 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
           break;
         case SAVE_FOR_FUTURE:
           LOG.trace("Deferring message for topic: {}", this::getTopic);
-          gossipedAttestationConsumer.accept(attestation);
+          gossipedAttestationConsumer.forward(attestation);
           break;
         case ACCEPT:
           attestation.markGossiped();
-          gossipedAttestationConsumer.accept(attestation);
+          gossipedAttestationConsumer.forward(attestation);
           break;
         default:
           throw new UnsupportedOperationException(

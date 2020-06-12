@@ -82,7 +82,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Valid);
-    verify(gossipedAttestationConsumer).accept(attestation);
+    verify(gossipedAttestationConsumer).forward(attestation);
   }
 
   @Test
@@ -97,7 +97,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Ignore);
-    verify(gossipedAttestationConsumer, never()).accept(attestation);
+    verify(gossipedAttestationConsumer, never()).forward(attestation);
   }
 
   @Test
@@ -112,7 +112,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Ignore);
-    verify(gossipedAttestationConsumer).accept(attestation);
+    verify(gossipedAttestationConsumer).forward(attestation);
   }
 
   @Test
@@ -127,7 +127,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Invalid);
-    verify(gossipedAttestationConsumer, never()).accept(attestation);
+    verify(gossipedAttestationConsumer, never()).forward(attestation);
   }
 
   @Test

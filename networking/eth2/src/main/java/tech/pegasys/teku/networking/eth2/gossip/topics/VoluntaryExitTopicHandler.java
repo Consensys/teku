@@ -56,7 +56,7 @@ public class VoluntaryExitTopicHandler implements Eth2TopicHandler<SignedVolunta
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
           break;
         case ACCEPT:
-          consumer.accept(signedVoluntaryExit);
+          consumer.forward(signedVoluntaryExit);
           break;
         default:
           throw new UnsupportedOperationException(

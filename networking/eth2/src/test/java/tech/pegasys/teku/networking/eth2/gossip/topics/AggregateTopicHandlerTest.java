@@ -53,7 +53,7 @@ public class AggregateTopicHandlerTest {
     final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isEqualTo(ValidationResult.Valid);
-    verify(attestationConsumer).accept(aggregate);
+    verify(attestationConsumer).forward(aggregate);
   }
 
   @Test
@@ -66,7 +66,7 @@ public class AggregateTopicHandlerTest {
     final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isEqualTo(ValidationResult.Ignore);
-    verify(attestationConsumer).accept(aggregate);
+    verify(attestationConsumer).forward(aggregate);
   }
 
   @Test
@@ -79,7 +79,7 @@ public class AggregateTopicHandlerTest {
     final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isEqualTo(ValidationResult.Ignore);
-    verify(attestationConsumer, never()).accept(aggregate);
+    verify(attestationConsumer, never()).forward(aggregate);
   }
 
   @Test
@@ -92,7 +92,7 @@ public class AggregateTopicHandlerTest {
     final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isEqualTo(ValidationResult.Invalid);
-    verify(attestationConsumer, never()).accept(aggregate);
+    verify(attestationConsumer, never()).forward(aggregate);
   }
 
   @Test
