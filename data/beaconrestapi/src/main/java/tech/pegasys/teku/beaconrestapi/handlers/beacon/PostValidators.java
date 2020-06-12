@@ -84,7 +84,7 @@ public class PostValidators extends AbstractHandler implements Handler {
       final SafeFuture<Optional<BeaconValidators>> validatorsFuture =
           chainDataProvider.getValidatorsByValidatorsRequest(request);
 
-      if (chainDataProvider.isFinalizedEpoch(request.epoch)) {
+      if (request.epoch != null && chainDataProvider.isFinalizedEpoch(request.epoch)) {
         handlePossiblyGoneResult(ctx, validatorsFuture, this::processResult);
       } else {
         handlePossiblyMissingResult(ctx, validatorsFuture, this::processResult);
