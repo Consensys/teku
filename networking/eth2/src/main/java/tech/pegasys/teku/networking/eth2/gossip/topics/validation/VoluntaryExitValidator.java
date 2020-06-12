@@ -80,7 +80,6 @@ public class VoluntaryExitValidator {
                         "Unable to get best state for voluntary exit processing."));
 
     Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validate(state, exit);
-    stateTransitionValidator.validate(state, exit);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
