@@ -42,7 +42,7 @@ public class PostValidatorsWithDataIntegrationTest
   void shouldRetrieveValidatorsWhenBlockPresentAtEpoch() throws Exception {
     createBlocksAtSlotsAndMapToApiResult(SEVEN, EIGHT);
 
-    Response response = post(Optional.of(1), VALIDATOR_KEYS);
+    final Response response = post(Optional.of(1), VALIDATOR_KEYS);
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
@@ -50,10 +50,10 @@ public class PostValidatorsWithDataIntegrationTest
   void shouldRetrieveValidatorsWhenEpochNotSpecified() throws Exception {
     createBlocksAtSlotsAndMapToApiResult(SEVEN, EIGHT);
 
-    Response response = post(Optional.empty(), VALIDATOR_KEYS);
+    final Response response = post(Optional.empty(), VALIDATOR_KEYS);
     assertThat(response.code()).isEqualTo(SC_OK);
 
-    ValidatorWithIndex[] validators =
+    final ValidatorWithIndex[] validators =
         jsonProvider.jsonToObject(response.body().string(), ValidatorWithIndex[].class);
     assertThat(validators.length).isEqualTo(VALIDATOR_KEYS.size());
   }
@@ -62,7 +62,7 @@ public class PostValidatorsWithDataIntegrationTest
   void shouldRetrieveValidatorsWhenBlockMissingAtEpoch() throws Exception {
     createBlocksAtSlotsAndMapToApiResult(SEVEN, NINE);
 
-    Response response = post(Optional.of(1), VALIDATOR_KEYS);
+    final Response response = post(Optional.of(1), VALIDATOR_KEYS);
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
