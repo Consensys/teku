@@ -16,6 +16,6 @@
   },
   "homepage": "https://pegasyseng.github.io/teku",
   "dependencies": {
-    "minimist": "^1.2.5"
+    "minimist": "~1.2.5"
   }
 }

@@ -224,8 +224,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendSignedAttestation(final Attestation attestation) {
     attestationManager
-        .onAttestation(ValidateableAttestation.fromSingle(attestation))
-        .ifUnsuccessful(
+        .onAttestation(ValidateableAttestation.fromAttestation(attestation))
+        .ifInvalid(
             reason ->
                 VALIDATOR_LOGGER.producedInvalidAttestation(
                     attestation.getData().getSlot(), reason));
@@ -234,8 +234,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     attestationManager
-        .onAttestation(ValidateableAttestation.fromAggregate(aggregateAndProof))
-        .ifUnsuccessful(
+        .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof))
+        .ifInvalid(
             reason ->
                 VALIDATOR_LOGGER.producedInvalidAggregate(
                     aggregateAndProof.getMessage().getAggregate().getData().getSlot(), reason));

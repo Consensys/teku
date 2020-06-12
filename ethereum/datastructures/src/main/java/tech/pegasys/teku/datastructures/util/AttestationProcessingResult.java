@@ -49,6 +49,12 @@ public class AttestationProcessingResult {
     }
   }
 
+  public void ifInvalid(final Consumer<String> handler) {
+    if (status == Status.INVALID) {
+      handler.accept(getInvalidReason());
+    }
+  }
+
   public boolean isSuccessful() {
     return status == Status.SUCCESSFUL;
   }

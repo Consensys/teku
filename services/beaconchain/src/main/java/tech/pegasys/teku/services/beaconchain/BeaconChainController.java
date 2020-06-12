@@ -39,9 +39,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
-import tech.pegasys.teku.core.BlockAttestationDataValidator;
 import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -358,10 +358,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   attestation ->
                       attestationManager
                           .onAttestation(attestation)
-                          .ifUnsuccessful(
+                          .ifInvalid(
                               reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToProcessedAttestations)
+              .verifiedBlockAttestationsProvider(
+                  blockImporter::subscribeToVerifiedBlockAttestations)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
@@ -388,7 +390,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool = new AggregatingAttestationPool(new BlockAttestationDataValidator());
+    attestationPool = new AggregatingAttestationPool(new AttestationDataStateTransitionValidator());
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
   }
 
@@ -514,7 +516,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       this.eventBus.post(new BroadcastAggregatesEvent(nodeSlot.getValue()));
       nodeSlot.inc();
     } catch (InterruptedException e) {
-      LOG.error("onTick: {}", e.toString(), e);
+      LOG.debug("onTick: {}", e.toString(), e);
     }
   }
 

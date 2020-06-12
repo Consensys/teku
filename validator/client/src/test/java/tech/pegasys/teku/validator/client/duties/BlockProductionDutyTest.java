@@ -27,6 +27,7 @@ import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -48,7 +49,9 @@ class BlockProductionDutyTest {
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final Signer signer = mock(Signer.class);
-  private final Validator validator = new Validator(dataStructureUtil.randomPublicKey(), signer);
+  private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
+  private final Validator validator =
+      new Validator(dataStructureUtil.randomPublicKey(), signer, Optional.of(graffiti));
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
@@ -72,7 +75,7 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT.longValue());
     when(signer.createRandaoReveal(compute_epoch_at_slot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.empty()))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
 
@@ -100,7 +103,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     when(signer.createRandaoReveal(compute_epoch_at_slot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.empty()))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
         .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
@@ -111,7 +114,7 @@ class BlockProductionDutyTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     when(signer.createRandaoReveal(compute_epoch_at_slot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.empty()))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.empty()));
 
     performAndReportDuty();
@@ -128,7 +131,7 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT.longValue());
     when(signer.createRandaoReveal(compute_epoch_at_slot(SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.empty()))
+    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(failedFuture(error));
 
