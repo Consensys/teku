@@ -76,7 +76,7 @@ public class PostValidatorsWithDataIntegrationTest
     final Map<String, Object> params =
         epoch.isEmpty()
             ? Map.of("pubkeys", publicKeyStrings)
-            : Map.of(RestApiConstants.EPOCH, epoch, "pubkeys", publicKeyStrings);
+            : Map.of(RestApiConstants.EPOCH, epoch.get(), "pubkeys", publicKeyStrings);
     return post(PostValidators.ROUTE, mapToJson(params));
   }
 }
