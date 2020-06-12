@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -36,10 +35,8 @@ public class OperationPool<T> {
           ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS,
           AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
 
-  private final Set<T> operations = LimitedSet.create(
-          Constants.OPERATION_POOL_SIZE,
-          LimitStrategy.DROP_OLDEST_ELEMENT
-  );
+  private final Set<T> operations =
+      LimitedSet.create(Constants.OPERATION_POOL_SIZE, LimitStrategy.DROP_OLDEST_ELEMENT);
   private final OperationStateTransitionValidator<T> operationValidator;
   private final Class<T> clazz;
 
