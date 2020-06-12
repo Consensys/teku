@@ -16,7 +16,6 @@ package tech.pegasys.teku.core;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_slashable_attestation_data;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
@@ -28,20 +27,16 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_val
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.slash_validator;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -53,6 +48,7 @@ import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
@@ -64,7 +60,6 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -313,52 +308,27 @@ public final class BlockProcessorUtil {
       MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
       throws BlockProcessingException {
     try {
+      final AttesterSlashingStateTransitionValidator validator =
+          new AttesterSlashingStateTransitionValidator();
 
       // For each attester_slashing in block.body.attester_slashings:
-      for (AttesterSlashing attester_slashing : attesterSlashings) {
-        IndexedAttestation attestation_1 = attester_slashing.getAttestation_1();
-        IndexedAttestation attestation_2 = attester_slashing.getAttestation_2();
+      for (AttesterSlashing attesterSlashing : attesterSlashings) {
+        List<UnsignedLong> indicesToSlash = new ArrayList<>();
+        final Optional<OperationInvalidReason> invalidReason =
+            validator.validateSlashing(state, attesterSlashing, indicesToSlash);
 
         checkArgument(
-            is_slashable_attestation_data(attestation_1.getData(), attestation_2.getData()),
-            "process_attester_slashings: Verify if attestations are slashable");
+            invalidReason.isEmpty(),
+            "process_attester_slashings: %s",
+            invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-        checkAttestationIsValid(state, 1, attestation_1);
-        checkAttestationIsValid(state, 2, attestation_2);
-        boolean slashed_any = false;
-
-        Set<UnsignedLong> indices =
-            Sets.intersection(
-                new TreeSet<>(
-                    attestation_1.getAttesting_indices().asList()), // TreeSet as must be sorted
-                new HashSet<>(attestation_2.getAttesting_indices().asList()));
-
-        for (UnsignedLong index : indices) {
-          if (is_slashable_validator(
-              state.getValidators().get(toIntExact(index.longValue())), get_current_epoch(state))) {
-            slash_validator(state, toIntExact(index.longValue()));
-            slashed_any = true;
-          }
-        }
-
-        checkArgument(slashed_any, "process_attester_slashings: No one is slashed");
+        indicesToSlash.forEach(
+            indexToSlash -> slash_validator(state, toIntExact(indexToSlash.longValue())));
       }
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
-  }
-
-  private static void checkAttestationIsValid(
-      final BeaconState state, final int attesationIndex, final IndexedAttestation attestation) {
-    final AttestationProcessingResult validation1 =
-        is_valid_indexed_attestation(state, attestation);
-    checkArgument(
-        validation1.isSuccessful(),
-        "process_attester_slashings: Indexed attestation "
-            + attesationIndex
-            + " invalid: "
-            + validation1.getInvalidReason());
   }
 
   /**
