@@ -333,14 +333,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
-        .setMetricsHostWhitelist(metricsOptions.getMetricsHostWhitelist())
+        .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
         .setDataPath(dataOptions.getDataPath())
         .setDataStorageMode(dataOptions.getDataStorageMode())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
-        .setRestApiHostWhitelist(beaconRestApiOptions.getRestApiHostWhitelist())
+        .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
         .build();
   }
 }

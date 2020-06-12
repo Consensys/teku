@@ -50,7 +50,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
       TekuConfiguration.builder()
           .setRestApiPort(0)
           .setRestApiDocsEnabled(false)
-          .setRestApiHostWhitelist(List.of("127.0.0.1", "localhost"))
+          .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();

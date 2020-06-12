@@ -44,7 +44,7 @@ executors:
 
   node_executor:
     docker:
-      - image: circleci/node:12.9.0-stretch
+      - image: circleci/node:14-buster
 
 commands:
   prepare:
@@ -298,7 +298,7 @@ jobs:
             TEKU_PID=$!
 
             EXIT_CODE=0
-            wget --timeout=30 --retry-connrefused --output-document=openapi.json http://localhost:5051/swagger-docs
+            wget --timeout=30 --retry-connrefused --output-document=./docs/openapi.json http://localhost:5051/swagger-docs
             if [ $? != 0 ]; then
               rm openapi.json
               EXIT_CODE=1
@@ -307,20 +307,66 @@ jobs:
             kill $TEKU_PID
             exit $EXIT_CODE
       - store_artifacts:
-          path: openapi.json
+          path: ./docs/openapi.json
       - store_artifacts:
           path: teku_output.log
       - persist_to_workspace:
           root: ~/project
           paths:
-            - ./
+            - ./docs/openapi.json
 
   publishAPIDoc:
     executor: node_executor
     steps:
+      # This job requires that we checkout current branch first to have all the repos.
+      # it will not be used directly as we have the saved workspace
+      # but will enable to checkout gh-pages branch.
       - checkout
       - attach_workspace:
-          at: ~/project
+          at: /tmp/workspace
+      - run:
+          name: checkout gh pages branch and copy files from workspace
+          command: |
+            # publishing happens by pushing files to gh-pages branch
+            # retrieve branch to publish to from Circle CI env vars and fallback on the real gh-pages
+            # if no var for a test or alternative branch defined.
+            [ -n "$GH_PAGES_BRANCH_OVERRIDE" ] && readonly BRANCH="$GH_PAGES_BRANCH_OVERRIDE" || readonly BRANCH='gh-pages'
+
+            # switch to the publishing branch
+            git checkout "$BRANCH"
+
+            # copy the content of the docs folder built on the previous job and attached
+            # using workspace on temp location
+            # cp with T option to override existing content, specially usefull for latest
+            cp -aT /tmp/workspace/docs/. .
+
+            # add a readme to make sure devs understand that this publishing branch is generated
+            # by CI (use template readme), mv replaces the current readme that is only for source dir
+            mv TARGET_README.md README.md
+      - restore_cache:
+          keys:
+            - node-cache-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: |
+            npm ci
+      - save_cache:
+          paths:
+            - ~/.npm
+          key: node-cache-{{ checksum "package-lock.json" }}
+      - run:
+          name: Generate API doc site files
+          command: |
+            npm run generate-versions -- --spec=openapi.json --tag=${CIRCLE_TAG}
+      - run:
+          name: Clean gh-pages branch
+          command: |
+            # remove files used to build the doc version but it's not usefull to have them in
+            # the final gh-pages branch
+            rm openapi.json
+            rm package.json
+            rm package-lock.json
+            rm generate-versions.js
       - add_ssh_keys:
           fingerprints:
             - '45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef'
@@ -329,31 +375,20 @@ jobs:
           command: |
             git config --global user.name $CIRCLE_USERNAME
             git config --global user.email "${CIRCLE_USERNAME}@users.noreply.github.com"
-      - restore_cache:
-          keys:
-            - deps-{{ checksum "./docs/package.json" }}
-      - run:
-          name: Install dependencies
-          working_directory: ./docs
-          command: |
-            npm install
-      - save_cache:
-          paths:
-            - ./docs/node_modules
-          key: deps-{{ checksum "./docs/package.json" }}
-      - run:
-          name: Generate API doc site files
-          working_directory: ./docs
-          command: |
-            npm run generate-versions -- --spec=../openapi.json --tag=${CIRCLE_TAG}
       - deploy:
-          name: Commit and push doc changes
+          name: Commit and push docs changes
           command: |
-            git add docs
-            git commit -m "Automated update of JSON specs and version files" \
-                       -m "[skip ci] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
+            # add all generated and copied content to git
+            git add .
+
+            # commit with infos on the triggering task and branch
+            # use [skip ci] to prevent CI from runnning on this branch as no CI is configured
+            git commit -m "Automated REST API documentation update" \
+                       -m "[ci skip] Circle CI build ${CIRCLE_BUILD_NUM}, see ${CIRCLE_BUILD_URL}" \
                        -m "Branch: ${CIRCLE_BRANCH}, commit: ${CIRCLE_SHA1}, tag:${CIRCLE_TAG-none}"
-            git push --set-upstream origin ${CIRCLE_BRANCH}
+
+            # push changes to the Github Pages publishing branch on origin repos
+            git push --set-upstream origin $BRANCH
             git push origin
 
 workflows:
@@ -413,17 +448,21 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
-      # - publishAPIDoc:
-      #     requires:
-      #       - extractAPISpec
-      #       - unitTests
-      #       - integrationTests
-      #       - acceptanceTests
-      #       - referenceTests
-      #       - docker
-      #     filters:
-      #       branches:
-      #         only: master
+      - publishAPIDoc:
+          filters:
+            branches:
+              only:
+                - master
+            tags: # stable doc is published only on tags to prevent confusion on the doc site.
+              only: /.*/
+          requires:
+            - unitTests
+            - integrationTests
+            - acceptanceTests
+            - referenceTests
+            - docker
+            - extractAPISpec
+
 #  nightly:
 #    triggers:
 #      - schedule:
