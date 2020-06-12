@@ -24,6 +24,8 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedSet;
 import tech.pegasys.teku.util.config.Constants;
 
 public class OperationPool<T> {
@@ -34,7 +36,10 @@ public class OperationPool<T> {
           ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS,
           AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
 
-  private final Set<T> operations = new HashSet<>();
+  private final Set<T> operations = LimitedSet.create(
+          Constants.OPERATION_POOL_SIZE,
+          LimitStrategy.DROP_OLDEST_ELEMENT
+  );
   private final OperationStateTransitionValidator<T> operationValidator;
   private final Class<T> clazz;
 
@@ -55,7 +60,6 @@ public class OperationPool<T> {
         itemsToPutInBlock.add(item);
         count++;
       }
-      iter.remove();
     }
     return itemsToPutInBlock;
   }

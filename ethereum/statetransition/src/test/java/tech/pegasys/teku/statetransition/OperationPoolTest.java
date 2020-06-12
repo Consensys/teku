@@ -58,7 +58,6 @@ public class OperationPoolTest {
       pool.add(dataStructureUtil.randomSignedVoluntaryExit());
     }
     assertThat(pool.getItemsForBlock(state)).hasSize(Constants.MAX_VOLUNTARY_EXITS);
-    assertThat(pool.getItemsForBlock(state)).hasSize(1);
   }
 
   @Test

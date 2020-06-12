@@ -131,6 +131,9 @@ class BlockFactoryTest {
     assertThat(block.getBody().getEth1_data()).isEqualTo(ETH1_DATA);
     assertThat(block.getBody().getDeposits()).isEqualTo(deposits);
     assertThat(block.getBody().getAttestations()).isEqualTo(attestations);
+    assertThat(block.getBody().getAttester_slashings()).isEqualTo(attesterSlashings);
+    assertThat(block.getBody().getProposer_slashings()).isEqualTo(proposerSlashings);
+    assertThat(block.getBody().getVoluntary_exits()).isEqualTo(voluntaryExits);
     assertThat(block.getBody().getGraffiti()).isEqualTo(graffiti);
   }
 }
