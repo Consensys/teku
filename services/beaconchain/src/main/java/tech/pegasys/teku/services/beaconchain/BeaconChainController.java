@@ -210,15 +210,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
-    initAttesterSlashingPool();
-    initProposerSlashingPool();
-    initVoluntaryExitPool();
     initStateTransition();
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
     initMetrics();
     initAttestationPool();
+    initAttesterSlashingPool();
+    initProposerSlashingPool();
+    initVoluntaryExitPool();
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
@@ -234,18 +234,21 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initAttesterSlashingPool()");
     attesterSlashingPool =
         new OperationPool<>(AttesterSlashing.class, new AttesterSlashingStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
   }
 
   private void initProposerSlashingPool() {
     LOG.debug("BeaconChainController.initProposerSlashingPool()");
     proposerSlashingPool =
         new OperationPool<>(ProposerSlashing.class, new ProposerSlashingStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
   private void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
     voluntaryExitPool =
         new OperationPool<>(SignedVoluntaryExit.class, new VoluntaryExitStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
   private void initCombinedChainDataClient() {

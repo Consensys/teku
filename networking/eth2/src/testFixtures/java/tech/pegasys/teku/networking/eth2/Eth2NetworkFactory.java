@@ -58,7 +58,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blockimport.VerifiedBlockAttestationsListener;
+import tech.pegasys.teku.statetransition.blockimport.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -243,7 +243,7 @@ public class Eth2NetworkFactory {
         processedAttestationSubscriptionProvider = subscribers::subscribe;
       }
       if (verifiedBlockAttestationsSubscriptionProvider == null) {
-        Subscribers<VerifiedBlockAttestationsListener> subscribers = Subscribers.create(false);
+        Subscribers<VerifiedBlockOperationsListener> subscribers = Subscribers.create(false);
         verifiedBlockAttestationsSubscriptionProvider = subscribers::subscribe;
       }
     }

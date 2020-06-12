@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.statetransition.blockimport;
 
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public interface VerifiedBlockAttestationsListener {
-  void onAttestationsFromBlock(SSZList<Attestation> attestations);
+public interface VerifiedBlockOperationsListener<T> {
+  void onOperationsFromBlock(SSZList<T> operations);
 }
