@@ -237,8 +237,8 @@ class GenerateActionTest {
     final File[] keyStoreFiles = parentDir.toFile().listFiles();
     for (File file : keyStoreFiles) {
       assertThat(
-          KeyStore.validatePassword(
-              EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toPath())))
+              KeyStore.validatePassword(
+                  EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toPath())))
           .isTrue();
     }
   }
