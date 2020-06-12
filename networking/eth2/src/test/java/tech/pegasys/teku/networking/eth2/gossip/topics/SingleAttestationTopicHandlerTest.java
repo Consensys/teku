@@ -37,7 +37,6 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.upstreamconsumers.GossipedAttestationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -50,8 +49,8 @@ public class SingleAttestationTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final GossipedAttestationConsumer gossipedAttestationConsumer =
-      mock(GossipedAttestationConsumer.class);
+  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
+      mock(GossipedOperationConsumer.class);
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);

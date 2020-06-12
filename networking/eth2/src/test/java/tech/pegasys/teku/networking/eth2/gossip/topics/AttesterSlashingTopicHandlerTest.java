@@ -38,6 +38,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttesterSlashingTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
+  private final GossipedOperationConsumer<AttesterSlashing> consumer = mock(GossipedOperationConsumer.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
@@ -46,7 +47,7 @@ public class AttesterSlashingTopicHandlerTest {
 
   private AttesterSlashingTopicHandler topicHandler =
       new AttesterSlashingTopicHandler(
-          gossipEncoding, dataStructureUtil.randomForkInfo(), validator);
+          gossipEncoding, dataStructureUtil.randomForkInfo(), validator, consumer);
 
   @BeforeEach
   public void setup() {
@@ -94,7 +95,7 @@ public class AttesterSlashingTopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final AttesterSlashingTopicHandler topicHandler =
-        new AttesterSlashingTopicHandler(gossipEncoding, forkInfo, validator);
+        new AttesterSlashingTopicHandler(gossipEncoding, forkInfo, validator, consumer);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/attester_slashing/ssz_snappy");
   }
 }
