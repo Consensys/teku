@@ -34,7 +34,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.operationpools.OperationPool;
+import tech.pegasys.teku.statetransition.OperationPool;
 
 public class BlockFactory {
   private final BlockProposalUtil blockCreator;

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.operationpools;
+package tech.pegasys.teku.statetransition;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,7 +48,7 @@ public class OperationPool<T> {
         SSZList.createMutable(clazz, maxNumberOfElementsInBlock.get(clazz));
     Iterator<T> iter = operations.iterator();
     int count = 0;
-    int numberOfElementsToGet = maxNumberOfElementsInBlock.get(iter.getClass());
+    int numberOfElementsToGet = maxNumberOfElementsInBlock.get(clazz);
     while (count < numberOfElementsToGet && iter.hasNext()) {
       T item = iter.next();
       if (operationValidator.validate(stateAtBlockSlot, item).isEmpty()) {

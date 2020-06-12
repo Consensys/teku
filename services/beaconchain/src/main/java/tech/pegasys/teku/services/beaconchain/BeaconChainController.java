@@ -71,7 +71,7 @@ import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesE
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
-import tech.pegasys.teku.statetransition.operationpools.OperationPool;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
