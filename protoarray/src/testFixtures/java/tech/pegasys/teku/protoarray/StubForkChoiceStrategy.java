@@ -18,8 +18,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class StubForkChoiceStrategy implements ForkChoiceStrategy {
 
@@ -32,7 +32,7 @@ public class StubForkChoiceStrategy implements ForkChoiceStrategy {
   public void onAttestation(MutableStore store, final IndexedAttestation attestation) {}
 
   @Override
-  public void onBlock(final ReadOnlyStore store, final BeaconBlock block) {}
+  public void onBlock(final BeaconBlock block, final BeaconState state) {}
 
   @Override
   public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
