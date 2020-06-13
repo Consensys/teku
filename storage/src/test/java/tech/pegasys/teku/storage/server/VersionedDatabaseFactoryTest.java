@@ -31,7 +31,6 @@ public class VersionedDatabaseFactoryTest {
   private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
   @TempDir Path dataDir;
 
-
   @Test
   public void createDatabase_fromEmptyDataDir() throws Exception {
     final DatabaseFactory dbFactory =
