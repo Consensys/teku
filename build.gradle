@@ -292,6 +292,25 @@ application {
   ]
 }
 
+startScripts {
+
+  def shortenWindowsClasspath = { line ->
+    line = line.replaceAll(/^set CLASSPATH=.*$/, "set CLASSPATH=%APP_HOME%/lib/*")
+  }
+
+  doLast {
+    unixScript.text = unixScript.text.replace('TEKU_HOME', '\$APP_HOME')
+    windowsScript.text = windowsScript.text.replace('TEKU_HOME', '%~dp0..')
+
+    // Prevent the error originating from the 8191 chars limit on Windows
+    windowsScript.text =
+        windowsScript
+            .readLines()
+            .collect(shortenWindowsClasspath)
+            .join('\r\n')
+  }
+}
+
 // rename the top level dir from teku-<version> to teku and this makes it really
 // simple for use in docker
 tasks.register("dockerDistUntar") {
@@ -541,13 +560,6 @@ run {
   args project.hasProperty("teku.run.args") ? project.property("teku.run.args").toString().split("\\s+") : []
   doFirst {
     applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('TEKU_HOME', "$buildDir/teku")}
-  }
-}
-
-startScripts {
-  doLast {
-    unixScript.text = unixScript.text.replace('TEKU_HOME', '\$APP_HOME').replace('APP_NAME=', 'export LD_LIBRARY_PATH="\$APP_HOME/native:\$LD_LIBRARY_PATH"\nAPP_NAME=')
-    windowsScript.text = windowsScript.text.replace('TEKU_HOME', '%~dp0..')
   }
 }
 
