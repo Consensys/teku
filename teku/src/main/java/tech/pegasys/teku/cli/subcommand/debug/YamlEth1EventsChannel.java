@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -63,7 +64,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
               + lastBlockTimestamp);
     }
     final List<DepositInfo> deposits =
-        event.getDeposits().stream().map(this::handleDeposit).collect(Collectors.toList());
+        event.getDeposits().stream().map(this::convertDeposit).collect(Collectors.toList());
 
     lastBlockNumber = event.getBlockNumber();
     lastBlockTimestamp = event.getBlockTimestamp();
@@ -80,7 +81,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
     }
   }
 
-  private DepositInfo handleDeposit(final Deposit deposit) {
+  private DepositInfo convertDeposit(final Deposit deposit) {
     final List<String> errors = new ArrayList<>();
     if (!nextExpectedDeposit.equals(deposit.getMerkle_tree_index())) {
       errors.add(
@@ -91,7 +92,12 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
     }
     nextExpectedDeposit = deposit.getMerkle_tree_index().plus(UnsignedLong.ONE);
     return new DepositInfo(
-        deposit.getMerkle_tree_index(), deposit.getPubkey(), deposit.getAmount(), errors);
+        deposit.getMerkle_tree_index(),
+        deposit.getPubkey(),
+        deposit.getAmount(),
+        deposit.getWithdrawal_credentials(),
+        deposit.getSignature(),
+        errors);
   }
 
   @Override
@@ -148,6 +154,8 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
     public final UnsignedLong index;
     public final String publicKey;
     public final UnsignedLong amount;
+    public final String withdrawalCredentials;
+    public final String signature;
 
     @JsonInclude(Include.NON_EMPTY)
     public final List<String> errors;
@@ -156,10 +164,14 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
         final UnsignedLong index,
         final BLSPublicKey publicKey,
         final UnsignedLong amount,
+        final Bytes32 withdrawalCredentials,
+        final BLSSignature signature,
         final List<String> errors) {
       this.index = index;
       this.publicKey = publicKey.toBytesCompressed().toHexString();
       this.amount = amount;
+      this.withdrawalCredentials = withdrawalCredentials.toHexString();
+      this.signature = signature.toBytes().toHexString();
       this.errors = errors;
     }
   }
