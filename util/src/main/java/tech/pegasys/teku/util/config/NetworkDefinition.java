@@ -38,6 +38,7 @@ public class NetworkDefinition {
               builder()
                   .constants("mainnet")
                   .snappyCompressionEnabled(true)
+                  .initialStateFromClasspath("onyx-genesis.ssz")
                   .discoveryBootnodes(
                       "enr:-Ku4QMKVC_MowDsmEa20d5uGjrChI0h8_KsKXDmgVQbIbngZV0idV6_RL7fEtZGo-kTNZ5o7_EJI_vCPJ6scrhwX0Z4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
                   .eth1DepositContractAddress("0x0f0f0fc0530007361933eab5db97d09acdd6c1c8")
