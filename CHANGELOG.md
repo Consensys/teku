@@ -25,6 +25,9 @@ the new endpoint, as `/node/version` will be removed in a future release.
   A hidden flag has been added to disable this functionality if it causes any issues - `--Xeth1-deposits-from-storage-enabled=false`.
   Local storage requirements will increase slightly due to the need to store each deposit block 
   event from the eth1 provider so that it can be replayed during restarts.
+- file and directory structure created by `validator generate` has changed. All files are now generated in a single directory. 
+  Filename of withdrawal key is now named using the validator key eg 814a1a6_validator.json 814a1a6_withdrawal.json
+
 
 ## 0.11.3
 
