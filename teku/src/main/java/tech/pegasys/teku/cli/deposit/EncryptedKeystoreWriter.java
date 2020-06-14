@@ -15,12 +15,12 @@ package tech.pegasys.teku.cli.deposit;
 
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.bytes.KeyFormatter.shortPublicKey;
-import static tech.pegasys.teku.util.crypto.SecureRandomProvider.createSecureRandom;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.signers.bls.keystore.KeyStore;
@@ -34,14 +34,18 @@ import tech.pegasys.signers.bls.keystore.model.SCryptParam;
 import tech.pegasys.teku.bls.BLSKeyPair;
 
 public class EncryptedKeystoreWriter implements KeysWriter {
+
+  private final SecureRandom secureRandom;
   private final String validatorKeyPassword;
   private final String withdrawalKeyPassword;
   private final Path outputPath;
 
   public EncryptedKeystoreWriter(
+      final SecureRandom secureRandom,
       final String validatorKeyPassword,
       final String withdrawalKeyPassword,
       final Path outputPath) {
+    this.secureRandom = secureRandom;
     this.validatorKeyPassword = validatorKeyPassword;
     this.withdrawalKeyPassword = withdrawalKeyPassword;
     this.outputPath = outputPath;
@@ -77,11 +81,10 @@ public class EncryptedKeystoreWriter implements KeysWriter {
   }
 
   private KeyStoreData generateKeystoreData(final BLSKeyPair key, final String password) {
-    final KdfParam kdfParam = new SCryptParam(32, Bytes32.random(createSecureRandom()));
-    final Cipher cipher =
-        new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16, createSecureRandom()));
+    final KdfParam kdfParam = new SCryptParam(32, Bytes32.random(secureRandom));
+    final Cipher cipher = new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16, secureRandom));
     return KeyStore.encrypt(
-        key.getSecretKey().getSecretKey().toBytes(),
+        key.getSecretKey().toBytes(),
         key.getPublicKey().toBytesCompressed(),
         password,
         "",
