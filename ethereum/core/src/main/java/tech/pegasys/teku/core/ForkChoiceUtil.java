@@ -84,23 +84,11 @@ public class ForkChoiceUtil {
    */
   private static Optional<Bytes32> get_ancestor(
       ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UnsignedLong slot) {
-    return forkChoiceStrategy
-        .blockSlot(root)
-        .flatMap(
-            blockSlot -> {
-              if (blockSlot.compareTo(slot) > 0) {
-                return get_ancestor(
-                    forkChoiceStrategy,
-                    forkChoiceStrategy.blockParentRoot(root).orElseThrow(),
-                    slot);
-              } else if (blockSlot.equals(slot)) {
-                return Optional.of(root);
-              } else {
-                // root is older than the queried slot, thus a skip slot. Return earliest root prior
-                // to slot.
-                return Optional.of(root);
-              }
-            });
+    Bytes32 parentRoot = root;
+    while (forkChoiceStrategy.blockSlot(parentRoot).get().compareTo(slot) > 0) {
+      parentRoot = forkChoiceStrategy.blockParentRoot(parentRoot).orElseThrow();
+    }
+    return Optional.of(parentRoot);
   }
 
   /*
