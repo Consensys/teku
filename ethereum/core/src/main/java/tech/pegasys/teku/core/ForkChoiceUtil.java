@@ -85,10 +85,12 @@ public class ForkChoiceUtil {
   private static Optional<Bytes32> get_ancestor(
       ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UnsignedLong slot) {
     Bytes32 parentRoot = root;
-    while (forkChoiceStrategy.blockSlot(parentRoot).get().compareTo(slot) > 0) {
+    Optional<UnsignedLong> blockSlot = forkChoiceStrategy.blockSlot(root);
+    while (blockSlot.isPresent() && blockSlot.get().compareTo(slot) > 0) {
       parentRoot = forkChoiceStrategy.blockParentRoot(parentRoot).orElseThrow();
+      blockSlot = forkChoiceStrategy.blockSlot(parentRoot);
     }
-    return Optional.of(parentRoot);
+    return blockSlot.isPresent() ? Optional.of(parentRoot) : Optional.empty();
   }
 
   /*
