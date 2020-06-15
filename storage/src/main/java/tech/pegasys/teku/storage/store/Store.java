@@ -95,11 +95,6 @@ class Store implements UpdatableStore {
     stateRequestCachedCounter = stateRequestCounter.labels("cached");
     stateRequestRegenerateCounter = stateRequestCounter.labels("regenerate");
     stateRequestMissCounter = stateRequestCounter.labels("miss");
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.STORAGE,
-        "memory_state_cache_size",
-        "Number of currently cached beacon states",
-        block_states::size);
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -120,6 +115,26 @@ class Store implements UpdatableStore {
 
     // Setup slot to root mappings
     indexBlockRootsBySlot(rootsBySlotLookup, this.blocks.values());
+
+    createGauges(metricsSystem);
+  }
+
+  private void createGauges(final MetricsSystem metricsSystem) {
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.STORAGE,
+        "memory_state_count",
+        "Number of beacon states held in the in-memory store",
+        block_states::size);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.STORAGE,
+        "memory_block_count",
+        "Number of beacon blocks held in the in-memory store",
+        block_states::size);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.STORAGE,
+        "memory_checkpoint_state_count",
+        "Number of checkpoint states held in the in-memory store",
+        checkpoint_states::size);
   }
 
   static void indexBlockRootsBySlot(
