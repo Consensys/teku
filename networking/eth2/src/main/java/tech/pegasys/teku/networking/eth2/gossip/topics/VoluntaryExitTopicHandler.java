@@ -32,14 +32,17 @@ public class VoluntaryExitTopicHandler implements Eth2TopicHandler<SignedVolunta
   private final VoluntaryExitValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
+  private final GossipedOperationConsumer<SignedVoluntaryExit> consumer;
 
   public VoluntaryExitTopicHandler(
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final VoluntaryExitValidator validator) {
+      final VoluntaryExitValidator validator,
+      final GossipedOperationConsumer<SignedVoluntaryExit> consumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
+    this.consumer = consumer;
   }
 
   @Override
@@ -53,6 +56,7 @@ public class VoluntaryExitTopicHandler implements Eth2TopicHandler<SignedVolunta
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
           break;
         case ACCEPT:
+          consumer.forward(signedVoluntaryExit);
           break;
         default:
           throw new UnsupportedOperationException(

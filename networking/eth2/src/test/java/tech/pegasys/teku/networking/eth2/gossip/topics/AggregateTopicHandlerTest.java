@@ -31,8 +31,11 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final GossipedAttestationConsumer attestationConsumer =
-      mock(GossipedAttestationConsumer.class);
+
+  @SuppressWarnings("unchecked")
+  private final GossipedOperationConsumer<ValidateableAttestation> attestationConsumer =
+      mock(GossipedOperationConsumer.class);
+
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final SignedAggregateAndProofValidator validator =
       mock(SignedAggregateAndProofValidator.class);
@@ -50,7 +53,7 @@ public class AggregateTopicHandlerTest {
     final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isEqualTo(ValidationResult.Valid);
-    verify(attestationConsumer).accept(aggregate);
+    verify(attestationConsumer).forward(aggregate);
   }
 
   @Test
@@ -63,7 +66,7 @@ public class AggregateTopicHandlerTest {
     final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isEqualTo(ValidationResult.Ignore);
-    verify(attestationConsumer).accept(aggregate);
+    verify(attestationConsumer).forward(aggregate);
   }
 
   @Test
@@ -76,7 +79,7 @@ public class AggregateTopicHandlerTest {
     final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isEqualTo(ValidationResult.Ignore);
-    verify(attestationConsumer, never()).accept(aggregate);
+    verify(attestationConsumer, never()).forward(aggregate);
   }
 
   @Test
@@ -89,7 +92,7 @@ public class AggregateTopicHandlerTest {
     final ValidationResult result =
         topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
     assertThat(result).isEqualTo(ValidationResult.Invalid);
-    verify(attestationConsumer, never()).accept(aggregate);
+    verify(attestationConsumer, never()).forward(aggregate);
   }
 
   @Test

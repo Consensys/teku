@@ -119,9 +119,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private boolean isValid(
       final BeaconState stateAtBlockSlot, final AttestationData attestationData) {
-    return attestationDataValidator
-        .validateAttestation(stateAtBlockSlot, attestationData)
-        .isEmpty();
+    return attestationDataValidator.validate(stateAtBlockSlot, attestationData).isEmpty();
   }
 
   public synchronized Optional<ValidateableAttestation> createAggregateFor(
