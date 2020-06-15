@@ -128,9 +128,9 @@ public class DepositGenerateCommand implements Runnable {
 
   @Override
   public void run() {
-    final KeysWriter keysWriter = getKeysWriter();
-
     final SecureRandom srng = SecureRandomProvider.createSecureRandom();
+    final KeysWriter keysWriter = getKeysWriter(srng);
+
     try (final RegisterAction registerAction = params.createRegisterAction()) {
       registerAction.displayConfirmation(validatorCount);
       final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
@@ -153,7 +153,7 @@ public class DepositGenerateCommand implements Runnable {
     shutdownFunction.accept(0);
   }
 
-  private KeysWriter getKeysWriter() {
+  private KeysWriter getKeysWriter(final SecureRandom secureRandom) {
     final KeysWriter keysWriter;
     if (encryptKeys) {
       final String validatorKeystorePassword =
@@ -164,7 +164,7 @@ public class DepositGenerateCommand implements Runnable {
       final Path keystoreDir = getKeystoreOutputDir();
       keysWriter =
           new EncryptedKeystoreWriter(
-              validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
+              secureRandom, validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
       if (consoleAdapter.isConsoleAvailable()

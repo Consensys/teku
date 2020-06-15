@@ -23,28 +23,27 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class BLSSecretKeyTest {
-  private static final String PRIVATE_KEY_32_BYTES =
-      "0x2CF622DE0FD92C7D4E59539CBDA63100E02CF59349595356CD97FFE6CB486460";
-  private static final String PRIVATE_KEY_48_BYTES =
-      "0x000000000000000000000000000000002CF622DE0FD92C7D4E59539CBDA63100E02CF59349595356CD97FFE6CB486460";
+  private static final Bytes PRIVATE_KEY_32_BYTES =
+      Bytes.fromHexString("0x2CF622DE0FD92C7D4E59539CBDA63100E02CF59349595356CD97FFE6CB486460");
+  private static final Bytes PRIVATE_KEY_48_BYTES =
+      Bytes.fromHexString(
+          "0x000000000000000000000000000000002CF622DE0FD92C7D4E59539CBDA63100E02CF59349595356CD97FFE6CB486460");
 
   @Test
   void keyCanBeCreatedWith32ByteValue() {
-    final Bytes keyBytes = Bytes.fromHexString(PRIVATE_KEY_32_BYTES);
-    assertThat(keyBytes.size()).isEqualTo(32);
+    assertThat(PRIVATE_KEY_32_BYTES.size()).isEqualTo(32);
 
-    final BLSSecretKey secretKey = BLSSecretKey.fromBytes(keyBytes);
+    final BLSSecretKey secretKey = BLSSecretKey.fromBytes(PRIVATE_KEY_32_BYTES);
     // mikuli always represents the key as 48 bytes so compare against the key left padded with 0s
-    assertThat(secretKey.getSecretKey().toBytes()).isEqualTo(Bytes48.leftPad(keyBytes));
+    assertThat(secretKey.getSecretKey().toBytes()).isEqualTo(Bytes48.leftPad(PRIVATE_KEY_32_BYTES));
   }
 
   @Test
   void keyCanBeCreatedWith48ByteValue() {
-    final Bytes keyBytes = Bytes.fromHexString(PRIVATE_KEY_48_BYTES);
-    assertThat(keyBytes.size()).isEqualTo(48);
+    assertThat(PRIVATE_KEY_48_BYTES.size()).isEqualTo(48);
 
-    final BLSSecretKey secretKey = BLSSecretKey.fromBytes(keyBytes);
-    assertThat(secretKey.getSecretKey().toBytes()).isEqualTo(keyBytes);
+    final BLSSecretKey secretKey = BLSSecretKey.fromBytes(PRIVATE_KEY_48_BYTES);
+    assertThat(secretKey.getSecretKey().toBytes()).isEqualTo(PRIVATE_KEY_48_BYTES);
   }
 
   @ParameterizedTest
@@ -55,5 +54,21 @@ class BLSSecretKeyTest {
     assertThatThrownBy(() -> BLSSecretKey.fromBytes(bytes))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Expected 32 or 48 bytes but received " + size + ".");
+  }
+
+  @Test
+  void toBytes_trimsLeadingZerosFrom48BytesKey() {
+    final BLSSecretKey secretKey = BLSSecretKey.fromBytes(PRIVATE_KEY_48_BYTES);
+    assertThat(secretKey.toBytes()).isEqualTo(PRIVATE_KEY_32_BYTES);
+  }
+
+  @Test
+  void toBytes_returns48BytesIfPaddingIsNotAllZero() {
+    // Lots of leading zeros but that first 1 is in the 16 bytes of padding.
+    final Bytes keyBytes =
+        Bytes.fromHexString(
+            "0x000000000000000000000000000000012CF622DE0FD92C7D4E59539CBDA63100E02CF59349595356CD97FFE6CB486460");
+    final BLSSecretKey key = BLSSecretKey.fromBytes(keyBytes);
+    assertThat(key.toBytes()).isEqualTo(keyBytes);
   }
 }
