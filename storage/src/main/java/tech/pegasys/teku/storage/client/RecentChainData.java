@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
@@ -54,6 +55,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
+  private final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
@@ -65,10 +67,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile UnsignedLong genesisTime;
 
   RecentChainData(
+      final MetricsSystem metricsSystem,
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
+    this.metricsSystem = metricsSystem;
     this.reorgEventChannel = reorgEventChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -84,7 +88,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
-    final UpdatableStore store = StoreFactory.getForkChoiceStore(genesisState);
+    final UpdatableStore store = StoreFactory.getForkChoiceStore(metricsSystem, genesisState);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(

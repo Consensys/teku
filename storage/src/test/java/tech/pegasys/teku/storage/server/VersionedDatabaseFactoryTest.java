@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class VersionedDatabaseFactoryTest {
@@ -39,7 +40,7 @@ public class VersionedDatabaseFactoryTest {
 
   @Test
   public void createDatabase_fromEmptyDataDir() throws Exception {
-    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
+    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(new StubMetricsSystem(), config);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -52,7 +53,7 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     createVersionFile(dataDir, DatabaseVersion.V3);
 
-    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
+    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(new StubMetricsSystem(), config);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -63,7 +64,7 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     createVersionFile(dataDir, "bla");
 
-    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
+    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(new StubMetricsSystem(), config);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -73,7 +74,7 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_dbExistsButNoVersionIsSaved() throws Exception {
     createDbDirectory(dataDir);
 
-    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(config);
+    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(new StubMetricsSystem(), config);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");

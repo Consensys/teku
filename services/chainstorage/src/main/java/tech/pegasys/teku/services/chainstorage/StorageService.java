@@ -42,7 +42,8 @@ public class StorageService extends Service {
     return SafeFuture.fromRunnable(
         () -> {
           final VersionedDatabaseFactory dbFactory =
-              new VersionedDatabaseFactory(serviceConfig.getConfig());
+              new VersionedDatabaseFactory(
+                  serviceConfig.getMetricsSystem(), serviceConfig.getConfig());
           database = dbFactory.createDatabase();
 
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
