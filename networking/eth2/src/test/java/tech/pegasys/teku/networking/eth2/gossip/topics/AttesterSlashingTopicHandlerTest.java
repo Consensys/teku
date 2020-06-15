@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
@@ -76,6 +77,7 @@ public class AttesterSlashingTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(slashing);
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Ignore);
+    verifyNoInteractions(consumer);
   }
 
   @Test
@@ -85,6 +87,7 @@ public class AttesterSlashingTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(slashing);
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Invalid);
+    verifyNoInteractions(consumer);
   }
 
   @Test
@@ -93,6 +96,7 @@ public class AttesterSlashingTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Invalid);
+    verifyNoInteractions(consumer);
   }
 
   @Test
