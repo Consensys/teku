@@ -86,7 +86,7 @@ public abstract class StoreFactory {
       // This should be an error, but keeping this as a warning now for backwards-compatibility
       // reasons.  Some existing databases may have unpruned fork blocks, and could become unusable
       // if we throw here.  In the future, we should convert this to an error.
-      LOG.warn("Ignoring %d non-canonical blocks", blocks.size() - tree.getBlockCount());
+      LOG.warn("Ignoring {} non-canonical blocks", blocks.size() - tree.getBlockCount());
     }
 
     return create(
