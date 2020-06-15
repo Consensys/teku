@@ -34,7 +34,7 @@ public class DelayedExecutorAsyncRunnerTest {
 
   @BeforeEach
   void setUp() {
-    asyncRunner = DelayedExecutorAsyncRunner.create();
+    asyncRunner = DelayedExecutorAsyncRunner.createNope();
   }
 
   @SuppressWarnings("unchecked")

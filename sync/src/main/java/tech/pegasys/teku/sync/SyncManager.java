@@ -34,7 +34,6 @@ import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
 import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
@@ -67,10 +66,10 @@ public class SyncManager extends Service {
   }
 
   public static SyncManager create(
+      final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
       final RecentChainData storageClient,
       final BlockImporter blockImporter) {
-    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
     return new SyncManager(
         asyncRunner,
         network,

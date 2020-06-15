@@ -31,7 +31,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
@@ -69,10 +68,11 @@ public class FetchRecentBlocksService extends Service {
   }
 
   public static FetchRecentBlocksService create(
+      final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool) {
     return new FetchRecentBlocksService(
-        DelayedExecutorAsyncRunner.create(),
+        asyncRunner,
         eth2Network,
         pendingBlocksPool,
         FetchBlockTask::create,

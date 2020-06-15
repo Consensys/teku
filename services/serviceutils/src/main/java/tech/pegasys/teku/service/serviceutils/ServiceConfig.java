@@ -16,6 +16,7 @@ package tech.pegasys.teku.service.serviceutils;
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
 
@@ -58,5 +59,13 @@ public class ServiceConfig {
 
   public MetricsSystem getMetricsSystem() {
     return metricsSystem;
+  }
+
+  public AsyncRunner createAsyncRunner(final String name) {
+    return createAsyncRunner(name, Integer.MAX_VALUE);
+  }
+
+  public AsyncRunner createAsyncRunner(final String name, final int maxThreads) {
+    return ScheduledExecutorAsyncRunner.create(name, maxThreads, metricsSystem);
   }
 }

@@ -25,7 +25,7 @@ public class AsyncRunnerTest {
 
   @Test
   public void testRecurrentTaskCancel() throws Exception {
-    AsyncRunner runner = DelayedExecutorAsyncRunner.create();
+    AsyncRunner runner = DelayedExecutorAsyncRunner.createNope();
     AtomicInteger counter = new AtomicInteger();
     Cancellable task =
         runner.runWithFixedDelay(counter::incrementAndGet, 100, TimeUnit.MILLISECONDS, t -> {});
@@ -39,7 +39,7 @@ public class AsyncRunnerTest {
 
   @Test
   public void testRecurrentTaskExceptionHandler() {
-    AsyncRunner runner = DelayedExecutorAsyncRunner.create();
+    AsyncRunner runner = DelayedExecutorAsyncRunner.createNope();
     AtomicInteger counter = new AtomicInteger();
     AtomicReference<Throwable> exception = new AtomicReference<>();
     Cancellable task =

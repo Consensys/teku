@@ -42,7 +42,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.Cancellable;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.util.events.Subscribers;
 
@@ -83,7 +82,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
-            DelayedExecutorAsyncRunner.create(),
+            asyncRunner,
             this,
             combinedChainDataClient,
             storageClient,

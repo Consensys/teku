@@ -164,7 +164,9 @@ public class Eth2NetworkFactory {
                 StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
+                asyncRunner,
                 new LibP2PNetwork(
+                    asyncRunner,
                     config,
                     reputationManager,
                     METRICS_SYSTEM,
@@ -212,7 +214,7 @@ public class Eth2NetworkFactory {
         eventBus = new EventBus();
       }
       if (asyncRunner == null) {
-        asyncRunner = DelayedExecutorAsyncRunner.create();
+        asyncRunner = DelayedExecutorAsyncRunner.createNope();
       }
       if (eth2RpcPingInterval == null) {
         eth2RpcPingInterval = Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;

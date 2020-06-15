@@ -57,6 +57,7 @@ import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
@@ -83,7 +84,7 @@ import tech.pegasys.teku.sync.SyncManager;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.sync.util.NoopSyncService;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
@@ -101,15 +102,16 @@ import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final DelayedExecutorAsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final TekuConfiguration config;
+  private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
   private final boolean setupInitialState;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
+  private final AsyncRunner networkAsyncRunner;
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -126,17 +128,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private SyncStateTracker syncStateTracker;
 
-  public BeaconChainController(
-      TimeProvider timeProvider,
-      EventBus eventBus,
-      EventChannels eventChannels,
-      MetricsSystem metricsSystem,
-      TekuConfiguration config) {
-    this.timeProvider = timeProvider;
-    this.eventBus = eventBus;
-    this.eventChannels = eventChannels;
-    this.config = config;
-    this.metricsSystem = metricsSystem;
+  public BeaconChainController(final ServiceConfig serviceConfig) {
+    this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
+    networkAsyncRunner = serviceConfig.createAsyncRunner("p2p");
+    this.timeProvider = serviceConfig.getTimeProvider();
+    this.eventBus = serviceConfig.getEventBus();
+    this.eventChannels = serviceConfig.getEventChannels();
+    this.config = serviceConfig.getConfig();
+    this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
     this.setupInitialState = config.isInteropEnabled() || config.getInitialState() != null;
   }
@@ -367,7 +366,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
-              .asyncRunner(asyncRunner)
+              .asyncRunner(networkAsyncRunner)
               .build();
     }
   }
@@ -421,7 +420,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       final FutureItems<SignedBeaconBlock> futureBlocks =
           new FutureItems<>(SignedBeaconBlock::getSlot);
       final FetchRecentBlocksService recentBlockFetcher =
-          FetchRecentBlocksService.create(p2pNetwork, pendingBlocks);
+          FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
       BlockManager blockManager =
           BlockManager.create(
               eventBus,
@@ -430,7 +429,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               recentBlockFetcher,
               recentChainData,
               blockImporter);
-      SyncManager syncManager = SyncManager.create(p2pNetwork, recentChainData, blockImporter);
+      SyncManager syncManager =
+          SyncManager.create(asyncRunner, p2pNetwork, recentChainData, blockImporter);
       syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
       eventChannels
           .subscribe(SlotEventsChannel.class, blockManager)
