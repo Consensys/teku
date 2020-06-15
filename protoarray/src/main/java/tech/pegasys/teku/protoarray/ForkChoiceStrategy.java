@@ -18,8 +18,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public interface ForkChoiceStrategy {
 
@@ -27,7 +27,7 @@ public interface ForkChoiceStrategy {
 
   void onAttestation(final MutableStore store, final IndexedAttestation attestation);
 
-  void onBlock(final ReadOnlyStore store, final BeaconBlock block);
+  void onBlock(final BeaconBlock block, final BeaconState state);
 
   Optional<UnsignedLong> blockSlot(Bytes32 blockRoot);
 

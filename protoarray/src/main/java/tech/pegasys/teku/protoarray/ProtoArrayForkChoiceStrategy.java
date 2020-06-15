@@ -36,6 +36,7 @@ import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -100,15 +101,15 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public void onBlock(final ReadOnlyStore store, final BeaconBlock block) {
+  public void onBlock(final BeaconBlock block, final BeaconState state) {
     Bytes32 blockRoot = block.hash_tree_root();
     processBlock(
         block.getSlot(),
         blockRoot,
         block.getParent_root(),
         block.getState_root(),
-        store.getBlockState(blockRoot).getCurrent_justified_checkpoint().getEpoch(),
-        store.getBlockState(blockRoot).getFinalized_checkpoint().getEpoch());
+        state.getCurrent_justified_checkpoint().getEpoch(),
+        state.getFinalized_checkpoint().getEpoch());
   }
 
   public void maybePrune(Bytes32 finalizedRoot) {
