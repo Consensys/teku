@@ -14,8 +14,11 @@
 package tech.pegasys.teku.service.serviceutils;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -28,57 +31,68 @@ import tech.pegasys.teku.util.async.SafeFuture;
 
 class ScheduledExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
-
-  private final ScheduledThreadPoolExecutor executorService;
+  private final ScheduledExecutorService scheduler;
+  private final ThreadPoolExecutor workerPool;
 
   private ScheduledExecutorAsyncRunner(
       final String name,
-      final ScheduledThreadPoolExecutor executorService,
+      final ScheduledExecutorService scheduler,
+      final ThreadPoolExecutor workerPool,
       final MetricsSystem metricsSystem) {
-    this.executorService = executorService;
+    this.scheduler = scheduler;
+    this.workerPool = workerPool;
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.EXECUTOR,
         name + "_queue_size",
         "Current size of the executor task queue",
-        () -> executorService.getQueue().size());
+        () -> workerPool.getQueue().size());
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.EXECUTOR,
         name + "_thread_pool_size",
         "Current number of threads in the executor thread pool",
-        executorService::getPoolSize);
+        workerPool::getPoolSize);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.EXECUTOR,
         name + "_thread_active_count",
         "Current number of threads executing tasks for this executor",
-        executorService::getActiveCount);
+        workerPool::getActiveCount);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.EXECUTOR,
         name + "_largest_thread_count",
         "Largest number of threads that have ever been in the pool for this executor",
-        executorService::getLargestPoolSize);
+        workerPool::getLargestPoolSize);
   }
 
   static AsyncRunner create(
       final String name, final int maxThreads, final MetricsSystem metricsSystem) {
-    final ScheduledThreadPoolExecutor executorService =
-        new ScheduledThreadPoolExecutor(
+    final ScheduledExecutorService scheduler =
+        Executors.newSingleThreadScheduledExecutor(
+            new ThreadFactoryBuilder()
+                .setNameFormat(name + "-async-scheduler-%d")
+                .setDaemon(true)
+                .build());
+    final ThreadPoolExecutor workerPool =
+        new ThreadPoolExecutor(
             1,
+            maxThreads,
+            60,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
             new ThreadFactoryBuilder().setNameFormat(name + "-async-%d").setDaemon(true).build());
-    executorService.setRemoveOnCancelPolicy(true);
-    executorService.setMaximumPoolSize(maxThreads);
-    return new ScheduledExecutorAsyncRunner(name, executorService, metricsSystem);
+    return new ScheduledExecutorAsyncRunner(name, scheduler, workerPool, metricsSystem);
   }
 
   @Override
   public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
-    return runTask(action, executorService::execute);
+    return runTask(action, workerPool::execute);
   }
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public <U> SafeFuture<U> runAfterDelay(
       final Supplier<SafeFuture<U>> action, final long delayAmount, final TimeUnit delayUnit) {
-    return runTask(action, task -> executorService.schedule(task, delayAmount, delayUnit));
+    return runTask(
+        action, task -> scheduler.schedule(() -> workerPool.execute(task), delayAmount, delayUnit));
   }
 
   private <U> SafeFuture<U> runTask(
