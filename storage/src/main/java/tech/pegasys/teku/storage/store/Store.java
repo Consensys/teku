@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -103,7 +104,6 @@ class Store implements UpdatableStore {
     this.blocks = new ConcurrentHashMap<>(blocks);
     this.block_states =
         ConcurrentLimitedMap.create(stateCacheSize, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    blockStateProvider.provide(this.block_states::put);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
     this.votes = new ConcurrentHashMap<>(votes);
 
@@ -112,6 +112,19 @@ class Store implements UpdatableStore {
     this.finalizedBlockAndState =
         new SignedBlockAndState(finalizedBlock, latestFinalizedBlockState);
     block_states.put(finalizedBlock.getRoot(), latestFinalizedBlockState);
+
+    // Process blocks
+    LOG.info("Process {} block(s) to regenerate state", blocks.size());
+    final AtomicInteger processedBlocks = new AtomicInteger(0);
+    blockStateProvider.provide(
+        (blockRoot, state) -> {
+          final int processed = processedBlocks.incrementAndGet();
+          if (processed % 100 == 0) {
+            LOG.info("Processed {} blocks", processed);
+          }
+          this.block_states.put(blockRoot, state);
+        });
+    LOG.info("Finished processing {} block(s)", blocks.size());
 
     // Setup slot to root mappings
     indexBlockRootsBySlot(rootsBySlotLookup, this.blocks.values());

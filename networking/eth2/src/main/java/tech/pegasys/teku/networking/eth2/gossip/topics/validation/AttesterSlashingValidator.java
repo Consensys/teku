@@ -73,8 +73,7 @@ public class AttesterSlashingValidator {
                 () ->
                     new IllegalStateException(
                         "Unable to get best state for attester slashing processing."));
-    Optional<OperationInvalidReason> invalidReason =
-        transitionValidator.validateSlashing(state, slashing);
+    Optional<OperationInvalidReason> invalidReason = transitionValidator.validate(state, slashing);
 
     if (invalidReason.isPresent()) {
       LOG.trace(

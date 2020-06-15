@@ -29,21 +29,23 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
-public class AttesterSlashingStateTransitionValidator {
+public class AttesterSlashingStateTransitionValidator
+    implements OperationStateTransitionValidator<AttesterSlashing> {
 
-  public Optional<OperationInvalidReason> validateSlashing(
+  public Optional<OperationInvalidReason> validate(
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
       final List<UnsignedLong> indicesToSlash) {
-    return validateSlashing(state, attesterSlashing, Optional.of(indicesToSlash));
+    return validate(state, attesterSlashing, Optional.of(indicesToSlash));
   }
 
-  public Optional<OperationInvalidReason> validateSlashing(
+  @Override
+  public Optional<OperationInvalidReason> validate(
       final BeaconState state, final AttesterSlashing attesterSlashing) {
-    return validateSlashing(state, attesterSlashing, Optional.empty());
+    return validate(state, attesterSlashing, Optional.empty());
   }
 
-  private Optional<OperationInvalidReason> validateSlashing(
+  private Optional<OperationInvalidReason> validate(
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
       final Optional<List<UnsignedLong>> maybeIndicesToSlash) {
