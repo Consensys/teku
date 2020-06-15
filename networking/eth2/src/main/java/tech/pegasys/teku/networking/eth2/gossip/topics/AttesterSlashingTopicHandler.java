@@ -32,14 +32,17 @@ public class AttesterSlashingTopicHandler implements Eth2TopicHandler<AttesterSl
   private final AttesterSlashingValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
+  private final GossipedOperationConsumer<AttesterSlashing> consumer;
 
   public AttesterSlashingTopicHandler(
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final AttesterSlashingValidator validator) {
+      final AttesterSlashingValidator validator,
+      final GossipedOperationConsumer<AttesterSlashing> consumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
+    this.consumer = consumer;
   }
 
   @Override
@@ -53,6 +56,7 @@ public class AttesterSlashingTopicHandler implements Eth2TopicHandler<AttesterSl
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
           break;
         case ACCEPT:
+          consumer.forward(attesterSlashing);
           break;
         default:
           throw new UnsupportedOperationException(

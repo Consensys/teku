@@ -11,11 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics;
+package tech.pegasys.teku.core.operationvalidators;
 
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.statetransition.blockimport.VerifiedBlockOperationsListener;
+import java.util.Optional;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 
-public interface VerifiedBlockAttestationsSubscriptionProvider {
-  void subscribe(VerifiedBlockOperationsListener<Attestation> verifiedBlockOperationsListener);
+@FunctionalInterface
+public interface OperationStateTransitionValidator<T> {
+
+  Optional<OperationInvalidReason> validate(final BeaconState state, final T operation);
 }

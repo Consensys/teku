@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics;
+package tech.pegasys.teku.statetransition.blockimport;
 
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public interface GossipedAttestationConsumer {
-  void accept(ValidateableAttestation attestation);
+public interface VerifiedBlockOperationsListener<T> {
+  void onOperationsFromBlock(SSZList<T> operations);
 }

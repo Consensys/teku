@@ -86,7 +86,7 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void getAttestationsForBlock_shouldReturnEmptyListWhenNoAttestationsAvailable() {
-    when(attestationDataValidator.validateAttestation(any(), any())).thenReturn(Optional.empty());
+    when(attestationDataValidator.validate(any(), any())).thenReturn(Optional.empty());
     assertThat(aggregatingPool.getAttestationsForBlock(dataStructureUtil.randomBeaconState()))
         .isEmpty();
   }
@@ -97,7 +97,7 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 2);
     addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 3);
 
-    when(attestationDataValidator.validateAttestation(any(), any()))
+    when(attestationDataValidator.validate(any(), any()))
         .thenReturn(Optional.of(AttestationInvalidReason.SLOT_NOT_IN_EPOCH));
 
     assertThat(aggregatingPool.getAttestationsForBlock(dataStructureUtil.randomBeaconState()))
@@ -114,11 +114,11 @@ class AggregatingAttestationPoolTest {
         addAttestationFromValidators(dataStructureUtil.randomAttestationData(), 3);
 
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    when(attestationDataValidator.validateAttestation(state, attestation1.getData()))
+    when(attestationDataValidator.validate(state, attestation1.getData()))
         .thenReturn(Optional.of(AttestationInvalidReason.SLOT_NOT_IN_EPOCH));
-    when(attestationDataValidator.validateAttestation(state, attestation2.getData()))
+    when(attestationDataValidator.validate(state, attestation2.getData()))
         .thenReturn(Optional.empty());
-    when(attestationDataValidator.validateAttestation(state, attestation3.getData()))
+    when(attestationDataValidator.validate(state, attestation3.getData()))
         .thenReturn(Optional.empty());
 
     assertThat(aggregatingPool.getAttestationsForBlock(state))
