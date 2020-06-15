@@ -48,8 +48,7 @@ public class AttesterSlashingValidatorTest {
   @Test
   public void shouldAcceptValidAttesterSlashing() {
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
-    when(stateTransitionValidator.validateSlashing(
-            recentChainData.getBestState().orElseThrow(), slashing))
+    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(Optional.empty());
     assertThat(attesterSlashingValidator.validate(slashing)).isEqualTo(ACCEPT);
   }
@@ -57,8 +56,7 @@ public class AttesterSlashingValidatorTest {
   @Test
   public void shouldRejectInvalidAttesterSlashing() {
     AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashing();
-    when(stateTransitionValidator.validateSlashing(
-            recentChainData.getBestState().orElseThrow(), slashing))
+    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), slashing))
         .thenReturn(
             Optional.of(
                 AttesterSlashingStateTransitionValidator.AttesterSlashingInvalidReason
@@ -71,8 +69,7 @@ public class AttesterSlashingValidatorTest {
     AttesterSlashing slashing1 = dataStructureUtil.randomAttesterSlashing();
     AttesterSlashing slashing2 =
         new AttesterSlashing(slashing1.getAttestation_1(), slashing1.getAttestation_2());
-    when(stateTransitionValidator.validateSlashing(
-            eq(recentChainData.getBestState().orElseThrow()), any()))
+    when(stateTransitionValidator.validate(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
     assertThat(attesterSlashingValidator.validate(slashing1)).isEqualTo(ACCEPT);
     assertThat(attesterSlashingValidator.validate(slashing2)).isEqualTo(IGNORE);

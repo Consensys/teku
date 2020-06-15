@@ -79,9 +79,7 @@ public class VoluntaryExitValidator {
                     new IllegalStateException(
                         "Unable to get best state for voluntary exit processing."));
 
-    Optional<OperationInvalidReason> invalidReason =
-        stateTransitionValidator.validateExit(state, exit);
-    stateTransitionValidator.validateExit(state, exit);
+    Optional<OperationInvalidReason> invalidReason = stateTransitionValidator.validate(state, exit);
 
     if (invalidReason.isPresent()) {
       LOG.trace(
