@@ -97,21 +97,17 @@ class Store implements UpdatableStore {
     block_states.put(finalizedBlock.getRoot(), latestFinalizedBlockState);
 
     // Process blocks
-    final long blocksToProcess =
-        blocks.values().stream()
-            .filter(b -> !b.getRoot().equals(finalized_checkpoint.getRoot()))
-            .count();
+    LOG.info("Process {} block(s) to regenerate state", blocks.size());
     final AtomicInteger processedBlocks = new AtomicInteger(0);
     blockStateProvider.provide(
         (blockRoot, state) -> {
-          LOG.trace(
-              "Processed block {} / {} at slot {}: {}",
-              processedBlocks.incrementAndGet(),
-              blocksToProcess,
-              state.getSlot(),
-              blockRoot);
+          final int processed = processedBlocks.incrementAndGet();
+          if (processed % 100 == 0) {
+            LOG.info("Processed {} blocks", processed);
+          }
           this.block_states.put(blockRoot, state);
         });
+    LOG.info("Finished processing {} block(s)", blocks.size());
 
     // Setup slot to root mappings
     indexBlockRootsBySlot(rootsBySlotLookup, this.blocks.values());
