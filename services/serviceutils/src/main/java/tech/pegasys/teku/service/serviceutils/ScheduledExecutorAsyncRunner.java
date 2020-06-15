@@ -75,6 +75,7 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public <U> SafeFuture<U> runAfterDelay(
       final Supplier<SafeFuture<U>> action, final long delayAmount, final TimeUnit delayUnit) {
     return runTask(action, task -> executorService.schedule(task, delayAmount, delayUnit));
