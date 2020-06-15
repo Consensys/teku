@@ -1,0 +1,18 @@
+message:
+  slot: 5
+  proposer_index: 6
+  parent_root: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+  state_root: '0x50d1be23428c0605fa1c8b7a1d0ba52bdb400fa195fae551617ae15a2559d46c'
+  body:
+    randao_reveal: '0x9942bcd4865fca974ee294d8e214d61f6f6637eb799925971133aca3bd3758fbab15d7c9fa3591422dc1ded0b6f2a21f0c97d91bda4de0040f80b4aecaa1e852b0eb453e3ba107860bdad7dba0410484c6e6fc2d7d5956070cee465f28e0160f'
+    eth1_data:
+      deposit_root: '0xc059dcca098cb8fd7a8ef4495c7f4be7e0377fcecf248793eb6c4e1a48879b3a'
+      deposit_count: 32
+      block_hash: '0x4242424242424242424242424242424242424242424242424242424242424242'
+    graffiti: '0x0000000000000000000000000000000000000000000000000000000000000000'
+    proposer_slashings: []
+    attester_slashings: []
+    attestations: []
+    deposits: []
+    voluntary_exits: []
+signature: '0x90be68fcf181f645b9bc293b56dd37556541edd14c51e1683ea9d53a7f324c6b382cad0b2cdfea9a50e213b8a64d887904c7ed40ed072f40bfb72df64c714c18bd810f62329a45c286487fe97b9c5b0ab69d4cd4acc06dee6fc1c38d34b73b9d'
