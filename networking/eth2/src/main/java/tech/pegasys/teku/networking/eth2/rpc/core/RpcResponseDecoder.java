@@ -34,13 +34,20 @@ public class RpcResponseDecoder<T> {
   private static final Logger LOG = LogManager.getLogger();
 
   private Optional<Integer> respCodeMaybe = Optional.empty();
-  private final RpcByteBufDecoder<T> payloadDecoder;
-  private final RpcByteBufDecoder<String> errorDecoder;
+  private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
+  private Optional<RpcByteBufDecoder<String>> errorDecoder = Optional.empty();
+  private final Class<T> responseType;
+  private final RpcEncoding encoding;
 
-  protected RpcResponseDecoder(final Class<T> responseType, final RpcEncoding encoding) {
-    this.payloadDecoder = encoding.createDecoder(responseType);
-    this.errorDecoder = encoding.createDecoder(String.class);
+  public RpcResponseDecoder(Class<T> responseType, RpcEncoding encoding) {
+    this.responseType = responseType;
+    this.encoding = encoding;
   }
+
+  //  protected RpcResponseDecoder(final Class<T> responseType, final RpcEncoding encoding) {
+  //    this.payloadDecoder = encoding.createDecoder(responseType);
+  //    this.errorDecoder = encoding.createDecoder(String.class);
+  //  }
 
   public List<T> decodeNextResponses(final ByteBuf data) throws RpcException {
     return decodeNextResponses(data, Optional.empty());
@@ -67,6 +74,7 @@ public class RpcResponseDecoder<T> {
 
     return ret;
   }
+
   private Optional<T> decodeNextResponse(
       final ByteBuf data, Optional<FirstByteReceivedListener> firstByteListener)
       throws RpcException {
@@ -82,15 +90,25 @@ public class RpcResponseDecoder<T> {
     int respCode = respCodeMaybe.get();
 
     if (respCode == SUCCESS_RESPONSE_CODE) {
-      Optional<T> ret = payloadDecoder.decodeOneMessage(data);
+      if (payloadDecoder.isEmpty()) {
+        payloadDecoder = Optional.of(encoding.createDecoder(responseType));
+      }
+      Optional<T> ret = payloadDecoder.get().decodeOneMessage(data);
       if (ret.isPresent()) {
         respCodeMaybe = Optional.empty();
+        payloadDecoder = Optional.empty();
       }
       return ret;
     } else {
-      Optional<RpcException> rpcException = decodeError(data, respCode);
+      if (errorDecoder.isEmpty()) {
+        errorDecoder = Optional.of(encoding.createDecoder(String.class));
+      }
+      Optional<RpcException> rpcException = errorDecoder.get()
+          .decodeOneMessage(data)
+          .map(errorMessage -> new RpcException(toByteExactUnsigned(respCode), errorMessage));
       if (rpcException.isPresent()) {
         respCodeMaybe = Optional.empty();
+        errorDecoder = Optional.empty();
         throw rpcException.get();
       } else {
         return Optional.empty();
@@ -98,15 +116,13 @@ public class RpcResponseDecoder<T> {
     }
   }
 
-  private Optional<RpcException> decodeError(final ByteBuf input, final int statusCode) throws RpcException {
-    return errorDecoder.decodeOneMessage(input).map(errorMessage ->
-            new RpcException(toByteExactUnsigned(statusCode), errorMessage)
-        );
-  }
-
   public void complete() throws RpcException {
-    payloadDecoder.complete();
-    errorDecoder.complete();
+    if (payloadDecoder.isPresent()) {
+      payloadDecoder.get().complete();
+    }
+    if (errorDecoder.isPresent()) {
+      errorDecoder.get().complete();
+    }
     if (respCodeMaybe.isPresent()) {
       throw RpcException.PAYLOAD_TRUNCATED();
     }

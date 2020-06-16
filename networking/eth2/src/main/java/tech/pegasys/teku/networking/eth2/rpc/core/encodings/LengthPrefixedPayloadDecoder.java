@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 
 class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
 
@@ -41,6 +42,8 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
   private final Compressor compressor;
   private Optional<Decompressor> decompressor = Optional.empty();
   private Optional<VarIntDecoder> varIntDecoder = Optional.empty();
+  private boolean decoded = false;
+  private boolean disposed = false;
 
   public LengthPrefixedPayloadDecoder(
       final RpcPayloadEncoder<T> payloadEncoder, final Compressor compressor) {
@@ -50,6 +53,9 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
 
   @Override
   public Optional<T> decodeOneMessage(final ByteBuf in) throws RpcException {
+    if (decoded || disposed) {
+      throw new IllegalStateException("Trying to reuse disposable LengthPrefixedPayloadDecoder");
+    }
     if (decompressor.isEmpty()) {
       readLengthPrefixHeader(in)
           .ifPresent(len -> decompressor = Optional.of(compressor.createDecompressor(len)));
@@ -62,6 +68,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
           // making a copy here since the Bytes.wrapByteBuf(buf).slice(...)
           // would be broken after [in] buffer is released
           Bytes bytes = Bytes.wrapByteBuf(ret.get()).copy();
+          decoded = true;
           return Optional.of(payloadEncoder.decode(bytes));
         } finally{
           ret.get().release();
@@ -76,12 +83,29 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
 
   @Override
   public void complete() throws RpcException {
-    varIntDecoder.ifPresent(AbstractRpcByteBufDecoder::complete);
-
+    if (disposed) {
+      throw new IllegalStateException("Trying to reuse disposable LengthPrefixedPayloadDecoder");
+    }
+    disposed = true;
+    RpcException err = null;
+    if (varIntDecoder.isPresent()) {
+      try {
+        varIntDecoder.ifPresent(AbstractRpcByteBufDecoder::complete);
+      } catch (Exception e) {}
+      err = RpcException.MESSAGE_TRUNCATED;
+    }
     if (decompressor.isPresent()) {
-      decompressor.get().complete();
-      // the chunk was not completely read
-      throw RpcException.PAYLOAD_TRUNCATED();
+      try {
+        decompressor.get().complete();
+      } catch (CompressionException e) {}
+      err = RpcException.PAYLOAD_TRUNCATED();
+    }
+    if (!decoded && err == null) {
+      err = RpcException.MESSAGE_TRUNCATED;
+    }
+
+    if (err != null) {
+      throw err;
     }
   }
 
@@ -93,7 +117,13 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
       varIntDecoder = Optional.of(new VarIntDecoder());
     }
 
-    Optional<Long> lengthMaybe = varIntDecoder.get().decodeOneMessage(in);
+    Optional<Long> lengthMaybe;
+    try {
+      lengthMaybe = varIntDecoder.get().decodeOneMessage(in);
+    } catch (IllegalStateException e) {
+      // varint overflow
+      throw RpcException.CHUNK_TOO_LONG;
+    }
     if (lengthMaybe.isEmpty()) {
       // wait for more byte to read length field
       return Optional.empty();

@@ -37,8 +37,12 @@ public class RpcRequestDecoder<T extends RpcRequest> {
   }
 
   public Optional<T> decodeRequest(final ByteBuf input) throws RpcException {
-    if (complete && input.isReadable()) {
-      throw RpcException.EXTRA_DATA_APPENDED;
+    if (complete) {
+      if (input.isReadable()) {
+        throw RpcException.EXTRA_DATA_APPENDED;
+      } else {
+        return Optional.empty();
+      }
     }
     final Optional<T> request = decoder.decodeOneMessage(input);
 
