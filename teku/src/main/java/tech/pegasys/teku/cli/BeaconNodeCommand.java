@@ -45,6 +45,7 @@ import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
+import tech.pegasys.teku.cli.subcommand.debug.DebugCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
@@ -66,7 +67,8 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
       TransitionCommand.class,
       PeerCommand.class,
       DepositCommand.class,
-      GenesisCommand.class
+      GenesisCommand.class,
+      DebugCommand.class
     },
     showDefaultValues = true,
     abbreviateSynopsis = true,
