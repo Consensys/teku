@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,33 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.subcommand;
+package tech.pegasys.teku.cli.subcommand.debug;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import tech.pegasys.teku.cli.deposit.DepositGenerateAndRegisterCommand;
-import tech.pegasys.teku.cli.deposit.DepositGenerateCommand;
-import tech.pegasys.teku.cli.deposit.DepositRegisterCommand;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
-    name = "validator",
-    description = "Register validators by sending deposit transactions to an Ethereum 1 node",
+    name = "debug",
+    description = "Utilities for debugging issues",
+    subcommands = {DebugDbCommand.class},
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
-    subcommands = {
-      DepositGenerateCommand.class,
-      DepositGenerateAndRegisterCommand.class,
-      DepositRegisterCommand.class
-    },
     versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
-public class DepositCommand implements Runnable {
+public class DebugCommand implements Runnable {
   @Override
   public void run() {
     CommandLine.usage(this, System.out);

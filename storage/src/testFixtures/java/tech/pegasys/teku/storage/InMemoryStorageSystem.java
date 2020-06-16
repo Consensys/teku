@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage;
 
 import com.google.common.eventbus.EventBus;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
@@ -71,7 +72,11 @@ public class InMemoryStorageSystem {
       final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
       final RecentChainData recentChainData =
           StorageBackedRecentChainData.createImmediately(
-              chainStorageServer, finalizedCheckpointChannel, reorgEventChannel, eventBus);
+              new NoOpMetricsSystem(),
+              chainStorageServer,
+              finalizedCheckpointChannel,
+              reorgEventChannel,
+              eventBus);
 
       // Create combined client
       final CombinedChainDataClient combinedChainDataClient =

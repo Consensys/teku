@@ -8,4 +8,5 @@ dependencies {
   implementation project(':events')
 
   implementation 'org.apache.tuweni:tuweni-config'
+  implementation 'org.hyperledger.besu:plugin-api'
  }

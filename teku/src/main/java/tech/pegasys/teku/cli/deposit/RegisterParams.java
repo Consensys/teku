@@ -36,7 +36,7 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
-public class CommonParams {
+public class RegisterParams {
 
   @Spec private CommandSpec spec;
 
@@ -72,23 +72,16 @@ public class CommonParams {
           "Deposit amount in Gwei. Defaults to the amount required to activate a validator on the specified network.")
   private UnsignedLong amount;
 
-  @Option(
-      names = {"--Xconfirm-enabled"},
-      arity = "1",
-      defaultValue = "true",
-      hidden = true)
-  private boolean displayConfirmation = true;
-
   private final IntConsumer shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
 
-  CommonParams() {
+  RegisterParams() {
     this.shutdownFunction = System::exit;
     this.consoleAdapter = new ConsoleAdapter();
   }
 
   @VisibleForTesting
-  public CommonParams(
+  public RegisterParams(
       final CommandSpec commandSpec,
       final Eth1PrivateKeyOptions eth1PrivateKeyOptions,
       final IntConsumer shutdownFunction,
@@ -99,7 +92,7 @@ public class CommonParams {
     this.consoleAdapter = consoleAdapter;
   }
 
-  public RegisterAction createRegisterAction() {
+  public RegisterAction createRegisterAction(final boolean displayConfirmation) {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
     Constants.setConstants(networkDefinition.getConstants());
     return new RegisterAction(
@@ -161,10 +154,6 @@ public class CommonParams {
           "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
           e);
     }
-  }
-
-  public boolean shouldDisplayConfirmation() {
-    return displayConfirmation;
   }
 
   private static class UnsignedLongConverter implements CommandLine.ITypeConverter<UnsignedLong> {

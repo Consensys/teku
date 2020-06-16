@@ -53,7 +53,7 @@ public class DepositRegisterCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
   private final Function<String, String> envSupplier;
   @Spec private CommandSpec spec;
-  @Mixin private CommonParams params;
+  @Mixin private RegisterParams registerParams;
 
   @ArgGroup(exclusive = true, multiplicity = "1")
   private ValidatorKeyOptions validatorKeyOptions;
@@ -64,6 +64,13 @@ public class DepositRegisterCommand implements Runnable {
       required = true,
       description = "Public withdrawal key for the validator")
   private String withdrawalKey;
+
+  @Option(
+      names = {"--Xconfirm-enabled"},
+      arity = "1",
+      defaultValue = "true",
+      hidden = true)
+  private boolean displayConfirmation = true;
 
   DepositRegisterCommand() {
     // required because web3j use non-daemon threads which halts the program
@@ -76,13 +83,13 @@ public class DepositRegisterCommand implements Runnable {
       final Consumer<Integer> shutdownFunction,
       final Function<String, String> envSupplier,
       final CommandSpec spec,
-      final CommonParams params,
+      final RegisterParams registerParams,
       final ValidatorKeyOptions validatorKeyOptions,
       final String withdrawalKey) {
     this.shutdownFunction = shutdownFunction;
     this.envSupplier = envSupplier;
     this.spec = spec;
-    this.params = params;
+    this.registerParams = registerParams;
     this.validatorKeyOptions = validatorKeyOptions;
     this.withdrawalKey = withdrawalKey;
   }
@@ -91,7 +98,8 @@ public class DepositRegisterCommand implements Runnable {
   public void run() {
     final BLSKeyPair validatorKey = getValidatorKey();
 
-    try (final RegisterAction registerAction = params.createRegisterAction()) {
+    try (final RegisterAction registerAction =
+        registerParams.createRegisterAction(displayConfirmation)) {
       final BLSPublicKey withdrawalPublicKey =
           BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(this.withdrawalKey));
       registerAction.displayConfirmation(1);

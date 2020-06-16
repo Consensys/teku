@@ -181,6 +181,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private SafeFuture<?> initialize() {
     return StorageBackedRecentChainData.create(
+            metricsSystem,
             asyncRunner,
             eventChannels.getPublisher(StorageUpdateChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
