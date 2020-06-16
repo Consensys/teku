@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
@@ -97,6 +99,10 @@ public class ChainUpdater {
   public void saveBlock(final SignedBlockAndState block) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block.getBlock(), block.getState());
-    tx.commit().reportExceptions();
+    assertThat(tx.commit()).isCompleted();
+    recentChainData
+        .getForkChoiceStrategy()
+        .orElseThrow()
+        .onBlock(block.getBlock().getMessage(), block.getState());
   }
 }

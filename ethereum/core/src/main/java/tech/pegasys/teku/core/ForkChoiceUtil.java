@@ -82,7 +82,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
-  private static Optional<Bytes32> get_ancestor(
+  public static Optional<Bytes32> get_ancestor(
       ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UnsignedLong slot) {
     Bytes32 parentRoot = root;
     Optional<UnsignedLong> blockSlot = forkChoiceStrategy.blockSlot(root);
