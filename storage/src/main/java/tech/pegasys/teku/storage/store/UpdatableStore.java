@@ -27,6 +27,8 @@ public interface UpdatableStore extends PrunableStore {
   StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler);
 
+  void startMetrics();
+
   interface StoreTransaction extends MutablePrunableStore {
     SafeFuture<Void> commit();
 

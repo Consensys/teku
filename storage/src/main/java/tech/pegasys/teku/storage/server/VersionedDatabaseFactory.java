@@ -21,6 +21,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -31,12 +32,17 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   @VisibleForTesting static final String DB_PATH = "db";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
 
+  private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final File dbDirectory;
   private final File dbVersionFile;
   private final StateStorageMode stateStorageMode;
 
-  public VersionedDatabaseFactory(final String dataPath, final StateStorageMode dataStorageMode) {
+  public VersionedDatabaseFactory(
+      final MetricsSystem metricsSystem,
+      final String dataPath,
+      final StateStorageMode dataStorageMode) {
+    this.metricsSystem = metricsSystem;
     this.dataDirectory = Paths.get(dataPath).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
@@ -51,7 +57,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     createDirectories();
     saveDatabaseVersion(dbVersion);
 
-    Database database = null;
+    Database database;
     switch (dbVersion) {
       case V3:
         database = createV3Database();
@@ -66,7 +72,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private Database createV3Database() {
     final RocksDbConfiguration rocksDbConfiguration =
         RocksDbConfiguration.withDataDirectory(dbDirectory.toPath());
-    return RocksDbDatabase.createV3(rocksDbConfiguration, stateStorageMode);
+    return RocksDbDatabase.createV3(metricsSystem, rocksDbConfiguration, stateStorageMode);
   }
 
   private void validateDataPaths() {
