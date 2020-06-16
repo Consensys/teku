@@ -25,6 +25,7 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.util.crypto.SecureRandomProvider;
 
 class EncryptedKeystoreWriterTest {
   private static final BLSSecretKey validator1SecretKey =
@@ -50,7 +51,9 @@ class EncryptedKeystoreWriterTest {
 
   @Test
   void keysAreWrittenToEncryptedKeystores(@TempDir final Path tempDir) {
-    final KeysWriter keysWriter = new EncryptedKeystoreWriter(PASSWORD, PASSWORD, tempDir);
+    final KeysWriter keysWriter =
+        new EncryptedKeystoreWriter(
+            SecureRandomProvider.createSecureRandom(), PASSWORD, PASSWORD, tempDir);
     keysWriter.writeKeys(new BLSKeyPair(validator1SecretKey), new BLSKeyPair(withdrawal1SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
@@ -72,8 +75,7 @@ class EncryptedKeystoreWriterTest {
       final Path keystorePath, final BLSSecretKey blsSecretKey) {
     final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystorePath);
     assertThat(KeyStore.validatePassword(PASSWORD, keyStoreData)).isTrue();
-    assertThat(KeyStore.decrypt(PASSWORD, keyStoreData))
-        .isEqualTo(blsSecretKey.getSecretKey().toBytes());
+    assertThat(KeyStore.decrypt(PASSWORD, keyStoreData)).isEqualTo(blsSecretKey.toBytes());
   }
 
   private String trimPublicKey(final String publicKey) {

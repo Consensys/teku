@@ -44,9 +44,15 @@ import tech.pegasys.teku.core.BlockProposalUtil;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -59,6 +65,7 @@ import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
@@ -125,6 +132,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationManager attestationManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
+  private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
+  private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
+  private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
 
   private volatile UnsignedLong onTickSlotStart;
   private volatile UnsignedLong onTickSlotAttestation;
@@ -178,6 +188,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private SafeFuture<?> initialize() {
     return StorageBackedRecentChainData.create(
+            metricsSystem,
             asyncRunner,
             eventChannels.getPublisher(StorageUpdateChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
@@ -213,6 +224,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initCombinedChainDataClient();
     initMetrics();
     initAttestationPool();
+    initAttesterSlashingPool();
+    initProposerSlashingPool();
+    initVoluntaryExitPool();
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
@@ -222,6 +236,27 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncStateTracker();
     initValidatorApiHandler();
     initRestAPI();
+  }
+
+  private void initAttesterSlashingPool() {
+    LOG.debug("BeaconChainController.initAttesterSlashingPool()");
+    attesterSlashingPool =
+        new OperationPool<>(AttesterSlashing.class, new AttesterSlashingStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
+  }
+
+  private void initProposerSlashingPool() {
+    LOG.debug("BeaconChainController.initProposerSlashingPool()");
+    proposerSlashingPool =
+        new OperationPool<>(ProposerSlashing.class, new ProposerSlashingStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
+  }
+
+  private void initVoluntaryExitPool() {
+    LOG.debug("BeaconChainController.initVoluntaryExitPool()");
+    voluntaryExitPool =
+        new OperationPool<>(SignedVoluntaryExit.class, new VoluntaryExitStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
   private void initCombinedChainDataClient() {
@@ -244,7 +279,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
-    new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem);
+    eventChannels.subscribe(
+        SlotEventsChannel.class, new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem));
   }
 
   public void initDepositProvider() {
@@ -278,6 +314,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             new BlockProposalUtil(stateTransition),
             stateTransition,
             attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool,
             depositProvider,
             eth1DataCache,
             VersionProvider.getDefaultGraffiti());
@@ -366,6 +405,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                           .onAttestation(attestation)
                           .ifInvalid(
                               reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
+              .gossipedAttesterSlashingConsumer(attesterSlashingPool::add)
+              .gossipedProposerSlashingConsumer(proposerSlashingPool::add)
+              .gossipedVoluntaryExitConsumer(voluntaryExitPool::add)
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToProcessedAttestations)
               .verifiedBlockAttestationsProvider(
@@ -478,10 +520,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     on_tick(transaction, currentTime);
     transaction.commit().join();
 
-    if (syncService.isSyncActive()) {
-      if (nextSlotDue) {
-        processSlotWhileSyncing();
-      }
+    if (nextSlotDue && syncService.isSyncActive()) {
+      processSlotWhileSyncing();
       return;
     }
 

@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreFactory;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -82,7 +83,8 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
+    store =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
     database.storeGenesis(store);
 
     // Shutdown and restart
@@ -111,7 +113,8 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
+    store =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
     database.storeGenesis(store);
 
     // Create finalized block at slot prior to epoch boundary

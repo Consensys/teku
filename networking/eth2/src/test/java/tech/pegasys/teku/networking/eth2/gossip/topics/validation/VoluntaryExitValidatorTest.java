@@ -66,7 +66,7 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(stateTransitionValidator.validateExit(recentChainData.getBestState().orElseThrow(), exit))
+    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), exit))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
@@ -83,8 +83,7 @@ public class VoluntaryExitValidatorTest {
     SignedVoluntaryExit exit2 = new SignedVoluntaryExit(exit1.getMessage(), exit1.getSignature());
     SignedVoluntaryExit exit3 = new SignedVoluntaryExit(exit2.getMessage(), exit2.getSignature());
 
-    when(stateTransitionValidator.validateExit(
-            eq(recentChainData.getBestState().orElseThrow()), any()))
+    when(stateTransitionValidator.validate(eq(recentChainData.getBestState().orElseThrow()), any()))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             eq(recentChainData.getBestState().orElseThrow()),
@@ -102,7 +101,7 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(stateTransitionValidator.validateExit(recentChainData.getBestState().orElseThrow(), exit))
+    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), exit))
         .thenReturn(
             Optional.of(VoluntaryExitStateTransitionValidator.ExitInvalidReason.EXIT_INITIATED));
     when(signatureVerifier.verifySignature(
@@ -116,7 +115,7 @@ public class VoluntaryExitValidatorTest {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(6);
     SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
-    when(stateTransitionValidator.validateExit(recentChainData.getBestState().orElseThrow(), exit))
+    when(stateTransitionValidator.validate(recentChainData.getBestState().orElseThrow(), exit))
         .thenReturn(Optional.empty());
     when(signatureVerifier.verifySignature(
             recentChainData.getBestState().orElseThrow(), exit, BLSSignatureVerifier.SIMPLE))
