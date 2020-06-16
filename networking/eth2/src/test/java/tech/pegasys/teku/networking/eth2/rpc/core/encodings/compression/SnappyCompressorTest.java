@@ -26,6 +26,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
@@ -56,12 +57,13 @@ public class SnappyCompressorTest {
 
     for (List<ByteBuf> testSlice : testSlices) {
       List<ByteBuf> uncompressed = new ArrayList<>();
-      SnappyFramedCompressor compressor = new SnappyFramedCompressor();
+      Decompressor decompressor = new SnappyFramedCompressor()
+          .createDecompressor(serializedState.size());
       for (ByteBuf byteBuf : testSlice) {
-        compressor.uncompress(byteBuf, serializedState.size()).ifPresent(uncompressed::add);
+        decompressor.uncompress(byteBuf).ifPresent(uncompressed::add);
         byteBuf.release();
       }
-      compressor.uncompressComplete();
+      decompressor.complete();
       assertThat(uncompressed).hasSize(1);
       assertThat(Bytes.wrapByteBuf(uncompressed.get(0))).isEqualTo(serializedState);
 
@@ -79,20 +81,20 @@ public class SnappyCompressorTest {
     List<List<ByteBuf>> testSlices = Utils.generateTestSlices(serializedState);
 
     for (List<ByteBuf> testSlice : testSlices) {
-      SnappyFramedCompressor compressor = new SnappyFramedCompressor();
+      Decompressor decompressor = new SnappyFramedCompressor()
+          .createDecompressor(serializedState.size());
 
       boolean exceptionCaught = false;
       for (ByteBuf byteBuf : testSlice) {
         if (!exceptionCaught) {
           try {
-            compressor.uncompress(byteBuf, serializedState.size());
+            decompressor.uncompress(byteBuf);
           } catch (CompressionException e) {
             exceptionCaught = true;
           }
         }
         byteBuf.release();
       }
-      compressor.uncompressComplete();
 
       assertThat(exceptionCaught).isTrue();
       assertThat(testSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
@@ -116,17 +118,21 @@ public class SnappyCompressorTest {
 
     for (List<ByteBuf> testSlice : testSlices) {
       List<ByteBuf> uncompressed = new ArrayList<>();
-      SnappyFramedCompressor compressorInst = new SnappyFramedCompressor();
+      Decompressor decompressorA = new SnappyFramedCompressor()
+          .createDecompressor(serializedStateA.size());
+      Decompressor decompressorB = new SnappyFramedCompressor()
+          .createDecompressor(serializedStateB.size());
       for (ByteBuf byteBuf : testSlice) {
         if (uncompressed.isEmpty()) {
-          compressorInst.uncompress(byteBuf, serializedStateA.size()).ifPresent(uncompressed::add);
+          decompressorA.uncompress(byteBuf).ifPresent(uncompressed::add);
         }
         if (uncompressed.size() > 0) {
-          compressorInst.uncompress(byteBuf, serializedStateB.size()).ifPresent(uncompressed::add);
+          decompressorB.uncompress(byteBuf).ifPresent(uncompressed::add);
         }
         byteBuf.release();
       }
-      compressorInst.uncompressComplete();
+      decompressorA.complete();
+      decompressorB.complete();
 
       assertThat(uncompressed).hasSize(2);
       assertThat(Bytes.wrapByteBuf(uncompressed.get(0))).isEqualTo(serializedStateA);
@@ -148,8 +154,10 @@ public class SnappyCompressorTest {
     final Bytes compressed = compressor.compress(serializedState.slice(1));
 
     SnappyFramedCompressor compressorInst = new SnappyFramedCompressor();
-    assertThat(compressorInst.uncompress(Utils.toByteBuf(compressed), payloadSize)).isEmpty();
-    assertThatThrownBy(compressorInst::uncompressComplete)
+    Decompressor decompressor = new SnappyFramedCompressor()
+        .createDecompressor(payloadSize);
+    assertThat(decompressor.uncompress(Utils.toByteBuf(compressed))).isEmpty();
+    assertThatThrownBy(decompressor::complete)
         .isInstanceOf(PayloadSmallerThanExpectedException.class);
   }
 
@@ -175,16 +183,16 @@ public class SnappyCompressorTest {
     assertThat(maliciousPayload.size()).isGreaterThan(maxExpectedCompressedBytes);
 
     List<List<ByteBuf>> testSlices = Utils.generateTestSlices(maliciousPayload);
-    testSlices = testSlices.subList(2, 3);
 
     for (List<ByteBuf> testSlice : testSlices) {
-      SnappyFramedCompressor compressor = new SnappyFramedCompressor();
+      Decompressor decompressor = new SnappyFramedCompressor()
+          .createDecompressor(uncompressedByteCount);
 
       boolean exceptionCaught = false;
       for (ByteBuf byteBuf : testSlice) {
         if (!exceptionCaught) {
           try {
-            compressor.uncompress(byteBuf, uncompressedByteCount);
+            decompressor.uncompress(byteBuf);
           } catch (CompressionException e) {
             exceptionCaught = true;
           }
@@ -210,10 +218,12 @@ public class SnappyCompressorTest {
     assertThat(serializedState.size()).isGreaterThan(MAX_FRAME_CONTENT_SIZE);
 
     ByteBuf partialPayload = Utils.toByteBuf(compressed.slice(0, partialPayloadSize));
-    SnappyFramedCompressor compressorInst = new SnappyFramedCompressor();
+    Decompressor decompressor = new SnappyFramedCompressor()
+        .createDecompressor(bytesToRead);
 
-    assertThat(compressorInst.uncompress(partialPayload, bytesToRead)).isEmpty();
-    assertThatThrownBy(compressorInst::uncompressComplete)
+    assertThatThrownBy(() -> decompressor.uncompress(partialPayload))
+        .isInstanceOf(CompressionException.class);
+    assertThatThrownBy(decompressor::complete)
         .isInstanceOf(CompressionException.class);
   }
 }

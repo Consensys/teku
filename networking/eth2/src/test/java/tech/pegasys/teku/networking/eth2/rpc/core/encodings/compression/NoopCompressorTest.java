@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 
 public class NoopCompressorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -35,8 +36,9 @@ public class NoopCompressorTest {
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
 
     final Bytes compressed = compressor.compress(serializedState);
-    Optional<ByteBuf> uncompressed = compressor.uncompress(
-        Unpooled.wrappedBuffer(compressed.toArray()), serializedState.size());
+    Decompressor decompressor = compressor.createDecompressor(serializedState.size());
+    Optional<ByteBuf> uncompressed =
+        decompressor.uncompress(Unpooled.wrappedBuffer(compressed.toArray()));
     assertThat(uncompressed).isPresent();
     assertThat(Bytes.wrapByteBuf(uncompressed.get())).isEqualTo(serializedState);
   }

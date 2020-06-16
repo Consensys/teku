@@ -18,10 +18,35 @@ import io.netty.buffer.Unpooled;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.DisposedDecompressorException;
 
 public class NoopCompressor implements Compressor {
 
-  NoopFrameDecoder decoder;
+  private class NoopDecompressor implements Decompressor {
+    private final NoopFrameDecoder decoder;
+    private final int uncompressedPayloadSize;
+    private boolean disposed = false;
+
+    public NoopDecompressor(int uncompressedPayloadSize) {
+      this.decoder = new NoopFrameDecoder(uncompressedPayloadSize);
+      this.uncompressedPayloadSize = uncompressedPayloadSize;
+    }
+
+    @Override
+    public Optional<ByteBuf> uncompress(ByteBuf input) throws CompressionException {
+      if (disposed) throw new DisposedDecompressorException();
+      return uncompressedPayloadSize > 0
+          ? decoder.decodeOneMessage(input)
+          : Optional.of(Unpooled.EMPTY_BUFFER);
+    }
+
+    @Override
+    public void complete() throws CompressionException {
+      if (disposed) throw new DisposedDecompressorException();
+      decoder.complete();
+      disposed = true;
+    }
+  }
 
   @Override
   public Bytes compress(final Bytes data) {
@@ -29,32 +54,8 @@ public class NoopCompressor implements Compressor {
   }
 
   @Override
-  public Optional<ByteBuf> uncompress(ByteBuf input, int uncompressedPayloadSize)
-      throws CompressionException {
-    if (decoder == null) {
-      decoder = new NoopFrameDecoder(uncompressedPayloadSize);
-    } else if (uncompressedPayloadSize != decoder.getExpectedBytes()) {
-      throw new CompressionException(
-          "Illegal state: requesting "
-              + uncompressedPayloadSize
-              + " bytes while previous bytes of expected size "
-              + decoder.getExpectedBytes()
-              + " not yet returned");
-    }
-    Optional<ByteBuf> ret =
-        uncompressedPayloadSize > 0
-            ? decoder.decodeOneMessage(input)
-            : Optional.of(Unpooled.EMPTY_BUFFER);
-
-    if (ret.isPresent()) {
-      decoder = null;
-    }
-    return ret;
-  }
-
-  @Override
-  public void uncompressComplete() throws CompressionException {
-    decoder.complete();
+  public Decompressor createDecompressor(int uncompressedPayloadSize) {
+    return new NoopDecompressor(uncompressedPayloadSize);
   }
 
   @Override
