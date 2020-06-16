@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.networking.eth2.rpc;
 
 import static java.lang.Integer.max;
@@ -18,31 +31,31 @@ public class Utils {
 
   public static List<List<ByteBuf>> generateTestSlices(Bytes... chunks) {
     int totalLen = Arrays.stream(chunks).mapToInt(Bytes::size).sum();
-    List<List<ByteBuf>> splits = List.of(
-        List.of(toByteBuf(chunks)),
-        Arrays.stream(chunks).map(Utils::toByteBuf).collect(Collectors.toList()),
-        Arrays.stream(chunks)
-            .map(Utils::toByteBuf)
-            .flatMap(b -> Utils.slice(b, 1).stream())
-            .collect(Collectors.toList()),
-        Arrays.stream(chunks)
-            .map(Utils::toByteBuf)
-            .flatMap(b -> Utils.slice(b, 2).stream())
-            .collect(Collectors.toList()),
-        Arrays.stream(chunks)
-            .map(Utils::toByteBuf)
-            .flatMap(b -> Utils.slice(b, 1, 2).stream())
-            .collect(Collectors.toList()),
-        Arrays.stream(chunks)
-            .map(Utils::toByteBuf)
-            .flatMap(b -> Utils.slice(b, -1).stream())
-            .collect(Collectors.toList()),
-        Arrays.stream(chunks)
-            .map(Utils::toByteBuf)
-            .flatMap(b -> Utils.slice(b, -2).stream())
-            .collect(Collectors.toList()),
-        Utils.slice(toByteBuf(chunks), totalLen / 3, 2 * totalLen / 3)
-    );
+    List<List<ByteBuf>> splits =
+        List.of(
+            List.of(toByteBuf(chunks)),
+            Arrays.stream(chunks).map(Utils::toByteBuf).collect(Collectors.toList()),
+            Arrays.stream(chunks)
+                .map(Utils::toByteBuf)
+                .flatMap(b -> Utils.slice(b, 1).stream())
+                .collect(Collectors.toList()),
+            Arrays.stream(chunks)
+                .map(Utils::toByteBuf)
+                .flatMap(b -> Utils.slice(b, 2).stream())
+                .collect(Collectors.toList()),
+            Arrays.stream(chunks)
+                .map(Utils::toByteBuf)
+                .flatMap(b -> Utils.slice(b, 1, 2).stream())
+                .collect(Collectors.toList()),
+            Arrays.stream(chunks)
+                .map(Utils::toByteBuf)
+                .flatMap(b -> Utils.slice(b, -1).stream())
+                .collect(Collectors.toList()),
+            Arrays.stream(chunks)
+                .map(Utils::toByteBuf)
+                .flatMap(b -> Utils.slice(b, -2).stream())
+                .collect(Collectors.toList()),
+            Utils.slice(toByteBuf(chunks), totalLen / 3, 2 * totalLen / 3));
 
     List<List<ByteBuf>> ret =
         Stream.concat(splits.stream(), addZeroLenBuffers(splits).stream())
@@ -50,7 +63,6 @@ public class Utils {
 
     return ret;
   }
-
 
   public static List<List<ByteBuf>> addZeroLenBuffers(List<List<ByteBuf>> bufSets) {
     return bufSets.stream()
@@ -78,7 +90,6 @@ public class Utils {
         .map(bb -> Unpooled.wrappedBuffer(Unpooled.wrappedBuffer(new byte[4]), bb).readerIndex(4))
         .collect(Collectors.toList());
   }
-
 
   public static ByteBuf emptyBuf() {
     // to avoid ByteBuf.EMPTY which always has reference count > 0

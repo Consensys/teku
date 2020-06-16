@@ -24,7 +24,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compress
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 
-class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
+class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
 
   private static class VarIntDecoder extends AbstractRpcByteBufDecoder<Long> {
     @Override
@@ -70,7 +70,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
           Bytes bytes = Bytes.wrapByteBuf(ret.get()).copy();
           decoded = true;
           return Optional.of(payloadEncoder.decode(bytes));
-        } finally{
+        } finally {
           ret.get().release();
         }
       } else {
@@ -91,13 +91,15 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
     if (varIntDecoder.isPresent()) {
       try {
         varIntDecoder.ifPresent(AbstractRpcByteBufDecoder::complete);
-      } catch (Exception e) {}
+      } catch (Exception e) {
+      }
       err = RpcException.MESSAGE_TRUNCATED;
     }
     if (decompressor.isPresent()) {
       try {
         decompressor.get().complete();
-      } catch (CompressionException e) {}
+      } catch (CompressionException e) {
+      }
       err = RpcException.PAYLOAD_TRUNCATED();
     }
     if (!decoded && err == null) {
@@ -110,8 +112,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T>{
   }
 
   /** Decode the length-prefix header, which contains the length of the uncompressed payload */
-  private Optional<Integer> readLengthPrefixHeader(final ByteBuf in)
-      throws RpcException {
+  private Optional<Integer> readLengthPrefixHeader(final ByteBuf in) throws RpcException {
 
     if (varIntDecoder.isEmpty()) {
       varIntDecoder = Optional.of(new VarIntDecoder());

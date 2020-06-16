@@ -147,13 +147,13 @@ class LengthPrefixedEncodingTest {
     assertThat(input.refCnt()).isEqualTo(0);
   }
 
-    @Test
-    public void encodePayload_shouldEncodeBlocksByRootRequest() {
-      final Bytes encoded =
-          encoding.encodePayload(new BeaconBlocksByRootRequestMessage(singletonList(Bytes32.ZERO)));
-      // Just the length prefix and the hash itself.
-      assertThat(encoded).isEqualTo(Bytes.wrap(Bytes.fromHexString("0x20"), Bytes32.ZERO));
-    }
+  @Test
+  public void encodePayload_shouldEncodeBlocksByRootRequest() {
+    final Bytes encoded =
+        encoding.encodePayload(new BeaconBlocksByRootRequestMessage(singletonList(Bytes32.ZERO)));
+    // Just the length prefix and the hash itself.
+    assertThat(encoded).isEqualTo(Bytes.wrap(Bytes.fromHexString("0x20"), Bytes32.ZERO));
+  }
 
   @Test
   public void encodePayload_shouldEncodeStringWithoutWrapper() {
@@ -173,7 +173,10 @@ class LengthPrefixedEncodingTest {
     final int expectedLengthPrefixLength = 1;
     assertThat(data.size())
         .isEqualTo(request.getBlockRoots().size() * Bytes32.SIZE + expectedLengthPrefixLength);
-    assertThat(encoding.createDecoder(BeaconBlocksByRootRequestMessage.class).decodeOneMessage(inputByteBuffer(data)))
+    assertThat(
+            encoding
+                .createDecoder(BeaconBlocksByRootRequestMessage.class)
+                .decodeOneMessage(inputByteBuffer(data)))
         .contains(request);
   }
 

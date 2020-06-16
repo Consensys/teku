@@ -57,8 +57,8 @@ public class SnappyCompressorTest {
 
     for (List<ByteBuf> testSlice : testSlices) {
       List<ByteBuf> uncompressed = new ArrayList<>();
-      Decompressor decompressor = new SnappyFramedCompressor()
-          .createDecompressor(serializedState.size());
+      Decompressor decompressor =
+          new SnappyFramedCompressor().createDecompressor(serializedState.size());
       for (ByteBuf byteBuf : testSlice) {
         decompressor.uncompress(byteBuf).ifPresent(uncompressed::add);
         byteBuf.release();
@@ -81,8 +81,8 @@ public class SnappyCompressorTest {
     List<List<ByteBuf>> testSlices = Utils.generateTestSlices(serializedState);
 
     for (List<ByteBuf> testSlice : testSlices) {
-      Decompressor decompressor = new SnappyFramedCompressor()
-          .createDecompressor(serializedState.size());
+      Decompressor decompressor =
+          new SnappyFramedCompressor().createDecompressor(serializedState.size());
 
       boolean exceptionCaught = false;
       for (ByteBuf byteBuf : testSlice) {
@@ -118,10 +118,10 @@ public class SnappyCompressorTest {
 
     for (List<ByteBuf> testSlice : testSlices) {
       List<ByteBuf> uncompressed = new ArrayList<>();
-      Decompressor decompressorA = new SnappyFramedCompressor()
-          .createDecompressor(serializedStateA.size());
-      Decompressor decompressorB = new SnappyFramedCompressor()
-          .createDecompressor(serializedStateB.size());
+      Decompressor decompressorA =
+          new SnappyFramedCompressor().createDecompressor(serializedStateA.size());
+      Decompressor decompressorB =
+          new SnappyFramedCompressor().createDecompressor(serializedStateB.size());
       for (ByteBuf byteBuf : testSlice) {
         if (uncompressed.isEmpty()) {
           decompressorA.uncompress(byteBuf).ifPresent(uncompressed::add);
@@ -154,8 +154,7 @@ public class SnappyCompressorTest {
     final Bytes compressed = compressor.compress(serializedState.slice(1));
 
     SnappyFramedCompressor compressorInst = new SnappyFramedCompressor();
-    Decompressor decompressor = new SnappyFramedCompressor()
-        .createDecompressor(payloadSize);
+    Decompressor decompressor = new SnappyFramedCompressor().createDecompressor(payloadSize);
     assertThat(decompressor.uncompress(Utils.toByteBuf(compressed))).isEmpty();
     assertThatThrownBy(decompressor::complete)
         .isInstanceOf(PayloadSmallerThanExpectedException.class);
@@ -185,8 +184,8 @@ public class SnappyCompressorTest {
     List<List<ByteBuf>> testSlices = Utils.generateTestSlices(maliciousPayload);
 
     for (List<ByteBuf> testSlice : testSlices) {
-      Decompressor decompressor = new SnappyFramedCompressor()
-          .createDecompressor(uncompressedByteCount);
+      Decompressor decompressor =
+          new SnappyFramedCompressor().createDecompressor(uncompressedByteCount);
 
       boolean exceptionCaught = false;
       for (ByteBuf byteBuf : testSlice) {
@@ -218,12 +217,10 @@ public class SnappyCompressorTest {
     assertThat(serializedState.size()).isGreaterThan(MAX_FRAME_CONTENT_SIZE);
 
     ByteBuf partialPayload = Utils.toByteBuf(compressed.slice(0, partialPayloadSize));
-    Decompressor decompressor = new SnappyFramedCompressor()
-        .createDecompressor(bytesToRead);
+    Decompressor decompressor = new SnappyFramedCompressor().createDecompressor(bytesToRead);
 
     assertThatThrownBy(() -> decompressor.uncompress(partialPayload))
         .isInstanceOf(CompressionException.class);
-    assertThatThrownBy(decompressor::complete)
-        .isInstanceOf(CompressionException.class);
+    assertThatThrownBy(decompressor::complete).isInstanceOf(CompressionException.class);
   }
 }

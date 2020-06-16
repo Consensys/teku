@@ -28,26 +28,30 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compress
  */
 public class LengthPrefixedEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
-  private static final RpcByteBufDecoder<EmptyMessage> EMPTY_MESSAGE_DECODER = new RpcByteBufDecoder<>() {
-    @Override
-    public Optional<EmptyMessage> decodeOneMessage(ByteBuf input) {
-      return Optional.of(EmptyMessage.EMPTY_MESSAGE);
-    }
-    @Override
-    public void complete() {}
-  };
+  private static final RpcByteBufDecoder<EmptyMessage> EMPTY_MESSAGE_DECODER =
+      new RpcByteBufDecoder<>() {
+        @Override
+        public Optional<EmptyMessage> decodeOneMessage(ByteBuf input) {
+          return Optional.of(EmptyMessage.EMPTY_MESSAGE);
+        }
+
+        @Override
+        public void complete() {}
+      };
 
   private final String name;
   private final RpcPayloadEncoders payloadEncoders;
   private final Supplier<Compressor> compressor;
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-  private static <T> RpcByteBufDecoder<T>  getEmptyMessageDecoder() {
+  private static <T> RpcByteBufDecoder<T> getEmptyMessageDecoder() {
     return (RpcByteBufDecoder<T>) EMPTY_MESSAGE_DECODER;
   }
 
   LengthPrefixedEncoding(
-      final String name, final RpcPayloadEncoders payloadEncoders, final Supplier<Compressor> compressor) {
+      final String name,
+      final RpcPayloadEncoders payloadEncoders,
+      final Supplier<Compressor> compressor) {
     this.name = name;
     this.payloadEncoders = payloadEncoders;
     this.compressor = compressor;
@@ -70,7 +74,8 @@ public class LengthPrefixedEncoding implements RpcEncoding {
     if (payloadType.equals(EmptyMessage.class)) {
       return getEmptyMessageDecoder();
     } else {
-      return new LengthPrefixedPayloadDecoder<>(payloadEncoders.getEncoder(payloadType), compressor.get());
+      return new LengthPrefixedPayloadDecoder<>(
+          payloadEncoders.getEncoder(payloadType), compressor.get());
     }
   }
 
@@ -85,5 +90,4 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   public String getName() {
     return name;
   }
-
 }

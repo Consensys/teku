@@ -103,9 +103,11 @@ public class RpcResponseDecoder<T> {
       if (errorDecoder.isEmpty()) {
         errorDecoder = Optional.of(encoding.createDecoder(String.class));
       }
-      Optional<RpcException> rpcException = errorDecoder.get()
-          .decodeOneMessage(data)
-          .map(errorMessage -> new RpcException(toByteExactUnsigned(respCode), errorMessage));
+      Optional<RpcException> rpcException =
+          errorDecoder
+              .get()
+              .decodeOneMessage(data)
+              .map(errorMessage -> new RpcException(toByteExactUnsigned(respCode), errorMessage));
       if (rpcException.isPresent()) {
         respCodeMaybe = Optional.empty();
         errorDecoder = Optional.empty();

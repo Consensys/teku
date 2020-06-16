@@ -142,7 +142,6 @@ public class SnappyFramedCompressor implements Compressor {
     return new SnappyFramedDecompressor(uncompressedPayloadSize);
   }
 
-
   @Override
   public int getMaxCompressedLength(final int uncompressedLength) {
     // Return worst-case compression size

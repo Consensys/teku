@@ -60,8 +60,8 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected T reqHandler;
 
-//  private Thread inputHandlerThread;
-//  private final AtomicBoolean inputHandlerDone = new AtomicBoolean(false);
+  //  private Thread inputHandlerThread;
+  //  private final AtomicBoolean inputHandlerDone = new AtomicBoolean(false);
   protected final MockInputStream inputStream = new MockInputStream();
 
   @BeforeEach
@@ -90,28 +90,28 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
 
   protected void startProcessingInput() {
     reqHandler.active(nodeId, rpcStream);
-//    reqHandler.processData(nodeId, rpcStream, Unpooled.EMPTY_BUFFER);
-//    inputHandlerThread =
-//        new Thread(
-//            () -> {
-//              try {
-//                reqHandler.processData(nodeId, rpcStream, Unpooled.EMPTY_BUFFER);
-//              } catch (Throwable t) {
-//                LOG.warn("Caught error while processing input: ", t);
-//              } finally {
-//                inputHandlerDone.set(true);
-//              }
-//            });
-//    inputHandlerThread.start();
+    //    reqHandler.processData(nodeId, rpcStream, Unpooled.EMPTY_BUFFER);
+    //    inputHandlerThread =
+    //        new Thread(
+    //            () -> {
+    //              try {
+    //                reqHandler.processData(nodeId, rpcStream, Unpooled.EMPTY_BUFFER);
+    //              } catch (Throwable t) {
+    //                LOG.warn("Caught error while processing input: ", t);
+    //              } finally {
+    //                inputHandlerDone.set(true);
+    //              }
+    //            });
+    //    inputHandlerThread.start();
   }
 
   @AfterEach
   public void teardown() {
-//    inputStream.close();
-//    if (inputHandlerThread != null) {
-//      inputHandlerThread.interrupt();
-//    }
-//    Waiter.waitFor(() -> assertThat(inputHandlerDone).isTrue());
+    //    inputStream.close();
+    //    if (inputHandlerThread != null) {
+    //      inputHandlerThread.interrupt();
+    //    }
+    //    Waiter.waitFor(() -> assertThat(inputHandlerDone).isTrue());
   }
 
   protected abstract T createRequestHandler(final BeaconChainMethods beaconChainMethods);
