@@ -117,7 +117,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
   public SafeFuture<Controller> initChannel(P2PChannel channel, String s) {
     final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
-    Controller controller = new Controller(nodeId, channel, asyncRunner);
+    Controller controller = new Controller(nodeId, channel);
     if (!channel.isInitiator()) {
       controller.setRequestHandler(rpcMethod.createIncomingRequestHandler());
     }
@@ -128,17 +128,15 @@ public class RpcHandler implements ProtocolBinding<Controller> {
   static class Controller extends SimpleChannelInboundHandler<ByteBuf> {
     private final NodeId nodeId;
     private final P2PChannel p2pChannel;
-    private final AsyncRunner asyncRunner;
     private RpcRequestHandler rpcRequestHandler;
     private RpcStream rpcStream;
 
     protected final SafeFuture<Controller> activeFuture = new SafeFuture<>();
 
     private Controller(
-        final NodeId nodeId, final P2PChannel p2pChannel, final AsyncRunner asyncRunner) {
+        final NodeId nodeId, final P2PChannel p2pChannel) {
       this.nodeId = nodeId;
       this.p2pChannel = p2pChannel;
-      this.asyncRunner = asyncRunner;
     }
 
     @Override
