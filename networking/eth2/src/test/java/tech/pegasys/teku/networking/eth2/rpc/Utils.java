@@ -57,7 +57,7 @@ public class Utils {
         .map(
             set ->
                 set.stream()
-                    .flatMap(b -> Stream.of(emptyBufEx(), b.copy(), emptyBufEx()))
+                    .flatMap(b -> Stream.of(emptyBuf(), b.copy(), emptyBuf()))
                     .collect(Collectors.toList()))
         .collect(Collectors.toList());
   }
@@ -80,16 +80,9 @@ public class Utils {
   }
 
 
-  public static ByteBuf emptyBufEx() {
+  public static ByteBuf emptyBuf() {
     // to avoid ByteBuf.EMPTY which always has reference count > 0
     return Unpooled.wrappedBuffer(new byte[1]).readerIndex(1);
-  }
-
-  public static ByteBuf toByteBufEx(final Bytes... bytes) {
-    return Unpooled.wrappedBuffer(
-            Bytes.concatenate(Bytes.fromHexString("0x12345678"), Bytes.concatenate(bytes))
-                .toArray())
-        .readerIndex(4);
   }
 
   public static ByteBuf toByteBuf(final Bytes... bytes) {

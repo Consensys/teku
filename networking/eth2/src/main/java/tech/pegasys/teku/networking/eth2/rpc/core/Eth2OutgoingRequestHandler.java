@@ -83,16 +83,20 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     try {
       this.rpcStream = rpcStream;
 
-      List<TResponse> maybeResponses =
-          responseDecoder.decodeNextResponses(data, this::onFirstByteReceived);
       if (!isClosed.get()) {
-        maybeResponses.forEach(responseProcessor::processResponse);
-
+        List<TResponse> maybeResponses =
+            responseDecoder.decodeNextResponses(data, this::onFirstByteReceived);
         final int chunksReceived = currentChunkCount.addAndGet(maybeResponses.size());
         if (chunksReceived > maximumResponseChunks) {
-          cancelRequest(rpcStream, RpcException.EXTRA_DATA_APPENDED);
+          throw RpcException.EXTRA_DATA_APPENDED;
+        }
+        maybeResponses.forEach(responseProcessor::processResponse);
+        if (chunksReceived == maximumResponseChunks) {
+          completeRequest(rpcStream);
         } else {
-          ensureNextResponseArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
+          if (!maybeResponses.isEmpty()) {
+            ensureNextResponseArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
+          }
         }
       }
     } catch (final RpcException e) {
