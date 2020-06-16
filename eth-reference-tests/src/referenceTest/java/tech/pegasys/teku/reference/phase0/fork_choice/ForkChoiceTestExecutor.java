@@ -48,7 +48,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ethtests.finder.ReferenceTestFinder;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
@@ -63,13 +62,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   public static ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
       ImmutableMap.of("fork_choice/integration_tests", new ForkChoiceTestExecutor());
 
-  public static Stream<Arguments> loadForkChoiceTests() throws Exception {
-    Path rootDirectory = ReferenceTestFinder.findReferenceTestRootDirectory();
-    Path dir =
-        rootDirectory.resolve(
-            "../../../java/tech/pegasys/teku/reference/phase0/fork_choice/integration_tests/");
-    boolean exists = dir.toFile().exists();
-    System.out.println(dir + " " + exists);
+  public static Stream<Arguments> loadForkChoiceTests() {
     Path path =
         Paths.get(
             "src/referenceTest/java/tech/pegasys/teku/reference/phase0/fork_choice/integration_tests/");
