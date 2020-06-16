@@ -238,7 +238,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                 UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
                 Bytes32 head = forkChoiceStrategy.findHead(transaction);
                 transaction.commit(() -> {}, "Failed to persist validator vote changes.");
-                assertEquals(root, head, "head");
+                assertEquals(root, head, "Head does not match expected head: \n head: " + head + "\n expectedHead: " + root);
                 break;
               }
             case "justified_checkpoint_epoch":
