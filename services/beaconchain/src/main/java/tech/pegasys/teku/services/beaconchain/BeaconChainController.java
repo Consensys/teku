@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -40,6 +41,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.core.BlockProposalUtil;
+import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -123,6 +125,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationManager attestationManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
+
+  private volatile UnsignedLong onTickSlotStart;
+  private volatile UnsignedLong onTickSlotAttestation;
+  private volatile UnsignedLong onTickSlotAggregate;
+  private final long oneThirdSlotSeconds = SECONDS_PER_SLOT / 3;
 
   private SyncStateTracker syncStateTracker;
 
@@ -477,8 +484,42 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       }
       return;
     }
-    if (nextSlotDue) {
-      processSlot();
+
+    final UnsignedLong genesisTime = recentChainData.getGenesisTime();
+    final UnsignedLong calculatedSlot =
+        currentTime.compareTo(genesisTime) < 0
+            ? ZERO
+            : ForkChoiceUtil.getCurrentSlot(currentTime, genesisTime);
+    if (currentTime.compareTo(genesisTime) < 0) {
+      return;
+    }
+
+    // tolerate 1 slot difference, not more
+    if (calculatedSlot.compareTo(nodeSlot.getValue().plus(ONE)) > 0) {
+      EVENT_LOG.nodeSlotDriftEvent(nodeSlot.getValue(), calculatedSlot);
+      nodeSlot.setValue(calculatedSlot);
+    }
+
+    final UnsignedLong epoch = compute_epoch_at_slot(nodeSlot.getValue());
+    final UnsignedLong nodeSlotStartTime =
+        ForkChoiceUtil.getSlotStartTime(nodeSlot.getValue(), genesisTime);
+    if (onTickSlotStart == null || calculatedSlot.compareTo(onTickSlotStart) > 0) {
+      onTickSlotStart = nodeSlot.getValue();
+      processSlotStart(epoch);
+    }
+
+    if ((onTickSlotAttestation == null || calculatedSlot.compareTo(onTickSlotAttestation) > 0)
+        && currentTime.compareTo(nodeSlotStartTime.plus(UnsignedLong.valueOf(oneThirdSlotSeconds)))
+            >= 0) {
+      onTickSlotAttestation = nodeSlot.getValue();
+      processSlotAttestation(epoch);
+    }
+    if ((onTickSlotAggregate == null || calculatedSlot.compareTo(onTickSlotAggregate) > 0)
+        && currentTime.compareTo(
+                nodeSlotStartTime.plus(UnsignedLong.valueOf(oneThirdSlotSeconds * 2)))
+            >= 0) {
+      onTickSlotAggregate = nodeSlot.getValue();
+      processSlotAggregate();
     }
   }
 
@@ -490,35 +531,33 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return currentTime.compareTo(nextSlotStartTime) >= 0;
   }
 
-  private void processSlot() {
-    try {
-      final UnsignedLong nodeEpoch = compute_epoch_at_slot(nodeSlot.getValue());
-      if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
-        EVENT_LOG.epochEvent(
-            nodeEpoch,
-            recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
-            recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-            recentChainData.getFinalizedRoot());
-      }
-
-      slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
-      Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-      Bytes32 headBlockRoot = this.forkChoice.processHead();
-      EVENT_LOG.slotEvent(
-          nodeSlot.getValue(),
-          recentChainData.getBestSlot(),
-          headBlockRoot,
+  private void processSlotStart(final UnsignedLong nodeEpoch) {
+    if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
+      EVENT_LOG.epochEvent(
           nodeEpoch,
+          recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
           recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-          recentChainData.getFinalizedRoot(),
-          p2pNetwork.getPeerCount());
-      this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot.getValue()));
-      Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-      this.eventBus.post(new BroadcastAggregatesEvent(nodeSlot.getValue()));
-      nodeSlot.inc();
-    } catch (InterruptedException e) {
-      LOG.debug("onTick: {}", e.toString(), e);
+          recentChainData.getFinalizedRoot());
     }
+    slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
+  }
+
+  private void processSlotAttestation(final UnsignedLong nodeEpoch) {
+    Bytes32 headBlockRoot = this.forkChoice.processHead();
+    EVENT_LOG.slotEvent(
+        nodeSlot.getValue(),
+        recentChainData.getBestSlot(),
+        headBlockRoot,
+        nodeEpoch,
+        recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
+        recentChainData.getFinalizedRoot(),
+        p2pNetwork.getPeerCount());
+    this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot.getValue()));
+  }
+
+  private void processSlotAggregate() {
+    this.eventBus.post(new BroadcastAggregatesEvent(nodeSlot.getValue()));
+    nodeSlot.inc();
   }
 
   private void processSlotWhileSyncing() {
