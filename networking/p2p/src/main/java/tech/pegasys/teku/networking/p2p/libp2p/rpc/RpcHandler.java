@@ -133,8 +133,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
     protected final SafeFuture<Controller> activeFuture = new SafeFuture<>();
 
-    private Controller(
-        final NodeId nodeId, final P2PChannel p2pChannel) {
+    private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
       this.nodeId = nodeId;
       this.p2pChannel = p2pChannel;
     }
