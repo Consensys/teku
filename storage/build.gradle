@@ -12,10 +12,12 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-ssz'
+  implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.mapdb:mapdb'
   implementation 'org.rocksdb:rocksdbjni'
 
   testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':data:metrics'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
@@ -30,5 +32,6 @@ dependencies {
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.tuweni:tuweni-ssz'
+  testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testFixturesImplementation 'org.hyperledger.besu:plugin-api'
 }

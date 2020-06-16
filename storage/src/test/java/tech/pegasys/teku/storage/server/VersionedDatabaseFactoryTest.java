@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class VersionedDatabaseFactoryTest {
@@ -34,7 +35,8 @@ public class VersionedDatabaseFactoryTest {
   @Test
   public void createDatabase_fromEmptyDataDir() throws Exception {
     final DatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(dataDir.toString(), DATA_STORAGE_MODE);
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -48,7 +50,8 @@ public class VersionedDatabaseFactoryTest {
     createVersionFile(dataDir, DatabaseVersion.V3);
 
     final DatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(dataDir.toString(), DATA_STORAGE_MODE);
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -60,7 +63,8 @@ public class VersionedDatabaseFactoryTest {
     createVersionFile(dataDir, "bla");
 
     final DatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(dataDir.toString(), DATA_STORAGE_MODE);
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -71,7 +75,8 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
 
     final DatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(dataDir.toString(), DATA_STORAGE_MODE);
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");

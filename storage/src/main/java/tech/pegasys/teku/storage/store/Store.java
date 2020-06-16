@@ -35,6 +35,9 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.core.StateGenerator;
 import tech.pegasys.teku.core.StateGenerator.StateHandler;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -45,6 +48,7 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
@@ -54,6 +58,10 @@ class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
+  private final Counter stateRequestCachedCounter;
+  private final Counter stateRequestRegenerateCounter;
+  private final Counter stateRequestMissCounter;
+  private final MetricsSystem metricsSystem;
   UnsignedLong time;
   UnsignedLong genesis_time;
   Checkpoint justified_checkpoint;
@@ -68,6 +76,7 @@ class Store implements UpdatableStore {
   final NavigableMap<UnsignedLong, Set<Bytes32>> rootsBySlotLookup = new TreeMap<>();
 
   Store(
+      final MetricsSystem metricsSystem,
       final UnsignedLong time,
       final UnsignedLong genesis_time,
       final Checkpoint justified_checkpoint,
@@ -79,6 +88,16 @@ class Store implements UpdatableStore {
       final BeaconState latestFinalizedBlockState,
       final Map<UnsignedLong, VoteTracker> votes,
       final int stateCacheSize) {
+    this.metricsSystem = metricsSystem;
+    final LabelledMetric<Counter> stateRequestCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.STORAGE,
+            "memory_state_requests",
+            "Number of requests for BeaconState from the in-memory store",
+            "result");
+    stateRequestCachedCounter = stateRequestCounter.labels("cached");
+    stateRequestRegenerateCounter = stateRequestCounter.labels("regenerate");
+    stateRequestMissCounter = stateRequestCounter.labels("miss");
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -111,6 +130,31 @@ class Store implements UpdatableStore {
 
     // Setup slot to root mappings
     indexBlockRootsBySlot(rootsBySlotLookup, this.blocks.values());
+  }
+
+  /**
+   * Start reporting gauge values to metrics.
+   *
+   * <p>Gauges can only be created once so we delay initializing these metrics until we know that
+   * this instance is the canonical store.
+   */
+  @Override
+  public void startMetrics() {
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.STORAGE,
+        "memory_state_count",
+        "Number of beacon states held in the in-memory store",
+        block_states::size);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.STORAGE,
+        "memory_block_count",
+        "Number of beacon blocks held in the in-memory store",
+        block_states::size);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.STORAGE,
+        "memory_checkpoint_state_count",
+        "Number of checkpoint states held in the in-memory store",
+        checkpoint_states::size);
   }
 
   static void indexBlockRootsBySlot(
@@ -287,7 +331,9 @@ class Store implements UpdatableStore {
   public Optional<BeaconState> getBlockStateIfAvailable(final Bytes32 blockRoot) {
     readLock.lock();
     try {
-      return Optional.ofNullable(block_states.get(blockRoot));
+      final Optional<BeaconState> state = Optional.ofNullable(block_states.get(blockRoot));
+      state.ifPresentOrElse(s -> stateRequestCachedCounter.inc(), stateRequestMissCounter::inc);
+      return state;
     } finally {
       readLock.unlock();
     }
@@ -353,7 +399,7 @@ class Store implements UpdatableStore {
       // If we haven't found a base state yet, we must have walked back to the latest finalized
       // block, check here for the base state
       final SignedBlockAndState finalizedBlock = getLatestFinalizedBlockAndState();
-      if (!blocks.keySet().contains(finalizedBlock.getRoot())) {
+      if (!blocks.containsKey(finalizedBlock.getRoot())) {
         // We must have finalized a new block while processing and moved past our target root
         return Optional.empty();
       }
@@ -365,6 +411,7 @@ class Store implements UpdatableStore {
         BlockTree.builder().rootBlock(baseBlock.getBlock()).blocks(blocks.values()).build();
     final StateGenerator stateGenerator = StateGenerator.create(tree, baseBlock.getState());
     final BeaconState regeneratedState = stateGenerator.regenerateStateForBlock(blockRoot);
+    stateRequestRegenerateCounter.inc();
 
     // Save regenerated state
     if (regeneratedState == null) {

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -64,7 +65,8 @@ public class DebugDbCommand implements Runnable {
 
   private Database createDatabase(final DataOptions dataOptions) {
     final VersionedDatabaseFactory databaseFactory =
-        new VersionedDatabaseFactory(dataOptions.getDataPath(), dataOptions.getDataStorageMode());
+        new VersionedDatabaseFactory(
+            new NoOpMetricsSystem(), dataOptions.getDataPath(), dataOptions.getDataStorageMode());
     return databaseFactory.createDatabase();
   }
 }
