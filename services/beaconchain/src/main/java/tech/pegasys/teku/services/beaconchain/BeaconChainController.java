@@ -526,17 +526,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
 
     final UnsignedLong genesisTime = recentChainData.getGenesisTime();
-    final UnsignedLong calculatedSlot =
-        currentTime.compareTo(genesisTime) < 0
-            ? ZERO
-            : ForkChoiceUtil.getCurrentSlot(currentTime, genesisTime);
     if (currentTime.compareTo(genesisTime) < 0) {
       return;
     }
+    final UnsignedLong calculatedSlot = ForkChoiceUtil.getCurrentSlot(currentTime, genesisTime);
 
     // tolerate 1 slot difference, not more
     if (calculatedSlot.compareTo(nodeSlot.getValue().plus(ONE)) > 0) {
-      EVENT_LOG.nodeSlotDriftEvent(nodeSlot.getValue(), calculatedSlot);
+      EVENT_LOG.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);
       nodeSlot.setValue(calculatedSlot);
     }
 

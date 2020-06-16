@@ -56,10 +56,10 @@ public class EventLogger {
     info(epochEventLog, Color.GREEN);
   }
 
-  public void nodeSlotDriftEvent(final UnsignedLong oldSlot, final UnsignedLong newSlot) {
+  public void nodeSlotsMissed(final UnsignedLong oldSlot, final UnsignedLong newSlot) {
     final String driftEventLog =
         String.format(
-            "Drift Event *** Current slot: %s, previous slot: %s",
+            "Miss slots  *** Current slot: %s, previous slot: %s",
             newSlot.toString(), oldSlot.toString());
     info(driftEventLog, Color.WHITE);
   }
