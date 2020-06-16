@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -155,7 +154,7 @@ public class DepositRegisterCommand implements Runnable {
   }
 
   private BLSKeyPair privateKeyToKeyPair(final Bytes validatorKey) {
-    return new BLSKeyPair(BLSSecretKey.fromBytes(Bytes48.leftPad(validatorKey)));
+    return new BLSKeyPair(BLSSecretKey.fromBytes(validatorKey));
   }
 
   static class ValidatorKeyOptions {

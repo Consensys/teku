@@ -32,14 +32,17 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
   private final ProposerSlashingValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
+  private final GossipedOperationConsumer<ProposerSlashing> consumer;
 
   public ProposerSlashingTopicHandler(
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final ProposerSlashingValidator validator) {
+      final ProposerSlashingValidator validator,
+      final GossipedOperationConsumer<ProposerSlashing> consumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
+    this.consumer = consumer;
   }
 
   @Override
@@ -53,6 +56,7 @@ public class ProposerSlashingTopicHandler implements Eth2TopicHandler<ProposerSl
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
           break;
         case ACCEPT:
+          consumer.forward(proposerSlashing);
           break;
         default:
           throw new UnsupportedOperationException(

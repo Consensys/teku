@@ -15,6 +15,8 @@ package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
@@ -31,6 +33,18 @@ public class ValidatorWithIndex {
   public final UnsignedLong balance;
 
   public final Validator validator;
+
+  @JsonCreator
+  public ValidatorWithIndex(
+      @JsonProperty("pubkey") final BLSPubKey pubkey,
+      @JsonProperty("validator_index") final Integer validator_index,
+      @JsonProperty("balance") final UnsignedLong balance,
+      @JsonProperty("validator") final Validator validator) {
+    this.pubkey = pubkey;
+    this.validator_index = validator_index;
+    this.balance = balance;
+    this.validator = validator;
+  }
 
   public ValidatorWithIndex(
       final Validator validator, final int validator_index, final UnsignedLong balance) {

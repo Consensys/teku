@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.util.async;
 
-import static tech.pegasys.teku.util.async.SafeFuture.propagateResult;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -58,8 +56,8 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
   <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
     final SafeFuture<U> result = new SafeFuture<>();
     try {
-      executor.execute(() -> propagateResult(action.get(), result));
-    } catch (RejectedExecutionException ex) {
+      executor.execute(() -> SafeFuture.ofComposed(action::get).propagateTo(result));
+    } catch (final RejectedExecutionException ex) {
       LOG.debug("shutting down ", ex);
     } catch (final Throwable t) {
       result.completeExceptionally(t);

@@ -27,9 +27,11 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.util.config.Constants;
 
-public class AttestationDataStateTransitionValidator {
+public class AttestationDataStateTransitionValidator
+    implements OperationStateTransitionValidator<AttestationData> {
 
-  public Optional<OperationInvalidReason> validateAttestation(
+  @Override
+  public Optional<OperationInvalidReason> validate(
       final BeaconState state, final AttestationData data) {
     return firstOf(
         () ->
