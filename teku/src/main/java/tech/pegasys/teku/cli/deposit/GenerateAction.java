@@ -74,7 +74,7 @@ public class GenerateAction {
   }
 
   public Stream<ValidatorKeys> generateKeysStream() {
-    final KeysWriter keysWriter = getKeysWriter();
+    final KeysWriter keysWriter = getKeysWriter(srng);
     return IntStream.range(0, validatorCount).mapToObj(ignore -> generateKey(keysWriter));
   }
 
@@ -85,7 +85,7 @@ public class GenerateAction {
     return new ValidatorKeys(validatorKey, withdrawalKey);
   }
 
-  private KeysWriter getKeysWriter() {
+  private KeysWriter getKeysWriter(final SecureRandom secureRandom) {
     final KeysWriter keysWriter;
     if (encryptKeys) {
       final String validatorKeystorePassword =
@@ -96,7 +96,7 @@ public class GenerateAction {
       final Path keystoreDir = getKeystoreOutputDir();
       keysWriter =
           new EncryptedKeystoreWriter(
-              validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
+              secureRandom, validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
       if (consoleAdapter.isConsoleAvailable() && isBlank(outputPath) && displayConfirmation) {
