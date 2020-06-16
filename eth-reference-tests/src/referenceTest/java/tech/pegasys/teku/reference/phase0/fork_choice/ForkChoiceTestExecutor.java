@@ -223,7 +223,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             case "block_in_store":
               {
                 Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                assertTrue(storageClient.getBlockByRoot(root).isPresent(), "block_in_store");
+                assertTrue(storageClient.getBlockByRoot(root).isPresent(), "Block is missing from store :" + root);
                 break;
               }
             case "block_not_in_store":
