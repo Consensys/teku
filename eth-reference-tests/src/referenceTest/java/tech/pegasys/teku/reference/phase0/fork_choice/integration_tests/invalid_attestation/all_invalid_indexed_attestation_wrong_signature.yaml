@@ -1,0 +1,33 @@
+meta:
+  bls_setting: 1
+genesis: state_0.ssz
+steps:
+- checks:
+    head: '0xa3c9c0d499b17754fff3429c6993590aa16ff17011422ff7522949749879e7ee'
+- slot: 1
+- checks:
+    head: '0xa3c9c0d499b17754fff3429c6993590aa16ff17011422ff7522949749879e7ee'
+- block: block_23.ssz
+- checks:
+    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+- slot: 2
+- checks:
+    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+- block: block_3.ssz
+- checks:
+    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+- attestation: attestation_16.ssz
+- checks:
+    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+- attestation: attestation_17.ssz
+- checks:
+    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+- attestation: attestation_18.ssz
+- checks:
+    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+- attestation: attestation_19.ssz
+- checks:
+    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+- slot: 3
+- checks:
+    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'

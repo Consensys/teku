@@ -20,6 +20,7 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.epoch_processing.EpochProcessingTestExecutor;
+import tech.pegasys.teku.reference.phase0.fork_choice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
 import tech.pegasys.teku.reference.phase0.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutor;
@@ -39,6 +40,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
           .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(SanityTests.SANITY_TEST_TYPES)
+          .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
           .putAll(RewardsTestExecutor.REWARDS_TEST_TYPES)
           .build();
 

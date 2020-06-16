@@ -32,6 +32,7 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.store.Store.StateProvider;
@@ -50,6 +51,7 @@ class StoreTest {
     final int stateCacheSize = 10;
     final Store store =
         new Store(
+            new StubMetricsSystem(),
             genesis.getState().getGenesis_time(),
             genesis.getState().getGenesis_time(),
             genesisCheckpoint,
@@ -86,7 +88,8 @@ class StoreTest {
   @Test
   public void shouldApplyChangesWhenTransactionCommits() throws StateTransitionException {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
-    final UpdatableStore store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
+    final UpdatableStore store =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
     final UnsignedLong initialTime = store.getTime();
     final UnsignedLong genesisTime = store.getGenesisTime();

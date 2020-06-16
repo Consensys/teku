@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -38,7 +39,8 @@ public abstract class StoreFactory {
 
   public static final int STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 5;
 
-  public static UpdatableStore getForkChoiceStore(final BeaconState anchorState) {
+  public static UpdatableStore getForkChoiceStore(
+      final MetricsSystem metricsSystem, final BeaconState anchorState) {
     final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
     final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
     final UnsignedLong anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
@@ -51,6 +53,7 @@ public abstract class StoreFactory {
     checkpoint_states.put(anchorCheckpoint, anchorState);
 
     return create(
+        metricsSystem,
         anchorState
             .getGenesis_time()
             .plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(anchorState.getSlot())),
@@ -66,6 +69,7 @@ public abstract class StoreFactory {
   }
 
   public static UpdatableStore createByRegeneratingHotStates(
+      final MetricsSystem metricsSystem,
       final UnsignedLong time,
       final UnsignedLong genesis_time,
       final Checkpoint justified_checkpoint,
@@ -86,10 +90,11 @@ public abstract class StoreFactory {
       // This should be an error, but keeping this as a warning now for backwards-compatibility
       // reasons.  Some existing databases may have unpruned fork blocks, and could become unusable
       // if we throw here.  In the future, we should convert this to an error.
-      LOG.warn("Ignoring %d non-canonical blocks", blocks.size() - tree.getBlockCount());
+      LOG.warn("Ignoring {} non-canonical blocks", blocks.size() - tree.getBlockCount());
     }
 
     return create(
+        metricsSystem,
         time,
         genesis_time,
         justified_checkpoint,
@@ -103,6 +108,7 @@ public abstract class StoreFactory {
   }
 
   public static UpdatableStore create(
+      final MetricsSystem metricsSystem,
       final UnsignedLong time,
       final UnsignedLong genesis_time,
       final Checkpoint justified_checkpoint,
@@ -114,6 +120,7 @@ public abstract class StoreFactory {
       final BeaconState latestFinalizedBlockState,
       final Map<UnsignedLong, VoteTracker> votes) {
     return new Store(
+        metricsSystem,
         time,
         genesis_time,
         justified_checkpoint,

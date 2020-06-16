@@ -20,4 +20,8 @@ public class UnsignedLongMath {
   public static UnsignedLong max(final UnsignedLong a, final UnsignedLong b) {
     return a.compareTo(b) >= 0 ? a : b;
   }
+
+  public static UnsignedLong min(final UnsignedLong a, final UnsignedLong b) {
+    return a.compareTo(b) <= 0 ? a : b;
+  }
 }

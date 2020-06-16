@@ -37,8 +37,6 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
-  public static final int KEY_LENGTH = 48;
-
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
@@ -47,7 +45,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
     // return distinct loaded key pairs
     return keystorePasswordFilePairs.stream()
-        .map(pair -> padLeft(loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()))))
+        .map(pair -> loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight())))
         .distinct()
         .map(privKey -> new BLSKeyPair(BLSSecretKey.fromBytes(privKey)))
         .collect(toList());
@@ -82,9 +80,5 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
       throw new UncheckedIOException(errorMessage, e);
     }
     return password;
-  }
-
-  private Bytes padLeft(Bytes input) {
-    return Bytes.concatenate(Bytes.wrap(new byte[KEY_LENGTH - input.size()]), input);
   }
 }

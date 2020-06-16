@@ -47,6 +47,17 @@ public final class BLSSecretKey {
     return secretKey;
   }
 
+  public Bytes toBytes() {
+    final Bytes bytes = secretKey.toBytes();
+    if (bytes.size() == 48) {
+      final int paddingLength = 48 - 32;
+      if (bytes.slice(0, paddingLength).isZero()) {
+        return bytes.slice(paddingLength, 32);
+      }
+    }
+    return bytes;
+  }
+
   public Scalar getScalarValue() {
     return secretKey.getScalarValue();
   }

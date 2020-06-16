@@ -20,6 +20,15 @@ public class StoreAssertions {
   public static void assertStoresMatch(
       final UpdatableStore actualState, final UpdatableStore expectedState) {
     assertThat(actualState)
-        .isEqualToIgnoringGivenFields(expectedState, "time", "lock", "readLock", "block_states");
+        .isEqualToIgnoringGivenFields(
+            expectedState,
+            "time",
+            "lock",
+            "readLock",
+            "block_states",
+            "stateRequestCachedCounter",
+            "stateRequestRegenerateCounter",
+            "stateRequestMissCounter",
+            "metricsSystem");
   }
 }
