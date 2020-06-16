@@ -245,7 +245,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               {
                 UnsignedLong expected = UnsignedLong.valueOf((Integer) e.getValue());
                 UnsignedLong actual = storageClient.getStore().getJustifiedCheckpoint().getEpoch();
-                assertEquals(expected, actual, "justified_checkpoint_epoch");
+                assertEquals(expected, actual, "Justified checkpoint epoch does not match expected: \n actual: " + actual + "\n expected: " + expected);
                 break;
               }
             default:
