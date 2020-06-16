@@ -43,7 +43,9 @@ public class StorageService extends Service {
         () -> {
           final VersionedDatabaseFactory dbFactory =
               new VersionedDatabaseFactory(
-                  serviceConfig.getMetricsSystem(), serviceConfig.getConfig());
+                  serviceConfig.getMetricsSystem(),
+                  serviceConfig.getConfig().getDataPath(),
+                  serviceConfig.getConfig().getDataStorageMode());
           database = dbFactory.createDatabase();
 
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);

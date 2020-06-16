@@ -25,7 +25,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class VersionedDatabaseFactory implements DatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -40,12 +39,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final StateStorageMode stateStorageMode;
 
   public VersionedDatabaseFactory(
-      final MetricsSystem metricsSystem, final TekuConfiguration config) {
+      final MetricsSystem metricsSystem,
+      final String dataPath,
+      final StateStorageMode dataStorageMode) {
     this.metricsSystem = metricsSystem;
-    this.dataDirectory = Paths.get(config.getDataPath()).toFile();
+    this.dataDirectory = Paths.get(dataPath).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
-    this.stateStorageMode = config.getDataStorageMode();
+    this.stateStorageMode = dataStorageMode;
   }
 
   @Override

@@ -22,25 +22,21 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class VersionedDatabaseFactoryTest {
 
+  private static final StateStorageMode DATA_STORAGE_MODE = PRUNE;
   @TempDir Path dataDir;
-  TekuConfiguration config;
-
-  @BeforeEach
-  public void setup() {
-    config = createConfig(dataDir);
-  }
 
   @Test
   public void createDatabase_fromEmptyDataDir() throws Exception {
-    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(new StubMetricsSystem(), config);
+    final DatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -53,7 +49,9 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     createVersionFile(dataDir, DatabaseVersion.V3);
 
-    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(new StubMetricsSystem(), config);
+    final DatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -64,7 +62,9 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     createVersionFile(dataDir, "bla");
 
-    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(new StubMetricsSystem(), config);
+    final DatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -74,7 +74,9 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_dbExistsButNoVersionIsSaved() throws Exception {
     createDbDirectory(dataDir);
 
-    final DatabaseFactory dbFactory = new VersionedDatabaseFactory(new StubMetricsSystem(), config);
+    final DatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");
@@ -103,13 +105,5 @@ public class VersionedDatabaseFactoryTest {
     final String versionValue =
         Files.readString(dataDirectory.resolve(VersionedDatabaseFactory.DB_VERSION_PATH));
     assertThat(versionValue).isEqualTo(defaultVersion.getValue());
-  }
-
-  private TekuConfiguration createConfig(final Path dataPath) {
-
-    return TekuConfiguration.builder()
-        .setDataPath(dataPath.toAbsolutePath().toString())
-        .setDataStorageMode(PRUNE)
-        .build();
   }
 }
