@@ -223,13 +223,17 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             case "block_in_store":
               {
                 Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                assertTrue(storageClient.getBlockByRoot(root).isPresent(), "Block is missing from store :" + root);
+                assertTrue(
+                    storageClient.getBlockByRoot(root).isPresent(),
+                    "Block is missing from store :" + root);
                 break;
               }
             case "block_not_in_store":
               {
                 Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                assertTrue(storageClient.getBlockByRoot(root).isEmpty(), "Block should not have been in store :" + root);
+                assertTrue(
+                    storageClient.getBlockByRoot(root).isEmpty(),
+                    "Block should not have been in store :" + root);
                 break;
               }
             case "head":
@@ -238,14 +242,26 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                 UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
                 Bytes32 head = forkChoiceStrategy.findHead(transaction);
                 transaction.commit(() -> {}, "Failed to persist validator vote changes.");
-                assertEquals(root, head, "Head does not match expected head: \n head: " + head + "\n expectedHead: " + root);
+                assertEquals(
+                    root,
+                    head,
+                    "Head does not match expected head: \n head: "
+                        + head
+                        + "\n expectedHead: "
+                        + root);
                 break;
               }
             case "justified_checkpoint_epoch":
               {
                 UnsignedLong expected = UnsignedLong.valueOf((Integer) e.getValue());
                 UnsignedLong actual = storageClient.getStore().getJustifiedCheckpoint().getEpoch();
-                assertEquals(expected, actual, "Justified checkpoint epoch does not match expected: \n actual: " + actual + "\n expected: " + expected);
+                assertEquals(
+                    expected,
+                    actual,
+                    "Justified checkpoint epoch does not match expected: \n actual: "
+                        + actual
+                        + "\n expected: "
+                        + expected);
                 break;
               }
             default:
