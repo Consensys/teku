@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.subcommand;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import tech.pegasys.teku.cli.deposit.DepositGenerateAndRegisterCommand;
 import tech.pegasys.teku.cli.deposit.DepositGenerateCommand;
 import tech.pegasys.teku.cli.deposit.DepositRegisterCommand;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
@@ -25,7 +26,11 @@ import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
-    subcommands = {DepositGenerateCommand.class, DepositRegisterCommand.class},
+    subcommands = {
+      DepositGenerateCommand.class,
+      DepositGenerateAndRegisterCommand.class,
+      DepositRegisterCommand.class
+    },
     versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
