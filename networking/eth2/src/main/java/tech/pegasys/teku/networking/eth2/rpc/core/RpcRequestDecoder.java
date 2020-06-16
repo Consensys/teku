@@ -15,8 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -27,8 +25,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
  * @param <T> The type of request to expect
  */
 public class RpcRequestDecoder<T extends RpcRequest> {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final RpcByteBufDecoder<T> decoder;
   private boolean complete;
 

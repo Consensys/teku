@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
@@ -27,7 +25,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compress
  * the length of the uncompressed payload
  */
 public class LengthPrefixedEncoding implements RpcEncoding {
-  private static final Logger LOG = LogManager.getLogger();
   private static final RpcByteBufDecoder<EmptyMessage> EMPTY_MESSAGE_DECODER =
       new RpcByteBufDecoder<>() {
         @Override

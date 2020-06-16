@@ -70,6 +70,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
   }
 
   @Override
+  @SuppressWarnings("UnusedVariable")
   protected Optional<ByteBuf> decodeOneImpl(ByteBuf in) {
     if (corrupted) {
       in.skipBytes(in.readableBytes());

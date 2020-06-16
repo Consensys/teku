@@ -115,15 +115,6 @@ public class SnappyFramedCompressor implements Compressor {
     }
   }
 
-  // The max uncompressed bytes that will be packed into a single frame
-  // See:
-  // https://github.com/google/snappy/blob/251d935d5096da77c4fef26ea41b019430da5572/framing_format.txt#L104-L106
-  static final int MAX_FRAME_CONTENT_SIZE = 65536;
-  private SnappyFrameDecoder snappyFrameDecoder = new SnappyFrameDecoder();
-  private int consumedCompressedSize = 0;
-  private List<ByteBuf> decodedSnappyFrames = new ArrayList<>();
-  private boolean broken = false;
-
   @Override
   public Bytes compress(final Bytes data) {
 

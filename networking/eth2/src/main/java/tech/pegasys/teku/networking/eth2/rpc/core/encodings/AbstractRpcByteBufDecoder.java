@@ -23,6 +23,7 @@ public abstract class AbstractRpcByteBufDecoder<TMessage> implements RpcByteBufD
 
   private CompositeByteBuf compositeByteBuf = Unpooled.compositeBuffer();
 
+  @Override
   public synchronized Optional<TMessage> decodeOneMessage(ByteBuf in) {
     if (!in.isReadable()) {
       return Optional.empty();

@@ -20,8 +20,6 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
@@ -31,8 +29,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
  * @param <T>
  */
 public class RpcResponseDecoder<T> {
-  private static final Logger LOG = LogManager.getLogger();
-
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
   private Optional<RpcByteBufDecoder<String>> errorDecoder = Optional.empty();
