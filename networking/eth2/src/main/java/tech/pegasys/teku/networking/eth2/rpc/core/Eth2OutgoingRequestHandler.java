@@ -76,6 +76,9 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
+  public void active(NodeId nodeId, RpcStream rpcStream) {}
+
+  @Override
   public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
     try {
       this.rpcStream = rpcStream;

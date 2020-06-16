@@ -58,10 +58,12 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
-  public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
-
+  public void active(NodeId nodeId, RpcStream rpcStream) {
     ensureRequestReceivedWithinTimeLimit(rpcStream);
+  }
 
+  @Override
+  public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
     try {
       Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
       requestDecoder

@@ -163,7 +163,9 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       this.rpcRequestHandler = rpcRequestHandler;
 
       activeFuture.finish(
-          () -> {},
+          () -> {
+            rpcRequestHandler.active(nodeId, rpcStream);
+          },
           err -> {
             if (err != null) {
               if (Throwables.getRootCause(err) instanceof StreamClosedException) {

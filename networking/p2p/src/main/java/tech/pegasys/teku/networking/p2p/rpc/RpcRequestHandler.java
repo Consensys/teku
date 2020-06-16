@@ -18,6 +18,8 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public interface RpcRequestHandler {
 
+  void active(final NodeId nodeId, final RpcStream rpcStream);
+
   void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data);
 
   void complete(final NodeId nodeId, final RpcStream rpcStream);
