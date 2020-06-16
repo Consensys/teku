@@ -61,6 +61,7 @@ class Store implements UpdatableStore {
   private final Counter stateRequestCachedCounter;
   private final Counter stateRequestRegenerateCounter;
   private final Counter stateRequestMissCounter;
+  private final MetricsSystem metricsSystem;
   UnsignedLong time;
   UnsignedLong genesis_time;
   Checkpoint justified_checkpoint;
@@ -87,6 +88,7 @@ class Store implements UpdatableStore {
       final BeaconState latestFinalizedBlockState,
       final Map<UnsignedLong, VoteTracker> votes,
       final int stateCacheSize) {
+    this.metricsSystem = metricsSystem;
     final LabelledMetric<Counter> stateRequestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE,
@@ -128,11 +130,16 @@ class Store implements UpdatableStore {
 
     // Setup slot to root mappings
     indexBlockRootsBySlot(rootsBySlotLookup, this.blocks.values());
-
-    createGauges(metricsSystem);
   }
 
-  private void createGauges(final MetricsSystem metricsSystem) {
+  /**
+   * Start reporting gauge values to metrics.
+   *
+   * <p>Gauges can only be created once so we delay initializing these metrics until we know that
+   * this instance is the canonical store.
+   */
+  @Override
+  public void startMetrics() {
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.STORAGE,
         "memory_state_count",

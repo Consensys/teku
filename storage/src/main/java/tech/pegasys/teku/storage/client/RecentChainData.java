@@ -126,6 +126,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return false;
     }
     this.store = store;
+    this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
     storeInitializedFuture.complete(null);
     return true;
