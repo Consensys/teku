@@ -277,7 +277,9 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final RequestState requestState =
         new RequestState(
             new BeaconBlocksByRangeRequestMessage(
-                UnsignedLong.ZERO, UnsignedLong.valueOf(500), UnsignedLong.ONE),
+                UnsignedLong.ZERO,
+                Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(UnsignedLong.ONE),
+                UnsignedLong.ONE),
             UnsignedLong.valueOf(10000),
             Bytes32.ZERO,
             listener);
