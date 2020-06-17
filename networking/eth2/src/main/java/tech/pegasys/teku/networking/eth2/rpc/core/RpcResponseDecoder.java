@@ -117,7 +117,7 @@ public class RpcResponseDecoder<T> {
       errorDecoder.get().complete();
     }
     if (respCodeMaybe.isPresent()) {
-      throw RpcException.PAYLOAD_TRUNCATED();
+      throw RpcException.PAYLOAD_TRUNCATED;
     }
   }
 

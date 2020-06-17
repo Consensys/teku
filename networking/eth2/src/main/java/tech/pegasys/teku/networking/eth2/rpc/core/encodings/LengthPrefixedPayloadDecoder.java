@@ -102,7 +102,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
         decompressor.get().complete();
       } catch (CompressionException e) {
       }
-      err = RpcException.PAYLOAD_TRUNCATED();
+      err = RpcException.PAYLOAD_TRUNCATED;
     }
     if (!decoded && err == null) {
       err = RpcException.MESSAGE_TRUNCATED;
