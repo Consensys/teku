@@ -60,6 +60,10 @@ public class ForkChoiceUtil {
     return currentTime.minus(genesisTime).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
+  public static UnsignedLong getSlotStartTime(UnsignedLong slotNumber, UnsignedLong genesisTime) {
+    return genesisTime.plus(slotNumber.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+  }
+
   public static UnsignedLong get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
     return UnsignedLong.valueOf(GENESIS_SLOT).plus(get_slots_since_genesis(store, useUnixTime));
   }
