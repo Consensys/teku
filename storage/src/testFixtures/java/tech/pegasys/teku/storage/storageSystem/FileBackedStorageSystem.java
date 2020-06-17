@@ -11,67 +11,58 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage;
+package tech.pegasys.teku.storage.storageSystem;
 
 import com.google.common.eventbus.EventBus;
-import java.util.List;
+import java.nio.file.Path;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
-import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
-import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class InMemoryStorageSystem {
-  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
-  protected final ChainUpdater chainUpdater;
+public class FileBackedStorageSystem extends AbstractStorageSystem implements StorageSystem {
+  private final Path dataPath;
 
   private final EventBus eventBus;
   private final TrackingReorgEventChannel reorgEventChannel;
 
-  private final MockRocksDbInstance rocksDbInstance;
-  private final RecentChainData recentChainData;
   private final CombinedChainDataClient combinedChainDataClient;
+  private final Database database;
 
-  public InMemoryStorageSystem(
+  public FileBackedStorageSystem(
+      final Path dataPath,
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
-      final MockRocksDbInstance rocksDbInstance,
+      final Database database,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient) {
+    super(recentChainData);
+
+    this.dataPath = dataPath;
     this.eventBus = eventBus;
+    this.database = database;
     this.reorgEventChannel = reorgEventChannel;
-    this.rocksDbInstance = rocksDbInstance;
-    this.recentChainData = recentChainData;
     this.combinedChainDataClient = combinedChainDataClient;
-
-    chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
   }
 
-  public static InMemoryStorageSystem createEmptyV3StorageSystem(
-      final StateStorageMode storageMode) {
-    final MockRocksDbInstance rocksDbInstance =
-        InMemoryRocksDbDatabaseFactory.createEmptyV3RocksDbInstance();
-    return createV3StorageSystem(rocksDbInstance, storageMode);
-  }
+  public static StorageSystem createV3StorageSystem(
+      final Path dataPath, final StateStorageMode storageMode) {
+    final RocksDbConfiguration rocksDbConfiguration =
+        RocksDbConfiguration.withDataDirectory(dataPath);
+    final Database database =
+        RocksDbDatabase.createV3(new StubMetricsSystem(), rocksDbConfiguration, storageMode);
 
-  private static InMemoryStorageSystem createV3StorageSystem(
-      final MockRocksDbInstance rocksDbInstance, final StateStorageMode storageMode) {
     try {
       final EventBus eventBus = new EventBus();
-      final Database database =
-          InMemoryRocksDbDatabaseFactory.createV3(rocksDbInstance, storageMode);
 
       // Create and start storage server
       final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
@@ -94,39 +85,45 @@ public class InMemoryStorageSystem {
           new CombinedChainDataClient(recentChainData, chainStorageServer);
 
       // Return storage system
-      return new InMemoryStorageSystem(
-          eventBus, reorgEventChannel, rocksDbInstance, recentChainData, combinedChainDataClient);
+      return new FileBackedStorageSystem(
+          dataPath,
+          eventBus,
+          reorgEventChannel,
+          database,
+          recentChainData,
+          combinedChainDataClient);
     } catch (Exception e) {
       throw new IllegalStateException("Unable to initialize storage system", e);
     }
   }
 
-  public InMemoryStorageSystem restarted(final StateStorageMode storageMode) {
-    final MockRocksDbInstance restartedRocksDbInstance = rocksDbInstance.reopen();
-    return createV3StorageSystem(restartedRocksDbInstance, storageMode);
+  @Override
+  public StorageSystem restarted(final StateStorageMode storageMode) {
+    try {
+      database.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    return createV3StorageSystem(dataPath, storageMode);
   }
 
+  @Override
   public RecentChainData recentChainData() {
     return recentChainData;
   }
 
+  @Override
   public CombinedChainDataClient combinedChainDataClient() {
     return combinedChainDataClient;
   }
 
+  @Override
   public EventBus eventBus() {
     return eventBus;
   }
 
+  @Override
   public TrackingReorgEventChannel reorgEventChannel() {
     return reorgEventChannel;
-  }
-
-  public ChainBuilder chainBuilder() {
-    return chainBuilder;
-  }
-
-  public ChainUpdater chainUpdater() {
-    return chainUpdater;
   }
 }
