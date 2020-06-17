@@ -19,7 +19,13 @@ import io.netty.buffer.Unpooled;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
-public abstract class AbstractRpcByteBufDecoder<TMessage> implements RpcByteBufDecoder<TMessage> {
+/**
+ * Abstract {@link ByteBufDecoder} implementation which handles unprocessed {@link ByteBuf}s
+ *
+ * <p>This class is a standalone analog of Netty {@link io.netty.handler.codec.ByteToMessageDecoder}
+ */
+public abstract class AbstractByteBufDecoder<TMessage>
+    implements ByteBufDecoder<TMessage, RuntimeException> {
 
   private CompositeByteBuf compositeByteBuf = Unpooled.compositeBuffer();
 
@@ -64,5 +70,14 @@ public abstract class AbstractRpcByteBufDecoder<TMessage> implements RpcByteBufD
     }
   }
 
+  /**
+   * Decodes one message if the full data is available in the buffer
+   *
+   * <p>If the full data is not available then return {@code empty} and left buffer reader index
+   * intact
+   *
+   * <p>If a message is read then the buffer reader position should be positioned after the end of
+   * message data
+   */
   protected abstract Optional<TMessage> decodeOneImpl(ByteBuf in);
 }

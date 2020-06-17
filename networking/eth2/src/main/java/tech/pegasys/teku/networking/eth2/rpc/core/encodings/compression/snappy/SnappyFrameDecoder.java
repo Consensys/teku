@@ -20,7 +20,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.compression.CompressionException;
 import io.netty.handler.codec.compression.Snappy;
 import java.util.Optional;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractRpcByteBufDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecoder;
 
 /**
  * This class is mostly borrowed from the Netty implementation:
@@ -36,7 +36,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractRpcByteBufDe
  * that checksum validation brings, please use the {@link #SnappyFrameDecoder(boolean)} constructor
  * with the argument set to {@code true}.
  */
-public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
+public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
 
   private enum ChunkType {
     STREAM_IDENTIFIER,

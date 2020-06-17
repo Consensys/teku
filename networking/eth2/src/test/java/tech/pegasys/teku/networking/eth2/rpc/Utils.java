@@ -81,8 +81,9 @@ public class Utils {
 
   public static List<ByteBuf> shiftedSlices(int shift, Bytes... chunks) {
     AtomicInteger sum = new AtomicInteger(0);
-    IntStream pos = IntStream
-        .concat(IntStream.of(0), Arrays.stream(chunks).mapToInt(Bytes::size).map(sum::addAndGet));
+    IntStream pos =
+        IntStream.concat(
+            IntStream.of(0), Arrays.stream(chunks).mapToInt(Bytes::size).map(sum::addAndGet));
     if (shift > 0) {
       pos = pos.limit(chunks.length);
     } else {
@@ -99,8 +100,8 @@ public class Utils {
             .map(i -> max(0, min(i, src.readableBytes())))
             .toArray();
     return Streams.zip(
-        IntStream.concat(IntStream.of(0), Arrays.stream(pos1)).boxed(),
-        IntStream.concat(Arrays.stream(pos1), IntStream.of(src.readableBytes())).boxed(),
+            IntStream.concat(IntStream.of(0), Arrays.stream(pos1)).boxed(),
+            IntStream.concat(Arrays.stream(pos1), IntStream.of(src.readableBytes())).boxed(),
             Pair::of)
         .map(rng -> Pair.of(rng.getLeft(), rng.getRight() - rng.getLeft()))
         .map(il -> src.slice(il.getLeft(), il.getRight()).copy())

@@ -14,28 +14,18 @@
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
 import io.netty.buffer.ByteBuf;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.DisposedDecompressorException;
 
 public interface Compressor {
 
-  interface Decompressor {
-
-    /**
-     * @param input
-     * @return
-     * @throws DisposedDecompressorException
-     */
-    Optional<ByteBuf> uncompress(final ByteBuf input) throws CompressionException;
-
-    /**
-     * @return
-     * @throws DisposedDecompressorException
-     */
-    void complete() throws CompressionException;
-  }
+  /**
+   * Alias Decompressor interface which also restricts the number of decoded messages to 1
+   *
+   * @see ByteBufDecoder
+   */
+  interface Decompressor extends ByteBufDecoder<ByteBuf, CompressionException> {}
 
   /**
    * Returns the compressed data
@@ -45,6 +35,10 @@ public interface Compressor {
    */
   Bytes compress(final Bytes data);
 
+  /**
+   * Creates a Decompressor instance which would return only a single decompressed data of size
+   * {@code uncompressedPayloadSize}
+   */
   Decompressor createDecompressor(final int uncompressedPayloadSize);
 
   /**

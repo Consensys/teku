@@ -39,7 +39,7 @@ public class NoopCompressorTest {
     final Bytes compressed = compressor.compress(serializedState);
     Decompressor decompressor = compressor.createDecompressor(serializedState.size());
     Optional<ByteBuf> uncompressed =
-        decompressor.uncompress(Unpooled.wrappedBuffer(compressed.toArray()));
+        decompressor.decodeOneMessage(Unpooled.wrappedBuffer(compressed.toArray()));
     assertThat(uncompressed).isPresent();
     assertThat(Bytes.wrapByteBuf(uncompressed.get())).isEqualTo(serializedState);
   }

@@ -26,7 +26,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
 
 class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
 
-  private static class VarIntDecoder extends AbstractRpcByteBufDecoder<Long> {
+  private static class VarIntDecoder extends AbstractByteBufDecoder<Long> {
     @Override
     protected Optional<Long> decodeOneImpl(ByteBuf in) {
       long length = ByteBufExtKt.readUvarint(in);
@@ -61,7 +61,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
           .ifPresent(len -> decompressor = Optional.of(compressor.createDecompressor(len)));
     }
     if (decompressor.isPresent()) {
-      Optional<ByteBuf> ret = decompressor.get().uncompress(in);
+      Optional<ByteBuf> ret = decompressor.get().decodeOneMessage(in);
       if (ret.isPresent()) {
         decompressor = Optional.empty();
         try {
@@ -92,7 +92,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
     RpcException err = null;
     if (varIntDecoder.isPresent()) {
       try {
-        varIntDecoder.ifPresent(AbstractRpcByteBufDecoder::complete);
+        varIntDecoder.ifPresent(AbstractByteBufDecoder::complete);
       } catch (Exception e) {
       }
       err = RpcException.MESSAGE_TRUNCATED;

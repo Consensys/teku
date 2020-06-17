@@ -15,9 +15,9 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractRpcByteBufDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecoder;
 
-public class NoopFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
+public class NoopFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
   private final int expectedBytes;
 
   public NoopFrameDecoder(int expectedBytes) {

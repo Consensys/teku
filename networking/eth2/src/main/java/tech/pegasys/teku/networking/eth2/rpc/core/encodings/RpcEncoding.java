@@ -37,13 +37,10 @@ public interface RpcEncoding {
   <T> Bytes encodePayload(T payload);
 
   /**
-   * Synchronously decodes a single payload value from the given input stream. The first available
-   * byte is expected to be the first byte of an encoded payload and header matching the expected
-   * type.
+   * Creates a brand new disposable {@link ByteBufDecoder} instance
    *
    * @param <T> The type of payload to decode
    * @param payloadType The type of payload to decode
-   * @return The decoded payload
    */
   <T> RpcByteBufDecoder<T> createDecoder(final Class<T> payloadType);
 
