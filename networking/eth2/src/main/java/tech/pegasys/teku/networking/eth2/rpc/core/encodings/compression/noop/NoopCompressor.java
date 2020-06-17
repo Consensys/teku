@@ -11,12 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.DisposedDecompressorException;
 

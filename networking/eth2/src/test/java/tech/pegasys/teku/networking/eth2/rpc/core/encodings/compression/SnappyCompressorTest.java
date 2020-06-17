@@ -29,6 +29,7 @@ import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 
 public class SnappyCompressorTest {
   // The max uncompressed bytes that will be packed into a single frame

@@ -103,8 +103,6 @@ dependencyManagement {
       entry 'crypto'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.7.3'
-
     dependency 'org.hyperledger.besu.internal:metrics-core:1.3.4'
     dependency 'org.hyperledger.besu:plugin-api:1.3.4'
 

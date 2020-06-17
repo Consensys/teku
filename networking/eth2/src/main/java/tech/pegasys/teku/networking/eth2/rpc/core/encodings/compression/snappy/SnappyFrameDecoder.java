@@ -11,16 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy;
+
+import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyUtil.validateChecksum;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.compression.DecompressionException;
+import io.netty.handler.codec.compression.CompressionException;
 import io.netty.handler.codec.compression.Snappy;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractRpcByteBufDecoder;
 
 /**
+ * This class is mostly borrowed from the Netty implementation:
+ * https://github.com/netty/netty/blob/4.1/codec/src/main/java/io/netty/handler/codec/compression/SnappyFramedDecoder.java
+ *
  * Uncompresses a {@link ByteBuf} encoded with the Snappy framing format.
  *
  * <p>See <a href="https://github.com/google/snappy/blob/master/framing_format.txt">Snappy framing
@@ -55,7 +60,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
    * validation on, please use the alternate {@link #SnappyFrameDecoder(boolean)} constructor.
    */
   public SnappyFrameDecoder() {
-    this(false);
+    this(true);
   }
 
   /**
@@ -63,14 +68,13 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
    *
    * @param validateChecksums If true, the checksum field will be validated against the actual
    *     uncompressed data, and if the checksums do not match, a suitable {@link
-   *     DecompressionException} will be thrown
+   *     CompressionException} will be thrown
    */
   public SnappyFrameDecoder(boolean validateChecksums) {
     this.validateChecksums = validateChecksums;
   }
 
   @Override
-  @SuppressWarnings("UnusedVariable")
   protected Optional<ByteBuf> decodeOneImpl(ByteBuf in) {
     if (corrupted) {
       in.skipBytes(in.readableBytes());
@@ -95,7 +99,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
       switch (chunkType) {
         case STREAM_IDENTIFIER:
           if (chunkLength != SNAPPY_IDENTIFIER_LEN) {
-            throw new DecompressionException(
+            throw new CompressionException(
                 "Unexpected length of stream identifier: " + chunkLength);
           }
 
@@ -118,7 +122,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
           break;
         case RESERVED_SKIPPABLE:
           if (!started) {
-            throw new DecompressionException(
+            throw new CompressionException(
                 "Received RESERVED_SKIPPABLE tag before STREAM_IDENTIFIER");
           }
 
@@ -133,15 +137,15 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
           // The spec mandates that reserved unskippable chunks must immediately
           // return an error, as we must assume that we cannot decode the stream
           // correctly
-          throw new DecompressionException(
+          throw new CompressionException(
               "Found reserved unskippable chunk type: 0x" + Integer.toHexString(chunkTypeVal));
         case UNCOMPRESSED_DATA:
           if (!started) {
-            throw new DecompressionException(
+            throw new CompressionException(
                 "Received UNCOMPRESSED_DATA tag before STREAM_IDENTIFIER");
           }
           if (chunkLength > MAX_UNCOMPRESSED_DATA_SIZE) {
-            throw new DecompressionException("Received UNCOMPRESSED_DATA larger than 65540 bytes");
+            throw new CompressionException("Received UNCOMPRESSED_DATA larger than 65540 bytes");
           }
 
           if (inSize < 4 + chunkLength) {
@@ -151,9 +155,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
           in.skipBytes(4);
           if (validateChecksums) {
             int checksum = in.readIntLE();
-            throw new UnsupportedOperationException();
-            // TODO
-            // validateChecksum(checksum, in, in.readerIndex(), chunkLength - 4);
+            validateChecksum(checksum, in, in.readerIndex(), chunkLength - 4);
           } else {
             in.skipBytes(4);
           }
@@ -161,7 +163,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
           break;
         case COMPRESSED_DATA:
           if (!started) {
-            throw new DecompressionException(
+            throw new CompressionException(
                 "Received COMPRESSED_DATA tag before STREAM_IDENTIFIER");
           }
 
@@ -181,9 +183,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
               } finally {
                 in.writerIndex(oldWriterIndex);
               }
-              throw new UnsupportedOperationException();
-              // TODO
-              // validateChecksum(checksum, uncompressed, 0, uncompressed.writerIndex());
+               validateChecksum(checksum, uncompressed, 0, uncompressed.writerIndex());
             } else {
               snappy.decode(in.readSlice(chunkLength - 4), uncompressed);
             }
@@ -206,7 +206,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
 
   private static void checkByte(byte actual, byte expect) {
     if (actual != expect) {
-      throw new DecompressionException(
+      throw new CompressionException(
           "Unexpected stream identifier contents. Mismatched snappy " + "protocol version?");
     }
   }

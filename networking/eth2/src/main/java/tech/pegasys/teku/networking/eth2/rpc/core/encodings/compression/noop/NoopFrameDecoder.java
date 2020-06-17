@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
@@ -30,9 +30,5 @@ public class NoopFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
       return Optional.empty();
     }
     return Optional.of(in.readRetainedSlice(expectedBytes));
-  }
-
-  public int getExpectedBytes() {
-    return expectedBytes;
   }
 }

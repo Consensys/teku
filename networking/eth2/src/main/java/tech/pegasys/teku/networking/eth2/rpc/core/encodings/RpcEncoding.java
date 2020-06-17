@@ -14,8 +14,8 @@
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.NoopCompressor;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.SnappyFramedCompressor;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop.NoopCompressor;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 
 public interface RpcEncoding {
 
