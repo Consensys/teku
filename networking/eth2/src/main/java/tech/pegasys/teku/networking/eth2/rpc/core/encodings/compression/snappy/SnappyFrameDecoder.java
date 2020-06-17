@@ -26,7 +26,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractRpcByteBufDe
  * This class is mostly borrowed from the Netty implementation:
  * https://github.com/netty/netty/blob/4.1/codec/src/main/java/io/netty/handler/codec/compression/SnappyFramedDecoder.java
  *
- * Uncompresses a {@link ByteBuf} encoded with the Snappy framing format.
+ * <p>Uncompresses a {@link ByteBuf} encoded with the Snappy framing format.
  *
  * <p>See <a href="https://github.com/google/snappy/blob/master/framing_format.txt">Snappy framing
  * format</a>.
@@ -163,8 +163,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
           break;
         case COMPRESSED_DATA:
           if (!started) {
-            throw new CompressionException(
-                "Received COMPRESSED_DATA tag before STREAM_IDENTIFIER");
+            throw new CompressionException("Received COMPRESSED_DATA tag before STREAM_IDENTIFIER");
           }
 
           if (inSize < 4 + chunkLength) {
@@ -183,7 +182,7 @@ public class SnappyFrameDecoder extends AbstractRpcByteBufDecoder<ByteBuf> {
               } finally {
                 in.writerIndex(oldWriterIndex);
               }
-               validateChecksum(checksum, uncompressed, 0, uncompressed.writerIndex());
+              validateChecksum(checksum, uncompressed, 0, uncompressed.writerIndex());
             } else {
               snappy.decode(in.readSlice(chunkLength - 4), uncompressed);
             }
