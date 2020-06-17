@@ -153,7 +153,6 @@ public class SnappyCompressorTest {
     final int payloadSize = serializedState.size();
     final Bytes compressed = compressor.compress(serializedState.slice(1));
 
-    SnappyFramedCompressor compressorInst = new SnappyFramedCompressor();
     Decompressor decompressor = new SnappyFramedCompressor().createDecompressor(payloadSize);
     assertThat(decompressor.uncompress(Utils.toByteBuf(compressed))).isEmpty();
     assertThatThrownBy(decompressor::complete)

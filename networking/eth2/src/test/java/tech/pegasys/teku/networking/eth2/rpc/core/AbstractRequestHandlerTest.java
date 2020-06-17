@@ -19,8 +19,6 @@ import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
@@ -44,8 +42,6 @@ import tech.pegasys.teku.util.async.StubAsyncRunner;
 import tech.pegasys.teku.util.iostreams.MockInputStream;
 
 abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
-  private static final Logger LOG = LogManager.getLogger();
-
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   protected final PeerLookup peerLookup = mock(PeerLookup.class);
