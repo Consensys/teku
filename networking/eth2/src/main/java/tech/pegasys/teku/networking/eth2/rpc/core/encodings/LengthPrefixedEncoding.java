@@ -45,9 +45,7 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   }
 
   LengthPrefixedEncoding(
-      final String name,
-      final RpcPayloadEncoders payloadEncoders,
-      final Compressor compressor) {
+      final String name, final RpcPayloadEncoders payloadEncoders, final Compressor compressor) {
     this.name = name;
     this.payloadEncoders = payloadEncoders;
     this.compressor = compressor;

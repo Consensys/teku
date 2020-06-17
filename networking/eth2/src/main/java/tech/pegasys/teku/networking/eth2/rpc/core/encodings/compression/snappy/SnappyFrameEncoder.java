@@ -16,7 +16,9 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy;
 import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyUtil.calculateChecksum;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.compression.Snappy;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 
 /**
@@ -46,7 +48,21 @@ public class SnappyFrameEncoder {
   private final Snappy snappy = new Snappy();
   private boolean started;
 
-  public void encode(ByteBuf in, ByteBuf out) throws Exception {
+  public Bytes encode(Bytes in) {
+    ByteBuf inBuf = Unpooled.wrappedBuffer(in.toArrayUnsafe());
+    ByteBuf outBuf = Unpooled.buffer(in.size() / 2);
+    try {
+      encode(inBuf, outBuf);
+      byte[] bytes = new byte[outBuf.readableBytes()];
+      outBuf.readBytes(bytes);
+      return Bytes.wrap(bytes);
+    } finally {
+      inBuf.release();
+      outBuf.release();
+    }
+  }
+
+  public void encode(ByteBuf in, ByteBuf out) {
     if (!in.isReadable()) {
       return;
     }

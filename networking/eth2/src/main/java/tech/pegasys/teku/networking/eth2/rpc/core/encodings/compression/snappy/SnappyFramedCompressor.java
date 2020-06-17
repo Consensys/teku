@@ -16,14 +16,10 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCounted;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.xerial.snappy.SnappyFramedOutputStream;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.DisposedDecompressorException;
@@ -118,15 +114,7 @@ public class SnappyFramedCompressor implements Compressor {
 
   @Override
   public Bytes compress(final Bytes data) {
-
-    try (final ByteArrayOutputStream out = new ByteArrayOutputStream(data.size() / 2);
-        final OutputStream compressor = new SnappyFramedOutputStream(out)) {
-      compressor.write(data.toArrayUnsafe());
-      compressor.flush();
-      return Bytes.wrap(out.toByteArray());
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to compress data", e);
-    }
+    return new SnappyFrameEncoder().encode(data);
   }
 
   @Override
