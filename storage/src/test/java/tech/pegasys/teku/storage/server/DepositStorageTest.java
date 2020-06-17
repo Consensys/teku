@@ -17,14 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
@@ -164,29 +162,5 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
   protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
     final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
     return RocksDbDatabase.createV3(new StubMetricsSystem(), config, storageMode);
-  }
-
-  static class TrackingEth1EventsChannel implements Eth1EventsChannel {
-    private final List<Object> orderedList = new ArrayList<>();
-    private MinGenesisTimeBlockEvent genesis;
-
-    @Override
-    public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
-      orderedList.add(event);
-    }
-
-    @Override
-    public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-      genesis = event;
-      orderedList.add(event);
-    }
-
-    public MinGenesisTimeBlockEvent getGenesis() {
-      return genesis;
-    }
-
-    public List<Object> getOrderedList() {
-      return orderedList;
-    }
   }
 }

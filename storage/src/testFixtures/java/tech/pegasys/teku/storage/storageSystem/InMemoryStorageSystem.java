@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -30,6 +32,7 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 public class InMemoryStorageSystem extends AbstractStorageSystem implements StorageSystem {
   private final EventBus eventBus;
   private final TrackingReorgEventChannel reorgEventChannel;
+  private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
   private final Database database;
   private final MockRocksDbInstance rocksDbInstance;
@@ -98,6 +101,11 @@ public class InMemoryStorageSystem extends AbstractStorageSystem implements Stor
   }
 
   @Override
+  public DepositStorage createDepositStorage(final boolean eth1DepositsFromStorageEnabled) {
+    return DepositStorage.create(eth1EventsChannel, database, eth1DepositsFromStorageEnabled);
+  }
+
+  @Override
   public Database getDatabase() {
     return database;
   }
@@ -121,5 +129,10 @@ public class InMemoryStorageSystem extends AbstractStorageSystem implements Stor
   @Override
   public TrackingReorgEventChannel reorgEventChannel() {
     return reorgEventChannel;
+  }
+
+  @Override
+  public TrackingEth1EventsChannel eth1EventsChannel() {
+    return eth1EventsChannel;
   }
 }

@@ -15,14 +15,18 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public interface StorageSystem {
+
+  DepositStorage createDepositStorage(final boolean eth1DepositsFromStorageEnabled);
 
   Database getDatabase();
 
@@ -35,6 +39,8 @@ public interface StorageSystem {
   EventBus eventBus();
 
   TrackingReorgEventChannel reorgEventChannel();
+
+  TrackingEth1EventsChannel eth1EventsChannel();
 
   ChainBuilder chainBuilder();
 
