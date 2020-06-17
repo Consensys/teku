@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -33,6 +34,9 @@ import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 
 class ForkChoiceUtilTest {
 
+  private static final UnsignedLong GENESIS_TIME = UnsignedLong.valueOf("1591924193");
+  static final UnsignedLong SLOT_50 =
+      GENESIS_TIME.plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(UnsignedLong.valueOf(50L)));
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -101,6 +105,31 @@ class ForkChoiceUtilTest {
             UnsignedLong.valueOf(20));
 
     assertThat(rootsBySlot).containsExactlyEntriesOf(getRootsForBlocks(6, 8, 10));
+  }
+
+  @Test
+  public void getCurrentSlot_shouldGetZeroAtGenesis() {
+    assertThat(ForkChoiceUtil.getCurrentSlot(GENESIS_TIME, GENESIS_TIME))
+        .isEqualTo(UnsignedLong.ZERO);
+  }
+
+  @Test
+  public void getCurrentSlot_shouldGetNonZeroPastGenesis() {
+
+    assertThat(ForkChoiceUtil.getCurrentSlot(SLOT_50, GENESIS_TIME))
+        .isEqualTo(UnsignedLong.valueOf(50L));
+  }
+
+  @Test
+  public void getSlotStartTime_shouldGetGenesisTimeForBlockZero() {
+    assertThat(ForkChoiceUtil.getSlotStartTime(UnsignedLong.ZERO, GENESIS_TIME))
+        .isEqualTo(GENESIS_TIME);
+  }
+
+  @Test
+  public void getSlotStartTime_shouldGetCorrectTimePastGenesis() {
+    assertThat(ForkChoiceUtil.getSlotStartTime(UnsignedLong.valueOf(50L), GENESIS_TIME))
+        .isEqualTo(SLOT_50);
   }
 
   private Map<UnsignedLong, Bytes32> getRootsForBlocks(final int... blockNumbers) {
