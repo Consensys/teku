@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.primitives.UnsignedLong;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -90,10 +88,6 @@ public class BeaconChainMethodsTest {
     final Optional<StatusMessage> decodedRequest =
         decoder.decodeRequest(Utils.toByteBuf(SSZ_RECORDED_STATUS_REQUEST_BYTES));
     assertThat(decodedRequest).contains(RECORDED_STATUS_MESSAGE_DATA);
-  }
-
-  private InputStream inputStream(final Bytes bytes) {
-    return new ByteArrayInputStream(bytes.toArrayUnsafe());
   }
 
   public static Stream<Arguments> getEncodings() {
