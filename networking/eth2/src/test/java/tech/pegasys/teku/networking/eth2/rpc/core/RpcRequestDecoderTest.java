@@ -50,7 +50,6 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
   public void shouldThrowErrorIfMessagesHaveTrailingData() throws Exception {
     List<List<ByteBuf>> testByteBufSlices =
         testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA, Bytes.fromHexString("0x1234"));
-    //    testByteBufSlices = testByteBufSlices.subList(8, 9);
 
     for (int i = 0; i < testByteBufSlices.size(); i++) {
       List<ByteBuf> bufSlices = testByteBufSlices.get(i);
