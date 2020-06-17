@@ -106,6 +106,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
         StorageBackedRecentChainData.createImmediately(
             new NoOpMetricsSystem(),
             chainStorageServer,
+            chainStorageServer,
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);

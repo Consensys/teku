@@ -40,13 +40,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.core.StateGenerator;
-import tech.pegasys.teku.core.StateGenerator.StateHandler;
+import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.stategenerator.StateGenerator;
+import tech.pegasys.teku.core.stategenerator.StateHandler;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -61,12 +62,18 @@ import tech.pegasys.teku.util.collections.LimitStrategy;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final SafeFuture<Optional<BeaconState>> EMPTY_STATE_FUTURE =
+      SafeFuture.completedFuture(Optional.empty());
+
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
   private final Counter stateRequestCachedCounter;
   private final Counter stateRequestRegenerateCounter;
   private final Counter stateRequestMissCounter;
   private final MetricsSystem metricsSystem;
+
+  private final BlockProvider blockProvider;
 
   final ProtoArrayForkChoiceStrategy forkChoiceState;
   UnsignedLong time;
@@ -83,13 +90,14 @@ class Store implements UpdatableStore {
 
   Store(
       final MetricsSystem metricsSystem,
+      final BlockProvider blockProvider,
+      final StateProviderFactory stateProviderFactory,
       final UnsignedLong time,
       final UnsignedLong genesis_time,
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final StateProvider blockStateProvider,
       final Map<Checkpoint, BeaconState> checkpoint_states,
       final BeaconState latestFinalizedBlockState,
       final Map<UnsignedLong, VoteTracker> votes,
@@ -104,6 +112,7 @@ class Store implements UpdatableStore {
     stateRequestCachedCounter = stateRequestCounter.labels("cached");
     stateRequestRegenerateCounter = stateRequestCounter.labels("regenerate");
     stateRequestMissCounter = stateRequestCounter.labels("miss");
+
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -114,6 +123,8 @@ class Store implements UpdatableStore {
         ConcurrentLimitedMap.create(
             pruningOptions.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
+
+    this.blockProvider = BlockProvider.withKnownBlocks(blockProvider, this.blocks);
 
     // Track latest finalized block
     final SignedBeaconBlock finalizedBlock = blocks.get(finalized_checkpoint.getRoot());
@@ -127,18 +138,22 @@ class Store implements UpdatableStore {
     // Process blocks
     LOG.info("Process {} block(s) to regenerate state", blocks.size());
     final AtomicInteger processedBlocks = new AtomicInteger(0);
-
+    // TODO - handle future properly
     final ProtoArrayForkChoiceStrategyUpdater forkChoiceUpdater = forkChoiceState.updater();
     forkChoiceUpdater.onBlock(finalizedBlockAndState);
-    blockStateProvider.provide(
-        (blockRoot, state) -> {
-          forkChoiceUpdater.onBlock(blocks.get(blockRoot), state);
-          final int processed = processedBlocks.incrementAndGet();
-          if (processed % 100 == 0) {
-            LOG.info("Processed {} blocks", processed);
-          }
-          this.block_states.put(blockRoot, state);
-        });
+    stateProviderFactory
+        .create(this.blockProvider)
+        .provide(
+            (blockRoot, state) -> {
+              // TODO - provide block and state
+              forkChoiceUpdater.onBlock(blocks.get(blockRoot), state);
+              final int processed = processedBlocks.incrementAndGet();
+              if (processed % 100 == 0) {
+                LOG.info("Processed {} blocks", processed);
+              }
+              this.block_states.put(blockRoot, state);
+            })
+        .join();
     forkChoiceUpdater.commit();
     LOG.info("Finished processing {} block(s)", blocks.size());
 
@@ -313,7 +328,10 @@ class Store implements UpdatableStore {
     if (block == null) {
       return Optional.empty();
     }
-    return getOrGenerateBlockState(blockRoot).map((state) -> new SignedBlockAndState(block, state));
+    // TODO - handle future properly
+    return getOrGenerateBlockState(blockRoot)
+        .join()
+        .map((state) -> new SignedBlockAndState(block, state));
   }
 
   @Override
@@ -353,7 +371,8 @@ class Store implements UpdatableStore {
 
   @Override
   public BeaconState getBlockState(Bytes32 blockRoot) {
-    return getOrGenerateBlockState(blockRoot).orElse(null);
+    // TODO - handle future properly
+    return getOrGenerateBlockState(blockRoot).join().orElse(null);
   }
 
   @Override
@@ -388,15 +407,15 @@ class Store implements UpdatableStore {
     }
   }
 
-  private Optional<BeaconState> getOrGenerateBlockState(final Bytes32 blockRoot) {
+  private SafeFuture<Optional<BeaconState>> getOrGenerateBlockState(final Bytes32 blockRoot) {
     Optional<BeaconState> state = getBlockStateIfAvailable(blockRoot);
     if (state.isPresent()) {
-      return state;
+      return SafeFuture.completedFuture(state);
     }
     final SignedBeaconBlock blockForState = getSignedBlock(blockRoot);
     if (blockForState == null) {
       // If we don't have the corresponding block, we can't possibly regenerate the state
-      return Optional.empty();
+      return EMPTY_STATE_FUTURE;
     }
 
     // Accumulate blocks until we find our base state to build from
@@ -420,25 +439,23 @@ class Store implements UpdatableStore {
       final SignedBlockAndState finalizedBlock = getLatestFinalizedBlockAndState();
       if (!blocks.containsKey(finalizedBlock.getRoot())) {
         // We must have finalized a new block while processing and moved past our target root
-        return Optional.empty();
+        return EMPTY_STATE_FUTURE;
       }
       baseBlock = finalizedBlock;
     }
 
     // Regenerate state
-    final BlockTree tree =
-        BlockTree.builder().rootBlock(baseBlock.getBlock()).blocks(blocks.values()).build();
-    final StateGenerator stateGenerator = StateGenerator.create(tree, baseBlock.getState());
-    final BeaconState regeneratedState = stateGenerator.regenerateStateForBlock(blockRoot);
-    stateRequestRegenerateCounter.inc();
-
-    // Save regenerated state
-    if (regeneratedState == null) {
-      throw new IllegalStateException("Unable to generate state for block " + blockRoot);
-    }
-    putState(blockRoot, regeneratedState);
-
-    return Optional.of(regeneratedState);
+    final HashTree tree =
+        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(blocks.values()).build();
+    final StateGenerator stateGenerator = StateGenerator.create(tree, baseBlock, blockProvider);
+    return stateGenerator
+        .regenerateStateForBlock(blockRoot)
+        .thenApply(
+            regeneratedState -> {
+              stateRequestRegenerateCounter.inc();
+              putState(blockRoot, regeneratedState);
+              return Optional.of(regeneratedState);
+            });
   }
 
   private void putState(final Bytes32 blockRoot, final BeaconState state) {
@@ -733,8 +750,14 @@ class Store implements UpdatableStore {
   }
 
   interface StateProvider {
-    StateProvider NOOP = stateHandler -> {};
+    StateProvider NOOP = stateHandler -> SafeFuture.COMPLETE;
 
-    void provide(StateHandler stateHandler);
+    SafeFuture<?> provide(StateHandler stateHandler);
+  }
+
+  interface StateProviderFactory {
+    StateProviderFactory NOOP = __ -> StateProvider.NOOP;
+
+    StateProvider create(final BlockProvider blockProvider);
   }
 }

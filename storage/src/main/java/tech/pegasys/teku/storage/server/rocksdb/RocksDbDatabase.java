@@ -20,14 +20,20 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.core.StateGenerator;
-import tech.pegasys.teku.datastructures.blocks.BlockTree;
+import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -48,8 +54,9 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
@@ -158,7 +165,7 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public Optional<UpdatableStore> createMemoryStore() {
+  public Optional<StoreBuilder> createMemoryStore() {
     Optional<UnsignedLong> maybeGenesisTime = hotDao.getGenesisTime();
     if (maybeGenesisTime.isEmpty()) {
       // If genesis time hasn't been set, genesis hasn't happened and we have no data
@@ -182,17 +189,17 @@ public class RocksDbDatabase implements Database {
         "Latest finalized state does not match latest finalized block");
 
     return Optional.of(
-        StoreFactory.createByRegeneratingHotStates(
-            metricsSystem,
-            UnsignedLong.valueOf(Instant.now().getEpochSecond()),
-            genesisTime,
-            justifiedCheckpoint,
-            finalizedCheckpoint,
-            bestJustifiedCheckpoint,
-            hotBlocksByRoot,
-            checkpointStates,
-            finalizedState,
-            votes));
+        StoreBuilder.create()
+            .metricsSystem(metricsSystem)
+            .time(UnsignedLong.valueOf(Instant.now().getEpochSecond()))
+            .genesis_time(genesisTime)
+            .finalized_checkpoint(finalizedCheckpoint)
+            .justified_checkpoint(justifiedCheckpoint)
+            .best_justified_checkpoint(bestJustifiedCheckpoint)
+            .blocks(hotBlocksByRoot)
+            .checkpoint_states(checkpointStates)
+            .latestFinalizedBlockState(finalizedState)
+            .votes(votes));
   }
 
   @Override
@@ -208,6 +215,14 @@ public class RocksDbDatabase implements Database {
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
     return hotDao.getHotBlock(root).or(() -> finalizedDao.getFinalizedBlock(root));
+  }
+
+  @Override
+  public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
+    return blockRoots.stream()
+        .map(root -> hotDao.getHotBlock(root).orElse(null))
+        .filter(Objects::nonNull)
+        .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
   }
 
   @Override
@@ -288,16 +303,21 @@ public class RocksDbDatabase implements Database {
     switch (stateStorageMode) {
       case ARCHIVE:
         // Get previously finalized block to build on top of
-        final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
-        final SignedBeaconBlock baseBlock =
-            finalizedDao.getFinalizedBlock(baseBlockRoot).orElseThrow();
-        final BeaconState baseState = hotDao.getLatestFinalizedState().orElseThrow();
+        final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
 
-        final BlockTree blockTree =
-            BlockTree.builder().rootBlock(baseBlock).blocks(finalizedBlocks.values()).build();
+        // TODO - build tree with roots rather than full blocks
+        final HashTree blockTree =
+            HashTree.builder()
+                .rootHash(baseBlock.getRoot())
+                .blocks(finalizedBlocks.values())
+                .build();
+        final BlockProvider blockProvider =
+            BlockProvider.withKnownBlocks(
+                roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
         final StateGenerator stateGenerator =
-            StateGenerator.create(blockTree, baseState, finalizedStates);
-        stateGenerator.regenerateAllStates(updater::addFinalizedState);
+            StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
+        // TODO - don't join, create synchronous API for synchronous blockProvider
+        stateGenerator.regenerateAllStates(updater::addFinalizedState).join();
         break;
       case PRUNE:
         // Don't persist finalized state
@@ -305,6 +325,13 @@ public class RocksDbDatabase implements Database {
       default:
         throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
     }
+  }
+
+  private SignedBlockAndState getFinalizedBlockAndState() {
+    final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
+    final SignedBeaconBlock baseBlock = finalizedDao.getFinalizedBlock(baseBlockRoot).orElseThrow();
+    final BeaconState baseState = hotDao.getLatestFinalizedState().orElseThrow();
+    return new SignedBlockAndState(baseBlock, baseState);
   }
 
   private void putFinalizedState(

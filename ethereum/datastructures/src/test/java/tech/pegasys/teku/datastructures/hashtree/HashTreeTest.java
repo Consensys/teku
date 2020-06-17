@@ -11,16 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.blocks;
+package tech.pegasys.teku.datastructures.hashtree;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
-public class BlockTreeTest {
+public class HashTreeTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
@@ -30,7 +31,8 @@ public class BlockTreeTest {
     final List<SignedBeaconBlock> chain =
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 5);
 
-    final BlockTree blockTree = BlockTree.builder().rootBlock(baseBlock).blocks(chain).build();
+    final HashTree blockTree =
+        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).build();
 
     // All blocks should be available
     assertThat(blockTree.getBlockCount()).isEqualTo(chain.size() + 1);
@@ -47,8 +49,8 @@ public class BlockTreeTest {
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 5);
     final SignedBeaconBlock randomBlock = dataStructureUtil.randomSignedBeaconBlock(2);
 
-    final BlockTree blockTree =
-        BlockTree.builder().rootBlock(baseBlock).blocks(chain).block(randomBlock).build();
+    final HashTree blockTree =
+        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).block(randomBlock).build();
 
     // Only valid blocks should be available
     assertThat(blockTree.getBlockCount()).isEqualTo(chain.size() + 1);
@@ -66,8 +68,8 @@ public class BlockTreeTest {
     final List<SignedBeaconBlock> chain2 =
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 3);
 
-    final BlockTree blockTree =
-        BlockTree.builder().rootBlock(baseBlock).blocks(chain).blocks(chain2).build();
+    final HashTree blockTree =
+        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).blocks(chain2).build();
 
     // All blocks should be available
     final List<SignedBeaconBlock> allBlocks = new ArrayList<>(chain);
@@ -88,8 +90,8 @@ public class BlockTreeTest {
     final List<SignedBeaconBlock> invalidFork =
         dataStructureUtil.randomSignedBeaconBlockSequence(genesis, 3);
 
-    final BlockTree blockTree =
-        BlockTree.builder().rootBlock(baseBlock).blocks(chain).blocks(invalidFork).build();
+    final HashTree blockTree =
+        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).blocks(invalidFork).build();
 
     // Only valid blocks should be available
     assertThat(blockTree.getBlockCount()).isEqualTo(chain.size());
@@ -102,7 +104,7 @@ public class BlockTreeTest {
   public void build_empty() {
     final SignedBeaconBlock baseBlock = dataStructureUtil.randomSignedBeaconBlock(0);
 
-    final BlockTree blockTree = BlockTree.builder().rootBlock(baseBlock).build();
+    final HashTree blockTree = HashTree.builder().rootHash(baseBlock.getRoot()).build();
 
     assertThat(blockTree.getBlockCount()).isEqualTo(1);
     assertThat(blockTree.containsBlock(baseBlock.getRoot())).isTrue();

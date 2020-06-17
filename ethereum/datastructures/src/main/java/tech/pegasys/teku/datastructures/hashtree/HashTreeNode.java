@@ -11,19 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.datastructures.hashtree;
 
-import java.util.Optional;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.storage.store.UpdatableStore;
-import tech.pegasys.teku.util.async.SafeFuture;
+import java.util.List;
+import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 
-public interface StorageUpdateChannel {
+public class HashTreeNode {
 
-  SafeFuture<Optional<StoreBuilder>> onStoreRequest();
+  private final Bytes32 hash;
+  private final List<HashTreeNode> children;
 
-  SafeFuture<Void> onStorageUpdate(StorageUpdate event);
+  HashTreeNode(final Bytes32 hash, final Set<HashTreeNode> children) {
+    this.hash = hash;
+    this.children = List.copyOf(children);
+  }
 
-  void onGenesis(UpdatableStore store);
+  public Bytes32 getHash() {
+    return hash;
+  }
+
+  public List<HashTreeNode> getChildren() {
+    return children;
+  }
+
+  public int childCount() {
+    return getChildren().size();
+  }
 }

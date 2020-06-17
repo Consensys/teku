@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core;
+package tech.pegasys.teku.core.stategenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,9 +31,13 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.datastructures.blocks.BlockTree;
+import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.StateTransitionException;
+import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.BlockProviderFactory;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class StateGeneratorTest {
@@ -205,21 +210,30 @@ public class StateGeneratorTest {
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
 
     // Create generator
-    final BlockTree blockTree =
-        BlockTree.builder()
-            .rootBlock(rootBlockAndState.getBlock())
+    final HashTree blockTree =
+        HashTree.builder()
+            .rootHash(rootBlockAndState.getRoot())
             .blocks(descendantBlocks)
             .blocks(unconnectedBlocks)
             .build();
+    final BlockProvider blockProvider = BlockProviderFactory.fromList(descendantBlocks);
     final StateGenerator generator =
         supplyAllKnownStates
-            ? StateGenerator.create(blockTree, rootBlockAndState.getState(), expectedResult)
-            : StateGenerator.create(blockTree, rootBlockAndState.getState());
+            ? StateGenerator.create(
+                blockTree, rootBlockAndState, blockProvider, expectedResult, 1000, cacheSize)
+            : StateGenerator.create(
+                blockTree,
+                rootBlockAndState,
+                blockProvider,
+                Collections.emptyMap(),
+                1000,
+                cacheSize);
 
     // Regenerate all states and collect results
     final List<StateAndBlockRoot> results = new ArrayList<>();
-    generator.regenerateAllStates(
-        (root, state) -> results.add(new StateAndBlockRoot(root, state)), cacheSize);
+    generator
+        .regenerateAllStates((root, state) -> results.add(new StateAndBlockRoot(root, state)))
+        .join();
 
     // Verify results
     final Map<Bytes32, BeaconState> resultMap =
@@ -244,12 +258,17 @@ public class StateGeneratorTest {
       }
     }
 
-    // Test generating each expected state 1 by 1
-    for (SignedBlockAndState descendant : descendantBlocksAndStates) {
-      final BeaconState stateResult = generator.regenerateStateForBlock(descendant.getRoot());
-      assertThat(stateResult)
-          .isEqualToIgnoringGivenFields(
-              descendant.getState(), "transitionCaches", "childrenViewCache", "backingNode");
+    try {
+      // Test generating each expected state 1 by 1
+      for (SignedBlockAndState descendant : descendantBlocksAndStates) {
+        final BeaconState stateResult =
+            generator.regenerateStateForBlock(descendant.getRoot()).get();
+        assertThat(stateResult)
+            .isEqualToIgnoringGivenFields(
+                descendant.getState(), "transitionCaches", "childrenViewCache", "backingNode");
+      }
+    } catch (ExecutionException | InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
 
