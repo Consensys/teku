@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -55,6 +56,10 @@ public class Utils {
                 .map(Utils::toByteBuf)
                 .flatMap(b -> Utils.slice(b, -2).stream())
                 .collect(Collectors.toList()),
+            shiftedSlices(1, chunks),
+            shiftedSlices(2, chunks),
+            shiftedSlices(-1, chunks),
+            shiftedSlices(-2, chunks),
             Utils.slice(toByteBuf(chunks), totalLen / 3, 2 * totalLen / 3));
 
     List<List<ByteBuf>> ret =
@@ -74,6 +79,19 @@ public class Utils {
         .collect(Collectors.toList());
   }
 
+  public static List<ByteBuf> shiftedSlices(int shift, Bytes... chunks) {
+    AtomicInteger sum = new AtomicInteger(0);
+    IntStream pos = IntStream
+        .concat(IntStream.of(0), Arrays.stream(chunks).mapToInt(Bytes::size).map(sum::addAndGet));
+    if (shift > 0) {
+      pos = pos.limit(chunks.length);
+    } else {
+      pos = pos.skip(1);
+    }
+    pos = pos.map(p -> p + shift).map(p -> Math.max(p, 0));
+    return slice(toByteBuf(chunks), pos.toArray());
+  }
+
   public static List<ByteBuf> slice(ByteBuf src, int... pos) {
     int[] pos1 =
         Arrays.stream(pos)
@@ -81,8 +99,8 @@ public class Utils {
             .map(i -> max(0, min(i, src.readableBytes())))
             .toArray();
     return Streams.zip(
-            IntStream.concat(IntStream.of(0), Arrays.stream(pos1)).boxed(),
-            IntStream.concat(Arrays.stream(pos1), IntStream.of(src.readableBytes())).boxed(),
+        IntStream.concat(IntStream.of(0), Arrays.stream(pos1)).boxed(),
+        IntStream.concat(Arrays.stream(pos1), IntStream.of(src.readableBytes())).boxed(),
             Pair::of)
         .map(rng -> Pair.of(rng.getLeft(), rng.getRight() - rng.getLeft()))
         .map(il -> src.slice(il.getLeft(), il.getRight()).copy())
