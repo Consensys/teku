@@ -21,6 +21,7 @@ import io.libp2p.core.P2PChannel;
 import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolDescriptor;
+import io.libp2p.etc.util.netty.mux.RemoteWriteClosed;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -188,8 +189,10 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-      rpcRequestHandler.complete(nodeId, rpcStream);
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+      if (evt instanceof RemoteWriteClosed) {
+        rpcRequestHandler.complete(nodeId, rpcStream);
+      }
     }
 
     private void close() {

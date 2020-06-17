@@ -40,11 +40,6 @@ public class RpcResponseDecoder<T> {
     this.encoding = encoding;
   }
 
-  //  protected RpcResponseDecoder(final Class<T> responseType, final RpcEncoding encoding) {
-  //    this.payloadDecoder = encoding.createDecoder(responseType);
-  //    this.errorDecoder = encoding.createDecoder(String.class);
-  //  }
-
   public List<T> decodeNextResponses(final ByteBuf data) throws RpcException {
     return decodeNextResponses(data, Optional.empty());
   }
