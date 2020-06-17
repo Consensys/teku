@@ -71,7 +71,7 @@ public class RpcResponseDecoder<T> {
       throws RpcException {
     firstByteListener.ifPresent(FirstByteReceivedListener::onFirstByteReceived);
 
-    if (data.readableBytes() < 1) {
+    if (!data.isReadable()) {
       return Optional.empty();
     }
 
