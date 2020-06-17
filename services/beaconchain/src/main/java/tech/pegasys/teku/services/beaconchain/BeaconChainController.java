@@ -139,7 +139,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile UnsignedLong onTickSlotStart;
   private volatile UnsignedLong onTickSlotAttestation;
   private volatile UnsignedLong onTickSlotAggregate;
-  private final long oneThirdSlotSeconds = SECONDS_PER_SLOT / 3;
+  private final UnsignedLong oneThirdSlotSeconds = UnsignedLong.valueOf(SECONDS_PER_SLOT / 3);
 
   private SyncStateTracker syncStateTracker;
 
@@ -540,24 +540,49 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final UnsignedLong epoch = compute_epoch_at_slot(nodeSlot.getValue());
     final UnsignedLong nodeSlotStartTime =
         ForkChoiceUtil.getSlotStartTime(nodeSlot.getValue(), genesisTime);
-    if (onTickSlotStart == null || calculatedSlot.compareTo(onTickSlotStart) > 0) {
-      onTickSlotStart = nodeSlot.getValue();
+    if (isSlotStartDue(calculatedSlot)) {
       processSlotStart(epoch);
     }
-
-    if ((onTickSlotAttestation == null || calculatedSlot.compareTo(onTickSlotAttestation) > 0)
-        && currentTime.compareTo(nodeSlotStartTime.plus(UnsignedLong.valueOf(oneThirdSlotSeconds)))
-            >= 0) {
-      onTickSlotAttestation = nodeSlot.getValue();
+    if (isSlotAttestationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
       processSlotAttestation(epoch);
     }
-    if ((onTickSlotAggregate == null || calculatedSlot.compareTo(onTickSlotAggregate) > 0)
-        && currentTime.compareTo(
-                nodeSlotStartTime.plus(UnsignedLong.valueOf(oneThirdSlotSeconds * 2)))
-            >= 0) {
-      onTickSlotAggregate = nodeSlot.getValue();
+    if (isSlotAggregationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
       processSlotAggregate();
     }
+  }
+
+  private boolean isProcessingDueForSlot(
+      final UnsignedLong calculatedSlot, final UnsignedLong currentPosition) {
+    return currentPosition == null || calculatedSlot.compareTo(currentPosition) > 0;
+  }
+
+  private boolean isTimeReached(final UnsignedLong currentTime, final UnsignedLong earliestTime) {
+    return currentTime.compareTo(earliestTime) >= 0;
+  }
+
+  private boolean isSlotStartDue(final UnsignedLong calculatedSlot) {
+    return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
+  }
+
+  // Attestations are due 1/3 of the way through the slots time period
+  private boolean isSlotAttestationDue(
+      final UnsignedLong calculatedSlot,
+      final UnsignedLong currentTime,
+      final UnsignedLong nodeSlotStartTime) {
+    final UnsignedLong earliestTime = nodeSlotStartTime.plus(oneThirdSlotSeconds);
+    return isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation)
+        && isTimeReached(currentTime, earliestTime);
+  }
+
+  // Aggregations are due 2/3 of the way through the slots time period
+  private boolean isSlotAggregationDue(
+      final UnsignedLong calculatedSlot,
+      final UnsignedLong currentTime,
+      final UnsignedLong nodeSlotStartTime) {
+    final UnsignedLong earliestTime =
+        nodeSlotStartTime.plus(oneThirdSlotSeconds).plus(oneThirdSlotSeconds);
+    return isProcessingDueForSlot(calculatedSlot, onTickSlotAggregate)
+        && isTimeReached(currentTime, earliestTime);
   }
 
   public boolean isNextSlotDue(final UnsignedLong currentTime) {
@@ -569,6 +594,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void processSlotStart(final UnsignedLong nodeEpoch) {
+    onTickSlotStart = nodeSlot.getValue();
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
       EVENT_LOG.epochEvent(
           nodeEpoch,
@@ -580,6 +606,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void processSlotAttestation(final UnsignedLong nodeEpoch) {
+    onTickSlotAttestation = nodeSlot.getValue();
     Bytes32 headBlockRoot = this.forkChoice.processHead();
     EVENT_LOG.slotEvent(
         nodeSlot.getValue(),
@@ -593,6 +620,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void processSlotAggregate() {
+    onTickSlotAggregate = nodeSlot.getValue();
     this.eventBus.post(new BroadcastAggregatesEvent(nodeSlot.getValue()));
     nodeSlot.inc();
   }
