@@ -15,52 +15,52 @@ package tech.pegasys.teku.pow;
 
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
+import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.Cancellable;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth1StatusLogger {
+  private static final Logger LOG = LogManager.getLogger();
   private static final int LOG_INTERVAL = 30000;
-  private final AtomicBoolean timerActive = new AtomicBoolean(false);
-  private Instant startInstant;
-  private ScheduledExecutorService executor;
-  private ScheduledFuture<?> scheduledFuture;
 
-  private void start() {
-    this.startInstant = Instant.now();
-    this.timerActive.set(true);
-    this.executor = Executors.newScheduledThreadPool(1);
-    scheduledFuture =
-        executor.scheduleAtFixedRate(
-            () ->
-                STATUS_LOG.eth1ServiceDown(
-                    Duration.between(startInstant, Instant.now()).getSeconds()),
-            LOG_INTERVAL,
-            LOG_INTERVAL,
-            TimeUnit.MILLISECONDS);
-  }
+  private final AsyncRunner asyncRunner;
+  private final TimeProvider timeProvider;
 
-  private void stop() {
-    this.scheduledFuture.isCancelled();
-    this.executor.shutdownNow();
-    this.executor = null;
-    this.timerActive.set(false);
-    this.startInstant = null;
-  }
+  private Optional<Cancellable> activeReporter = Optional.empty();
 
-  synchronized void fail() {
-    if (!this.timerActive.get()) {
-      start();
-    }
+  public Eth1StatusLogger(final AsyncRunner asyncRunner, final TimeProvider timeProvider) {
+    this.asyncRunner = asyncRunner;
+    this.timeProvider = timeProvider;
   }
 
   synchronized void success() {
-    if (this.timerActive.get()) {
-      stop();
+    activeReporter.ifPresent(
+        reporter -> {
+          reporter.cancel();
+          activeReporter = Optional.empty();
+        });
+  }
+
+  synchronized void fail() {
+    if (activeReporter.isEmpty()) {
+      final UnsignedLong outageStartInSeconds = timeProvider.getTimeInSeconds();
+      final Cancellable reporter =
+          asyncRunner.runWithFixedDelay(
+              () -> reportOutage(outageStartInSeconds),
+              LOG_INTERVAL,
+              TimeUnit.MILLISECONDS,
+              error -> LOG.error("Failed to check ETH1 status", error));
+      activeReporter = Optional.of(reporter);
     }
+  }
+
+  private void reportOutage(final UnsignedLong outageStartInSeconds) {
+    STATUS_LOG.eth1ServiceDown(
+        timeProvider.getTimeInSeconds().minus(outageStartInSeconds).longValue());
   }
 }

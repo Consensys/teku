@@ -35,10 +35,8 @@ class Eth1HeadTrackerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
   private final HeadUpdatedSubscriber subscriber = mock(HeadUpdatedSubscriber.class);
-  private final Eth1StatusLogger eth1StatusLogger = mock(Eth1StatusLogger.class);
 
-  private final Eth1HeadTracker tracker =
-      new Eth1HeadTracker(asyncRunner, eth1Provider, eth1StatusLogger);
+  private final Eth1HeadTracker tracker = new Eth1HeadTracker(asyncRunner, eth1Provider);
 
   @BeforeAll
   static void setConstants() {

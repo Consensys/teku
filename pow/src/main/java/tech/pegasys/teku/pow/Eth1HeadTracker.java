@@ -33,18 +33,13 @@ public class Eth1HeadTracker {
   private final AsyncRunner asyncRunner;
   private final Eth1Provider eth1Provider;
   private Optional<UnsignedLong> headAtFollowDistance = Optional.empty();
-  private final Eth1StatusLogger eth1StatusLogger;
   private final AtomicBoolean reachedHead = new AtomicBoolean(false);
 
   private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.create(true);
 
-  public Eth1HeadTracker(
-      final AsyncRunner asyncRunner,
-      final Eth1Provider eth1Provider,
-      final Eth1StatusLogger eth1StatusLogger) {
+  public Eth1HeadTracker(final AsyncRunner asyncRunner, final Eth1Provider eth1Provider) {
     this.asyncRunner = asyncRunner;
     this.eth1Provider = eth1Provider;
-    this.eth1StatusLogger = eth1StatusLogger;
   }
 
   public void start() {
@@ -64,7 +59,6 @@ public class Eth1HeadTracker {
         .exceptionally(
             error -> {
               LOG.debug("Failed to get latest ETH1 chain head. Will retry.", error);
-              eth1StatusLogger.fail();
               return null;
             })
         .always(

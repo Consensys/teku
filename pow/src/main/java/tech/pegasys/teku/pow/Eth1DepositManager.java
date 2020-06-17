@@ -39,7 +39,6 @@ public class Eth1DepositManager {
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
-  private final Eth1StatusLogger eth1StatusLogger;
 
   public Eth1DepositManager(
       final Eth1Provider eth1Provider,
@@ -47,15 +46,13 @@ public class Eth1DepositManager {
       final Eth1EventsChannel eth1EventsChannel,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
       final DepositProcessingController depositProcessingController,
-      final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder,
-      final Eth1StatusLogger eth1StatusLogger) {
+      final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder) {
     this.eth1Provider = eth1Provider;
     this.asyncRunner = asyncRunner;
     this.eth1EventsChannel = eth1EventsChannel;
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
-    this.eth1StatusLogger = eth1StatusLogger;
   }
 
   public void start() {
@@ -152,7 +149,6 @@ public class Eth1DepositManager {
                   err.getMessage(),
                   Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
                   err);
-              eth1StatusLogger.fail();
 
               return asyncRunner
                   .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
