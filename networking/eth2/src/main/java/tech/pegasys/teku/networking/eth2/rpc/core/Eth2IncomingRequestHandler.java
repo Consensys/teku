@@ -106,8 +106,9 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
             (__) -> {
               if (!requestHandled.get()) {
                 LOG.debug(
-                    "Failed to receive incoming request data within {} sec. Close stream.",
-                    timeout.getSeconds());
+                    "Failed to receive incoming request data within {} sec for method {}. Close stream.",
+                    timeout.getSeconds(),
+                    method);
                 stream.close().reportExceptions();
               }
             })
