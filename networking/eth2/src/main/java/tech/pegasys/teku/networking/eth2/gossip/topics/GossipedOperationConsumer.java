@@ -11,11 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.blockimport;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+public interface GossipedOperationConsumer<T> {
+  void forward(T operation);
 
-public interface VerifiedBlockAttestationsListener {
-  void onAttestationsFromBlock(SSZList<Attestation> attestations);
+  GossipedOperationConsumer<?> NOOP = (__) -> {};
+
+  @SuppressWarnings("unchecked")
+  static <T> GossipedOperationConsumer<T> noop() {
+    return (GossipedOperationConsumer<T>) NOOP;
+  }
 }

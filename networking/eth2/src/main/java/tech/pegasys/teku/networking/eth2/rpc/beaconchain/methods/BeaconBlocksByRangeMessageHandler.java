@@ -17,6 +17,8 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
+import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.min;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -27,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -65,6 +66,10 @@ public class BeaconBlocksByRangeMessageHandler
       callback.completeWithErrorResponse(INVALID_STEP);
       return;
     }
+    // TODO: Go to protoarray and get the block roots for the requested range
+    // We want to get them all at once because then they will be consistent to a fork
+    // and it's more efficient to collect them backwards from protoarray.
+    // Then we just load and send the blocks in forward order by root.
     sendMatchingBlocks(message, callback)
         .finish(
             callback::completeSuccessfully,
@@ -89,9 +94,9 @@ public class BeaconBlocksByRangeMessageHandler
       final ResponseCallback<SignedBeaconBlock> callback) {
     Optional<Bytes32> maybeBestRoot = combinedChainDataClient.getBestBlockRoot();
     return maybeBestRoot
-        .map(combinedChainDataClient::getStateByBlockRoot)
+        .map(combinedChainDataClient::getBlockByBlockRoot)
         .flatMap(CompletableFuture::join)
-        .map(BeaconState::getSlot)
+        .map(SignedBeaconBlock::getSlot)
         .map(slot -> sendNextBlock(new RequestState(message, slot, maybeBestRoot.get(), callback)))
         .orElseGet(() -> completedFuture(null));
   }
@@ -133,7 +138,7 @@ public class BeaconBlocksByRangeMessageHandler
         requestState.currentSlot, requestState.headBlockRoot);
   }
 
-  private static class RequestState {
+  static class RequestState {
     private final UnsignedLong headSlot;
     private final ResponseCallback<SignedBeaconBlock> callback;
     private final Bytes32 headBlockRoot;
@@ -150,7 +155,7 @@ public class BeaconBlocksByRangeMessageHandler
       this.headBlockRoot = headBlockRoot;
       // Minus 1 to account for sending the block at startSlot.
       // We only decrement this when moving to the next slot but we're already at the first slot
-      this.remainingBlocks = message.getCount().minus(ONE);
+      this.remainingBlocks = min(message.getCount(), MAX_BLOCK_BY_RANGE_REQUEST_SIZE).minus(ONE);
       this.step = message.getStep();
       this.headSlot = headSlot;
       this.callback = callback;

@@ -14,8 +14,10 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VoluntaryExitTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -30,9 +32,11 @@ public class VoluntaryExitGossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final VoluntaryExitValidator voluntaryExitValidator) {
+      final VoluntaryExitValidator voluntaryExitValidator,
+      final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
     final VoluntaryExitTopicHandler topicHandler =
-        new VoluntaryExitTopicHandler(gossipEncoding, forkInfo, voluntaryExitValidator);
+        new VoluntaryExitTopicHandler(
+            gossipEncoding, forkInfo, voluntaryExitValidator, gossipedVoluntaryExitConsumer);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

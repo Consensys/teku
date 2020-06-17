@@ -60,6 +60,10 @@ public class ForkChoiceUtil {
     return currentTime.minus(genesisTime).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
+  public static UnsignedLong getSlotStartTime(UnsignedLong slotNumber, UnsignedLong genesisTime) {
+    return genesisTime.plus(slotNumber.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+  }
+
   public static UnsignedLong get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
     return UnsignedLong.valueOf(GENESIS_SLOT).plus(get_slots_since_genesis(store, useUnixTime));
   }
@@ -82,25 +86,15 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
-  private static Optional<Bytes32> get_ancestor(
+  public static Optional<Bytes32> get_ancestor(
       ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UnsignedLong slot) {
-    return forkChoiceStrategy
-        .blockSlot(root)
-        .flatMap(
-            blockSlot -> {
-              if (blockSlot.compareTo(slot) > 0) {
-                return get_ancestor(
-                    forkChoiceStrategy,
-                    forkChoiceStrategy.blockParentRoot(root).orElseThrow(),
-                    slot);
-              } else if (blockSlot.equals(slot)) {
-                return Optional.of(root);
-              } else {
-                // root is older than the queried slot, thus a skip slot. Return earliest root prior
-                // to slot.
-                return Optional.of(root);
-              }
-            });
+    Bytes32 parentRoot = root;
+    Optional<UnsignedLong> blockSlot = forkChoiceStrategy.blockSlot(root);
+    while (blockSlot.isPresent() && blockSlot.get().compareTo(slot) > 0) {
+      parentRoot = forkChoiceStrategy.blockParentRoot(parentRoot).orElseThrow();
+      blockSlot = forkChoiceStrategy.blockSlot(parentRoot);
+    }
+    return blockSlot.isPresent() ? Optional.of(parentRoot) : Optional.empty();
   }
 
   /*

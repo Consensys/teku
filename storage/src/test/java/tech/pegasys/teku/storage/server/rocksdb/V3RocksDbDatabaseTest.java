@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.store.StoreFactory;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -39,7 +40,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
   @Override
   protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
     final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
-    return RocksDbDatabase.createV3(config, storageMode);
+    return RocksDbDatabase.createV3(new StubMetricsSystem(), config, storageMode);
   }
 
   @Test
@@ -86,7 +87,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
     // Setup database
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = StoreFactory.getForkChoiceStore(genesis.getState());
+    store = StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesis.getState());
     database.storeGenesis(store);
 
     final Set<SignedBlockAndState> allBlocksAndStates =
@@ -136,7 +137,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
     // Setup database
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = StoreFactory.getForkChoiceStore(genesis.getState());
+    store = StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesis.getState());
     database.storeGenesis(store);
 
     add(chain.streamBlocksAndStates().collect(Collectors.toSet()));

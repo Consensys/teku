@@ -14,6 +14,7 @@
 package tech.pegasys.teku.util.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.util.async.SafeFutureTest.assertExceptionallyCompletedWith;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,5 +96,30 @@ public class DelayedExecutorAsyncRunnerTest {
 
     verify(action, never()).get();
     assertExceptionallyCompletedWith(result, exception);
+  }
+
+  @Test
+  void runAsyc_shouldCompleteExceptionallyWhenSupplierThrowsException() {
+    final RuntimeException exception = new RuntimeException("My bad...");
+    final AtomicReference<Throwable> executorException = new AtomicReference<>();
+    // Real executors use a different thread so exceptions don't propagate back out of execute
+    final Executor executor =
+        action -> {
+          try {
+            action.run();
+          } catch (final Throwable t) {
+            executorException.set(t);
+          }
+        };
+    final Supplier<SafeFuture<String>> action =
+        () -> {
+          throw exception;
+        };
+
+    final SafeFuture<String> result = asyncRunner.runAsync(action, executor);
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::join).hasRootCause(exception);
+    assertThat(executorException).hasValue(null);
   }
 }

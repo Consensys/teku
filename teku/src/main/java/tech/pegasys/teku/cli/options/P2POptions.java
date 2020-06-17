@@ -24,7 +24,7 @@ public class P2POptions {
   @Option(
       names = {"--p2p-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Enables peer to peer",
+      description = "Enables P2P",
       fallbackValue = "true",
       arity = "0..1")
   private boolean p2pEnabled = true;
@@ -32,14 +32,14 @@ public class P2POptions {
   @Option(
       names = {"--p2p-interface"},
       paramLabel = "<NETWORK>",
-      description = "Peer to peer network interface",
+      description = "P2P network interface",
       arity = "1")
   private String p2pInterface = "0.0.0.0";
 
   @Option(
       names = {"--p2p-port"},
       paramLabel = "<INTEGER>",
-      description = "Peer to peer port",
+      description = "P2P port",
       arity = "1")
   private int p2pPort = 9000;
 
@@ -54,7 +54,7 @@ public class P2POptions {
   @Option(
       names = {"--p2p-discovery-bootnodes"},
       paramLabel = "<enode://id@host:port>",
-      description = "ENR of the bootnode",
+      description = "List of ENRs of the bootnodes",
       split = ",",
       arity = "0..*")
   private List<String> p2pDiscoveryBootnodes = null;
@@ -62,14 +62,14 @@ public class P2POptions {
   @Option(
       names = {"--p2p-advertised-ip"},
       paramLabel = "<NETWORK>",
-      description = "Peer to peer advertised ip",
+      description = "P2P advertised IP",
       arity = "1")
   private String p2pAdvertisedIp;
 
   @Option(
       names = {"--p2p-advertised-port"},
       paramLabel = "<INTEGER>",
-      description = "Peer to peer advertised port",
+      description = "P2P advertised port",
       arity = "1")
   private Integer p2pAdvertisedPort;
 
