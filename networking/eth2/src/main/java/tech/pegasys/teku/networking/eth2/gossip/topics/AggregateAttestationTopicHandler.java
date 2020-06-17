@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -21,8 +22,8 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
-import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class AggregateAttestationTopicHandler implements Eth2TopicHandler<SignedAggregateAndProof> {
@@ -32,13 +33,13 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
   private final SignedAggregateAndProofValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final GossipedAttestationConsumer gossipedAttestationConsumer;
+  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
 
   public AggregateAttestationTopicHandler(
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final SignedAggregateAndProofValidator validator,
-      final GossipedAttestationConsumer gossipedAttestationConsumer) {
+      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
@@ -46,33 +47,35 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
   }
 
   @Override
-  public boolean handleMessage(final Bytes bytes) {
+  public ValidationResult handleMessage(final Bytes bytes) {
     try {
       ValidateableAttestation attestation =
-          ValidateableAttestation.fromAggregate(deserialize(bytes));
-      final ValidationResult validationResult = validateData(attestation);
-      switch (validationResult) {
-        case INVALID:
+          ValidateableAttestation.fromSignedAggregate(deserialize(bytes));
+      final InternalValidationResult internalValidationResult = validateData(attestation);
+      switch (internalValidationResult) {
+        case REJECT:
+        case IGNORE:
           LOG.trace("Received invalid message for topic: {}", this::getTopic);
-          return false;
-        case SAVED_FOR_FUTURE:
+          break;
+        case SAVE_FOR_FUTURE:
           LOG.trace("Deferring message for topic: {}", this::getTopic);
-          gossipedAttestationConsumer.accept(attestation);
-          return false;
-        case VALID:
+          gossipedAttestationConsumer.forward(attestation);
+          break;
+        case ACCEPT:
           attestation.markGossiped();
-          gossipedAttestationConsumer.accept(attestation);
-          return true;
+          gossipedAttestationConsumer.forward(attestation);
+          break;
         default:
           throw new UnsupportedOperationException(
-              "Unexpected validation result: " + validationResult);
+              "Unexpected validation result: " + internalValidationResult);
       }
+      return internalValidationResult.getGossipSubValidationResult();
     } catch (DecodingException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
-      return false;
+      return ValidationResult.Invalid;
     } catch (Throwable e) {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
-      return false;
+      return ValidationResult.Invalid;
     }
   }
 
@@ -96,7 +99,8 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
     return forkDigest;
   }
 
-  protected ValidationResult validateData(final ValidateableAttestation validateableAttestation) {
+  protected InternalValidationResult validateData(
+      final ValidateableAttestation validateableAttestation) {
     return validator.validate(validateableAttestation);
   }
 }

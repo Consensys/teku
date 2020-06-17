@@ -24,25 +24,24 @@ import io.libp2p.core.PeerId;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetPeersTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
 
-  @SuppressWarnings("unchecked")
-  private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
+  private final Eth2Network eth2Network = mock(Eth2Network.class);
 
   @Test
   public void shouldReturnArrayOfPeersIfPresent() throws Exception {
-    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    final NetworkDataProvider network = new NetworkDataProvider(eth2Network);
     final GetPeers handler = new GetPeers(network, jsonProvider);
-    final Peer peer1 = mock(Peer.class);
-    final Peer peer2 = mock(Peer.class);
+    final Eth2Peer peer1 = mock(Eth2Peer.class);
+    final Eth2Peer peer2 = mock(Eth2Peer.class);
     final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
     final PeerId peerId2 = new PeerId(PeerId.random().getBytes());
     final NodeId nodeId1 = new LibP2PNodeId(peerId1);
@@ -50,7 +49,7 @@ public class GetPeersTest {
 
     when(peer1.getId()).thenReturn(nodeId1);
     when(peer2.getId()).thenReturn(nodeId2);
-    when(p2pNetwork.streamPeers()).thenReturn(Stream.of(peer1, peer2));
+    when(eth2Network.streamPeers()).thenReturn(Stream.of(peer1, peer2));
 
     final String response =
         jsonProvider.objectToJSON(new String[] {peerId1.toBase58(), peerId2.toBase58()});
@@ -62,11 +61,11 @@ public class GetPeersTest {
 
   @Test
   public void shouldReturnEmptyPeersArrayIfNoneConnected() throws Exception {
-    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    final NetworkDataProvider network = new NetworkDataProvider(eth2Network);
     final GetPeers handler = new GetPeers(network, jsonProvider);
     final String response = jsonProvider.objectToJSON(new String[] {});
 
-    when(p2pNetwork.streamPeers()).thenReturn(Stream.empty());
+    when(eth2Network.streamPeers()).thenReturn(Stream.empty());
 
     handler.handle(context);
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);

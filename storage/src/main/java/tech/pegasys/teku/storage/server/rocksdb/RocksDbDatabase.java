@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.core.StateGenerator;
+import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -43,22 +46,32 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
 
+  private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
 
   private final RocksDbDao dao;
 
   public static Database createV3(
-      final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
+      final MetricsSystem metricsSystem,
+      final RocksDbConfiguration configuration,
+      final StateStorageMode stateStorageMode) {
     final RocksDbAccessor db = RocksDbInstanceFactory.create(configuration, V3Schema.class);
-    return createV3(db, stateStorageMode);
+    return createV3(metricsSystem, db, stateStorageMode);
   }
 
-  static Database createV3(final RocksDbAccessor db, final StateStorageMode stateStorageMode) {
+  static Database createV3(
+      final MetricsSystem metricsSystem,
+      final RocksDbAccessor db,
+      final StateStorageMode stateStorageMode) {
     final RocksDbDao dao = new V3RocksDbDao(db);
-    return new RocksDbDatabase(dao, stateStorageMode);
+    return new RocksDbDatabase(metricsSystem, dao, stateStorageMode);
   }
 
-  private RocksDbDatabase(final RocksDbDao dao, final StateStorageMode stateStorageMode) {
+  private RocksDbDatabase(
+      final MetricsSystem metricsSystem,
+      final RocksDbDao dao,
+      final StateStorageMode stateStorageMode) {
+    this.metricsSystem = metricsSystem;
     this.stateStorageMode = stateStorageMode;
     this.dao = dao;
   }
@@ -129,6 +142,7 @@ public class RocksDbDatabase implements Database {
 
     return Optional.of(
         StoreFactory.createByRegeneratingHotStates(
+            metricsSystem,
             UnsignedLong.valueOf(Instant.now().getEpochSecond()),
             genesisTime,
             justifiedCheckpoint,
@@ -201,22 +215,45 @@ public class RocksDbDatabase implements Database {
       updater.addHotBlocks(update.getHotBlocks());
       updater.addVotes(update.getVotes());
 
+      // Update finalized blocks and states
+      putFinalizedStates(updater, update.getFinalizedBlocks(), update.getFinalizedStates());
+      update.getFinalizedBlocks().values().forEach(updater::addFinalizedBlock);
+      update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
+
       // Delete data
       update.getDeletedCheckpointStates().forEach(updater::deleteCheckpointState);
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
 
-      update
-          .getFinalizedBlocksAndStates()
-          .forEach(
-              (root, blockAndState) -> {
-                if (update.getFinalizedCheckpoint().get().getRoot().equals(root)) {
-                  updater.setLatestFinalizedState(blockAndState.getState());
-                }
-                updater.addFinalizedBlock(blockAndState.getBlock());
-                putFinalizedState(updater, root, blockAndState.getState());
-              });
-
       updater.commit();
+    }
+  }
+
+  private void putFinalizedStates(
+      Updater updater,
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, BeaconState> finalizedStates) {
+    if (finalizedBlocks.isEmpty()) {
+      return;
+    }
+
+    switch (stateStorageMode) {
+      case ARCHIVE:
+        // Get previously finalized block to build on top of
+        final Bytes32 baseBlockRoot = dao.getFinalizedCheckpoint().get().getRoot();
+        final SignedBeaconBlock baseBlock = dao.getFinalizedBlock(baseBlockRoot).orElseThrow();
+        final BeaconState baseState = dao.getLatestFinalizedState().orElseThrow();
+
+        final BlockTree blockTree =
+            BlockTree.builder().rootBlock(baseBlock).blocks(finalizedBlocks.values()).build();
+        final StateGenerator stateGenerator =
+            StateGenerator.create(blockTree, baseState, finalizedStates);
+        stateGenerator.regenerateAllStates(updater::addFinalizedState);
+        break;
+      case PRUNE:
+        // Don't persist finalized state
+        break;
+      default:
+        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
     }
   }
 

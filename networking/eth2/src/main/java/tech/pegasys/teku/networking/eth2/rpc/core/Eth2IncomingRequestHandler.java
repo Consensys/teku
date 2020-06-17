@@ -27,6 +27,7 @@ import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.util.async.AsyncRunner;
 
 public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
@@ -92,6 +93,9 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
     try {
       requestHandled.set(true);
       localMessageHandler.onIncomingMessage(peer, request, callback);
+    } catch (final StreamClosedException e) {
+      LOG.trace("Stream closed before response sent for request " + method.getMultistreamId(), e);
+      callback.completeWithUnexpectedError(e);
     } catch (final Throwable t) {
       LOG.error("Unhandled error while processing request " + method.getMultistreamId(), t);
       callback.completeWithUnexpectedError(t);

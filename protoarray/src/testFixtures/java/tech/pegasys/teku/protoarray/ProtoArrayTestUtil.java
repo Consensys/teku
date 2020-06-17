@@ -13,18 +13,16 @@
 
 package tech.pegasys.teku.protoarray;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes32;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.store.StoreFactory;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class ProtoArrayTestUtil {
+  private static final TestStoreFactory STORE_FACTORY = new TestStoreFactory();
 
   // Gives a deterministic hash for a given integer
   public static Bytes32 getHash(int i) {
@@ -36,17 +34,9 @@ public class ProtoArrayTestUtil {
       UnsignedLong finalizedBlockSlot,
       UnsignedLong finalizedCheckpointEpoch,
       UnsignedLong justifiedCheckpointEpoch) {
-    UpdatableStore store =
-        StoreFactory.create(
-            UnsignedLong.ONE,
-            ZERO,
-            new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO),
-            new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO),
-            new Checkpoint(ONE, Bytes32.ZERO),
-            new HashMap<>(),
-            new HashMap<>(),
-            new HashMap<>(),
-            new HashMap<>());
+    MutableStore store = STORE_FACTORY.createEmptyStore();
+    store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
+    store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
     ProtoArrayForkChoiceStrategy forkChoice = ProtoArrayForkChoiceStrategy.create(store);
 
@@ -61,16 +51,7 @@ public class ProtoArrayTestUtil {
     return forkChoice;
   }
 
-  public static UpdatableStore createStoreToManipulateVotes() {
-    return StoreFactory.create(
-        UnsignedLong.ONE,
-        ZERO,
-        new Checkpoint(ZERO, Bytes32.ZERO),
-        new Checkpoint(ZERO, Bytes32.ZERO),
-        new Checkpoint(ONE, Bytes32.ZERO),
-        new HashMap<>(),
-        new HashMap<>(),
-        new HashMap<>(),
-        new HashMap<>());
+  public static MutableStore createStoreToManipulateVotes() {
+    return STORE_FACTORY.createMutableGenesisStore();
   }
 }

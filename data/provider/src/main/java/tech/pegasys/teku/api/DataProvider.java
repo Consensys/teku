@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.api;
 
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -29,7 +29,7 @@ public class DataProvider {
   public DataProvider(
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
-      final P2PNetwork<?> p2pNetwork,
+      final Eth2Network p2pNetwork,
       final SyncService syncService,
       final ValidatorApiChannel validatorApiChannel,
       final BlockImporter blockImporter) {

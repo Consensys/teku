@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -106,12 +107,13 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     block.getMessage().getBody().getAttestations().forEach(aggregatingAttestationPool::remove);
   }
 
-  public void onAttestation(final ValidateableAttestation attestation) {
+  public AttestationProcessingResult onAttestation(final ValidateableAttestation attestation) {
     if (pendingAttestations.contains(attestation)) {
-      return;
+      return AttestationProcessingResult.SAVED_FOR_FUTURE;
     }
 
-    switch (attestationProcessor.processAttestation(attestation)) {
+    final AttestationProcessingResult result = attestationProcessor.processAttestation(attestation);
+    switch (result.getStatus()) {
       case SUCCESSFUL:
         LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
         aggregatingAttestationPool.add(attestation);
@@ -133,6 +135,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       default:
         throw new UnsupportedOperationException("AttestationProcessingResult is unrecognizable");
     }
+    return result;
   }
 
   @Override

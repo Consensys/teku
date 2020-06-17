@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.storage.server;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.io.Files;
 import com.google.common.primitives.UnsignedLong;
@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreFactory;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -82,7 +83,8 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
+    store =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
     database.storeGenesis(store);
 
     // Shutdown and restart
@@ -90,7 +92,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     database = setupDatabase(tempDir.toFile(), storageMode);
 
     final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
-    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
+    assertStoresMatch(memoryStore, store);
   }
 
   @Test
@@ -111,7 +113,8 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
     database = setupDatabase(tempDir.toFile(), storageMode);
-    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
+    store =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
     database.storeGenesis(store);
 
     // Create finalized block at slot prior to epoch boundary
@@ -146,7 +149,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     database = setupDatabase(tempDir.toFile(), storageMode);
 
     final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
-    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
+    assertStoresMatch(memoryStore, store);
   }
 
   @Test

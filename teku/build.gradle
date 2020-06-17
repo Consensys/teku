@@ -16,6 +16,7 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':services:timer')
   implementation project(':storage')
+  implementation project(':storage:api')
   implementation project(':util')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
@@ -40,6 +41,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
   testImplementation testFixtures(project(':util'))
+  testImplementation testFixtures(project(':ethereum:datastructures'))
 
   testImplementation 'org.awaitility:awaitility'
 

@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.rocksdb;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -39,6 +40,6 @@ public class InMemoryV3RocksDbDatabaseTest extends V3RocksDbDatabaseTest {
               }
             });
 
-    return RocksDbDatabase.createV3(db, storageMode);
+    return RocksDbDatabase.createV3(new StubMetricsSystem(), db, storageMode);
   }
 }

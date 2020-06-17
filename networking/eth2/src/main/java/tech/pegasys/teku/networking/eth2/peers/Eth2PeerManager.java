@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -119,6 +120,10 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         eth2RpcPingInterval,
         eth2RpcOutstandingPingThreshold,
         eth2StatusUpdateInterval);
+  }
+
+  public MetadataMessage getMetadataMessage() {
+    return metadataMessagesFactory.createMetadataMessage();
   }
 
   private void setUpPeriodicTasksForPeer(Eth2Peer peer) {

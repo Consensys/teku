@@ -17,8 +17,18 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.IntFunction;
 
+/**
+ * Thread-safe int indexed cache
+ *
+ * <p>CAUTION: though the class is thread-safe it contains no synchronisation for performance
+ * reasons When accessed concurrently the cache may result in extra cache misses and extra backing
+ * array copying but this should be safe. In optimistic scenarios such overhead could be neglected
+ *
+ * <p>Modify this class carefully to not violate thread safety!
+ */
 public final class ArrayIntCache<V> implements IntCache<V> {
-  private V[] values;
+  private static final int DEFAULT_INITIAL_CACHE_SIZE = 16;
+  private volatile V[] values;
   private final int initSize;
 
   public ArrayIntCache() {
@@ -40,52 +50,60 @@ public final class ArrayIntCache<V> implements IntCache<V> {
     return (V[]) new Object[size];
   }
 
-  private void extend(int index) {
-    int newSize = values.length;
+  private V[] extend(int index) {
+    V[] valuesLocal = this.values;
+    int newSize = valuesLocal.length;
     if (index >= newSize) {
       while (index >= newSize) {
         newSize <<= 1;
       }
-      values = Arrays.copyOf(values, newSize);
+      V[] newValues = Arrays.copyOf(valuesLocal, newSize);
+      this.values = newValues;
+      return newValues;
     }
+    return valuesLocal;
   }
 
   @Override
   public V getInt(int key, IntFunction<V> fallback) {
-    V val = key >= values.length ? null : values[key];
+    V[] valuesLocal = this.values;
+    V val = key >= valuesLocal.length ? null : valuesLocal[key];
     if (val == null) {
       val = fallback.apply(key);
-      extend(key);
-      values[key] = val;
+      extend(key)[key] = val;
     }
     return val;
   }
 
   @Override
   public Optional<V> getCached(Integer key) {
-    return key >= values.length ? Optional.empty() : Optional.ofNullable(values[key]);
+    V[] valuesLocal = this.values;
+    return key >= valuesLocal.length ? Optional.empty() : Optional.ofNullable(valuesLocal[key]);
   }
 
   @Override
   public IntCache<V> copy() {
-    return new ArrayIntCache<>(Arrays.copyOf(values, values.length), initSize);
+    V[] valuesLocal = this.values;
+    return new ArrayIntCache<>(Arrays.copyOf(valuesLocal, valuesLocal.length), initSize);
   }
 
   @Override
   public IntCache<V> transfer() {
-    return copy();
+    IntCache<V> copy = copy();
+    this.values = createArray(DEFAULT_INITIAL_CACHE_SIZE);
+    return copy;
   }
 
   @Override
   public void invalidateWithNewValueInt(int key, V newValue) {
-    extend(key);
-    values[key] = newValue;
+    extend(key)[key] = newValue;
   }
 
   @Override
   public void invalidateInt(int key) {
-    if (key < values.length) {
-      values[key] = null;
+    V[] valuesLocal = this.values;
+    if (key < valuesLocal.length) {
+      valuesLocal[key] = null;
     }
   }
 

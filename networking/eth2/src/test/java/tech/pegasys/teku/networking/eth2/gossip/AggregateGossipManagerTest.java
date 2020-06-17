@@ -27,7 +27,7 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.AggregateAttestationTopicHandler;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -40,8 +40,10 @@ public class AggregateGossipManagerTest {
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
-  private final GossipedAttestationConsumer gossipedAttestationConsumer =
-      mock(GossipedAttestationConsumer.class);
+
+  @SuppressWarnings("unchecked")
+  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
+      mock(GossipedOperationConsumer.class);
 
   private AggregateGossipManager gossipManager;
 
@@ -63,7 +65,7 @@ public class AggregateGossipManagerTest {
   public void onNewAggregate() {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes serialized = gossipEncoding.encode(aggregate);
-    gossipManager.onNewAggregate(ValidateableAttestation.fromAggregate(aggregate));
+    gossipManager.onNewAggregate(ValidateableAttestation.fromSignedAggregate(aggregate));
 
     verify(topicChannel).gossip(serialized);
   }

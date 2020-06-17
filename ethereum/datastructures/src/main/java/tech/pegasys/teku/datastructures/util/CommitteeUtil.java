@@ -207,6 +207,11 @@ public class CommitteeUtil {
 
   private static List<Integer> compute_committee_shuffle(
       BeaconState state, List<Integer> indices, Bytes32 seed, int fromIndex, int toIndex) {
+    if (fromIndex < toIndex) {
+      int index_count = indices.size();
+      checkArgument(fromIndex < index_count, "CommitteeUtil.get_shuffled_index1");
+      checkArgument(toIndex <= index_count, "CommitteeUtil.get_shuffled_index1");
+    }
     return BeaconStateCache.getTransitionCaches(state)
         .getCommitteeShuffle()
         .get(seed, s -> shuffle_list(indices, s))

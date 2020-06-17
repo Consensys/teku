@@ -83,13 +83,13 @@ public class ValidatorDataProviderTest {
   @Test
   void getUnsignedBeaconBlockAtSlot_throwsWithoutSlotDefined() {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(null, null));
+        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(null, null, Optional.empty()));
   }
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldThrowWithoutRandaoDefined() {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ONE, null));
+        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ONE, null, Optional.empty()));
   }
 
   @Test
@@ -97,7 +97,7 @@ public class ValidatorDataProviderTest {
     when(combinedChainDataClient.getBestSlot()).thenReturn(ONE);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signature));
+        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signature, Optional.empty()));
   }
 
   @Test
@@ -106,17 +106,20 @@ public class ValidatorDataProviderTest {
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
-            () -> provider.getUnsignedBeaconBlockAtSlot(UnsignedLong.valueOf(10L), signature));
+            () ->
+                provider.getUnsignedBeaconBlockAtSlot(
+                    UnsignedLong.valueOf(10L), signature, Optional.empty()));
   }
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
     when(combinedChainDataClient.getBestSlot()).thenReturn(ZERO);
-    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal))
+    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockInternal)));
 
-    SafeFuture<Optional<BeaconBlock>> data = provider.getUnsignedBeaconBlockAtSlot(ONE, signature);
-    verify(validatorApiChannel).createUnsignedBlock(ONE, signatureInternal);
+    SafeFuture<Optional<BeaconBlock>> data =
+        provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty());
+    verify(validatorApiChannel).createUnsignedBlock(ONE, signatureInternal, Optional.empty());
     assertThat(data).isCompleted();
     assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(block);
   }

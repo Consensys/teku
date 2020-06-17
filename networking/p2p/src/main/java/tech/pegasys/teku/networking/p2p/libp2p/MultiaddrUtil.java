@@ -30,19 +30,28 @@ public class MultiaddrUtil {
     return fromInetSocketAddress(peer.getNodeAddress(), getNodeId(peer));
   }
 
-  public static Multiaddr fromInetSocketAddress(final InetSocketAddress address) {
+  public static Multiaddr fromDiscoveryPeerAsUdp(final DiscoveryPeer peer) {
+    return addPeerId(fromInetSocketAddress(peer.getNodeAddress(), "udp"), getNodeId(peer));
+  }
+
+  static Multiaddr fromInetSocketAddress(final InetSocketAddress address) {
+    return fromInetSocketAddress(address, "tcp");
+  }
+
+  static Multiaddr fromInetSocketAddress(final InetSocketAddress address, final String protocol) {
     final String addrString =
         String.format(
-            "/%s/%s/tcp/%d",
+            "/%s/%s/%s/%d",
             protocol(address.getAddress()),
             address.getAddress().getHostAddress(),
+            protocol,
             address.getPort());
     return Multiaddr.fromString(addrString);
   }
 
   public static Multiaddr fromInetSocketAddress(
       final InetSocketAddress address, final NodeId nodeId) {
-    return addPeerId(fromInetSocketAddress(address), nodeId);
+    return addPeerId(fromInetSocketAddress(address, "tcp"), nodeId);
   }
 
   private static Multiaddr addPeerId(final Multiaddr addr, final NodeId nodeId) {

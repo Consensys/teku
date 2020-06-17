@@ -81,6 +81,20 @@ public class DutyScheduler implements ValidatorTimingChannel {
     notifyDutyQueue(DutyQueue::onAttestationAggregationDue, slot);
   }
 
+  @Override
+  public void onBlockImportedForSlot(final UnsignedLong slot) {
+    // From an epoch x we can calculate duties for epoch's x and x+1 and importing more blocks from
+    // epoch x won't change those duties.
+    // However, importing a block from epoch x-1 will change the duties for x+1 (2 epochs after the
+    // block is imported) because it adds another randao reveal.
+    // So invalidate any duties for slot.
+    // They will be recalculated on the next slot event if required which avoids requesting duties
+    // too often if we're syncing a batch of blocks
+    final UnsignedLong firstInvalidatedEpoch =
+        compute_epoch_at_slot(slot).plus(UnsignedLong.valueOf(2));
+    removeEpochs(dutiesByEpoch.tailMap(firstInvalidatedEpoch, true));
+  }
+
   private DutyQueue requestDutiesForEpoch(final UnsignedLong epochNumber) {
     return new DutyQueue(epochDutiesScheduler.loadDutiesForEpoch(epochNumber));
   }
@@ -95,6 +109,10 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   private void removePriorEpochs(final UnsignedLong epochNumber) {
     final SortedMap<UnsignedLong, DutyQueue> toRemove = dutiesByEpoch.headMap(epochNumber);
+    removeEpochs(toRemove);
+  }
+
+  private void removeEpochs(final SortedMap<UnsignedLong, DutyQueue> toRemove) {
     toRemove.values().forEach(DutyQueue::cancel);
     toRemove.clear();
   }

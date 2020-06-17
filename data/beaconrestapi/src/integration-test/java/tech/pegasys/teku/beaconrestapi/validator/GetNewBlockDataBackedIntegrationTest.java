@@ -59,9 +59,9 @@ public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRest
     BeaconBlock block = dataStructureUtil.randomBeaconBlock(EIGHT);
     SafeFuture<Optional<BeaconBlock>> futureBlock = completedFuture(Optional.of(block));
 
-    when(validatorApiChannel.createUnsignedBlock(any(), any())).thenReturn(futureBlock);
+    when(validatorApiChannel.createUnsignedBlock(any(), any(), any())).thenReturn(futureBlock);
     Response response = getUnsignedBlock(EIGHT);
-    verify(validatorApiChannel).createUnsignedBlock(eq(EIGHT), any());
+    verify(validatorApiChannel).createUnsignedBlock(eq(EIGHT), any(), any());
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 

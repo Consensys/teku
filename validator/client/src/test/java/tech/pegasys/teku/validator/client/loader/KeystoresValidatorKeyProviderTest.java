@@ -17,7 +17,6 @@ import static java.nio.file.Files.createTempFile;
 import static java.nio.file.Files.writeString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.validator.client.loader.KeystoresValidatorKeyProvider.KEY_LENGTH;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -38,8 +37,7 @@ class KeystoresValidatorKeyProviderTest {
   private final KeystoresValidatorKeyProvider keystoresValidatorKeyProvider =
       new KeystoresValidatorKeyProvider();
   private static final Bytes BLS_PRIVATE_KEY =
-      Bytes.fromHexString(
-          "0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", KEY_LENGTH);
+      Bytes.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 48);
   private static final BLSKeyPair EXPECTED_BLS_KEY_PAIR =
       new BLSKeyPair(BLSSecretKey.fromBytes(BLS_PRIVATE_KEY));
 

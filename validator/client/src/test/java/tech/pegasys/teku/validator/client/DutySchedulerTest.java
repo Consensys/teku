@@ -62,8 +62,10 @@ class DutySchedulerTest {
       Set.of(VALIDATOR1_KEY, VALIDATOR2_KEY);
   private final Signer validator1Signer = mock(Signer.class);
   private final Signer validator2Signer = mock(Signer.class);
-  private final Validator validator1 = new Validator(VALIDATOR1_KEY, validator1Signer);
-  private final Validator validator2 = new Validator(VALIDATOR2_KEY, validator2Signer);
+  private final Validator validator1 =
+      new Validator(VALIDATOR1_KEY, validator1Signer, Optional.empty());
+  private final Validator validator2 =
+      new Validator(VALIDATOR2_KEY, validator2Signer, Optional.empty());
 
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
@@ -189,6 +191,27 @@ class DutySchedulerTest {
     // Re-requests epoch 2 and also requests epoch 3 as the new chain is far enough along for that
     verify(validatorApiChannel, times(2)).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
     verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(3), VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  public void shouldRefetchDutiesAfterBlockImportedFromTwoOrMoreEpochsBefore() {
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(5)));
+
+    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(5), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(6), VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+
+    dutyScheduler.onBlockImportedForSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(4)));
+
+    // Duties are invalidated but not yet re-requested as we might be importing a batch of blocks
+    verifyNoMoreInteractions(validatorApiChannel);
+
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(5)).plus(ONE));
+    // Re-requests epoch 6 which may have been changed by the new block
+    verify(validatorApiChannel, times(2)).getDuties(UnsignedLong.valueOf(6), VALIDATOR_KEYS);
+    // Epoch 5 is unchanged so not re-requested
     verifyNoMoreInteractions(validatorApiChannel);
   }
 

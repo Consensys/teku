@@ -23,9 +23,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedAttestationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
@@ -49,8 +54,13 @@ public class Eth2NetworkBuilder {
   private Eth2Config eth2Config;
   private EventBus eventBus;
   private RecentChainData recentChainData;
-  private GossipedAttestationConsumer gossipedAttestationConsumer;
+  private GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
+  private GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
+  private GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
+  private GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
   private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
+  private VerifiedBlockAttestationsSubscriptionProvider
+      verifiedBlockAttestationsSubscriptionProvider;
   private StorageQueryChannel historicalChainData;
   private MetricsSystem metricsSystem;
   private List<RpcMethod> rpcMethods = new ArrayList<>();
@@ -102,7 +112,11 @@ public class Eth2NetworkBuilder {
         gossipEncoding,
         attestationSubnetService,
         gossipedAttestationConsumer,
-        processedAttestationSubscriptionProvider);
+        gossipedAttesterSlashingConsumer,
+        gossipedProposerSlashingConsumer,
+        gossipedVoluntaryExitConsumer,
+        processedAttestationSubscriptionProvider,
+        verifiedBlockAttestationsSubscriptionProvider);
   }
 
   protected DiscoveryNetwork<?> buildNetwork() {
@@ -121,6 +135,10 @@ public class Eth2NetworkBuilder {
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
     assertNotNull("timeProvider", timeProvider);
+    assertNotNull("gossipedAttestationConsumer", gossipedAttestationConsumer);
+    assertNotNull("gossipedAttesterSlashingConsumer", gossipedAttesterSlashingConsumer);
+    assertNotNull("gossipedProposerSlashingConsumer", gossipedProposerSlashingConsumer);
+    assertNotNull("gossipedVoluntaryExitConsumer", gossipedVoluntaryExitConsumer);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
@@ -164,10 +182,40 @@ public class Eth2NetworkBuilder {
     return this;
   }
 
+  public Eth2NetworkBuilder verifiedBlockAttestationsProvider(
+      final VerifiedBlockAttestationsSubscriptionProvider
+          verifiedBlockAttestationsSubscriptionProvider) {
+    checkNotNull(verifiedBlockAttestationsSubscriptionProvider);
+    this.verifiedBlockAttestationsSubscriptionProvider =
+        verifiedBlockAttestationsSubscriptionProvider;
+    return this;
+  }
+
   public Eth2NetworkBuilder gossipedAttestationConsumer(
-      final GossipedAttestationConsumer gossipedAttestationConsumer) {
+      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     checkNotNull(gossipedAttestationConsumer);
     this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+    return this;
+  }
+
+  public Eth2NetworkBuilder gossipedAttesterSlashingConsumer(
+      final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
+    checkNotNull(gossipedAttesterSlashingConsumer);
+    this.gossipedAttesterSlashingConsumer = gossipedAttesterSlashingConsumer;
+    return this;
+  }
+
+  public Eth2NetworkBuilder gossipedProposerSlashingConsumer(
+      final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
+    checkNotNull(gossipedProposerSlashingConsumer);
+    this.gossipedProposerSlashingConsumer = gossipedProposerSlashingConsumer;
+    return this;
+  }
+
+  public Eth2NetworkBuilder gossipedVoluntaryExitConsumer(
+      final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
+    checkNotNull(gossipedVoluntaryExitConsumer);
+    this.gossipedVoluntaryExitConsumer = gossipedVoluntaryExitConsumer;
     return this;
   }
 

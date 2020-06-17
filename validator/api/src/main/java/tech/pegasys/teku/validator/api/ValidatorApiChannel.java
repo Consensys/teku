@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -36,7 +37,7 @@ public interface ValidatorApiChannel {
       UnsignedLong epoch, Collection<BLSPublicKey> publicKeys);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      UnsignedLong slot, BLSSignature randaoReveal);
+      UnsignedLong slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
   SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       UnsignedLong slot, int committeeIndex);

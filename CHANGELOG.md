@@ -5,6 +5,79 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
+ - Anyone using `/node/version` should switch to use
+   the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
+ - `--metrics-host-whitelist` CLI option will be renamed `--metrics-host-allowlist` (currently both are supported)
+ - `--rest-api-host-whitelist` CLI option will be renamed `--rest-api-host-allowlist` (currently both are supported)
+
+## 0.11.4
+
+### Breaking Changes
+
+- `teku validator generate` no longer sends ETH1 deposit transactions. It only generates BLS keys for validators.
+   The new `teku validator generate-and-register` subcommand can be used to generate and register validators in one step 
+
+### Additions and Improvements
+
+- Renamed `--metrics-host-whitelist` to `--metrics-host-allowlist` and `--rest-api-host-whitelist` to `--rest-api-host-allowlist`
+- Added `/v1/node/version` and `/v1/node/identity` REST endpoints. Anyone using `/node/version` should switch to use
+the new endpoint, as `/node/version` will be removed in a future release.
+- Added `--validators-graffiti="GRAFFITI"` command line option to allow graffiti to be used in block production.
+- The Teku version is now printed at startup
+- Eth1 deposits now load on startup from the local database, then sync to the eth1 provider once loading is complete.
+  A hidden flag has been added to disable this functionality if it causes any issues - `--Xeth1-deposits-from-storage-enabled=false`.
+  Local storage requirements will increase slightly due to the need to store each deposit block 
+  event from the eth1 provider so that it can be replayed during restarts.
+- Added a `teku debug db get-deposits` subcommand to load report the ETH1 deposits from the database. This is not intended for normal use but can be useful when debugging issues.
+- The directory structure created by `validator generate` has changed. All files are now generated in a single directory. 
+  Filename of withdrawal key is now named using the validator public key eg 814a1a6_validator.json 814a1a6_withdrawal.json
+- Validator voluntary exit gossip topics are now supported
+- Proposer slashing gossip topics are now supported
+- Attester slashing gossip topics are now supported
+- Added support for Gossipsub 1.1
+- Building from downloaded source packages rather than git checkout now works 
+- Memory requirements during non-finalized periods has been reduced, but further work is required in this area
+- REST API documentation is automatically published to https://pegasyseng.github.io/teku/ as soon as changes are merged 
+- A memory dump is now captured if Teku encounters and out of memory error. By default these are
+   written to the current work directory but an alternate location can be specified by setting the
+   environment variable `TEKU_OPTS=-XX:HeapDumpPath=/path`
+   This can be disabled by setting `TEKU_OPTS=-XX:-HeapDumpOnOutOfMemoryError` 
+- Treat attestations from verified blocks or produced in the validator as "seen" for gossip handling
+- Added metrics to report the active and live validators for the current and previous epochs
+   (`beacon_previous_live_validators`, `beacon_previous_active_validators`, `beacon_current_live_validators`, `beacon_current_active_validators`)
+- Added metrics to report on the in-memory store. Includes state cache hit/miss rates and the current number of states, blocks and checkpoint states held in the store.
+- Optimised decompression of points in BLS
+- Keystores generated with Teku are now compatible with Lighthouse
+- Added additional logging during start up to provide progress information while hot states are being regenerated
+- Integrated the new fork choice reference tests
+
+
+### Bug Fixes
+
+- Fixed `StackOverflowException` from fork choice `get_ancestor` method during long periods of non-finalization
+- Fixed issue where ETH1 events could be missed immediately after startup resulting in an incorrect genesis state being generated
+- Fixed issue where the beacon node was considered in-sync prior to finding any peers
+- Recalculate validator duties when a block is imported which may affect duty scheudling.
+   This occurs when blocks are delayed for more than epoch, for example due to a network outage
+- Block production no longer fails if the Eth1Data vote in the new block is the last required vote 
+  for that Eth1Data and the new Eth1Data allows inclusion of new deposits
+- `io.netty.handler.timeout.ReadTimeoutException` and `io.netty.channel.ExtendedClosedChannelException` are no longer reported at `ERROR` level
+- Fix `attestation is invalid` error messages caused by a race condition verifying signatures
+- Support zero-roundtrip multistream negotiations in libp2p
+- Fix missed assertion in fork choice which could lead to an `IndexOutOfBoundException` (not consensus affecting)
+- Clarified the "Minimum genesis time reached" message to be clearer that this only indicates that an
+   ETH1 block satisfying the time criteria for genesis has been found. 
+   Additional validators may still be required before the genesis state is known.
+- Fixed a number of error messages that were logged during Teku shutdown
+- Respect the optional `epoch` paramter to the `/beacon/validators` REST API endpoint
+- Fix "Command too long" error when running on Windows
+- Fixed issue where exceptions may be reported by the uncaught exception handler instead of reported back to the original caller.
+   This resulted in some RPC streams not being closed correctly.
+- Fixed execessive use of CPU regenerating states to map slots to block roots while servicing beacon block by root RPC requests.
+
+
+### Known Issues
+
 
 ## 0.11.3
 

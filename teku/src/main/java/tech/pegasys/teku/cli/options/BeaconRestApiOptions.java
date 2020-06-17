@@ -50,13 +50,12 @@ public class BeaconRestApiOptions {
   private String restApiInterface = "127.0.0.1";
 
   @Option(
-      names = {"--rest-api-host-whitelist"},
+      names = {"--rest-api-host-allowlist", "--rest-api-host-whitelist"},
       paramLabel = "<hostname>",
-      description =
-          "Comma separated list of hostnames to whitelist for access, or * to accept any host",
+      description = "Comma separated list of hostnames to allow, or * to allow any host",
       split = ",",
       arity = "0..*")
-  private final List<String> restApiHostWhitelist = Arrays.asList("127.0.0.1", "localhost");
+  private final List<String> restApiHostAllowlist = Arrays.asList("127.0.0.1", "localhost");
 
   public int getRestApiPort() {
     return restApiPort;
@@ -74,7 +73,7 @@ public class BeaconRestApiOptions {
     return restApiInterface;
   }
 
-  public List<String> getRestApiHostWhitelist() {
-    return restApiHostWhitelist;
+  public List<String> getRestApiHostAllowlist() {
+    return restApiHostAllowlist;
   }
 }

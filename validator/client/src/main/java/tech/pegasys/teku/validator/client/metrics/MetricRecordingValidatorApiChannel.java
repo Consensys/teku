@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -134,9 +135,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      final UnsignedLong slot, final BLSSignature randaoReveal) {
+      final UnsignedLong slot, final BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
     return countRequest(
-        delegate.createUnsignedBlock(slot, randaoReveal), unsignedBlockRequestsCounter);
+        delegate.createUnsignedBlock(slot, randaoReveal, graffiti), unsignedBlockRequestsCounter);
   }
 
   @Override

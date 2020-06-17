@@ -115,7 +115,7 @@ public class Constants {
   public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
   // Sync
-  public static UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
+  public static final UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
 
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
@@ -143,6 +143,7 @@ public class Constants {
   public static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   public static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
   public static final int ATTESTATION_RETENTION_EPOCHS = 2;
+  public static final int OPERATION_POOL_SIZE = 1000;
 
   // Teku Validator Client Specific
   public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
@@ -161,7 +162,7 @@ public class Constants {
   public static final int VALID_BLOCK_SET_SIZE = 1000;
   public static final int VALID_ATTESTATION_SET_SIZE = 1000;
   public static final int VALID_AGGREGATE_SET_SIZE = 1000;
-  public static final int VALID_VALIDATOR_SET_SIZE = 1000;
+  public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
   static {

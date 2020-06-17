@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -39,12 +40,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
-import tech.pegasys.teku.core.BlockAttestationDataValidator;
 import tech.pegasys.teku.core.BlockProposalUtil;
+import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
+import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -57,6 +65,7 @@ import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
@@ -123,6 +132,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile AttestationManager attestationManager;
   private volatile CombinedChainDataClient combinedChainDataClient;
   private volatile Eth1DataCache eth1DataCache;
+  private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
+  private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
+  private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+
+  private volatile UnsignedLong onTickSlotStart;
+  private volatile UnsignedLong onTickSlotAttestation;
+  private volatile UnsignedLong onTickSlotAggregate;
+  private final UnsignedLong oneThirdSlotSeconds = UnsignedLong.valueOf(SECONDS_PER_SLOT / 3);
 
   private SyncStateTracker syncStateTracker;
 
@@ -171,6 +188,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private SafeFuture<?> initialize() {
     return StorageBackedRecentChainData.create(
+            metricsSystem,
             asyncRunner,
             eventChannels.getPublisher(StorageUpdateChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
@@ -206,6 +224,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initCombinedChainDataClient();
     initMetrics();
     initAttestationPool();
+    initAttesterSlashingPool();
+    initProposerSlashingPool();
+    initVoluntaryExitPool();
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
@@ -215,6 +236,27 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncStateTracker();
     initValidatorApiHandler();
     initRestAPI();
+  }
+
+  private void initAttesterSlashingPool() {
+    LOG.debug("BeaconChainController.initAttesterSlashingPool()");
+    attesterSlashingPool =
+        new OperationPool<>(AttesterSlashing.class, new AttesterSlashingStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
+  }
+
+  private void initProposerSlashingPool() {
+    LOG.debug("BeaconChainController.initProposerSlashingPool()");
+    proposerSlashingPool =
+        new OperationPool<>(ProposerSlashing.class, new ProposerSlashingStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
+  }
+
+  private void initVoluntaryExitPool() {
+    LOG.debug("BeaconChainController.initVoluntaryExitPool()");
+    voluntaryExitPool =
+        new OperationPool<>(SignedVoluntaryExit.class, new VoluntaryExitStateTransitionValidator());
+    blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
   private void initCombinedChainDataClient() {
@@ -232,12 +274,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
     forkChoice = new ForkChoice(recentChainData, stateTransition);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, forkChoice);
   }
 
   public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
-    new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem);
+    eventChannels.subscribe(
+        SlotEventsChannel.class, new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem));
   }
 
   public void initDepositProvider() {
@@ -271,6 +313,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             new BlockProposalUtil(stateTransition),
             stateTransition,
             attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool,
             depositProvider,
             eth1DataCache,
             VersionProvider.getDefaultGraffiti());
@@ -353,9 +398,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
-              .gossipedAttestationConsumer(attestationManager::onAttestation)
+              .gossipedAttestationConsumer(
+                  attestation ->
+                      attestationManager
+                          .onAttestation(attestation)
+                          .ifInvalid(
+                              reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
+              .gossipedAttesterSlashingConsumer(attesterSlashingPool::add)
+              .gossipedProposerSlashingConsumer(proposerSlashingPool::add)
+              .gossipedVoluntaryExitConsumer(voluntaryExitPool::add)
               .processedAttestationSubscriptionProvider(
                   attestationManager::subscribeToProcessedAttestations)
+              .verifiedBlockAttestationsProvider(
+                  blockImporter::subscribeToVerifiedBlockAttestations)
               .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
@@ -382,7 +437,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool = new AggregatingAttestationPool(new BlockAttestationDataValidator());
+    attestationPool = new AggregatingAttestationPool(new AttestationDataStateTransitionValidator());
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
   }
 
@@ -464,15 +519,69 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     on_tick(transaction, currentTime);
     transaction.commit().join();
 
-    if (syncService.isSyncActive()) {
-      if (nextSlotDue) {
-        processSlotWhileSyncing();
-      }
+    if (nextSlotDue && syncService.isSyncActive()) {
+      processSlotWhileSyncing();
       return;
     }
-    if (nextSlotDue) {
-      processSlot();
+
+    final UnsignedLong genesisTime = recentChainData.getGenesisTime();
+    if (currentTime.compareTo(genesisTime) < 0) {
+      return;
     }
+    final UnsignedLong calculatedSlot = ForkChoiceUtil.getCurrentSlot(currentTime, genesisTime);
+
+    // tolerate 1 slot difference, not more
+    if (calculatedSlot.compareTo(nodeSlot.getValue().plus(ONE)) > 0) {
+      EVENT_LOG.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);
+      nodeSlot.setValue(calculatedSlot);
+    }
+
+    final UnsignedLong epoch = compute_epoch_at_slot(nodeSlot.getValue());
+    final UnsignedLong nodeSlotStartTime =
+        ForkChoiceUtil.getSlotStartTime(nodeSlot.getValue(), genesisTime);
+    if (isSlotStartDue(calculatedSlot)) {
+      processSlotStart(epoch);
+    }
+    if (isSlotAttestationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
+      processSlotAttestation(epoch);
+    }
+    if (isSlotAggregationDue(calculatedSlot, currentTime, nodeSlotStartTime)) {
+      processSlotAggregate();
+    }
+  }
+
+  private boolean isProcessingDueForSlot(
+      final UnsignedLong calculatedSlot, final UnsignedLong currentPosition) {
+    return currentPosition == null || calculatedSlot.compareTo(currentPosition) > 0;
+  }
+
+  private boolean isTimeReached(final UnsignedLong currentTime, final UnsignedLong earliestTime) {
+    return currentTime.compareTo(earliestTime) >= 0;
+  }
+
+  private boolean isSlotStartDue(final UnsignedLong calculatedSlot) {
+    return isProcessingDueForSlot(calculatedSlot, onTickSlotStart);
+  }
+
+  // Attestations are due 1/3 of the way through the slots time period
+  private boolean isSlotAttestationDue(
+      final UnsignedLong calculatedSlot,
+      final UnsignedLong currentTime,
+      final UnsignedLong nodeSlotStartTime) {
+    final UnsignedLong earliestTime = nodeSlotStartTime.plus(oneThirdSlotSeconds);
+    return isProcessingDueForSlot(calculatedSlot, onTickSlotAttestation)
+        && isTimeReached(currentTime, earliestTime);
+  }
+
+  // Aggregations are due 2/3 of the way through the slots time period
+  private boolean isSlotAggregationDue(
+      final UnsignedLong calculatedSlot,
+      final UnsignedLong currentTime,
+      final UnsignedLong nodeSlotStartTime) {
+    final UnsignedLong earliestTime =
+        nodeSlotStartTime.plus(oneThirdSlotSeconds).plus(oneThirdSlotSeconds);
+    return isProcessingDueForSlot(calculatedSlot, onTickSlotAggregate)
+        && isTimeReached(currentTime, earliestTime);
   }
 
   public boolean isNextSlotDue(final UnsignedLong currentTime) {
@@ -483,35 +592,36 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return currentTime.compareTo(nextSlotStartTime) >= 0;
   }
 
-  private void processSlot() {
-    try {
-      final UnsignedLong nodeEpoch = compute_epoch_at_slot(nodeSlot.getValue());
-      if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
-        EVENT_LOG.epochEvent(
-            nodeEpoch,
-            recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
-            recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-            recentChainData.getFinalizedRoot());
-      }
-
-      slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
-      Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-      Bytes32 headBlockRoot = this.forkChoice.processHead();
-      EVENT_LOG.slotEvent(
-          nodeSlot.getValue(),
-          recentChainData.getBestSlot(),
-          headBlockRoot,
+  private void processSlotStart(final UnsignedLong nodeEpoch) {
+    onTickSlotStart = nodeSlot.getValue();
+    if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
+      EVENT_LOG.epochEvent(
           nodeEpoch,
+          recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
           recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-          recentChainData.getFinalizedRoot(),
-          p2pNetwork.getPeerCount());
-      this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot.getValue()));
-      Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-      this.eventBus.post(new BroadcastAggregatesEvent(nodeSlot.getValue()));
-      nodeSlot.inc();
-    } catch (InterruptedException e) {
-      LOG.error("onTick: {}", e.toString(), e);
+          recentChainData.getFinalizedRoot());
     }
+    slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
+  }
+
+  private void processSlotAttestation(final UnsignedLong nodeEpoch) {
+    onTickSlotAttestation = nodeSlot.getValue();
+    Bytes32 headBlockRoot = this.forkChoice.processHead();
+    EVENT_LOG.slotEvent(
+        nodeSlot.getValue(),
+        recentChainData.getBestSlot(),
+        headBlockRoot,
+        nodeEpoch,
+        recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
+        recentChainData.getFinalizedRoot(),
+        p2pNetwork.getPeerCount());
+    this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot.getValue()));
+  }
+
+  private void processSlotAggregate() {
+    onTickSlotAggregate = nodeSlot.getValue();
+    this.eventBus.post(new BroadcastAggregatesEvent(nodeSlot.getValue()));
+    nodeSlot.inc();
   }
 
   private void processSlotWhileSyncing() {

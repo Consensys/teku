@@ -18,11 +18,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.INVALID;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.SAVED_FOR_FUTURE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.ValidationResult.VALID;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
 import com.google.common.eventbus.EventBus;
+import io.libp2p.core.pubsub.ValidationResult;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,8 +49,11 @@ public class SingleAttestationTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final GossipedAttestationConsumer gossipedAttestationConsumer =
-      mock(GossipedAttestationConsumer.class);
+
+  @SuppressWarnings("unchecked")
+  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
+      mock(GossipedOperationConsumer.class);
+
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
@@ -66,31 +71,33 @@ public class SingleAttestationTopicHandlerTest {
   }
 
   @Test
-  public void handleMessage_validAttestation() {
+  public void handleMessage_valid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(VALID);
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(blockAndState));
+    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(ACCEPT);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(true);
-    verify(gossipedAttestationConsumer).accept(attestation);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Valid);
+    verify(gossipedAttestationConsumer).forward(attestation);
   }
 
   @Test
-  public void handleMessage_failsValidation() {
+  public void handleMessage_ignored() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(INVALID);
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(blockAndState));
+    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(IGNORE);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
-    verify(gossipedAttestationConsumer, never()).accept(attestation);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Ignore);
+    verify(gossipedAttestationConsumer, never()).forward(attestation);
   }
 
   @Test
@@ -98,21 +105,37 @@ public class SingleAttestationTopicHandlerTest {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
-        ValidateableAttestation.fromSingle(attestationGenerator.validAttestation(blockAndState));
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVED_FOR_FUTURE);
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(blockAndState));
+    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVE_FOR_FUTURE);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
-    verify(gossipedAttestationConsumer).accept(attestation);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Ignore);
+    verify(gossipedAttestationConsumer).forward(attestation);
+  }
+
+  @Test
+  public void handleMessage_invalid() {
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
+    final ValidateableAttestation attestation =
+        ValidateableAttestation.fromAttestation(
+            attestationGenerator.validAttestation(blockAndState));
+    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(REJECT);
+    final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
+
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Invalid);
+    verify(gossipedAttestationConsumer, never()).forward(attestation);
   }
 
   @Test
   public void handleMessage_invalidAttestation_invalidSSZ() {
     final Bytes serialized = Bytes.fromHexString("0x3456");
 
-    final boolean result = topicHandler.handleMessage(serialized);
-    assertThat(result).isEqualTo(false);
+    final ValidationResult result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(ValidationResult.Invalid);
   }
 
   @Test

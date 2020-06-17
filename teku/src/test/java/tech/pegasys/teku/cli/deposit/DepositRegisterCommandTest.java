@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.deposit;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,7 +49,7 @@ class DepositRegisterCommandTest {
   private static final Function<String, String> envSupplier =
       s -> EXPECTED_ENV_VARIABLE.equals(s) ? PASSWORD : null;
   private static final Bytes BLS_PRIVATE_KEY =
-      Bytes.fromHexString("0x19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+      Bytes.fromHexString("0x19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 32);
   private static final Bytes BLS_PUB_KEY =
       Bytes.fromHexString(
           "9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07");
@@ -59,19 +60,19 @@ class DepositRegisterCommandTest {
   private static final KdfParam KDF_PARAM = new SCryptParam(32, 262144, 1, 8, SALT);
   private static final KeyStoreData VALIDATOR_KEYSTORE =
       KeyStore.encrypt(BLS_PRIVATE_KEY, BLS_PUB_KEY, PASSWORD, "", KDF_PARAM, CIPHER);
-  private CommonParams commonParams;
+  private RegisterParams registerParams;
   private CommandLine.Model.CommandSpec commandSpec;
   private RegisterAction registerAction;
 
   @BeforeEach
   void setUp() {
-    commonParams = mock(CommonParams.class);
+    registerParams = mock(RegisterParams.class);
     commandSpec = mock(CommandLine.Model.CommandSpec.class);
     final CommandLine commandLine = mock(CommandLine.class);
     registerAction = mock(RegisterAction.class);
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
-    when(commonParams.createRegisterAction()).thenReturn(registerAction);
+    when(registerParams.createRegisterAction(anyBoolean())).thenReturn(registerAction);
     when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
@@ -88,7 +89,7 @@ class DepositRegisterCommandTest {
 
     final DepositRegisterCommand depositRegisterCommand =
         new DepositRegisterCommand(
-            shutdownFunction, envSupplier, commandSpec, commonParams, validatorKeyOptions, "");
+            shutdownFunction, envSupplier, commandSpec, registerParams, validatorKeyOptions, "");
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
@@ -105,7 +106,7 @@ class DepositRegisterCommandTest {
 
     final DepositRegisterCommand depositRegisterCommand =
         new DepositRegisterCommand(
-            shutdownFunction, envSupplier, commandSpec, commonParams, validatorKeyOptions, "");
+            shutdownFunction, envSupplier, commandSpec, registerParams, validatorKeyOptions, "");
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 

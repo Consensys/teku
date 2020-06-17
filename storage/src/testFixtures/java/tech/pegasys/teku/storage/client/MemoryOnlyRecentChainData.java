@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.eventbus.EventBus;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -27,11 +29,17 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
   private MemoryOnlyRecentChainData(
+      final MetricsSystem metricsSystem,
       final EventBus eventBus,
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel) {
-    super(storageUpdateChannel, finalizedCheckpointChannel, reorgEventChannel, eventBus);
+    super(
+        metricsSystem,
+        storageUpdateChannel,
+        finalizedCheckpointChannel,
+        reorgEventChannel,
+        eventBus);
     eventBus.register(this);
   }
 
@@ -66,7 +74,11 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
 
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
-          eventBus, storageUpdateChannel, finalizedCheckpointChannel, reorgEventChannel);
+          new NoOpMetricsSystem(),
+          eventBus,
+          storageUpdateChannel,
+          finalizedCheckpointChannel,
+          reorgEventChannel);
     }
 
     public Builder eventBus(final EventBus eventBus) {

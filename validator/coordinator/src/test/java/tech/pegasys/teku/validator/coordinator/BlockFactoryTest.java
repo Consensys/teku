@@ -19,10 +19,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttestations;
+import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createAttesterSlashings;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createDeposits;
+import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createProposerSlashings;
+import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createVoluntaryExits;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,15 +39,20 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
+import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+@SuppressWarnings("unchecked")
 class BlockFactoryTest {
 
   public static final Eth1Data ETH1_DATA = new Eth1Data();
@@ -52,11 +61,17 @@ class BlockFactoryTest {
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(1, recentChainData);
   private final AggregatingAttestationPool attestationsPool =
       mock(AggregatingAttestationPool.class);
+  private final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
+  private final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
+  private final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final StateTransition stateTransition = new StateTransition();
   private final SSZMutableList<Deposit> deposits = createDeposits();
   private final SSZMutableList<Attestation> attestations = createAttestations();
+  private final SSZMutableList<AttesterSlashing> attesterSlashings = createAttesterSlashings();
+  private final SSZMutableList<ProposerSlashing> proposerSlashings = createProposerSlashings();
+  private final SSZMutableList<SignedVoluntaryExit> voluntaryExits = createVoluntaryExits();
 
   private final Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private final BlockFactory blockFactory =
@@ -64,6 +79,9 @@ class BlockFactoryTest {
           new BlockProposalUtil(stateTransition),
           stateTransition,
           attestationsPool,
+          attesterSlashingPool,
+          proposerSlashingPool,
+          voluntaryExitPool,
           depositProvider,
           eth1DataCache,
           graffiti);
@@ -72,6 +90,9 @@ class BlockFactoryTest {
   void setUp() {
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
     when(attestationsPool.getAttestationsForBlock(any())).thenReturn(attestations);
+    when(attesterSlashingPool.getItemsForBlock(any())).thenReturn(attesterSlashings);
+    when(proposerSlashingPool.getItemsForBlock(any())).thenReturn(proposerSlashings);
+    when(voluntaryExitPool.getItemsForBlock(any())).thenReturn(voluntaryExits);
     when(eth1DataCache.getEth1Vote(any())).thenReturn(ETH1_DATA);
     beaconChainUtil.initializeStorage();
   }
@@ -101,7 +122,8 @@ class BlockFactoryTest {
     final BeaconBlock previousBlock = recentChainData.getBlockByRoot(bestBlockRoot).orElseThrow();
     final BeaconState previousState = recentChainData.getBlockState(bestBlockRoot).orElseThrow();
     final BeaconBlock block =
-        blockFactory.createUnsignedBlock(previousState, previousBlock, newSlot, randaoReveal);
+        blockFactory.createUnsignedBlock(
+            previousState, previousBlock, newSlot, randaoReveal, Optional.empty());
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
@@ -109,6 +131,9 @@ class BlockFactoryTest {
     assertThat(block.getBody().getEth1_data()).isEqualTo(ETH1_DATA);
     assertThat(block.getBody().getDeposits()).isEqualTo(deposits);
     assertThat(block.getBody().getAttestations()).isEqualTo(attestations);
+    assertThat(block.getBody().getAttester_slashings()).isEqualTo(attesterSlashings);
+    assertThat(block.getBody().getProposer_slashings()).isEqualTo(proposerSlashings);
+    assertThat(block.getBody().getVoluntary_exits()).isEqualTo(voluntaryExits);
     assertThat(block.getBody().getGraffiti()).isEqualTo(graffiti);
   }
 }

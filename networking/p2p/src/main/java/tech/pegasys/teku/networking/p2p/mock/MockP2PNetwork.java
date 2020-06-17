@@ -90,6 +90,11 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
+  public Optional<String> getDiscoveryAddress() {
+    return Optional.empty();
+  }
+
+  @Override
   public int getListenPort() {
     return 0;
   };

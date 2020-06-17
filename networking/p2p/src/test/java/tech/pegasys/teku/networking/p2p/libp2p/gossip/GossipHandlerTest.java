@@ -41,7 +41,7 @@ public class GossipHandlerTest {
 
   @BeforeEach
   public void setup() {
-    when(topicHandler.handleMessage(any())).thenReturn(true);
+    when(topicHandler.handleMessage(any())).thenReturn(ValidationResult.Valid);
     when(publisher.publish(any(), any())).thenReturn(SafeFuture.completedFuture(null));
   }
 
@@ -58,7 +58,7 @@ public class GossipHandlerTest {
   public void apply_invalid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    when(topicHandler.handleMessage(any())).thenReturn(false);
+    when(topicHandler.handleMessage(any())).thenReturn(ValidationResult.Invalid);
     final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
@@ -83,7 +83,7 @@ public class GossipHandlerTest {
     gossipHandler.apply(message);
     final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
 
-    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(topicHandler).handleMessage(any());
   }
 
@@ -134,7 +134,7 @@ public class GossipHandlerTest {
     gossipHandler.apply(message);
     final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
 
-    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+    assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(topicHandler, never()).handleMessage(any());
   }
 

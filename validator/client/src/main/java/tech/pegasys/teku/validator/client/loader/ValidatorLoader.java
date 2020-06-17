@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -76,7 +77,8 @@ public class ValidatorLoader {
             blsKeyPair ->
                 new Validator(
                     blsKeyPair.getPublicKey(),
-                    new Signer(new LocalMessageSignerService(blsKeyPair))))
+                    new Signer(new LocalMessageSignerService(blsKeyPair)),
+                    Optional.ofNullable(config.getGraffiti())))
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
@@ -90,7 +92,8 @@ public class ValidatorLoader {
                     publicKey,
                     new Signer(
                         new ExternalMessageSignerService(
-                            config.getValidatorExternalSignerUrl(), publicKey, timeout))))
+                            config.getValidatorExternalSignerUrl(), publicKey, timeout)),
+                    Optional.ofNullable(config.getGraffiti())))
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
