@@ -149,7 +149,7 @@ class Store implements UpdatableStore {
         TekuMetricCategory.STORAGE,
         "memory_block_count",
         "Number of beacon blocks held in the in-memory store",
-        block_states::size);
+        blocks::size);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.STORAGE,
         "memory_checkpoint_state_count",

@@ -274,7 +274,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
     forkChoice = new ForkChoice(recentChainData, stateTransition);
-    eventChannels.subscribe(FinalizedCheckpointChannel.class, forkChoice);
   }
 
   public void initMetrics() {
