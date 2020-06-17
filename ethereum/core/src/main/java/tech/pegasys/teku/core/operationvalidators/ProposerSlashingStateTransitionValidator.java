@@ -26,9 +26,11 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
-public class ProposerSlashingStateTransitionValidator {
+public class ProposerSlashingStateTransitionValidator
+    implements OperationStateTransitionValidator<ProposerSlashing> {
 
-  public Optional<OperationInvalidReason> validateSlashing(
+  @Override
+  public Optional<OperationInvalidReason> validate(
       final BeaconState state, final ProposerSlashing proposerSlashing) {
     final BeaconBlockHeader header1 = proposerSlashing.getHeader_1().getMessage();
     final BeaconBlockHeader header2 = proposerSlashing.getHeader_2().getMessage();

@@ -17,6 +17,8 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
+import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.min;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -27,11 +29,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -64,6 +66,10 @@ public class BeaconBlocksByRangeMessageHandler
       callback.completeWithErrorResponse(INVALID_STEP);
       return;
     }
+    // TODO: Go to protoarray and get the block roots for the requested range
+    // We want to get them all at once because then they will be consistent to a fork
+    // and it's more efficient to collect them backwards from protoarray.
+    // Then we just load and send the blocks in forward order by root.
     sendMatchingBlocks(message, callback)
         .finish(
             callback::completeSuccessfully,
@@ -73,7 +79,11 @@ public class BeaconBlocksByRangeMessageHandler
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
                 callback.completeWithErrorResponse((RpcException) rootCause);
               } else {
-                LOG.error("Failed to process blocks by range request", error);
+                if (rootCause instanceof StreamClosedException) {
+                  LOG.trace("Stream closed while sending requested blocks", error);
+                } else {
+                  LOG.error("Failed to process blocks by range request", error);
+                }
                 callback.completeWithUnexpectedError(error);
               }
             });
@@ -84,28 +94,51 @@ public class BeaconBlocksByRangeMessageHandler
       final ResponseCallback<SignedBeaconBlock> callback) {
     Optional<Bytes32> maybeBestRoot = combinedChainDataClient.getBestBlockRoot();
     return maybeBestRoot
-        .map(combinedChainDataClient::getStateByBlockRoot)
+        .map(combinedChainDataClient::getBlockByBlockRoot)
         .flatMap(CompletableFuture::join)
-        .map(BeaconState::getSlot)
+        .map(SignedBeaconBlock::getSlot)
         .map(slot -> sendNextBlock(new RequestState(message, slot, maybeBestRoot.get(), callback)))
         .orElseGet(() -> completedFuture(null));
   }
 
   private SafeFuture<RequestState> sendNextBlock(final RequestState requestState) {
-    return combinedChainDataClient
-        .getBlockAtSlotExact(requestState.currentSlot, requestState.headBlockRoot)
-        .thenCompose(
-            maybeBlock -> {
-              maybeBlock.ifPresent(requestState::sendBlock);
-              if (requestState.isComplete()) {
-                return completedFuture(requestState);
-              }
-              requestState.incrementCurrentSlot();
-              return sendNextBlock(requestState);
-            });
+    SafeFuture<Optional<SignedBeaconBlock>> blockFuture = loadNextBlock(requestState);
+    // Avoid risk of StackOverflowException by iterating when the block future is already complete
+    // Using thenCompose on the completed future would execute immediately and recurse back into
+    // this method to send the next block.  When not already complete, thenCompose is executed
+    // on a separate thread so doesn't recurse on the same stack.
+    while (blockFuture.isDone() && !blockFuture.isCompletedExceptionally()) {
+      final boolean complete = handleLoadedBlock(requestState, blockFuture.join());
+      if (complete) {
+        return completedFuture(requestState);
+      }
+      blockFuture = loadNextBlock(requestState);
+    }
+    return blockFuture.thenCompose(
+        maybeBlock ->
+            handleLoadedBlock(requestState, maybeBlock)
+                ? completedFuture(requestState)
+                : sendNextBlock(requestState));
   }
 
-  private static class RequestState {
+  /** Sends the block and returns true if the request is now complete. */
+  private boolean handleLoadedBlock(
+      final RequestState requestState, final Optional<SignedBeaconBlock> block) {
+    block.ifPresent(requestState::sendBlock);
+    if (requestState.isComplete()) {
+      return true;
+    } else {
+      requestState.incrementCurrentSlot();
+      return false;
+    }
+  }
+
+  private SafeFuture<Optional<SignedBeaconBlock>> loadNextBlock(final RequestState requestState) {
+    return combinedChainDataClient.getBlockAtSlotExact(
+        requestState.currentSlot, requestState.headBlockRoot);
+  }
+
+  static class RequestState {
     private final UnsignedLong headSlot;
     private final ResponseCallback<SignedBeaconBlock> callback;
     private final Bytes32 headBlockRoot;
@@ -122,7 +155,7 @@ public class BeaconBlocksByRangeMessageHandler
       this.headBlockRoot = headBlockRoot;
       // Minus 1 to account for sending the block at startSlot.
       // We only decrement this when moving to the next slot but we're already at the first slot
-      this.remainingBlocks = message.getCount().minus(ONE);
+      this.remainingBlocks = min(message.getCount(), MAX_BLOCK_BY_RANGE_REQUEST_SIZE).minus(ONE);
       this.step = message.getStep();
       this.headSlot = headSlot;
       this.callback = callback;

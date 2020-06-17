@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
@@ -37,14 +36,12 @@ import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.InMemoryStorageSystem;
-import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.EventSink;
@@ -59,7 +56,6 @@ class RecentChainDataTest {
 
   private final BeaconState genesisState = genesis.getState();
   private final BeaconBlock genesisBlock = genesis.getBlock().getMessage();
-  private final Bytes32 genesisBlockRoot = genesis.getRoot();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
@@ -70,14 +66,10 @@ class RecentChainDataTest {
 
   private final RecentChainData storageClient = storageSystem.recentChainData();
   private final RecentChainData preGenesisStorageClient = preGenesisStorageSystem.recentChainData();
-  private RecentChainData preForkChoiceStorageClient;
 
   @BeforeEach
   public void setup() {
     storageClient.initializeFromGenesis(genesisState);
-    preForkChoiceStorageClient =
-        MemoryOnlyRecentChainData.createWithStore(
-            mock(EventBus.class), new StubReorgEventChannel(), storageClient.getStore());
   }
 
   @Test
@@ -105,84 +97,6 @@ class RecentChainDataTest {
 
     storageClient.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
     assertThat(storageClient.getBestBlockAndState()).contains(genesis.toUnsigned());
-  }
-
-  @Test
-  public void getBlockBySlot_returnEmptyWhenStoreNotSet() {
-    assertThat(preGenesisStorageClient.getBlockBySlot(UnsignedLong.ZERO)).isEmpty();
-  }
-
-  @Test
-  public void getBlockBySlot_returnEmptyWhenBestBlockNotSet() {
-    assertThat(preForkChoiceStorageClient.getBlockBySlot(UnsignedLong.ZERO)).isEmpty();
-  }
-
-  @Test
-  public void getBlockBySlot_returnGenesisBlockWhenItIsTheBestState() {
-    assertThat(storageClient.getBlockBySlot(UnsignedLong.ZERO)).contains(genesisBlock);
-  }
-
-  @Test
-  public void getBlockBySlot_returnGenesisBlockWhenItIsNotTheBestState() throws Exception {
-    final SignedBlockAndState bestBlock = addNewBestBlock(storageClient);
-    // Sanity check
-    assertThat(bestBlock.getSlot()).isGreaterThan(genesisBlock.getSlot());
-
-    assertThat(storageClient.getBlockBySlot(genesisBlock.getSlot())).contains(genesisBlock);
-  }
-
-  @Test
-  public void getBlockBySlot_returnEmptyWhenSlotBeforeHistoricalRootWindow() {
-    // First slot where the block roots start overwriting themselves and dropping history
-    final UnsignedLong bestSlot =
-        UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT).plus(UnsignedLong.ONE);
-    final SignedBlockAndState bestBlock = dataStructureUtil.randomSignedBlockAndState(bestSlot);
-    updateBestBlock(storageClient, bestBlock);
-
-    // Slot 0 has now been overwritten by our current best slot so we can't get that block anymore.
-    assertThat(storageClient.getBlockBySlot(UnsignedLong.ZERO)).isEmpty();
-  }
-
-  @Test
-  public void getBlockBySlot_returnCorrectBlockFromHistoricalWindow() {
-    // We've wrapped around a lot of times and are 5 slots into the next "loop"
-    final int historicalIndex = 5;
-    final UnsignedLong requestedSlot =
-        UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)
-            .times(UnsignedLong.valueOf(900000000))
-            .plus(UnsignedLong.valueOf(historicalIndex));
-    final SignedBlockAndState requestedBlock =
-        dataStructureUtil.randomSignedBlockAndState(requestedSlot);
-    final Bytes32 requestedBlockHash = requestedBlock.getRoot();
-    saveBlock(storageClient, requestedBlock);
-
-    // Avoid the simple case where the requested slot is the best slot so we have to go to the
-    // historic blocks
-    final UnsignedLong bestSlot = requestedSlot.plus(UnsignedLong.ONE);
-    // Overwrite the genesis hash.
-    final BeaconState bestState =
-        dataStructureUtil
-            .randomBeaconState(bestSlot)
-            .updated(state -> state.getBlock_roots().set(historicalIndex, requestedBlockHash));
-    final SignedBeaconBlock bestBlock =
-        dataStructureUtil.randomSignedBeaconBlock(bestSlot, bestState);
-    final SignedBlockAndState bestBlockAndState = new SignedBlockAndState(bestBlock, bestState);
-    updateBestBlock(storageClient, bestBlockAndState);
-
-    assertThat(storageClient.getBlockBySlot(requestedSlot))
-        .contains(requestedBlock.getBlock().getMessage());
-  }
-
-  @Test
-  public void getBlockBySlot_returnEmptyWhenSlotWasEmpty() throws Exception {
-    // Request block for an empty slot immediately after genesis
-    final UnsignedLong requestedSlot = genesisBlock.getSlot().plus(UnsignedLong.ONE);
-    final UnsignedLong bestSlot = requestedSlot.plus(UnsignedLong.ONE);
-
-    final SignedBlockAndState bestBlock = chainBuilder.generateBlockAtSlot(bestSlot);
-    updateBestBlock(storageClient, bestBlock);
-
-    assertThat(storageClient.getBlockBySlot(requestedSlot)).isEmpty();
   }
 
   @Test
@@ -217,62 +131,6 @@ class RecentChainDataTest {
     final SignedBlockAndState bestBlock = addNewBestBlock(storageClient);
     assertThat(storageClient.getStateInEffectAtSlot(bestBlock.getSlot()))
         .contains(bestBlock.getState());
-  }
-
-  @Test
-  public void isIncludedInBestState_falseWhenNoStoreSet() {
-    assertThat(preGenesisStorageClient.isIncludedInBestState(genesisBlockRoot)).isFalse();
-  }
-
-  @Test
-  public void isIncludedInBestState_falseWhenBestBlockNotSet() {
-    assertThat(preForkChoiceStorageClient.isIncludedInBestState(genesisBlockRoot)).isFalse();
-  }
-
-  @Test
-  public void isIncludedInBestState_falseWhenNoBlockAtSlot() throws Exception {
-    final ChainBuilder fork = chainBuilder.fork();
-    final SignedBlockAndState forkBlock = fork.generateNextBlock();
-    saveBlock(storageClient, forkBlock);
-
-    final UnsignedLong bestSlot = forkBlock.getSlot().plus(UnsignedLong.ONE);
-    final SignedBlockAndState bestBlock = chainBuilder.generateBlockAtSlot(bestSlot);
-    updateBestBlock(storageClient, bestBlock);
-
-    assertThat(storageClient.isIncludedInBestState(forkBlock.getRoot())).isFalse();
-  }
-
-  @Test
-  public void isIncludedInBestState_falseWhenBlockAtSlotDoesNotMatch() throws Exception {
-    // Build a small chain, so we can later generate attestations
-    for (int i = 0; i < 10; i++) {
-      advanceChain(storageClient);
-    }
-
-    // Create a fork chain
-    final ChainBuilder fork = chainBuilder.fork();
-    final SignedBlockAndState forkBlock = fork.generateNextBlock();
-    saveBlock(storageClient, forkBlock);
-
-    // Generate attestation at canonical block to differentiate from fork block
-    final UnsignedLong bestSlot = forkBlock.getSlot();
-    final Attestation attestation =
-        chainBuilder.streamValidAttestationsForBlockAtSlot(bestSlot).findFirst().orElseThrow();
-    final BlockOptions blockOptions = BlockOptions.create().addAttestation(attestation);
-    final SignedBlockAndState bestBlock = chainBuilder.generateBlockAtSlot(bestSlot, blockOptions);
-    updateBestBlock(storageClient, bestBlock);
-
-    // Fork block should not be accessible from best state
-    assertThat(storageClient.isIncludedInBestState(forkBlock.getRoot())).isFalse();
-  }
-
-  @Test
-  public void isIncludedInBestState_trueWhenBlockAtSlotDoesMatch() throws Exception {
-    final SignedBlockAndState targetBlock = chainBuilder.generateNextBlock();
-    saveBlock(storageClient, targetBlock);
-    addNewBestBlock(storageClient);
-
-    assertThat(storageClient.isIncludedInBestState(targetBlock.getRoot())).isTrue();
   }
 
   @Test
@@ -476,6 +334,7 @@ class RecentChainDataTest {
 
   @Test
   public void getBlockRootBySlot_forOutOfRangeSlot() throws Exception {
+    disableForkChoicePruneThreshold();
     final UnsignedLong historicalRoots = UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
     final UnsignedLong targetSlot = UnsignedLong.valueOf(10);
     final UnsignedLong finalizedBlockSlot = targetSlot.plus(historicalRoots).plus(UnsignedLong.ONE);
@@ -536,13 +395,13 @@ class RecentChainDataTest {
 
   @Test
   public void getBlockRootBySlot_queryEntireChain() throws Exception {
+    disableForkChoicePruneThreshold();
     final UnsignedLong historicalRoots = UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
 
     // Build a chain that spans multiple increments of SLOTS_PER_HISTORICAL_ROOT
     final int skipBlocks = 3;
     final UnsignedLong skipBlocksLong = UnsignedLong.valueOf(skipBlocks);
-    final UnsignedLong oldestAvailableSlot = UnsignedLong.valueOf(10);
-    final UnsignedLong finalizedBlockSlot = oldestAvailableSlot.plus(historicalRoots);
+    final UnsignedLong finalizedBlockSlot = UnsignedLong.valueOf(10).plus(historicalRoots);
     final UnsignedLong finalizedEpoch =
         ChainProperties.computeBestEpochFinalizableAtSlot(finalizedBlockSlot);
     final UnsignedLong recentSlot =
@@ -577,12 +436,12 @@ class RecentChainDataTest {
     finalizeBlock(storageClient, finalizedEpoch, finalizedBlock);
 
     // Check slots that should be unavailable
-    for (int i = 0; i < oldestAvailableSlot.intValue(); i++) {
+    for (int i = 0; i < finalizedBlockSlot.intValue(); i++) {
       final UnsignedLong targetSlot = UnsignedLong.valueOf(i);
       assertThat(storageClient.getBlockRootBySlot(targetSlot)).isEmpty();
     }
     // Check slots that should be available
-    for (int i = oldestAvailableSlot.intValue(); i <= bestBlock.getSlot().intValue(); i++) {
+    for (int i = finalizedBlockSlot.intValue(); i <= bestBlock.getSlot().intValue(); i++) {
       final UnsignedLong targetSlot = UnsignedLong.valueOf(i);
       final SignedBlockAndState expectedResult =
           chainBuilder.getLatestBlockAndStateAtSlot(targetSlot);
@@ -740,7 +599,14 @@ class RecentChainDataTest {
     final StoreTransaction transaction = preGenesisStorageClient.startStoreTransaction();
     Stream.of(chainBuilders)
         .flatMap(ChainBuilder::streamBlocksAndStates)
-        .forEach(transaction::putBlockAndState);
+        .forEach(
+            blockAndState -> {
+              transaction.putBlockAndState(blockAndState);
+              preGenesisStorageClient
+                  .getForkChoiceStrategy()
+                  .orElseThrow()
+                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
+            });
     transaction.commit().join();
   }
 
@@ -774,7 +640,7 @@ class RecentChainDataTest {
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()));
-    tx.commit().reportExceptions();
+    assertThat(tx.commit()).isCompleted();
   }
 
   private SignedBlockAndState advanceChain(final RecentChainData recentChainData)
@@ -788,5 +654,14 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block);
     tx.commit().reportExceptions();
+    recentChainData
+        .getForkChoiceStrategy()
+        .orElseThrow()
+        .onBlock(block.getBlock().getMessage(), block.getState());
+  }
+
+  private void disableForkChoicePruneThreshold() {
+    ((ProtoArrayForkChoiceStrategy) storageClient.getForkChoiceStrategy().orElseThrow())
+        .setPruneThreshold(0);
   }
 }

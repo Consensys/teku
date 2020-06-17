@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
@@ -162,7 +163,7 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
   @Override
   protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
     final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
-    return RocksDbDatabase.createV3(config, storageMode);
+    return RocksDbDatabase.createV3(new StubMetricsSystem(), config, storageMode);
   }
 
   static class TrackingEth1EventsChannel implements Eth1EventsChannel {

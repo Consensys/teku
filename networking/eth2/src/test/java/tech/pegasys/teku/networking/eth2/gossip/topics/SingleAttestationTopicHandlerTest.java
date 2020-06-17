@@ -49,8 +49,11 @@ public class SingleAttestationTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final GossipedAttestationConsumer gossipedAttestationConsumer =
-      mock(GossipedAttestationConsumer.class);
+
+  @SuppressWarnings("unchecked")
+  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
+      mock(GossipedOperationConsumer.class);
+
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
@@ -79,7 +82,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Valid);
-    verify(gossipedAttestationConsumer).accept(attestation);
+    verify(gossipedAttestationConsumer).forward(attestation);
   }
 
   @Test
@@ -94,7 +97,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Ignore);
-    verify(gossipedAttestationConsumer, never()).accept(attestation);
+    verify(gossipedAttestationConsumer, never()).forward(attestation);
   }
 
   @Test
@@ -109,7 +112,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Ignore);
-    verify(gossipedAttestationConsumer).accept(attestation);
+    verify(gossipedAttestationConsumer).forward(attestation);
   }
 
   @Test
@@ -124,7 +127,7 @@ public class SingleAttestationTopicHandlerTest {
 
     final ValidationResult result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(ValidationResult.Invalid);
-    verify(gossipedAttestationConsumer, never()).accept(attestation);
+    verify(gossipedAttestationConsumer, never()).forward(attestation);
   }
 
   @Test
