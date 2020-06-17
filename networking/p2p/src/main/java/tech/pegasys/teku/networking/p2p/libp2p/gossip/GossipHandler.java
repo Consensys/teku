@@ -64,7 +64,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
       return VALIDATION_FAILED;
     }
     byte[] arr = new byte[message.getData().readableBytes()];
-    message.getData().readBytes(arr);
+    message.getData().slice().readBytes(arr);
     Bytes bytes = Bytes.wrap(arr);
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
