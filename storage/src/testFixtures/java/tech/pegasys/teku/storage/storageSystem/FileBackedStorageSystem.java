@@ -49,8 +49,8 @@ public class FileBackedStorageSystem extends AbstractStorageSystem implements St
 
     this.dataPath = dataPath;
     this.eventBus = eventBus;
-    this.database = database;
     this.reorgEventChannel = reorgEventChannel;
+    this.database = database;
     this.combinedChainDataClient = combinedChainDataClient;
   }
 
@@ -95,6 +95,11 @@ public class FileBackedStorageSystem extends AbstractStorageSystem implements St
     } catch (Exception e) {
       throw new IllegalStateException("Unable to initialize storage system", e);
     }
+  }
+
+  @Override
+  public Database getDatabase() {
+    return database;
   }
 
   @Override

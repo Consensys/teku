@@ -31,12 +31,14 @@ public class InMemoryStorageSystem extends AbstractStorageSystem implements Stor
   private final EventBus eventBus;
   private final TrackingReorgEventChannel reorgEventChannel;
 
+  private final Database database;
   private final MockRocksDbInstance rocksDbInstance;
   private final CombinedChainDataClient combinedChainDataClient;
 
   public InMemoryStorageSystem(
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
+      final Database database,
       final MockRocksDbInstance rocksDbInstance,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient) {
@@ -44,6 +46,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem implements Stor
 
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
+    this.database = database;
     this.rocksDbInstance = rocksDbInstance;
     this.combinedChainDataClient = combinedChainDataClient;
   }
@@ -83,10 +86,20 @@ public class InMemoryStorageSystem extends AbstractStorageSystem implements Stor
 
       // Return storage system
       return new InMemoryStorageSystem(
-          eventBus, reorgEventChannel, rocksDbInstance, recentChainData, combinedChainDataClient);
+          eventBus,
+          reorgEventChannel,
+          database,
+          rocksDbInstance,
+          recentChainData,
+          combinedChainDataClient);
     } catch (Exception e) {
       throw new IllegalStateException("Unable to initialize storage system", e);
     }
+  }
+
+  @Override
+  public Database getDatabase() {
+    return database;
   }
 
   @Override

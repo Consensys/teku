@@ -19,9 +19,12 @@ import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public interface StorageSystem {
+
+  Database getDatabase();
 
   StorageSystem restarted(StateStorageMode storageMode);
 
