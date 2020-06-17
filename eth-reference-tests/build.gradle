@@ -2,16 +2,12 @@ jar { enabled = false }
 
 dependencies {
   referenceTestImplementation project(':bls')
-  referenceTestImplementation project(':data')
   referenceTestImplementation project(':ethereum:core')
   referenceTestImplementation project(':ethereum:datastructures')
   referenceTestImplementation project(':eth-tests')
-  referenceTestImplementation project(':protoarray')
   referenceTestImplementation project(':ssz')
   referenceTestImplementation project(':storage')
   referenceTestImplementation project(':util')
-
-  referenceTestImplementation testFixtures(project(':storage'))
 
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
