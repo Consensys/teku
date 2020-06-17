@@ -19,10 +19,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.schema.ValidatorWithIndex;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.PostValidators;
@@ -40,26 +42,41 @@ public class PostValidatorsWithDataIntegrationTest
   void shouldRetrieveValidatorsWhenBlockPresentAtEpoch() throws Exception {
     createBlocksAtSlotsAndMapToApiResult(SEVEN, EIGHT);
 
-    Response response = post(1, VALIDATOR_KEYS);
+    final Response response = post(Optional.of(1), VALIDATOR_KEYS);
     assertThat(response.code()).isEqualTo(SC_OK);
+  }
+
+  @Test
+  void shouldRetrieveValidatorsWhenEpochNotSpecified() throws Exception {
+    createBlocksAtSlotsAndMapToApiResult(SEVEN, EIGHT);
+
+    final Response response = post(Optional.empty(), VALIDATOR_KEYS);
+    assertThat(response.code()).isEqualTo(SC_OK);
+
+    final ValidatorWithIndex[] validators =
+        jsonProvider.jsonToObject(response.body().string(), ValidatorWithIndex[].class);
+    assertThat(validators.length).isEqualTo(VALIDATOR_KEYS.size());
   }
 
   @Test
   void shouldRetrieveValidatorsWhenBlockMissingAtEpoch() throws Exception {
     createBlocksAtSlotsAndMapToApiResult(SEVEN, NINE);
 
-    Response response = post(1, VALIDATOR_KEYS);
+    final Response response = post(Optional.of(1), VALIDATOR_KEYS);
     assertThat(response.code()).isEqualTo(SC_OK);
   }
 
-  private Response post(final int epoch, final List<BLSKeyPair> publicKeys) throws IOException {
+  private Response post(final Optional<Integer> epoch, final List<BLSKeyPair> publicKeys)
+      throws IOException {
     final List<String> publicKeyStrings =
         publicKeys.stream()
             .map(k -> k.getPublicKey().toBytes().toHexString())
             .collect(Collectors.toList());
 
     final Map<String, Object> params =
-        Map.of(RestApiConstants.EPOCH, epoch, "pubkeys", publicKeyStrings);
+        epoch.isEmpty()
+            ? Map.of("pubkeys", publicKeyStrings)
+            : Map.of(RestApiConstants.EPOCH, epoch.get(), "pubkeys", publicKeyStrings);
     return post(PostValidators.ROUTE, mapToJson(params));
   }
 }

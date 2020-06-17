@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -58,6 +59,7 @@ public class StorageBackedRecentChainDataTest {
     final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
+            new StubMetricsSystem(),
             asyncRunner,
             storageUpdateChannel,
             finalizedCheckpointChannel,
@@ -71,7 +73,8 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final UpdatableStore genesisStore = StoreFactory.getForkChoiceStore(INITIAL_STATE);
+    final UpdatableStore genesisStore =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), INITIAL_STATE);
     storeRequestFuture.complete(Optional.of(genesisStore));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -88,6 +91,7 @@ public class StorageBackedRecentChainDataTest {
     final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
+            new StubMetricsSystem(),
             asyncRunner,
             storageUpdateChannel,
             finalizedCheckpointChannel,
@@ -106,7 +110,8 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.get().getStore()).isNull();
 
     // Now set the genesis state
-    final UpdatableStore genesisStore = StoreFactory.getForkChoiceStore(INITIAL_STATE);
+    final UpdatableStore genesisStore =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), INITIAL_STATE);
     client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -124,6 +129,7 @@ public class StorageBackedRecentChainDataTest {
     final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
+            new StubMetricsSystem(),
             asyncRunner,
             storageUpdateChannel,
             finalizedCheckpointChannel,
@@ -139,7 +145,8 @@ public class StorageBackedRecentChainDataTest {
     asyncRunner.executeQueuedActions();
 
     // Now set the genesis state
-    final UpdatableStore genesisStore = StoreFactory.getForkChoiceStore(INITIAL_STATE);
+    final UpdatableStore genesisStore =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), INITIAL_STATE);
     storeRequestFuture.complete(Optional.of(genesisStore));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());

@@ -50,6 +50,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
@@ -90,7 +91,8 @@ public abstract class AbstractDatabaseTest {
     genesisBlockAndState = chainBuilder.generateGenesis();
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
 
-    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
+    store =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
     database.storeGenesis(store);
   }
 
@@ -521,7 +523,8 @@ public abstract class AbstractDatabaseTest {
   @Test
   public void handleFinalizationWhenCacheLimitsExceeded() throws StateTransitionException {
     database = setupDatabase(StateStorageMode.ARCHIVE);
-    store = StoreFactory.getForkChoiceStore(genesisBlockAndState.getState());
+    store =
+        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
     database.storeGenesis(store);
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
@@ -596,7 +599,7 @@ public abstract class AbstractDatabaseTest {
     // Setup database
     database = initializeDatabase.apply(storageMode);
     final Checkpoint genesisCheckpoint = getCheckpointForBlock(genesis.getBlock());
-    store = StoreFactory.getForkChoiceStore(genesis.getState());
+    store = StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesis.getState());
     database.storeGenesis(store);
 
     final Set<SignedBlockAndState> allBlocksAndStates =

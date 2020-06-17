@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -45,22 +46,32 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
 
+  private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
 
   private final RocksDbDao dao;
 
   public static Database createV3(
-      final RocksDbConfiguration configuration, final StateStorageMode stateStorageMode) {
+      final MetricsSystem metricsSystem,
+      final RocksDbConfiguration configuration,
+      final StateStorageMode stateStorageMode) {
     final RocksDbAccessor db = RocksDbInstanceFactory.create(configuration, V3Schema.class);
-    return createV3(db, stateStorageMode);
+    return createV3(metricsSystem, db, stateStorageMode);
   }
 
-  static Database createV3(final RocksDbAccessor db, final StateStorageMode stateStorageMode) {
+  static Database createV3(
+      final MetricsSystem metricsSystem,
+      final RocksDbAccessor db,
+      final StateStorageMode stateStorageMode) {
     final RocksDbDao dao = new V3RocksDbDao(db);
-    return new RocksDbDatabase(dao, stateStorageMode);
+    return new RocksDbDatabase(metricsSystem, dao, stateStorageMode);
   }
 
-  private RocksDbDatabase(final RocksDbDao dao, final StateStorageMode stateStorageMode) {
+  private RocksDbDatabase(
+      final MetricsSystem metricsSystem,
+      final RocksDbDao dao,
+      final StateStorageMode stateStorageMode) {
+    this.metricsSystem = metricsSystem;
     this.stateStorageMode = stateStorageMode;
     this.dao = dao;
   }
@@ -131,6 +142,7 @@ public class RocksDbDatabase implements Database {
 
     return Optional.of(
         StoreFactory.createByRegeneratingHotStates(
+            metricsSystem,
             UnsignedLong.valueOf(Instant.now().getEpochSecond()),
             genesisTime,
             justifiedCheckpoint,
