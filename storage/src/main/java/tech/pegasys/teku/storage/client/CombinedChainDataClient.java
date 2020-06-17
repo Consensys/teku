@@ -195,6 +195,10 @@ public class CombinedChainDataClient {
     return recentChainData.getBestBlockRoot();
   }
 
+  public Optional<SignedBeaconBlock> getBestBlock() {
+    return recentChainData.getBestBlock();
+  }
+
   public boolean isStoreAvailable() {
     return recentChainData != null && recentChainData.getStore() != null;
   }

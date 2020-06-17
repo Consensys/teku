@@ -17,7 +17,6 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.min;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -47,9 +46,12 @@ public class BeaconBlocksByRangeMessageHandler
       new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero");
 
   private final CombinedChainDataClient combinedChainDataClient;
+  private final UnsignedLong maxRequestSize;
 
-  public BeaconBlocksByRangeMessageHandler(final CombinedChainDataClient combinedChainDataClient) {
+  public BeaconBlocksByRangeMessageHandler(
+      final CombinedChainDataClient combinedChainDataClient, final UnsignedLong maxRequestSize) {
     this.combinedChainDataClient = combinedChainDataClient;
+    this.maxRequestSize = maxRequestSize;
   }
 
   @Override
@@ -89,11 +91,12 @@ public class BeaconBlocksByRangeMessageHandler
   private SafeFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
-    final UnsignedLong count = min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE, message.getCount());
+    final UnsignedLong count = min(maxRequestSize, message.getCount());
     final UnsignedLong endSlot =
         message.getStartSlot().plus(message.getStep().times(count)).minus(ONE);
 
-    final UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
+    final UnsignedLong headBlockSlot =
+        combinedChainDataClient.getBestBlock().map(SignedBeaconBlock::getSlot).orElse(ZERO);
     final NavigableMap<UnsignedLong, Bytes32> hotRoots;
     if (combinedChainDataClient.isFinalized(endSlot)) {
       // All blocks are finalized so skip scanning the protoarray
@@ -101,12 +104,12 @@ public class BeaconBlocksByRangeMessageHandler
     } else {
       hotRoots =
           combinedChainDataClient.getAncestorRoots(
-              message.getStartSlot(), message.getStep(), message.getCount());
+              message.getStartSlot(), message.getStep(), count);
     }
     // Don't send anything past the last slot found in protoarray to ensure blocks are consistent
     // If we didn't find any blocks in protoarray, every block in the range must be finalized
     // so we don't need to worry about inconsistent blocks
-    final UnsignedLong headSlot = hotRoots.isEmpty() ? bestSlot : hotRoots.lastKey();
+    final UnsignedLong headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
     return sendNextBlock(
         new RequestState(
             message.getStartSlot(), message.getStep(), count, headSlot, hotRoots, callback));
@@ -194,11 +197,17 @@ public class BeaconBlocksByRangeMessageHandler
       final UnsignedLong slot = this.currentSlot;
       final Bytes32 knownBlockRoot = knownBlockRoots.get(slot);
       if (knownBlockRoot != null) {
+        // Known root so lookup by root
         return combinedChainDataClient
             .getBlockByBlockRoot(knownBlockRoot)
             .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
+      } else if ((!knownBlockRoots.isEmpty() && slot.compareTo(knownBlockRoots.firstKey()) >= 0)
+          || slot.compareTo(headSlot) > 0) {
+        // Unknown root but not finalized means this is an empty slot
+        // Could also be because the first block requested is above our head slot
+        return SafeFuture.completedFuture(Optional.empty());
       } else {
-        // Must be a finalized block
+        // Must be a finalized block so lookup by slot
         return combinedChainDataClient.getBlockAtSlotExact(slot);
       }
     }

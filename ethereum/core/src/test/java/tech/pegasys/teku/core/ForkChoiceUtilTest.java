@@ -108,6 +108,21 @@ class ForkChoiceUtilTest {
   }
 
   @Test
+  void getAncestors_shouldNotIncludeEntryForEmptySlots() throws Exception {
+    addBlock(chainBuilder.generateBlockAtSlot(3));
+    addBlock(chainBuilder.generateBlockAtSlot(5));
+
+    final NavigableMap<UnsignedLong, Bytes32> rootsBySlot =
+        ForkChoiceUtil.getAncestors(
+            forkChoiceStrategy,
+            chainBuilder.getLatestBlockAndState().getRoot(),
+            UnsignedLong.ZERO,
+            UnsignedLong.ONE,
+            UnsignedLong.valueOf(10));
+    assertThat(rootsBySlot).containsExactlyEntriesOf(getRootsForBlocks(0, 3, 5));
+  }
+
+  @Test
   public void getCurrentSlot_shouldGetZeroAtGenesis() {
     assertThat(ForkChoiceUtil.getCurrentSlot(GENESIS_TIME, GENESIS_TIME))
         .isEqualTo(UnsignedLong.ZERO);
