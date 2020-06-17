@@ -28,7 +28,7 @@ public class DepositOptions {
   @Option(
       names = {"--eth1-endpoint"},
       paramLabel = "<NETWORK>",
-      description = "URL for Eth 1.0 node",
+      description = "URL for Eth1 node.",
       arity = "1")
   private String eth1Endpoint = null;
 
@@ -39,7 +39,7 @@ public class DepositOptions {
       paramLabel = "<BOOLEAN>",
       fallbackValue = "true",
       description =
-          "On startup, use eth1 deposits from storage before loading from the remote endpoint.",
+          "On startup, use Eth1 deposits from storage before loading from the remote endpoint.",
       arity = "0..1")
   private boolean eth1DepositsFromStorageEnabled = true;
 
