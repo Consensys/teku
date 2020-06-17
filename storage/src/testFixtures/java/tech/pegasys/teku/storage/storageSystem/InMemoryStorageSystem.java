@@ -29,7 +29,7 @@ import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class InMemoryStorageSystem extends AbstractStorageSystem implements StorageSystem {
+public class InMemoryStorageSystem extends AbstractStorageSystem {
   private final EventBus eventBus;
   private final TrackingReorgEventChannel reorgEventChannel;
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
@@ -62,42 +62,37 @@ public class InMemoryStorageSystem extends AbstractStorageSystem implements Stor
 
   private static StorageSystem createV3StorageSystem(
       final MockRocksDbInstance rocksDbInstance, final StateStorageMode storageMode) {
-    try {
-      final EventBus eventBus = new EventBus();
-      final Database database =
-          InMemoryRocksDbDatabaseFactory.createV3(rocksDbInstance, storageMode);
+    final EventBus eventBus = new EventBus();
+    final Database database = InMemoryRocksDbDatabaseFactory.createV3(rocksDbInstance, storageMode);
 
-      // Create and start storage server
-      final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
-      chainStorageServer.start();
+    // Create and start storage server
+    final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
+    chainStorageServer.start();
 
-      // Create recent chain data
-      final FinalizedCheckpointChannel finalizedCheckpointChannel =
-          new StubFinalizedCheckpointChannel();
-      final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
-      final RecentChainData recentChainData =
-          StorageBackedRecentChainData.createImmediately(
-              new NoOpMetricsSystem(),
-              chainStorageServer,
-              finalizedCheckpointChannel,
-              reorgEventChannel,
-              eventBus);
+    // Create recent chain data
+    final FinalizedCheckpointChannel finalizedCheckpointChannel =
+        new StubFinalizedCheckpointChannel();
+    final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
+    final RecentChainData recentChainData =
+        StorageBackedRecentChainData.createImmediately(
+            new NoOpMetricsSystem(),
+            chainStorageServer,
+            finalizedCheckpointChannel,
+            reorgEventChannel,
+            eventBus);
 
-      // Create combined client
-      final CombinedChainDataClient combinedChainDataClient =
-          new CombinedChainDataClient(recentChainData, chainStorageServer);
+    // Create combined client
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(recentChainData, chainStorageServer);
 
-      // Return storage system
-      return new InMemoryStorageSystem(
-          eventBus,
-          reorgEventChannel,
-          database,
-          rocksDbInstance,
-          recentChainData,
-          combinedChainDataClient);
-    } catch (Exception e) {
-      throw new IllegalStateException("Unable to initialize storage system", e);
-    }
+    // Return storage system
+    return new InMemoryStorageSystem(
+        eventBus,
+        reorgEventChannel,
+        database,
+        rocksDbInstance,
+        recentChainData,
+        combinedChainDataClient);
   }
 
   @Override
@@ -134,5 +129,10 @@ public class InMemoryStorageSystem extends AbstractStorageSystem implements Stor
   @Override
   public TrackingEth1EventsChannel eth1EventsChannel() {
     return eth1EventsChannel;
+  }
+
+  @Override
+  public void close() throws Exception {
+    database.close();
   }
 }

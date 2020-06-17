@@ -24,7 +24,7 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public interface StorageSystem {
+public interface StorageSystem extends AutoCloseable {
 
   DepositStorage createDepositStorage(final boolean eth1DepositsFromStorageEnabled);
 

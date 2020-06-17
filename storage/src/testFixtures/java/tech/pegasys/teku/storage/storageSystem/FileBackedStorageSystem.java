@@ -31,7 +31,7 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class FileBackedStorageSystem extends AbstractStorageSystem implements StorageSystem {
+public class FileBackedStorageSystem extends AbstractStorageSystem {
   private final Path dataPath;
 
   private final EventBus eventBus;
@@ -64,40 +64,31 @@ public class FileBackedStorageSystem extends AbstractStorageSystem implements St
     final Database database =
         RocksDbDatabase.createV3(new StubMetricsSystem(), rocksDbConfiguration, storageMode);
 
-    try {
-      final EventBus eventBus = new EventBus();
+    final EventBus eventBus = new EventBus();
 
-      // Create and start storage server
-      final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
-      chainStorageServer.start();
+    // Create and start storage server
+    final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
+    chainStorageServer.start();
 
-      // Create recent chain data
-      final FinalizedCheckpointChannel finalizedCheckpointChannel =
-          new StubFinalizedCheckpointChannel();
-      final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
-      final RecentChainData recentChainData =
-          StorageBackedRecentChainData.createImmediately(
-              new NoOpMetricsSystem(),
-              chainStorageServer,
-              finalizedCheckpointChannel,
-              reorgEventChannel,
-              eventBus);
+    // Create recent chain data
+    final FinalizedCheckpointChannel finalizedCheckpointChannel =
+        new StubFinalizedCheckpointChannel();
+    final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
+    final RecentChainData recentChainData =
+        StorageBackedRecentChainData.createImmediately(
+            new NoOpMetricsSystem(),
+            chainStorageServer,
+            finalizedCheckpointChannel,
+            reorgEventChannel,
+            eventBus);
 
-      // Create combined client
-      final CombinedChainDataClient combinedChainDataClient =
-          new CombinedChainDataClient(recentChainData, chainStorageServer);
+    // Create combined client
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(recentChainData, chainStorageServer);
 
-      // Return storage system
-      return new FileBackedStorageSystem(
-          dataPath,
-          eventBus,
-          reorgEventChannel,
-          database,
-          recentChainData,
-          combinedChainDataClient);
-    } catch (Exception e) {
-      throw new IllegalStateException("Unable to initialize storage system", e);
-    }
+    // Return storage system
+    return new FileBackedStorageSystem(
+        dataPath, eventBus, reorgEventChannel, database, recentChainData, combinedChainDataClient);
   }
 
   @Override
@@ -143,5 +134,10 @@ public class FileBackedStorageSystem extends AbstractStorageSystem implements St
   @Override
   public TrackingEth1EventsChannel eth1EventsChannel() {
     return eth1EventsChannel;
+  }
+
+  @Override
+  public void close() throws Exception {
+    this.database.close();
   }
 }
