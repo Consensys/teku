@@ -18,7 +18,9 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -134,6 +136,16 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public UpdatableStore getStore() {
     return store;
+  }
+
+  public NavigableMap<UnsignedLong, Bytes32> getAncestorRoots(
+      final UnsignedLong startSlot, final UnsignedLong step, final UnsignedLong count) {
+    return chainHead
+        .map(
+            head ->
+                ForkChoiceUtil.getAncestors(
+                    forkChoiceStrategy.orElseThrow(), head.getRoot(), startSlot, step, count))
+        .orElseGet(TreeMap::new);
   }
 
   public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {

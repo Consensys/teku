@@ -40,6 +40,10 @@ public class TestStoreFactory {
     return getForkChoiceStore(StoreImpl::new, genesisStore);
   }
 
+  public ReadOnlyStore createGenesisStore(final BeaconState genesisState) {
+    return getForkChoiceStore(StoreImpl::new, genesisState);
+  }
+
   public MutableStore createMutableGenesisStore() {
     final BeaconState genesisStore = createRandomGenesisState();
     return getForkChoiceStore(MutableStoreImpl::new, genesisStore);

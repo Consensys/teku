@@ -25,7 +25,9 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,6 +93,42 @@ public class ForkChoiceUtil {
       blockSlot = forkChoiceStrategy.blockSlot(parentRoot);
     }
     return blockSlot.isPresent() ? Optional.of(parentRoot) : Optional.empty();
+  }
+
+  public static NavigableMap<UnsignedLong, Bytes32> getAncestors(
+      ForkChoiceStrategy forkChoiceStrategy,
+      Bytes32 root,
+      UnsignedLong startSlot,
+      UnsignedLong step,
+      UnsignedLong count) {
+    final NavigableMap<UnsignedLong, Bytes32> roots = new TreeMap<>();
+    // minus(ONE) because the start block is included
+    final UnsignedLong endSlot = startSlot.plus(step.times(count)).minus(UnsignedLong.ONE);
+    Bytes32 parentRoot = root;
+    Optional<UnsignedLong> parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
+    while (parentSlot.isPresent() && parentSlot.get().compareTo(startSlot) > 0) {
+      maybeAddRoot(startSlot, step, roots, endSlot, parentRoot, parentSlot);
+      parentRoot = forkChoiceStrategy.blockParentRoot(parentRoot).orElseThrow();
+      parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
+    }
+    maybeAddRoot(startSlot, step, roots, endSlot, parentRoot, parentSlot);
+    return roots;
+  }
+
+  private static void maybeAddRoot(
+      final UnsignedLong startSlot,
+      final UnsignedLong step,
+      final NavigableMap<UnsignedLong, Bytes32> roots,
+      final UnsignedLong endSlot,
+      final Bytes32 root,
+      final Optional<UnsignedLong> maybeSlot) {
+    maybeSlot.ifPresent(
+        slot -> {
+          if (slot.compareTo(endSlot) <= 0
+              && slot.minus(startSlot).mod(step).equals(UnsignedLong.ZERO)) {
+            roots.put(slot, root);
+          }
+        });
   }
 
   /*
