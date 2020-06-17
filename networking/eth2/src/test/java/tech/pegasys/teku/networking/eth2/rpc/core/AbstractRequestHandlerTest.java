@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -80,34 +79,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
     lenient().when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.COMPLETE);
     lenient().when(peerLookup.getConnectedPeer(nodeId)).thenReturn(Optional.of(peer));
 
-    // Setup thread to process input
-    startProcessingInput();
-  }
-
-  protected void startProcessingInput() {
     reqHandler.active(nodeId, rpcStream);
-    //    reqHandler.processData(nodeId, rpcStream, Unpooled.EMPTY_BUFFER);
-    //    inputHandlerThread =
-    //        new Thread(
-    //            () -> {
-    //              try {
-    //                reqHandler.processData(nodeId, rpcStream, Unpooled.EMPTY_BUFFER);
-    //              } catch (Throwable t) {
-    //                LOG.warn("Caught error while processing input: ", t);
-    //              } finally {
-    //                inputHandlerDone.set(true);
-    //              }
-    //            });
-    //    inputHandlerThread.start();
-  }
-
-  @AfterEach
-  public void teardown() {
-    //    inputStream.close();
-    //    if (inputHandlerThread != null) {
-    //      inputHandlerThread.interrupt();
-    //    }
-    //    Waiter.waitFor(() -> assertThat(inputHandlerDone).isTrue());
   }
 
   protected abstract T createRequestHandler(final BeaconChainMethods beaconChainMethods);
