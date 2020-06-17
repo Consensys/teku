@@ -67,7 +67,9 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
         try {
           // making a copy here since the Bytes.wrapByteBuf(buf).slice(...)
           // would be broken after [in] buffer is released
-          Bytes bytes = Bytes.wrapByteBuf(ret.get()).copy();
+          byte[] arr = new byte[ret.get().readableBytes()];
+          ret.get().readBytes(arr);
+          Bytes bytes = Bytes.wrap(arr);
           decoded = true;
           return Optional.of(payloadEncoder.decode(bytes));
         } finally {
