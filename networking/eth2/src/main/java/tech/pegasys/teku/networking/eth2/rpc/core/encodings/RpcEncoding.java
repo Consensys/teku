@@ -37,7 +37,7 @@ public interface RpcEncoding {
   <T> Bytes encodePayload(T payload);
 
   /**
-   * Creates a brand new disposable {@link ByteBufDecoder} instance
+   * Creates a brand new disposable {@link RpcByteBufDecoder} instance
    *
    * @param <T> The type of payload to decode
    * @param payloadType The type of payload to decode
