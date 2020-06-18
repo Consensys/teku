@@ -23,12 +23,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class ScheduledExecutorAsyncRunner implements AsyncRunner {
+  private static final Logger LOG = LogManager.getLogger();
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final ScheduledExecutorService scheduler;
   private final ExecutorService workerPool;
@@ -99,6 +102,7 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
   private <U> SafeFuture<U> runTask(
       final Supplier<SafeFuture<U>> action, final Consumer<Runnable> scheduler) {
     if (shutdown.get()) {
+      LOG.debug("Ignoring async task because shutdown is in progress");
       return new SafeFuture<>();
     }
     final SafeFuture<U> result = new SafeFuture<>();
