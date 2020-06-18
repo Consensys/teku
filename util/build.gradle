@@ -23,6 +23,7 @@ dependencies {
 
   testFixturesApi 'com.google.guava:guava'
 
+  testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
   testFixturesImplementation 'org.awaitility:awaitility'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
 }

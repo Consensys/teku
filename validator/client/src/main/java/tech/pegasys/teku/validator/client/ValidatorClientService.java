@@ -21,7 +21,6 @@ import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.anticorruption.ValidatorAnticorruptionLayer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -46,7 +45,7 @@ public class ValidatorClientService extends Service {
         ValidatorLoader.initializeValidators(config.getConfig());
     final EventChannels eventChannels = config.getEventChannels();
     final MetricsSystem metricsSystem = config.getMetricsSystem();
-    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+    final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
             metricsSystem, config.getEventChannels().getPublisher(ValidatorApiChannel.class));

@@ -123,7 +123,9 @@ public class Eth2NetworkBuilder {
     final ReputationManager reputationManager =
         new ReputationManager(timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
     return DiscoveryNetwork.create(
-        new LibP2PNetwork(config, reputationManager, metricsSystem, rpcMethods, peerHandlers),
+        asyncRunner,
+        new LibP2PNetwork(
+            asyncRunner, config, reputationManager, metricsSystem, rpcMethods, peerHandlers),
         reputationManager,
         config);
   }

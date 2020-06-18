@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.iostreams.IOStreamConstants.END_OF_STREAM;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
@@ -68,6 +69,9 @@ public class RpcResponseDecoder<T> {
       } else {
         throw decodeError(input, status);
       }
+    } catch (InterruptedIOException e) {
+      LOG.debug("Interrupted while reading rpc responses", e);
+      throw RpcException.SERVER_ERROR;
     } catch (IOException e) {
       LOG.error("Unexpected error while reading rpc responses", e);
       throw RpcException.SERVER_ERROR;
