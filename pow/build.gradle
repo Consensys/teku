@@ -4,6 +4,8 @@ dependencies {
   implementation project(':util')
   implementation project(':events')
   implementation project(':storage:api')
+  implementation project(':logging')
+
   api 'org.web3j:core'
   
   implementation 'com.googlecode.json-simple:json-simple'

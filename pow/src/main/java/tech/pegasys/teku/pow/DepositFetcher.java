@@ -52,11 +52,11 @@ public class DepositFetcher {
   private final AsyncRunner asyncRunner;
 
   public DepositFetcher(
-      Eth1Provider eth1Provider,
-      Eth1EventsChannel eth1EventsChannel,
-      DepositContract depositContract,
-      Eth1BlockFetcher eth1BlockFetcher,
-      AsyncRunner asyncRunner) {
+      final Eth1Provider eth1Provider,
+      final Eth1EventsChannel eth1EventsChannel,
+      final DepositContract depositContract,
+      final Eth1BlockFetcher eth1BlockFetcher,
+      final AsyncRunner asyncRunner) {
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
     this.depositContract = depositContract;
@@ -94,7 +94,7 @@ public class DepositFetcher {
         .depositEventInRange(fromBlock, toBlock)
         .exceptionallyCompose(
             (err) -> {
-              LOG.warn(
+              LOG.debug(
                   "Failed to request deposit events for block numbers in the range ({}, {}). Retrying.",
                   fromBlockNumber,
                   toBlockNumber,
