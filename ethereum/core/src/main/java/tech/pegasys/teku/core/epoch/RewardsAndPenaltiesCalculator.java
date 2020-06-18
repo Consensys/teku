@@ -16,7 +16,6 @@ package tech.pegasys.teku.core.epoch;
 import static java.lang.Math.toIntExact;
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.core.epoch.EpochProcessorUtil.get_unslashed_attesting_indices;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_active_balance;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_active_balance_with_root;
@@ -38,10 +37,11 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
@@ -197,22 +197,33 @@ public class RewardsAndPenaltiesCalculator {
     }
     SSZList<PendingAttestation> matchingSourceAttestations =
         matchingAttestations.getMatchingSourceAttestations(get_previous_epoch(state));
-    for (int index : get_unslashed_attesting_indices(state, matchingSourceAttestations)) {
-      Optional<PendingAttestation> attestation =
-          matchingSourceAttestations.stream()
-              .filter(
-                  a ->
-                      get_attesting_indices(state, a.getData(), a.getAggregation_bits())
-                          .contains(index))
-              .min(Comparator.comparing(PendingAttestation::getInclusion_delay));
-      attestation.ifPresent(
-          a -> {
-            add(rewards, toIntExact(a.getProposer_index().longValue()), getProposerReward(index));
 
-            UnsignedLong maxAttesterReward = getBaseReward(index).minus(getProposerReward(index));
-            add(rewards, index, maxAttesterReward.dividedBy(a.getInclusion_delay()));
-          });
-    }
+    // map (unslashed attester index) -> (list of source attestations)
+    Map<Integer, List<PendingAttestation>> validator_source_attestations =
+        matchingSourceAttestations.stream()
+            .flatMap(
+                a ->
+                    get_unslashed_attesting_indices(state, SSZList.singleton(a)).stream()
+                        .map(i -> Pair.of(i, a)))
+            .collect(
+                Collectors.groupingBy(
+                    Pair::getLeft, Collectors.mapping(Pair::getRight, Collectors.toList())));
+
+    validator_source_attestations.forEach(
+        (index, attestations) ->
+            attestations.stream()
+                .min(Comparator.comparing(PendingAttestation::getInclusion_delay))
+                .ifPresent(
+                    a -> {
+                      add(
+                          rewards,
+                          toIntExact(a.getProposer_index().longValue()),
+                          getProposerReward(index));
+
+                      UnsignedLong maxAttesterReward =
+                          getBaseReward(index).minus(getProposerReward(index));
+                      add(rewards, index, maxAttesterReward.dividedBy(a.getInclusion_delay()));
+                    }));
 
     // No penalties associtated with inclusion delay
     return new Deltas(rewards, noValues);
