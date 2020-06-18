@@ -22,13 +22,7 @@ public class BeaconChainService extends Service {
   private final BeaconChainController controller;
 
   public BeaconChainService(final ServiceConfig config) {
-    this.controller =
-        new BeaconChainController(
-            config.getTimeProvider(),
-            config.getEventBus(),
-            config.getEventChannels(),
-            config.getMetricsSystem(),
-            config.getConfig());
+    this.controller = new BeaconChainController(config);
   }
 
   @Override

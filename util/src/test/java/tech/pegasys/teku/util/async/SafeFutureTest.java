@@ -15,12 +15,12 @@ package tech.pegasys.teku.util.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.util.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
@@ -54,7 +54,7 @@ public class SafeFutureTest {
 
     final RuntimeException exception = new RuntimeException("Oh no");
     completableFuture.completeExceptionally(exception);
-    assertExceptionallyCompletedWith(safeFuture, exception);
+    assertThatSafeFuture(safeFuture).isCompletedExceptionallyWith(exception);
   }
 
   @Test
@@ -104,7 +104,7 @@ public class SafeFutureTest {
 
     final SafeFuture<Void> future = SafeFuture.of(futureSupplier);
 
-    assertExceptionallyCompletedWith(future, error);
+    assertThatSafeFuture(future).isCompletedExceptionallyWith(error);
   }
 
   @Test
@@ -128,7 +128,7 @@ public class SafeFutureTest {
 
     final SafeFuture<Void> future = SafeFuture.of(supplier);
 
-    assertExceptionallyCompletedWith(future, error);
+    assertThatSafeFuture(future).isCompletedExceptionallyWith(error);
   }
 
   @Test
@@ -160,7 +160,7 @@ public class SafeFutureTest {
             });
 
     assertThat(supplierWasProcessed).isTrue();
-    assertExceptionallyCompletedWith(future, error);
+    assertThatSafeFuture(future).isCompletedExceptionallyWith(error);
   }
 
   @Test
@@ -173,7 +173,7 @@ public class SafeFutureTest {
     final RuntimeException exception = new RuntimeException("Oh no");
     final SafeFuture<String> safeFuture = SafeFuture.failedFuture(exception);
 
-    assertExceptionallyCompletedWith(safeFuture, exception);
+    assertThatSafeFuture(safeFuture).isCompletedExceptionallyWith(exception);
   }
 
   @Test
@@ -331,7 +331,7 @@ public class SafeFutureTest {
             });
 
     safeFuture.completeExceptionally(exception1);
-    assertExceptionallyCompletedWith(result, exception2);
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception2);
   }
 
   @Test
@@ -376,7 +376,7 @@ public class SafeFutureTest {
 
     final RuntimeException exception = new RuntimeException("Nope");
     safeFuture.completeExceptionally(exception);
-    assertExceptionallyCompletedWith(result, exception);
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
     assertThat(receivedError).hasValue(exception);
   }
 
@@ -396,7 +396,7 @@ public class SafeFutureTest {
     source.propagateTo(target);
     final RuntimeException exception = new RuntimeException("Oh no!");
     source.completeExceptionally(exception);
-    assertExceptionallyCompletedWith(target, exception);
+    assertThatSafeFuture(target).isCompletedExceptionallyWith(exception);
   }
 
   @Test
@@ -418,7 +418,7 @@ public class SafeFutureTest {
             });
 
     assertThat(future).isCompletedExceptionally();
-    assertExceptionallyCompletedWith(future, error);
+    assertThatSafeFuture(future).isCompletedExceptionallyWith(error);
   }
 
   @Test
@@ -469,7 +469,7 @@ public class SafeFutureTest {
 
     final RuntimeException error = new RuntimeException("Nope");
     future1.completeExceptionally(error);
-    assertExceptionallyCompletedWith(result, error);
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(error);
   }
 
   @Test
@@ -485,7 +485,7 @@ public class SafeFutureTest {
 
     final RuntimeException error = new RuntimeException("Nope");
     future3.completeExceptionally(error);
-    assertExceptionallyCompletedWith(result, error);
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(error);
   }
 
   @Test
@@ -506,14 +506,5 @@ public class SafeFutureTest {
     final List<Throwable> caughtExceptions = new ArrayList<>();
     Thread.currentThread().setUncaughtExceptionHandler((t, e) -> caughtExceptions.add(e));
     return caughtExceptions;
-  }
-
-  static void assertExceptionallyCompletedWith(
-      final SafeFuture<?> safeFuture, final Throwable exception) {
-    assertThat(safeFuture).isCompletedExceptionally();
-    assertThatThrownBy(safeFuture::join)
-        .isInstanceOf(CompletionException.class)
-        .extracting(Throwable::getCause)
-        .isSameAs(exception);
   }
 }

@@ -45,7 +45,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
@@ -80,6 +80,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
+      final AsyncRunner asyncRunner,
       final P2PNetwork<P> p2pNetwork,
       final ReputationManager reputationManager,
       final NetworkConfig p2pConfig) {
@@ -88,7 +89,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
         new ConnectionManager(
             discoveryService,
             reputationManager,
-            DelayedExecutorAsyncRunner.create(),
+            asyncRunner,
             p2pNetwork,
             p2pConfig.getStaticPeers().stream()
                 .map(p2pNetwork::createPeerAddress)
