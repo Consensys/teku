@@ -21,6 +21,7 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.pow.DepositContractAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
+import tech.pegasys.teku.pow.ErrorTrackingEth1Provider;
 import tech.pegasys.teku.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.pow.Eth1DepositManager;
 import tech.pegasys.teku.pow.Eth1HeadTracker;
@@ -50,7 +51,9 @@ public class PowchainService extends Service {
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
-            new Web3jEth1Provider(web3j, asyncRunner), MAXIMUM_CONCURRENT_ETH1_REQUESTS);
+            new ErrorTrackingEth1Provider(
+                new Web3jEth1Provider(web3j, asyncRunner), asyncRunner, config.getTimeProvider()),
+            MAXIMUM_CONCURRENT_ETH1_REQUESTS);
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(

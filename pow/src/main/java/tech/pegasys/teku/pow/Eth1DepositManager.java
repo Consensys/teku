@@ -144,7 +144,7 @@ public class Eth1DepositManager {
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
             (err) -> {
-              LOG.warn(
+              LOG.debug(
                   "Eth1DepositManager failed to get the head of Eth1: {}. Retrying in {} seconds.",
                   err.getMessage(),
                   Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
