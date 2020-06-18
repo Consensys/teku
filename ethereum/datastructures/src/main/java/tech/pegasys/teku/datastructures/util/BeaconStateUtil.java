@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -77,8 +78,10 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.util.cache.Cache;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
+import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class BeaconStateUtil {
@@ -134,9 +137,16 @@ public class BeaconStateUtil {
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
       SSZList<Validator> validators = state.getValidators();
+
+      Cache<UnsignedLong, BLSPublicKey> publicKeyCache =
+          BeaconStateCache.getTransitionCaches(state).getValidatorsPubKeys();
+      Function<Integer, BLSPublicKey> validatorPubkey =
+          index ->
+              publicKeyCache.get(
+                  UnsignedLong.valueOf(index), i -> validators.get(index).getPubkey());
       existingIndex =
           IntStream.range(0, validators.size())
-              .filter(index -> pubkey.equals(validators.get(index).getPubkey()))
+              .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
               .findFirst();
     }
 
@@ -179,7 +189,7 @@ public class BeaconStateUtil {
                   pubkey,
                   deposit.getData().getWithdrawal_credentials(),
                   min(
-                      amount.minus(amount.mod(Constants.EFFECTIVE_BALANCE_INCREMENT)),
+                      amount.minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT)),
                       UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)),
                   false,
                   FAR_FUTURE_EPOCH,
@@ -370,8 +380,7 @@ public class BeaconStateUtil {
   public static Bytes compute_signing_root(long number, Bytes domain) {
     SigningData domain_wrapped_object =
         new SigningData(
-            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(number)),
-            domain);
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(number)), domain);
     return domain_wrapped_object.hash_tree_root();
   }
 
@@ -386,8 +395,7 @@ public class BeaconStateUtil {
    */
   public static Bytes compute_signing_root(Bytes bytes, Bytes domain) {
     SigningData domain_wrapped_object =
-        new SigningData(
-            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.VECTOR_OF_BASIC, bytes), domain);
+        new SigningData(HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, bytes), domain);
     return domain_wrapped_object.hash_tree_root();
   }
 
@@ -400,7 +408,7 @@ public class BeaconStateUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
   public static UnsignedLong compute_epoch_at_slot(UnsignedLong slot) {
-    return slot.dividedBy(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
+    return slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
 
   /**
