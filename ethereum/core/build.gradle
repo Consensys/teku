@@ -12,6 +12,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
 
   testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':ethereum:datastructures'))
 
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'org.apache.tuweni:tuweni-ssz'

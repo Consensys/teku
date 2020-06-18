@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableMap;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -194,6 +195,10 @@ public class CombinedChainDataClient {
     return recentChainData.getBestBlockRoot();
   }
 
+  public Optional<SignedBeaconBlock> getBestBlock() {
+    return recentChainData.getBestBlock();
+  }
+
   public boolean isStoreAvailable() {
     return recentChainData != null && recentChainData.getStore() != null;
   }
@@ -224,6 +229,11 @@ public class CombinedChainDataClient {
   @VisibleForTesting
   public UpdatableStore getStore() {
     return recentChainData.getStore();
+  }
+
+  public NavigableMap<UnsignedLong, Bytes32> getAncestorRoots(
+      final UnsignedLong startSlot, final UnsignedLong step, final UnsignedLong count) {
+    return recentChainData.getAncestorRoots(startSlot, step, count);
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
