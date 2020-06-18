@@ -20,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.util.async.SafeFuture;
 
 class ScheduledExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
+  private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final ScheduledExecutorService scheduler;
   private final ThreadPoolExecutor workerPool;
 
@@ -98,12 +100,16 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
   @Override
   public void shutdown() {
     // All threads are daemon threads so don't wait for them to actually stop
+    shutdown.set(true);
     scheduler.shutdownNow();
     workerPool.shutdownNow();
   }
 
   private <U> SafeFuture<U> runTask(
       final Supplier<SafeFuture<U>> action, final Consumer<Runnable> scheduler) {
+    if (shutdown.get()) {
+      return new SafeFuture<>();
+    }
     final SafeFuture<U> result = new SafeFuture<>();
     try {
       scheduler.accept(() -> runTask(action, result));

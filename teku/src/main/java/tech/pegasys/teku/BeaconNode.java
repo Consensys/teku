@@ -96,11 +96,16 @@ public class BeaconNode {
   }
 
   public void stop() {
-    serviceController.stop().reportExceptions();
+    // Stop processing new events
     eventChannels.stop();
     threadPool.shutdownNow();
+
+    // Stop async actions
+    asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
+
+    // Stop services. This includes closing the database.
+    serviceController.stop().reportExceptions();
     metricsEndpoint.stop();
     vertx.close();
-    asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
   }
 }
