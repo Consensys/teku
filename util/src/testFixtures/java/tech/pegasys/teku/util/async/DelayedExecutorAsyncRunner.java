@@ -47,6 +47,9 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
     return runAsync(action, executor);
   }
 
+  @Override
+  public void shutdown() {}
+
   @VisibleForTesting
   <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
     final SafeFuture<U> result = new SafeFuture<>();

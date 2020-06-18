@@ -22,6 +22,7 @@ import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ServiceConfig {
 
+  private final AsyncRunnerFactory asyncRunnerFactory;
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
   private final EventChannels eventChannels;
@@ -29,11 +30,13 @@ public class ServiceConfig {
   private final TekuConfiguration config;
 
   public ServiceConfig(
+      final AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
       final EventBus eventBus,
       final EventChannels eventChannels,
       final MetricsSystem metricsSystem,
       final TekuConfiguration config) {
+    this.asyncRunnerFactory = asyncRunnerFactory;
     this.timeProvider = timeProvider;
     this.eventBus = eventBus;
     this.eventChannels = eventChannels;
@@ -62,10 +65,10 @@ public class ServiceConfig {
   }
 
   public AsyncRunner createAsyncRunner(final String name) {
-    return createAsyncRunner(name, Integer.MAX_VALUE);
+    return createAsyncRunner(name, Math.max(Runtime.getRuntime().availableProcessors(), 2));
   }
 
   public AsyncRunner createAsyncRunner(final String name, final int maxThreads) {
-    return ScheduledExecutorAsyncRunner.create(name, maxThreads, metricsSystem);
+    return asyncRunnerFactory.create(name, maxThreads, metricsSystem);
   }
 }

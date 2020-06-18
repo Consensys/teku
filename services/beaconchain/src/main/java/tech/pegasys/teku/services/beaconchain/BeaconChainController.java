@@ -147,7 +147,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public BeaconChainController(final ServiceConfig serviceConfig) {
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
-    networkAsyncRunner = serviceConfig.createAsyncRunner("p2p");
+    this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventBus = serviceConfig.getEventBus();
     this.eventChannels = serviceConfig.getEventChannels();

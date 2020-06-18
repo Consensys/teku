@@ -95,6 +95,13 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
         action, task -> scheduler.schedule(() -> workerPool.execute(task), delayAmount, delayUnit));
   }
 
+  @Override
+  public void shutdown() {
+    // All threads are daemon threads so don't wait for them to actually stop
+    scheduler.shutdownNow();
+    workerPool.shutdownNow();
+  }
+
   private <U> SafeFuture<U> runTask(
       final Supplier<SafeFuture<U>> action, final Consumer<Runnable> scheduler) {
     final SafeFuture<U> result = new SafeFuture<>();

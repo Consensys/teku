@@ -29,6 +29,8 @@ public interface AsyncRunner {
   <U> SafeFuture<U> runAfterDelay(
       Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit);
 
+  void shutdown();
+
   default SafeFuture<Void> runAfterDelay(
       final ExceptionThrowingRunnable action, long delayAmount, TimeUnit delayUnit) {
     return runAfterDelay(() -> SafeFuture.fromRunnable(action), delayAmount, delayUnit);
