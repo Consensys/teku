@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutablePrunableStore;
 import tech.pegasys.teku.datastructures.forkchoice.PrunableStore;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -40,7 +41,16 @@ public interface UpdatableStore extends PrunableStore {
   }
 
   interface StoreUpdateHandler {
-    StoreUpdateHandler NOOP = finalizedCheckpoint -> {};
+    StoreUpdateHandler NOOP =
+        new StoreUpdateHandler() {
+          @Override
+          public void onNewBlock(final SignedBlockAndState blockAndState) {}
+
+          @Override
+          public void onNewFinalizedCheckpoint(final Checkpoint finalizedCheckpoint) {}
+        };
+
+    void onNewBlock(final SignedBlockAndState blockAndState);
 
     void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint);
   }

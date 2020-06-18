@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
+import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -51,6 +53,7 @@ public class BeaconChainUtil {
   private final ForkChoice forkChoice;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
+  private final BlockImporter blockImporter;
 
   private BeaconChainUtil(
       final List<BLSKeyPair> validatorKeys,
@@ -61,6 +64,7 @@ public class BeaconChainUtil {
     this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
     this.forkChoice = forkChoice;
+    this.blockImporter = new BlockImporter(recentChainData, new EventBus());
   }
 
   public static BeaconChainUtil create(
@@ -183,7 +187,7 @@ public class BeaconChainUtil {
     final SignedBeaconBlock block =
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
-    final BlockImportResult importResult = forkChoice.onBlock(block);
+    final BlockImportResult importResult = blockImporter.importBlock(block);
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "

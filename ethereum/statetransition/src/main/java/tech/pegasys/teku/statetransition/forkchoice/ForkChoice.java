@@ -14,13 +14,10 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
@@ -56,24 +53,6 @@ public class ForkChoice {
                 () ->
                     new IllegalStateException("Unable to retrieve the slot of fork choice head")));
     return headBlockRoot;
-  }
-
-  public synchronized BlockImportResult onBlock(final SignedBeaconBlock block) {
-    final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-    StoreTransaction transaction = recentChainData.startStoreTransaction();
-    final BlockImportResult result =
-        on_block(transaction, block, stateTransition, forkChoiceStrategy);
-
-    if (!result.isSuccessful()) {
-      return result;
-    }
-
-    transaction.commit().join();
-    result
-        .getBlockProcessingRecord()
-        .ifPresent(record -> forkChoiceStrategy.onBlock(block.getMessage(), record.getPostState()));
-
-    return result;
   }
 
   public AttestationProcessingResult onAttestation(

@@ -38,6 +38,7 @@ import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.store.Store.Transaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
 
 class StoreTransactionUpdates {
   private final Store.Transaction tx;
@@ -266,6 +267,18 @@ class StoreTransactionUpdates {
                 removeBlockRootFromSlotIndex(store.rootsBySlotLookup, slot, root);
               });
         });
+  }
+
+  public void invokeUpdateHandler(StoreUpdateHandler storeUpdateHandler) {
+    // Process new blocks and states
+    for (SignedBeaconBlock newBlock : hotBlocks.values()) {
+      final BeaconState newState = hotStates.get(newBlock.getRoot());
+      storeUpdateHandler.onNewBlock(new SignedBlockAndState(newBlock, newState));
+    }
+
+    // Process new finalized block
+    finalizedChainData.ifPresent(
+        data -> storeUpdateHandler.onNewFinalizedCheckpoint(data.getFinalizedCheckpoint()));
   }
 
   private Set<Bytes32> getPrunedRoots() {

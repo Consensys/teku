@@ -347,6 +347,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   @Override
+  public void onNewBlock(final SignedBlockAndState blockAndState) {
+    forkChoiceStrategy.ifPresent(
+        strategy ->
+            strategy.onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState()));
+  }
+
+  @Override
   public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
     finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
     forkChoiceStrategy.ifPresent(strategy -> strategy.maybePrune(finalizedCheckpoint.getRoot()));
