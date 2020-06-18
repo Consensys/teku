@@ -142,7 +142,7 @@ class DiscoveryNetworkTest {
   public void shouldNotEnableDiscoveryWhenDiscoveryIsDisabled() {
     final DiscoveryNetwork<Peer> network =
         DiscoveryNetwork.create(
-            DelayedExecutorAsyncRunner.createNope(),
+            DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
             reputationManager,
             new NetworkConfig(

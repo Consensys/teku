@@ -22,6 +22,10 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * An AsyncRunner that uses the common ForkJoinPool so that it is guaranteed not to leak threads
+ * even if the test doesn't shut it down.
+ */
 public class DelayedExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
   private final ExecutorFactory executorFactory;
@@ -30,7 +34,7 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
     this.executorFactory = executorFactory;
   }
 
-  public static DelayedExecutorAsyncRunner createNope() {
+  public static DelayedExecutorAsyncRunner create() {
     return new DelayedExecutorAsyncRunner(CompletableFuture::delayedExecutor);
   }
 

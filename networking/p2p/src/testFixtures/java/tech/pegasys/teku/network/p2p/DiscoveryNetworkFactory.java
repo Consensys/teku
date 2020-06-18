@@ -92,9 +92,9 @@ public class DiscoveryNetworkFactory {
                 StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
         final DiscoveryNetwork<Peer> network =
             DiscoveryNetwork.create(
-                DelayedExecutorAsyncRunner.createNope(),
+                DelayedExecutorAsyncRunner.create(),
                 new LibP2PNetwork(
-                    DelayedExecutorAsyncRunner.createNope(),
+                    DelayedExecutorAsyncRunner.create(),
                     config,
                     reputationManager,
                     METRICS_SYSTEM,

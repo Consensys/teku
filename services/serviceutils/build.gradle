@@ -10,4 +10,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.hyperledger.besu:plugin-api'
+
+  testImplementation testFixtures(project(':util'))
 }

@@ -225,7 +225,7 @@ public class Eth2NetworkFactory {
         eventBus = new EventBus();
       }
       if (asyncRunner == null) {
-        asyncRunner = DelayedExecutorAsyncRunner.createNope();
+        asyncRunner = DelayedExecutorAsyncRunner.create();
       }
       if (eth2RpcPingInterval == null) {
         eth2RpcPingInterval = Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL;

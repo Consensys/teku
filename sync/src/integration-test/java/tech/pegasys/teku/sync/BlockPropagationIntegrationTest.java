@@ -37,7 +37,7 @@ import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BlockPropagationIntegrationTest {
-  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.createNope();
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
 

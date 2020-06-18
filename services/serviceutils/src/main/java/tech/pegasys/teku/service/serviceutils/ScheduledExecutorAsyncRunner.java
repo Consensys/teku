@@ -14,8 +14,8 @@
 package tech.pegasys.teku.service.serviceutils;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -34,35 +34,12 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final ScheduledExecutorService scheduler;
-  private final ThreadPoolExecutor workerPool;
+  private final ExecutorService workerPool;
 
-  private ScheduledExecutorAsyncRunner(
-      final String name,
-      final ScheduledExecutorService scheduler,
-      final ThreadPoolExecutor workerPool,
-      final MetricsSystem metricsSystem) {
+  ScheduledExecutorAsyncRunner(
+      final ScheduledExecutorService scheduler, final ExecutorService workerPool) {
     this.scheduler = scheduler;
     this.workerPool = workerPool;
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.EXECUTOR,
-        name + "_queue_size",
-        "Current size of the executor task queue",
-        () -> workerPool.getQueue().size());
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.EXECUTOR,
-        name + "_thread_pool_size",
-        "Current number of threads in the executor thread pool",
-        workerPool::getPoolSize);
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.EXECUTOR,
-        name + "_thread_active_count",
-        "Current number of threads executing tasks for this executor",
-        workerPool::getActiveCount);
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.EXECUTOR,
-        name + "_largest_thread_count",
-        "Largest number of threads that have ever been in the pool for this executor",
-        workerPool::getLargestPoolSize);
   }
 
   static AsyncRunner create(
@@ -81,7 +58,24 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
             TimeUnit.SECONDS,
             new SynchronousQueue<>(),
             new ThreadFactoryBuilder().setNameFormat(name + "-async-%d").setDaemon(true).build());
-    return new ScheduledExecutorAsyncRunner(name, scheduler, workerPool, metricsSystem);
+
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.EXECUTOR,
+        name + "_queue_size",
+        "Current size of the executor task queue",
+        () -> workerPool.getQueue().size());
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.EXECUTOR,
+        name + "_thread_pool_size",
+        "Current number of threads in the executor thread pool",
+        workerPool::getPoolSize);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.EXECUTOR,
+        name + "_thread_active_count",
+        "Current number of threads executing tasks for this executor",
+        workerPool::getActiveCount);
+
+    return new ScheduledExecutorAsyncRunner(scheduler, workerPool);
   }
 
   @Override
@@ -112,20 +106,10 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
     }
     final SafeFuture<U> result = new SafeFuture<>();
     try {
-      scheduler.accept(() -> runTask(action, result));
-    } catch (final RejectedExecutionException e) {
-      LOG.debug("Execution rejected", e);
+      scheduler.accept(() -> SafeFuture.ofComposed(action::get).propagateTo(result));
     } catch (final Throwable t) {
       result.completeExceptionally(t);
     }
     return result;
-  }
-
-  private <U> void runTask(final Supplier<SafeFuture<U>> action, final SafeFuture<U> result) {
-    try {
-      action.get().propagateTo(result);
-    } catch (final Throwable t) {
-      result.completeExceptionally(t);
-    }
   }
 }
