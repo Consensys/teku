@@ -42,7 +42,7 @@ public class SlotProcessor {
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final EventBus eventBus;
   private final NodeSlot nodeSlot = new NodeSlot(ZERO);
-  private final EventLogger EVENT_LOG;
+  private final EventLogger eventLog;
 
   private volatile UnsignedLong onTickSlotStart;
   private volatile UnsignedLong onTickSlotAttestation;
@@ -64,7 +64,7 @@ public class SlotProcessor {
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
     this.eventBus = eventBus;
-    this.EVENT_LOG = eventLogger;
+    this.eventLog = eventLogger;
   }
 
   public SlotProcessor(
@@ -106,7 +106,7 @@ public class SlotProcessor {
     final UnsignedLong calculatedSlot = ForkChoiceUtil.getCurrentSlot(currentTime, genesisTime);
     // tolerate 1 slot difference, not more
     if (calculatedSlot.compareTo(nodeSlot.getValue().plus(ONE)) > 0) {
-      EVENT_LOG.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);
+      eventLog.nodeSlotsMissed(nodeSlot.getValue(), calculatedSlot);
       nodeSlot.setValue(calculatedSlot);
     }
 
@@ -127,7 +127,7 @@ public class SlotProcessor {
 
   private void processSlotWhileSyncing() {
     this.forkChoice.processHead();
-    EVENT_LOG.syncEvent(
+    eventLog.syncEvent(
         nodeSlot.getValue(), recentChainData.getBestSlot(), p2pNetwork.getPeerCount());
     slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
   }
@@ -175,7 +175,7 @@ public class SlotProcessor {
   private void processSlotStart(final UnsignedLong nodeEpoch) {
     onTickSlotStart = nodeSlot.getValue();
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
-      EVENT_LOG.epochEvent(
+      eventLog.epochEvent(
           nodeEpoch,
           recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
           recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
@@ -187,7 +187,7 @@ public class SlotProcessor {
   private void processSlotAttestation(final UnsignedLong nodeEpoch) {
     onTickSlotAttestation = nodeSlot.getValue();
     Bytes32 headBlockRoot = this.forkChoice.processHead();
-    EVENT_LOG.slotEvent(
+    eventLog.slotEvent(
         nodeSlot.getValue(),
         recentChainData.getBestSlot(),
         headBlockRoot,
