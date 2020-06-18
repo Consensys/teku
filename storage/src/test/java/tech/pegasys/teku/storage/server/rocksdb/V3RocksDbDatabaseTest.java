@@ -30,17 +30,16 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
   @Override
-  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
-    final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
-    return RocksDbDatabase.createV3(new StubMetricsSystem(), config, storageMode);
+  protected StorageSystem createStorageSystem(
+      final File tempDir, final StateStorageMode storageMode) {
+    return FileBackedStorageSystem.createV3StorageSystem(tempDir.toPath(), storageMode);
   }
 
   @Test
@@ -72,7 +71,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
-    final SignedBlockAndState genesis = primaryChain.generateGenesis();
+    primaryChain.generateGenesis();
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
     // Primary chain's next block is at 7
@@ -86,9 +85,8 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     forkChain.generateBlockAtSlot(firstHotBlockSlot);
 
     // Setup database
-    database = setupDatabase(tempDir.toFile(), storageMode);
-    store = StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesis.getState());
-    database.storeGenesis(store);
+    createStorage(tempDir.toFile(), storageMode);
+    initGenesis();
 
     final Set<SignedBlockAndState> allBlocksAndStates =
         Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
@@ -99,8 +97,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     finalizeCheckpoint(finalizedCheckpoint);
 
     // Close database and rebuild from disk
-    database.close();
-    database = setupDatabase(tempDir.toFile(), storageMode);
+    restartStorage();
 
     // We should be able to access primary hot blocks and state
     final List<SignedBlockAndState> expectedHotBlocksAndStates =
@@ -124,10 +121,8 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     final long finalizedSlot = 7;
     final int hotBlockCount = 3;
     // Setup chains
-    final ChainBuilder chain = ChainBuilder.create(VALIDATOR_KEYS);
-    final SignedBlockAndState genesis = chain.generateGenesis();
-    chain.generateBlocksUpToSlot(finalizedSlot);
-    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(chain.getBlockAtSlot(7));
+    chainBuilder.generateBlocksUpToSlot(finalizedSlot);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(chainBuilder.getBlockAtSlot(7));
     final long firstHotBlockSlot =
         finalizedCheckpoint.getEpochStartSlot().plus(UnsignedLong.ONE).longValue();
     for (int i = 0; i < hotBlockCount; i++) {
@@ -136,25 +131,23 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     final long lastSlot = chainBuilder.getLatestSlot().longValue();
 
     // Setup database
-    database = setupDatabase(tempDir.toFile(), storageMode);
-    store = StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesis.getState());
-    database.storeGenesis(store);
+    createStorage(tempDir.toFile(), storageMode);
+    initGenesis();
 
-    add(chain.streamBlocksAndStates().collect(Collectors.toSet()));
+    add(chainBuilder.streamBlocksAndStates().collect(Collectors.toSet()));
 
     // Close database and rebuild from disk
-    database.close();
-    database = setupDatabase(tempDir.toFile(), storageMode);
+    restartStorage();
 
     finalizeCheckpoint(finalizedCheckpoint);
 
     // We should be able to access hot blocks and state
     final List<SignedBlockAndState> expectedHotBlocksAndStates =
-        chain.streamBlocksAndStates(finalizedSlot, lastSlot).collect(toList());
+        chainBuilder.streamBlocksAndStates(finalizedSlot, lastSlot).collect(toList());
     assertHotBlocksAndStatesInclude(expectedHotBlocksAndStates);
 
     final Map<Bytes32, BeaconState> historicalStates =
-        chain
+        chainBuilder
             .streamBlocksAndStates(0, 6)
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
 

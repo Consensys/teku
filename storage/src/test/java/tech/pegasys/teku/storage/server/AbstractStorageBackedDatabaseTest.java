@@ -22,7 +22,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,9 +30,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
-import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -41,14 +39,14 @@ import tech.pegasys.teku.util.file.FileUtil;
 public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabaseTest {
   private final List<File> tmpDirectories = new ArrayList<>();
 
-  protected abstract Database createDatabase(
+  protected abstract StorageSystem createStorageSystem(
       final File tempDir, final StateStorageMode storageMode);
 
   @Override
-  protected Database createDatabase(final StateStorageMode storageMode) {
+  protected StorageSystem createStorageSystemInternal(final StateStorageMode storageMode) {
     final File tmpDir = Files.createTempDir();
     tmpDirectories.add(tmpDir);
-    return createDatabase(tmpDir, storageMode);
+    return createStorageSystem(tmpDir, storageMode);
   }
 
   @Override
@@ -60,11 +58,11 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     tmpDirectories.clear();
   }
 
-  protected Database setupDatabase(final File tempDir, final StateStorageMode storageMode) {
-    database = createDatabase(tempDir, storageMode);
-    databases.add(database);
-    storageUpdateChannel = new DatabaseBackedStorageUpdateChannel(database);
-    return database;
+  protected StorageSystem createStorage(final File tempDir, final StateStorageMode storageMode) {
+    this.storageMode = storageMode;
+    final StorageSystem storage = createStorageSystem(tempDir, storageMode);
+    setDefaultStorage(storage);
+    return storage;
   }
 
   @Test
@@ -80,16 +78,13 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   }
 
   public void testShouldRecreateGenesisStateOnRestart(
-      final Path tempDir, final StateStorageMode storageMode) throws Exception {
+      final Path tempDir, final StateStorageMode storageMode) {
     // Set up database with genesis state
-    database = setupDatabase(tempDir.toFile(), storageMode);
-    store =
-        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
-    database.storeGenesis(store);
+    createStorage(tempDir.toFile(), storageMode);
+    initGenesis();
 
     // Shutdown and restart
-    database.close();
-    database = setupDatabase(tempDir.toFile(), storageMode);
+    restartStorage();
 
     final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
     assertStoresMatch(memoryStore, store);
@@ -112,10 +107,8 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   public void testShouldRecreateStoreOnRestartWithOffEpochBoundaryFinalizedBlock(
       final Path tempDir, final StateStorageMode storageMode) throws Exception {
     // Set up database with genesis state
-    database = setupDatabase(tempDir.toFile(), storageMode);
-    store =
-        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
-    database.storeGenesis(store);
+    createStorage(tempDir.toFile(), storageMode);
+    initGenesis();
 
     // Create finalized block at slot prior to epoch boundary
     final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
@@ -138,15 +131,14 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(UnsignedLong.valueOf(10)));
 
     // Save new blocks and finalized checkpoint
-    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
     chainBuilder.streamBlocksAndStates(1).forEach(tx::putBlockAndState);
     tx.putCheckpointState(finalizedCheckpoint, finalizedCheckpointState);
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
     tx.commit().join();
 
     // Shutdown and restart
-    database.close();
-    database = setupDatabase(tempDir.toFile(), storageMode);
+    restartStorage();
 
     final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
     assertStoresMatch(memoryStore, store);
@@ -164,18 +156,8 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
   private void testShouldPersistOnDisk(
       @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
-    Function<StateStorageMode, Database> initializeDatabase =
-        mode -> setupDatabase(tempDir.toFile(), mode);
-    Function<Database, Database> restartDatabase =
-        d -> {
-          try {
-            d.close();
-            return initializeDatabase.apply(storageMode);
-          } catch (Exception e) {
-            throw new RuntimeException(e);
-          }
-        };
-    testShouldRecordFinalizedBlocksAndStates(
-        storageMode, false, initializeDatabase, restartDatabase);
+    Consumer<StateStorageMode> initializeDatabase = mode -> createStorage(tempDir.toFile(), mode);
+
+    testShouldRecordFinalizedBlocksAndStates(storageMode, false, initializeDatabase);
   }
 }
