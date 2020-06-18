@@ -58,7 +58,7 @@ public class Eth1HeadTracker {
         .thenAccept(this::onLatestBlockHead)
         .exceptionally(
             error -> {
-              LOG.debug("Failed to get latest ETH1 chain head. Will retry.", error);
+              LOG.debug("Failed to get latest Eth1 chain head. Will retry.", error);
               return null;
             })
         .always(
@@ -71,13 +71,13 @@ public class Eth1HeadTracker {
                     .finish(
                         () -> {},
                         error ->
-                            LOG.error("Scheduling next check of ETH1 chain head failed", error)));
+                            LOG.error("Scheduling next check of Eth1 chain head failed", error)));
   }
 
   private void onLatestBlockHead(final Block headBlock) {
     final UnsignedLong headBlockNumber = UnsignedLong.valueOf(headBlock.getNumber());
     if (headBlockNumber.compareTo(ETH1_FOLLOW_DISTANCE) < 0) {
-      LOG.debug("Not processing ETH1 blocks because chain has not reached minimum follow distance");
+      LOG.debug("Not processing Eth1 blocks because chain has not reached minimum follow distance");
       return;
     }
     final UnsignedLong newHeadAtFollowDistance = headBlockNumber.minus(ETH1_FOLLOW_DISTANCE);

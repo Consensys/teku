@@ -54,7 +54,7 @@ public class Eth1StatusLogger {
               () -> reportOutage(outageStartInSeconds),
               LOG_INTERVAL,
               TimeUnit.MILLISECONDS,
-              error -> LOG.error("Failed to check ETH1 status", error));
+              error -> LOG.error("Failed to check Eth1 status", error));
       activeReporter = Optional.of(reporter);
     }
   }
