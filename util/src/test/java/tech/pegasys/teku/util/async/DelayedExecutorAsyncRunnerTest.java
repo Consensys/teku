@@ -130,7 +130,8 @@ public class DelayedExecutorAsyncRunnerTest {
   public void testRecurrentTaskCancel() throws Exception {
     AtomicInteger counter = new AtomicInteger();
     Cancellable task =
-        asyncRunner.runWithFixedDelay(counter::incrementAndGet, 100, TimeUnit.MILLISECONDS, t -> {});
+        asyncRunner.runWithFixedDelay(
+            counter::incrementAndGet, 100, TimeUnit.MILLISECONDS, t -> {});
     waitFor(() -> assertThat(counter).hasValueGreaterThan(3));
     task.cancel();
     int cnt1 = counter.get();
