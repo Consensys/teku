@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.events.attestation;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 
 public class BroadcastAggregatesEvent {
 
@@ -25,5 +26,18 @@ public class BroadcastAggregatesEvent {
 
   public UnsignedLong getSlot() {
     return slot;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final BroadcastAggregatesEvent that = (BroadcastAggregatesEvent) o;
+    return Objects.equals(slot, that.slot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(slot);
   }
 }
