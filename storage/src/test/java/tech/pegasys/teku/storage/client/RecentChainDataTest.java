@@ -602,10 +602,6 @@ class RecentChainDataTest {
         .forEach(
             blockAndState -> {
               transaction.putBlockAndState(blockAndState);
-              preGenesisStorageClient
-                  .getForkChoiceStrategy()
-                  .orElseThrow()
-                  .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
             });
     transaction.commit().join();
   }
@@ -654,10 +650,6 @@ class RecentChainDataTest {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block);
     tx.commit().reportExceptions();
-    recentChainData
-        .getForkChoiceStrategy()
-        .orElseThrow()
-        .onBlock(block.getBlock().getMessage(), block.getState());
   }
 
   private void disableForkChoicePruneThreshold() {

@@ -62,8 +62,7 @@ public class BlockImporterTest {
   private final BeaconChainUtil otherChain =
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
-  private final BlockImporter blockImporter =
-      new BlockImporter(recentChainData, forkChoice, localEventBus);
+  private final BlockImporter blockImporter = new BlockImporter(recentChainData, localEventBus);
 
   @BeforeAll
   public static void init() {

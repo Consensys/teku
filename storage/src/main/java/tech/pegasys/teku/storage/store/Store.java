@@ -531,8 +531,7 @@ class Store implements UpdatableStore {
                   writeLock.unlock();
                 }
 
-                // Signal back changes to the handler
-                finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
+                updates.invokeUpdateHandler(updateHandler);
               });
     }
 
