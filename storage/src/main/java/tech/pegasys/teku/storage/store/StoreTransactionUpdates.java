@@ -17,10 +17,13 @@ import static tech.pegasys.teku.storage.store.Store.indexBlockRootsBySlot;
 import static tech.pegasys.teku.storage.store.Store.removeBlockRootFromSlotIndex;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -271,7 +274,9 @@ class StoreTransactionUpdates {
 
   public void invokeUpdateHandler(StoreUpdateHandler storeUpdateHandler) {
     // Process new blocks and states
-    for (SignedBeaconBlock newBlock : hotBlocks.values()) {
+    final List<SignedBeaconBlock> sortedBlocks = new ArrayList<>(hotBlocks.values());
+    sortedBlocks.sort(Comparator.comparing(SignedBeaconBlock::getSlot));
+    for (SignedBeaconBlock newBlock : sortedBlocks) {
       final BeaconState newState = hotStates.get(newBlock.getRoot());
       storeUpdateHandler.onNewBlock(new SignedBlockAndState(newBlock, newState));
     }
