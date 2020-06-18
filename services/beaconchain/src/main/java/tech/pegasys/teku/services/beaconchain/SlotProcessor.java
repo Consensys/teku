@@ -55,7 +55,7 @@ public class SlotProcessor {
       final SyncService syncService,
       final ForkChoice forkChoice,
       final Eth2Network p2pNetwork,
-      SlotEventsChannel slotEventsChannelPublisher,
+      final SlotEventsChannel slotEventsChannelPublisher,
       final EventBus eventBus,
       final EventLogger eventLogger) {
     this.recentChainData = recentChainData;
@@ -72,7 +72,7 @@ public class SlotProcessor {
       final SyncService syncService,
       final ForkChoice forkChoice,
       final Eth2Network p2pNetwork,
-      SlotEventsChannel slotEventsChannelPublisher,
+      final SlotEventsChannel slotEventsChannelPublisher,
       final EventBus eventBus) {
     this(
         recentChainData,
