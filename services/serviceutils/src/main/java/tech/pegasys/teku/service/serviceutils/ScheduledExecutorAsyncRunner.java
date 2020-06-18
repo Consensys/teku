@@ -100,14 +100,14 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
   }
 
   private <U> SafeFuture<U> runTask(
-      final Supplier<SafeFuture<U>> action, final Consumer<Runnable> scheduler) {
+      final Supplier<SafeFuture<U>> action, final Consumer<Runnable> executor) {
     if (shutdown.get()) {
       LOG.debug("Ignoring async task because shutdown is in progress");
       return new SafeFuture<>();
     }
     final SafeFuture<U> result = new SafeFuture<>();
     try {
-      scheduler.accept(() -> SafeFuture.ofComposed(action::get).propagateTo(result));
+      executor.accept(() -> SafeFuture.ofComposed(action::get).propagateTo(result));
     } catch (final Throwable t) {
       result.completeExceptionally(t);
     }
