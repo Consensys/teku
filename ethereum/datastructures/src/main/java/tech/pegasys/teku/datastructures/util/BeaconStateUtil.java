@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -77,6 +78,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.util.cache.Cache;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
 import tech.pegasys.teku.util.hashtree.Merkleizable;
@@ -134,9 +136,16 @@ public class BeaconStateUtil {
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
       SSZList<Validator> validators = state.getValidators();
+
+      Cache<UnsignedLong, BLSPublicKey> publicKeyCache =
+          BeaconStateCache.getTransitionCaches(state).getValidatorsPubKeys();
+      Function<Integer, BLSPublicKey> validatorPubkey =
+          index ->
+              publicKeyCache.get(
+                  UnsignedLong.valueOf(index), i -> validators.get(index).getPubkey());
       existingIndex =
           IntStream.range(0, validators.size())
-              .filter(index -> pubkey.equals(validators.get(index).getPubkey()))
+              .filter(index -> pubkey.equals(validatorPubkey.apply(index)))
               .findFirst();
     }
 
