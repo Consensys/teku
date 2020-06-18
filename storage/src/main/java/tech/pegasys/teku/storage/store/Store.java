@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
@@ -461,6 +463,9 @@ class Store implements UpdatableStore {
 
     @Override
     public void putBlockAndState(SignedBeaconBlock block, BeaconState state) {
+      checkArgument(
+          block.getStateRoot().equals(state.hash_tree_root()),
+          "State must belong to the given block");
       blocks.put(block.getRoot(), block);
       block_states.put(block.getRoot(), state);
     }
