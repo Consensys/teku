@@ -210,14 +210,24 @@ public class ChainBuilder {
     return generateBlocksUpToSlot(UnsignedLong.valueOf(slot));
   }
 
+  public List<SignedBlockAndState> generateBlocksUpToSlot(final long slot, final int skip)
+      throws StateTransitionException {
+    return generateBlocksUpToSlot(UnsignedLong.valueOf(slot));
+  }
+
   public List<SignedBlockAndState> generateBlocksUpToSlot(final UnsignedLong slot)
+      throws StateTransitionException {
+    return generateBlocksUpToSlot(slot, 0);
+  }
+
+  public List<SignedBlockAndState> generateBlocksUpToSlot(final UnsignedLong slot, final int skip)
       throws StateTransitionException {
     assertBlockCanBeGenerated();
     final List<SignedBlockAndState> generated = new ArrayList<>();
 
     SignedBlockAndState latestBlock = getLatestBlockAndState();
     while (latestBlock.getState().getSlot().compareTo(slot) < 0) {
-      latestBlock = generateNextBlock();
+      latestBlock = generateNextBlock(skip);
       generated.add(latestBlock);
     }
 

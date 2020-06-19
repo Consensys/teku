@@ -29,6 +29,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public class NoVotesTest {
 
@@ -42,7 +43,7 @@ public class NoVotesTest {
     List<UnsignedLong> balances = new ArrayList<>(Collections.nCopies(16, ZERO));
 
     // Check that the head is the finalized block.
-    assertThat(forkChoice.findHead(store, valueOf(1), getHash(0), valueOf(1), balances))
+    assertThat(processHead(forkChoice, store, valueOf(1), getHash(0), valueOf(1), balances))
         .isEqualTo(getHash(0));
 
     // Add block 2
@@ -57,7 +58,7 @@ public class NoVotesTest {
     //         0
     //        /
     //        2 <- head
-    assertThat(forkChoice.findHead(store, valueOf(1), getHash(0), valueOf(1), balances))
+    assertThat(processHead(forkChoice, store, valueOf(1), getHash(0), valueOf(1), balances))
         .isEqualTo(getHash(2));
 
     // Add block 1
@@ -72,7 +73,7 @@ public class NoVotesTest {
     //         0
     //        / \
     // head-> 2  1
-    assertThat(forkChoice.findHead(store, valueOf(1), getHash(0), valueOf(1), balances))
+    assertThat(processHead(forkChoice, store, valueOf(1), getHash(0), valueOf(1), balances))
         .isEqualTo(getHash(2));
 
     // Add block 3
@@ -91,7 +92,7 @@ public class NoVotesTest {
     // head-> 2  1
     //           |
     //           3
-    assertThat(forkChoice.findHead(store, valueOf(1), getHash(0), valueOf(1), balances))
+    assertThat(processHead(forkChoice, store, valueOf(1), getHash(0), valueOf(1), balances))
         .isEqualTo(getHash(2));
 
     // Add block 4
@@ -110,7 +111,7 @@ public class NoVotesTest {
     //        2  1
     //        |  |
     // head-> 4  3
-    assertThat(forkChoice.findHead(store, valueOf(1), getHash(0), valueOf(1), balances))
+    assertThat(processHead(forkChoice, store, valueOf(1), getHash(0), valueOf(1), balances))
         .isEqualTo(getHash(4));
 
     // Add block 5 with a justified epoch of 2
@@ -133,7 +134,7 @@ public class NoVotesTest {
     // head-> 4  3
     //        |
     //        5
-    assertThat(forkChoice.findHead(store, valueOf(1), getHash(0), valueOf(1), balances))
+    assertThat(processHead(forkChoice, store, valueOf(1), getHash(0), valueOf(1), balances))
         .isEqualTo(getHash(4));
 
     // Ensure there is an error when starting from a block that has the wrong justified epoch.
@@ -146,7 +147,7 @@ public class NoVotesTest {
     //     |
     //     5 <- starting from 5 with justified epoch 0 should error.
     assertThatThrownBy(
-            () -> forkChoice.findHead(store, valueOf(1), getHash(5), valueOf(1), balances))
+            () -> processHead(forkChoice, store, valueOf(1), getHash(5), valueOf(1), balances))
         .hasMessage("ProtoArray: Best node is not viable for head");
 
     // Set the justified epoch to 2 and the start block to 5 and ensure 5 is the head.
@@ -158,7 +159,7 @@ public class NoVotesTest {
     //     4  3
     //     |
     //     5 <- head
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(1), balances))
+    assertThat(processHead(forkChoice, store, valueOf(2), getHash(5), valueOf(1), balances))
         .isEqualTo(getHash(5));
 
     // Add block 6
@@ -185,7 +186,22 @@ public class NoVotesTest {
     //     5
     //     |
     //     6 <- head
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(1), balances))
+    assertThat(processHead(forkChoice, store, valueOf(2), getHash(5), valueOf(1), balances))
         .isEqualTo(getHash(6));
+  }
+
+  private Bytes32 processHead(
+      final ProtoArrayForkChoiceStrategy forkChoice,
+      final MutableStore store,
+      final UnsignedLong justifiedEpoch,
+      final Bytes32 justifiedRoot,
+      final UnsignedLong finalizedEpoch,
+      final List<UnsignedLong> justifiedStateBalances) {
+    forkChoice.updateForkChoiceWeights(
+        store,
+        new Checkpoint(justifiedEpoch, justifiedRoot),
+        finalizedEpoch,
+        justifiedStateBalances);
+    return forkChoice.getHead();
   }
 }

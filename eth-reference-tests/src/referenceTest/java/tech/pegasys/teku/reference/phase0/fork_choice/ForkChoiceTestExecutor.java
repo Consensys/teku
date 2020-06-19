@@ -43,13 +43,14 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.ForkChoiceState;
+import tech.pegasys.teku.datastructures.forkchoice.MutableForkChoiceState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -181,9 +182,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
     storageClient.initializeFromGenesis(genesis);
 
-    ForkChoiceStrategy forkChoiceStrategy =
+    MutableForkChoiceState forkChoiceStrategy =
         protoArrayFC
-            ? ProtoArrayForkChoiceStrategy.create(storageClient.getStore())
+            ? ProtoArrayForkChoiceStrategy.create(
+                storageClient.getStore().getFinalizedCheckpoint(),
+                storageClient.getStore().getJustifiedCheckpoint())
             : new OrigForkChoiceStrategy(storageClient.getStore());
 
     @SuppressWarnings("ModifiedButNotUsed")
@@ -240,8 +243,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               {
                 Bytes32 root = Bytes32.fromHexString((String) e.getValue());
                 UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
-                Bytes32 head = forkChoiceStrategy.findHead(transaction);
+                forkChoiceStrategy.updateHead(transaction);
                 transaction.commit(() -> {}, "Failed to persist validator vote changes.");
+
+                Bytes32 head = forkChoiceStrategy.getHead();
                 assertEquals(
                     root,
                     head,
@@ -278,7 +283,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       StateTransition st,
       RecentChainData storageClient,
       Attestation step,
-      ForkChoiceStrategy strategy) {
+      ForkChoiceState strategy) {
     UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
     AttestationProcessingResult attestationProcessingResult =
         ForkChoiceUtil.on_attestation(
@@ -295,7 +300,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       StateTransition st,
       RecentChainData storageClient,
       SignedBeaconBlock block,
-      ForkChoiceStrategy forkChoiceStrategy) {
+      MutableForkChoiceState forkChoiceStrategy) {
     UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
     BlockImportResult blockImportResult =
         ForkChoiceUtil.on_block(transaction, block, st, forkChoiceStrategy);

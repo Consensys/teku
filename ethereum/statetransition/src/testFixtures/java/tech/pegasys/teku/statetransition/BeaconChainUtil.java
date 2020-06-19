@@ -25,7 +25,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.TestMessageSignerService;
@@ -40,7 +39,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -50,7 +48,6 @@ public class BeaconChainUtil {
 
   private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
   private final RecentChainData recentChainData;
-  private final ForkChoice forkChoice;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
   private final BlockImporter blockImporter;
@@ -58,12 +55,10 @@ public class BeaconChainUtil {
   private BeaconChainUtil(
       final List<BLSKeyPair> validatorKeys,
       final RecentChainData recentChainData,
-      final ForkChoice forkChoice,
       boolean signDeposits) {
     this.validatorKeys = validatorKeys;
     this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
-    this.forkChoice = forkChoice;
     this.blockImporter = new BlockImporter(recentChainData, new EventBus());
   }
 
@@ -76,27 +71,14 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-    return create(
-        storageClient, validatorKeys, new ForkChoice(storageClient, new StateTransition()), true);
+    return create(storageClient, validatorKeys, true);
   }
 
   public static BeaconChainUtil create(
       final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
-    return new BeaconChainUtil(
-        validatorKeys,
-        storageClient,
-        new ForkChoice(storageClient, new StateTransition()),
-        signDeposits);
-  }
-
-  public static BeaconChainUtil create(
-      final RecentChainData storageClient,
-      final List<BLSKeyPair> validatorKeys,
-      final ForkChoice forkChoice,
-      final boolean signDeposits) {
-    return new BeaconChainUtil(validatorKeys, storageClient, forkChoice, signDeposits);
+    return new BeaconChainUtil(validatorKeys, storageClient, signDeposits);
   }
 
   public static void initializeStorage(
@@ -197,7 +179,11 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-    forkChoice.processHead();
+
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.updateHead();
+    tx.commit().reportExceptions();
+
     return importResult.getBlock();
   }
 

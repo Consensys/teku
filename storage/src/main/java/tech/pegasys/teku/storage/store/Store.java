@@ -17,10 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
@@ -46,11 +48,14 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.forkchoice.MutableForkChoiceState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
@@ -64,6 +69,8 @@ class Store implements UpdatableStore {
   private final Counter stateRequestRegenerateCounter;
   private final Counter stateRequestMissCounter;
   private final MetricsSystem metricsSystem;
+
+  final MutableForkChoiceState forkChoiceState;
   UnsignedLong time;
   UnsignedLong genesis_time;
   Checkpoint justified_checkpoint;
@@ -117,11 +124,16 @@ class Store implements UpdatableStore {
         new SignedBlockAndState(finalizedBlock, latestFinalizedBlockState);
     block_states.put(finalizedBlock.getRoot(), latestFinalizedBlockState);
 
+    forkChoiceState =
+        ProtoArrayForkChoiceStrategy.create(finalized_checkpoint, justified_checkpoint);
+
     // Process blocks
     LOG.info("Process {} block(s) to regenerate state", blocks.size());
     final AtomicInteger processedBlocks = new AtomicInteger(0);
+    forkChoiceState.onBlock(finalizedBlockAndState);
     blockStateProvider.provide(
         (blockRoot, state) -> {
+          forkChoiceState.onBlock(blocks.get(blockRoot).getMessage(), state);
           final int processed = processedBlocks.incrementAndGet();
           if (processed % 100 == 0) {
             LOG.info("Processed {} blocks", processed);
@@ -305,6 +317,31 @@ class Store implements UpdatableStore {
   }
 
   @Override
+  public Bytes32 getHead() {
+    return forkChoiceState.getHead();
+  }
+
+  @Override
+  public Optional<UnsignedLong> getBlockSlot(final Bytes32 blockRoot) {
+    readLock.lock();
+    try {
+      return forkChoiceState.getBlockSlot(blockRoot);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Optional<Bytes32> getBlockParent(final Bytes32 blockRoot) {
+    readLock.lock();
+    try {
+      return forkChoiceState.getBlockParent(blockRoot);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public boolean containsBlock(Bytes32 blockRoot) {
     readLock.lock();
     try {
@@ -439,6 +476,12 @@ class Store implements UpdatableStore {
   class Transaction implements StoreTransaction {
 
     private final StorageUpdateChannel storageUpdateChannel;
+
+    // Fork choice
+    boolean shouldUpdateHead = false;
+    List<IndexedAttestation> attestationsToProcess = new ArrayList<>();
+
+    // Other store updates
     Optional<UnsignedLong> time = Optional.empty();
     Optional<UnsignedLong> genesis_time = Optional.empty();
     Optional<Checkpoint> justified_checkpoint = Optional.empty();
@@ -536,7 +579,7 @@ class Store implements UpdatableStore {
                   writeLock.unlock();
                 }
 
-                updates.invokeUpdateHandler(updateHandler);
+                updates.invokeUpdateHandler(Store.this, updateHandler);
               });
     }
 
@@ -615,6 +658,25 @@ class Store implements UpdatableStore {
     }
 
     @Override
+    public Bytes32 getHead() {
+      return Store.this.getHead();
+    }
+
+    @Override
+    public Optional<UnsignedLong> getBlockSlot(final Bytes32 blockRoot) {
+      return Store.this
+          .getBlockSlot(blockRoot)
+          .or(() -> Optional.of(blocks.get(blockRoot)).map(SignedBeaconBlock::getSlot));
+    }
+
+    @Override
+    public Optional<Bytes32> getBlockParent(final Bytes32 blockRoot) {
+      return Store.this
+          .getBlockParent(blockRoot)
+          .or(() -> Optional.of(blocks.get(blockRoot)).map(SignedBeaconBlock::getParent_root));
+    }
+
+    @Override
     public boolean containsBlock(final Bytes32 blockRoot) {
       return blocks.containsKey(blockRoot) || Store.this.containsBlock(blockRoot);
     }
@@ -654,6 +716,16 @@ class Store implements UpdatableStore {
     public boolean containsCheckpointState(final Checkpoint checkpoint) {
       return checkpoint_states.containsKey(checkpoint)
           || Store.this.containsCheckpointState(checkpoint);
+    }
+
+    @Override
+    public void updateHead() {
+      shouldUpdateHead = true;
+    }
+
+    @Override
+    public void processAttestation(final IndexedAttestation attestation) {
+      this.attestationsToProcess.add(attestation);
     }
   }
 

@@ -16,6 +16,7 @@ package tech.pegasys.teku.datastructures.forkchoice;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
@@ -199,6 +201,26 @@ public class TestStoreFactory {
     }
 
     @Override
+    public Bytes32 getHead() {
+      // Just return a block with the highest slot
+      return blocks.values().stream()
+          .sorted(Comparator.comparing(SignedBeaconBlock::getSlot).reversed())
+          .findFirst()
+          .map(SignedBeaconBlock::getRoot)
+          .orElseThrow();
+    }
+
+    @Override
+    public Optional<UnsignedLong> getBlockSlot(final Bytes32 blockRoot) {
+      return Optional.ofNullable(blocks.get(blockRoot)).map(SignedBeaconBlock::getSlot);
+    }
+
+    @Override
+    public Optional<Bytes32> getBlockParent(final Bytes32 blockRoot) {
+      return Optional.ofNullable(blocks.get(blockRoot)).map(SignedBeaconBlock::getParent_root);
+    }
+
+    @Override
     public Set<Bytes32> getBlockRoots() {
       return blocks.keySet();
     }
@@ -298,6 +320,16 @@ public class TestStoreFactory {
       }
       this.votes.put(validatorIndex, vote);
       return vote;
+    }
+
+    @Override
+    public void updateHead() {
+      // No-op
+    }
+
+    @Override
+    public void processAttestation(final IndexedAttestation attestation) {
+      // No-op
     }
   }
 

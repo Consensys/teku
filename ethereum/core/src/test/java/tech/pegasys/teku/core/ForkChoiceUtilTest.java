@@ -23,6 +23,7 @@ import java.util.NavigableMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -42,7 +43,13 @@ class ForkChoiceUtilTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final ReadOnlyStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
   private final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-      ProtoArrayForkChoiceStrategy.create(store);
+      ProtoArrayForkChoiceStrategy.create(
+          store.getFinalizedCheckpoint(), store.getJustifiedCheckpoint());
+
+  @BeforeEach
+  public void setup() {
+    forkChoiceStrategy.onBlock(genesis);
+  }
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() throws Exception {
@@ -79,7 +86,7 @@ class ForkChoiceUtilTest {
       throws Exception {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
     forkChoiceStrategy.setPruneThreshold(0);
-    forkChoiceStrategy.maybePrune(chainBuilder.getBlockAtSlot(4).getRoot());
+    forkChoiceStrategy.updateFinalizedBlock(chainBuilder.getBlockAtSlot(4).getRoot());
 
     final NavigableMap<UnsignedLong, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(

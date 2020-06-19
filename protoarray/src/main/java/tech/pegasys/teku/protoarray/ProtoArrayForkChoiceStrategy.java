@@ -18,10 +18,10 @@ import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
 import static java.lang.Math.toIntExact;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,15 +32,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.MutableForkChoiceState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.util.config.Constants;
 
-public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
+public class ProtoArrayForkChoiceStrategy implements MutableForkChoiceState {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
@@ -48,37 +48,51 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   private final ProtoArray protoArray;
 
+  private Checkpoint justifiedCheckpoint;
   private List<UnsignedLong> balances;
 
-  private ProtoArrayForkChoiceStrategy(ProtoArray protoArray, List<UnsignedLong> balances) {
+  private ProtoArrayForkChoiceStrategy(
+      ProtoArray protoArray, List<UnsignedLong> balances, final Checkpoint justifiedCheckpoint) {
     this.protoArray = protoArray;
     this.balances = balances;
+    this.justifiedCheckpoint = justifiedCheckpoint;
   }
 
   // Public
-  public static ProtoArrayForkChoiceStrategy create(ReadOnlyStore store) {
+  public static ProtoArrayForkChoiceStrategy create(
+      final Checkpoint finalizedCheckpoint, final Checkpoint justifiedCheckpoint) {
+    return create(
+        finalizedCheckpoint, justifiedCheckpoint, Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD);
+  }
+
+  private static ProtoArrayForkChoiceStrategy create(
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final int pruningThreshold) {
     ProtoArray protoArray =
         new ProtoArray(
-            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            store.getJustifiedCheckpoint().getEpoch(),
-            store.getFinalizedCheckpoint().getEpoch(),
+            pruningThreshold,
+            justifiedCheckpoint.getEpoch(),
+            finalizedCheckpoint.getEpoch(),
             new ArrayList<>(),
             new HashMap<>());
 
-    processBlocksInStoreAtStartup(store, protoArray);
-
-    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>());
+    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), justifiedCheckpoint);
   }
 
   @Override
-  public Bytes32 findHead(final MutableStore store) {
+  public void updateHead(final MutableStore store) {
     Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
-    return findHead(
+    updateForkChoiceWeights(
         store,
-        justifiedCheckpoint.getEpoch(),
-        justifiedCheckpoint.getRoot(),
+        justifiedCheckpoint,
         store.getFinalizedCheckpoint().getEpoch(),
         store.getCheckpointState(justifiedCheckpoint).getBalances().asList());
+  }
+
+  @Override
+  public Bytes32 getHead() {
+    return protoArray.findHead(justifiedCheckpoint.getRoot());
   }
 
   @Override
@@ -112,7 +126,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         state.getFinalized_checkpoint().getEpoch());
   }
 
-  public void maybePrune(Bytes32 finalizedRoot) {
+  @Override
+  public void updateFinalizedBlock(Bytes32 finalizedRoot) {
     protoArrayLock.writeLock().lock();
     try {
       protoArray.maybePrune(finalizedRoot);
@@ -121,26 +136,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
-  // Internal
-  private static void processBlocksInStoreAtStartup(ReadOnlyStore store, ProtoArray protoArray) {
-    store.getBlockRoots().stream()
-        .map(store::getBlock)
-        .sorted(Comparator.comparing(BeaconBlock::getSlot))
-        .forEach(block -> processBlockAtStartup(store, protoArray, block));
-  }
-
-  private static void processBlockAtStartup(
-      final ReadOnlyStore store, final ProtoArray protoArray, final BeaconBlock block) {
-    Bytes32 blockRoot = block.hash_tree_root();
-    protoArray.onBlock(
-        block.getSlot(),
-        blockRoot,
-        block.getParent_root(),
-        block.getState_root(),
-        store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
-        store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
-  }
-
+  @VisibleForTesting
   void processAttestation(
       MutableStore store,
       UnsignedLong validatorIndex,
@@ -154,6 +150,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
+  @VisibleForTesting
   void processBlock(
       UnsignedLong blockSlot,
       Bytes32 blockRoot,
@@ -170,12 +167,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     }
   }
 
-  Bytes32 findHead(
-      MutableStore store,
-      UnsignedLong justifiedEpoch,
-      Bytes32 justifiedRoot,
-      UnsignedLong finalizedEpoch,
-      List<UnsignedLong> justifiedStateBalances) {
+  @VisibleForTesting
+  void updateForkChoiceWeights(
+      final MutableStore store,
+      final Checkpoint justifiedCheckpoint,
+      final UnsignedLong finalizedEpoch,
+      final List<UnsignedLong> justifiedStateBalances) {
     protoArrayLock.writeLock().lock();
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
@@ -185,10 +182,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
       List<Long> deltas = computeDeltas(store, protoArray.getIndices(), oldBalances, newBalances);
 
-      protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
+      this.justifiedCheckpoint = justifiedCheckpoint;
+      protoArray.applyScoreChanges(deltas, justifiedCheckpoint.getEpoch(), finalizedEpoch);
       balances = new ArrayList<>(newBalances);
-
-      return protoArray.findHead(justifiedRoot);
     } finally {
       protoArrayLock.writeLock().unlock();
       votesLock.writeLock().unlock();
@@ -215,7 +211,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public boolean contains(Bytes32 blockRoot) {
+  public boolean containsBlock(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return protoArray.getIndices().containsKey(blockRoot);
@@ -225,7 +221,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
+  public Optional<UnsignedLong> getBlockSlot(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::getBlockSlot);
@@ -235,7 +231,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public Optional<Bytes32> blockParentRoot(Bytes32 blockRoot) {
+  public Optional<Bytes32> getBlockParent(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
       return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);

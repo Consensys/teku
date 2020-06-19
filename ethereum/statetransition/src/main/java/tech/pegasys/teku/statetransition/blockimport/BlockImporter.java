@@ -29,7 +29,6 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -70,7 +69,7 @@ public class BlockImporter {
 
       StoreTransaction transaction = recentChainData.startStoreTransaction();
       final BlockImportResult result =
-          on_block(transaction, block, new StateTransition(), getForkChoiceStrategy());
+          on_block(transaction, block, new StateTransition(), transaction);
 
       if (!result.isSuccessful()) {
         LOG.trace(
@@ -149,14 +148,5 @@ public class BlockImporter {
   public void subscribeToVerifiedBlockVoluntaryExits(
       VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
-  }
-
-  private ForkChoiceStrategy getForkChoiceStrategy() {
-    return recentChainData
-        .getForkChoiceStrategy()
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Attempting to perform fork choice operations before store has been initialized"));
   }
 }

@@ -31,7 +31,6 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.AttestationGenerator;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -43,7 +42,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -53,9 +51,8 @@ public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
-  private final ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
   private final BeaconChainUtil localChain =
-      BeaconChainUtil.create(recentChainData, validatorKeys, forkChoice, false);
+      BeaconChainUtil.create(recentChainData, validatorKeys, false);
 
   private final EventBus otherEventBus = mock(EventBus.class);
   private final RecentChainData otherStorage = MemoryOnlyRecentChainData.create(otherEventBus);

@@ -27,19 +27,20 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.MutableForkChoiceState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.Constants;
 
-public class OrigForkChoiceStrategy implements ForkChoiceStrategy {
+public class OrigForkChoiceStrategy implements MutableForkChoiceState {
   final Map<UnsignedLong, Checkpoint> latestMessages = new HashMap<>();
   final Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
+  Bytes32 headRoot;
 
   public OrigForkChoiceStrategy(UpdatableStore store) {
     CheckpointAndBlock finalizedCheckpointAndBlock = store.getFinalizedCheckpointAndBlock();
@@ -48,6 +49,7 @@ public class OrigForkChoiceStrategy implements ForkChoiceStrategy {
       throw new IllegalArgumentException();
     }
     onBlock(genesisBlock, store.getBlockState(genesisBlock.hash_tree_root()));
+    this.headRoot = store.getJustifiedCheckpoint().getRoot();
   }
 
   public static Bytes32 get_ancestor(ReadOnlyStore store, Bytes32 root, UnsignedLong slot) {
@@ -130,16 +132,20 @@ public class OrigForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public Bytes32 findHead(MutableStore store) {
+  public Bytes32 getHead() {
+    return headRoot;
+  }
+
+  @Override
+  public void updateHead(MutableStore store) {
     // Get filtered block tree that only includes viable branches
     final Map<Bytes32, BeaconBlock> blocks = get_filtered_block_tree(store);
 
     // Execute the LMD-GHOST fork choice
-    Bytes32 head = store.getJustifiedCheckpoint().getRoot();
     UnsignedLong justified_slot = store.getJustifiedCheckpoint().getEpochStartSlot();
 
     while (true) {
-      final Bytes32 head_in_filter = head;
+      final Bytes32 head_in_filter = headRoot;
       List<Bytes32> children =
           blocks.entrySet().stream()
               .filter(
@@ -152,7 +158,7 @@ public class OrigForkChoiceStrategy implements ForkChoiceStrategy {
               .collect(Collectors.toList());
 
       if (children.size() == 0) {
-        return head;
+        return;
       }
 
       // Sort by latest attesting balance with ties broken lexicographically
@@ -165,12 +171,17 @@ public class OrigForkChoiceStrategy implements ForkChoiceStrategy {
       }
 
       final UnsignedLong max = max_value;
-      head =
+      headRoot =
           children.stream()
               .filter(child -> get_latest_attesting_balance(store, child).compareTo(max) == 0)
               .max(Comparator.comparing(Bytes::toHexString))
               .get();
     }
+  }
+
+  @Override
+  public void updateFinalizedBlock(final Bytes32 finalizedRoot) {
+    // No-op
   }
 
   @Override
@@ -192,17 +203,17 @@ public class OrigForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public Optional<UnsignedLong> blockSlot(Bytes32 blockRoot) {
+  public Optional<UnsignedLong> getBlockSlot(Bytes32 blockRoot) {
     return Optional.ofNullable(blocks.get(blockRoot)).map(BeaconBlock::getSlot);
   }
 
   @Override
-  public Optional<Bytes32> blockParentRoot(Bytes32 blockRoot) {
+  public Optional<Bytes32> getBlockParent(Bytes32 blockRoot) {
     return Optional.ofNullable(blocks.get(blockRoot)).map(BeaconBlock::getParent_root);
   }
 
   @Override
-  public boolean contains(Bytes32 blockRoot) {
+  public boolean containsBlock(Bytes32 blockRoot) {
     return blocks.containsKey(blockRoot);
   }
 }

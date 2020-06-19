@@ -41,7 +41,6 @@ import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.store.Store.Transaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
 
 class StoreTransactionUpdates {
   private final Store.Transaction tx;
@@ -270,20 +269,46 @@ class StoreTransactionUpdates {
                 removeBlockRootFromSlotIndex(store.rootsBySlotLookup, slot, root);
               });
         });
+
+    // Update forkchoice
+    applyForkChoiceUpdates(store);
   }
 
-  public void invokeUpdateHandler(StoreUpdateHandler storeUpdateHandler) {
+  private void applyForkChoiceUpdates(final Store store) {
     // Process new blocks and states
     final List<SignedBeaconBlock> sortedBlocks = new ArrayList<>(hotBlocks.values());
     sortedBlocks.sort(Comparator.comparing(SignedBeaconBlock::getSlot));
     for (SignedBeaconBlock newBlock : sortedBlocks) {
       final BeaconState newState = hotStates.get(newBlock.getRoot());
-      storeUpdateHandler.onNewBlock(new SignedBlockAndState(newBlock, newState));
+      store.forkChoiceState.onBlock(new SignedBlockAndState(newBlock, newState));
     }
 
+    // Process attestations
+    // TODO - clean up circular logic
+    tx.attestationsToProcess.forEach(
+        attestation -> store.forkChoiceState.onAttestation(tx, attestation));
+
+    // Handle finalization update
+    finalizedChainData
+        .map(FinalizedChainData::getFinalizedCheckpoint)
+        .map(Checkpoint::getRoot)
+        .ifPresent(store.forkChoiceState::updateFinalizedBlock);
+
+    if (tx.shouldUpdateHead) {
+      // TODO - clean up this circular logic
+      store.forkChoiceState.updateHead(tx);
+    }
+  }
+
+  public void invokeUpdateHandler(final Store store, StoreUpdateHandler storeUpdateHandler) {
     // Process new finalized block
     finalizedChainData.ifPresent(
         data -> storeUpdateHandler.onNewFinalizedCheckpoint(data.getFinalizedCheckpoint()));
+
+    // Process new head
+    if (tx.shouldUpdateHead) {
+      storeUpdateHandler.onNewHeadBlock(store.forkChoiceState.getHead());
+    }
   }
 
   private Set<Bytes32> getPrunedRoots() {
