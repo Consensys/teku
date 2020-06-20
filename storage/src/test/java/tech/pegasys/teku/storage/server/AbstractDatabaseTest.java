@@ -201,8 +201,9 @@ public abstract class AbstractDatabaseTest {
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
     add(List.of(finalBlock));
     final UnsignedLong finalEpoch = chainBuilder.getLatestEpoch().plus(ONE);
-    final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(finalEpoch);
-    finalizeCheckpoint(finalizedCheckpoint);
+    final SignedBlockAndState finalizedBlock =
+        chainBuilder.getLatestBlockAndStateAtEpochBoundary(finalEpoch);
+    justifyAndFinalizeEpoch(finalEpoch, finalizedBlock);
 
     // Check pruning result
     final Set<Bytes32> rootsToPrune = new HashSet<>(block10Roots);
@@ -606,11 +607,11 @@ public abstract class AbstractDatabaseTest {
     if (batchUpdate) {
       final StoreTransaction transaction = recentChainData.startStoreTransaction();
       add(transaction, allBlocksAndStates);
-      transaction.setFinalizedCheckpoint(finalizedCheckpoint);
+      justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock, transaction);
       assertThat(transaction.commit()).isCompleted();
     } else {
       add(allBlocksAndStates);
-      finalizeCheckpoint(finalizedCheckpoint);
+      justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
     }
 
     // Upon finalization, we should prune data
@@ -827,16 +828,35 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  protected void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
-    commit(transaction);
+  protected void justifyAndFinalizeEpoch(
+      final UnsignedLong epoch, final SignedBlockAndState block) {
+    StoreTransaction tx = recentChainData.startStoreTransaction();
+    justifyAndFinalizeEpoch(epoch, block, tx);
+    tx.commit().reportExceptions();
   }
 
-  protected void finalizeCheckpoint(final Checkpoint checkpoint) {
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+  protected void justifyAndFinalizeEpoch(
+      final UnsignedLong epoch, final SignedBlockAndState block, final StoreTransaction tx) {
+    justifyEpoch(epoch, block, tx);
+    finalizeEpoch(epoch, block, tx);
+  }
+
+  protected void finalizeEpoch(
+      final UnsignedLong epoch,
+      final SignedBlockAndState block,
+      final StoreTransaction transaction) {
+    final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
     transaction.setFinalizedCheckpoint(checkpoint);
-    commit(transaction);
+    transaction.putCheckpointState(checkpoint, block.getState());
+  }
+
+  protected void justifyEpoch(
+      final UnsignedLong epoch,
+      final SignedBlockAndState block,
+      final StoreTransaction transaction) {
+    final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
+    transaction.setJustifiedCheckpoint(checkpoint);
+    transaction.putCheckpointState(checkpoint, block.getState());
   }
 
   protected Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {

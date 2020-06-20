@@ -26,9 +26,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -118,11 +116,6 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     final SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
-    // Calculate finalized state
-    StateTransition stateTransition = new StateTransition();
-    final BeaconState finalizedCheckpointState =
-        stateTransition.process_slots(
-            finalizedBlock.getState(), finalizedCheckpoint.getEpochStartSlot());
 
     // Add some more blocks
     final UnsignedLong firstHotBlockSlot =
@@ -133,8 +126,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     // Save new blocks and finalized checkpoint
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     chainBuilder.streamBlocksAndStates(1).forEach(tx::putBlockAndState);
-    tx.putCheckpointState(finalizedCheckpoint, finalizedCheckpointState);
-    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock, tx);
     tx.commit().join();
 
     // Shutdown and restart

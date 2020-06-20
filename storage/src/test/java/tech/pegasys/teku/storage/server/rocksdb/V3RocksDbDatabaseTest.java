@@ -94,7 +94,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
     // Finalize at block 7, making the fork blocks unavailable
     add(allBlocksAndStates);
-    finalizeCheckpoint(finalizedCheckpoint);
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
 
     // Close database and rebuild from disk
     restartStorage();
@@ -122,7 +122,8 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     final int hotBlockCount = 3;
     // Setup chains
     chainBuilder.generateBlocksUpToSlot(finalizedSlot);
-    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(chainBuilder.getBlockAtSlot(7));
+    SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(7);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(finalizedBlock.getBlock());
     final long firstHotBlockSlot =
         finalizedCheckpoint.getEpochStartSlot().plus(UnsignedLong.ONE).longValue();
     for (int i = 0; i < hotBlockCount; i++) {
@@ -139,7 +140,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     // Close database and rebuild from disk
     restartStorage();
 
-    finalizeCheckpoint(finalizedCheckpoint);
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
 
     // We should be able to access hot blocks and state
     final List<SignedBlockAndState> expectedHotBlocksAndStates =
