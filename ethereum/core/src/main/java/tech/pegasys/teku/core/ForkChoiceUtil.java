@@ -339,14 +339,6 @@ public class ForkChoiceUtil {
         forkChoiceStrategy, block.getParent_root(), finalizedSlot, finalizedCheckpoint.getRoot());
   }
 
-  @CheckReturnValue
-  public static AttestationProcessingResult on_attestation(
-      final MutableStore store,
-      final ValidateableAttestation validateableAttestation,
-      final StateTransition stateTransition) {
-    return on_attestation(store, validateableAttestation, stateTransition, store);
-  }
-
   /**
    * Run ``on_attestation`` upon receiving a new ``attestation`` from either within a block or
    * directly on the wire.
@@ -364,13 +356,11 @@ public class ForkChoiceUtil {
   public static AttestationProcessingResult on_attestation(
       final MutableStore store,
       final ValidateableAttestation validateableAttestation,
-      final StateTransition stateTransition,
-      final ForkChoiceState forkChoiceStrategy) {
-
+      final StateTransition stateTransition) {
     Attestation attestation = validateableAttestation.getAttestation();
     Checkpoint target = attestation.getData().getTarget();
 
-    return validateOnAttestation(store, attestation, forkChoiceStrategy)
+    return validateOnAttestation(store, attestation, store)
         .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
         .ifSuccessful(() -> indexAndValidateAttestation(store, validateableAttestation, target))
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))

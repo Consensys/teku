@@ -283,21 +283,11 @@ class StoreTransactionUpdates {
       store.forkChoiceState.onBlock(new SignedBlockAndState(newBlock, newState));
     }
 
-    // Process attestations
-    // TODO - clean up circular logic
-    tx.attestationsToProcess.forEach(
-        attestation -> store.forkChoiceState.onAttestation(tx, attestation));
-
     // Handle finalization update
     finalizedChainData
         .map(FinalizedChainData::getFinalizedCheckpoint)
         .map(Checkpoint::getRoot)
         .ifPresent(store.forkChoiceState::updateFinalizedBlock);
-
-    if (tx.shouldUpdateHead) {
-      // TODO - clean up this circular logic
-      store.forkChoiceState.updateHead(tx);
-    }
   }
 
   public void invokeUpdateHandler(final Store store, StoreUpdateHandler storeUpdateHandler) {
@@ -306,7 +296,7 @@ class StoreTransactionUpdates {
         data -> storeUpdateHandler.onNewFinalizedCheckpoint(data.getFinalizedCheckpoint()));
 
     // Process new head
-    if (tx.shouldUpdateHead) {
+    if (tx.headUpdated) {
       storeUpdateHandler.onNewHeadBlock(store.forkChoiceState.getHead());
     }
   }

@@ -17,12 +17,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
@@ -478,9 +476,7 @@ class Store implements UpdatableStore {
     private final StorageUpdateChannel storageUpdateChannel;
 
     // Fork choice
-    boolean shouldUpdateHead = false;
-    List<IndexedAttestation> attestationsToProcess = new ArrayList<>();
-
+    boolean headUpdated = false;
     // Other store updates
     Optional<UnsignedLong> time = Optional.empty();
     Optional<UnsignedLong> genesis_time = Optional.empty();
@@ -720,12 +716,13 @@ class Store implements UpdatableStore {
 
     @Override
     public void updateHead() {
-      shouldUpdateHead = true;
+      Store.this.forkChoiceState.updateHead(this);
+      this.headUpdated = true;
     }
 
     @Override
     public void processAttestation(final IndexedAttestation attestation) {
-      this.attestationsToProcess.add(attestation);
+      Store.this.forkChoiceState.onAttestation(this, attestation);
     }
   }
 
