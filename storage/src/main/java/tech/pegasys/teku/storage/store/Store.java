@@ -662,14 +662,17 @@ class Store implements UpdatableStore {
     public Optional<UnsignedLong> getBlockSlot(final Bytes32 blockRoot) {
       return Store.this
           .getBlockSlot(blockRoot)
-          .or(() -> Optional.of(blocks.get(blockRoot)).map(SignedBeaconBlock::getSlot));
+          .or(() -> Optional.ofNullable(blocks.get(blockRoot)).map(SignedBeaconBlock::getSlot));
     }
 
     @Override
     public Optional<Bytes32> getBlockParent(final Bytes32 blockRoot) {
       return Store.this
           .getBlockParent(blockRoot)
-          .or(() -> Optional.of(blocks.get(blockRoot)).map(SignedBeaconBlock::getParent_root));
+          .or(
+              () ->
+                  Optional.ofNullable(blocks.get(blockRoot))
+                      .map(SignedBeaconBlock::getParent_root));
     }
 
     @Override
