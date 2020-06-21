@@ -128,6 +128,11 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     // Initialize genesis
     setupStorage(StateStorageMode.ARCHIVE);
     chainUpdater.initializeGenesis();
+    // Setup finalized checkpoint without any attestations
+    // Making protoarray fork-choice incompatible with the Store's justified checkpoint
+    // and preventing the chainhead from being set
+    chainUpdater.advanceChain();
+    chainUpdater.finalizeEpoch(UnsignedLong.ONE);
     // Restart storage system without running fork choice
     storageSystem = storageSystem.restarted(StateStorageMode.ARCHIVE);
     setupStorage(storageSystem);
