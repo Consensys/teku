@@ -307,14 +307,35 @@ public final class DataStructureUtil {
     return new BeaconBlockAndState(block, state);
   }
 
+  public SignedBlockAndState randomSignedBlockAndState(final long slot, final boolean isFullBlock) {
+    return randomSignedBlockAndState(UnsignedLong.valueOf(slot), isFullBlock);
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(
+      final UnsignedLong slot, final boolean isFullBlock) {
+    return randomSignedBlockAndState(slot, randomBeaconState(), isFullBlock);
+  }
+
+  public SignedBlockAndState randomSignedBlockAndState(
+      final UnsignedLong slot, final BeaconState state, final boolean isFullBlock) {
+    final BeaconBlock block =
+        randomBeaconBlock(slot.longValue(), randomBytes32(), state.hash_tree_root(), isFullBlock);
+    final SignedBeaconBlock signedBlock = new SignedBeaconBlock(block, randomSignature());
+    return new SignedBlockAndState(signedBlock, state);
+  }
+
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot, boolean isFull) {
+    return randomBeaconBlock(slotNum, parentRoot, randomBytes32(), isFull);
+  }
+
+  public BeaconBlock randomBeaconBlock(
+      final long slotNum, final Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
     UnsignedLong slot = UnsignedLong.valueOf(slotNum);
 
     final UnsignedLong proposer_index = randomUnsignedLong();
-    Bytes32 state_root = randomBytes32();
     BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
 
-    return new BeaconBlock(slot, proposer_index, parentRoot, state_root, body);
+    return new BeaconBlock(slot, proposer_index, parentRoot, stateRoot, body);
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot) {

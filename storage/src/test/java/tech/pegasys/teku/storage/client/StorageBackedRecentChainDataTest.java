@@ -15,19 +15,23 @@ package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
@@ -40,15 +44,20 @@ import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class StorageBackedRecentChainDataTest {
-
+  private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private static final BeaconState INITIAL_STATE =
-      new DataStructureUtil(3).randomBeaconState(UnsignedLong.ZERO);
+      ChainBuilder.create(VALIDATOR_KEYS).generateGenesis().getState();
 
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final FinalizedCheckpointChannel finalizedCheckpointChannel =
       new StubFinalizedCheckpointChannel();
   private final ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+
+  @BeforeEach
+  public void setup() {
+    when(storageUpdateChannel.onStorageUpdate(any())).thenReturn(SafeFuture.COMPLETE);
+  }
 
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()

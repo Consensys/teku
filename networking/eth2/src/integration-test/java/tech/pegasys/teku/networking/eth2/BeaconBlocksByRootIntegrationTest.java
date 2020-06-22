@@ -30,7 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -191,13 +191,11 @@ public abstract class BeaconBlocksByRootIntegrationTest {
   }
 
   private SignedBeaconBlock addBlock(boolean full) {
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(1, dataStructureUtil.randomBytes32(), full);
-    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final SignedBlockAndState blockAndState = dataStructureUtil.randomSignedBlockAndState(1, full);
     final StoreTransaction transaction = storageClient1.startStoreTransaction();
-    transaction.putBlockAndState(block, state);
+    transaction.putBlockAndState(blockAndState);
     assertThat(transaction.commit()).isCompleted();
-    return block;
+    return blockAndState.getBlock();
   }
 
   private List<SignedBeaconBlock> requestBlocks(final List<Bytes32> blockRoots)

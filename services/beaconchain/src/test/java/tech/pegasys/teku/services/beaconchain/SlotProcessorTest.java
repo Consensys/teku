@@ -31,45 +31,43 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.core.ForkChoiceUtil;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.logging.EventLogger;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.teku.storage.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.EventSink;
+import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SlotProcessorTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-
-  private final BeaconState beaconState = dataStructureUtil.randomBeaconState();
   private final EventLogger eventLogger = mock(EventLogger.class);
-  private final EventBus eventBus = new EventBus();
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
+
+  private final InMemoryStorageSystem storageSystem =
+      InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
+  private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private final EventBus eventBus = storageSystem.eventBus();
+
   private final SyncService syncService = mock(SyncService.class);
-  private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final Eth2Network p2pNetwork = mock(Eth2Network.class);
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final SlotProcessor slotProcessor =
       new SlotProcessor(
-          recentChainData,
-          syncService,
-          forkChoice,
-          p2pNetwork,
-          slotEventsChannel,
-          eventBus,
-          eventLogger);
-  final UnsignedLong genesisTime = beaconState.getGenesis_time();
+          recentChainData, syncService, p2pNetwork, slotEventsChannel, eventBus, eventLogger);
+
+  private BeaconState beaconState;
+  UnsignedLong genesisTime;
   final UnsignedLong desiredSlot = UnsignedLong.valueOf(100L);
 
   @BeforeEach
   public void setup() {
-    recentChainData.initializeFromGenesis(beaconState);
+    final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
+    beaconState = genesis.getState();
+    genesisTime = beaconState.getGenesis_time();
   }
 
   @Test
@@ -113,17 +111,20 @@ public class SlotProcessorTest {
 
   @Test
   public void isTimeReached_shouldReturnFalseIfTimeNotReached() {
-    assertThat(slotProcessor.isTimeReached(genesisTime, genesisTime.plus(ONE))).isFalse();
+    final UnsignedLong time = UnsignedLong.valueOf(10);
+    assertThat(slotProcessor.isTimeReached(time, time.plus(ONE))).isFalse();
   }
 
   @Test
   public void isTimeReached_shouldReturnTrueIfTimeMatches() {
-    assertThat(slotProcessor.isTimeReached(genesisTime, genesisTime)).isTrue();
+    final UnsignedLong time = UnsignedLong.valueOf(10);
+    assertThat(slotProcessor.isTimeReached(time, time)).isTrue();
   }
 
   @Test
   public void isTimeReached_shouldReturnTrueIfBeyondEarliestTime() {
-    assertThat(slotProcessor.isTimeReached(genesisTime, genesisTime.minus(ONE))).isTrue();
+    final UnsignedLong time = UnsignedLong.valueOf(10);
+    assertThat(slotProcessor.isTimeReached(time, time.minus(ONE))).isTrue();
   }
 
   @Test
@@ -135,7 +136,6 @@ public class SlotProcessorTest {
   public void onTick_shouldExitBeforeOtherProcessingIfSyncing() {
     ArgumentCaptor<UnsignedLong> captor = ArgumentCaptor.forClass(UnsignedLong.class);
     when(syncService.isSyncActive()).thenReturn(true);
-    when(forkChoice.processHead()).thenReturn(dataStructureUtil.randomBytes32());
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(beaconState.getGenesis_time());
@@ -201,12 +201,11 @@ public class SlotProcessorTest {
   public void onTick_shouldRunAttestationsDuringProcessing() {
     // skip the slot start
     slotProcessor.setOnTickSlotStart(slotProcessor.getNodeSlot().getValue());
-    final Bytes32 bestRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 bestRoot = recentChainData.getStore().getHead();
     final List<BroadcastAttestationEvent> events =
         EventSink.capture(eventBus, BroadcastAttestationEvent.class);
     when(syncService.isSyncActive()).thenReturn(false);
 
-    when(forkChoice.processHead()).thenReturn(bestRoot);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(
@@ -235,10 +234,8 @@ public class SlotProcessorTest {
     final List<BroadcastAggregatesEvent> events =
         EventSink.capture(eventBus, BroadcastAggregatesEvent.class);
 
-    final Bytes32 bestRoot = dataStructureUtil.randomBytes32();
     when(syncService.isSyncActive()).thenReturn(false);
 
-    when(forkChoice.processHead()).thenReturn(bestRoot);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(

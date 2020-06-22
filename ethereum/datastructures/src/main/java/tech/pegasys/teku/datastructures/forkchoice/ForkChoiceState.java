@@ -11,27 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.protoarray;
+package tech.pegasys.teku.datastructures.forkchoice;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 
-public interface ForkChoiceStrategy {
+public interface ForkChoiceState {
 
-  Bytes32 findHead(final MutableStore store);
+  Bytes32 getHead();
 
-  void onAttestation(final MutableStore store, final IndexedAttestation attestation);
+  Optional<UnsignedLong> getBlockSlot(Bytes32 blockRoot);
 
-  void onBlock(final BeaconBlock block, final BeaconState state);
+  Optional<Bytes32> getBlockParent(Bytes32 blockRoot);
 
-  Optional<UnsignedLong> blockSlot(Bytes32 blockRoot);
-
-  Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
-
-  boolean contains(Bytes32 blockRoot);
+  boolean containsBlock(Bytes32 blockRoot);
 }
