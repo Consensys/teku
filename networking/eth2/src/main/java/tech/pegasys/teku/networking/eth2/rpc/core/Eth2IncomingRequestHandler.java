@@ -84,7 +84,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
       requestDecoder.complete();
     } catch (RpcException e) {
       new RpcResponseCallback<>(rpcStream, rpcEncoder).completeWithErrorResponse(e);
-      LOG.debug("RPC Request stream ends prematurely", e);
+      LOG.debug("RPC Request stream closed prematurely", e);
     }
   }
 
