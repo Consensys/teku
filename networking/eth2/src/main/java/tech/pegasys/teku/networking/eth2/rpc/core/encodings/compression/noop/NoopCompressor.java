@@ -24,12 +24,12 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
 public class NoopCompressor implements Compressor {
 
   private static class NoopDecompressor implements Decompressor {
-    private final NoopFrameDecoder decoder;
+    private final NoopDecoder decoder;
     private final int uncompressedPayloadSize;
     private boolean disposed = false;
 
     public NoopDecompressor(int uncompressedPayloadSize) {
-      this.decoder = new NoopFrameDecoder(uncompressedPayloadSize);
+      this.decoder = new NoopDecoder(uncompressedPayloadSize);
       this.uncompressedPayloadSize = uncompressedPayloadSize;
     }
 

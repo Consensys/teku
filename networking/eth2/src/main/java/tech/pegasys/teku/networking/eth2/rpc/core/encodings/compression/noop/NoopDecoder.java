@@ -17,10 +17,10 @@ import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecoder;
 
-public class NoopFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
+public class NoopDecoder extends AbstractByteBufDecoder<ByteBuf> {
   private final int expectedBytes;
 
-  public NoopFrameDecoder(int expectedBytes) {
+  public NoopDecoder(int expectedBytes) {
     this.expectedBytes = expectedBytes;
   }
 
