@@ -74,7 +74,7 @@ public class SnappyFrameEncoder {
 
     int dataLength = in.readableBytes();
     if (dataLength > MIN_COMPRESSIBLE_LENGTH) {
-      for (; ; ) {
+      while (true) {
         final int lengthIdx = out.writerIndex() + 1;
         if (dataLength < MIN_COMPRESSIBLE_LENGTH) {
           ByteBuf slice = in.readSlice(dataLength);
