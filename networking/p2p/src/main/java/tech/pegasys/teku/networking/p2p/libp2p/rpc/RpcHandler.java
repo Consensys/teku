@@ -190,12 +190,25 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-      if (evt instanceof RemoteWriteClosed) {
-        rpcRequestHandler.complete(nodeId, rpcStream);
+      if (evt instanceof RemoteWriteClosed && rpcRequestHandler != null) {
+        try {
+          rpcRequestHandler.complete(nodeId, rpcStream);
+        } finally {
+          rpcRequestHandler = null;
+        }
       }
     }
 
     private void close() {
+      if (rpcRequestHandler != null) {
+        try {
+          rpcRequestHandler.complete(nodeId, rpcStream);
+        } catch (Exception e) {
+          LOG.trace("Exception completing RpcRequestHandler", e);
+        }
+        rpcRequestHandler = null;
+      }
+
       if (rpcStream != null) {
         rpcStream.close().reportExceptions();
       }
