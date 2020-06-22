@@ -41,21 +41,9 @@ public class RpcResponseDecoder<T> {
   }
 
   public List<T> decodeNextResponses(final ByteBuf data) throws RpcException {
-    return decodeNextResponses(data, Optional.empty());
-  }
-
-  public List<T> decodeNextResponses(
-      final ByteBuf data, final FirstByteReceivedListener firstByteReceivedListener)
-      throws RpcException {
-    return decodeNextResponses(data, Optional.of(firstByteReceivedListener));
-  }
-
-  private List<T> decodeNextResponses(
-      final ByteBuf data, Optional<FirstByteReceivedListener> firstByteListener)
-      throws RpcException {
     List<T> ret = new ArrayList<>();
     while (true) {
-      Optional<T> responseMaybe = decodeNextResponse(data, firstByteListener);
+      Optional<T> responseMaybe = decodeNextResponse(data);
       if (responseMaybe.isPresent()) {
         ret.add(responseMaybe.get());
       } else {
@@ -66,11 +54,7 @@ public class RpcResponseDecoder<T> {
     return ret;
   }
 
-  private Optional<T> decodeNextResponse(
-      final ByteBuf data, Optional<FirstByteReceivedListener> firstByteListener)
-      throws RpcException {
-    firstByteListener.ifPresent(FirstByteReceivedListener::onFirstByteReceived);
-
+  private Optional<T> decodeNextResponse(final ByteBuf data) throws RpcException {
     if (!data.isReadable()) {
       return Optional.empty();
     }
