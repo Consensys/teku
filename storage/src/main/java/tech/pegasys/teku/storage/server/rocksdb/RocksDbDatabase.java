@@ -206,6 +206,15 @@ public class RocksDbDatabase implements Database {
 
   private void doUpdate(final StorageUpdate update) {
     try (final Updater updater = dao.updater()) {
+      // Update finalized blocks and states
+      putFinalizedStates(updater, update.getFinalizedBlocks(), update.getFinalizedStates());
+      update.getFinalizedBlocks().values().forEach(updater::addFinalizedBlock);
+      update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
+      updater.commit();
+    }
+
+    try (final Updater updater = dao.updater()) {
+      // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
       update.getFinalizedCheckpoint().ifPresent(updater::setFinalizedCheckpoint);
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
@@ -215,12 +224,7 @@ public class RocksDbDatabase implements Database {
       updater.addHotBlocks(update.getHotBlocks());
       updater.addVotes(update.getVotes());
 
-      // Update finalized blocks and states
-      putFinalizedStates(updater, update.getFinalizedBlocks(), update.getFinalizedStates());
-      update.getFinalizedBlocks().values().forEach(updater::addFinalizedBlock);
-      update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
-
-      // Delete data
+      // Delete finalized data from hot db
       update.getDeletedCheckpointStates().forEach(updater::deleteCheckpointState);
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
 
