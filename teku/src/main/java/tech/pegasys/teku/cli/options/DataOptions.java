@@ -34,12 +34,39 @@ public class DataOptions {
       arity = "1")
   private StateStorageMode dataStorageMode = StateStorageMode.PRUNE;
 
+  @Option(
+      names = {"--data-storage-archive-frequency"},
+      hidden = true,
+      paramLabel = "<FREQUENCY>",
+      description =
+          "Sets the frequency at which to store archived slots to disk. (slot modulo frequency == 0)",
+      defaultValue = "2048",
+      arity = "1")
+  private long dataStorageFrequency = 2048L;
+
+  @Option(
+      names = {"--Xdata-storage-create-db-version"},
+      paramLabel = "<VERSION>",
+      description = "Database version to create (3 or 4)",
+      arity = "1",
+      defaultValue = "3",
+      hidden = true)
+  private int createDbVersion = 3;
+
   public String getDataPath() {
     return dataPath;
   }
 
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
+  }
+
+  public long getDataStorageFrequency() {
+    return dataStorageFrequency;
+  }
+
+  public int getCreateDbVersion() {
+    return createDbVersion;
   }
 
   private static String defaultDataPath() {
