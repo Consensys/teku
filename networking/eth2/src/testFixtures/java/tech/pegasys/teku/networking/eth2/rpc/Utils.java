@@ -25,11 +25,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Utils {
 
+  /**
+   * Given the list of a stream byte chunks (which are normally prefixes and payloads) creates a set
+   * of test {@code ByteBuf}'s which are different combinations of slicing and sticking of the
+   * original chunks. Zero-length {@code ByteBuf}s are also mixed up to the resulting lists
+   */
   public static List<List<ByteBuf>> generateTestSlices(Bytes... chunks) {
     int totalLen = Arrays.stream(chunks).mapToInt(Bytes::size).sum();
     List<List<ByteBuf>> splits =
@@ -69,7 +73,7 @@ public class Utils {
     return ret;
   }
 
-  public static List<List<ByteBuf>> addZeroLenBuffers(List<List<ByteBuf>> bufSets) {
+  private static List<List<ByteBuf>> addZeroLenBuffers(List<List<ByteBuf>> bufSets) {
     return bufSets.stream()
         .map(
             set ->
@@ -79,7 +83,7 @@ public class Utils {
         .collect(Collectors.toList());
   }
 
-  public static List<ByteBuf> shiftedSlices(int shift, Bytes... chunks) {
+  private static List<ByteBuf> shiftedSlices(int shift, Bytes... chunks) {
     AtomicInteger sum = new AtomicInteger(0);
     IntStream pos =
         IntStream.concat(
@@ -93,7 +97,7 @@ public class Utils {
     return slice(toByteBuf(chunks), pos.toArray());
   }
 
-  public static List<ByteBuf> slice(ByteBuf src, int... pos) {
+  private static List<ByteBuf> slice(ByteBuf src, int... pos) {
     int[] pos1 =
         Arrays.stream(pos)
             .map(i -> i >= 0 ? i : src.readableBytes() + i)
@@ -102,9 +106,8 @@ public class Utils {
     return Streams.zip(
             IntStream.concat(IntStream.of(0), Arrays.stream(pos1)).boxed(),
             IntStream.concat(Arrays.stream(pos1), IntStream.of(src.readableBytes())).boxed(),
-            Pair::of)
-        .map(rng -> Pair.of(rng.getLeft(), rng.getRight() - rng.getLeft()))
-        .map(il -> src.slice(il.getLeft(), il.getRight()).copy())
+            IntRange::ofIndexes)
+        .map(il -> src.slice(il.getStartIndex(), il.getLength()).copy())
         // check that buffer with non-zero offset works well
         .map(bb -> Unpooled.wrappedBuffer(Unpooled.wrappedBuffer(new byte[4]), bb).readerIndex(4))
         .collect(Collectors.toList());
