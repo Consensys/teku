@@ -39,7 +39,7 @@ public class DataOptions {
       hidden = true,
       paramLabel = "<FREQUENCY>",
       description =
-          "Sets the frequency at which to store archived slots to disk. (slot modulo frequency == 0)",
+          "Sets the frequency, in slots, at which to store archived states to disk.",
       defaultValue = "2048",
       arity = "1")
   private long dataStorageFrequency = 2048L;
