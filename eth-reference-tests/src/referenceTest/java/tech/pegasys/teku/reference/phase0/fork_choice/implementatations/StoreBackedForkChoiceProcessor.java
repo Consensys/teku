@@ -55,7 +55,7 @@ public class StoreBackedForkChoiceProcessor extends ForkChoiceProcessor {
   public Bytes32 processHead() {
     UpdatableStore.StoreTransaction transaction = chainData.startStoreTransaction();
     transaction.updateHead();
-    transaction.commit(() -> {}, "Failed to persist validator vote changes.");
+    transaction.commit().join();
 
     return chainData.getStore().getHead();
   }

@@ -182,7 +182,7 @@ public class BeaconChainUtil {
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.updateHead();
-    tx.commit().reportExceptions();
+    tx.commit().join();
 
     return importResult.getBlock();
   }
