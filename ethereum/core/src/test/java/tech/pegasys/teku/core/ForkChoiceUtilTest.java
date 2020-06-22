@@ -17,12 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -31,6 +33,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategyUpdater;
 
 class ForkChoiceUtilTest {
 
@@ -42,7 +45,15 @@ class ForkChoiceUtilTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final ReadOnlyStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
   private final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-      ProtoArrayForkChoiceStrategy.create(store);
+      ProtoArrayForkChoiceStrategy.create(
+          new HashMap<>(), store.getFinalizedCheckpoint(), store.getJustifiedCheckpoint());
+
+  @BeforeEach
+  public void setup() {
+    ProtoArrayForkChoiceStrategyUpdater updater = forkChoiceStrategy.updater();
+    updater.onBlock(genesis);
+    updater.commit();
+  }
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() throws Exception {
@@ -79,7 +90,9 @@ class ForkChoiceUtilTest {
       throws Exception {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
     forkChoiceStrategy.setPruneThreshold(0);
-    forkChoiceStrategy.maybePrune(chainBuilder.getBlockAtSlot(4).getRoot());
+    ProtoArrayForkChoiceStrategyUpdater updater = forkChoiceStrategy.updater();
+    updater.updateFinalizedBlock(chainBuilder.getBlockAtSlot(4).getRoot());
+    updater.commit();
 
     final NavigableMap<UnsignedLong, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(
@@ -154,6 +167,8 @@ class ForkChoiceUtilTest {
   }
 
   private void addBlock(final SignedBlockAndState blockAndState) {
-    forkChoiceStrategy.onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
+    ProtoArrayForkChoiceStrategyUpdater updater = forkChoiceStrategy.updater();
+    updater.onBlock(blockAndState.getBlock(), blockAndState.getState());
+    updater.commit();
   }
 }

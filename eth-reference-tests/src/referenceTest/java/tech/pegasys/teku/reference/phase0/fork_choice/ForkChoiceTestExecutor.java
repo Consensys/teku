@@ -39,19 +39,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.core.ForkChoiceUtil;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.reference.phase0.fork_choice.implementatations.ForkChoiceProcessor;
+import tech.pegasys.teku.reference.phase0.fork_choice.implementatations.OrigForkChoiceProcessor;
+import tech.pegasys.teku.reference.phase0.fork_choice.implementatations.StoreBackedForkChoiceProcessor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -171,20 +168,19 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     runForkChoiceTests(genesis, steps, testName, protoArrayFC);
   }
 
-  @ParameterizedTest(name = "{index}.{2} fork choice test")
+  @ParameterizedTest(name = "{index}. (protoarray={3}) {2}")
   @MethodSource("loadForkChoiceTests")
   void runForkChoiceTests(
       BeaconState genesis, List<Object> steps, String testName, boolean protoArrayFC) {
-    StateTransition st = new StateTransition();
 
     EventBus eventBus = new EventBus();
     RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
     storageClient.initializeFromGenesis(genesis);
 
-    ForkChoiceStrategy forkChoiceStrategy =
+    ForkChoiceProcessor forkChoiceProcessor =
         protoArrayFC
-            ? ProtoArrayForkChoiceStrategy.create(storageClient.getStore())
-            : new OrigForkChoiceStrategy(storageClient.getStore());
+            ? new StoreBackedForkChoiceProcessor(storageClient)
+            : new OrigForkChoiceProcessor(storageClient);
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();
@@ -192,9 +188,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     List<Attestation> attestationBuffer = new ArrayList<>();
 
     for (Object step : steps) {
-      blockBuffer.removeIf(block -> processBlock(st, storageClient, block, forkChoiceStrategy));
-      attestationBuffer.removeIf(
-          attestation -> processAttestation(st, storageClient, attestation, forkChoiceStrategy));
+      blockBuffer.removeIf(forkChoiceProcessor::processBlock);
+      attestationBuffer.removeIf(forkChoiceProcessor::processAttestation);
       if (step instanceof UnsignedLong) {
         UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
         while (ForkChoiceUtil.get_current_slot(transaction).compareTo((UnsignedLong) step) < 0) {
@@ -207,11 +202,11 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             ((SignedBeaconBlock) step).getMessage().getBody().getAttestations()) {
           attestationBuffer.add(attestation);
         }
-        if (!processBlock(st, storageClient, (SignedBeaconBlock) step, forkChoiceStrategy)) {
+        if (!forkChoiceProcessor.processBlock((SignedBeaconBlock) step)) {
           blockBuffer.add((SignedBeaconBlock) step);
         }
       } else if (step instanceof Attestation) {
-        if (!processAttestation(st, storageClient, (Attestation) step, forkChoiceStrategy)) {
+        if (!forkChoiceProcessor.processAttestation((Attestation) step)) {
           attestationBuffer.add((Attestation) step);
         }
       } else if (step instanceof Map) {
@@ -239,9 +234,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             case "head":
               {
                 Bytes32 root = Bytes32.fromHexString((String) e.getValue());
-                UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
-                Bytes32 head = forkChoiceStrategy.findHead(transaction);
-                transaction.commit(() -> {}, "Failed to persist validator vote changes.");
+                Bytes32 head = forkChoiceProcessor.processHead();
                 assertEquals(
                     root,
                     head,
@@ -271,41 +264,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       } else {
         throw new IllegalArgumentException();
       }
-    }
-  }
-
-  private boolean processAttestation(
-      StateTransition st,
-      RecentChainData storageClient,
-      Attestation step,
-      ForkChoiceStrategy strategy) {
-    UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
-    AttestationProcessingResult attestationProcessingResult =
-        ForkChoiceUtil.on_attestation(
-            transaction, ValidateableAttestation.fromAttestation(step), st, strategy);
-    if (attestationProcessingResult.isSuccessful()) {
-      transaction.commit().join();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  private boolean processBlock(
-      StateTransition st,
-      RecentChainData storageClient,
-      SignedBeaconBlock block,
-      ForkChoiceStrategy forkChoiceStrategy) {
-    UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
-    BlockImportResult blockImportResult =
-        ForkChoiceUtil.on_block(transaction, block, st, forkChoiceStrategy);
-    if (blockImportResult.isSuccessful()) {
-      transaction.commit().join();
-      forkChoiceStrategy.onBlock(
-          block.getMessage(), blockImportResult.getBlockProcessingRecord().get().getPostState());
-      return true;
-    } else {
-      return false;
     }
   }
 
