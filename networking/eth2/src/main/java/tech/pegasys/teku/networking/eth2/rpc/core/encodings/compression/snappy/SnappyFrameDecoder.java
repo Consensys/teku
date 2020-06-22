@@ -17,10 +17,11 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.s
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.compression.CompressionException;
 import io.netty.handler.codec.compression.Snappy;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
 /**
  * This class is mostly borrowed from the Netty implementation:
@@ -31,7 +32,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecod
  * <p>See <a href="https://github.com/google/snappy/blob/master/framing_format.txt">Snappy framing
  * format</a>.
  */
-public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
+public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, CompressionException> {
 
   private enum ChunkType {
     STREAM_IDENTIFIER,
@@ -70,7 +71,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
   }
 
   @Override
-  protected Optional<ByteBuf> decodeOneImpl(ByteBuf in) {
+  protected Optional<ByteBuf> decodeOneImpl(ByteBuf in) throws CompressionException {
     if (corrupted) {
       in.skipBytes(in.readableBytes());
       return Optional.empty();
@@ -194,14 +195,20 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
           snappy.reset();
           break;
       }
-    } catch (Exception e) {
+    } catch (CompressionException e) {
       corrupted = true;
       throw e;
     }
     return Optional.ofNullable(ret);
   }
 
-  private static void checkByte(byte actual, byte expect) {
+  @Override
+  protected void throwDataTruncatedException(int dataLeft) throws CompressionException {
+    throw new PayloadSmallerThanExpectedException(
+        "Snappy stream complete, but unprocessed data left: " + dataLeft);
+  }
+
+  private static void checkByte(byte actual, byte expect) throws CompressionException {
     if (actual != expect) {
       throw new CompressionException(
           "Unexpected stream identifier contents. Mismatched snappy " + "protocol version?");

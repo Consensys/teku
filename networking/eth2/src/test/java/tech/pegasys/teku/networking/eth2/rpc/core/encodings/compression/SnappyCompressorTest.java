@@ -145,7 +145,7 @@ public class SnappyCompressorTest {
   }
 
   @Test
-  public void uncompress_truncatedPayload() {
+  public void uncompress_truncatedPayload() throws CompressionException {
     final BeaconState state = dataStructureUtil.randomBeaconState(0);
     final Bytes serializedState =
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());

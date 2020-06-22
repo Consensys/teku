@@ -17,7 +17,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.Optional;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
 /**
  * Abstract {@link ByteBufDecoder} implementation which handles unprocessed {@link ByteBuf}s
@@ -27,13 +26,13 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
  * <p>This class is NOT thread safe. Calls should either be synchronized on a higher level or
  * performed from a single thread.
  */
-public abstract class AbstractByteBufDecoder<TMessage>
-    implements ByteBufDecoder<TMessage, RuntimeException> {
+public abstract class AbstractByteBufDecoder<TMessage, TException extends Exception>
+    implements ByteBufDecoder<TMessage, TException> {
 
   private CompositeByteBuf compositeByteBuf = Unpooled.compositeBuffer();
 
   @Override
-  public Optional<TMessage> decodeOneMessage(ByteBuf in) {
+  public Optional<TMessage> decodeOneMessage(ByteBuf in) throws TException {
     if (!in.isReadable()) {
       return Optional.empty();
     }
@@ -65,13 +64,14 @@ public abstract class AbstractByteBufDecoder<TMessage>
   }
 
   @Override
-  public void complete() {
+  public void complete() throws TException {
     if (compositeByteBuf.isReadable()) {
       compositeByteBuf.release();
-      throw new PayloadSmallerThanExpectedException(
-          "Rpc stream complete, but unprocessed data left: " + compositeByteBuf.readableBytes());
+      throwDataTruncatedException(compositeByteBuf.readableBytes());
     }
   }
+
+  protected abstract void throwDataTruncatedException(int dataLeft) throws TException;
 
   /**
    * Decodes one message if the full data is available in the buffer
@@ -82,5 +82,5 @@ public abstract class AbstractByteBufDecoder<TMessage>
    * <p>If a message is read then the buffer reader position should be positioned after the end of
    * message data
    */
-  protected abstract Optional<TMessage> decodeOneImpl(ByteBuf in);
+  protected abstract Optional<TMessage> decodeOneImpl(ByteBuf in) throws TException;
 }

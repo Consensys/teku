@@ -23,6 +23,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
 class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
 
@@ -49,7 +51,17 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
           .ifPresent(len -> decompressor = Optional.of(compressor.createDecompressor(len)));
     }
     if (decompressor.isPresent()) {
-      Optional<ByteBuf> ret = decompressor.get().decodeOneMessage(in);
+      final Optional<ByteBuf> ret;
+      try {
+        ret = decompressor.get().decodeOneMessage(in);
+      } catch (PayloadSmallerThanExpectedException e) {
+        throw RpcException.PAYLOAD_TRUNCATED;
+      } catch (PayloadLargerThanExpectedException e) {
+        throw RpcException.EXTRA_DATA_APPENDED;
+      } catch (CompressionException e) {
+        throw RpcException.FAILED_TO_UNCOMPRESS_MESSAGE;
+      }
+
       if (ret.isPresent()) {
         decompressor = Optional.empty();
         try {
@@ -80,16 +92,20 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
     RpcException err = null;
     if (varIntDecoder.isPresent()) {
       try {
-        varIntDecoder.ifPresent(AbstractByteBufDecoder::complete);
+        varIntDecoder.get().complete();
       } catch (Exception e) {
+        // ignore any exception, call complete() just to release resources
       }
+      // if varIntDecoder exists then payload length was not read completely
       err = RpcException.MESSAGE_TRUNCATED;
     }
     if (decompressor.isPresent()) {
       try {
         decompressor.get().complete();
       } catch (CompressionException e) {
+        // ignore any exception, call complete() just to release resources
       }
+      // if decompressor still exists then not enough data was fed to it
       err = RpcException.PAYLOAD_TRUNCATED;
     }
     if (!decoded && err == null) {
@@ -129,7 +145,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
     return Optional.of((int) length);
   }
 
-  private static class VarIntDecoder extends AbstractByteBufDecoder<Long> {
+  private static class VarIntDecoder extends AbstractByteBufDecoder<Long, RuntimeException> {
     @Override
     protected Optional<Long> decodeOneImpl(ByteBuf in) {
       long length = ByteBufExtKt.readUvarint(in);
@@ -138,6 +154,11 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
         return Optional.empty();
       }
       return Optional.of(length);
+    }
+
+    @Override
+    protected void throwDataTruncatedException(int dataLeft) throws RuntimeException {
+      // Do nothing, exceptional case is handled upstream
     }
   }
 }

@@ -16,8 +16,10 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop;
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
-public class NoopDecoder extends AbstractByteBufDecoder<ByteBuf> {
+public class NoopDecoder extends AbstractByteBufDecoder<ByteBuf, CompressionException> {
   private final int expectedBytes;
 
   public NoopDecoder(int expectedBytes) {
@@ -30,5 +32,11 @@ public class NoopDecoder extends AbstractByteBufDecoder<ByteBuf> {
       return Optional.empty();
     }
     return Optional.of(in.readRetainedSlice(expectedBytes));
+  }
+
+  @Override
+  protected void throwDataTruncatedException(int dataLeft) throws CompressionException {
+    throw new PayloadSmallerThanExpectedException(
+        "The stream complete, but unprocessed data left: " + dataLeft);
   }
 }

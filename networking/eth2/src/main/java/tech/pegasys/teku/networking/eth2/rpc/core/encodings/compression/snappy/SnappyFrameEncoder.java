@@ -19,7 +19,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.compression.Snappy;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 
 /**
  * This class is mostly borrowed from the Netty implementation:
@@ -112,7 +111,7 @@ public class SnappyFrameEncoder {
   private static void setChunkLength(ByteBuf out, int lengthIdx) {
     int chunkLength = out.writerIndex() - lengthIdx - 3;
     if (chunkLength >>> 24 != 0) {
-      throw new CompressionException("compressed data too large: " + chunkLength);
+      throw new IllegalArgumentException("compressed data too large: " + chunkLength);
     }
     out.setMediumLE(lengthIdx, chunkLength);
   }
