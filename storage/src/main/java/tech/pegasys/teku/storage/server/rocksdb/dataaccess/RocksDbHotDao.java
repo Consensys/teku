@@ -14,24 +14,19 @@
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.common.primitives.UnsignedLong;
-import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
 /**
- * A RocksDB "data access object" interface to abstract interactions with underlying database.
- *
- * @see <a href="https://en.wikipedia.org/wiki/Data_access_object">DAO</a>
+ * Provides an abstract "data access object" interface for working with hot data (non-finalized)
+ * data from the underlying database.
  */
-public interface RocksDbDao extends AutoCloseable {
+public interface RocksDbHotDao extends AutoCloseable {
 
   Optional<UnsignedLong> getGenesisTime();
 
@@ -41,17 +36,10 @@ public interface RocksDbDao extends AutoCloseable {
 
   Optional<Checkpoint> getFinalizedCheckpoint();
 
-  Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot);
-
-  Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot);
+  // In hot dao because it must be in sync with the finalized checkpoint
+  Optional<BeaconState> getLatestFinalizedState();
 
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root);
-
-  Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
-
-  Optional<BeaconState> getFinalizedState(final Bytes32 root);
-
-  Optional<BeaconState> getLatestFinalizedState();
 
   Map<Bytes32, SignedBeaconBlock> getHotBlocks();
 
@@ -59,14 +47,9 @@ public interface RocksDbDao extends AutoCloseable {
 
   Map<UnsignedLong, VoteTracker> getVotes();
 
-  @MustBeClosed
-  Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
+  HotUpdater hotUpdater();
 
-  Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
-
-  Updater updater();
-
-  interface Updater extends AutoCloseable {
+  interface HotUpdater extends AutoCloseable {
 
     void setGenesisTime(final UnsignedLong genesisTime);
 
@@ -84,10 +67,6 @@ public interface RocksDbDao extends AutoCloseable {
 
     void addHotBlock(final SignedBeaconBlock block);
 
-    void addFinalizedBlock(final SignedBeaconBlock block);
-
-    void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
-
     void addVotes(final Map<UnsignedLong, VoteTracker> states);
 
     void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
@@ -95,10 +74,6 @@ public interface RocksDbDao extends AutoCloseable {
     void deleteCheckpointState(final Checkpoint checkpoint);
 
     void deleteHotBlock(final Bytes32 blockRoot);
-
-    void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
-
-    void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
     void commit();
 
