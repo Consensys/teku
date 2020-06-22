@@ -213,8 +213,7 @@ public class SnappyCompressorTest {
     List<List<ByteBuf>> testSlices = Utils.generateTestSlices(maliciousPayload);
 
     for (List<ByteBuf> testSlice : testSlices) {
-      Decompressor decompressor =
-          new SnappyFramedCompressor().createDecompressor(1);
+      Decompressor decompressor = new SnappyFramedCompressor().createDecompressor(1);
 
       boolean exceptionCaught = false;
       for (ByteBuf byteBuf : testSlice) {

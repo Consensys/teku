@@ -24,7 +24,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
  *
  * <p>This class is a standalone analog of Netty {@link io.netty.handler.codec.ByteToMessageDecoder}
  *
- * This class is NOT thread safe. Calls should either be synchronized on a higher level or
+ * <p>This class is NOT thread safe. Calls should either be synchronized on a higher level or
  * performed from a single thread.
  */
 public abstract class AbstractByteBufDecoder<TMessage>
