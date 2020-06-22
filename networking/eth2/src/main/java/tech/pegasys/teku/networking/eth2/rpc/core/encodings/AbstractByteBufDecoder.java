@@ -23,6 +23,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
  * Abstract {@link ByteBufDecoder} implementation which handles unprocessed {@link ByteBuf}s
  *
  * <p>This class is a standalone analog of Netty {@link io.netty.handler.codec.ByteToMessageDecoder}
+ *
+ * This class is NOT thread safe. Calls should either be synchronized on a higher level or
+ * performed from a single thread.
  */
 public abstract class AbstractByteBufDecoder<TMessage>
     implements ByteBufDecoder<TMessage, RuntimeException> {
@@ -30,7 +33,7 @@ public abstract class AbstractByteBufDecoder<TMessage>
   private CompositeByteBuf compositeByteBuf = Unpooled.compositeBuffer();
 
   @Override
-  public synchronized Optional<TMessage> decodeOneMessage(ByteBuf in) {
+  public Optional<TMessage> decodeOneMessage(ByteBuf in) {
     if (!in.isReadable()) {
       return Optional.empty();
     }
