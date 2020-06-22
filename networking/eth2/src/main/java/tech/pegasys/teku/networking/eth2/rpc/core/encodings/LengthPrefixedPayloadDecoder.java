@@ -26,18 +26,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
 
 class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
 
-  private static class VarIntDecoder extends AbstractByteBufDecoder<Long> {
-    @Override
-    protected Optional<Long> decodeOneImpl(ByteBuf in) {
-      long length = ByteBufExtKt.readUvarint(in);
-      if (length < 0) {
-        // wait for more byte to read length field
-        return Optional.empty();
-      }
-      return Optional.of(length);
-    }
-  }
-
   private final RpcPayloadEncoder<T> payloadEncoder;
   private final Compressor compressor;
   private Optional<Decompressor> decompressor = Optional.empty();
@@ -139,5 +127,17 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
       throw RpcException.CHUNK_TOO_LONG;
     }
     return Optional.of((int) length);
+  }
+
+  private static class VarIntDecoder extends AbstractByteBufDecoder<Long> {
+    @Override
+    protected Optional<Long> decodeOneImpl(ByteBuf in) {
+      long length = ByteBufExtKt.readUvarint(in);
+      if (length < 0) {
+        // wait for more byte to read length field
+        return Optional.empty();
+      }
+      return Optional.of(length);
+    }
   }
 }
