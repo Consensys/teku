@@ -69,7 +69,7 @@ public class TekuConfigurationBuilder {
   private List<String> metricsHostAllowlist;
   private String dataPath;
   private StateStorageMode dataStorageMode;
-  private int dataStorageCreateDbVersion;
+  private String dataStorageCreateDbVersion;
   private long dataStorageFrequency;
   private int restApiPort;
   private boolean restApiDocsEnabled;
@@ -339,7 +339,7 @@ public class TekuConfigurationBuilder {
   }
 
   public TekuConfigurationBuilder setDataStorageCreateDbVersion(
-      final int dataStorageCreateDbVersion) {
+      final String dataStorageCreateDbVersion) {
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     return this;
   }

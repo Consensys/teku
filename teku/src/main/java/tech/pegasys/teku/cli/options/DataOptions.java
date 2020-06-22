@@ -48,9 +48,9 @@ public class DataOptions {
       paramLabel = "<VERSION>",
       description = "Database version to create (3 or 4)",
       arity = "1",
-      defaultValue = "3",
+      defaultValue = "3.0",
       hidden = true)
-  private int createDbVersion = 3;
+  private String createDbVersion = "3.0";
 
   public String getDataPath() {
     return dataPath;
@@ -64,7 +64,7 @@ public class DataOptions {
     return dataStorageFrequency;
   }
 
-  public int getCreateDbVersion() {
+  public String getCreateDbVersion() {
     return createDbVersion;
   }
 

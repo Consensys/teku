@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -30,23 +32,38 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   @VisibleForTesting static final String DB_PATH = "db";
+  @VisibleForTesting static final String ARCHIVE_PATH = "archive";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
 
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final File dbDirectory;
+  private final File archiveDirectory;
   private final File dbVersionFile;
   private final StateStorageMode stateStorageMode;
+  private final DatabaseVersion createDatabaseVersion;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final String dataPath,
       final StateStorageMode dataStorageMode) {
+    this(metricsSystem, dataPath, dataStorageMode, "3.0");
+  }
+
+  public VersionedDatabaseFactory(
+      final MetricsSystem metricsSystem,
+      final String dataPath,
+      final StateStorageMode dataStorageMode,
+      final String createDatabaseVersion) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = Paths.get(dataPath).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
+    this.archiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.stateStorageMode = dataStorageMode;
+
+    Optional<DatabaseVersion> versionOptional = DatabaseVersion.fromString(createDatabaseVersion);
+    this.createDatabaseVersion = versionOptional.orElse(DatabaseVersion.DEFAULT_VERSION);
   }
 
   @Override
@@ -61,11 +78,23 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     switch (dbVersion) {
       case V3:
         database = createV3Database();
+        LOG.trace(
+            "Created V3 database ({}) at {}", dbVersion.getValue(), dbDirectory.getAbsolutePath());
+        break;
+      case V4:
+        database = createV4Database();
+        LOG.trace(
+            "Created V4 Hot database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+        LOG.trace(
+            "Created V4 Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            archiveDirectory.getAbsolutePath());
         break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
-    LOG.trace("Created database ({}) at {}", dbVersion.getValue(), dbDirectory.getAbsolutePath());
     return database;
   }
 
@@ -73,6 +102,14 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     final RocksDbConfiguration rocksDbConfiguration =
         RocksDbConfiguration.withDataDirectory(dbDirectory.toPath());
     return RocksDbDatabase.createV3(metricsSystem, rocksDbConfiguration, stateStorageMode);
+  }
+
+  private Database createV4Database() {
+    return RocksDbDatabase.createV4(
+        metricsSystem,
+        RocksDbConfiguration.withDataDirectory(dbDirectory.toPath()),
+        RocksDbConfiguration.withDataDirectory(archiveDirectory.toPath()),
+        stateStorageMode);
   }
 
   private void validateDataPaths() {
@@ -91,9 +128,16 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
               "Unable to create the path to store database files at %s",
               dbDirectory.getAbsolutePath()));
     }
+    if (!archiveDirectory.exists() && !archiveDirectory.mkdirs()) {
+      throw new DatabaseStorageException(
+          String.format(
+              "Unable to create the path to store archive files at %s",
+              archiveDirectory.getAbsolutePath()));
+    }
   }
 
-  private DatabaseVersion getDatabaseVersion() {
+  @VisibleForTesting
+  DatabaseVersion getDatabaseVersion() {
     if (dbVersionFile.exists()) {
       try {
         final String versionValue = Files.readString(dbVersionFile.toPath()).trim();
@@ -107,9 +151,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
                 "Unable to read database version from file %s", dbVersionFile.getAbsolutePath()),
             e);
       }
-    } else {
-      return DatabaseVersion.DEFAULT_VERSION;
     }
+    return Objects.requireNonNullElse(this.createDatabaseVersion, DatabaseVersion.DEFAULT_VERSION);
   }
 
   private void saveDatabaseVersion(final DatabaseVersion version) {
