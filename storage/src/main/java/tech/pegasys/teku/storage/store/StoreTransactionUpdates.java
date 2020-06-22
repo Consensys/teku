@@ -280,7 +280,7 @@ class StoreTransactionUpdates {
     sortedBlocks.sort(Comparator.comparing(SignedBeaconBlock::getSlot));
     for (SignedBeaconBlock newBlock : sortedBlocks) {
       final BeaconState newState = hotStates.get(newBlock.getRoot());
-      store.forkChoiceState.onBlock(new SignedBlockAndState(newBlock, newState));
+      store.forkChoiceState.onBlock(newBlock.getMessage(), newState);
     }
 
     // Handle finalization update
