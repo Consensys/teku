@@ -51,8 +51,8 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
   private boolean corrupted;
 
   /**
-   * Creates a new snappy-framed decoder with validation of checksums turned OFF. To turn checksum
-   * validation on, please use the alternate {@link #SnappyFrameDecoder(boolean)} constructor.
+   * Creates a new snappy-framed decoder with validation of checksums turned on. To turn checksum
+   * validation off, please use the alternate {@link #SnappyFrameDecoder(boolean)} constructor.
    */
   public SnappyFrameDecoder() {
     this(true);
