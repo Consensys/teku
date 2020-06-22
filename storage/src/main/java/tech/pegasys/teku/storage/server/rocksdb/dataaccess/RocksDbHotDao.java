@@ -22,6 +22,10 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
+/**
+ * Provides an abstract "data access object" interface for working with hot data (non-finalized)
+ * data from the underlying database.
+ */
 public interface RocksDbHotDao extends AutoCloseable {
 
   Optional<UnsignedLong> getGenesisTime();
@@ -31,6 +35,9 @@ public interface RocksDbHotDao extends AutoCloseable {
   Optional<Checkpoint> getBestJustifiedCheckpoint();
 
   Optional<Checkpoint> getFinalizedCheckpoint();
+
+  // In hot dao because it must be in sync with the finalized checkpoint
+  Optional<BeaconState> getLatestFinalizedState();
 
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root);
 
@@ -51,6 +58,8 @@ public interface RocksDbHotDao extends AutoCloseable {
     void setBestJustifiedCheckpoint(final Checkpoint checkpoint);
 
     void setFinalizedCheckpoint(final Checkpoint checkpoint);
+
+    void setLatestFinalizedState(final BeaconState state);
 
     void addCheckpointState(final Checkpoint checkpoint, final BeaconState state);
 

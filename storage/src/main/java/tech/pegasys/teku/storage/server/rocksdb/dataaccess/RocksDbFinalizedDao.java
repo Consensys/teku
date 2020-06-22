@@ -19,6 +19,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
+/**
+ * Provides an abstract "data access object" interface for working with finalized data from the
+ * underlying database.
+ */
 public interface RocksDbFinalizedDao extends AutoCloseable {
 
   Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot);
@@ -29,12 +33,9 @@ public interface RocksDbFinalizedDao extends AutoCloseable {
 
   Optional<BeaconState> getFinalizedState(final Bytes32 root);
 
-  Optional<BeaconState> getLatestFinalizedState();
-
   FinalizedUpdater finalizedUpdater();
 
   interface FinalizedUpdater extends AutoCloseable {
-    void setLatestFinalizedState(final BeaconState state);
 
     void addFinalizedBlock(final SignedBeaconBlock block);
 

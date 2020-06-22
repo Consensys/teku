@@ -99,7 +99,7 @@ public class RocksDbDatabase implements Database {
       final BeaconState genesisState =
           store.getBlockState(store.getFinalizedCheckpoint().getRoot());
       hotUpdater.addCheckpointState(store.getFinalizedCheckpoint(), genesisState);
-      finalizedUpdater.setLatestFinalizedState(genesisState);
+      hotUpdater.setLatestFinalizedState(genesisState);
 
       for (Bytes32 root : store.getBlockRoots()) {
         // Since we're storing genesis, we should only have 1 root here corresponding to genesis
@@ -139,7 +139,7 @@ public class RocksDbDatabase implements Database {
     final Checkpoint justifiedCheckpoint = hotDao.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = hotDao.getFinalizedCheckpoint().orElseThrow();
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
-    final BeaconState finalizedState = finalizedDao.getLatestFinalizedState().orElseThrow();
+    final BeaconState finalizedState = hotDao.getLatestFinalizedState().orElseThrow();
 
     final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot = hotDao.getHotBlocks();
     final Map<Checkpoint, BeaconState> checkpointStates = hotDao.getCheckpointStates();
@@ -223,7 +223,6 @@ public class RocksDbDatabase implements Database {
       // Update finalized blocks and states
       putFinalizedStates(updater, update.getFinalizedBlocks(), update.getFinalizedStates());
       update.getFinalizedBlocks().values().forEach(updater::addFinalizedBlock);
-      update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
       updater.commit();
     }
 
@@ -233,6 +232,7 @@ public class RocksDbDatabase implements Database {
       update.getFinalizedCheckpoint().ifPresent(updater::setFinalizedCheckpoint);
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
+      update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
       updater.addCheckpointStates(update.getCheckpointStates());
       updater.addHotBlocks(update.getHotBlocks());
@@ -260,7 +260,7 @@ public class RocksDbDatabase implements Database {
         final Bytes32 baseBlockRoot = hotDao.getFinalizedCheckpoint().orElseThrow().getRoot();
         final SignedBeaconBlock baseBlock =
             finalizedDao.getFinalizedBlock(baseBlockRoot).orElseThrow();
-        final BeaconState baseState = finalizedDao.getLatestFinalizedState().orElseThrow();
+        final BeaconState baseState = hotDao.getLatestFinalizedState().orElseThrow();
 
         final BlockTree blockTree =
             BlockTree.builder().rootBlock(baseBlock).blocks(finalizedBlocks.values()).build();

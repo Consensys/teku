@@ -19,6 +19,10 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
+/**
+ * Provides an abstract "data access object" interface for working with ETH1 data from the
+ * underlying database.
+ */
 public interface RocksDbEth1Dao extends AutoCloseable {
 
   @MustBeClosed
