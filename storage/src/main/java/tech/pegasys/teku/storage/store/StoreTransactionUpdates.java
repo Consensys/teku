@@ -17,13 +17,10 @@ import static tech.pegasys.teku.storage.store.Store.indexBlockRootsBySlot;
 import static tech.pegasys.teku.storage.store.Store.removeBlockRootFromSlotIndex;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -229,7 +226,7 @@ class StoreTransactionUpdates {
         getPrunedRoots(),
         checkpointStates,
         prunedCheckpointStates,
-        tx.votes);
+        tx.getForkChoiceVotes());
   }
 
   public void applyToStore(final Store store) {
@@ -241,7 +238,6 @@ class StoreTransactionUpdates {
     store.blocks.putAll(hotBlocks);
     store.block_states.putAll(hotStates);
     store.checkpoint_states.putAll(checkpointStates);
-    store.votes.putAll(tx.votes);
 
     // Update finalized data
     finalizedChainData.ifPresent(
@@ -271,23 +267,7 @@ class StoreTransactionUpdates {
         });
 
     // Update forkchoice
-    applyForkChoiceUpdates(store);
-  }
-
-  private void applyForkChoiceUpdates(final Store store) {
-    // Process new blocks and states
-    final List<SignedBeaconBlock> sortedBlocks = new ArrayList<>(hotBlocks.values());
-    sortedBlocks.sort(Comparator.comparing(SignedBeaconBlock::getSlot));
-    for (SignedBeaconBlock newBlock : sortedBlocks) {
-      final BeaconState newState = hotStates.get(newBlock.getRoot());
-      store.forkChoiceState.onBlock(newBlock.getMessage(), newState);
-    }
-
-    // Handle finalization update
-    finalizedChainData
-        .map(FinalizedChainData::getFinalizedCheckpoint)
-        .map(Checkpoint::getRoot)
-        .ifPresent(store.forkChoiceState::updateFinalizedBlock);
+    tx.forkChoiceUpdater.commit();
   }
 
   public void invokeUpdateHandler(final Store store, StoreUpdateHandler storeUpdateHandler) {

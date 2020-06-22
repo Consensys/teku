@@ -60,7 +60,6 @@ public class TestStoreFactory {
         null,
         new HashMap<>(),
         new HashMap<>(),
-        new HashMap<>(),
         new HashMap<>());
   }
 
@@ -76,7 +75,6 @@ public class TestStoreFactory {
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
 
     blocks.put(anchorRoot, signedAnchorBlock);
     block_states.put(anchorRoot, anchorState);
@@ -92,8 +90,7 @@ public class TestStoreFactory {
         anchorCheckpoint,
         blocks,
         block_states,
-        checkpoint_states,
-        votes);
+        checkpoint_states);
   }
 
   private BeaconState createRandomGenesisState() {
@@ -109,7 +106,6 @@ public class TestStoreFactory {
     protected Map<Bytes32, SignedBeaconBlock> blocks;
     protected Map<Bytes32, BeaconState> block_states;
     protected Map<Checkpoint, BeaconState> checkpoint_states;
-    protected Map<UnsignedLong, VoteTracker> votes;
 
     StoreImpl(
         final UnsignedLong time,
@@ -119,8 +115,7 @@ public class TestStoreFactory {
         final Checkpoint best_justified_checkpoint,
         final Map<Bytes32, SignedBeaconBlock> blocks,
         final Map<Bytes32, BeaconState> block_states,
-        final Map<Checkpoint, BeaconState> checkpoint_states,
-        final Map<UnsignedLong, VoteTracker> votes) {
+        final Map<Checkpoint, BeaconState> checkpoint_states) {
       this.time = time;
       this.genesis_time = genesis_time;
       this.justified_checkpoint = justified_checkpoint;
@@ -129,7 +124,6 @@ public class TestStoreFactory {
       this.blocks = blocks;
       this.block_states = block_states;
       this.checkpoint_states = checkpoint_states;
-      this.votes = votes;
     }
 
     @Override
@@ -239,11 +233,6 @@ public class TestStoreFactory {
     public boolean containsCheckpointState(final Checkpoint checkpoint) {
       return checkpoint_states.containsKey(checkpoint);
     }
-
-    @Override
-    public Set<UnsignedLong> getVotedValidatorIndices() {
-      return votes.keySet();
-    }
   }
 
   private static class MutableStoreImpl extends StoreImpl implements MutableStore {
@@ -256,8 +245,7 @@ public class TestStoreFactory {
         final Checkpoint best_justified_checkpoint,
         final Map<Bytes32, SignedBeaconBlock> blocks,
         final Map<Bytes32, BeaconState> block_states,
-        final Map<Checkpoint, BeaconState> checkpoint_states,
-        final Map<UnsignedLong, VoteTracker> votes) {
+        final Map<Checkpoint, BeaconState> checkpoint_states) {
       super(
           time,
           genesis_time,
@@ -266,8 +254,7 @@ public class TestStoreFactory {
           best_justified_checkpoint,
           blocks,
           block_states,
-          checkpoint_states,
-          votes);
+          checkpoint_states);
     }
 
     @Override
@@ -313,16 +300,6 @@ public class TestStoreFactory {
     }
 
     @Override
-    public VoteTracker getVote(final UnsignedLong validatorIndex) {
-      VoteTracker vote = votes.get(validatorIndex);
-      if (vote == null) {
-        vote = VoteTracker.Default();
-      }
-      this.votes.put(validatorIndex, vote);
-      return vote;
-    }
-
-    @Override
     public void updateHead() {
       // No-op
     }
@@ -343,7 +320,6 @@ public class TestStoreFactory {
         final Checkpoint best_justified_checkpoint,
         final Map<Bytes32, SignedBeaconBlock> blocks,
         final Map<Bytes32, BeaconState> block_states,
-        final Map<Checkpoint, BeaconState> checkpoint_states,
-        final Map<UnsignedLong, VoteTracker> votes);
+        final Map<Checkpoint, BeaconState> checkpoint_states);
   }
 }

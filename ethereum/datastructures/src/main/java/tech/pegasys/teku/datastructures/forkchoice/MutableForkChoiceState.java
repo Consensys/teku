@@ -14,22 +14,26 @@
 package tech.pegasys.teku.datastructures.forkchoice;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public interface MutableForkChoiceState extends ForkChoiceState {
 
-  void updateHead(final MutableStore store);
+  void updateHead(
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState);
 
   void updateFinalizedBlock(final Bytes32 finalizedRoot);
 
-  void onAttestation(final MutableStore store, final IndexedAttestation attestation);
+  void onAttestation(final IndexedAttestation attestation);
 
-  void onBlock(final BeaconBlock block, final BeaconState state);
+  void onBlock(final SignedBlockAndState blockAndState);
 
-  default void onBlock(final SignedBlockAndState blockAndState) {
-    onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
+  default void onBlock(final SignedBeaconBlock block, final BeaconState state) {
+    onBlock(new SignedBlockAndState(block, state));
   }
 }

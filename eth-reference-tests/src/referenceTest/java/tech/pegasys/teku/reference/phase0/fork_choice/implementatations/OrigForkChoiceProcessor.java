@@ -31,8 +31,8 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableForkChoiceState;
-import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -58,8 +58,7 @@ public class OrigForkChoiceProcessor extends ForkChoiceProcessor {
     BlockImportResult blockImportResult = ForkChoiceUtil.on_block(transaction, block, st, strategy);
     if (blockImportResult.isSuccessful()) {
       transaction.commit().join();
-      strategy.onBlock(
-          block.getMessage(), blockImportResult.getBlockProcessingRecord().get().getPostState());
+      strategy.onBlock(block, blockImportResult.getBlockProcessingRecord().get().getPostState());
       return true;
     } else {
       return false;
@@ -73,7 +72,7 @@ public class OrigForkChoiceProcessor extends ForkChoiceProcessor {
     AttestationProcessingResult attestationProcessingResult =
         ForkChoiceUtil.on_attestation(transaction, validateable, st);
     if (attestationProcessingResult.isSuccessful()) {
-      strategy.onAttestation(transaction, validateable.getIndexedAttestation());
+      strategy.onAttestation(validateable.getIndexedAttestation());
       transaction.commit().join();
       return true;
     } else {
@@ -83,24 +82,27 @@ public class OrigForkChoiceProcessor extends ForkChoiceProcessor {
 
   @Override
   public Bytes32 processHead() {
-    UpdatableStore.StoreTransaction transaction = chainData.startStoreTransaction();
-    strategy.updateHead(transaction);
-    transaction.commit(() -> {}, "Failed to persist validator vote changes.");
+    final Checkpoint finalized = chainData.getStore().getFinalizedCheckpoint();
+    final Checkpoint justified = chainData.getStore().getJustifiedCheckpoint();
+    final BeaconState justifiedState = chainData.getStore().getCheckpointState(justified);
+    strategy.updateHead(finalized, justified, justifiedState);
     return strategy.getHead();
   }
 
   public static class OrigForkChoiceStrategy implements MutableForkChoiceState {
+    final ReadOnlyStore store;
     final Map<UnsignedLong, Checkpoint> latestMessages = new HashMap<>();
     final Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
     Bytes32 headRoot;
 
     public OrigForkChoiceStrategy(UpdatableStore store) {
+      this.store = store;
       CheckpointAndBlock finalizedCheckpointAndBlock = store.getFinalizedCheckpointAndBlock();
-      BeaconBlock genesisBlock = finalizedCheckpointAndBlock.getBlock().getMessage();
+      SignedBeaconBlock genesisBlock = finalizedCheckpointAndBlock.getBlock();
       if (!genesisBlock.getSlot().equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT))) {
         throw new IllegalArgumentException();
       }
-      onBlock(genesisBlock, store.getBlockState(genesisBlock.hash_tree_root()));
+      onBlock(genesisBlock, store.getBlockState(genesisBlock.getRoot()));
       this.headRoot = store.getJustifiedCheckpoint().getRoot();
     }
 
@@ -192,7 +194,11 @@ public class OrigForkChoiceProcessor extends ForkChoiceProcessor {
     }
 
     @Override
-    public void updateHead(MutableStore store) {
+    public void updateHead(
+        final Checkpoint finalizedCheckpoint,
+        final Checkpoint justifiedCheckpoint,
+        final BeaconState justifiedCheckpointState) {
+
       // Get filtered block tree that only includes viable branches
       final Map<Bytes32, BeaconBlock> blocks = get_filtered_block_tree(store);
 
@@ -242,7 +248,7 @@ public class OrigForkChoiceProcessor extends ForkChoiceProcessor {
     }
 
     @Override
-    public void onAttestation(final MutableStore store, IndexedAttestation attestation) {
+    public void onAttestation(IndexedAttestation attestation) {
       Checkpoint target = attestation.getData().getTarget();
       // Update latest messages
       for (UnsignedLong i : attestation.getAttesting_indices()) {
@@ -255,8 +261,8 @@ public class OrigForkChoiceProcessor extends ForkChoiceProcessor {
     }
 
     @Override
-    public void onBlock(final BeaconBlock block, final BeaconState state) {
-      blocks.put(block.hash_tree_root(), block);
+    public void onBlock(final SignedBlockAndState blockAndState) {
+      blocks.put(blockAndState.getRoot(), blockAndState.getBlock().getMessage());
     }
 
     @Override

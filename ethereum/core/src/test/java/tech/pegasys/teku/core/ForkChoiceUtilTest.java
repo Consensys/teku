@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategyUpdater;
 
 class ForkChoiceUtilTest {
 
@@ -44,11 +46,13 @@ class ForkChoiceUtilTest {
   private final ReadOnlyStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
   private final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
       ProtoArrayForkChoiceStrategy.create(
-          store.getFinalizedCheckpoint(), store.getJustifiedCheckpoint());
+          new HashMap<>(), store.getFinalizedCheckpoint(), store.getJustifiedCheckpoint());
 
   @BeforeEach
   public void setup() {
-    forkChoiceStrategy.onBlock(genesis);
+    ProtoArrayForkChoiceStrategyUpdater updater = forkChoiceStrategy.updater();
+    updater.onBlock(genesis);
+    updater.commit();
   }
 
   @Test
@@ -86,7 +90,9 @@ class ForkChoiceUtilTest {
       throws Exception {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
     forkChoiceStrategy.setPruneThreshold(0);
-    forkChoiceStrategy.updateFinalizedBlock(chainBuilder.getBlockAtSlot(4).getRoot());
+    ProtoArrayForkChoiceStrategyUpdater updater = forkChoiceStrategy.updater();
+    updater.updateFinalizedBlock(chainBuilder.getBlockAtSlot(4).getRoot());
+    updater.commit();
 
     final NavigableMap<UnsignedLong, Bytes32> rootsBySlot =
         ForkChoiceUtil.getAncestors(
@@ -161,6 +167,8 @@ class ForkChoiceUtilTest {
   }
 
   private void addBlock(final SignedBlockAndState blockAndState) {
-    forkChoiceStrategy.onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
+    ProtoArrayForkChoiceStrategyUpdater updater = forkChoiceStrategy.updater();
+    updater.onBlock(blockAndState.getBlock(), blockAndState.getState());
+    updater.commit();
   }
 }

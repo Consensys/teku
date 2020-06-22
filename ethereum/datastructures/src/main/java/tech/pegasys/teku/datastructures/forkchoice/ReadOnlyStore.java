@@ -61,6 +61,4 @@ public interface ReadOnlyStore extends ForkChoiceState {
   BeaconState getCheckpointState(Checkpoint checkpoint);
 
   boolean containsCheckpointState(Checkpoint checkpoint);
-
-  Set<UnsignedLong> getVotedValidatorIndices();
 }
