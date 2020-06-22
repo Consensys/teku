@@ -13,23 +13,20 @@
 
 package tech.pegasys.teku.storage.store;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 
-public class StoreAssertions {
+public interface StoreUpdateHandler {
+  StoreUpdateHandler NOOP =
+      new StoreUpdateHandler() {
+        @Override
+        public void onNewHeadBlock(final Bytes32 headRoot) {}
 
-  public static void assertStoresMatch(
-      final UpdatableStore actualState, final UpdatableStore expectedState) {
-    assertThat(actualState)
-        .isEqualToIgnoringGivenFields(
-            expectedState,
-            "time",
-            "lock",
-            "readLock",
-            "block_states",
-            "forkChoiceState",
-            "stateRequestCachedCounter",
-            "stateRequestRegenerateCounter",
-            "stateRequestMissCounter",
-            "metricsSystem");
-  }
+        @Override
+        public void onNewFinalizedCheckpoint(final Checkpoint finalizedCheckpoint) {}
+      };
+
+  void onNewHeadBlock(final Bytes32 headRoot);
+
+  void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint);
 }

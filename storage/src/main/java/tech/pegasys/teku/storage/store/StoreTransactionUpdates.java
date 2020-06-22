@@ -226,7 +226,7 @@ class StoreTransactionUpdates {
         getPrunedRoots(),
         checkpointStates,
         prunedCheckpointStates,
-        tx.votes);
+        tx.getForkChoiceVotes());
   }
 
   public void applyToStore(final Store store) {
@@ -238,7 +238,6 @@ class StoreTransactionUpdates {
     store.blocks.putAll(hotBlocks);
     store.block_states.putAll(hotStates);
     store.checkpoint_states.putAll(checkpointStates);
-    store.votes.putAll(tx.votes);
 
     // Update finalized data
     finalizedChainData.ifPresent(
@@ -266,6 +265,20 @@ class StoreTransactionUpdates {
                 removeBlockRootFromSlotIndex(store.rootsBySlotLookup, slot, root);
               });
         });
+
+    // Update forkchoice
+    tx.forkChoiceUpdater.commit();
+  }
+
+  public void invokeUpdateHandler(final Store store, StoreUpdateHandler storeUpdateHandler) {
+    // Process new finalized block
+    finalizedChainData.ifPresent(
+        data -> storeUpdateHandler.onNewFinalizedCheckpoint(data.getFinalizedCheckpoint()));
+
+    // Process new head
+    if (tx.headUpdated) {
+      storeUpdateHandler.onNewHeadBlock(store.forkChoiceState.getHead());
+    }
   }
 
   private Set<Bytes32> getPrunedRoots() {
