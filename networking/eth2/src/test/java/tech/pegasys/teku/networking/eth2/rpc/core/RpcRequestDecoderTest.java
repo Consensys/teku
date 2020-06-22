@@ -26,7 +26,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRoot
 class RpcRequestDecoderTest extends RpcDecoderTestBase {
 
   @Test
-  public void shouldParseSingleResponseReceivedInSinglePacket() throws Exception {
+  public void shouldParseSingleResponse() throws Exception {
     List<List<ByteBuf>> testByteBufSlices = testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA);
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {

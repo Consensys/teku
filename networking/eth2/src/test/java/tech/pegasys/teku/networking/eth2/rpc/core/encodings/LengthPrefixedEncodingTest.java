@@ -43,7 +43,8 @@ class LengthPrefixedEncodingTest {
   @Test
   public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong() {
     ByteBuf input = inputByteBuffer("0xAAAAAAAAAAAAAAAAAAAA80");
-    assertThatThrownBy(() -> encoding.createDecoder(StatusMessage.class).decodeOneMessage(input))
+    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+    assertThatThrownBy(() -> decoder.decodeOneMessage(input))
         .isEqualTo(RpcException.CHUNK_TOO_LONG);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
@@ -60,8 +61,7 @@ class LengthPrefixedEncodingTest {
               assertThat(decoder.decodeOneMessage(input)).isEmpty();
               decoder.complete();
             })
-        .isInstanceOf(RpcException.class)
-        .hasMessageContaining("payload smaller");
+        .isEqualTo(RpcException.PAYLOAD_TRUNCATED);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
   }
@@ -78,8 +78,7 @@ class LengthPrefixedEncodingTest {
               assertThat(decoder.decodeOneMessage(input)).isEmpty();
               decoder.complete();
             })
-        .isInstanceOf(RpcException.class)
-        .hasMessageContaining("payload smaller");
+        .isEqualTo(RpcException.PAYLOAD_TRUNCATED);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
   }
@@ -103,7 +102,8 @@ class LengthPrefixedEncodingTest {
   public void decodePayload_shouldRejectMessagesThatAreTooLong() {
     // We should reject the message based on the length prefix and skip reading the data entirely
     final ByteBuf input = inputByteBuffer(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH);
-    assertThatThrownBy(() -> encoding.createDecoder(StatusMessage.class).decodeOneMessage(input))
+    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+    assertThatThrownBy(() -> decoder.decodeOneMessage(input))
         .isEqualTo(RpcException.CHUNK_TOO_LONG);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
@@ -141,7 +141,8 @@ class LengthPrefixedEncodingTest {
   @Test
   public void decodePayload_shouldThrowRpcExceptionIfMessageLengthPrefixIsMoreThanThreeBytes() {
     final ByteBuf input = inputByteBuffer("0x80808001");
-    assertThatThrownBy(() -> encoding.createDecoder(StatusMessage.class).decodeOneMessage(input))
+    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+    assertThatThrownBy(() -> decoder.decodeOneMessage(input))
         .isEqualTo(RpcException.CHUNK_TOO_LONG);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
@@ -171,13 +172,11 @@ class LengthPrefixedEncodingTest {
             List.of(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02")));
     final Bytes data = encoding.encodePayload(request);
     final int expectedLengthPrefixLength = 1;
+    RpcByteBufDecoder<BeaconBlocksByRootRequestMessage> decoder =
+        encoding.createDecoder(BeaconBlocksByRootRequestMessage.class);
     assertThat(data.size())
         .isEqualTo(request.getBlockRoots().size() * Bytes32.SIZE + expectedLengthPrefixLength);
-    assertThat(
-            encoding
-                .createDecoder(BeaconBlocksByRootRequestMessage.class)
-                .decodeOneMessage(inputByteBuffer(data)))
-        .contains(request);
+    assertThat(decoder.decodeOneMessage(inputByteBuffer(data))).contains(request);
   }
 
   @Test
