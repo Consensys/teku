@@ -303,6 +303,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
         .setDataStorageMode(PRUNE)
+        .setDataStorageFrequency(2048L)
+        .setDataStorageCreateDbVersion(3)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
