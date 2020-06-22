@@ -321,22 +321,12 @@ class Store implements UpdatableStore {
 
   @Override
   public Optional<UnsignedLong> getBlockSlot(final Bytes32 blockRoot) {
-    readLock.lock();
-    try {
-      return forkChoiceState.getBlockSlot(blockRoot);
-    } finally {
-      readLock.unlock();
-    }
+    return forkChoiceState.getBlockSlot(blockRoot);
   }
 
   @Override
   public Optional<Bytes32> getBlockParent(final Bytes32 blockRoot) {
-    readLock.lock();
-    try {
-      return forkChoiceState.getBlockParent(blockRoot);
-    } finally {
-      readLock.unlock();
-    }
+    return forkChoiceState.getBlockParent(blockRoot);
   }
 
   @Override

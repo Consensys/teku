@@ -92,7 +92,13 @@ public class ProtoArrayForkChoiceStrategy implements MutableForkChoiceState {
 
   @Override
   public Bytes32 getHead() {
-    return protoArray.findHead(justifiedCheckpoint.getRoot());
+    protoArrayLock.readLock().lock();
+    try {
+      // justifiedCheckpoint is guarded by justifiedCheckpoint
+      return protoArray.findHead(justifiedCheckpoint.getRoot());
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
   }
 
   @Override
@@ -192,7 +198,8 @@ public class ProtoArrayForkChoiceStrategy implements MutableForkChoiceState {
     }
   }
 
-  public void setPruneThreshold(int pruneThreshold) {
+  @VisibleForTesting
+  void setPruneThreshold(int pruneThreshold) {
     protoArrayLock.writeLock().lock();
     try {
       protoArray.setPruneThreshold(pruneThreshold);
