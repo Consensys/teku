@@ -24,7 +24,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecod
 
 /**
  * This class is mostly borrowed from the Netty implementation:
- * https://github.com/netty/netty/blob/4.1/codec/src/main/java/io/netty/handler/codec/compression/SnappyFramedDecoder.java
+ * https://github.com/netty/netty/blob/4.1/codec/src/main/java/io/netty/handler/codec/compression/SnappyFrameDecoder.java
  *
  * <p>Uncompresses a {@link ByteBuf} encoded with the Snappy framing format.
  *

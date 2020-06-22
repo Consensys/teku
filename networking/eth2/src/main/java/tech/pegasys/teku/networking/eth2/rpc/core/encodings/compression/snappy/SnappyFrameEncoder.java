@@ -23,7 +23,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
 
 /**
  * This class is mostly borrowed from the Netty implementation:
- * https://github.com/netty/netty/blob/4.1/codec/src/main/java/io/netty/handler/codec/compression/SnappyFramedEncoder.java
+ * https://github.com/netty/netty/blob/4.1/codec/src/main/java/io/netty/handler/codec/compression/SnappyFrameEncoder.java
  *
  * <p>Compresses a {@link ByteBuf} using the Snappy framing format.
  *
