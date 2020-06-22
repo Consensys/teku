@@ -30,11 +30,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.AbstractByteBufDecod
  *
  * <p>See <a href="https://github.com/google/snappy/blob/master/framing_format.txt">Snappy framing
  * format</a>.
- *
- * <p>Note that by default, validation of the checksum header in each chunk is DISABLED for
- * performance improvements. If performance is less of an issue, or if you would prefer the safety
- * that checksum validation brings, please use the {@link #SnappyFrameDecoder(boolean)} constructor
- * with the argument set to {@code true}.
  */
 public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
 
