@@ -93,6 +93,9 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf> {
 
       switch (chunkType) {
         case STREAM_IDENTIFIER:
+          if (started) {
+            throw new CompressionException("Extra Snappy stream identifier");
+          }
           if (chunkLength != SNAPPY_IDENTIFIER_LEN) {
             throw new CompressionException(
                 "Unexpected length of stream identifier: " + chunkLength);

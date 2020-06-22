@@ -205,6 +205,35 @@ public class SnappyCompressorTest {
   }
 
   @Test
+  public void uncompress_failOnExtraHeader() {
+    final Bytes singleByte = compressor.compress(Bytes.of(0x01));
+    final Bytes singleByteFrame = singleByte.slice(SNAPPY_HEADER.size());
+    final Bytes maliciousPayload = Bytes.concatenate(SNAPPY_HEADER, SNAPPY_HEADER, singleByteFrame);
+
+    List<List<ByteBuf>> testSlices = Utils.generateTestSlices(maliciousPayload);
+
+    for (List<ByteBuf> testSlice : testSlices) {
+      Decompressor decompressor =
+          new SnappyFramedCompressor().createDecompressor(1);
+
+      boolean exceptionCaught = false;
+      for (ByteBuf byteBuf : testSlice) {
+        if (!exceptionCaught) {
+          try {
+            decompressor.decodeOneMessage(byteBuf);
+          } catch (CompressionException e) {
+            exceptionCaught = true;
+          }
+        }
+        byteBuf.release();
+      }
+
+      assertThat(exceptionCaught).isTrue();
+      assertThat(testSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
+  }
+
+  @Test
   public void uncompress_partialValueWhenFullFrameUnavailable() throws Exception {
     final BeaconState state = dataStructureUtil.randomBeaconState(0);
     final Bytes serializedState =
