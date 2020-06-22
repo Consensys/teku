@@ -155,7 +155,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
         // Send 2 chunks in the last batch of data which should only contain 1 chunk
         final Bytes lastChunk = chunks.get(i);
         final Bytes lastChunkWithExtraChunk = Bytes.concatenate(lastChunk, lastChunk);
-        deliverBytes(lastChunkWithExtraChunk, lastChunk.size());
+        deliverBytes(lastChunkWithExtraChunk);
       } else {
         deliverChunk(i);
       }

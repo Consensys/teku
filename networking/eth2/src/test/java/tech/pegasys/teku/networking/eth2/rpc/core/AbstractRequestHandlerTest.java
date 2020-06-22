@@ -17,7 +17,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
-import java.io.IOException;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
-import tech.pegasys.teku.util.iostreams.MockInputStream;
 
 abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -54,10 +52,6 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
   protected final RpcStream rpcStream = mock(RpcStream.class);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected T reqHandler;
-
-  //  private Thread inputHandlerThread;
-  //  private final AtomicBoolean inputHandlerDone = new AtomicBoolean(false);
-  protected final MockInputStream inputStream = new MockInputStream();
 
   @BeforeEach
   public void setup() {
@@ -86,11 +80,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
 
   protected abstract RpcEncoding getRpcEncoding();
 
-  protected void deliverBytes(final Bytes bytes) throws IOException {
-    deliverBytes(bytes, bytes.size());
-  }
-
-  protected void deliverBytes(final Bytes bytes, final int waitUntilBytesConsumed) {
+  protected void deliverBytes(final Bytes bytes) {
     reqHandler.processData(nodeId, rpcStream, Utils.toByteBuf(bytes));
   }
 }
