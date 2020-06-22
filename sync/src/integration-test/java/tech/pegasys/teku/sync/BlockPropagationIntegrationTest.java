@@ -32,9 +32,12 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.util.Waiter;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BlockPropagationIntegrationTest {
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
 
@@ -59,6 +62,7 @@ public class BlockPropagationIntegrationTest {
     // Setup node 1
     SyncingNodeManager node1 =
         SyncingNodeManager.create(
+            asyncRunner,
             networkFactory,
             validatorKeys,
             c -> c.rpcEncoding(encoding).gossipEncoding(gossipEncoding));
@@ -75,6 +79,7 @@ public class BlockPropagationIntegrationTest {
     // Setup node 2
     SyncingNodeManager node2 =
         SyncingNodeManager.create(
+            asyncRunner,
             networkFactory,
             validatorKeys,
             c -> c.rpcEncoding(encoding).gossipEncoding(gossipEncoding));

@@ -338,6 +338,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
         .setDataPath(dataOptions.getDataPath())
         .setDataStorageMode(dataOptions.getDataStorageMode())
+        .setDataStorageFrequency(dataOptions.getDataStorageFrequency())
+        .setDataStorageCreateDbVersion(dataOptions.getCreateDbVersion())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())

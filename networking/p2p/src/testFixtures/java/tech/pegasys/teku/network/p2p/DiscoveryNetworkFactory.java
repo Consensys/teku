@@ -33,6 +33,7 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
@@ -91,7 +92,9 @@ public class DiscoveryNetworkFactory {
                 StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
         final DiscoveryNetwork<Peer> network =
             DiscoveryNetwork.create(
+                DelayedExecutorAsyncRunner.create(),
                 new LibP2PNetwork(
+                    DelayedExecutorAsyncRunner.create(),
                     config,
                     reputationManager,
                     METRICS_SYSTEM,

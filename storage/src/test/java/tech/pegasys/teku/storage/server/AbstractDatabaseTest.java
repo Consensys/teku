@@ -544,7 +544,7 @@ public abstract class AbstractDatabaseTest {
     // Then finalize
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
-    tx.commit().reportExceptions();
+    assertThat(tx.commit()).isCompleted();
 
     // All finalized blocks and states should be available
     assertFinalizedBlocksAndStatesAvailable(newBlocks);
@@ -610,7 +610,7 @@ public abstract class AbstractDatabaseTest {
       final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
       add(transaction, allBlocksAndStates);
       transaction.setFinalizedCheckpoint(finalizedCheckpoint);
-      transaction.commit().reportExceptions();
+      assertThat(transaction.commit()).isCompleted();
     } else {
       add(allBlocksAndStates);
       finalizeCheckpoint(finalizedCheckpoint);

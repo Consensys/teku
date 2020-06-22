@@ -94,10 +94,10 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
       requestHandled.set(true);
       localMessageHandler.onIncomingMessage(peer, request, callback);
     } catch (final StreamClosedException e) {
-      LOG.trace("Stream closed before response sent for request " + method.getMultistreamId(), e);
+      LOG.trace("Stream closed before response sent for request {}", method.getMultistreamId(), e);
       callback.completeWithUnexpectedError(e);
     } catch (final Throwable t) {
-      LOG.error("Unhandled error while processing request " + method.getMultistreamId(), t);
+      LOG.error("Unhandled error while processing request {}", method.getMultistreamId(), t);
       callback.completeWithUnexpectedError(t);
     }
   }
