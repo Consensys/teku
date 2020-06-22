@@ -38,8 +38,7 @@ public class DataOptions {
       names = {"--data-storage-archive-frequency"},
       hidden = true,
       paramLabel = "<FREQUENCY>",
-      description =
-          "Sets the frequency, in slots, at which to store archived states to disk.",
+      description = "Sets the frequency, in slots, at which to store archived states to disk.",
       defaultValue = "2048",
       arity = "1")
   private long dataStorageFrequency = 2048L;
