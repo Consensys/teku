@@ -63,7 +63,7 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_asV4Database() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "4");
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "4", 1L);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V4);
@@ -107,7 +107,7 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "4");
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "4", 1L);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
   }
 
@@ -116,7 +116,7 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "3.0");
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "3.0", 1L);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V3);
   }
 

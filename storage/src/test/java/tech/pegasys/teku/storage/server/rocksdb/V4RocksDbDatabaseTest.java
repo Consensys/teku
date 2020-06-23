@@ -31,6 +31,7 @@ public class V4RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
         new StubMetricsSystem(),
         RocksDbConfiguration.withDataDirectory(dbDir),
         RocksDbConfiguration.withDataDirectory(archiveDir),
-        storageMode);
+        storageMode,
+        1L);
   }
 }

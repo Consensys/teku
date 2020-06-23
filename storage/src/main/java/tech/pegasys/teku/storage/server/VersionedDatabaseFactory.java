@@ -40,25 +40,33 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final File dbVersionFile;
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
+  private final long stateStorageFrequency;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final String dataPath,
       final StateStorageMode dataStorageMode) {
-    this(metricsSystem, dataPath, dataStorageMode, DatabaseVersion.DEFAULT_VERSION.getValue());
+    this(
+        metricsSystem,
+        dataPath,
+        dataStorageMode,
+        DatabaseVersion.DEFAULT_VERSION.getValue(),
+        2048L);
   }
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final String dataPath,
       final StateStorageMode dataStorageMode,
-      final String createDatabaseVersion) {
+      final String createDatabaseVersion,
+      final long stateStorageFrequency) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = Paths.get(dataPath).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.archiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.stateStorageMode = dataStorageMode;
+    this.stateStorageFrequency = stateStorageFrequency;
 
     this.createDatabaseVersion =
         DatabaseVersion.fromString(createDatabaseVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
@@ -107,7 +115,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         metricsSystem,
         RocksDbConfiguration.withDataDirectory(dbDirectory.toPath()),
         RocksDbConfiguration.withDataDirectory(archiveDirectory.toPath()),
-        stateStorageMode);
+        stateStorageMode,
+        stateStorageFrequency);
   }
 
   private void validateDataPaths() {

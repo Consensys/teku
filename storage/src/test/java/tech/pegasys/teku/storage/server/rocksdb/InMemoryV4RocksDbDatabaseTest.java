@@ -49,6 +49,6 @@ public class InMemoryV4RocksDbDatabaseTest extends V4RocksDbDatabaseTest {
                 return existingDb.reopen();
               }
             });
-    return RocksDbDatabase.createV4(new StubMetricsSystem(), hotDb, finalizedDb, storageMode);
+    return RocksDbDatabase.createV4(new StubMetricsSystem(), hotDb, finalizedDb, storageMode, 1L);
   }
 }
