@@ -94,31 +94,19 @@ public class ValidatorLogger {
       final int expectedValidatorIndex,
       final Optional<Integer> actualValidatorIndex,
       final String reason) {
-    actualValidatorIndex.ifPresentOrElse(
-        actualIndex ->
-            log.error(
-                print(
-                    PREFIX
-                        + "Produced invalid attestation for slot "
-                        + slot
-                        + " with expected validator index: "
-                        + expectedValidatorIndex
-                        + " and actual validator index: "
-                        + actualIndex
-                        + " invalid reason: "
-                        + reason,
-                    Color.RED)),
-        () ->
-            log.error(
-                print(
-                    PREFIX
-                        + "Produced invalid attestation for slot "
-                        + slot
-                        + " with expected validator index: "
-                        + expectedValidatorIndex
-                        + " invalid reason: "
-                        + reason,
-                    Color.RED)));
+    final String actualDescription =
+        actualValidatorIndex.map(idx -> " and actual validator index: " + idx).orElse("");
+    log.error(
+        print(
+            PREFIX
+                + "Produced invalid attestation for slot "
+                + slot
+                + " with expected validator index: "
+                + expectedValidatorIndex
+                + actualDescription
+                + " . Invalid reason: "
+                + reason,
+            Color.RED));
   }
 
   public void producedInvalidAggregate(final UnsignedLong slot, final String reason) {
