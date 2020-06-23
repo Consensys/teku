@@ -36,6 +36,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
   private final TrackingReorgEventChannel reorgEventChannel;
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
+  private final StateStorageMode storageMode;
   private final Database database;
   private final CombinedChainDataClient combinedChainDataClient;
   private final RestartedStorageSupplier restartedStorageSupplier;
@@ -43,6 +44,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
   public InMemoryStorageSystem(
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
+      final StateStorageMode storageMode,
       final Database database,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
@@ -51,6 +53,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
 
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
+    this.storageMode = storageMode;
     this.database = database;
     this.combinedChainDataClient = combinedChainDataClient;
     this.restartedStorageSupplier = restartedStorageSupplier;
@@ -79,7 +82,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
         InMemoryRocksDbDatabaseFactory.createV4(hotDb, coldDb, storageMode, stateStorageFrequency);
     final RestartedStorageSupplier restartedStorageSupplier =
         (mode) -> createV4(hotDb.reopen(), coldDb.reopen(), mode, stateStorageFrequency);
-    return create(database, restartedStorageSupplier);
+    return create(database, restartedStorageSupplier, storageMode);
   }
 
   private static StorageSystem createV3(
@@ -87,11 +90,13 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
     final Database database = InMemoryRocksDbDatabaseFactory.createV3(rocksDbInstance, storageMode);
     final RestartedStorageSupplier restartedStorageSupplier =
         (mode) -> createV3(rocksDbInstance.reopen(), mode);
-    return create(database, restartedStorageSupplier);
+    return create(database, restartedStorageSupplier, storageMode);
   }
 
   private static StorageSystem create(
-      final Database database, final RestartedStorageSupplier restartedStorageSupplier) {
+      final Database database,
+      final RestartedStorageSupplier restartedStorageSupplier,
+      final StateStorageMode storageMode) {
     final EventBus eventBus = new EventBus();
 
     // Create and start storage server
@@ -119,6 +124,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
     return new InMemoryStorageSystem(
         eventBus,
         reorgEventChannel,
+        storageMode,
         database,
         recentChainData,
         combinedChainDataClient,
@@ -133,6 +139,11 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
   @Override
   public Database getDatabase() {
     return database;
+  }
+
+  @Override
+  public StorageSystem restarted() {
+    return restarted(storageMode);
   }
 
   @Override
