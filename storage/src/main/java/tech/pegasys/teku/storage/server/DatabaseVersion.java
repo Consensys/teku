@@ -18,7 +18,8 @@ import java.util.Optional;
 public enum DatabaseVersion {
   V1("1.0"),
   V2("2.0"),
-  V3("3.0");
+  V3("3.0"),
+  V4("4");
 
   public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V3;
   private String value;

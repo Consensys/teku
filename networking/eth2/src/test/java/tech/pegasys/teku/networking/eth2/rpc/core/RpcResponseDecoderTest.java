@@ -16,8 +16,9 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.io.InputStream;
-import java.util.Optional;
+import io.netty.buffer.ByteBuf;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -31,44 +32,59 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
 
   @Test
   public void decodeNextResponse_shouldParseSingleResponse() throws Exception {
-    final InputStream input = inputStream(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA);
-    final Optional<BeaconBlocksByRootRequestMessage> result = decoder.decodeNextResponse(input);
-    assertThat(result).contains(MESSAGE);
+    for (Iterable<ByteBuf> testByteBufSlice :
+        testByteBufSlices(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA)) {
 
-    // Next attempt to read should be empty
-    final Optional<BeaconBlocksByRootRequestMessage> result2 = decoder.decodeNextResponse(input);
-    assertThat(result2).isEmpty();
+      List<BeaconBlocksByRootRequestMessage> results = new ArrayList<>();
+      for (ByteBuf byteBuf : testByteBufSlice) {
+        results.addAll(decoder.decodeNextResponses(byteBuf));
+        byteBuf.release();
+      }
+      decoder.complete();
+      assertThat(results).containsExactly(MESSAGE);
+      assertThat(testByteBufSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
   }
 
   @Test
   public void decodeNextResponse_shouldParseMultipleResponses() throws Exception {
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
     final Bytes secondMessageData = PAYLOAD_ENCODER.encode(secondMessage);
-    final InputStream input =
-        inputStream(
+    final Bytes compressedPayload = COMPRESSOR.compress(secondMessageData);
+
+    for (Iterable<ByteBuf> testByteBufSlice :
+        testByteBufSlices(
             SUCCESS_CODE,
             LENGTH_PREFIX,
             MESSAGE_DATA,
             SUCCESS_CODE,
             getLengthPrefix(secondMessageData.size()),
-            secondMessageData);
+            compressedPayload)) {
 
-    final Optional<BeaconBlocksByRootRequestMessage> result1 = decoder.decodeNextResponse(input);
-    assertThat(result1).contains(MESSAGE);
-
-    final Optional<BeaconBlocksByRootRequestMessage> result2 = decoder.decodeNextResponse(input);
-    assertThat(result2).contains(secondMessage);
-
-    final Optional<BeaconBlocksByRootRequestMessage> result3 = decoder.decodeNextResponse(input);
-    assertThat(result3).isEmpty();
+      List<BeaconBlocksByRootRequestMessage> results = new ArrayList<>();
+      for (ByteBuf byteBuf : testByteBufSlice) {
+        results.addAll(decoder.decodeNextResponses(byteBuf));
+        byteBuf.release();
+      }
+      decoder.complete();
+      assertThat(results).containsExactly(MESSAGE, secondMessage);
+      assertThat(testByteBufSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
   }
 
   @Test
   public void decodeNextResponse_shouldThrowErrorIfStatusCodeIsNotSuccess() throws Exception {
-    assertThatThrownBy(
-            () ->
-                decoder.decodeNextResponse(
-                    inputStream(ERROR_CODE, ERROR_MESSAGE_LENGTH_PREFIX, ERROR_MESSAGE_DATA)))
-        .isEqualTo(new RpcException(ERROR_CODE.get(0), ERROR_MESSAGE));
+    for (Iterable<ByteBuf> testByteBufSlice :
+        testByteBufSlices(ERROR_CODE, ERROR_MESSAGE_LENGTH_PREFIX, ERROR_MESSAGE_DATA)) {
+
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf byteBuf : testByteBufSlice) {
+                  decoder.decodeNextResponses(byteBuf);
+                }
+                decoder.complete();
+              })
+          .isEqualTo(new RpcException(ERROR_CODE.get(0), ERROR_MESSAGE));
+    }
   }
 }
