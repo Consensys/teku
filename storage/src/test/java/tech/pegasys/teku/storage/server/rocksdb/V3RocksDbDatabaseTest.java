@@ -122,7 +122,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     final int hotBlockCount = 3;
     // Setup chains
     chainBuilder.generateBlocksUpToSlot(finalizedSlot);
-    SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(7);
+    SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint = getCheckpointForBlock(finalizedBlock.getBlock());
     final long firstHotBlockSlot =
         finalizedCheckpoint.getEpochStartSlot().plus(UnsignedLong.ONE).longValue();
