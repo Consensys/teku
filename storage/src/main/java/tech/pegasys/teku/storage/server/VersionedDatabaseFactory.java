@@ -29,6 +29,7 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 public class VersionedDatabaseFactory implements DatabaseFactory {
   private static final Logger LOG = LogManager.getLogger();
 
+  public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   @VisibleForTesting static final String DB_PATH = "db";
   @VisibleForTesting static final String ARCHIVE_PATH = "archive";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
@@ -51,7 +52,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         dataPath,
         dataStorageMode,
         DatabaseVersion.DEFAULT_VERSION.getValue(),
-        2048L);
+        DEFAULT_STORAGE_FREQUENCY);
   }
 
   public VersionedDatabaseFactory(
