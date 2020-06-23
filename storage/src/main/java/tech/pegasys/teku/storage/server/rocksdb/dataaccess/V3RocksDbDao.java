@@ -58,13 +58,34 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   }
 
   @Override
-  public Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot) {
-    return db.get(V3Schema.FINALIZED_ROOTS_BY_SLOT, slot);
+  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+    return db.get(V3Schema.FINALIZED_ROOTS_BY_SLOT, slot).flatMap(this::getFinalizedBlock);
   }
 
   @Override
-  public Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot) {
-    return db.getFloorEntry(V3Schema.FINALIZED_ROOTS_BY_SLOT, slot).map(ColumnEntry::getValue);
+  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
+    return db.getFloorEntry(V3Schema.FINALIZED_ROOTS_BY_SLOT, slot)
+        .map(ColumnEntry::getValue)
+        .flatMap(this::getFinalizedBlock);
+  }
+
+  @Override
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+    return Optional.empty();
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
+      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+    return db.stream(V3Schema.FINALIZED_ROOTS_BY_SLOT, startSlot, endSlot)
+        .map(ColumnEntry::getValue)
+        .flatMap(root -> getFinalizedBlock(root).stream());
+  }
+
+  @Override
+  public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
+    return getFinalizedBlock(blockRoot).map(SignedBeaconBlock::getSlot);
   }
 
   @Override
@@ -75,11 +96,6 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return db.get(V3Schema.FINALIZED_BLOCKS_BY_ROOT, root);
-  }
-
-  @Override
-  public Optional<BeaconState> getFinalizedState(final Bytes32 root) {
-    return db.get(V3Schema.FINALIZED_STATES_BY_ROOT, root);
   }
 
   @Override

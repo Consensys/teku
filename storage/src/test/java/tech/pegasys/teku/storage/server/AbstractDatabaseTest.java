@@ -228,8 +228,10 @@ public abstract class AbstractDatabaseTest {
     transaction.setFinalizedCheckpoint(finalizedCheckpoint);
     commit(transaction);
 
-    assertThat(database.getFinalizedState(block2.getRoot())).contains(block2.getState());
-    assertThat(database.getFinalizedState(block1.getRoot())).contains(block1.getState());
+    assertThat(database.getLatestAvailableFinalizedState(block2.getSlot()))
+        .contains(block2.getState());
+    assertThat(database.getLatestAvailableFinalizedState(block1.getSlot()))
+        .contains(block1.getState());
   }
 
   @Test
@@ -659,8 +661,8 @@ public abstract class AbstractDatabaseTest {
         break;
       case PRUNE:
         // Check pruned states
-        final List<Bytes32> unavailableRoots =
-            allBlocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList());
+        final List<UnsignedLong> unavailableRoots =
+            allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
         assertStatesUnavailable(unavailableRoots);
         break;
     }
@@ -680,9 +682,9 @@ public abstract class AbstractDatabaseTest {
 
   protected void assertBlocksFinalized(final List<SignedBeaconBlock> blocks) {
     for (SignedBeaconBlock block : blocks) {
-      assertThat(database.getFinalizedRootAtSlot(block.getSlot()))
-          .describedAs("Block root at slot %s", block.getSlot())
-          .contains(block.getMessage().hash_tree_root());
+      assertThat(database.getFinalizedBlockAtSlot(block.getSlot()))
+          .describedAs("Block at slot %s", block.getSlot())
+          .contains(block);
     }
   }
 
@@ -697,8 +699,8 @@ public abstract class AbstractDatabaseTest {
   protected void assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(
       final List<SignedBeaconBlock> blocks) {
     final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    final Bytes32 genesisRoot = database.getFinalizedRootAtSlot(genesisSlot).get();
-    final SignedBeaconBlock genesisBlock = database.getSignedBlock(genesisRoot).get();
+    final SignedBeaconBlock genesisBlock =
+        database.getFinalizedBlockAtSlot(genesisSlot).orElseThrow();
 
     final List<SignedBeaconBlock> finalizedBlocks = new ArrayList<>();
     finalizedBlocks.add(genesisBlock);
@@ -711,9 +713,9 @@ public abstract class AbstractDatabaseTest {
       for (long slot = currentBlock.getSlot().longValue();
           slot < nextBlock.getSlot().longValue();
           slot++) {
-        assertThat(database.getLatestFinalizedRootAtSlot(UnsignedLong.valueOf(slot)))
-            .describedAs("Latest finalized at block root at slot %s", slot)
-            .contains(currentBlock.getMessage().hash_tree_root());
+        assertThat(database.getFinalizedBlockAtSlot(UnsignedLong.valueOf(slot)))
+            .describedAs("Finalized block at slot %s", slot)
+            .contains(currentBlock);
       }
     }
 
@@ -721,9 +723,9 @@ public abstract class AbstractDatabaseTest {
     final SignedBeaconBlock lastFinalizedBlock = finalizedBlocks.get(finalizedBlocks.size() - 1);
     for (int i = 0; i < 10; i++) {
       final UnsignedLong slot = lastFinalizedBlock.getSlot().plus(UnsignedLong.valueOf(i));
-      assertThat(database.getLatestFinalizedRootAtSlot(slot))
-          .describedAs("Latest finalized at block root at slot %s", slot)
-          .contains(lastFinalizedBlock.getMessage().hash_tree_root());
+      assertThat(database.getFinalizedBlockAtSlot(slot))
+          .describedAs("Finalized block at slot %s", slot)
+          .contains(lastFinalizedBlock);
     }
   }
 
@@ -765,14 +767,17 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void assertFinalizedStatesAvailable(final Map<Bytes32, BeaconState> states) {
-    for (Bytes32 root : states.keySet()) {
-      assertThat(database.getFinalizedState(root)).contains(states.get(root));
+    for (BeaconState state : states.values()) {
+      assertThat(database.getLatestAvailableFinalizedState(state.getSlot())).contains(state);
     }
   }
 
-  protected void assertStatesUnavailable(final Collection<Bytes32> roots) {
-    for (Bytes32 root : roots) {
-      Optional<BeaconState> bs = database.getFinalizedState(root);
+  protected void assertStatesUnavailable(final Collection<UnsignedLong> slots) {
+    for (UnsignedLong slot : slots) {
+      Optional<BeaconState> bs =
+          database
+              .getLatestAvailableFinalizedState(slot)
+              .filter(state -> state.getSlot().equals(slot));
       assertThat(bs).isEmpty();
     }
   }

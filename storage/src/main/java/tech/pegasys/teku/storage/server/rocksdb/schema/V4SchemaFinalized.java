@@ -24,10 +24,10 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public interface V4SchemaFinalized extends Schema {
-  RocksDbColumn<UnsignedLong, Bytes32> FINALIZED_ROOTS_BY_SLOT =
-      RocksDbColumn.create(1, UNSIGNED_LONG_SERIALIZER, BYTES32_SERIALIZER);
-  RocksDbColumn<Bytes32, SignedBeaconBlock> FINALIZED_BLOCKS_BY_ROOT =
-      RocksDbColumn.create(2, BYTES32_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
-  RocksDbColumn<Bytes32, BeaconState> FINALIZED_STATES_BY_ROOT =
-      RocksDbColumn.create(3, BYTES32_SERIALIZER, STATE_SERIALIZER);
+  RocksDbColumn<Bytes32, UnsignedLong> SLOTS_BY_FINALIZED_ROOT =
+      RocksDbColumn.create(1, BYTES32_SERIALIZER, UNSIGNED_LONG_SERIALIZER);
+  RocksDbColumn<UnsignedLong, SignedBeaconBlock> FINALIZED_BLOCKS_BY_SLOT =
+      RocksDbColumn.create(2, UNSIGNED_LONG_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
+  RocksDbColumn<UnsignedLong, BeaconState> FINALIZED_STATES_BY_SLOT =
+      RocksDbColumn.create(3, UNSIGNED_LONG_SERIALIZER, STATE_SERIALIZER);
 }
