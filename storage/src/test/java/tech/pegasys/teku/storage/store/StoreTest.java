@@ -29,13 +29,13 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
+import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
-import tech.pegasys.teku.storage.store.Store.StateProvider;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -53,13 +53,14 @@ class StoreTest {
     final Store store =
         new Store(
             new StubMetricsSystem(),
+            BlockProvider.NOOP,
+            Store.StateProviderFactory.NOOP,
             genesis.getState().getGenesis_time(),
             genesis.getState().getGenesis_time(),
             genesisCheckpoint,
             genesisCheckpoint,
             genesisCheckpoint,
             Map.of(genesis.getRoot(), genesis.getBlock()),
-            StateProvider.NOOP,
             Map.of(genesisCheckpoint, genesis.getState()),
             genesis.getState(),
             Collections.emptyMap(),
@@ -89,7 +90,8 @@ class StoreTest {
   public void shouldApplyChangesWhenTransactionCommits() throws StateTransitionException {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
     final UpdatableStore store =
-        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
+        StoreBuilder.buildForkChoiceStore(
+            new StubMetricsSystem(), BlockProvider.NOOP, genesisBlockAndState.getState());
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
     final UnsignedLong initialTime = store.getTime();
     final UnsignedLong genesisTime = store.getGenesisTime();
