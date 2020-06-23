@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.blockvalidator.NopBlockValidator;
 import tech.pegasys.teku.datastructures.blocks.BlockTree;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -163,7 +164,7 @@ public class StateGenerator {
   }
 
   private BeaconState processBlock(final BeaconState preState, final SignedBeaconBlock block) {
-    StateTransition stateTransition = new StateTransition();
+    StateTransition stateTransition = new StateTransition(new NopBlockValidator());
     try {
       final BeaconState postState = stateTransition.initiate(preState, block);
       // Validate that state matches expectation
