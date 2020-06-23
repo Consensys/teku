@@ -16,11 +16,13 @@ package tech.pegasys.teku.service.serviceutils;
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ServiceConfig {
 
+  private final AsyncRunnerFactory asyncRunnerFactory;
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
   private final EventChannels eventChannels;
@@ -28,11 +30,13 @@ public class ServiceConfig {
   private final TekuConfiguration config;
 
   public ServiceConfig(
+      final AsyncRunnerFactory asyncRunnerFactory,
       final TimeProvider timeProvider,
       final EventBus eventBus,
       final EventChannels eventChannels,
       final MetricsSystem metricsSystem,
       final TekuConfiguration config) {
+    this.asyncRunnerFactory = asyncRunnerFactory;
     this.timeProvider = timeProvider;
     this.eventBus = eventBus;
     this.eventChannels = eventChannels;
@@ -58,5 +62,13 @@ public class ServiceConfig {
 
   public MetricsSystem getMetricsSystem() {
     return metricsSystem;
+  }
+
+  public AsyncRunner createAsyncRunner(final String name) {
+    return createAsyncRunner(name, Math.max(Runtime.getRuntime().availableProcessors(), 2));
+  }
+
+  public AsyncRunner createAsyncRunner(final String name, final int maxThreads) {
+    return asyncRunnerFactory.create(name, maxThreads, metricsSystem);
   }
 }

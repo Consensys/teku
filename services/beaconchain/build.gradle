@@ -25,6 +25,7 @@ dependencies {
   testImplementation testFixtures(project(':storage'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':util'))
 
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'

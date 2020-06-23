@@ -1,3 +1,5 @@
 # database
 data-path: "/tmp/teku"
 data-storage-mode: "archive"
+Xdata-storage-create-db-version: "4"
+data-storage-archive-frequency: 128

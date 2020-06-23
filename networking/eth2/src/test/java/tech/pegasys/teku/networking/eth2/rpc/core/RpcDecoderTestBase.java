@@ -13,22 +13,23 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import io.netty.buffer.ByteBuf;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
+import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop.NoopCompressor;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
@@ -39,13 +40,18 @@ public class RpcDecoderTestBase {
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
   protected static final RpcPayloadEncoder<BeaconBlocksByRootRequestMessage> PAYLOAD_ENCODER =
       new BeaconBlocksByRootRequestMessageEncoder();
-  protected static final Bytes MESSAGE_DATA = PAYLOAD_ENCODER.encode(MESSAGE);
-  protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_DATA.size());
+  protected static final RpcEncoding ENCODING = RpcEncoding.SSZ_SNAPPY;
+  protected static final Compressor COMPRESSOR =
+      ENCODING == RpcEncoding.SSZ ? new NoopCompressor() : new SnappyFramedCompressor();
+  protected static final Bytes MESSAGE_PLAIN_DATA = PAYLOAD_ENCODER.encode(MESSAGE);
+  protected static final Bytes MESSAGE_DATA = COMPRESSOR.compress(MESSAGE_PLAIN_DATA);
+  protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_PLAIN_DATA.size());
   protected static final String ERROR_MESSAGE = "Bad request";
-  protected static final Bytes ERROR_MESSAGE_DATA =
+  protected static final Bytes ERROR_MESSAGE_PLAIN_DATA =
       Bytes.wrap(ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8));
+  protected static final Bytes ERROR_MESSAGE_DATA = COMPRESSOR.compress(ERROR_MESSAGE_PLAIN_DATA);
   protected static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
-      getLengthPrefix(ERROR_MESSAGE_DATA.size());
+      getLengthPrefix(ERROR_MESSAGE_PLAIN_DATA.size());
 
   protected static final AsyncRunner asyncRunner = new StubAsyncRunner();
   protected static final PeerLookup peerLookup = mock(PeerLookup.class);
@@ -57,21 +63,17 @@ public class RpcDecoderTestBase {
           new Eth2RpcMethod<>(
               asyncRunner,
               "",
-              RpcEncoding.SSZ,
+              ENCODING,
               BeaconBlocksByRootRequestMessage.class,
               BeaconBlocksByRootRequestMessage.class,
               false,
               mock(LocalMessageHandler.class),
               peerLookup);
 
-  @BeforeAll
-  public static void sanityCheckConstants() {
-    assertThat(LENGTH_PREFIX.size()).isEqualTo(3);
-  }
+  protected List<List<ByteBuf>> testByteBufSlices(final Bytes... bytes) {
+    List<List<ByteBuf>> ret = Utils.generateTestSlices(bytes);
 
-  protected InputStream inputStream(final Bytes... bytes) {
-    final Bytes allBytes = Bytes.concatenate(bytes);
-    return new ByteArrayInputStream(allBytes.toArrayUnsafe());
+    return ret;
   }
 
   protected static BeaconBlocksByRootRequestMessage createRequestMessage(

@@ -15,14 +15,12 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SUCCESS_RESPONSE_CODE;
 import static tech.pegasys.teku.util.bytes.ByteUtil.toByteExactUnsigned;
-import static tech.pegasys.teku.util.iostreams.IOStreamConstants.END_OF_STREAM;
 
-import java.io.IOException;
-import java.io.InputStream;
+import io.netty.buffer.ByteBuf;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
 /**
@@ -31,62 +29,80 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
  * @param <T>
  */
 public class RpcResponseDecoder<T> {
-  private static final Logger LOG = LogManager.getLogger();
-
+  private Optional<Integer> respCodeMaybe = Optional.empty();
+  private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
+  private Optional<RpcByteBufDecoder<String>> errorDecoder = Optional.empty();
   private final Class<T> responseType;
   private final RpcEncoding encoding;
 
-  protected RpcResponseDecoder(final Class<T> responseType, final RpcEncoding encoding) {
+  public RpcResponseDecoder(Class<T> responseType, RpcEncoding encoding) {
     this.responseType = responseType;
     this.encoding = encoding;
   }
 
-  public Optional<T> decodeNextResponse(final InputStream input) throws RpcException {
-    return decodeNextResponse(input, Optional.empty());
+  public List<T> decodeNextResponses(final ByteBuf data) throws RpcException {
+    List<T> ret = new ArrayList<>();
+    while (true) {
+      Optional<T> responseMaybe = decodeNextResponse(data);
+      if (responseMaybe.isPresent()) {
+        ret.add(responseMaybe.get());
+      } else {
+        break;
+      }
+    }
+
+    return ret;
   }
 
-  public Optional<T> decodeNextResponse(
-      final InputStream input, final FirstByteReceivedListener firstByteReceivedListener)
-      throws RpcException {
-    return decodeNextResponse(input, Optional.of(firstByteReceivedListener));
-  }
+  private Optional<T> decodeNextResponse(final ByteBuf data) throws RpcException {
+    if (!data.isReadable()) {
+      return Optional.empty();
+    }
 
-  private Optional<T> decodeNextResponse(
-      final InputStream input, Optional<FirstByteReceivedListener> firstByteListener)
-      throws RpcException {
-    try {
-      final OptionalInt maybeStatus = getNextStatusCode(input);
-      if (maybeStatus.isEmpty()) {
-        // Empty status indicates we're finished reading responses
+    if (respCodeMaybe.isEmpty()) {
+      respCodeMaybe = Optional.of((int) data.readByte());
+    }
+    int respCode = respCodeMaybe.get();
+
+    if (respCode == SUCCESS_RESPONSE_CODE) {
+      if (payloadDecoder.isEmpty()) {
+        payloadDecoder = Optional.of(encoding.createDecoder(responseType));
+      }
+      Optional<T> ret = payloadDecoder.get().decodeOneMessage(data);
+      if (ret.isPresent()) {
+        respCodeMaybe = Optional.empty();
+        payloadDecoder = Optional.empty();
+      }
+      return ret;
+    } else {
+      if (errorDecoder.isEmpty()) {
+        errorDecoder = Optional.of(encoding.createDecoder(String.class));
+      }
+      Optional<RpcException> rpcException =
+          errorDecoder
+              .get()
+              .decodeOneMessage(data)
+              .map(errorMessage -> new RpcException(toByteExactUnsigned(respCode), errorMessage));
+      if (rpcException.isPresent()) {
+        respCodeMaybe = Optional.empty();
+        errorDecoder = Optional.empty();
+        throw rpcException.get();
+      } else {
         return Optional.empty();
       }
-      firstByteListener.ifPresent(FirstByteReceivedListener::onFirstByteReceived);
-      final int status = maybeStatus.getAsInt();
-      if (status == SUCCESS_RESPONSE_CODE) {
-        final T response = encoding.decodePayload(input, responseType);
-        return Optional.of(response);
-      } else {
-        throw decodeError(input, status);
-      }
-    } catch (IOException e) {
-      LOG.error("Unexpected error while reading rpc responses", e);
-      throw RpcException.SERVER_ERROR;
     }
   }
 
-  private RpcException decodeError(final InputStream input, final int statusCode)
-      throws RpcException {
-    final String errorMessage = encoding.decodePayload(input, String.class);
-    return new RpcException(toByteExactUnsigned(statusCode), errorMessage);
-  }
-
-  private OptionalInt getNextStatusCode(final InputStream input) throws IOException {
-    final int nextByte = input.read();
-    if (nextByte == END_OF_STREAM) {
-      return OptionalInt.empty();
+  public void complete() throws RpcException {
+    if (payloadDecoder.isPresent()) {
+      payloadDecoder.get().complete();
     }
-
-    return OptionalInt.of(nextByte);
+    if (errorDecoder.isPresent()) {
+      errorDecoder.get().complete();
+    }
+    if (respCodeMaybe.isPresent()) {
+      throw RpcException.PAYLOAD_TRUNCATED;
+    }
   }
 
   public interface FirstByteReceivedListener {

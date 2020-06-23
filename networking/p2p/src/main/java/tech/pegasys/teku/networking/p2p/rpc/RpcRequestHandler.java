@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.networking.p2p.rpc;
 
-import java.io.InputStream;
+import io.netty.buffer.ByteBuf;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public interface RpcRequestHandler {
-  void processInput(final NodeId nodeId, final RpcStream rpcStream, final InputStream input);
+
+  void active(final NodeId nodeId, final RpcStream rpcStream);
+
+  void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data);
+
+  void complete(final NodeId nodeId, final RpcStream rpcStream);
 }

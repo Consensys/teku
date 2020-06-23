@@ -69,6 +69,8 @@ public class TekuConfigurationBuilder {
   private List<String> metricsHostAllowlist;
   private String dataPath;
   private StateStorageMode dataStorageMode;
+  private String dataStorageCreateDbVersion;
+  private long dataStorageFrequency;
   private int restApiPort;
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
@@ -331,6 +333,17 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setDataStorageFrequency(final long dataStorageFrequency) {
+    this.dataStorageFrequency = dataStorageFrequency;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setDataStorageCreateDbVersion(
+      final String dataStorageCreateDbVersion) {
+    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
+    return this;
+  }
+
   public TekuConfigurationBuilder setRestApiPort(final int restApiPort) {
     this.restApiPort = restApiPort;
     return this;
@@ -437,6 +450,8 @@ public class TekuConfigurationBuilder {
         metricsHostAllowlist,
         dataPath,
         dataStorageMode,
+        dataStorageFrequency,
+        dataStorageCreateDbVersion,
         restApiPort,
         restApiDocsEnabled,
         restApiEnabled,

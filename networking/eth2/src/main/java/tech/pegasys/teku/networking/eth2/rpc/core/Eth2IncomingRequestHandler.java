@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.io.InputStream;
+import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -59,19 +59,32 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
-  public void processInput(
-      final NodeId nodeId, final RpcStream rpcStream, final InputStream input) {
-
+  public void active(NodeId nodeId, RpcStream rpcStream) {
     ensureRequestReceivedWithinTimeLimit(rpcStream);
+  }
 
-    final ResponseCallback<TResponse> callback = new RpcResponseCallback<>(rpcStream, rpcEncoder);
+  @Override
+  public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
     try {
       Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
-      final TRequest request = requestDecoder.decodeRequest(input);
-      handleRequest(peer, request, callback);
+      requestDecoder
+          .decodeRequest(data)
+          .ifPresent(
+              request ->
+                  handleRequest(peer, request, new RpcResponseCallback<>(rpcStream, rpcEncoder)));
     } catch (final RpcException e) {
       requestHandled.set(true);
-      callback.completeWithErrorResponse(e);
+      new RpcResponseCallback<>(rpcStream, rpcEncoder).completeWithErrorResponse(e);
+    }
+  }
+
+  @Override
+  public void complete(NodeId nodeId, RpcStream rpcStream) {
+    try {
+      requestDecoder.complete();
+    } catch (RpcException e) {
+      new RpcResponseCallback<>(rpcStream, rpcEncoder).completeWithErrorResponse(e);
+      LOG.debug("RPC Request stream closed prematurely", e);
     }
   }
 
@@ -81,10 +94,10 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
       requestHandled.set(true);
       localMessageHandler.onIncomingMessage(peer, request, callback);
     } catch (final StreamClosedException e) {
-      LOG.trace("Stream closed before response sent for request " + method.getMultistreamId(), e);
+      LOG.trace("Stream closed before response sent for request {}", method.getMultistreamId(), e);
       callback.completeWithUnexpectedError(e);
     } catch (final Throwable t) {
-      LOG.error("Unhandled error while processing request " + method.getMultistreamId(), t);
+      LOG.error("Unhandled error while processing request {}", method.getMultistreamId(), t);
       callback.completeWithUnexpectedError(t);
     }
   }
@@ -97,8 +110,9 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
             (__) -> {
               if (!requestHandled.get()) {
                 LOG.debug(
-                    "Failed to receive incoming request data within {} sec. Close stream.",
-                    timeout.getSeconds());
+                    "Failed to receive incoming request data within {} sec for method {}. Close stream.",
+                    timeout.getSeconds(),
+                    method);
                 stream.close().reportExceptions();
               }
             })

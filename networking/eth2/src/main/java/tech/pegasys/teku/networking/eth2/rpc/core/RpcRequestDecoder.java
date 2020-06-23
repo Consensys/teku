@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import java.io.IOException;
-import java.io.InputStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.netty.buffer.ByteBuf;
+import java.util.Optional;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
 /**
@@ -26,30 +25,36 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
  * @param <T> The type of request to expect
  */
 public class RpcRequestDecoder<T extends RpcRequest> {
-  private static final Logger LOG = LogManager.getLogger();
-
-  private final Class<T> requestType;
-  private final RpcEncoding encoding;
+  private final RpcByteBufDecoder<T> decoder;
+  private boolean complete;
 
   public RpcRequestDecoder(final Class<T> requestType, final RpcEncoding encoding) {
-    this.requestType = requestType;
-    this.encoding = encoding;
+    this.decoder = encoding.createDecoder(requestType);
   }
 
-  public T decodeRequest(final InputStream input) throws RpcException {
-    final T request = encoding.decodePayload(input, requestType);
+  public Optional<T> decodeRequest(final ByteBuf input) throws RpcException {
+    if (complete) {
+      if (input.isReadable()) {
+        throw RpcException.EXTRA_DATA_APPENDED;
+      } else {
+        return Optional.empty();
+      }
+    }
+    final Optional<T> request = decoder.decodeOneMessage(input);
 
-    // Check for extra bytes remaining
-    try {
-      if (input.available() != 0) {
+    if (request.isPresent()) {
+      // Check for extra bytes remaining
+      if (input.readableBytes() != 0) {
         throw RpcException.EXTRA_DATA_APPENDED;
       }
-    } catch (IOException e) {
-      // We were unable to check for extra bytes - log a warning and continue on
-      LOG.warn(
-          "Unexpected error encountered while checking bytes remaining in rpc input stream.", e);
+      complete = true;
     }
 
     return request;
+  }
+
+  public void complete() throws RpcException {
+    decoder.complete();
+    if (!complete) throw RpcException.PAYLOAD_TRUNCATED;
   }
 }

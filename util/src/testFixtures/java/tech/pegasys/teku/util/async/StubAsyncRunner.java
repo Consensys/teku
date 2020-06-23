@@ -43,6 +43,11 @@ public class StubAsyncRunner implements AsyncRunner {
     return runAsync(action);
   }
 
+  @Override
+  public void shutdown() {
+    queuedActions.clear();
+  }
+
   public void executeQueuedActions() {
     final List<Runnable> actionsToExecute = queuedActions;
     queuedActions = new ArrayList<>();

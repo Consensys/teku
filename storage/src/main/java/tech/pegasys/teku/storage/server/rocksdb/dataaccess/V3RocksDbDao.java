@@ -30,8 +30,7 @@ import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 
-public class V3RocksDbDao implements RocksDbDao {
-  // Persistent data
+public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDbEth1Dao {
   private final RocksDbAccessor db;
 
   public V3RocksDbDao(final RocksDbAccessor db) {
@@ -115,7 +114,17 @@ public class V3RocksDbDao implements RocksDbDao {
   }
 
   @Override
-  public Updater updater() {
+  public HotUpdater hotUpdater() {
+    return new V3Updater(db);
+  }
+
+  @Override
+  public FinalizedUpdater finalizedUpdater() {
+    return new V3Updater(db);
+  }
+
+  @Override
+  public Eth1Updater eth1Updater() {
     return new V3Updater(db);
   }
 
@@ -124,7 +133,7 @@ public class V3RocksDbDao implements RocksDbDao {
     db.close();
   }
 
-  private static class V3Updater implements Updater {
+  private static class V3Updater implements HotUpdater, FinalizedUpdater, Eth1Updater {
 
     private final RocksDbTransaction transaction;
 
@@ -209,13 +218,11 @@ public class V3RocksDbDao implements RocksDbDao {
     @Override
     public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
       transaction.put(V3Schema.MIN_GENESIS_TIME_BLOCK, event);
-      transaction.commit();
     }
 
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       transaction.put(V3Schema.DEPOSITS_FROM_BLOCK_EVENTS, event.getBlockNumber(), event);
-      transaction.commit();
     }
 
     @Override

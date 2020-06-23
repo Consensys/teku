@@ -27,14 +27,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.ImportedBlocks;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -63,11 +61,10 @@ public class BlockManagerTest {
       BeaconChainUtil.create(localRecentChainData, validatorKeys);
   private final BeaconChainUtil remoteChain =
       BeaconChainUtil.create(remoteRecentChainData, validatorKeys);
-  private final ForkChoice forkChoice = new ForkChoice(localRecentChainData, new StateTransition());
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
 
   private final BlockImporter blockImporter =
-      new BlockImporter(localRecentChainData, forkChoice, localEventBus);
+      new BlockImporter(localRecentChainData, localEventBus);
   private final BlockManager blockManager =
       new BlockManager(
           localEventBus,

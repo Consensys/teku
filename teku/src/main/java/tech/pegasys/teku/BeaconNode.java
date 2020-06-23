@@ -28,8 +28,10 @@ import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.logging.LoggingConfiguration;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.MetricsEndpoint;
+import tech.pegasys.teku.service.serviceutils.AsyncRunnerFactory;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.ServiceController;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -42,11 +44,10 @@ public class BeaconNode {
       Executors.newCachedThreadPool(
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
+  private final AsyncRunnerFactory asyncRunnerFactory = new AsyncRunnerFactory();
   private final ServiceController serviceController;
-  private final ServiceConfig serviceConfig;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
-  private final EventBus eventBus;
 
   public BeaconNode(final TekuConfiguration config) {
 
@@ -65,11 +66,17 @@ public class BeaconNode {
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
-    this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
+    final EventBus eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
-    this.serviceConfig =
-        new ServiceConfig(new SystemTimeProvider(), eventBus, eventChannels, metricsSystem, config);
-    this.serviceConfig.getConfig().validateConfig();
+    final ServiceConfig serviceConfig =
+        new ServiceConfig(
+            asyncRunnerFactory,
+            new SystemTimeProvider(),
+            eventBus,
+            eventChannels,
+            metricsSystem,
+            config);
+    serviceConfig.getConfig().validateConfig();
     Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDirectory();
@@ -89,8 +96,15 @@ public class BeaconNode {
   }
 
   public void stop() {
-    serviceController.stop().reportExceptions();
+    // Stop processing new events
     eventChannels.stop();
+    threadPool.shutdownNow();
+
+    // Stop async actions
+    asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
+
+    // Stop services. This includes closing the database.
+    serviceController.stop().reportExceptions();
     metricsEndpoint.stop();
     vertx.close();
   }

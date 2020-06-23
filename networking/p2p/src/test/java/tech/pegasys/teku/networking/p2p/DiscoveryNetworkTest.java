@@ -51,6 +51,7 @@ import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class DiscoveryNetworkTest {
@@ -141,6 +142,7 @@ class DiscoveryNetworkTest {
   public void shouldNotEnableDiscoveryWhenDiscoveryIsDisabled() {
     final DiscoveryNetwork<Peer> network =
         DiscoveryNetwork.create(
+            DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
             reputationManager,
             new NetworkConfig(
