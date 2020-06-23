@@ -34,7 +34,8 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.storage.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -42,7 +43,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(2);
 
-  protected InMemoryStorageSystem storageSystem;
+  protected StorageSystem storageSystem;
   protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater;
   protected CombinedChainDataClient client;
@@ -56,7 +57,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   protected abstract StateStorageMode getStorageMode();
 
-  protected InMemoryStorageSystem createStorageSystem() {
+  protected StorageSystem createStorageSystem() {
     return InMemoryStorageSystem.createEmptyV3StorageSystem(getStorageMode());
   }
 
@@ -90,7 +91,7 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.advanceChain();
 
     // Restart
-    final InMemoryStorageSystem restarted = storageSystem.restarted(getStorageMode());
+    final StorageSystem restarted = storageSystem.restarted(getStorageMode());
     final CombinedChainDataClient client = restarted.combinedChainDataClient();
     // We should now have an initialized store, but no chosen chainhead
     assertThat(restarted.recentChainData().getStore()).isNotNull();
