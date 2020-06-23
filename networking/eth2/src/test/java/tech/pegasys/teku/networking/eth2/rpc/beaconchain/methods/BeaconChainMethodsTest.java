@@ -17,9 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import com.google.common.primitives.UnsignedLong;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,6 +30,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
+import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcRequestDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -76,22 +76,18 @@ public class BeaconChainMethodsTest {
 
     final Bytes encoded = methods.status().encodeRequest(expected);
     final RpcRequestDecoder<StatusMessage> decoder = methods.status().createRequestDecoder();
-    StatusMessage decodedRequest = decoder.decodeRequest(inputStream(encoded));
+    Optional<StatusMessage> decodedRequest = decoder.decodeRequest(Utils.toByteBuf(encoded));
 
-    assertThat(decodedRequest).isEqualTo(expected);
+    assertThat(decodedRequest).contains(expected);
   }
 
   @Test
   public void shouldDecodeStatusMessageRequest() throws Exception {
     final BeaconChainMethods methods = getMethods(RpcEncoding.SSZ);
     final RpcRequestDecoder<StatusMessage> decoder = methods.status().createRequestDecoder();
-    final StatusMessage decodedRequest =
-        decoder.decodeRequest(inputStream(SSZ_RECORDED_STATUS_REQUEST_BYTES));
-    assertThat(decodedRequest).isEqualTo(RECORDED_STATUS_MESSAGE_DATA);
-  }
-
-  private InputStream inputStream(final Bytes bytes) {
-    return new ByteArrayInputStream(bytes.toArrayUnsafe());
+    final Optional<StatusMessage> decodedRequest =
+        decoder.decodeRequest(Utils.toByteBuf(SSZ_RECORDED_STATUS_REQUEST_BYTES));
+    assertThat(decodedRequest).contains(RECORDED_STATUS_MESSAGE_DATA);
   }
 
   public static Stream<Arguments> getEncodings() {

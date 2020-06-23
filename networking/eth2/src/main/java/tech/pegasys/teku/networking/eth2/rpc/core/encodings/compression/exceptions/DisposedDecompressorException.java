@@ -11,16 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.rpc;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions;
 
-import io.netty.buffer.ByteBuf;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
+public class DisposedDecompressorException extends CompressionException {
 
-public interface RpcRequestHandler {
-
-  void active(final NodeId nodeId, final RpcStream rpcStream);
-
-  void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data);
-
-  void complete(final NodeId nodeId, final RpcStream rpcStream);
+  public DisposedDecompressorException() {
+    super("Reuse of disposed Decompressor");
+  }
 }

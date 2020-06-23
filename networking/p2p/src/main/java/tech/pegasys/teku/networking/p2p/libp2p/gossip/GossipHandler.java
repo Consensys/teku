@@ -64,7 +64,9 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
           GOSSIP_MAX_SIZE);
       return VALIDATION_FAILED;
     }
-    Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
+    byte[] arr = new byte[message.getData().readableBytes()];
+    message.getData().slice().readBytes(arr);
+    Bytes bytes = Bytes.wrap(arr);
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", topic, bytes.size());

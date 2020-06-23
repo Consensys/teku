@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.util.Waiter;
@@ -71,9 +72,6 @@ public abstract class Eth2IncomingRequestHandlerTest
 
   @Test
   public void shouldCloseStreamIfRequestNotReceivedInTime() {
-    // Wait for processInput to block on waiting for input
-    Waiter.waitFor(() -> assertThat(inputStream.isWaitingOnNextByteToBeDelivered()).isTrue());
-
     verify(rpcStream, never()).close();
     verify(rpcStream, never()).closeWriteStream();
 
@@ -88,9 +86,8 @@ public abstract class Eth2IncomingRequestHandlerTest
   @Test
   public void shouldNotCloseStreamIfRequestReceivedInTime() throws Exception {
     // Deliver request and wait for it to be processed
-    inputStream.deliverBytes(requestData);
+    reqHandler.processData(nodeId, rpcStream, Utils.toByteBuf(requestData));
     Waiter.waitFor(() -> assertThat(reqHandler.hasRequestBeenReceived()).isTrue());
-    inputStream.close();
 
     // When timeout completes, we should not close stream
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);

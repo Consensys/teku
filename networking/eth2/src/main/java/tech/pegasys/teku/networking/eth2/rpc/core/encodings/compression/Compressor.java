@@ -13,13 +13,19 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import io.netty.buffer.ByteBuf;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 
 public interface Compressor {
+
+  /**
+   * Alias Decompressor interface which also restricts the number of decoded messages to 1
+   *
+   * @see ByteBufDecoder
+   */
+  interface Decompressor extends ByteBufDecoder<ByteBuf, CompressionException> {}
 
   /**
    * Returns the compressed data
@@ -30,32 +36,10 @@ public interface Compressor {
   Bytes compress(final Bytes data);
 
   /**
-   * Returns the uncompressed data.
-   *
-   * @param data The data to uncompress.
-   * @param uncompressedPayloadSize The expected size of the uncompressed payload
-   * @return The uncompressed data.
+   * Creates a Decompressor instance which would return only a single decompressed data of size
+   * {@code uncompressedPayloadSize}
    */
-  default Bytes uncompress(final Bytes data, final int uncompressedPayloadSize)
-      throws CompressionException {
-    try (final InputStream byteStream = new ByteArrayInputStream(data.toArrayUnsafe())) {
-      // Read everything
-      return uncompress(byteStream, uncompressedPayloadSize);
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "Unexpected error encountered while preparing to uncompress bytes", e);
-    }
-  }
-
-  /**
-   * Uncompress a value expected to be {@code uncompressedPayloadSize} bytes.
-   *
-   * @param input The underlying {@link InputStream} to read from.
-   * @param uncompressedPayloadSize The expected size of the uncompressed payload
-   * @return The uncompressed bytes read from the underlying inputStream {@code input} stream.
-   */
-  Bytes uncompress(final InputStream input, final int uncompressedPayloadSize)
-      throws CompressionException;
+  Decompressor createDecompressor(final int uncompressedPayloadSize);
 
   /**
    * Returns a maximum estimate of the size of a compressed payload given the uncompressed payload
