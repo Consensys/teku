@@ -18,6 +18,7 @@ import static tech.pegasys.teku.logging.LoggingConfigurator.VALIDATOR_LOGGER_NAM
 
 import com.google.common.base.Strings;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -88,9 +89,36 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void producedInvalidAttestation(final UnsignedLong slot, final String reason) {
-    log.error(
-        print(PREFIX + "Produced invalid attestation for slot " + slot + ": " + reason, Color.RED));
+  public void producedInvalidAttestation(
+      final UnsignedLong slot,
+      final int expectedValidatorIndex,
+      final Optional<Integer> actualValidatorIndex,
+      final String reason) {
+    actualValidatorIndex.ifPresentOrElse(
+        actualIndex ->
+            log.error(
+                print(
+                    PREFIX
+                        + "Produced invalid attestation for slot "
+                        + slot
+                        + " with expected validator index: "
+                        + expectedValidatorIndex
+                        + " and actual validator index: "
+                        + actualIndex
+                        + " invalid reason: "
+                        + reason,
+                    Color.RED)),
+        () ->
+            log.error(
+                print(
+                    PREFIX
+                        + "Produced invalid attestation for slot "
+                        + slot
+                        + " with expected validator index: "
+                        + expectedValidatorIndex
+                        + " invalid reason: "
+                        + reason,
+                    Color.RED)));
   }
 
   public void producedInvalidAggregate(final UnsignedLong slot, final String reason) {
