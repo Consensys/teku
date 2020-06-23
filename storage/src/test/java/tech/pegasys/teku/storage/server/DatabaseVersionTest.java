@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 public class DatabaseVersionTest {
   @Test
   public void defaultVersion() {
-    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V4);
+    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V3);
   }
 
   @Test

@@ -21,7 +21,7 @@ public enum DatabaseVersion {
   V3("3.0"),
   V4("4");
 
-  public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V4;
+  public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V3;
   private String value;
 
   DatabaseVersion(final String value) {

@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Objects;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -47,7 +45,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final MetricsSystem metricsSystem,
       final String dataPath,
       final StateStorageMode dataStorageMode) {
-    this(metricsSystem, dataPath, dataStorageMode, "4");
+    this(metricsSystem, dataPath, dataStorageMode, DatabaseVersion.DEFAULT_VERSION.getValue());
   }
 
   public VersionedDatabaseFactory(
@@ -62,8 +60,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.stateStorageMode = dataStorageMode;
 
-    Optional<DatabaseVersion> versionOptional = DatabaseVersion.fromString(createDatabaseVersion);
-    this.createDatabaseVersion = versionOptional.orElse(DatabaseVersion.DEFAULT_VERSION);
+    this.createDatabaseVersion =
+        DatabaseVersion.fromString(createDatabaseVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
   }
 
   @Override
@@ -122,13 +120,13 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   }
 
   private void createDirectories() {
-    if (!dbDirectory.exists() && !dbDirectory.mkdirs()) {
+    if (!dbDirectory.mkdirs() && !dbDirectory.isDirectory()) {
       throw new DatabaseStorageException(
           String.format(
               "Unable to create the path to store database files at %s",
               dbDirectory.getAbsolutePath()));
     }
-    if (!archiveDirectory.exists() && !archiveDirectory.mkdirs()) {
+    if (!archiveDirectory.mkdirs() && !archiveDirectory.isDirectory()) {
       throw new DatabaseStorageException(
           String.format(
               "Unable to create the path to store archive files at %s",
@@ -152,7 +150,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             e);
       }
     }
-    return Objects.requireNonNullElse(this.createDatabaseVersion, DatabaseVersion.DEFAULT_VERSION);
+    return this.createDatabaseVersion;
   }
 
   private void saveDatabaseVersion(final DatabaseVersion version) {

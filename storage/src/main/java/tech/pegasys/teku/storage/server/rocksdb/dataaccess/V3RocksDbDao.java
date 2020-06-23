@@ -31,7 +31,6 @@ import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTran
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 
 public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDbEth1Dao {
-  // Persistent data
   private final RocksDbAccessor db;
 
   public V3RocksDbDao(final RocksDbAccessor db) {

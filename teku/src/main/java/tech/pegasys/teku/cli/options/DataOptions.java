@@ -48,7 +48,7 @@ public class DataOptions {
       paramLabel = "<VERSION>",
       description = "Database version to create (3.0 or 4)",
       arity = "1",
-      defaultValue = "4",
+      defaultValue = "3.0",
       hidden = true)
   private String createDbVersion = "4";
 

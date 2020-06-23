@@ -23,7 +23,6 @@ import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 
 public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
-  // Persistent data
   private final RocksDbAccessor db;
 
   public V4FinalizedRocksDbDao(final RocksDbAccessor db) {
