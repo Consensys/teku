@@ -50,6 +50,8 @@ public interface ValidatorApiChannel {
 
   void sendSignedAttestation(Attestation attestation);
 
+  void sendSignedAttestation(Attestation attestation, Optional<Integer> validatorIndex);
+
   void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof);
 
   void sendSignedBlock(SignedBeaconBlock block);

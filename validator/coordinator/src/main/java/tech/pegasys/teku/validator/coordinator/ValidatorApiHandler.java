@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
@@ -222,13 +223,29 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
+  public void sendSignedAttestation(
+      final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
     attestationManager
         .onAttestation(ValidateableAttestation.fromAttestation(attestation))
         .ifInvalid(
-            reason ->
-                VALIDATOR_LOGGER.producedInvalidAttestation(
-                    attestation.getData().getSlot(), reason));
+            reason -> {
+              int actualValidatorIndex =
+                  get_attesting_indices(
+                          combinedChainDataClient.getHeadStateFromStore().orElseThrow(),
+                          attestation.getData(),
+                          attestation.getAggregation_bits())
+                      .get(0);
+              VALIDATOR_LOGGER.producedInvalidAttestation(
+                  attestation.getData().getSlot(),
+                  actualValidatorIndex,
+                  expectedValidatorIndex,
+                  reason);
+            });
+  }
+
+  @Override
+  public void sendSignedAttestation(final Attestation attestation) {
+    sendSignedAttestation(attestation, Optional.empty());
   }
 
   @Override
