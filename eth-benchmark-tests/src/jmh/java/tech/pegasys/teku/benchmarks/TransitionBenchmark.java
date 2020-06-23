@@ -57,7 +57,7 @@ public abstract class TransitionBenchmark {
   BlockImportResult lastResult;
   SignedBeaconBlock prefetchedBlock;
 
-  @Param({"16384", "32768"})
+  @Param({"32768"})
   int validatorsCount;
 
   @Setup(Level.Trial)
