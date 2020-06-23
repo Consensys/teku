@@ -340,9 +340,11 @@ class DutySchedulerTest {
 
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)
-        .addValidator(validator1, validator1Committee, validator1CommitteePosition);
+        .addValidator(
+            validator1, validator1Committee, validator1CommitteePosition, validator1Index);
     verify(attestationDuty)
-        .addValidator(validator2, validator2Committee, validator2CommitteePosition);
+        .addValidator(
+            validator2, validator2Committee, validator2CommitteePosition, validator2Index);
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationSlot);
@@ -391,7 +393,8 @@ class DutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
     when(dutyFactory.createAggregationDuty(attestationSlot)).thenReturn(aggregationDuty);
     when(aggregationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(attestationDuty.addValidator(validator1, validator1Committee, validator1CommitteePosition))
+    when(attestationDuty.addValidator(
+            validator1, validator1Committee, validator1CommitteePosition, validator1Index))
         .thenReturn(unsignedAttestationFuture);
 
     // Load duties
