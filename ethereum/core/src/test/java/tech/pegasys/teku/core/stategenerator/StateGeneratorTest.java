@@ -205,8 +205,14 @@ public class StateGeneratorTest {
         descendantBlocksAndStates.stream()
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
+
+    final List<SignedBlockAndState> allBlocksAndStates = new ArrayList<>();
+    allBlocksAndStates.add(rootBlockAndState);
+    allBlocksAndStates.addAll(descendantBlocksAndStates);
+    final List<SignedBeaconBlock> allBlocks =
+        allBlocksAndStates.stream().map(SignedBlockAndState::getBlock).collect(Collectors.toList());
     final Map<Bytes32, BeaconState> expectedResult =
-        descendantBlocksAndStates.stream()
+        allBlocksAndStates.stream()
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
 
     // Create generator
@@ -216,7 +222,7 @@ public class StateGeneratorTest {
             .blocks(descendantBlocks)
             .blocks(unconnectedBlocks)
             .build();
-    final BlockProvider blockProvider = BlockProviderFactory.fromList(descendantBlocks);
+    final BlockProvider blockProvider = BlockProviderFactory.fromList(allBlocks);
     final StateGenerator generator =
         supplyAllKnownStates
             ? StateGenerator.create(
@@ -230,16 +236,15 @@ public class StateGeneratorTest {
                 cacheSize);
 
     // Regenerate all states and collect results
-    final List<StateAndBlockRoot> results = new ArrayList<>();
+    final List<SignedBlockAndState> results = new ArrayList<>();
     generator
-        .regenerateAllStates((root, state) -> results.add(new StateAndBlockRoot(root, state)))
+        .regenerateAllStates((block, state) -> results.add(new SignedBlockAndState(block, state)))
         .join();
 
     // Verify results
     final Map<Bytes32, BeaconState> resultMap =
         results.stream()
-            .collect(
-                Collectors.toMap(StateAndBlockRoot::getBlockRoot, StateAndBlockRoot::getState));
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
     // We shouldn't process any duplicates
     assertThat(resultMap.size()).isEqualTo(results.size());
     // Check that our expectations are met
@@ -254,6 +259,10 @@ public class StateGeneratorTest {
     } else if (cacheSize == 0) {
       // All states should be regenerated and should not match the known states
       for (Bytes32 root : expectedResult.keySet()) {
+        // Skip root state
+        if (root.equals(rootBlockAndState.getRoot())) {
+          continue;
+        }
         assertThat(resultMap.get(root)).isNotSameAs(expectedResult.get(root));
       }
     }
@@ -274,23 +283,5 @@ public class StateGeneratorTest {
 
   public static Stream<Arguments> getCacheSize() {
     return Stream.of(Arguments.of(0), Arguments.of(1), Arguments.of(100));
-  }
-
-  private static class StateAndBlockRoot {
-    private final BeaconState state;
-    private final Bytes32 blockRoot;
-
-    private StateAndBlockRoot(final Bytes32 blockRoot, final BeaconState state) {
-      this.state = state;
-      this.blockRoot = blockRoot;
-    }
-
-    public BeaconState getState() {
-      return state;
-    }
-
-    public Bytes32 getBlockRoot() {
-      return blockRoot;
-    }
   }
 }

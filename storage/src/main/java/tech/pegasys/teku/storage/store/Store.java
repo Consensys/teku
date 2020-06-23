@@ -42,7 +42,6 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerator;
-import tech.pegasys.teku.core.stategenerator.StateHandler;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -140,18 +139,16 @@ class Store implements UpdatableStore {
     final AtomicInteger processedBlocks = new AtomicInteger(0);
     // TODO - handle future properly
     final ProtoArrayForkChoiceStrategyUpdater forkChoiceUpdater = forkChoiceState.updater();
-    forkChoiceUpdater.onBlock(finalizedBlockAndState);
     stateProviderFactory
         .create(this.blockProvider)
         .provide(
-            (blockRoot, state) -> {
-              // TODO - provide block and state
-              forkChoiceUpdater.onBlock(blocks.get(blockRoot), state);
+            (block, state) -> {
+              forkChoiceUpdater.onBlock(block, state);
               final int processed = processedBlocks.incrementAndGet();
               if (processed % 100 == 0) {
                 LOG.info("Processed {} blocks", processed);
               }
-              this.block_states.put(blockRoot, state);
+              this.block_states.put(block.getRoot(), state);
             })
         .join();
     forkChoiceUpdater.commit();
@@ -747,17 +744,5 @@ class Store implements UpdatableStore {
         best_justified_checkpoint,
         blocks,
         checkpoint_states);
-  }
-
-  interface StateProvider {
-    StateProvider NOOP = stateHandler -> SafeFuture.COMPLETE;
-
-    SafeFuture<?> provide(StateHandler stateHandler);
-  }
-
-  interface StateProviderFactory {
-    StateProviderFactory NOOP = __ -> StateProvider.NOOP;
-
-    StateProvider create(final BlockProvider blockProvider);
   }
 }

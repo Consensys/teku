@@ -20,27 +20,19 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.storage.store.Store.StateProvider;
-import tech.pegasys.teku.storage.store.Store.StateProviderFactory;
 
 public class StoreBuilder {
-  private static final Logger LOG = LogManager.getLogger();
-
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
   StateProviderFactory stateProviderFactory;
@@ -90,7 +82,6 @@ public class StoreBuilder {
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
-        .stateProvider(StateProvider.NOOP)
         .time(time)
         .genesis_time(anchorState.getGenesis_time())
         .finalized_checkpoint(anchorCheckpoint)
@@ -104,10 +95,7 @@ public class StoreBuilder {
 
   public UpdatableStore build() {
     assertValid();
-
-    if (stateProviderFactory == null) {
-      stateProviderFactory = createStateProviderFactory();
-    }
+    stateProviderFactory = createStateProviderFactory();
 
     return new Store(
         metricsSystem,
@@ -130,22 +118,8 @@ public class StoreBuilder {
     final SignedBlockAndState finalizedBlockAndState =
         new SignedBlockAndState(finalizedBlock, latestFinalizedBlockState);
 
-    return (blockProvider) -> {
-      final HashTree tree =
-          HashTree.builder().rootHash(finalizedBlock.getRoot()).blocks(blocks.values()).build();
-      final StateGenerator stateGenerator =
-          StateGenerator.create(tree, finalizedBlockAndState, blockProvider);
-
-      if (tree.getBlockCount() < blocks.size()) {
-        // This should be an error, but keeping this as a warning now for backwards-compatibility
-        // reasons.  Some existing databases may have unpruned fork blocks, and could become
-        // unusable
-        // if we throw here.  In the future, we should convert this to an error.
-        LOG.warn("Ignoring {} non-canonical blocks", blocks.size() - tree.getBlockCount());
-      }
-
-      return stateGenerator::regenerateAllStates;
-    };
+    // TODO - build tree using block hashes rather than full blocks
+    return StateProviderFactory.createFromBlocks(finalizedBlockAndState, blocks.values());
   }
 
   private void assertValid() {
@@ -171,12 +145,6 @@ public class StoreBuilder {
   public StoreBuilder blockProvider(final BlockProvider blockProvider) {
     checkNotNull(blockProvider);
     this.blockProvider = blockProvider;
-    return this;
-  }
-
-  public StoreBuilder stateProvider(final StateProvider stateProvider) {
-    checkNotNull(stateProvider);
-    this.stateProviderFactory = __ -> stateProvider;
     return this;
   }
 

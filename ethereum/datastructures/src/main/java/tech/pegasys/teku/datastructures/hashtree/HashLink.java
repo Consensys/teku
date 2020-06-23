@@ -11,11 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.stategenerator;
+package tech.pegasys.teku.datastructures.hashtree;
 
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import org.apache.tuweni.bytes.Bytes32;
 
-public interface StateHandler {
-  void handle(final SignedBeaconBlock block, final BeaconState state);
+public class HashLink {
+  private final Bytes32 childHash;
+  private final Bytes32 parentHash;
+
+  public HashLink(Bytes32 childHash, Bytes32 parentHash) {
+    this.childHash = childHash;
+    this.parentHash = parentHash;
+  }
+
+  public Bytes32 getChildHash() {
+    return childHash;
+  }
+
+  public Bytes32 getParentHash() {
+    return parentHash;
+  }
 }

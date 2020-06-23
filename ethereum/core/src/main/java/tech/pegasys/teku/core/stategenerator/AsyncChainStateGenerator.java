@@ -23,7 +23,6 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class AsyncChainStateGenerator {
@@ -62,8 +61,8 @@ class AsyncChainStateGenerator {
     final SafeFuture<BeaconState> lastState = new SafeFuture<>();
     generateStates(
             targetRoot,
-            (root, state) -> {
-              if (root.equals(targetRoot)) {
+            (block, state) -> {
+              if (block.getRoot().equals(targetRoot)) {
                 lastState.complete(state);
               }
             })
@@ -79,36 +78,29 @@ class AsyncChainStateGenerator {
 
   public SafeFuture<?> generateStates(final Bytes32 targetRoot, final StateHandler handler) {
     // Build chain from target root to the first ancestor with a known state
-    final AtomicReference<BlockRootAndState> baseStateWithBlockRoot = new AtomicReference<>(null);
+    final AtomicReference<BeaconState> baseState = new AtomicReference<>(null);
     final List<Bytes32> chain =
         blockTree.accumulateChain(
             targetRoot,
             (currentRoot) -> {
-              stateProvider
-                  .getState(currentRoot)
-                  .ifPresent(
-                      state ->
-                          baseStateWithBlockRoot.set(new BlockRootAndState(currentRoot, state)));
-              return baseStateWithBlockRoot.get() == null;
+              stateProvider.getState(currentRoot).ifPresent(baseState::set);
+              return baseState.get() == null;
             });
 
-    if (baseStateWithBlockRoot.get() == null) {
+    if (baseState.get() == null) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException("Unable to find base state to build on"));
     }
 
-    // Process base state
-    final BeaconState baseState = baseStateWithBlockRoot.get().getState();
-    handler.handle(baseStateWithBlockRoot.get().getBlockRoot(), baseState);
-
     if (chain.size() == 0) {
-      return SafeFuture.COMPLETE;
+      throw new IllegalStateException("Failed to retrieve chain");
     }
 
     // Process chain in batches
     final List<List<Bytes32>> blockBatches = Lists.partition(chain, blockBatchSize);
     // Request and process each batch of blocks in order
-    SafeFuture<BeaconState> future = processBlockBatch(blockBatches.get(0), baseState, handler);
+    SafeFuture<BeaconState> future =
+        processBlockBatch(blockBatches.get(0), baseState.get(), handler);
     for (int i = 1; i < blockBatches.size(); i++) {
       final List<Bytes32> blockBatch = blockBatches.get(i);
       future = future.thenCompose(state -> processBlockBatch(blockBatch, state, handler));
@@ -135,9 +127,9 @@ class AsyncChainStateGenerator {
                   ChainStateGenerator.create(chainBlocks, startState, true);
               final AtomicReference<BeaconState> lastState = new AtomicReference<>(null);
               chainStateGenerator.generateStates(
-                  (root, state) -> {
+                  (block, state) -> {
                     lastState.set(state);
-                    handler.handle(root, state);
+                    handler.handle(block, state);
                   });
 
               return lastState.get();

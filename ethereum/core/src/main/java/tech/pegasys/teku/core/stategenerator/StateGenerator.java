@@ -105,9 +105,7 @@ public class StateGenerator {
   }
 
   public SafeFuture<?> regenerateAllStates(final StateHandler stateHandler) {
-    // Skip 1 root because we must already have this state
-    final List<Bytes32> blockRoots =
-        blockTree.preOrderStream().skip(1).collect(Collectors.toList());
+    final List<Bytes32> blockRoots = blockTree.preOrderStream().collect(Collectors.toList());
     if (blockRoots.size() == 0) {
       return SafeFuture.completedFuture(null);
     }
@@ -182,7 +180,7 @@ public class StateGenerator {
                 }
 
                 blockProcessor.assertBlockAndStateMatch(currentBlock, postState);
-                stateHandler.handle(currentBlock.getRoot(), postState);
+                stateHandler.handle(currentBlock, postState);
                 currentState = new BlockRootAndState(currentBlock.getRoot(), postState);
               }
 

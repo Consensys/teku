@@ -73,11 +73,12 @@ class ChainStateGenerator {
     BeaconState state = baseState;
     for (SignedBeaconBlock currentBlock : chain) {
       if (currentBlock.getStateRoot().equals(baseState.hash_tree_root())) {
-        // Skip the base block
+        // Don't process base block
+        handler.handle(currentBlock, baseState);
         continue;
       }
       state = blockProcessor.process(state, currentBlock);
-      handler.handle(currentBlock.getRoot(), state);
+      handler.handle(currentBlock, state);
     }
   }
 }

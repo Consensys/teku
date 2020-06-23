@@ -317,7 +317,10 @@ public class RocksDbDatabase implements Database {
         final StateGenerator stateGenerator =
             StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
         // TODO - don't join, create synchronous API for synchronous blockProvider
-        stateGenerator.regenerateAllStates(updater::addFinalizedState).join();
+        stateGenerator
+            .regenerateAllStates(
+                (block, state) -> updater.addFinalizedState(block.getRoot(), state))
+            .join();
         break;
       case PRUNE:
         // Don't persist finalized state
