@@ -45,6 +45,14 @@ public class NetworkDefinition {
                   .eth1Endpoint("https://goerli.prylabs.net")
                   .startupTimeoutSeconds(120)
                   .build())
+          .put(
+              "altona",
+              builder()
+                  .constants("altona")
+                  .snappyCompressionEnabled(true)
+                  .eth1DepositContractAddress("0x16e82D77882A663454Ef92806b7DeCa1D394810f")
+                  .startupTimeoutSeconds(120)
+                  .build())
           .build();
 
   private final String constants;

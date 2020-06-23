@@ -153,33 +153,6 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   @SuppressWarnings("unused")
   private final Checkpoint finalized_checkpoint = null;
 
-  @Label("sos-ignore")
-  private SSZList<Validator> validatorsCache;
-
-  @Label("sos-ignore")
-  private SSZList<UnsignedLong> balancesCache;
-
-  @Label("sos-ignore")
-  private SSZVector<Bytes32> blockRootsCache;
-
-  @Label("sos-ignore")
-  private SSZVector<Bytes32> stateRootsCache;
-
-  @Label("sos-ignore")
-  private SSZList<Bytes32> historicalRootsCache;
-
-  @Label("sos-ignore")
-  private SSZList<Eth1Data> eth1DataVotesCache;
-
-  @Label("sos-ignore")
-  private SSZVector<Bytes32> randaoMixesCache;
-
-  @Label("sos-ignore")
-  private SSZList<PendingAttestation> previousEpochAttestationsCache;
-
-  @Label("sos-ignore")
-  private SSZList<PendingAttestation> currentEpochAttestationsCache;
-
   public BeaconStateImpl() {
     super(BeaconState.getSSZType());
     transitionCaches = TransitionCaches.createNewEmpty();
@@ -429,68 +402,5 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   private MutableBeaconState createWritableCopyPriv() {
     return new MutableBeaconStateImpl(this);
-  }
-
-  @Override
-  public SSZList<Validator> getValidators() {
-    return validatorsCache != null
-        ? validatorsCache
-        : (validatorsCache = BeaconState.super.getValidators());
-  }
-
-  @Override
-  public SSZList<UnsignedLong> getBalances() {
-    return balancesCache != null
-        ? balancesCache
-        : (balancesCache = BeaconState.super.getBalances());
-  }
-
-  @Override
-  public SSZVector<Bytes32> getBlock_roots() {
-    return blockRootsCache != null
-        ? blockRootsCache
-        : (blockRootsCache = BeaconState.super.getBlock_roots());
-  }
-
-  @Override
-  public SSZVector<Bytes32> getState_roots() {
-    return stateRootsCache != null
-        ? stateRootsCache
-        : (stateRootsCache = BeaconState.super.getState_roots());
-  }
-
-  @Override
-  public SSZList<Bytes32> getHistorical_roots() {
-    return historicalRootsCache != null
-        ? historicalRootsCache
-        : (historicalRootsCache = BeaconState.super.getHistorical_roots());
-  }
-
-  @Override
-  public SSZList<Eth1Data> getEth1_data_votes() {
-    return eth1DataVotesCache != null
-        ? eth1DataVotesCache
-        : (eth1DataVotesCache = BeaconState.super.getEth1_data_votes());
-  }
-
-  @Override
-  public SSZVector<Bytes32> getRandao_mixes() {
-    return randaoMixesCache != null
-        ? randaoMixesCache
-        : (randaoMixesCache = BeaconState.super.getRandao_mixes());
-  }
-
-  @Override
-  public SSZList<PendingAttestation> getPrevious_epoch_attestations() {
-    return previousEpochAttestationsCache != null
-        ? previousEpochAttestationsCache
-        : (previousEpochAttestationsCache = BeaconState.super.getPrevious_epoch_attestations());
-  }
-
-  @Override
-  public SSZList<PendingAttestation> getCurrent_epoch_attestations() {
-    return currentEpochAttestationsCache != null
-        ? currentEpochAttestationsCache
-        : (currentEpochAttestationsCache = BeaconState.super.getCurrent_epoch_attestations());
   }
 }
