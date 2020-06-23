@@ -14,10 +14,15 @@
 package tech.pegasys.teku.storage;
 
 import com.google.common.eventbus.EventBus;
+import java.util.List;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
@@ -28,6 +33,10 @@ import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryStorageSystem {
+  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
+  protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  protected final ChainUpdater chainUpdater;
+
   private final EventBus eventBus;
   private final TrackingReorgEventChannel reorgEventChannel;
 
@@ -46,6 +55,8 @@ public class InMemoryStorageSystem {
     this.rocksDbInstance = rocksDbInstance;
     this.recentChainData = recentChainData;
     this.combinedChainDataClient = combinedChainDataClient;
+
+    chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
   }
 
   public static InMemoryStorageSystem createEmptyV3StorageSystem(
@@ -109,5 +120,13 @@ public class InMemoryStorageSystem {
 
   public TrackingReorgEventChannel reorgEventChannel() {
     return reorgEventChannel;
+  }
+
+  public ChainBuilder chainBuilder() {
+    return chainBuilder;
+  }
+
+  public ChainUpdater chainUpdater() {
+    return chainUpdater;
   }
 }

@@ -30,7 +30,7 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromFile("dataOptions_config.yaml");
     assertThat(tekuConfiguration.getDataPath()).isEqualTo(TEST_PATH);
     assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
-    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo(4);
+    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo("4");
     assertThat(tekuConfiguration.getDataStorageFrequency()).isEqualTo(128L);
   }
 
@@ -71,13 +71,13 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataStorageCreateDbVersion_shouldDefault() {
     final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo(3);
+    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo("3.0");
   }
 
   @Test
   public void dataStorageCreateDbVersion_shouldAcceptNonDefaultValues() {
     final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xdata-storage-create-db-version", "4");
-    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo(4);
+        getTekuConfigurationFromArguments("--Xdata-storage-create-db-version", "3.0");
+    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo("3.0");
   }
 }

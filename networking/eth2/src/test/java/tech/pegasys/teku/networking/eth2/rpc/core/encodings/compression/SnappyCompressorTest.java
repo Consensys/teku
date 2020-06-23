@@ -15,22 +15,27 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.SnappyFramedCompressor.MAX_FRAME_CONTENT_SIZE;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCounted;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.rpc.Utils;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.SnappyFramedCompressor;
 
 public class SnappyCompressorTest {
+  // The max uncompressed bytes that will be packed into a single frame
+  // See:
+  // https://github.com/google/snappy/blob/251d935d5096da77c4fef26ea41b019430da5572/framing_format.txt#L104-L106
+  static final int MAX_FRAME_CONTENT_SIZE = 65536;
   // The static snappy header taken from the Snappy library
   // see:
   // https://github.com/xerial/snappy-java/blob/de99182a82516c60d29813820926003b2543faf5/src/main/java/org/xerial/snappy/SnappyFramed.java#L121
@@ -49,8 +54,23 @@ public class SnappyCompressorTest {
     final Bytes compressed = compressor.compress(serializedState);
     assertThat(compressed).isNotEqualTo(serializedState);
 
-    final Bytes uncompressed = compressor.uncompress(compressed, serializedState.size());
-    assertThat(uncompressed).isEqualTo(serializedState);
+    List<List<ByteBuf>> testSlices = Utils.generateTestSlices(compressed);
+
+    for (List<ByteBuf> testSlice : testSlices) {
+      List<ByteBuf> uncompressed = new ArrayList<>();
+      Decompressor decompressor =
+          new SnappyFramedCompressor().createDecompressor(serializedState.size());
+      for (ByteBuf byteBuf : testSlice) {
+        decompressor.decodeOneMessage(byteBuf).ifPresent(uncompressed::add);
+        byteBuf.release();
+      }
+      decompressor.complete();
+      assertThat(uncompressed).hasSize(1);
+      assertThat(Bytes.wrapByteBuf(uncompressed.get(0))).isEqualTo(serializedState);
+
+      uncompressed.get(0).release();
+      assertThat(testSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
   }
 
   @Test
@@ -59,8 +79,27 @@ public class SnappyCompressorTest {
     final Bytes serializedState =
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
 
-    assertThatThrownBy(() -> compressor.uncompress(serializedState, serializedState.size()))
-        .isInstanceOf(CompressionException.class);
+    List<List<ByteBuf>> testSlices = Utils.generateTestSlices(serializedState);
+
+    for (List<ByteBuf> testSlice : testSlices) {
+      Decompressor decompressor =
+          new SnappyFramedCompressor().createDecompressor(serializedState.size());
+
+      boolean exceptionCaught = false;
+      for (ByteBuf byteBuf : testSlice) {
+        if (!exceptionCaught) {
+          try {
+            decompressor.decodeOneMessage(byteBuf);
+          } catch (CompressionException e) {
+            exceptionCaught = true;
+          }
+        }
+        byteBuf.release();
+      }
+
+      assertThat(exceptionCaught).isTrue();
+      assertThat(testSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
   }
 
   @Test
@@ -75,21 +114,38 @@ public class SnappyCompressorTest {
     final Bytes compressedA = compressor.compress(serializedStateA);
     final Bytes compressedB = compressor.compress(serializedStateB);
     final Bytes compressedSeries = Bytes.concatenate(compressedA, compressedB);
-    final InputStream input = new ByteArrayInputStream(compressedSeries.toArrayUnsafe());
 
-    // Get first value
-    final Bytes uncompressed = compressor.uncompress(input, serializedStateA.size());
-    assertThat(uncompressed).isEqualTo(serializedStateA);
-    // Then next value
-    final Bytes uncompressed2 = compressor.uncompress(input, serializedStateB.size());
-    assertThat(uncompressed2).isEqualTo(serializedStateB);
-    // Input stream should now be closed
-    assertThat(input.available()).isEqualTo(0);
-    assertThat(input.read()).isEqualTo(-1);
+    List<List<ByteBuf>> testSlices = Utils.generateTestSlices(compressedSeries);
+
+    for (List<ByteBuf> testSlice : testSlices) {
+      List<ByteBuf> uncompressed = new ArrayList<>();
+      Decompressor decompressorA =
+          new SnappyFramedCompressor().createDecompressor(serializedStateA.size());
+      Decompressor decompressorB =
+          new SnappyFramedCompressor().createDecompressor(serializedStateB.size());
+      for (ByteBuf byteBuf : testSlice) {
+        if (uncompressed.isEmpty()) {
+          decompressorA.decodeOneMessage(byteBuf).ifPresent(uncompressed::add);
+        }
+        if (uncompressed.size() > 0) {
+          decompressorB.decodeOneMessage(byteBuf).ifPresent(uncompressed::add);
+        }
+        byteBuf.release();
+      }
+      decompressorA.complete();
+      decompressorB.complete();
+
+      assertThat(uncompressed).hasSize(2);
+      assertThat(Bytes.wrapByteBuf(uncompressed.get(0))).isEqualTo(serializedStateA);
+      assertThat(Bytes.wrapByteBuf(uncompressed.get(1))).isEqualTo(serializedStateB);
+
+      uncompressed.forEach(ReferenceCounted::release);
+      assertThat(testSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
   }
 
   @Test
-  public void uncompress_truncatedPayload() {
+  public void uncompress_truncatedPayload() throws CompressionException {
     final BeaconState state = dataStructureUtil.randomBeaconState(0);
     final Bytes serializedState =
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
@@ -98,28 +154,13 @@ public class SnappyCompressorTest {
     final int payloadSize = serializedState.size();
     final Bytes compressed = compressor.compress(serializedState.slice(1));
 
-    final InputStream input = new ByteArrayInputStream(compressed.toArrayUnsafe());
-    assertThatThrownBy(() -> compressor.uncompress(input, payloadSize))
+    Decompressor decompressor = new SnappyFramedCompressor().createDecompressor(payloadSize);
+    assertThat(decompressor.decodeOneMessage(Utils.toByteBuf(compressed))).isEmpty();
+    assertThatThrownBy(decompressor::complete)
         .isInstanceOf(PayloadSmallerThanExpectedException.class);
   }
 
-  @Test
-  public void uncompress_appendExtraDataToPayload() {
-    final BeaconState state = dataStructureUtil.randomBeaconState(0);
-    final Bytes serializedState =
-        Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
-
-    // Compress too much data
-    final int payloadSize = serializedState.size();
-    final Bytes payloadWithExtraData =
-        Bytes.concatenate(serializedState, Bytes.fromHexString("0x01"));
-    final Bytes compressed = compressor.compress(payloadWithExtraData);
-
-    final InputStream input = new ByteArrayInputStream(compressed.toArrayUnsafe());
-    assertThatThrownBy(() -> compressor.uncompress(input, payloadSize))
-        .isInstanceOf(PayloadLargerThanExpectedException.class);
-  }
-
+  // netty compressor doesn't check that assumption
   @Test
   public void uncompress_maliciousBytes() {
     // The number of underlying uncompressed bytes encoded
@@ -140,9 +181,55 @@ public class SnappyCompressorTest {
     final int maxExpectedCompressedBytes = compressor.getMaxCompressedLength(uncompressedByteCount);
     assertThat(maliciousPayload.size()).isGreaterThan(maxExpectedCompressedBytes);
 
-    final InputStream input = new ByteArrayInputStream(maliciousPayload.toArray());
-    assertThatThrownBy(() -> compressor.uncompress(input, uncompressedByteCount))
-        .isInstanceOf(CompressionException.class);
+    List<List<ByteBuf>> testSlices = Utils.generateTestSlices(maliciousPayload);
+
+    for (List<ByteBuf> testSlice : testSlices) {
+      Decompressor decompressor =
+          new SnappyFramedCompressor().createDecompressor(uncompressedByteCount);
+
+      boolean exceptionCaught = false;
+      for (ByteBuf byteBuf : testSlice) {
+        if (!exceptionCaught) {
+          try {
+            decompressor.decodeOneMessage(byteBuf);
+          } catch (CompressionException e) {
+            exceptionCaught = true;
+          }
+        }
+        byteBuf.release();
+      }
+
+      assertThat(exceptionCaught).isTrue();
+      assertThat(testSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
+  }
+
+  @Test
+  public void uncompress_failOnExtraHeader() {
+    final Bytes singleByte = compressor.compress(Bytes.of(0x01));
+    final Bytes singleByteFrame = singleByte.slice(SNAPPY_HEADER.size());
+    final Bytes maliciousPayload = Bytes.concatenate(SNAPPY_HEADER, SNAPPY_HEADER, singleByteFrame);
+
+    List<List<ByteBuf>> testSlices = Utils.generateTestSlices(maliciousPayload);
+
+    for (List<ByteBuf> testSlice : testSlices) {
+      Decompressor decompressor = new SnappyFramedCompressor().createDecompressor(1);
+
+      boolean exceptionCaught = false;
+      for (ByteBuf byteBuf : testSlice) {
+        if (!exceptionCaught) {
+          try {
+            decompressor.decodeOneMessage(byteBuf);
+          } catch (CompressionException e) {
+            exceptionCaught = true;
+          }
+        }
+        byteBuf.release();
+      }
+
+      assertThat(exceptionCaught).isTrue();
+      assertThat(testSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
+    }
   }
 
   @Test
@@ -156,14 +243,12 @@ public class SnappyCompressorTest {
     final int bytesToRead = partialPayloadSize / 2;
     // Check assumptions
     assertThat(serializedState.size()).isGreaterThan(MAX_FRAME_CONTENT_SIZE);
-    // Calculate the number of compressed bytes to request
-    final int fullCapacity = Math.max(compressed.size(), serializedState.size());
 
-    try (final PipedOutputStream outputStream = new PipedOutputStream();
-        final InputStream inputStream = new PipedInputStream(outputStream, fullCapacity)) {
-      outputStream.write(compressed.slice(0, partialPayloadSize).toArrayUnsafe());
-      assertThatThrownBy(() -> compressor.uncompress(inputStream, bytesToRead))
-          .isInstanceOf(CompressionException.class);
-    }
+    ByteBuf partialPayload = Utils.toByteBuf(compressed.slice(0, partialPayloadSize));
+    Decompressor decompressor = new SnappyFramedCompressor().createDecompressor(bytesToRead);
+
+    assertThatThrownBy(() -> decompressor.decodeOneMessage(partialPayload))
+        .isInstanceOf(CompressionException.class);
+    assertThatThrownBy(decompressor::complete).isInstanceOf(CompressionException.class);
   }
 }
