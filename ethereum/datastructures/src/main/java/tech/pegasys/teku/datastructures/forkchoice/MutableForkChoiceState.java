@@ -13,36 +13,27 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
-public interface MutableStore extends ReadOnlyStore {
+public interface MutableForkChoiceState extends ForkChoiceState {
 
-  void putCheckpointState(Checkpoint checkpoint, BeaconState state);
+  void updateHead(
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState);
 
-  void putBlockAndState(SignedBeaconBlock block, BeaconState state);
+  void updateFinalizedBlock(final Bytes32 finalizedRoot);
 
-  default void putBlockAndState(SignedBlockAndState blockAndState) {
-    putBlockAndState(blockAndState.getBlock(), blockAndState.getState());
+  void onAttestation(final IndexedAttestation attestation);
+
+  void onBlock(final SignedBlockAndState blockAndState);
+
+  default void onBlock(final SignedBeaconBlock block, final BeaconState state) {
+    onBlock(new SignedBlockAndState(block, state));
   }
-
-  void setTime(UnsignedLong time);
-
-  void setGenesis_time(UnsignedLong genesis_time);
-
-  void setJustifiedCheckpoint(Checkpoint justified_checkpoint);
-
-  void setFinalizedCheckpoint(Checkpoint finalized_checkpoint);
-
-  void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint);
-
-  // Fork-choice updates
-
-  void updateHead();
-
-  void processAttestation(IndexedAttestation attestation);
 }
