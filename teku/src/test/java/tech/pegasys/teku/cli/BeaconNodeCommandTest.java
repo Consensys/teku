@@ -304,7 +304,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setDataPath(dataPath.toString())
         .setDataStorageMode(PRUNE)
         .setDataStorageFrequency(2048L)
-        .setDataStorageCreateDbVersion("3.0")
+        .setDataStorageCreateDbVersion("4")
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)

@@ -47,7 +47,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final MetricsSystem metricsSystem,
       final String dataPath,
       final StateStorageMode dataStorageMode) {
-    this(metricsSystem, dataPath, dataStorageMode, "3.0");
+    this(metricsSystem, dataPath, dataStorageMode, "4");
   }
 
   public VersionedDatabaseFactory(

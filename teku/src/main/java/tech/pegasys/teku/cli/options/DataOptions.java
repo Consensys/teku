@@ -46,11 +46,11 @@ public class DataOptions {
   @Option(
       names = {"--Xdata-storage-create-db-version"},
       paramLabel = "<VERSION>",
-      description = "Database version to create (3 or 4)",
+      description = "Database version to create (3.0 or 4)",
       arity = "1",
-      defaultValue = "3.0",
+      defaultValue = "4",
       hidden = true)
-  private String createDbVersion = "3.0";
+  private String createDbVersion = "4";
 
   public String getDataPath() {
     return dataPath;

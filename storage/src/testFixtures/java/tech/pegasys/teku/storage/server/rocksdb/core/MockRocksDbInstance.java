@@ -66,7 +66,6 @@ public class MockRocksDbInstance implements RocksDbAccessor {
     final Set<RocksDbVariable<?>> variables =
         Schema.streamVariables(schema).collect(Collectors.toSet());
     checkArgument(columns.size() > 0, "No columns attached to schema");
-    checkArgument(variables.size() > 0, "No variables attached to schema");
 
     final Map<RocksDbColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =
         columns.stream()

@@ -242,6 +242,8 @@ public class RocksDbDatabase implements Database {
   @Override
   public void close() throws Exception {
     hotDao.close();
+    eth1Dao.close();
+    finalizedDao.close();
   }
 
   private void doUpdate(final StorageUpdate update) {
