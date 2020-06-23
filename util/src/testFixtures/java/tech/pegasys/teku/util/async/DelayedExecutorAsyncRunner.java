@@ -22,6 +22,10 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * An AsyncRunner that uses the common ForkJoinPool so that it is guaranteed not to leak threads
+ * even if the test doesn't shut it down.
+ */
 public class DelayedExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
   private final ExecutorFactory executorFactory;
@@ -32,11 +36,6 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
 
   public static DelayedExecutorAsyncRunner create() {
     return new DelayedExecutorAsyncRunner(CompletableFuture::delayedExecutor);
-  }
-
-  public static DelayedExecutorAsyncRunner create(Executor executor) {
-    return new DelayedExecutorAsyncRunner(
-        (delay, unit) -> CompletableFuture.delayedExecutor(delay, unit, executor));
   }
 
   @Override
@@ -51,6 +50,9 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
     final Executor executor = getDelayedExecutor(delayAmount, delayUnit);
     return runAsync(action, executor);
   }
+
+  @Override
+  public void shutdown() {}
 
   @VisibleForTesting
   <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
@@ -69,7 +71,7 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
     return getDelayedExecutor(-1, TimeUnit.SECONDS);
   }
 
-  protected Executor getDelayedExecutor(long delayAmount, TimeUnit delayUnit) {
+  private Executor getDelayedExecutor(long delayAmount, TimeUnit delayUnit) {
     return executorFactory.create(delayAmount, delayUnit);
   }
 

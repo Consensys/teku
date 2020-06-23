@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -31,12 +30,12 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -64,11 +63,7 @@ public class SyncingNodeManager {
   }
 
   public static SyncingNodeManager create(
-      Eth2NetworkFactory networkFactory, final List<BLSKeyPair> validatorKeys) throws Exception {
-    return create(networkFactory, validatorKeys, c -> {});
-  }
-
-  public static SyncingNodeManager create(
+      final AsyncRunner asyncRunner,
       Eth2NetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
@@ -88,13 +83,12 @@ public class SyncingNodeManager {
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
 
-    ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
-    BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
+    BlockImporter blockImporter = new BlockImporter(recentChainData, eventBus);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         new FutureItems<>(SignedBeaconBlock::getSlot);
     final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(eth2Network, pendingBlocks);
+        FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
     BlockManager blockManager =
         BlockManager.create(
             eventBus,
@@ -104,7 +98,8 @@ public class SyncingNodeManager {
             recentChainData,
             blockImporter);
 
-    SyncManager syncManager = SyncManager.create(eth2Network, recentChainData, blockImporter);
+    SyncManager syncManager =
+        SyncManager.create(asyncRunner, eth2Network, recentChainData, blockImporter);
     SyncService syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
 
     eventChannels

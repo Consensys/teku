@@ -52,7 +52,7 @@ public class BeaconRestApiOptions {
   @Option(
       names = {"--rest-api-host-allowlist"},
       paramLabel = "<hostname>",
-      description = "Comma separated list of hostnames to allow, or * to allow any host",
+      description = "Comma-separated list of hostnames to allow, or * to allow any host",
       split = ",",
       arity = "0..*")
   private final List<String> restApiHostAllowlist = Arrays.asList("127.0.0.1", "localhost");

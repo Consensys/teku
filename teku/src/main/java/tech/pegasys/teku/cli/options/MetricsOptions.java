@@ -65,7 +65,7 @@ public class MetricsOptions {
   @Option(
       names = {"--metrics-host-allowlist"},
       paramLabel = "<hostname>",
-      description = "Comma separated list of hostnames to allow, or * to allow any host",
+      description = "Comma-separated list of hostnames to allow, or * to allow any host",
       split = ",",
       arity = "0..*")
   private final List<String> metricsHostAllowlist = Arrays.asList("127.0.0.1", "localhost");

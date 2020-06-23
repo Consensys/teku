@@ -359,6 +359,11 @@ subprojects {
     reports {
       junitXml.enabled = true
     }
+    filter {
+      // Support filtering tests with the --tests option to gradle
+      // Without this the build fails if you filter out all the tests for any module
+      setFailOnNoMatchingTests(false)
+    }
   }
 
   tasks.withType(JavaCompile) {

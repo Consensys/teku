@@ -98,6 +98,8 @@ public class TekuConfiguration {
   // Database
   private final String dataPath;
   private final StateStorageMode dataStorageMode;
+  private final long dataStorageFrequency;
+  private final String dataStorageCreateDbVersion;
 
   // Beacon REST API
   private final int restApiPort;
@@ -159,6 +161,8 @@ public class TekuConfiguration {
       final List<String> metricsHostAllowlist,
       final String dataPath,
       final StateStorageMode dataStorageMode,
+      final long dataStorageFrequency,
+      final String dataStorageCreateDbVersion,
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
@@ -213,6 +217,8 @@ public class TekuConfiguration {
     this.metricsHostAllowlist = metricsHostAllowlist;
     this.dataPath = dataPath;
     this.dataStorageMode = dataStorageMode;
+    this.dataStorageFrequency = dataStorageFrequency;
+    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -432,6 +438,14 @@ public class TekuConfiguration {
 
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
+  }
+
+  public long getDataStorageFrequency() {
+    return dataStorageFrequency;
+  }
+
+  public String getDataStorageCreateDbVersion() {
+    return dataStorageCreateDbVersion;
   }
 
   public int getRestApiPort() {

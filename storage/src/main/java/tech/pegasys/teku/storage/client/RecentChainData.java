@@ -16,11 +16,13 @@ package tech.pegasys.teku.storage.client;
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,15 +36,13 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.StoreUpdateHandler;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 /** This class is the ChainStorage client-side logic */
@@ -61,7 +61,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
 
   private volatile UpdatableStore store;
-  private volatile Optional<ProtoArrayForkChoiceStrategy> forkChoiceStrategy;
   private volatile Optional<SignedBlockAndState> chainHead = Optional.empty();
   private volatile UnsignedLong genesisTime;
 
@@ -127,8 +126,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.store = store;
     this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
-    forkChoiceStrategy = Optional.of(ProtoArrayForkChoiceStrategy.create(this.store));
     storeInitializedFuture.complete(null);
+
+    // Update head
+    final StoreTransaction tx = startStoreTransaction();
+    tx.updateHead();
+    tx.commit().reportExceptions();
+
     return true;
   }
 
@@ -136,8 +140,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store;
   }
 
-  public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
-    return forkChoiceStrategy.map(Function.identity());
+  public NavigableMap<UnsignedLong, Bytes32> getAncestorRoots(
+      final UnsignedLong startSlot, final UnsignedLong step, final UnsignedLong count) {
+    return chainHead
+        .map(head -> ForkChoiceUtil.getAncestors(store, head.getRoot(), startSlot, step, count))
+        .orElseGet(TreeMap::new);
   }
 
   public StoreTransaction startStoreTransaction() {
@@ -152,6 +159,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param root
    * @param slot
    */
+  // TODO - we should make this method private
+  @VisibleForTesting
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
     synchronized (this) {
       final SignedBeaconBlock newBestBlock = store.getSignedBlock(root);
@@ -318,7 +327,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public Optional<Bytes32> getBlockRootBySlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
-    return forkChoiceStrategy.flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
+    return Optional.ofNullable(store).flatMap(store -> get_ancestor(store, headBlockRoot, slot));
   }
 
   // TODO: These methods should not return zero if null. We should handle this better
@@ -335,8 +344,17 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   @Override
+  public void onNewHeadBlock(final Bytes32 headRoot) {
+    final UnsignedLong headSlot =
+        store
+            .getBlockSlot(headRoot)
+            .orElseThrow(
+                () -> new IllegalStateException("Unable to retrieve the slot of fork choice head"));
+    this.updateBestBlock(headRoot, headSlot);
+  }
+
+  @Override
   public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
     finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
-    forkChoiceStrategy.ifPresent(strategy -> strategy.maybePrune(finalizedCheckpoint.getRoot()));
   }
 }

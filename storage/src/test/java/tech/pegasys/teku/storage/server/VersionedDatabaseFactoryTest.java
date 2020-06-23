@@ -55,6 +55,26 @@ public class VersionedDatabaseFactoryTest {
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
+    assertThat(((VersionedDatabaseFactory) dbFactory).getDatabaseVersion())
+        .isEqualTo(DatabaseVersion.V3);
+  }
+
+  @Test
+  public void createDatabase_asV4Database() throws Exception {
+    final DatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "4");
+    try (final Database db = dbFactory.createDatabase()) {
+      assertThat(db).isNotNull();
+      assertDbVersionSaved(dataDir, DatabaseVersion.V4);
+    }
+    final File dbDirectory =
+        Paths.get(dataDir.toAbsolutePath().toString(), VersionedDatabaseFactory.DB_PATH).toFile();
+    final File archiveDirectory =
+        Paths.get(dataDir.toAbsolutePath().toString(), VersionedDatabaseFactory.ARCHIVE_PATH)
+            .toFile();
+    assertThat(dbDirectory).exists();
+    assertThat(archiveDirectory).exists();
   }
 
   @Test
@@ -80,6 +100,24 @@ public class VersionedDatabaseFactoryTest {
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");
+  }
+
+  @Test
+  public void createDatabase_shouldAllowV4Database() {
+    createDbDirectory(dataDir);
+    final VersionedDatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "4");
+    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
+  }
+
+  @Test
+  public void createDatabase_shouldAllowV3Database() {
+    createDbDirectory(dataDir);
+    final VersionedDatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "3.0");
+    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V3);
   }
 
   private void createDbDirectory(final Path dataPath) {
