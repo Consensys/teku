@@ -123,6 +123,7 @@ class ValidatorApiDutyLoader implements DutyLoader {
             scheduledDuties,
             attestationCommitteeIndex,
             attestationCommitteePosition,
+            validatorIndex,
             validator,
             slot);
 
@@ -140,10 +141,11 @@ class ValidatorApiDutyLoader implements DutyLoader {
       final ScheduledDuties scheduledDuties,
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
+      final int validatorIndex,
       final Validator validator,
       final UnsignedLong slot) {
     return scheduledDuties.scheduleAttestationProduction(
-        slot, validator, attestationCommitteeIndex, attestationCommitteePosition);
+        slot, validator, attestationCommitteeIndex, attestationCommitteePosition, validatorIndex);
   }
 
   private SafeFuture<Void> scheduleAggregation(
