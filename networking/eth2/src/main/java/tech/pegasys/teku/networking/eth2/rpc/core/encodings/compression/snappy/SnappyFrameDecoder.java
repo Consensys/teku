@@ -203,7 +203,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
   }
 
   @Override
-  protected void throwDataTruncatedException(int dataLeft) throws CompressionException {
+  protected void throwUnprocessedDataException(int dataLeft) throws CompressionException {
     throw new PayloadSmallerThanExpectedException(
         "Snappy stream complete, but unprocessed data left: " + dataLeft);
   }
@@ -211,7 +211,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
   private static void checkByte(byte actual, byte expect) throws CompressionException {
     if (actual != expect) {
       throw new CompressionException(
-          "Unexpected stream identifier contents. Mismatched snappy " + "protocol version?");
+          "Unexpected stream identifier contents. Mismatched snappy protocol version?");
     }
   }
 

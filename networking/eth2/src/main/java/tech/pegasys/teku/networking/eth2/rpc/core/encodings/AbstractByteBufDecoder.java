@@ -67,11 +67,11 @@ public abstract class AbstractByteBufDecoder<TMessage, TException extends Except
   public void complete() throws TException {
     if (compositeByteBuf.isReadable()) {
       compositeByteBuf.release();
-      throwDataTruncatedException(compositeByteBuf.readableBytes());
+      throwUnprocessedDataException(compositeByteBuf.readableBytes());
     }
   }
 
-  protected abstract void throwDataTruncatedException(int dataLeft) throws TException;
+  protected abstract void throwUnprocessedDataException(int dataLeft) throws TException;
 
   /**
    * Decodes one message if the full data is available in the buffer

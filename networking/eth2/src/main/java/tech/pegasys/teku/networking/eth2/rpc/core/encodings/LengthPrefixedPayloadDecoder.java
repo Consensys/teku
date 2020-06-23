@@ -157,7 +157,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
     }
 
     @Override
-    protected void throwDataTruncatedException(int dataLeft) throws RuntimeException {
+    protected void throwUnprocessedDataException(int dataLeft) throws RuntimeException {
       // Do nothing, exceptional case is handled upstream
     }
   }

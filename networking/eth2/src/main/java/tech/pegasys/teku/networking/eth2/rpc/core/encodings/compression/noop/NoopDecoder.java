@@ -35,7 +35,7 @@ public class NoopDecoder extends AbstractByteBufDecoder<ByteBuf, CompressionExce
   }
 
   @Override
-  protected void throwDataTruncatedException(int dataLeft) throws CompressionException {
+  protected void throwUnprocessedDataException(int dataLeft) throws CompressionException {
     throw new PayloadSmallerThanExpectedException(
         "The stream complete, but unprocessed data left: " + dataLeft);
   }
