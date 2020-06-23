@@ -15,28 +15,30 @@ package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
-import tech.pegasys.teku.storage.server.rocksdb.AbstractRocksDbDatabaseTest;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
-import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
-  private final TrackingEth1EventsChannel eventsChannel = new TrackingEth1EventsChannel();
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+public class DepositStorageTest {
+  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
+
+  protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private DepositStorage depositStorage;
 
   private final DepositsFromBlockEvent block_99 =
@@ -48,9 +50,18 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
   private final DepositsFromBlockEvent block_101 =
       dataStructureUtil.randomDepositsFromBlockEvent(101L, 10);
 
+  private final StorageSystem storageSystem =
+      InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
+  private final Database database = storageSystem.getDatabase();
+  private final TrackingEth1EventsChannel eventsChannel = storageSystem.eth1EventsChannel();
+
   @BeforeEach
   public void beforeEach() {
-    depositStorage = DepositStorage.create(eventsChannel, database, true);
+    // Initialize db
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    storageSystem.recentChainData().initializeFromGenesis(genesis.getState());
+
+    depositStorage = storageSystem.createDepositStorage(true);
     depositStorage.start();
   }
 
@@ -158,35 +169,5 @@ public class DepositStorageTest extends AbstractRocksDbDatabaseTest {
     assertThat(future.get().getBlockNumber())
         .isEqualTo(genesis_100.getBlockNumber().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
-  }
-
-  @Override
-  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
-    final RocksDbConfiguration config = RocksDbConfiguration.withDataDirectory(tempDir.toPath());
-    return RocksDbDatabase.createV3(new StubMetricsSystem(), config, storageMode);
-  }
-
-  static class TrackingEth1EventsChannel implements Eth1EventsChannel {
-    private final List<Object> orderedList = new ArrayList<>();
-    private MinGenesisTimeBlockEvent genesis;
-
-    @Override
-    public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
-      orderedList.add(event);
-    }
-
-    @Override
-    public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-      genesis = event;
-      orderedList.add(event);
-    }
-
-    public MinGenesisTimeBlockEvent getGenesis() {
-      return genesis;
-    }
-
-    public List<Object> getOrderedList() {
-      return orderedList;
-    }
   }
 }

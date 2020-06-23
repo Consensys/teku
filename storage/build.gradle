@@ -22,6 +22,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
+  testImplementation testFixtures(project(':pow'))
   testImplementation testFixtures(project(':storage'))
 
   testFixturesApi project(':util')
@@ -30,7 +31,9 @@ dependencies {
   testFixturesApi project(':ethereum:datastructures')
 
   testFixturesImplementation testFixtures(project(':bls'))
+  testFixturesImplementation testFixtures(project(':data:metrics'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
+  testFixturesImplementation testFixtures(project(':pow'))
   testFixturesImplementation project(':protoarray')
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation 'com.google.guava:guava'

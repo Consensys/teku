@@ -37,8 +37,9 @@ import tech.pegasys.teku.logging.EventLogger;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
-import tech.pegasys.teku.storage.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.EventSink;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -47,7 +48,7 @@ import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 public class SlotProcessorTest {
   private final EventLogger eventLogger = mock(EventLogger.class);
 
-  private final InMemoryStorageSystem storageSystem =
+  private final StorageSystem storageSystem =
       InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
   private final EventBus eventBus = storageSystem.eventBus();
