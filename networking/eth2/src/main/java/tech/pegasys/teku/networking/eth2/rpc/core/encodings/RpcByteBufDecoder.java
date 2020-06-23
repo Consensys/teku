@@ -11,16 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.rpc;
+package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
-import io.netty.buffer.ByteBuf;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 
-public interface RpcRequestHandler {
-
-  void active(final NodeId nodeId, final RpcStream rpcStream);
-
-  void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data);
-
-  void complete(final NodeId nodeId, final RpcStream rpcStream);
-}
+public interface RpcByteBufDecoder<TMessage> extends ByteBufDecoder<TMessage, RpcException> {}

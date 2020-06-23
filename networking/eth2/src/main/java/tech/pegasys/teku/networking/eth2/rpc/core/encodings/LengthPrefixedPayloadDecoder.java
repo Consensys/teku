@@ -14,28 +14,26 @@
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
 import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
-import static tech.pegasys.teku.util.iostreams.IOStreamConstants.END_OF_STREAM;
 
-import com.google.protobuf.CodedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.libp2p.etc.types.ByteBufExtKt;
+import io.netty.buffer.ByteBuf;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadLargerThanExpectedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.PayloadSmallerThanExpectedException;
 
-class LengthPrefixedPayloadDecoder<T> {
-  private static final Logger LOG = LogManager.getLogger();
-
-  static final Bytes MAX_CHUNK_SIZE_PREFIX = ProtobufEncoder.encodeVarInt(MAX_CHUNK_SIZE);
+class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
 
   private final RpcPayloadEncoder<T> payloadEncoder;
   private final Compressor compressor;
+  private Optional<Decompressor> decompressor = Optional.empty();
+  private Optional<VarIntDecoder> varIntDecoder = Optional.empty();
+  private boolean decoded = false;
+  private boolean disposed = false;
 
   public LengthPrefixedPayloadDecoder(
       final RpcPayloadEncoder<T> payloadEncoder, final Compressor compressor) {
@@ -43,73 +41,124 @@ class LengthPrefixedPayloadDecoder<T> {
     this.compressor = compressor;
   }
 
-  public T decodePayload(final InputStream inputStream) throws RpcException {
-    try {
-      final int uncompressedPayloadSize = processLengthPrefixHeader(inputStream);
-      return processPayload(inputStream, uncompressedPayloadSize);
-    } catch (PayloadSmallerThanExpectedException e) {
-      throw RpcException.PAYLOAD_TRUNCATED;
-    } catch (PayloadLargerThanExpectedException e) {
-      throw RpcException.EXTRA_DATA_APPENDED;
-    } catch (CompressionException e) {
-      LOG.debug("Failed to uncompress rpc payload", e);
-      throw RpcException.FAILED_TO_UNCOMPRESS_MESSAGE;
-    } catch (IOException e) {
-      LOG.error("Unable to decode rpc payload", e);
-      throw RpcException.SERVER_ERROR;
+  @Override
+  public Optional<T> decodeOneMessage(final ByteBuf in) throws RpcException {
+    if (decoded || disposed) {
+      throw new IllegalStateException("Trying to reuse disposable LengthPrefixedPayloadDecoder");
+    }
+    if (decompressor.isEmpty()) {
+      readLengthPrefixHeader(in)
+          .ifPresent(len -> decompressor = Optional.of(compressor.createDecompressor(len)));
+    }
+    if (decompressor.isPresent()) {
+      final Optional<ByteBuf> ret;
+      try {
+        ret = decompressor.get().decodeOneMessage(in);
+      } catch (PayloadSmallerThanExpectedException e) {
+        throw RpcException.PAYLOAD_TRUNCATED;
+      } catch (PayloadLargerThanExpectedException e) {
+        throw RpcException.EXTRA_DATA_APPENDED;
+      } catch (CompressionException e) {
+        throw RpcException.FAILED_TO_UNCOMPRESS_MESSAGE;
+      }
+
+      if (ret.isPresent()) {
+        decompressor = Optional.empty();
+        try {
+          // making a copy here since the Bytes.wrapByteBuf(buf).slice(...)
+          // would be broken after [in] buffer is released
+          byte[] arr = new byte[ret.get().readableBytes()];
+          ret.get().readBytes(arr);
+          Bytes bytes = Bytes.wrap(arr);
+          decoded = true;
+          return Optional.of(payloadEncoder.decode(bytes));
+        } finally {
+          ret.get().release();
+        }
+      } else {
+        return Optional.empty();
+      }
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public void complete() throws RpcException {
+    if (disposed) {
+      throw new IllegalStateException("Trying to reuse disposable LengthPrefixedPayloadDecoder");
+    }
+    disposed = true;
+    RpcException err = null;
+    if (varIntDecoder.isPresent()) {
+      try {
+        varIntDecoder.get().complete();
+      } catch (Exception e) {
+        // ignore any exception, call complete() just to release resources
+      }
+      // if varIntDecoder exists then payload length was not read completely
+      err = RpcException.MESSAGE_TRUNCATED;
+    }
+    if (decompressor.isPresent()) {
+      try {
+        decompressor.get().complete();
+      } catch (CompressionException e) {
+        // ignore any exception, call complete() just to release resources
+      }
+      // if decompressor still exists then not enough data was fed to it
+      err = RpcException.PAYLOAD_TRUNCATED;
+    }
+    if (!decoded && err == null) {
+      err = RpcException.MESSAGE_TRUNCATED;
+    }
+
+    if (err != null) {
+      throw err;
     }
   }
 
   /** Decode the length-prefix header, which contains the length of the uncompressed payload */
-  private int processLengthPrefixHeader(final InputStream inputStream)
-      throws RpcException, IOException {
-    // Collect length prefix raw bytes
-    final ByteArrayOutputStream headerBytes = new ByteArrayOutputStream();
+  private Optional<Integer> readLengthPrefixHeader(final ByteBuf in) throws RpcException {
 
-    boolean foundTerminatingCharacter = false;
-    int nextByte;
-    while ((nextByte = inputStream.read()) != END_OF_STREAM) {
-      if (headerBytes.size() >= MAX_CHUNK_SIZE_PREFIX.size()) {
-        // Any protobuf length requiring more bytes than this will also be bigger.
-        throw RpcException.CHUNK_TOO_LONG;
-      }
-      headerBytes.write(nextByte);
-      if ((nextByte & 0x80) == 0) {
-        // Var int ends at first byte where (b & 0x80) == 0
-        foundTerminatingCharacter = true;
-        break;
-      }
+    if (varIntDecoder.isEmpty()) {
+      varIntDecoder = Optional.of(new VarIntDecoder());
     }
 
-    if (!foundTerminatingCharacter) {
-      throw RpcException.MESSAGE_TRUNCATED;
-    }
-
-    // Decode length prefix from raw bytes
-    final CodedInputStream in = CodedInputStream.newInstance(headerBytes.toByteArray());
-    final int uncompressedPayloadSize;
+    Optional<Long> lengthMaybe;
     try {
-      uncompressedPayloadSize = in.readRawVarint32();
-    } catch (final IOException e) {
-      throw RpcException.MALFORMED_MESSAGE_LENGTH;
-    }
-
-    // Validate length prefix size is within bounds
-    if (uncompressedPayloadSize > MAX_CHUNK_SIZE) {
-      LOG.trace("Rejecting message as length is too long");
+      lengthMaybe = varIntDecoder.get().decodeOneMessage(in);
+    } catch (IllegalStateException e) {
+      // varint overflow
       throw RpcException.CHUNK_TOO_LONG;
     }
+    if (lengthMaybe.isEmpty()) {
+      // wait for more byte to read length field
+      return Optional.empty();
+    }
 
-    // Return payload size metadata
-    return uncompressedPayloadSize;
+    varIntDecoder = Optional.empty();
+
+    long length = lengthMaybe.get();
+    if (length > MAX_CHUNK_SIZE) {
+      throw RpcException.CHUNK_TOO_LONG;
+    }
+    return Optional.of((int) length);
   }
 
-  private T processPayload(final InputStream inputStream, final int uncompressedPayloadSize)
-      throws RpcException, CompressionException {
-    final Bytes uncompressedPayload = compressor.uncompress(inputStream, uncompressedPayloadSize);
-    if (uncompressedPayload.size() < uncompressedPayloadSize) {
-      throw RpcException.PAYLOAD_TRUNCATED;
+  private static class VarIntDecoder extends AbstractByteBufDecoder<Long, RuntimeException> {
+    @Override
+    protected Optional<Long> decodeOneImpl(ByteBuf in) {
+      long length = ByteBufExtKt.readUvarint(in);
+      if (length < 0) {
+        // wait for more byte to read length field
+        return Optional.empty();
+      }
+      return Optional.of(length);
     }
-    return payloadEncoder.decode(uncompressedPayload);
+
+    @Override
+    protected void throwUnprocessedDataException(int dataLeft) throws RuntimeException {
+      // Do nothing, exceptional case is handled upstream
+    }
   }
 }
