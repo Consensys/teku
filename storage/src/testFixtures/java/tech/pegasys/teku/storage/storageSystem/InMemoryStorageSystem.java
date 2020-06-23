@@ -27,6 +27,8 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryStorageSystem extends AbstractStorageSystem {
@@ -35,35 +37,59 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
   private final Database database;
-  private final MockRocksDbInstance rocksDbInstance;
   private final CombinedChainDataClient combinedChainDataClient;
+  private final RestartedStorageSupplier restartedStorageSupplier;
 
   public InMemoryStorageSystem(
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
       final Database database,
-      final MockRocksDbInstance rocksDbInstance,
       final RecentChainData recentChainData,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final RestartedStorageSupplier restartedStorageSupplier) {
     super(recentChainData);
 
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
     this.database = database;
-    this.rocksDbInstance = rocksDbInstance;
     this.combinedChainDataClient = combinedChainDataClient;
+    this.restartedStorageSupplier = restartedStorageSupplier;
+  }
+
+  public static StorageSystem createEmptyV4StorageSystem(final StateStorageMode storageMode) {
+
+    final MockRocksDbInstance hotDb = MockRocksDbInstance.createEmpty(V4SchemaHot.class);
+    final MockRocksDbInstance coldDb = MockRocksDbInstance.createEmpty(V4SchemaFinalized.class);
+    return createV4(hotDb, coldDb, storageMode);
   }
 
   public static StorageSystem createEmptyV3StorageSystem(final StateStorageMode storageMode) {
     final MockRocksDbInstance rocksDbInstance =
         InMemoryRocksDbDatabaseFactory.createEmptyV3RocksDbInstance();
-    return createV3StorageSystem(rocksDbInstance, storageMode);
+    return createV3(rocksDbInstance, storageMode);
   }
 
-  private static StorageSystem createV3StorageSystem(
+  private static StorageSystem createV4(
+      final MockRocksDbInstance hotDb,
+      final MockRocksDbInstance coldDb,
+      final StateStorageMode storageMode) {
+    final Database database = InMemoryRocksDbDatabaseFactory.createV4(hotDb, coldDb, storageMode);
+    final RestartedStorageSupplier restartedStorageSupplier =
+        (mode) -> createV4(hotDb.reopen(), coldDb.reopen(), mode);
+    return create(database, restartedStorageSupplier);
+  }
+
+  private static StorageSystem createV3(
       final MockRocksDbInstance rocksDbInstance, final StateStorageMode storageMode) {
-    final EventBus eventBus = new EventBus();
     final Database database = InMemoryRocksDbDatabaseFactory.createV3(rocksDbInstance, storageMode);
+    final RestartedStorageSupplier restartedStorageSupplier =
+        (mode) -> createV3(rocksDbInstance.reopen(), mode);
+    return create(database, restartedStorageSupplier);
+  }
+
+  private static StorageSystem create(
+      final Database database, final RestartedStorageSupplier restartedStorageSupplier) {
+    final EventBus eventBus = new EventBus();
 
     // Create and start storage server
     final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
@@ -90,9 +116,9 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
         eventBus,
         reorgEventChannel,
         database,
-        rocksDbInstance,
         recentChainData,
-        combinedChainDataClient);
+        combinedChainDataClient,
+        restartedStorageSupplier);
   }
 
   @Override
@@ -107,8 +133,12 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
 
   @Override
   public StorageSystem restarted(final StateStorageMode storageMode) {
-    final MockRocksDbInstance restartedRocksDbInstance = rocksDbInstance.reopen();
-    return createV3StorageSystem(restartedRocksDbInstance, storageMode);
+    try {
+      database.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    return restartedStorageSupplier.restart(storageMode);
   }
 
   @Override

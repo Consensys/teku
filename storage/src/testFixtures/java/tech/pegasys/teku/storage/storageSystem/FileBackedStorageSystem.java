@@ -32,7 +32,6 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class FileBackedStorageSystem extends AbstractStorageSystem {
-  private final Path dataPath;
 
   private final EventBus eventBus;
   private final TrackingReorgEventChannel reorgEventChannel;
@@ -40,21 +39,33 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
 
   private final CombinedChainDataClient combinedChainDataClient;
   private final Database database;
+  private final RestartedStorageSupplier restartedSupplier;
 
   public FileBackedStorageSystem(
-      final Path dataPath,
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
       final Database database,
       final RecentChainData recentChainData,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final RestartedStorageSupplier restartedSupplier) {
     super(recentChainData);
 
-    this.dataPath = dataPath;
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
     this.database = database;
     this.combinedChainDataClient = combinedChainDataClient;
+    this.restartedSupplier = restartedSupplier;
+  }
+
+  public static StorageSystem createV4StorageSystem(
+      final Path hotDir, final Path archiveDir, final StateStorageMode storageMode) {
+    final Database database =
+        RocksDbDatabase.createV4(
+            new StubMetricsSystem(),
+            RocksDbConfiguration.withDataDirectory(hotDir),
+            RocksDbConfiguration.withDataDirectory(archiveDir),
+            storageMode);
+    return create(database, (mode) -> createV4StorageSystem(hotDir, archiveDir, mode));
   }
 
   public static StorageSystem createV3StorageSystem(
@@ -63,7 +74,11 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
         RocksDbConfiguration.withDataDirectory(dataPath);
     final Database database =
         RocksDbDatabase.createV3(new StubMetricsSystem(), rocksDbConfiguration, storageMode);
+    return create(database, (mode) -> createV3StorageSystem(dataPath, mode));
+  }
 
+  private static StorageSystem create(
+      final Database database, final RestartedStorageSupplier restartedSupplier) {
     final EventBus eventBus = new EventBus();
 
     // Create and start storage server
@@ -88,7 +103,12 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
 
     // Return storage system
     return new FileBackedStorageSystem(
-        dataPath, eventBus, reorgEventChannel, database, recentChainData, combinedChainDataClient);
+        eventBus,
+        reorgEventChannel,
+        database,
+        recentChainData,
+        combinedChainDataClient,
+        restartedSupplier);
   }
 
   @Override
@@ -108,7 +128,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    return createV3StorageSystem(dataPath, storageMode);
+    return restartedSupplier.restart(storageMode);
   }
 
   @Override

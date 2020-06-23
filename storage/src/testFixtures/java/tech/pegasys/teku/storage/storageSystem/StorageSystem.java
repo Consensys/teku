@@ -45,4 +45,8 @@ public interface StorageSystem extends AutoCloseable {
   ChainBuilder chainBuilder();
 
   ChainUpdater chainUpdater();
+
+  interface RestartedStorageSupplier {
+    StorageSystem restart(final StateStorageMode storageMode);
+  }
 }
