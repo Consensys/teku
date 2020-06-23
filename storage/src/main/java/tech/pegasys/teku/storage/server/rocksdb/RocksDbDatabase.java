@@ -43,7 +43,11 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao.F
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao.HotUpdater;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V3RocksDbDao;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4FinalizedRocksDbDao;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.store.StoreFactory;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -65,12 +69,34 @@ public class RocksDbDatabase implements Database {
     return createV3(metricsSystem, db, stateStorageMode);
   }
 
+  public static Database createV4(
+      final MetricsSystem metricsSystem,
+      final RocksDbConfiguration hotConfiguration,
+      final RocksDbConfiguration finalizedConfiguration,
+      final StateStorageMode stateStorageMode) {
+    final RocksDbAccessor hotDb =
+        RocksDbInstanceFactory.create(hotConfiguration, V4SchemaHot.class);
+    final RocksDbAccessor finalizedDb =
+        RocksDbInstanceFactory.create(finalizedConfiguration, V4SchemaFinalized.class);
+    return createV4(metricsSystem, hotDb, finalizedDb, stateStorageMode);
+  }
+
   static Database createV3(
       final MetricsSystem metricsSystem,
       final RocksDbAccessor db,
       final StateStorageMode stateStorageMode) {
     final V3RocksDbDao dao = new V3RocksDbDao(db);
     return new RocksDbDatabase(metricsSystem, dao, dao, dao, stateStorageMode);
+  }
+
+  static Database createV4(
+      final MetricsSystem metricsSystem,
+      final RocksDbAccessor hotDb,
+      final RocksDbAccessor finalizedDb,
+      final StateStorageMode stateStorageMode) {
+    final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb);
+    final V4FinalizedRocksDbDao finalizedDbDao = new V4FinalizedRocksDbDao(finalizedDb);
+    return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, stateStorageMode);
   }
 
   private RocksDbDatabase(
@@ -216,6 +242,8 @@ public class RocksDbDatabase implements Database {
   @Override
   public void close() throws Exception {
     hotDao.close();
+    eth1Dao.close();
+    finalizedDao.close();
   }
 
   private void doUpdate(final StorageUpdate update) {
