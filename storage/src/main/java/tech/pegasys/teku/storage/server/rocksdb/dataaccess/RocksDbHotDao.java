@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -42,6 +43,8 @@ public interface RocksDbHotDao extends AutoCloseable {
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root);
 
   Map<Bytes32, SignedBeaconBlock> getHotBlocks();
+
+  Stream<SignedBeaconBlock> streamHotBlocks();
 
   Map<Checkpoint, BeaconState> getCheckpointStates();
 

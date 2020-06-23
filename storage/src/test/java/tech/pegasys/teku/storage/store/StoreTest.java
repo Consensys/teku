@@ -54,15 +54,14 @@ class StoreTest {
         new Store(
             new StubMetricsSystem(),
             BlockProvider.NOOP,
-            StateProviderFactory.createFromBlocks(genesis, List.of(genesis.getBlock())),
             genesis.getState().getGenesis_time(),
             genesis.getState().getGenesis_time(),
             genesisCheckpoint,
             genesisCheckpoint,
             genesisCheckpoint,
-            Map.of(genesis.getRoot(), genesis.getBlock()),
+            Map.of(genesis.getRoot(), genesis.getParentRoot()),
             Map.of(genesisCheckpoint, genesis.getState()),
-            genesis.getState(),
+            genesis,
             Collections.emptyMap(),
             pruningOptions);
 

@@ -238,6 +238,7 @@ class StoreTransactionUpdates {
     store.blocks.putAll(hotBlocks);
     store.block_states.putAll(hotStates);
     store.checkpoint_states.putAll(checkpointStates);
+    // TODO - update Store.blockTree
 
     // Update finalized data
     finalizedChainData.ifPresent(

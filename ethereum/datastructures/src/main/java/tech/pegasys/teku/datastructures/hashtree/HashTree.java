@@ -98,8 +98,8 @@ public class HashTree {
   }
 
   /**
-   * Accumulate the list of roots from the provided head hash up to the root hash.
-   * Stops accumulating roots when {@code shouldContinue} returns false.
+   * Accumulate the list of roots from the provided head hash up to the root hash. Stops
+   * accumulating roots when {@code shouldContinue} returns false.
    *
    * @param headRoot The root defining the head of the chain to construct
    * @param shouldContinue The condition determining when to stop collecting ancestor roots
@@ -212,15 +212,6 @@ public class HashTree {
       checkNotNull(rootBlockHash);
       this.rootHash = rootBlockHash;
       return this;
-    }
-
-    public Builder childAndParentRoots(final List<HashLink> hashLink) {
-      hashLink.forEach(this::childAndParentRoots);
-      return this;
-    }
-
-    public Builder childAndParentRoots(final HashLink hashLink) {
-      return childAndParentRoots(hashLink.getChildHash(), hashLink.getParentHash());
     }
 
     public Builder childAndParentRoots(final Bytes32 childRoot, final Bytes32 parentRoot) {

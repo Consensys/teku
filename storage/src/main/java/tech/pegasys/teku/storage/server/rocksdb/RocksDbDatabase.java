@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -177,16 +178,22 @@ public class RocksDbDatabase implements Database {
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = hotDao.getLatestFinalizedState().orElseThrow();
 
-    final Map<Bytes32, SignedBeaconBlock> hotBlocksByRoot = hotDao.getHotBlocks();
     final Map<Checkpoint, BeaconState> checkpointStates = hotDao.getCheckpointStates();
     final Map<UnsignedLong, VoteTracker> votes = hotDao.getVotes();
 
+    // Build child-parent lookup
+    final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
+    hotDao.streamHotBlocks().forEach(b -> childToParentLookup.put(b.getRoot(), b.getParent_root()));
+
     // Validate finalized data is consistent and available
-    final SignedBeaconBlock finalizedBlock = hotBlocksByRoot.get(finalizedCheckpoint.getRoot());
+    final SignedBeaconBlock finalizedBlock =
+        hotDao.getHotBlock(finalizedCheckpoint.getRoot()).orElse(null);
     checkNotNull(finalizedBlock);
     checkState(
         finalizedBlock.getMessage().getState_root().equals(finalizedState.hash_tree_root()),
         "Latest finalized state does not match latest finalized block");
+    final SignedBlockAndState latestFinalized =
+        new SignedBlockAndState(finalizedBlock, finalizedState);
 
     return Optional.of(
         StoreBuilder.create()
@@ -196,9 +203,9 @@ public class RocksDbDatabase implements Database {
             .finalized_checkpoint(finalizedCheckpoint)
             .justified_checkpoint(justifiedCheckpoint)
             .best_justified_checkpoint(bestJustifiedCheckpoint)
-            .blocks(hotBlocksByRoot)
+            .childToParentMap(childToParentLookup)
             .checkpoint_states(checkpointStates)
-            .latestFinalizedBlockState(finalizedState)
+            .latestFinalized(latestFinalized)
             .votes(votes));
   }
 
