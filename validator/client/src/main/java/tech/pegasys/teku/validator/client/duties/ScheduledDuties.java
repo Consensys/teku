@@ -46,10 +46,12 @@ public class ScheduledDuties {
       final UnsignedLong slot,
       final Validator validator,
       final int attestationCommitteeIndex,
-      final int attestationCommitteePosition) {
+      final int attestationCommitteePosition,
+      final int validatorIndex) {
     return attestationProductionDuties
         .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
-        .addValidator(validator, attestationCommitteeIndex, attestationCommitteePosition);
+        .addValidator(
+            validator, attestationCommitteeIndex, attestationCommitteePosition, validatorIndex);
   }
 
   public synchronized void scheduleAggregationDuties(

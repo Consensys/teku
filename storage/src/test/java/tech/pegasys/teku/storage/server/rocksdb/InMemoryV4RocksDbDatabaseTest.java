@@ -14,41 +14,15 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryV4RocksDbDatabaseTest extends V4RocksDbDatabaseTest {
-  private final Map<File, MockRocksDbInstance> existingDatabaseInstances = new HashMap<>();
 
   @Override
-  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
-    final RocksDbAccessor hotDb =
-        existingDatabaseInstances.compute(
-            new File(tempDir, "db"),
-            (__, existingDb) -> {
-              if (existingDb == null) {
-                return MockRocksDbInstance.createEmpty(V4SchemaHot.class);
-              } else {
-                return existingDb.reopen();
-              }
-            });
-    final RocksDbAccessor finalizedDb =
-        existingDatabaseInstances.compute(
-            new File(tempDir, "archive"),
-            (__, existingDb) -> {
-              if (existingDb == null) {
-                return MockRocksDbInstance.createEmpty(V4SchemaFinalized.class);
-              } else {
-                return existingDb.reopen();
-              }
-            });
-    return RocksDbDatabase.createV4(new StubMetricsSystem(), hotDb, finalizedDb, storageMode, 1L);
+  protected StorageSystem createStorageSystem(
+      final File tempDir, final StateStorageMode storageMode) {
+    return InMemoryStorageSystem.createEmptyV4StorageSystem(storageMode, 1L);
   }
 }

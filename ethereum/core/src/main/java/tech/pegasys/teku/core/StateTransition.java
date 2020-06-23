@@ -47,7 +47,7 @@ public class StateTransition {
     this(createDefaultBlockValidator());
   }
 
-  private StateTransition(BlockValidator blockValidator) {
+  public StateTransition(BlockValidator blockValidator) {
     this.blockValidator = blockValidator;
   }
 

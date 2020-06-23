@@ -60,11 +60,14 @@ public class AttestationProductionDuty implements Duty {
    * @return a future which will be completed with the unsigned attestation for the committee.
    */
   public SafeFuture<Optional<Attestation>> addValidator(
-      final Validator validator, final int attestationCommitteeIndex, final int committeePosition) {
+      final Validator validator,
+      final int attestationCommitteeIndex,
+      final int committeePosition,
+      final int validatorIndex) {
     final Committee committee =
         validatorsByCommitteeIndex.computeIfAbsent(
             attestationCommitteeIndex, key -> new Committee());
-    committee.addValidator(validator, committeePosition);
+    committee.addValidator(validator, committeePosition, validatorIndex);
     return committee.attestationFuture;
   }
 
@@ -122,18 +125,21 @@ public class AttestationProductionDuty implements Duty {
   private SafeFuture<DutyResult> signAttestationForValidator(
       final ForkInfo forkInfo,
       final Attestation attestation,
-      final ValidatorWithCommitteePosition validator) {
+      final ValidatorWithCommitteePositionAndIndex validator) {
     return validator
         .getSigner()
         .signAttestationData(attestation.getData(), forkInfo)
         .thenApply(signature -> createSignedAttestation(attestation, validator, signature))
-        .thenAccept(validatorApiChannel::sendSignedAttestation)
+        .thenAccept(
+            signedAttestation ->
+                validatorApiChannel.sendSignedAttestation(
+                    signedAttestation, Optional.of(validator.getValidatorIndex())))
         .thenApply(__ -> DutyResult.success(attestation.getData().getBeacon_block_root()));
   }
 
   private Attestation createSignedAttestation(
       final Attestation attestation,
-      final ValidatorWithCommitteePosition validator,
+      final ValidatorWithCommitteePositionAndIndex validator,
       final BLSSignature signature) {
     final Bitlist aggregationBits = new Bitlist(attestation.getAggregation_bits());
     aggregationBits.setBit(validator.getCommitteePosition());
@@ -141,26 +147,31 @@ public class AttestationProductionDuty implements Duty {
   }
 
   private static class Committee {
-    private final List<ValidatorWithCommitteePosition> validators = new ArrayList<>();
+    private final List<ValidatorWithCommitteePositionAndIndex> validators = new ArrayList<>();
     private final SafeFuture<Optional<Attestation>> attestationFuture = new SafeFuture<>();
 
-    public synchronized void addValidator(final Validator validator, final int committeePosition) {
-      validators.add(new ValidatorWithCommitteePosition(validator, committeePosition));
+    public synchronized void addValidator(
+        final Validator validator, final int committeePosition, final int validatorIndex) {
+      validators.add(
+          new ValidatorWithCommitteePositionAndIndex(validator, committeePosition, validatorIndex));
     }
 
     public synchronized <T> List<SafeFuture<T>> forEach(
-        final Function<ValidatorWithCommitteePosition, SafeFuture<T>> action) {
+        final Function<ValidatorWithCommitteePositionAndIndex, SafeFuture<T>> action) {
       return validators.stream().map(action).collect(toList());
     }
   }
 
-  private static class ValidatorWithCommitteePosition {
+  private static class ValidatorWithCommitteePositionAndIndex {
     private final Validator validator;
     private final int committeePosition;
+    private final int validatorIndex;
 
-    private ValidatorWithCommitteePosition(final Validator validator, final int committeePosition) {
+    private ValidatorWithCommitteePositionAndIndex(
+        final Validator validator, final int committeePosition, final int validatorIndex) {
       this.validator = validator;
       this.committeePosition = committeePosition;
+      this.validatorIndex = validatorIndex;
     }
 
     public Signer getSigner() {
@@ -169,6 +180,10 @@ public class AttestationProductionDuty implements Duty {
 
     public int getCommitteePosition() {
       return committeePosition;
+    }
+
+    public int getValidatorIndex() {
+      return validatorIndex;
     }
   }
 }

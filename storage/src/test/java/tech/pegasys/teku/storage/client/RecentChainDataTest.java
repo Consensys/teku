@@ -39,8 +39,9 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.storage.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.EventSink;
 import tech.pegasys.teku.util.config.Constants;
@@ -55,9 +56,9 @@ class RecentChainDataTest {
   private final BeaconState genesisState = genesis.getState();
   private final BeaconBlock genesisBlock = genesis.getBlock().getMessage();
 
-  private final InMemoryStorageSystem storageSystem =
+  private final StorageSystem storageSystem =
       InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.PRUNE);
-  private final InMemoryStorageSystem preGenesisStorageSystem =
+  private final StorageSystem preGenesisStorageSystem =
       InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.PRUNE);
 
   private final RecentChainData storageClient = storageSystem.recentChainData();
