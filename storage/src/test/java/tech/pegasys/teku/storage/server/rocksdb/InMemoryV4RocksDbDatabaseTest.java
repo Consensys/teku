@@ -23,6 +23,6 @@ public class InMemoryV4RocksDbDatabaseTest extends V4RocksDbDatabaseTest {
   @Override
   protected StorageSystem createStorageSystem(
       final File tempDir, final StateStorageMode storageMode) {
-    return InMemoryStorageSystem.createEmptyV4StorageSystem(storageMode);
+    return InMemoryStorageSystem.createEmptyV4StorageSystem(storageMode, 1L);
   }
 }

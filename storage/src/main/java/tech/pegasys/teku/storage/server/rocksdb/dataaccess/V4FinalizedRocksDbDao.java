@@ -24,9 +24,11 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 
 public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   private final RocksDbAccessor db;
+  private final UnsignedLong stateStorageFrequency;
 
-  public V4FinalizedRocksDbDao(final RocksDbAccessor db) {
+  public V4FinalizedRocksDbDao(final RocksDbAccessor db, final long stateStorageFrequency) {
     this.db = db;
+    this.stateStorageFrequency = UnsignedLong.valueOf(stateStorageFrequency);
   }
 
   @Override
@@ -57,14 +59,16 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
 
   @Override
   public FinalizedUpdater finalizedUpdater() {
-    return new V4FinalizedRocksDbDao.V4FinalizedUpdater(db);
+    return new V4FinalizedRocksDbDao.V4FinalizedUpdater(db, stateStorageFrequency);
   }
 
   private static class V4FinalizedUpdater implements FinalizedUpdater {
     private final RocksDbAccessor.RocksDbTransaction transaction;
+    private final UnsignedLong stateStorageFrequency;
 
-    V4FinalizedUpdater(final RocksDbAccessor db) {
+    V4FinalizedUpdater(final RocksDbAccessor db, final UnsignedLong stateStorageFrequency) {
       this.transaction = db.startTransaction();
+      this.stateStorageFrequency = stateStorageFrequency;
     }
 
     @Override
@@ -76,7 +80,9 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
 
     @Override
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
-      transaction.put(V4SchemaFinalized.FINALIZED_STATES_BY_ROOT, blockRoot, state);
+      if (state.getSlot().mod(stateStorageFrequency).equals(UnsignedLong.ZERO)) {
+        transaction.put(V4SchemaFinalized.FINALIZED_STATES_BY_ROOT, blockRoot, state);
+      }
     }
 
     @Override

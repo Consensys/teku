@@ -58,14 +58,19 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
   }
 
   public static StorageSystem createV4StorageSystem(
-      final Path hotDir, final Path archiveDir, final StateStorageMode storageMode) {
+      final Path hotDir,
+      final Path archiveDir,
+      final StateStorageMode storageMode,
+      final long stateStorageFrequency) {
     final Database database =
         RocksDbDatabase.createV4(
             new StubMetricsSystem(),
             RocksDbConfiguration.withDataDirectory(hotDir),
             RocksDbConfiguration.withDataDirectory(archiveDir),
-            storageMode);
-    return create(database, (mode) -> createV4StorageSystem(hotDir, archiveDir, mode));
+            storageMode,
+            stateStorageFrequency);
+    return create(
+        database, (mode) -> createV4StorageSystem(hotDir, archiveDir, mode, stateStorageFrequency));
   }
 
   public static StorageSystem createV3StorageSystem(
