@@ -130,7 +130,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
     }
     try (final Stream<SignedBeaconBlock> blocks =
         database.streamFinalizedBlocks(state.getSlot().plus(ONE), slot)) {
-      return StreamingStateRegenerator.regenerate(state, slot, blocks);
+      return StreamingStateRegenerator.regenerate(state, blocks);
     }
   }
 }

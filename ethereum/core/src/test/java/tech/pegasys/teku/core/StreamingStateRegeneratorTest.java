@@ -45,30 +45,7 @@ class StreamingStateRegeneratorTest {
     final BeaconState result =
         StreamingStateRegenerator.regenerate(
             genesis.getState(),
-            lastBlockAndState.getSlot(),
             newBlocksAndStates.stream().map(SignedBlockAndState::getBlock));
     assertThat(result).isEqualTo(lastBlockAndState.getState());
-  }
-
-  @Test
-  void shouldProcessSkippedSlotsAfterLastBlock() throws Exception {
-    // Build a small chain
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    chainBuilder.generateBlocksUpToSlot(10);
-    final List<SignedBlockAndState> newBlocksAndStates =
-        chainBuilder
-            .streamBlocksAndStates(
-                genesis.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
-            .collect(Collectors.toList());
-
-    final UnsignedLong targetSlot = UnsignedLong.valueOf(14);
-    final BeaconState expectedState = chainBuilder.generateStateAtSlot(targetSlot);
-
-    final BeaconState result =
-        StreamingStateRegenerator.regenerate(
-            genesis.getState(),
-            targetSlot,
-            newBlocksAndStates.stream().map(SignedBlockAndState::getBlock));
-    assertThat(result).isEqualTo(expectedState);
   }
 }

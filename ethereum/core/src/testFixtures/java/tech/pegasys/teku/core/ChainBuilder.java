@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.core;
 
-import static org.assertj.core.util.Preconditions.checkNotNull;
 import static org.assertj.core.util.Preconditions.checkState;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -34,8 +33,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.TestMessageSignerService;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -235,17 +232,6 @@ public class ChainBuilder {
     }
 
     return generated;
-  }
-
-  public BeaconState generateStateAtSlot(final UnsignedLong slot)
-      throws EpochProcessingException, SlotProcessingException {
-    final SignedBlockAndState preState =
-        checkNotNull(
-            blocks.floorEntry(slot).getValue(), "No state available before requested slot");
-    if (preState.getSlot().equals(slot)) {
-      return preState.getState();
-    }
-    return new StateTransition().process_slots(preState.getState(), slot);
   }
 
   public SignedBlockAndState generateNextBlock() throws StateTransitionException {

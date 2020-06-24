@@ -13,10 +13,7 @@
 
 package tech.pegasys.teku.core;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.stream.Stream;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
@@ -42,23 +39,11 @@ public class StreamingStateRegenerator {
     }
   }
 
-  private BeaconState processRemainingSlots(final UnsignedLong slot) {
-    if (state.getSlot().equals(slot)) {
-      return state;
-    }
-    try {
-      return stateTransition.process_slots(state, slot);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      throw new IllegalStateException("Failed to process slots when regenerating state", e);
-    }
-  }
-
   public static BeaconState regenerate(
       final BeaconState initialState,
-      final UnsignedLong slot,
       final Stream<SignedBeaconBlock> blocks) {
     final StreamingStateRegenerator regenerator = new StreamingStateRegenerator(initialState);
     blocks.forEach(regenerator::processBlock);
-    return regenerator.processRemainingSlots(slot);
+    return regenerator.state;
   }
 }
