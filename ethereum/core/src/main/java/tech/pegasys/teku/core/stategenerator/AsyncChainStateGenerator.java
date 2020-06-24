@@ -114,7 +114,6 @@ class AsyncChainStateGenerator {
 
   private SafeFuture<BeaconState> processBlockBatch(
       final List<Bytes32> blockRoots, final BeaconState startState, final StateHandler handler) {
-    checkArgument(blockRoots.isEmpty(), "Must provide block roots to process");
     checkArgument(startState != null, "Must provide start state");
     return blockProvider
         .getBlocks(blockRoots)
