@@ -131,11 +131,11 @@ public class RocksDbInstance implements RocksDbAccessor {
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
       RocksDbColumn<K, V> column,
       Consumer<RocksIterator> setupIterator,
-      Predicate<K> limitReachedTest) {
+      Predicate<K> continueTest) {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
-    return RocksDbIterator.create(column, rocksDbIterator, limitReachedTest).toStream();
+    return RocksDbIterator.create(column, rocksDbIterator, continueTest).toStream();
   }
 
   @Override

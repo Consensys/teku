@@ -47,8 +47,8 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   public static <K, V> RocksDbIterator<K, V> create(
       final RocksDbColumn<K, V> column,
       final RocksIterator rocksIt,
-      final Predicate<K> limitReachedTest) {
-    return new RocksDbIterator<>(column, rocksIt, limitReachedTest);
+      final Predicate<K> continueTest) {
+    return new RocksDbIterator<>(column, rocksIt, continueTest);
   }
 
   @Override
