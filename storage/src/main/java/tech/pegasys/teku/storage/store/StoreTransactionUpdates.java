@@ -173,9 +173,7 @@ class StoreTransactionUpdates {
       final Store baseStore, Transaction tx, final HashTree prunedTree) {
 
     Set<Bytes32> roots =
-        baseStore
-            .blockTree
-            .preOrderStream()
+        baseStore.blockTree.getAllRoots().stream()
             .filter(root -> !prunedTree.containsBlock(root))
             .collect(Collectors.toSet());
 

@@ -199,12 +199,12 @@ public class RocksDbDatabase implements Database {
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
             .time(UnsignedLong.valueOf(Instant.now().getEpochSecond()))
-            .genesis_time(genesisTime)
-            .finalized_checkpoint(finalizedCheckpoint)
-            .justified_checkpoint(justifiedCheckpoint)
-            .best_justified_checkpoint(bestJustifiedCheckpoint)
+            .genesisTime(genesisTime)
+            .finalizedCheckpoint(finalizedCheckpoint)
+            .justifiedCheckpoint(justifiedCheckpoint)
+            .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
             .childToParentMap(childToParentLookup)
-            .checkpoint_states(checkpointStates)
+            .checkpointStates(checkpointStates)
             .latestFinalized(latestFinalized)
             .votes(votes));
   }

@@ -31,7 +31,8 @@ public interface StorageQueryChannel {
   SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot);
 
   /**
-   * Returns latest finalized block or any known blocks that descend from the latest finalized block
+   * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest
+   * finalized block
    *
    * @param blockRoots The roots of blocks to look up
    * @return A map from root too block of any found blocks

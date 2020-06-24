@@ -38,11 +38,11 @@ public class StoreBuilder {
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
   UnsignedLong time;
-  UnsignedLong genesis_time;
-  Checkpoint justified_checkpoint;
-  Checkpoint finalized_checkpoint;
-  Checkpoint best_justified_checkpoint;
-  Map<Checkpoint, BeaconState> checkpoint_states;
+  UnsignedLong genesisTime;
+  Checkpoint justifiedCheckpoint;
+  Checkpoint finalizedCheckpoint;
+  Checkpoint bestJustifiedCheckpoint;
+  Map<Checkpoint, BeaconState> checkpointStates;
   SignedBlockAndState latestFinalized;
   Map<UnsignedLong, VoteTracker> votes;
 
@@ -75,22 +75,22 @@ public class StoreBuilder {
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
-    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
     Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
 
     childToParentMap.put(anchorRoot, anchorBlock.getParent_root());
-    checkpoint_states.put(anchorCheckpoint, anchorState);
+    checkpointStates.put(anchorCheckpoint, anchorState);
 
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
         .time(time)
-        .genesis_time(anchorState.getGenesis_time())
-        .finalized_checkpoint(anchorCheckpoint)
-        .justified_checkpoint(anchorCheckpoint)
-        .best_justified_checkpoint(anchorCheckpoint)
+        .genesisTime(anchorState.getGenesis_time())
+        .finalizedCheckpoint(anchorCheckpoint)
+        .justifiedCheckpoint(anchorCheckpoint)
+        .bestJustifiedCheckpoint(anchorCheckpoint)
         .childToParentMap(childToParentMap)
-        .checkpoint_states(checkpoint_states)
+        .checkpointStates(checkpointStates)
         .latestFinalized(new SignedBlockAndState(signedAnchorBlock, anchorState))
         .votes(votes);
   }
@@ -101,12 +101,12 @@ public class StoreBuilder {
         metricsSystem,
         blockProvider,
         time,
-        genesis_time,
-        justified_checkpoint,
-        finalized_checkpoint,
-        best_justified_checkpoint,
+        genesisTime,
+        justifiedCheckpoint,
+        finalizedCheckpoint,
+        bestJustifiedCheckpoint,
         childToParentRoot,
-        checkpoint_states,
+        checkpointStates,
         latestFinalized,
         votes,
         StorePruningOptions.createDefault());
@@ -116,12 +116,12 @@ public class StoreBuilder {
     checkState(metricsSystem != null, "Metrics system must be defined");
     checkState(blockProvider != null, "Block provider must be defined");
     checkState(time != null, "Time must be defined");
-    checkState(genesis_time != null, "Genesis time must be defined");
-    checkState(justified_checkpoint != null, "Justified checkpoint must be defined");
-    checkState(finalized_checkpoint != null, "Finalized checkpoint must be defined");
-    checkState(best_justified_checkpoint != null, "Best justified checkpoint must be defined");
+    checkState(genesisTime != null, "Genesis time must be defined");
+    checkState(justifiedCheckpoint != null, "Justified checkpoint must be defined");
+    checkState(finalizedCheckpoint != null, "Finalized checkpoint must be defined");
+    checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
     checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
-    checkState(checkpoint_states != null, "Checkpoint states must be defined");
+    checkState(checkpointStates != null, "Checkpoint states must be defined");
     checkState(latestFinalized != null, "Latest finalized block state must be defined");
     checkState(votes != null, "Votes must be defined");
   }
@@ -144,27 +144,27 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder genesis_time(final UnsignedLong genesis_time) {
-    checkNotNull(genesis_time);
-    this.genesis_time = genesis_time;
+  public StoreBuilder genesisTime(final UnsignedLong genesisTime) {
+    checkNotNull(genesisTime);
+    this.genesisTime = genesisTime;
     return this;
   }
 
-  public StoreBuilder justified_checkpoint(final Checkpoint justified_checkpoint) {
-    checkNotNull(justified_checkpoint);
-    this.justified_checkpoint = justified_checkpoint;
+  public StoreBuilder justifiedCheckpoint(final Checkpoint justifiedCheckpoint) {
+    checkNotNull(justifiedCheckpoint);
+    this.justifiedCheckpoint = justifiedCheckpoint;
     return this;
   }
 
-  public StoreBuilder finalized_checkpoint(final Checkpoint finalized_checkpoint) {
-    checkNotNull(finalized_checkpoint);
-    this.finalized_checkpoint = finalized_checkpoint;
+  public StoreBuilder finalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
+    checkNotNull(finalizedCheckpoint);
+    this.finalizedCheckpoint = finalizedCheckpoint;
     return this;
   }
 
-  public StoreBuilder best_justified_checkpoint(final Checkpoint best_justified_checkpoint) {
-    checkNotNull(best_justified_checkpoint);
-    this.best_justified_checkpoint = best_justified_checkpoint;
+  public StoreBuilder bestJustifiedCheckpoint(final Checkpoint bestJustifiedCheckpoint) {
+    checkNotNull(bestJustifiedCheckpoint);
+    this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     return this;
   }
 
@@ -174,9 +174,9 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder checkpoint_states(final Map<Checkpoint, BeaconState> checkpoint_states) {
-    checkNotNull(checkpoint_states);
-    this.checkpoint_states = checkpoint_states;
+  public StoreBuilder checkpointStates(final Map<Checkpoint, BeaconState> checkpointStates) {
+    checkNotNull(checkpointStates);
+    this.checkpointStates = checkpointStates;
     return this;
   }
 

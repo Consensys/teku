@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
@@ -60,12 +59,6 @@ class ChainStateGenerator {
       final BeaconState baseState,
       final boolean skipValidation) {
     return new ChainStateGenerator(chain, baseState, skipValidation);
-  }
-
-  public BeaconState generateFinalState() {
-    final AtomicReference<BeaconState> lastState = new AtomicReference<>(null);
-    generateStates((__, state) -> lastState.set(state));
-    return lastState.get();
   }
 
   public void generateStates(final StateHandler handler) {

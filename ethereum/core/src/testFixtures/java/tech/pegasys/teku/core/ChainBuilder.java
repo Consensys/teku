@@ -54,7 +54,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
 public class ChainBuilder {
-  protected static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
+  private static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
       BLSKeyGenerator.generateKeyPairs(3);
 
   private final List<BLSKeyPair> validatorKeys;

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Objects;
@@ -77,39 +79,43 @@ class AsyncChainStateGenerator {
   }
 
   public SafeFuture<?> generateStates(final Bytes32 targetRoot, final StateHandler handler) {
-    // Build chain from target root to the first ancestor with a known state
-    final AtomicReference<BeaconState> baseState = new AtomicReference<>(null);
-    final List<Bytes32> chain =
-        blockTree.collectChainRoots(
-            targetRoot,
-            (currentRoot) -> {
-              stateProvider.getState(currentRoot).ifPresent(baseState::set);
-              return baseState.get() == null;
-            });
+    return SafeFuture.of(
+        () -> {
+          // Build chain from target root to the first ancestor with a known state
+          final AtomicReference<BeaconState> baseState = new AtomicReference<>(null);
+          final List<Bytes32> chain =
+              blockTree.collectChainRoots(
+                  targetRoot,
+                  (currentRoot) -> {
+                    stateProvider.getState(currentRoot).ifPresent(baseState::set);
+                    return baseState.get() == null;
+                  });
 
-    if (baseState.get() == null) {
-      return SafeFuture.failedFuture(
-          new IllegalArgumentException("Unable to find base state to build on"));
-    }
+          if (baseState.get() == null) {
+            throw new IllegalArgumentException("Unable to find base state to build on");
+          }
 
-    if (chain.size() == 0) {
-      throw new IllegalStateException("Failed to retrieve chain");
-    }
+          if (chain.size() == 0) {
+            throw new IllegalStateException("Failed to retrieve chain");
+          }
 
-    // Process chain in batches
-    final List<List<Bytes32>> blockBatches = Lists.partition(chain, blockBatchSize);
-    // Request and process each batch of blocks in order
-    SafeFuture<BeaconState> future =
-        processBlockBatch(blockBatches.get(0), baseState.get(), handler);
-    for (int i = 1; i < blockBatches.size(); i++) {
-      final List<Bytes32> blockBatch = blockBatches.get(i);
-      future = future.thenCompose(state -> processBlockBatch(blockBatch, state, handler));
-    }
-    return future;
+          // Process chain in batches
+          final List<List<Bytes32>> blockBatches = Lists.partition(chain, blockBatchSize);
+          // Request and process each batch of blocks in order
+          SafeFuture<BeaconState> future =
+              processBlockBatch(blockBatches.get(0), baseState.get(), handler);
+          for (int i = 1; i < blockBatches.size(); i++) {
+            final List<Bytes32> blockBatch = blockBatches.get(i);
+            future = future.thenCompose(state -> processBlockBatch(blockBatch, state, handler));
+          }
+          return future;
+        });
   }
 
   private SafeFuture<BeaconState> processBlockBatch(
       final List<Bytes32> blockRoots, final BeaconState startState, final StateHandler handler) {
+    checkArgument(blockRoots.isEmpty(), "Must provide block roots to process");
+    checkArgument(startState != null, "Must provide start state");
     return blockProvider
         .getBlocks(blockRoots)
         .thenApply(

@@ -24,13 +24,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,7 +52,6 @@ import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategyUpdater;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.collections.LimitedMap;
 
@@ -124,9 +121,9 @@ class Store implements UpdatableStore {
         LimitedMap.create(
             pruningOptions.getBlockCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     this.block_states =
-        ConcurrentLimitedMap.create(
+        LimitedMap.create(
             pruningOptions.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
+    this.checkpoint_states = checkpoint_states;
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
@@ -135,7 +132,7 @@ class Store implements UpdatableStore {
 
     // Track latest finalized block
     this.finalizedBlockAndState = finalizedBlockAndState;
-    block_states.put(finalizedBlockAndState.getRoot(), finalizedBlockAndState.getState());
+    putBlockState(finalizedBlockAndState.getRoot(), finalizedBlockAndState.getState());
 
     forkChoiceState =
         ProtoArrayForkChoiceStrategy.create(votes, finalized_checkpoint, justified_checkpoint);
@@ -165,8 +162,8 @@ class Store implements UpdatableStore {
               if (processed % 100 == 0) {
                 LOG.info("Processed {} blocks", processed);
               }
-              this.blocks.put(block.getRoot(), block);
-              this.block_states.put(block.getRoot(), state);
+              putBlock(block);
+              putBlockState(block.getRoot(), state);
             })
         .join();
     forkChoiceUpdater.commit();
@@ -185,17 +182,17 @@ class Store implements UpdatableStore {
         TekuMetricCategory.STORAGE,
         "memory_state_count",
         "Number of beacon states held in the in-memory store",
-        block_states::size);
+        this::countStates);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.STORAGE,
         "memory_block_count",
         "Number of beacon blocks held in the in-memory store",
-        blocks::size);
+        this::countBlocks);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.STORAGE,
         "memory_checkpoint_state_count",
         "Number of checkpoint states held in the in-memory store",
-        checkpoint_states::size);
+        this::countCheckpointStates);
   }
 
   static void indexBlockRootsBySlot(
@@ -371,7 +368,7 @@ class Store implements UpdatableStore {
   public Set<Bytes32> getBlockRoots() {
     readLock.lock();
     try {
-      return blockTree.preOrderStream().collect(Collectors.toSet());
+      return blockTree.getAllRoots();
     } finally {
       readLock.unlock();
     }
@@ -439,7 +436,7 @@ class Store implements UpdatableStore {
         .getBlock(blockRoot)
         .thenApply(
             block -> {
-              block.ifPresent(b -> this.blocks.put(b.getRoot(), b));
+              block.ifPresent(this::putBlock);
               return block;
             });
   }
@@ -495,12 +492,12 @@ class Store implements UpdatableStore {
         .thenApply(
             regeneratedState -> {
               stateRequestRegenerateCounter.inc();
-              putState(blockRoot, regeneratedState);
+              putBlockState(blockRoot, regeneratedState);
               return Optional.of(regeneratedState);
             });
   }
 
-  private void putState(final Bytes32 blockRoot, final BeaconState state) {
+  private void putBlockState(final Bytes32 blockRoot, final BeaconState state) {
     final Lock writeLock = lock.writeLock();
     writeLock.lock();
     try {
@@ -509,6 +506,45 @@ class Store implements UpdatableStore {
       }
     } finally {
       writeLock.unlock();
+    }
+  }
+
+  private void putBlock(final SignedBeaconBlock block) {
+    final Lock writeLock = lock.writeLock();
+    writeLock.lock();
+    try {
+      if (containsBlock(block.getRoot())) {
+        blocks.put(block.getRoot(), block);
+      }
+    } finally {
+      writeLock.unlock();
+    }
+  }
+
+  private int countBlocks() {
+    readLock.lock();
+    try {
+      return blocks.size();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  private int countStates() {
+    readLock.lock();
+    try {
+      return block_states.size();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  private int countCheckpointStates() {
+    readLock.lock();
+    try {
+      return checkpoint_states.size();
+    } finally {
+      readLock.unlock();
     }
   }
 

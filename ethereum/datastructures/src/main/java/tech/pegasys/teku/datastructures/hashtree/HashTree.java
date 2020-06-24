@@ -94,29 +94,33 @@ public class HashTree {
     return Optional.ofNullable(childToParent.get(childRoot));
   }
 
+  public Set<Bytes32> getAllRoots() {
+    return new HashSet<>(childToParent.keySet());
+  }
+
   /**
-   * Process each node in the chain defined by {@code headRoot}
+   * Process each node in the chain defined by {@code head}
    *
-   * @param headRoot The root defining the head of the chain to process
+   * @param head The root defining the head of the chain to process
    * @param processor The callback to invoke for each child-parent pair
    */
-  public void processHashesInChain(final Bytes32 headRoot, NodeProcessor processor) {
-    processChainNodes(headRoot, HaltableNodeProcessor.fromNodeProcessor(processor));
+  public void processHashesInChain(final Bytes32 head, NodeProcessor processor) {
+    processChainNodes(head, HaltableNodeProcessor.fromNodeProcessor(processor));
   }
 
   /**
    * Accumulate the list of roots from the provided head hash up to the root hash. Stops
    * accumulating roots when {@code shouldContinue} returns false.
    *
-   * @param headRoot The root defining the head of the chain to construct
+   * @param head The root defining the head of the chain to construct
    * @param shouldContinue The condition determining when to stop collecting ancestor roots
-   * @return A list of roots in ascending order belonging to the chain defined by {@code headRoot}
+   * @return A list of roots in ascending order belonging to the chain defined by {@code head}
    */
   public List<Bytes32> collectChainRoots(
-      final Bytes32 headRoot, Function<Bytes32, Boolean> shouldContinue) {
+      final Bytes32 head, Function<Bytes32, Boolean> shouldContinue) {
     final Deque<Bytes32> chain = new ArrayDeque<>();
     processChainNodes(
-        headRoot,
+        head,
         (child, parent) -> {
           chain.addFirst(child);
           return shouldContinue.apply(child);
@@ -124,10 +128,10 @@ public class HashTree {
     return new ArrayList<>(chain);
   }
 
-  private void processChainNodes(final Bytes32 headRoot, HaltableNodeProcessor nodeProcessor) {
-    checkArgument(containsBlock(headRoot), "Unknown root supplied: " + headRoot);
+  private void processChainNodes(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
+    checkArgument(containsBlock(head), "Unknown root supplied: " + head);
 
-    Optional<Bytes32> currentRoot = Optional.of(headRoot);
+    Optional<Bytes32> currentRoot = Optional.of(head);
     Optional<Bytes32> parentRoot = currentRoot.flatMap(this::getParent);
     while (parentRoot.isPresent()) {
       final boolean shouldContinue = nodeProcessor.process(currentRoot.get(), parentRoot.get());
