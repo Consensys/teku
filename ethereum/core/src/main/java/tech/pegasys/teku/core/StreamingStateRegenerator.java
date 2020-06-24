@@ -40,8 +40,7 @@ public class StreamingStateRegenerator {
   }
 
   public static BeaconState regenerate(
-      final BeaconState initialState,
-      final Stream<SignedBeaconBlock> blocks) {
+      final BeaconState initialState, final Stream<SignedBeaconBlock> blocks) {
     final StreamingStateRegenerator regenerator = new StreamingStateRegenerator(initialState);
     blocks.forEach(regenerator::processBlock);
     return regenerator.state;

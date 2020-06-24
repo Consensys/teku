@@ -44,8 +44,7 @@ class StreamingStateRegeneratorTest {
         newBlocksAndStates.get(newBlocksAndStates.size() - 1);
     final BeaconState result =
         StreamingStateRegenerator.regenerate(
-            genesis.getState(),
-            newBlocksAndStates.stream().map(SignedBlockAndState::getBlock));
+            genesis.getState(), newBlocksAndStates.stream().map(SignedBlockAndState::getBlock));
     assertThat(result).isEqualTo(lastBlockAndState.getState());
   }
 }
