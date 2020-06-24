@@ -647,7 +647,12 @@ public abstract class AbstractDatabaseTest {
     assertBlocksFinalized(expectedFinalizedBlocks);
     assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(expectedFinalizedBlocks);
     assertBlocksAvailableByRoot(expectedFinalizedBlocks);
-    assertFinalizedBlocksAvailableViaStream(primaryChain);
+    assertFinalizedBlocksAvailableViaStream(
+        1,
+        3,
+        primaryChain.getBlockAtSlot(1),
+        primaryChain.getBlockAtSlot(2),
+        primaryChain.getBlockAtSlot(3));
 
     switch (storageMode) {
       case ARCHIVE:
@@ -667,14 +672,12 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  private void assertFinalizedBlocksAvailableViaStream(final ChainBuilder primaryChain) {
+  protected void assertFinalizedBlocksAvailableViaStream(
+      final int fromSlot, final int toSlot, final SignedBeaconBlock... expectedBlocks) {
     try (final Stream<SignedBeaconBlock> stream =
-        database.streamFinalizedBlocks(UnsignedLong.valueOf(1), UnsignedLong.valueOf(3))) {
-      assertThat(stream)
-          .containsExactly(
-              primaryChain.getBlockAtSlot(1),
-              primaryChain.getBlockAtSlot(2),
-              primaryChain.getBlockAtSlot(3));
+        database.streamFinalizedBlocks(
+            UnsignedLong.valueOf(fromSlot), UnsignedLong.valueOf(toSlot))) {
+      assertThat(stream).containsExactly(expectedBlocks);
     }
   }
 
