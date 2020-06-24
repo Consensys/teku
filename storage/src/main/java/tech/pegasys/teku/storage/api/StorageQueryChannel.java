@@ -28,7 +28,7 @@ public interface StorageQueryChannel {
 
   SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot);
 
-  SafeFuture<Optional<BeaconState>> getFinalizedStateAtSlot(final UnsignedLong slot);
+  SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot);
 
   SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot);
 }

@@ -105,8 +105,8 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> getFinalizedStateAtSlot(final UnsignedLong slot) {
-    return SafeFuture.of(() -> getFinalizedStateAtSlotSync(slot));
+  public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot) {
+    return SafeFuture.of(() -> getLatestFinalizedStateAtSlotSync(slot));
   }
 
   @Override
@@ -115,10 +115,10 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
         () ->
             database
                 .getSlotForFinalizedBlockRoot(blockRoot)
-                .flatMap(this::getFinalizedStateAtSlotSync));
+                .flatMap(this::getLatestFinalizedStateAtSlotSync));
   }
 
-  private Optional<BeaconState> getFinalizedStateAtSlotSync(final UnsignedLong slot) {
+  private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UnsignedLong slot) {
     return database
         .getLatestAvailableFinalizedState(slot)
         .map(state -> regenerateState(slot, state));

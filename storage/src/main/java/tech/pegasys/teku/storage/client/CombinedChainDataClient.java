@@ -170,7 +170,7 @@ public class CombinedChainDataClient {
     // Fall-through to historical query in case state has moved into historical range during
     // processing
     LOG.trace("Getting state at slot {} from historical chain data", slot);
-    return historicalChainData.getFinalizedStateAtSlot(slot);
+    return historicalChainData.getLatestFinalizedStateAtSlot(slot);
   }
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
