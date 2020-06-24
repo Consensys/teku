@@ -126,6 +126,7 @@ public class MockRocksDbInstance implements RocksDbAccessor {
   @Override
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final RocksDbColumn<K, V> column, final K from, final K to) {
+    assertOpen();
     return columnData.get(column)
         .subMap(keyToBytes(column, from), true, keyToBytes(column, to), true).entrySet().stream()
         .map(e -> columnEntry(column, e));

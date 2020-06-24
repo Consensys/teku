@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.rocksdb;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -71,6 +72,15 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     database.close();
 
     assertThatThrownBy(() -> database.getSignedBlock(genesisCheckpoint.getRoot()))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocks() throws Exception {
+    database.storeGenesis(store);
+    database.close();
+
+    assertThatThrownBy(() -> database.streamFinalizedBlocks(UnsignedLong.ZERO, UnsignedLong.ONE))
         .isInstanceOf(IllegalStateException.class);
   }
 

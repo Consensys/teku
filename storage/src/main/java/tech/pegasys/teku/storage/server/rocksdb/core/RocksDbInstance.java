@@ -111,6 +111,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   @Override
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final RocksDbColumn<K, V> column, final K from, final K to) {
+    assertOpen();
     return createStream(
         column,
         iter -> iter.seek(column.getKeySerializer().serialize(from)),

@@ -668,11 +668,14 @@ public abstract class AbstractDatabaseTest {
   }
 
   private void assertFinalizedBlocksAvailableViaStream(final ChainBuilder primaryChain) {
-    assertThat(database.streamFinalizedBlocks(UnsignedLong.valueOf(1), UnsignedLong.valueOf(3)))
-        .containsExactly(
-            primaryChain.getBlockAtSlot(1),
-            primaryChain.getBlockAtSlot(2),
-            primaryChain.getBlockAtSlot(3));
+    try (final Stream<SignedBeaconBlock> stream =
+        database.streamFinalizedBlocks(UnsignedLong.valueOf(1), UnsignedLong.valueOf(3))) {
+      assertThat(stream)
+          .containsExactly(
+              primaryChain.getBlockAtSlot(1),
+              primaryChain.getBlockAtSlot(2),
+              primaryChain.getBlockAtSlot(3));
+    }
   }
 
   protected void assertFinalizedBlocksAndStatesAvailable(
