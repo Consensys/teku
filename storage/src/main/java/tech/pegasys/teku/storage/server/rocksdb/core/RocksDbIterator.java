@@ -18,6 +18,7 @@ import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.LogManager;
@@ -32,22 +33,29 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   private final RocksDbColumn<TKey, TValue> column;
   private final RocksIterator rocksIterator;
   private final AtomicBoolean closed = new AtomicBoolean(false);
+  private final Predicate<TKey> continueTest;
 
   private RocksDbIterator(
-      final RocksDbColumn<TKey, TValue> column, final RocksIterator rocksIterator) {
+      final RocksDbColumn<TKey, TValue> column,
+      final RocksIterator rocksIterator,
+      final Predicate<TKey> continueTest) {
     this.column = column;
     this.rocksIterator = rocksIterator;
+    this.continueTest = continueTest;
   }
 
   public static <K, V> RocksDbIterator<K, V> create(
-      final RocksDbColumn<K, V> column, final RocksIterator rocksIt) {
-    return new RocksDbIterator<>(column, rocksIt);
+      final RocksDbColumn<K, V> column,
+      final RocksIterator rocksIt,
+      final Predicate<K> continueTest) {
+    return new RocksDbIterator<>(column, rocksIt, continueTest);
   }
 
   @Override
   public boolean hasNext() {
     assertOpen();
-    return rocksIterator.isValid();
+    return rocksIterator.isValid()
+        && continueTest.test(column.getKeySerializer().deserialize(rocksIterator.key()));
   }
 
   @Override

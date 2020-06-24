@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.StreamingStateRegenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -28,7 +32,7 @@ import tech.pegasys.teku.util.async.SafeFuture;
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   private final EventBus eventBus;
 
-  private volatile Database database;
+  private final Database database;
   private volatile Optional<UpdatableStore> cachedStore = Optional.empty();
 
   private ChainStorage(final EventBus eventBus, final Database database) {
@@ -86,32 +90,47 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
-    Optional<SignedBeaconBlock> block =
-        database.getFinalizedRootAtSlot(slot).flatMap(database::getSignedBlock);
-    return SafeFuture.completedFuture(block);
+    return SafeFuture.of(() -> database.getFinalizedBlockAtSlot(slot));
   }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(
       final UnsignedLong slot) {
-    final Optional<SignedBeaconBlock> block =
-        database.getLatestFinalizedRootAtSlot(slot).flatMap(database::getSignedBlock);
-    return SafeFuture.completedFuture(block);
+    return SafeFuture.of(() -> database.getLatestFinalizedBlockAtSlot(slot));
   }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
-    return SafeFuture.completedFuture(database.getSignedBlock(blockRoot));
+    return SafeFuture.of(() -> database.getSignedBlock(blockRoot));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot) {
-    return SafeFuture.completedFuture(
-        database.getLatestFinalizedRootAtSlot(slot).flatMap(database::getFinalizedState));
+    return SafeFuture.of(() -> getLatestFinalizedStateAtSlotSync(slot));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
-    return SafeFuture.completedFuture(database.getFinalizedState(blockRoot));
+    return SafeFuture.of(
+        () ->
+            database
+                .getSlotForFinalizedBlockRoot(blockRoot)
+                .flatMap(this::getLatestFinalizedStateAtSlotSync));
+  }
+
+  private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UnsignedLong slot) {
+    return database
+        .getLatestAvailableFinalizedState(slot)
+        .map(state -> regenerateState(slot, state));
+  }
+
+  private BeaconState regenerateState(final UnsignedLong slot, final BeaconState state) {
+    if (state.getSlot().equals(slot)) {
+      return state;
+    }
+    try (final Stream<SignedBeaconBlock> blocks =
+        database.streamFinalizedBlocks(state.getSlot().plus(ONE), slot)) {
+      return StreamingStateRegenerator.regenerate(state, blocks);
+    }
   }
 }
