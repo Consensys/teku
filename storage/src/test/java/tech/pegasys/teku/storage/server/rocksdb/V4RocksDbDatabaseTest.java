@@ -28,6 +28,6 @@ public class V4RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     final Path dbDir = Paths.get(tempDir.getAbsolutePath(), "db");
     final Path archiveDir = Paths.get(tempDir.getAbsolutePath(), "archive");
 
-    return FileBackedStorageSystem.createV4StorageSystem(dbDir, archiveDir, storageMode);
+    return FileBackedStorageSystem.createV4StorageSystem(dbDir, archiveDir, storageMode, 1L);
   }
 }

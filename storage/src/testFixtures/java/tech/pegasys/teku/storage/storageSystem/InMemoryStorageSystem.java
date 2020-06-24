@@ -56,11 +56,12 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
     this.restartedStorageSupplier = restartedStorageSupplier;
   }
 
-  public static StorageSystem createEmptyV4StorageSystem(final StateStorageMode storageMode) {
+  public static StorageSystem createEmptyV4StorageSystem(
+      final StateStorageMode storageMode, final long stateStorageFrequency) {
 
     final MockRocksDbInstance hotDb = MockRocksDbInstance.createEmpty(V4SchemaHot.class);
     final MockRocksDbInstance coldDb = MockRocksDbInstance.createEmpty(V4SchemaFinalized.class);
-    return createV4(hotDb, coldDb, storageMode);
+    return createV4(hotDb, coldDb, storageMode, stateStorageFrequency);
   }
 
   public static StorageSystem createEmptyV3StorageSystem(final StateStorageMode storageMode) {
@@ -72,10 +73,12 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
   private static StorageSystem createV4(
       final MockRocksDbInstance hotDb,
       final MockRocksDbInstance coldDb,
-      final StateStorageMode storageMode) {
-    final Database database = InMemoryRocksDbDatabaseFactory.createV4(hotDb, coldDb, storageMode);
+      final StateStorageMode storageMode,
+      final long stateStorageFrequency) {
+    final Database database =
+        InMemoryRocksDbDatabaseFactory.createV4(hotDb, coldDb, storageMode, stateStorageFrequency);
     final RestartedStorageSupplier restartedStorageSupplier =
-        (mode) -> createV4(hotDb.reopen(), coldDb.reopen(), mode);
+        (mode) -> createV4(hotDb.reopen(), coldDb.reopen(), mode, stateStorageFrequency);
     return create(database, restartedStorageSupplier);
   }
 

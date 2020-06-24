@@ -28,8 +28,12 @@ public class InMemoryRocksDbDatabaseFactory {
   }
 
   public static Database createV4(
-      MockRocksDbInstance hotDb, MockRocksDbInstance coldDb, final StateStorageMode storageMode) {
-    return RocksDbDatabase.createV4(new StubMetricsSystem(), hotDb, coldDb, storageMode);
+      MockRocksDbInstance hotDb,
+      MockRocksDbInstance coldDb,
+      final StateStorageMode storageMode,
+      final long stateStorageFrequency) {
+    return RocksDbDatabase.createV4(
+        new StubMetricsSystem(), hotDb, coldDb, storageMode, stateStorageFrequency);
   }
 
   public static MockRocksDbInstance createEmptyV3RocksDbInstance() {

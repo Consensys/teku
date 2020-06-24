@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -41,7 +42,7 @@ public class DataOptions {
       paramLabel = "<FREQUENCY>",
       description = "Sets the frequency, in slots, at which to store archived states to disk.",
       arity = "1")
-  private long dataStorageFrequency = 2048L;
+  private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
   @Option(
       names = {"--Xdata-storage-create-db-version"},
