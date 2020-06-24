@@ -272,12 +272,11 @@ public class RocksDbDatabase implements Database {
   }
 
   private void doUpdate(final StorageUpdate update) {
-    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
-      // Update finalized blocks and states
-      putFinalizedStates(updater, update.getFinalizedBlocks(), update.getFinalizedStates());
-      update.getFinalizedBlocks().values().forEach(updater::addFinalizedBlock);
-      updater.commit();
-    }
+    // Update finalized blocks and states
+    updateFinalizedData(
+        update.getFinalizedChildToParentMap(),
+        update.getFinalizedBlocks(),
+        update.getFinalizedStates());
 
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       // Store new hot data
@@ -299,41 +298,40 @@ public class RocksDbDatabase implements Database {
     }
   }
 
-  private void putFinalizedStates(
-      FinalizedUpdater updater,
+  private void updateFinalizedData(
+      Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
-    if (finalizedBlocks.isEmpty()) {
+    if (finalizedChildToParentMap.isEmpty()) {
+      // Nothing to do
       return;
     }
 
-    switch (stateStorageMode) {
-      case ARCHIVE:
-        // Get previously finalized block to build on top of
-        final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
+    try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
+      // Get previously finalized block to build on top of
+      final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
 
-        // TODO - build tree with roots rather than full blocks
-        final HashTree blockTree =
-            HashTree.builder()
-                .rootHash(baseBlock.getRoot())
-                .blocks(finalizedBlocks.values())
-                .build();
-        final BlockProvider blockProvider =
-            BlockProvider.withKnownBlocks(
-                roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
-        final StateGenerator stateGenerator =
-            StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
-        // TODO - don't join, create synchronous API for synchronous blockProvider
-        stateGenerator
-            .regenerateAllStates(
-                (block, state) -> updater.addFinalizedState(block.getRoot(), state))
-            .join();
-        break;
-      case PRUNE:
-        // Don't persist finalized state
-        break;
-      default:
-        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
+      final HashTree blockTree =
+          HashTree.builder()
+              .rootHash(baseBlock.getRoot())
+              .childAndParentRoots(finalizedChildToParentMap)
+              .build();
+
+      final BlockProvider blockProvider =
+          BlockProvider.withKnownBlocks(
+              roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
+      final StateGenerator stateGenerator =
+          StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
+      // TODO - don't join, create synchronous API for synchronous blockProvider
+      stateGenerator
+          .regenerateAllStates(
+              (block, state) -> {
+                updater.addFinalizedBlock(block);
+                putFinalizedState(updater, block.getRoot(), state);
+              })
+          .join();
+
+      updater.commit();
     }
   }
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.datastructures.hashtree;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -27,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
@@ -54,13 +56,12 @@ public class HashTree {
     this.childToParent = childToParent;
   }
 
-  private static HashTree singleNode(final Bytes32 rootHash) {
-    final HashTreeNode rootNode = new HashTreeNode(rootHash, Collections.emptySet());
-    return new HashTree(rootHash, Map.of(rootHash, rootNode), Collections.emptyMap());
-  }
-
   public static Builder builder() {
     return new Builder();
+  }
+
+  public Builder updater() {
+    return withRoot(rootHash);
   }
 
   /**
@@ -70,23 +71,19 @@ public class HashTree {
    * @param newRootHash The new root of the tree
    * @return A new {@code HashTree} containing only nodes that descend from the new root.
    */
-  public HashTree withRoot(final Bytes32 newRootHash) {
-    if (!containsBlock(newRootHash)) {
-      return singleNode(newRootHash);
-    }
+  public Builder withRoot(final Bytes32 newRootHash) {
+    checkArgument(containsBlock(newRootHash), "Unknown hash provided");
 
-    final Map<Bytes32, HashTreeNode> newTreeNodes = new HashMap<>();
-    final Map<Bytes32, Bytes32> newChildToParentMap = new HashMap<>();
+    Builder builder = builder().rootHash(newRootHash);
     preOrderStream(newRootHash)
         .forEach(
             root -> {
               final HashTreeNode treeNode = treeNodes.get(root);
-              newTreeNodes.put(root, treeNode);
-              treeNode
-                  .getChildren()
-                  .forEach((child) -> newChildToParentMap.put(root, child.getHash()));
+              builder.putTreeNode(root, treeNode);
+              getParent(root).ifPresent(parent -> builder.childAndParentRoots(root, parent));
             });
-    return new HashTree(newRootHash, newTreeNodes, newChildToParentMap);
+
+    return builder;
   }
 
   public Bytes32 getRootHash() {
@@ -98,27 +95,48 @@ public class HashTree {
   }
 
   /**
+   * Process each node in the chain defined by {@code headRoot}
+   *
+   * @param headRoot The root defining the head of the chain to process
+   * @param processor The callback to invoke for each child-parent pair
+   */
+  public void processHashesInChain(final Bytes32 headRoot, NodeProcessor processor) {
+    processChainNodes(headRoot, HaltableNodeProcessor.fromNodeProcessor(processor));
+  }
+
+  /**
    * Accumulate the list of roots from the provided head hash up to the root hash. Stops
    * accumulating roots when {@code shouldContinue} returns false.
    *
    * @param headRoot The root defining the head of the chain to construct
    * @param shouldContinue The condition determining when to stop collecting ancestor roots
-   * @return A list of linked hash roots in ascending order where {@code headRoot} is the last root
+   * @return A list of roots in ascending order belonging to the chain defined by {@code headRoot}
    */
-  public List<Bytes32> accumulateChain(
+  public List<Bytes32> collectChainRoots(
       final Bytes32 headRoot, Function<Bytes32, Boolean> shouldContinue) {
-    final List<Bytes32> chain = new ArrayList<>();
+    final Deque<Bytes32> chain = new ArrayDeque<>();
+    processChainNodes(
+        headRoot,
+        (child, parent) -> {
+          chain.addFirst(child);
+          return shouldContinue.apply(child);
+        });
+    return new ArrayList<>(chain);
+  }
+
+  private void processChainNodes(final Bytes32 headRoot, HaltableNodeProcessor nodeProcessor) {
+    checkArgument(containsBlock(headRoot), "Unknown root supplied: " + headRoot);
+
     Optional<Bytes32> currentRoot = Optional.of(headRoot);
-    while (currentRoot.isPresent()) {
-      chain.add(currentRoot.get());
-      if (!shouldContinue.apply(currentRoot.get())) {
+    Optional<Bytes32> parentRoot = currentRoot.flatMap(this::getParent);
+    while (parentRoot.isPresent()) {
+      final boolean shouldContinue = nodeProcessor.process(currentRoot.get(), parentRoot.get());
+      if (!shouldContinue) {
         break;
       }
-      currentRoot = getParent(currentRoot.get());
+      currentRoot = parentRoot;
+      parentRoot = currentRoot.flatMap(this::getParent);
     }
-
-    Collections.reverse(chain);
-    return chain;
   }
 
   public int countChildren(final Bytes32 hash) {
@@ -159,9 +177,30 @@ public class HashTree {
     return StreamSupport.stream(split, false);
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof HashTree)) {
+      return false;
+    }
+    HashTree hashTree = (HashTree) o;
+    return Objects.equals(rootHash, hashTree.rootHash)
+        && Objects.equals(childToParent, hashTree.childToParent);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(rootHash, childToParent);
+  }
+
   public static class Builder {
     private Bytes32 rootHash = null;
     private final Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
+
+    // Cached nodes that may or may not belong in the new tree
+    private final Map<Bytes32, HashTreeNode> existingTreeNodes = new HashMap<>();
 
     public HashTree build() {
       assertValid();
@@ -190,7 +229,12 @@ public class HashTree {
           final Set<HashTreeNode> childNodes =
               childRoots.stream().map(nodes::get).collect(Collectors.toSet());
           checkState(childNodes.size() == childRoots.size(), "Failed to find required child nodes");
-          final HashTreeNode currentNode = new HashTreeNode(currentRoot, childNodes);
+
+          final HashTreeNode currentNode =
+              Optional.ofNullable(existingTreeNodes.get(currentRoot))
+                  .filter(existingNode -> existingNode.childCount() == childNodes.size())
+                  .filter(existingNode -> existingNode.getChildren().containsAll(childNodes))
+                  .orElseGet(() -> new HashTreeNode(currentRoot, childNodes));
           childNodes.forEach(child -> prunedChildToParentMap.put(child.getHash(), currentRoot));
           nodes.put(currentRoot, currentNode);
         } else {
@@ -201,16 +245,26 @@ public class HashTree {
         }
       }
 
+      // Save root parent
+      prunedChildToParentMap.put(rootHash, childToParentMap.get(rootHash));
       return new HashTree(rootHash, nodes, prunedChildToParentMap);
     }
 
     private void assertValid() {
       checkNotNull(rootHash, "Must supply a root block");
+      checkState(
+          childToParentMap.containsKey(rootHash), "Must provide parent information for root");
     }
 
     public Builder rootHash(final Bytes32 rootBlockHash) {
       checkNotNull(rootBlockHash);
       this.rootHash = rootBlockHash;
+      return this;
+    }
+
+    public Builder childAndParentRoots(Map<Bytes32, Bytes32> childToParentMap) {
+      checkNotNull(childToParentMap);
+      this.childToParentMap.putAll(childToParentMap);
       return this;
     }
 
@@ -231,5 +285,39 @@ public class HashTree {
       blocks.forEach(this::block);
       return this;
     }
+
+    // Internal setters for building from an existing tree
+    void putTreeNode(Bytes32 root, HashTreeNode treeNode) {
+      existingTreeNodes.put(root, treeNode);
+    }
+  }
+
+  public interface NodeProcessor {
+    /**
+     * Process parent and child roots
+     *
+     * @param childRoot The child root
+     * @param parentRoot The parent root
+     */
+    void process(final Bytes32 childRoot, final Bytes32 parentRoot);
+  }
+
+  private interface HaltableNodeProcessor {
+
+    static HaltableNodeProcessor fromNodeProcessor(final NodeProcessor processor) {
+      return (child, parent) -> {
+        processor.process(child, parent);
+        return true;
+      };
+    }
+
+    /**
+     * Process parent and child and return a status indicating whether to continue
+     *
+     * @param childRoot The child root
+     * @param parentRoot The parent root
+     * @return True if processing should continue, false if processing should halt
+     */
+    boolean process(final Bytes32 childRoot, final Bytes32 parentRoot);
   }
 }

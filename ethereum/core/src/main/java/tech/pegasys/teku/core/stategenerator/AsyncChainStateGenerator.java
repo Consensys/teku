@@ -80,7 +80,7 @@ class AsyncChainStateGenerator {
     // Build chain from target root to the first ancestor with a known state
     final AtomicReference<BeaconState> baseState = new AtomicReference<>(null);
     final List<Bytes32> chain =
-        blockTree.accumulateChain(
+        blockTree.collectChainRoots(
             targetRoot,
             (currentRoot) -> {
               stateProvider.getState(currentRoot).ifPresent(baseState::set);

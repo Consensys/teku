@@ -32,6 +32,15 @@ public interface BlockProvider {
 
   BlockProvider NOOP = (roots) -> SafeFuture.completedFuture(Collections.emptyMap());
 
+  static BlockProvider fromMap(final Map<Bytes32, SignedBeaconBlock> blockMap) {
+    return (roots) ->
+        SafeFuture.completedFuture(
+            roots.stream()
+                .map(root -> blockMap.get(root))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
+  }
+
   static BlockProvider withKnownBlocks(
       final BlockProvider blockProvider, final Map<Bytes32, SignedBeaconBlock> knownBlocks) {
     return (final Set<Bytes32> blockRoots) -> {

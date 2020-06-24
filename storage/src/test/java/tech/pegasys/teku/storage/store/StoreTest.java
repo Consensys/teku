@@ -24,12 +24,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -44,59 +48,50 @@ class StoreTest {
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
   @Test
-  public void getBlockState_withLimitedStateCache() throws StateTransitionException {
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    // Create a new store with a small state cache
-    final int cacheSize = 10;
-    final StorePruningOptions pruningOptions = StorePruningOptions.create(cacheSize, cacheSize);
-    final Store store =
-        new Store(
-            new StubMetricsSystem(),
-            BlockProvider.NOOP,
-            genesis.getState().getGenesis_time(),
-            genesis.getState().getGenesis_time(),
-            genesisCheckpoint,
-            genesisCheckpoint,
-            genesisCheckpoint,
-            Map.of(genesis.getRoot(), genesis.getParentRoot()),
-            Map.of(genesisCheckpoint, genesis.getState()),
-            genesis,
-            Collections.emptyMap(),
-            pruningOptions);
+  public void getSignedBlock_withLimitedCache() throws StateTransitionException {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final SignedBeaconBlock expectedBlock = blockAndState.getBlock();
+          final SignedBeaconBlock blockResult = store.getSignedBlock(expectedBlock.getRoot());
+          assertThat(blockResult)
+              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .isEqualTo(expectedBlock);
+        });
+  }
 
-    // Generate enough blocks to exceed our cache limit
-    final List<SignedBlockAndState> blocks = chainBuilder.generateBlocksUpToSlot(3 * cacheSize);
-    addBlocks(store, blocks);
-
-    // Request states in order
-    for (SignedBlockAndState block : blocks) {
-      final BeaconState result = store.getBlockState(block.getRoot());
-      assertThat(result).isNotNull();
-      assertThat(result.hash_tree_root()).isEqualTo(block.getBlock().getMessage().getState_root());
-    }
-
-    // Request states in reverse order
-    Collections.reverse(blocks);
-    for (SignedBlockAndState block : blocks) {
-      final BeaconState result = store.getBlockState(block.getRoot());
-      assertThat(result).isNotNull();
-      assertThat(result.hash_tree_root()).isEqualTo(block.getBlock().getMessage().getState_root());
-    }
+  @Test
+  public void getBlockState_withLimitedCache() throws StateTransitionException {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final BeaconState result = store.getBlockState(blockAndState.getRoot());
+          assertThat(result)
+              .withFailMessage(
+                  "Expected state for block %s to be available", blockAndState.getSlot())
+              .isNotNull();
+          assertThat(result.hash_tree_root())
+              .isEqualTo(blockAndState.getBlock().getMessage().getState_root());
+        });
   }
 
   @Test
   public void shouldApplyChangesWhenTransactionCommits() throws StateTransitionException {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final UnsignedLong epoch3Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(4));
+    chainBuilder.generateBlocksUpToSlot(epoch3Slot);
+    final BlockProvider blockProvider =
+        BlockProvider.fromMap(
+            chainBuilder
+                .streamBlocksAndStates()
+                .collect(
+                    Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock)));
+
     final UpdatableStore store =
         StoreBuilder.buildForkChoiceStore(
-            new StubMetricsSystem(), BlockProvider.NOOP, genesisBlockAndState.getState());
+            new StubMetricsSystem(), blockProvider, genesisBlockAndState.getState());
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
     final UnsignedLong initialTime = store.getTime();
     final UnsignedLong genesisTime = store.getGenesisTime();
 
-    final UnsignedLong epoch3Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(4));
-    chainBuilder.generateBlocksUpToSlot(epoch3Slot);
     final Checkpoint checkpoint1 =
         chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.valueOf(1));
     final Checkpoint checkpoint2 =
@@ -179,6 +174,47 @@ class StoreTest {
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
+  }
+
+  void processChainWithLimitedCache(BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor)
+      throws StateTransitionException {
+    final int cacheSize = 10;
+    final int cacheMultiplier = 3;
+
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    final List<SignedBlockAndState> blocks =
+        chainBuilder.generateBlocksUpToSlot(cacheMultiplier * cacheSize);
+    final Map<Bytes32, SignedBeaconBlock> blockLookup =
+        blocks.stream()
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
+
+    // Create a new store with a small state cache
+    final StorePruningOptions pruningOptions = StorePruningOptions.create(cacheSize, cacheSize);
+    final Store store =
+        new Store(
+            new StubMetricsSystem(),
+            BlockProvider.fromMap(blockLookup),
+            genesis.getState().getGenesis_time(),
+            genesis.getState().getGenesis_time(),
+            genesisCheckpoint,
+            genesisCheckpoint,
+            genesisCheckpoint,
+            Map.of(genesis.getRoot(), genesis.getParentRoot()),
+            Map.of(genesisCheckpoint, genesis.getState()),
+            genesis,
+            Collections.emptyMap(),
+            pruningOptions);
+
+    // Generate enough blocks to exceed our cache limit
+    addBlocks(store, blocks);
+
+    // Process chain in order
+    blocks.forEach(b -> chainProcessor.accept(store, b));
+
+    // Request states in reverse order
+    Collections.reverse(blocks);
+    blocks.forEach(b -> chainProcessor.accept(store, b));
   }
 
   private void addBlocks(final Store store, final List<SignedBlockAndState> blocks) {

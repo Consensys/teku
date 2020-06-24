@@ -32,7 +32,7 @@ public class HashTreeTest {
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 5);
 
     final HashTree blockTree =
-        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).build();
+        HashTree.builder().rootHash(baseBlock.getRoot()).block(baseBlock).blocks(chain).build();
 
     // All blocks should be available
     assertThat(blockTree.getBlockCount()).isEqualTo(chain.size() + 1);
@@ -50,7 +50,12 @@ public class HashTreeTest {
     final SignedBeaconBlock randomBlock = dataStructureUtil.randomSignedBeaconBlock(2);
 
     final HashTree blockTree =
-        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).block(randomBlock).build();
+        HashTree.builder()
+            .rootHash(baseBlock.getRoot())
+            .block(baseBlock)
+            .blocks(chain)
+            .block(randomBlock)
+            .build();
 
     // Only valid blocks should be available
     assertThat(blockTree.getBlockCount()).isEqualTo(chain.size() + 1);
@@ -69,7 +74,12 @@ public class HashTreeTest {
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 3);
 
     final HashTree blockTree =
-        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).blocks(chain2).build();
+        HashTree.builder()
+            .rootHash(baseBlock.getRoot())
+            .block(baseBlock)
+            .blocks(chain)
+            .blocks(chain2)
+            .build();
 
     // All blocks should be available
     final List<SignedBeaconBlock> allBlocks = new ArrayList<>(chain);
@@ -104,7 +114,8 @@ public class HashTreeTest {
   public void build_empty() {
     final SignedBeaconBlock baseBlock = dataStructureUtil.randomSignedBeaconBlock(0);
 
-    final HashTree blockTree = HashTree.builder().rootHash(baseBlock.getRoot()).build();
+    final HashTree blockTree =
+        HashTree.builder().rootHash(baseBlock.getRoot()).block(baseBlock).build();
 
     assertThat(blockTree.getBlockCount()).isEqualTo(1);
     assertThat(blockTree.containsBlock(baseBlock.getRoot())).isTrue();

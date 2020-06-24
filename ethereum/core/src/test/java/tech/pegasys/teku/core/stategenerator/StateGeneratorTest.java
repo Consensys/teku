@@ -219,6 +219,7 @@ public class StateGeneratorTest {
     final HashTree blockTree =
         HashTree.builder()
             .rootHash(rootBlockAndState.getRoot())
+            .block(rootBlockAndState.getBlock())
             .blocks(descendantBlocks)
             .blocks(unconnectedBlocks)
             .build();

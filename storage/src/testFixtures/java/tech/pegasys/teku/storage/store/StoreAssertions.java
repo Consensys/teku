@@ -27,6 +27,7 @@ public class StoreAssertions {
             "readLock",
             "blockProvider",
             "block_states",
+            "blocks",
             "forkChoiceState",
             "stateRequestCachedCounter",
             "stateRequestRegenerateCounter",
