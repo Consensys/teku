@@ -647,6 +647,7 @@ public abstract class AbstractDatabaseTest {
     assertBlocksFinalized(expectedFinalizedBlocks);
     assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(expectedFinalizedBlocks);
     assertBlocksAvailableByRoot(expectedFinalizedBlocks);
+    assertFinalizedBlocksAvailableViaStream(primaryChain);
 
     switch (storageMode) {
       case ARCHIVE:
@@ -664,6 +665,14 @@ public abstract class AbstractDatabaseTest {
         assertStatesUnavailable(unavailableRoots);
         break;
     }
+  }
+
+  private void assertFinalizedBlocksAvailableViaStream(final ChainBuilder primaryChain) {
+    assertThat(database.streamFinalizedBlocks(UnsignedLong.valueOf(1), UnsignedLong.valueOf(3)))
+        .containsExactly(
+            primaryChain.getBlockAtSlot(1),
+            primaryChain.getBlockAtSlot(2),
+            primaryChain.getBlockAtSlot(3));
   }
 
   protected void assertFinalizedBlocksAndStatesAvailable(
