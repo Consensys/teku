@@ -16,6 +16,7 @@ package tech.pegasys.teku.core.stategenerator;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.stategenerator.AsyncChainStateGenerator.DEFAULT_BLOCK_BATCH_SIZE;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,23 +39,25 @@ public class StateGenerator {
   private final BlockProcessor blockProcessor = new BlockProcessor();
   private final HashTree blockTree;
   private final BlockProvider blockProvider;
-  private final StateCache stateCache;
   private final AsyncChainStateGenerator chainStateGenerator;
+
+  private final StateCache stateCache;
   private final int blockBatchSize;
 
   private StateGenerator(
       final HashTree blockTree,
       final BlockProvider blockProvider,
-      final StateCache stateCache,
       final AsyncChainStateGenerator chainStateGenerator,
+      final StateCache stateCache,
       final int blockBatchSize) {
-    this.blockBatchSize = blockBatchSize;
+    checkArgument(blockBatchSize > 0, "Must provide a block batch size > 0");
     checkArgument(
         stateCache.containsKnownState(blockTree.getRootHash()), "Root state must be available");
 
     this.blockTree = blockTree;
     this.blockProvider = blockProvider;
     this.stateCache = stateCache;
+    this.blockBatchSize = blockBatchSize;
     this.chainStateGenerator = chainStateGenerator;
   }
 
@@ -97,14 +100,19 @@ public class StateGenerator {
     final AsyncChainStateGenerator chainStateGenerator =
         AsyncChainStateGenerator.create(blockTree, blockProvider, stateCache::get);
     return new StateGenerator(
-        blockTree, blockProvider, stateCache, chainStateGenerator, blockBatchSize);
+        blockTree, blockProvider, chainStateGenerator, stateCache, blockBatchSize);
   }
 
   public SafeFuture<BeaconState> regenerateStateForBlock(final Bytes32 blockRoot) {
     return chainStateGenerator.generateTargetState(blockRoot);
   }
 
-  public SafeFuture<?> regenerateAllStates(final StateHandler stateHandler) {
+  public SafeFuture<Void> regenerateAllStates(final StateHandler stateHandler) {
+    return regenerateAllStatesInternal(stateHandler).thenAccept(__ -> stateCache.clear());
+  }
+
+  @VisibleForTesting
+  SafeFuture<?> regenerateAllStatesInternal(final StateHandler stateHandler) {
     final List<Bytes32> blockRoots = blockTree.preOrderStream().collect(Collectors.toList());
     if (blockRoots.size() == 0) {
       return SafeFuture.completedFuture(null);
@@ -126,8 +134,12 @@ public class StateGenerator {
               state -> regenerateAllStatesForBatch(batch, stateCache, state, stateHandler));
     }
 
-    stateCache.clear();
     return future;
+  }
+
+  @VisibleForTesting
+  int countCachedStates() {
+    return stateCache.countCachedStates();
   }
 
   private SafeFuture<BlockRootAndState> regenerateAllStatesForBatch(

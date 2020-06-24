@@ -44,9 +44,9 @@ public class StateGeneratorTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
-  @ParameterizedTest(name = "cache size: {0}")
-  @MethodSource("getCacheSize")
-  public void shouldHandleValidChainFromGenesis(final int cacheSize)
+  @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
+  @MethodSource("getParameters")
+  public void shouldHandleValidChainFromGenesis(final int cacheSize, final int blockBatchSize)
       throws StateTransitionException {
     // Build a small chain
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -57,12 +57,12 @@ public class StateGeneratorTest {
                 genesis.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
             .collect(Collectors.toList());
 
-    testRegenerateAllStates(cacheSize, genesis, newBlocksAndStates);
+    testRegenerateAllStates(cacheSize, blockBatchSize, genesis, 0, newBlocksAndStates);
   }
 
-  @ParameterizedTest(name = "cache size: {0}")
-  @MethodSource("getCacheSize")
-  public void shouldHandleValidPostGenesisChain(final int cacheSize)
+  @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
+  @MethodSource("getParameters")
+  public void shouldHandleValidPostGenesisChain(final int cacheSize, final int blockBatchSize)
       throws StateTransitionException {
     // Build a small chain
     chainBuilder.generateGenesis();
@@ -74,12 +74,13 @@ public class StateGeneratorTest {
                 baseBlock.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
             .collect(Collectors.toList());
 
-    testRegenerateAllStates(cacheSize, baseBlock, newBlocksAndStates);
+    testRegenerateAllStates(cacheSize, blockBatchSize, baseBlock, 0, newBlocksAndStates);
   }
 
-  @ParameterizedTest(name = "cache size: {0}")
-  @MethodSource("getCacheSize")
-  public void shouldHandleInvalidForkBlocks(final int cacheSize) throws StateTransitionException {
+  @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
+  @MethodSource("getParameters")
+  public void shouldHandleInvalidForkBlocks(final int cacheSize, final int blockBatchSize)
+      throws StateTransitionException {
     // Build a small chain
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(5);
@@ -104,12 +105,14 @@ public class StateGeneratorTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
 
-    testRegenerateAllStates(cacheSize, baseBlock, newBlocksAndStates, newForkBlocks);
+    testRegenerateAllStates(
+        cacheSize, blockBatchSize, baseBlock, 0, newBlocksAndStates, newForkBlocks);
   }
 
-  @ParameterizedTest(name = "cache size: {0}")
-  @MethodSource("getCacheSize")
-  public void shouldHandleForkBlocks(final int cacheSize) throws StateTransitionException {
+  @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
+  @MethodSource("getParameters")
+  public void shouldHandleForkBlocks(final int cacheSize, final int blockBatchSize)
+      throws StateTransitionException {
     // Build a small chain
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(5);
@@ -129,21 +132,24 @@ public class StateGeneratorTest {
     fork.streamBlocksAndStates(baseBlock.getSlot().plus(UnsignedLong.ONE), fork.getLatestSlot())
         .forEach(newBlocksAndStates::add);
 
-    testRegenerateAllStates(cacheSize, baseBlock, newBlocksAndStates);
+    testRegenerateAllStates(cacheSize, blockBatchSize, baseBlock, 1, newBlocksAndStates);
   }
 
-  @ParameterizedTest(name = "cache size: {0}")
-  @MethodSource("getCacheSize")
-  public void shouldHandleMultipleForks(final int cacheSize) throws StateTransitionException {
+  @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
+  @MethodSource("getParameters")
+  public void shouldHandleMultipleForks(final int cacheSize, final int blockBatchSize)
+      throws StateTransitionException {
     // Build a small chain
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(5);
     final SignedBlockAndState baseBlock = chainBuilder.getLatestBlockAndState();
+    // Branch at current block
     final ChainBuilder fork = chainBuilder.fork();
 
     chainBuilder.generateBlocksUpToSlot(10);
     // Fork chain skips a block
     final SignedBlockAndState forkBase = fork.generateBlockAtSlot(7);
+    // Branch at current block
     final ChainBuilder fork2 = fork.fork();
     final ChainBuilder fork3 = fork.fork();
     final ChainBuilder fork4 = fork.fork();
@@ -166,38 +172,61 @@ public class StateGeneratorTest {
                     forkBase.getSlot().plus(UnsignedLong.ONE), fork4.getLatestSlot()))
             .collect(Collectors.toList());
 
-    testRegenerateAllStates(cacheSize, baseBlock, newBlocksAndStates);
+    testRegenerateAllStates(cacheSize, blockBatchSize, baseBlock, 2, newBlocksAndStates);
   }
 
   @Test
   public void produceStatesForBlocks_emptyNewBlockCollection() {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
 
-    testRegenerateAllStates(0, genesis, Collections.emptyList());
+    testRegenerateAllStates(0, 10, genesis, 0, Collections.emptyList());
   }
 
   private void testRegenerateAllStates(
       final int cacheSize,
+      final int blockBatchSize,
       final SignedBlockAndState rootBlockAndState,
+      final int expectedCachedStateCount,
       final List<SignedBlockAndState> descendantBlocksAndStates) {
     testRegenerateAllStates(
-        cacheSize, rootBlockAndState, descendantBlocksAndStates, Collections.emptyList());
+        cacheSize,
+        blockBatchSize,
+        rootBlockAndState,
+        expectedCachedStateCount,
+        descendantBlocksAndStates,
+        Collections.emptyList());
   }
 
   private void testRegenerateAllStates(
       final int cacheSize,
+      final int blockBatchSize,
       final SignedBlockAndState rootBlockAndState,
+      final int expectedCachedStateCount,
       final List<SignedBlockAndState> descendantBlocksAndStates,
       final List<SignedBeaconBlock> unconnectedBlocks) {
     testRegenerateAllStates(
-        cacheSize, rootBlockAndState, descendantBlocksAndStates, unconnectedBlocks, false);
+        cacheSize,
+        blockBatchSize,
+        rootBlockAndState,
+        expectedCachedStateCount,
+        descendantBlocksAndStates,
+        unconnectedBlocks,
+        false);
     testRegenerateAllStates(
-        cacheSize, rootBlockAndState, descendantBlocksAndStates, unconnectedBlocks, true);
+        cacheSize,
+        blockBatchSize,
+        rootBlockAndState,
+        expectedCachedStateCount,
+        descendantBlocksAndStates,
+        unconnectedBlocks,
+        true);
   }
 
   private void testRegenerateAllStates(
       final int cacheSize,
+      final int blockBatchSize,
       final SignedBlockAndState rootBlockAndState,
+      final int expectedCachedStateCount,
       final List<SignedBlockAndState> descendantBlocksAndStates,
       final List<SignedBeaconBlock> unconnectedBlocks,
       final boolean supplyAllKnownStates) {
@@ -233,14 +262,18 @@ public class StateGeneratorTest {
                 rootBlockAndState,
                 blockProvider,
                 Collections.emptyMap(),
-                1000,
+                blockBatchSize,
                 cacheSize);
 
     // Regenerate all states and collect results
     final List<SignedBlockAndState> results = new ArrayList<>();
     generator
-        .regenerateAllStates((block, state) -> results.add(new SignedBlockAndState(block, state)))
+        .regenerateAllStatesInternal(
+            (block, state) -> results.add(new SignedBlockAndState(block, state)))
         .join();
+    // Check that we don't cache more states than we're expected
+    // We should only cache states for blocks that have multiple descendants
+    assertThat(generator.countCachedStates()).isLessThanOrEqualTo(expectedCachedStateCount);
 
     // Verify results
     final Map<Bytes32, BeaconState> resultMap =
@@ -282,7 +315,17 @@ public class StateGeneratorTest {
     }
   }
 
-  public static Stream<Arguments> getCacheSize() {
-    return Stream.of(Arguments.of(0), Arguments.of(1), Arguments.of(100));
+  public static Stream<Arguments> getParameters() {
+    Stream.Builder<Arguments> builder = Stream.builder();
+
+    final List<Integer> stateCacheSizes = List.of(0, 1, 100);
+    final List<Integer> blockBatchSizes = List.of(1, 5, 1000);
+    for (Integer stateCacheSize : stateCacheSizes) {
+      for (Integer blockBatchSize : blockBatchSizes) {
+        builder.add(Arguments.of(stateCacheSize, blockBatchSize));
+      }
+    }
+
+    return builder.build();
   }
 }

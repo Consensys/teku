@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,6 +32,11 @@ class StateCache {
 
   boolean containsKnownState(final Bytes32 blockRoot) {
     return knownStates.containsKey(blockRoot);
+  }
+
+  @VisibleForTesting
+  int countCachedStates() {
+    return cache.size();
   }
 
   public Optional<BeaconState> get(final Bytes32 blockRoot) {
