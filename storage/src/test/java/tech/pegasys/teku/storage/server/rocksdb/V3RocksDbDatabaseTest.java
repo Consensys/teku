@@ -112,7 +112,12 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
             .streamBlocksAndStates(4, firstHotBlockSlot.longValue())
             .map(SignedBlockAndState::getRoot)
             .collect(Collectors.toList());
-    assertStatesUnavailable(unavailableBlockRoots);
+    final List<UnsignedLong> unavailableBlockSlots =
+        forkChain
+            .streamBlocksAndStates(4, firstHotBlockSlot.longValue())
+            .map(SignedBlockAndState::getSlot)
+            .collect(Collectors.toList());
+    assertStatesUnavailable(unavailableBlockSlots);
     assertBlocksUnavailable(unavailableBlockRoots);
   }
 
@@ -157,7 +162,8 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
         assertFinalizedStatesAvailable(historicalStates);
         break;
       case PRUNE:
-        assertStatesUnavailable(historicalStates.keySet());
+        assertStatesUnavailable(
+            historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
         break;
     }
   }
