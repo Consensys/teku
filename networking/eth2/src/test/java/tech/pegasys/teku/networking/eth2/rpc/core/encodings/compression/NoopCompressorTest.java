@@ -15,11 +15,16 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.noop.NoopCompressor;
 
 public class NoopCompressorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -32,7 +37,10 @@ public class NoopCompressorTest {
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
 
     final Bytes compressed = compressor.compress(serializedState);
-    final Bytes uncompressed = compressor.uncompress(compressed, serializedState.size());
-    assertThat(uncompressed).isEqualTo(serializedState);
+    Decompressor decompressor = compressor.createDecompressor(serializedState.size());
+    Optional<ByteBuf> uncompressed =
+        decompressor.decodeOneMessage(Unpooled.wrappedBuffer(compressed.toArray()));
+    assertThat(uncompressed).isPresent();
+    assertThat(Bytes.wrapByteBuf(uncompressed.get())).isEqualTo(serializedState);
   }
 }

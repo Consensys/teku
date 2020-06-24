@@ -14,32 +14,15 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
-import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryV3RocksDbDatabaseTest extends V3RocksDbDatabaseTest {
 
-  private final Map<File, MockRocksDbInstance> existingDatabaseInstances = new HashMap<>();
-
   @Override
-  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
-    final RocksDbAccessor db =
-        existingDatabaseInstances.compute(
-            tempDir,
-            (__, existingDb) -> {
-              if (existingDb == null) {
-                return MockRocksDbInstance.createEmpty(V3Schema.class);
-              } else {
-                return existingDb.reopen();
-              }
-            });
-
-    return RocksDbDatabase.createV3(new StubMetricsSystem(), db, storageMode);
+  protected StorageSystem createStorageSystem(
+      final File tempDir, final StateStorageMode storageMode) {
+    return InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode);
   }
 }

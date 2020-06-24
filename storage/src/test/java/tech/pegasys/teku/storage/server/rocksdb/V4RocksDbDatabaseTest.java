@@ -16,21 +16,18 @@ package tech.pegasys.teku.storage.server.rocksdb;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class V4RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
-  @Override
-  protected Database createDatabase(final File tempDir, final StateStorageMode storageMode) {
 
+  @Override
+  protected StorageSystem createStorageSystem(
+      final File tempDir, final StateStorageMode storageMode) {
     final Path dbDir = Paths.get(tempDir.getAbsolutePath(), "db");
     final Path archiveDir = Paths.get(tempDir.getAbsolutePath(), "archive");
 
-    return RocksDbDatabase.createV4(
-        new StubMetricsSystem(),
-        RocksDbConfiguration.withDataDirectory(dbDir),
-        RocksDbConfiguration.withDataDirectory(archiveDir),
-        storageMode);
+    return FileBackedStorageSystem.createV4StorageSystem(dbDir, archiveDir, storageMode, 1L);
   }
 }

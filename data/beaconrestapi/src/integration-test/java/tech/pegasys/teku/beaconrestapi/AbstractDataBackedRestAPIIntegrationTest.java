@@ -44,10 +44,11 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
-import tech.pegasys.teku.storage.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -75,7 +76,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
-  private InMemoryStorageSystem storageSystem;
+  private StorageSystem storageSystem;
 
   protected RecentChainData recentChainData;
   protected CombinedChainDataClient combinedChainDataClient;
@@ -97,7 +98,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupStorage(InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode));
   }
 
-  private void setupStorage(final InMemoryStorageSystem storageSystem) {
+  private void setupStorage(final StorageSystem storageSystem) {
     this.storageSystem = storageSystem;
     recentChainData = storageSystem.recentChainData();
     chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);

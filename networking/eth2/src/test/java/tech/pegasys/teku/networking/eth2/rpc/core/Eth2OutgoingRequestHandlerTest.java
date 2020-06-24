@@ -82,7 +82,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
       deliverChunk(i);
       assertThat(finishedProcessingFuture).isNotDone();
     }
-    inputStream.close();
+    complete();
 
     asyncRequestRunner.waitForExactly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
@@ -105,7 +105,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
       deliverChunk(i);
       assertThat(finishedProcessingFuture).isNotDone();
     }
-    inputStream.close();
+    complete();
 
     asyncRequestRunner.waitForExactly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
@@ -135,7 +135,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     deliverChunk(0);
     assertThat(finishedProcessingFuture).isNotDone();
     deliverError();
-    inputStream.close();
+    complete();
 
     asyncRequestRunner.waitForExactly(1);
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
@@ -155,19 +155,19 @@ public abstract class Eth2OutgoingRequestHandlerTest
         // Send 2 chunks in the last batch of data which should only contain 1 chunk
         final Bytes lastChunk = chunks.get(i);
         final Bytes lastChunkWithExtraChunk = Bytes.concatenate(lastChunk, lastChunk);
-        deliverBytes(lastChunkWithExtraChunk, lastChunk.size());
+        deliverBytes(lastChunkWithExtraChunk);
       } else {
         deliverChunk(i);
       }
     }
-    inputStream.close();
+    complete();
 
-    asyncRequestRunner.waitForExactly(maxChunks);
+    asyncRequestRunner.waitForExactly(maxChunks - 1);
     timeoutRunner.executeUntilDone();
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
     verify(rpcStream).close();
-    assertThat(blocks.size()).isEqualTo(3);
+    assertThat(blocks.size()).isEqualTo(2);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
     assertThatThrownBy(finishedProcessingFuture::get)
         .hasRootCause(RpcException.EXTRA_DATA_APPENDED);
@@ -274,10 +274,10 @@ public abstract class Eth2OutgoingRequestHandlerTest
   private void deliverChunk(final int chunk) throws IOException {
     final Bytes chunkBytes = chunks.get(chunk);
     deliverBytes(chunkBytes);
-    if (chunk < maxChunks - 1) {
-      // Make sure we finish processing this chunk, and loop back around to wait on the next
-      Waiter.waitFor(() -> assertThat(inputStream.isWaitingOnNextByteToBeDelivered()).isTrue());
-    }
+  }
+
+  private void complete() {
+    reqHandler.complete(nodeId, rpcStream);
   }
 
   public static class Eth2OutgoingRequestHandlerTest_ssz extends Eth2OutgoingRequestHandlerTest {

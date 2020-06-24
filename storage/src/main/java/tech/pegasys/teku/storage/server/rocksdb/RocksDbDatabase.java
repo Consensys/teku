@@ -73,12 +73,13 @@ public class RocksDbDatabase implements Database {
       final MetricsSystem metricsSystem,
       final RocksDbConfiguration hotConfiguration,
       final RocksDbConfiguration finalizedConfiguration,
-      final StateStorageMode stateStorageMode) {
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency) {
     final RocksDbAccessor hotDb =
         RocksDbInstanceFactory.create(hotConfiguration, V4SchemaHot.class);
     final RocksDbAccessor finalizedDb =
         RocksDbInstanceFactory.create(finalizedConfiguration, V4SchemaFinalized.class);
-    return createV4(metricsSystem, hotDb, finalizedDb, stateStorageMode);
+    return createV4(metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency);
   }
 
   static Database createV3(
@@ -93,9 +94,11 @@ public class RocksDbDatabase implements Database {
       final MetricsSystem metricsSystem,
       final RocksDbAccessor hotDb,
       final RocksDbAccessor finalizedDb,
-      final StateStorageMode stateStorageMode) {
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency) {
     final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb);
-    final V4FinalizedRocksDbDao finalizedDbDao = new V4FinalizedRocksDbDao(finalizedDb);
+    final V4FinalizedRocksDbDao finalizedDbDao =
+        new V4FinalizedRocksDbDao(finalizedDb, stateStorageFrequency);
     return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, stateStorageMode);
   }
 

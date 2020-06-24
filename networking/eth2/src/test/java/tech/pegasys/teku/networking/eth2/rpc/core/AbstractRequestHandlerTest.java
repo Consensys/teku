@@ -13,24 +13,18 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
-import java.io.IOException;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
+import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -41,14 +35,10 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.Waiter;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
-import tech.pegasys.teku.util.iostreams.MockInputStream;
 
 abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
-  private static final Logger LOG = LogManager.getLogger();
-
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   protected final PeerLookup peerLookup = mock(PeerLookup.class);
@@ -62,10 +52,6 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
   protected final RpcStream rpcStream = mock(RpcStream.class);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected T reqHandler;
-
-  private Thread inputHandlerThread;
-  private final AtomicBoolean inputHandlerDone = new AtomicBoolean(false);
-  protected final MockInputStream inputStream = new MockInputStream();
 
   @BeforeEach
   public void setup() {
@@ -87,50 +73,14 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
     lenient().when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.COMPLETE);
     lenient().when(peerLookup.getConnectedPeer(nodeId)).thenReturn(Optional.of(peer));
 
-    // Setup thread to process input
-    startProcessingInput();
-  }
-
-  protected void startProcessingInput() {
-    inputHandlerThread =
-        new Thread(
-            () -> {
-              try {
-                reqHandler.processInput(nodeId, rpcStream, inputStream);
-              } catch (Throwable t) {
-                LOG.warn("Caught error while processing input: ", t);
-              } finally {
-                inputHandlerDone.set(true);
-              }
-            });
-    inputHandlerThread.start();
-  }
-
-  @AfterEach
-  public void teardown() {
-    inputStream.close();
-    if (inputHandlerThread != null) {
-      inputHandlerThread.interrupt();
-    }
-    Waiter.waitFor(() -> assertThat(inputHandlerDone).isTrue());
+    reqHandler.active(nodeId, rpcStream);
   }
 
   protected abstract T createRequestHandler(final BeaconChainMethods beaconChainMethods);
 
   protected abstract RpcEncoding getRpcEncoding();
 
-  protected void deliverBytes(final Bytes bytes) throws IOException {
-    deliverBytes(bytes, bytes.size());
-  }
-
-  protected void deliverBytes(final Bytes bytes, final int waitUntilBytesConsumed)
-      throws IOException {
-    checkArgument(
-        waitUntilBytesConsumed <= bytes.size(), "Cannot wait for more bytes than those supplied.");
-    inputStream.deliverBytes(bytes);
-    final int maxRemainingBytes = bytes.size() - waitUntilBytesConsumed;
-    Waiter.waitFor(
-        () ->
-            assertThat(inputStream.countUnconsumedBytes()).isLessThanOrEqualTo(maxRemainingBytes));
+  protected void deliverBytes(final Bytes bytes) {
+    reqHandler.processData(nodeId, rpcStream, Utils.toByteBuf(bytes));
   }
 }

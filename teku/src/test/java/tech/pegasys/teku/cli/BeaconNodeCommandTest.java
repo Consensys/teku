@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.LoggingDestination;
 import tech.pegasys.teku.util.config.NetworkDefinition;
@@ -203,7 +205,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
-            .replace("data-path: \".\"", "data-path: \"" + dataPath.toString() + "\"");
+            .replace(
+                "data-path: \".\"",
+                "data-path: \"" + dataPath.toString().replace("\\", "\\\\") + "\"");
     return createTempFile(updatedConfig.getBytes(UTF_8));
   }
 
@@ -303,8 +307,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
         .setDataStorageMode(PRUNE)
-        .setDataStorageFrequency(2048L)
-        .setDataStorageCreateDbVersion("3.0")
+        .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
+        .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
