@@ -123,7 +123,7 @@ class Store implements UpdatableStore {
     this.block_states =
         LimitedMap.create(
             pruningOptions.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    this.checkpoint_states = checkpoint_states;
+    this.checkpoint_states = new HashMap<>(checkpoint_states);
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
