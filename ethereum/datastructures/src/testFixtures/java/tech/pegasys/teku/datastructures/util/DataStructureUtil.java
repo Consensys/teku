@@ -222,13 +222,35 @@ public final class DataStructureUtil {
 
   public List<SignedBeaconBlock> randomSignedBeaconBlockSequence(
       final SignedBeaconBlock parent, final int count) {
+    return randomSignedBeaconBlockSequence(parent, count, false);
+  }
+
+  public List<SignedBeaconBlock> randomSignedBeaconBlockSequence(
+      final SignedBeaconBlock parent, final int count, final boolean full) {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     SignedBeaconBlock parentBlock = parent;
     for (int i = 0; i < count; i++) {
       final long nextSlot = parentBlock.getSlot().plus(UnsignedLong.ONE).longValue();
       final Bytes32 parentRoot = parentBlock.getRoot();
-      final SignedBeaconBlock block = randomSignedBeaconBlock(nextSlot, parentRoot, false);
+      final SignedBeaconBlock block = randomSignedBeaconBlock(nextSlot, parentRoot, full);
       blocks.add(block);
+      parentBlock = block;
+    }
+    return blocks;
+  }
+
+  public List<SignedBlockAndState> randomSignedBlockAndStateSequence(
+      final SignedBeaconBlock parent, final int count, final boolean full) {
+    final List<SignedBlockAndState> blocks = new ArrayList<>();
+    SignedBeaconBlock parentBlock = parent;
+    for (int i = 0; i < count; i++) {
+      final long nextSlot = parentBlock.getSlot().plus(UnsignedLong.ONE).longValue();
+      final Bytes32 parentRoot = parentBlock.getRoot();
+      final BeaconState state = randomBeaconState(UnsignedLong.valueOf(nextSlot));
+      final Bytes32 stateRoot = state.hash_tree_root();
+      final SignedBeaconBlock block =
+          signedBlock(randomBeaconBlock(nextSlot, parentRoot, stateRoot, full));
+      blocks.add(new SignedBlockAndState(block, state));
       parentBlock = block;
     }
     return blocks;
@@ -250,6 +272,10 @@ public final class DataStructureUtil {
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, Bytes32 parentRoot, boolean full) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, parentRoot, full);
     return new SignedBeaconBlock(beaconBlock, randomSignature());
+  }
+
+  public SignedBeaconBlock signedBlock(final BeaconBlock block) {
+    return new SignedBeaconBlock(block, randomSignature());
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, BeaconState state) {
