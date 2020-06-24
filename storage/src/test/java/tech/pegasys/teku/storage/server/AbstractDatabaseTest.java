@@ -711,7 +711,7 @@ public abstract class AbstractDatabaseTest {
       for (long slot = currentBlock.getSlot().longValue();
           slot < nextBlock.getSlot().longValue();
           slot++) {
-        assertThat(database.getFinalizedBlockAtSlot(UnsignedLong.valueOf(slot)))
+        assertThat(database.getLatestFinalizedBlockAtSlot(UnsignedLong.valueOf(slot)))
             .describedAs("Finalized block at slot %s", slot)
             .contains(currentBlock);
       }
