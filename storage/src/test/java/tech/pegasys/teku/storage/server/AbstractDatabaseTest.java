@@ -665,9 +665,9 @@ public abstract class AbstractDatabaseTest {
         break;
       case PRUNE:
         // Check pruned states
-        final List<UnsignedLong> unavailableRoots =
+        final List<UnsignedLong> unavailableSlots =
             allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
-        assertStatesUnavailable(unavailableRoots);
+        assertStatesUnavailable(unavailableSlots);
         break;
     }
   }
