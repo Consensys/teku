@@ -71,7 +71,9 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
-    return Optional.empty();
+    return db.getFloorEntry(V3Schema.FINALIZED_ROOTS_BY_SLOT, maxSlot)
+        .map(ColumnEntry::getValue)
+        .flatMap(root -> db.get(V3Schema.FINALIZED_STATES_BY_ROOT, root));
   }
 
   @Override

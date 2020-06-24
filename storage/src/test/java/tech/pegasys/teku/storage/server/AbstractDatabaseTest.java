@@ -712,7 +712,7 @@ public abstract class AbstractDatabaseTest {
           slot < nextBlock.getSlot().longValue();
           slot++) {
         assertThat(database.getLatestFinalizedBlockAtSlot(UnsignedLong.valueOf(slot)))
-            .describedAs("Finalized block at slot %s", slot)
+            .describedAs("Latest finalized block at slot %s", slot)
             .contains(currentBlock);
       }
     }
@@ -721,8 +721,8 @@ public abstract class AbstractDatabaseTest {
     final SignedBeaconBlock lastFinalizedBlock = finalizedBlocks.get(finalizedBlocks.size() - 1);
     for (int i = 0; i < 10; i++) {
       final UnsignedLong slot = lastFinalizedBlock.getSlot().plus(UnsignedLong.valueOf(i));
-      assertThat(database.getFinalizedBlockAtSlot(slot))
-          .describedAs("Finalized block at slot %s", slot)
+      assertThat(database.getLatestFinalizedBlockAtSlot(slot))
+          .describedAs("Latest finalized block at slot %s", slot)
           .contains(lastFinalizedBlock);
     }
   }
