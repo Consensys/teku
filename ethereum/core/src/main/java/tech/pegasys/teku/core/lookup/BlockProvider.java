@@ -32,27 +32,51 @@ public interface BlockProvider {
 
   BlockProvider NOOP = (roots) -> SafeFuture.completedFuture(Collections.emptyMap());
 
+  static BlockProvider fromMap(final Map<Bytes32, SignedBeaconBlock> blockMap) {
+    return (roots) ->
+        SafeFuture.completedFuture(
+            roots.stream()
+                .map(blockMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
+  }
+
+  static BlockProvider fromList(final List<SignedBeaconBlock> blockAndStates) {
+    final Map<Bytes32, SignedBeaconBlock> blocks =
+        blockAndStates.stream()
+            .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+
+    return fromMap(blocks);
+  }
+
   static BlockProvider withKnownBlocks(
       final BlockProvider blockProvider, final Map<Bytes32, SignedBeaconBlock> knownBlocks) {
-    return (final Set<Bytes32> blockRoots) -> {
-      final Map<Bytes32, SignedBeaconBlock> blocks =
-          blockRoots.stream()
-              .map(knownBlocks::get)
-              .filter(Objects::nonNull)
-              .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
-      final Set<Bytes32> remainingRoots = Sets.difference(blockRoots, blocks.keySet());
-      if (remainingRoots.size() == 0) {
-        return SafeFuture.completedFuture(blocks);
-      }
+    return combined(fromMap(knownBlocks), blockProvider);
+  }
 
-      // Look up missing blocks
-      return blockProvider
-          .getBlocks(remainingRoots)
-          .thenApply(
-              retrieved -> {
-                blocks.putAll(retrieved);
-                return blocks;
-              });
+  static BlockProvider combined(
+      final BlockProvider primaryProvider, final BlockProvider... secondaryProviders) {
+
+    return (final Set<Bytes32> blockRoots) -> {
+      SafeFuture<Map<Bytes32, SignedBeaconBlock>> result = primaryProvider.getBlocks(blockRoots);
+      for (BlockProvider nextProvider : secondaryProviders) {
+        result =
+            result.thenCompose(
+                blocks -> {
+                  final Set<Bytes32> remainingRoots = Sets.difference(blockRoots, blocks.keySet());
+                  if (remainingRoots.isEmpty()) {
+                    return SafeFuture.completedFuture(blocks);
+                  }
+                  return nextProvider
+                      .getBlocks(remainingRoots)
+                      .thenApply(
+                          moreBlocks -> {
+                            blocks.putAll(moreBlocks);
+                            return blocks;
+                          });
+                });
+      }
+      return result;
     };
   }
 

@@ -33,7 +33,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.BlockProviderFactory;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -80,7 +79,7 @@ class StoreTest {
     final UnsignedLong epoch3Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(4));
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
     final BlockProvider blockProvider =
-        BlockProviderFactory.fromMap(
+        BlockProvider.fromMap(
             chainBuilder
                 .streamBlocksAndStates()
                 .collect(
@@ -195,7 +194,7 @@ class StoreTest {
     final Store store =
         new Store(
             new StubMetricsSystem(),
-            BlockProviderFactory.fromMap(blockLookup),
+            BlockProvider.fromMap(blockLookup),
             genesis.getState().getGenesis_time(),
             genesis.getState().getGenesis_time(),
             genesisCheckpoint,

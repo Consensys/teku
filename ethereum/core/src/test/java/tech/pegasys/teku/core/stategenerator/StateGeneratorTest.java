@@ -37,7 +37,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.BlockProviderFactory;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
@@ -237,7 +236,7 @@ public class StateGeneratorTest {
     final SignedBeaconBlock missingBlock =
         chainBuilder.getBlockAtSlot(genesis.getSlot().plus(UnsignedLong.valueOf(2)));
     blockMap.remove(missingBlock.getRoot());
-    final BlockProvider blockProvider = BlockProviderFactory.fromMap(blockMap);
+    final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 
     final StateGenerator generator = StateGenerator.create(tree, genesis, blockProvider);
     processor.accept(generator, missingBlock);
@@ -313,7 +312,7 @@ public class StateGeneratorTest {
             .blocks(descendantBlocks)
             .blocks(unconnectedBlocks)
             .build();
-    final BlockProvider blockProvider = BlockProviderFactory.fromList(allBlocks);
+    final BlockProvider blockProvider = BlockProvider.fromList(allBlocks);
     final StateGenerator generator =
         supplyAllKnownStates
             ? StateGenerator.create(

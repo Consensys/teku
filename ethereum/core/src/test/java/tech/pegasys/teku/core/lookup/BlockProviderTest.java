@@ -59,7 +59,7 @@ public class BlockProviderTest {
             .streamBlocksAndStates(6)
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
 
-    final BlockProvider origProvider = BlockProviderFactory.fromMap(otherBlocks);
+    final BlockProvider origProvider = BlockProvider.fromMap(otherBlocks);
     final BlockProvider provider = BlockProvider.withKnownBlocks(origProvider, knownBlocks);
 
     // Pull known blocks
@@ -69,6 +69,38 @@ public class BlockProviderTest {
     // Pull blocks from original provider
     for (Bytes32 root : otherBlocks.keySet()) {
       assertThat(provider.getBlock(root).get()).contains(otherBlocks.get(root));
+    }
+  }
+
+  @Test
+  void combined() throws StateTransitionException, ExecutionException, InterruptedException {
+    chainBuilder.generateGenesis();
+    chainBuilder.generateBlocksUpToSlot(10);
+
+    final Map<Bytes32, SignedBeaconBlock> allBlocks =
+        chainBuilder
+            .streamBlocksAndStates()
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
+    final Map<Bytes32, SignedBeaconBlock> setA =
+        chainBuilder
+            .streamBlocksAndStates(0, 3)
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
+    final Map<Bytes32, SignedBeaconBlock> setB =
+        chainBuilder
+            .streamBlocksAndStates(4, 6)
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
+    final Map<Bytes32, SignedBeaconBlock> setC =
+        chainBuilder
+            .streamBlocksAndStates(7, 10)
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
+
+    final BlockProvider provider =
+        BlockProvider.combined(
+            BlockProvider.fromMap(setA), BlockProvider.fromMap(setB), BlockProvider.fromMap(setC));
+
+    // Check all blocks are available
+    for (Bytes32 root : allBlocks.keySet()) {
+      assertThat(provider.getBlock(root).get()).contains(allBlocks.get(root));
     }
   }
 }

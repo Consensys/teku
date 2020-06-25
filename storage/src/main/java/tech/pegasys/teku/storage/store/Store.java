@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
@@ -53,6 +54,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategyUpdater;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.collections.LimitedMap;
 
@@ -109,22 +111,24 @@ class Store implements UpdatableStore {
     stateRequestRegenerateCounter = stateRequestCounter.labels("regenerate");
     stateRequestMissCounter = stateRequestCounter.labels("miss");
 
-    this.blockProvider =
-        BlockProvider.withKnownBlocks(
-            blockProvider,
-            Map.of(finalizedBlockAndState.getRoot(), finalizedBlockAndState.getBlock()));
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
     this.best_justified_checkpoint = best_justified_checkpoint;
     this.blocks =
-        LimitedMap.create(
+        ConcurrentLimitedMap.create(
             pruningOptions.getBlockCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     this.block_states =
         LimitedMap.create(
             pruningOptions.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     this.checkpoint_states = new HashMap<>(checkpoint_states);
+
+    this.blockProvider =
+        BlockProvider.combined(
+            fromMap(Map.of(finalizedBlockAndState.getRoot(), finalizedBlockAndState.getBlock())),
+            fromMap(this.blocks),
+            blockProvider);
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
