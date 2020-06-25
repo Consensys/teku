@@ -16,7 +16,6 @@ package tech.pegasys.teku.core.lookup;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,23 +29,15 @@ public class BlockProviderFactory {
         blockAndStates.stream()
             .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
 
-    return new MapBackedBlockProvider(blocks);
+    return fromMap(blocks);
   }
 
-  private static class MapBackedBlockProvider implements BlockProvider {
-    private final Map<Bytes32, SignedBeaconBlock> blocks;
-
-    private MapBackedBlockProvider(final Map<Bytes32, SignedBeaconBlock> blocks) {
-      this.blocks = blocks;
-    }
-
-    @Override
-    public SafeFuture<Map<Bytes32, SignedBeaconBlock>> getBlocks(final Set<Bytes32> blockRoots) {
-      return SafeFuture.completedFuture(
-          blockRoots.stream()
-              .map(blocks::get)
-              .filter(Objects::nonNull)
-              .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
-    }
+  public static BlockProvider fromMap(final Map<Bytes32, SignedBeaconBlock> blockMap) {
+    return (roots) ->
+        SafeFuture.completedFuture(
+            roots.stream()
+                .map(blockMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
   }
 }

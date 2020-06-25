@@ -59,7 +59,7 @@ public class BlockProviderTest {
             .streamBlocksAndStates(6)
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
 
-    final BlockProvider origProvider = BlockProvider.fromMap(otherBlocks);
+    final BlockProvider origProvider = BlockProviderFactory.fromMap(otherBlocks);
     final BlockProvider provider = BlockProvider.withKnownBlocks(origProvider, knownBlocks);
 
     // Pull known blocks

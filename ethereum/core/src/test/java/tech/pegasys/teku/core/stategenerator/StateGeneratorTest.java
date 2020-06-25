@@ -237,7 +237,7 @@ public class StateGeneratorTest {
     final SignedBeaconBlock missingBlock =
         chainBuilder.getBlockAtSlot(genesis.getSlot().plus(UnsignedLong.valueOf(2)));
     blockMap.remove(missingBlock.getRoot());
-    final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
+    final BlockProvider blockProvider = BlockProviderFactory.fromMap(blockMap);
 
     final StateGenerator generator = StateGenerator.create(tree, genesis, blockProvider);
     processor.accept(generator, missingBlock);
