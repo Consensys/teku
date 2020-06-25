@@ -74,26 +74,13 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
                   state.getFinalized_checkpoint().getEpoch());
             });
 
-    finalizedRoot.ifPresent(
-        root -> {
-          forkChoice.protoArrayLock.writeLock().lock();
-          try {
-            forkChoice.protoArray.maybePrune(root);
-          } finally {
-            forkChoice.protoArrayLock.writeLock().unlock();
-          }
-        });
+    finalizedRoot.ifPresent(forkChoice.protoArray::maybePrune);
 
     // Process head updates
     headUpdates.ifPresent(this::updateForkChoiceWeights);
 
     // Commit vote changes
-    forkChoice.votesLock.writeLock().lock();
-    try {
-      votes.applyUpdates();
-    } finally {
-      forkChoice.votesLock.writeLock().unlock();
-    }
+    votes.applyUpdates();
   }
 
   public Map<UnsignedLong, VoteTracker> getVotes() {
@@ -107,9 +94,6 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
       final BeaconState justifiedCheckpointState) {
     checkState(headUpdates.isEmpty(), "Head is already updated");
 
-    forkChoice.protoArrayLock.readLock().lock();
-    forkChoice.balancesLock.readLock().lock();
-    try {
       List<UnsignedLong> oldBalances = forkChoice.balances;
       List<UnsignedLong> newBalances = justifiedCheckpointState.getBalances().asList();
 
@@ -119,10 +103,6 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
           Optional.of(
               new HeadUpdates(
                   finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState, deltas));
-    } finally {
-      forkChoice.protoArrayLock.readLock().unlock();
-      forkChoice.balancesLock.readLock().unlock();
-    }
   }
 
   @Override
@@ -147,7 +127,6 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
   void processAttestation(
       UnsignedLong validatorIndex, Bytes32 blockRoot, UnsignedLong targetEpoch) {
     VoteTracker vote = votes.getVote(validatorIndex);
-    ;
 
     if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
       vote.setNextRoot(blockRoot);
@@ -162,9 +141,6 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
 
   @VisibleForTesting
   void updateForkChoiceWeights(final HeadUpdates headUpdates) {
-    forkChoice.protoArrayLock.writeLock().lock();
-    forkChoice.balancesLock.writeLock().lock();
-    try {
       final Checkpoint justifiedCheckpoint = headUpdates.getJustifiedCheckpoint();
       final Checkpoint finalizedCheckpoint = headUpdates.getFinalizedCheckpoint();
       final BeaconState justifiedState = headUpdates.getJustifiedCheckpointState();
@@ -175,10 +151,6 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
       forkChoice.protoArray.applyScoreChanges(
           deltas, justifiedCheckpoint.getEpoch(), finalizedCheckpoint.getEpoch());
       forkChoice.balances = new ArrayList<>(newBalances);
-    } finally {
-      forkChoice.protoArrayLock.writeLock().unlock();
-      forkChoice.balancesLock.writeLock().unlock();
-    }
   }
 
   @VisibleForTesting
@@ -189,13 +161,8 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
       Bytes32 stateRoot,
       UnsignedLong justifiedEpoch,
       UnsignedLong finalizedEpoch) {
-    forkChoice.protoArrayLock.writeLock().lock();
-    try {
       forkChoice.protoArray.onBlock(
           blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
-    } finally {
-      forkChoice.protoArrayLock.writeLock().unlock();
-    }
   }
 
   @Override

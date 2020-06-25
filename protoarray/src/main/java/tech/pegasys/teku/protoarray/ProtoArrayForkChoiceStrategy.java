@@ -29,9 +29,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceState {
-  final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
-  final ReadWriteLock votesLock = new ReentrantReadWriteLock();
-  final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   final ProtoArray protoArray;
 
   Checkpoint justifiedCheckpoint;
@@ -80,62 +77,32 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceState {
 
   @Override
   public Bytes32 getHead() {
-    protoArrayLock.readLock().lock();
-    try {
       // justifiedCheckpoint is guarded by justifiedCheckpoint
       return protoArray.findHead(justifiedCheckpoint.getRoot());
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
   }
 
   @VisibleForTesting
   public void setPruneThreshold(int pruneThreshold) {
-    protoArrayLock.writeLock().lock();
-    try {
       protoArray.setPruneThreshold(pruneThreshold);
-    } finally {
-      protoArrayLock.writeLock().unlock();
-    }
   }
 
   public int size() {
-    protoArrayLock.readLock().lock();
-    try {
       return protoArray.getNodes().size();
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
   }
 
   @Override
   public boolean containsBlock(Bytes32 blockRoot) {
-    protoArrayLock.readLock().lock();
-    try {
       return protoArray.getIndices().containsKey(blockRoot);
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
   }
 
   @Override
   public Optional<UnsignedLong> getBlockSlot(Bytes32 blockRoot) {
-    protoArrayLock.readLock().lock();
-    try {
-      return getProtoNode(blockRoot).map(ProtoNode::getBlockSlot);
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
+    return getProtoNode(blockRoot).map(ProtoNode::getBlockSlot);
   }
 
   @Override
   public Optional<Bytes32> getBlockParent(Bytes32 blockRoot) {
-    protoArrayLock.readLock().lock();
-    try {
       return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
-    } finally {
-      protoArrayLock.readLock().unlock();
-    }
   }
 
   public ProtoArrayForkChoiceStrategyUpdater updater() {

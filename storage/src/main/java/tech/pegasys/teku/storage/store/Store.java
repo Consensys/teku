@@ -684,11 +684,17 @@ class Store implements UpdatableStore {
 
     @Override
     public void updateHead() {
-      final Checkpoint finalized = getFinalizedCheckpoint();
-      final Checkpoint justified = getJustifiedCheckpoint();
-      final BeaconState justifiedState = getCheckpointState(justified);
-      forkChoiceUpdater.updateHead(finalized, justified, justifiedState);
-      this.headUpdated = true;
+      final Lock writeLock = Store.this.lock.writeLock();
+      writeLock.lock();
+      try {
+        final Checkpoint finalized = getFinalizedCheckpoint();
+        final Checkpoint justified = getJustifiedCheckpoint();
+        final BeaconState justifiedState = getCheckpointState(justified);
+        forkChoiceUpdater.updateHead(finalized, justified, justifiedState);
+        this.headUpdated = true;
+      } finally {
+        writeLock.unlock();
+      }
     }
 
     @Override
