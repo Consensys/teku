@@ -17,5 +17,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public interface StateHandler {
+  StateHandler NOOP = (block, state) -> {};
+
   void handle(final SignedBeaconBlock block, final BeaconState state);
 }

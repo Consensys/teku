@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core.stategenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
@@ -22,6 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -39,6 +42,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class StateGeneratorTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
@@ -180,6 +184,63 @@ public class StateGeneratorTest {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
 
     testRegenerateAllStates(0, 10, genesis, 0, Collections.emptyList());
+  }
+
+  @Test
+  public void regenerateAllStates_failOnMissingBlocks() throws StateTransitionException {
+    testGeneratorWithMissingBlock(
+        (generator, missingBlock) -> {
+          SafeFuture<Void> result = generator.regenerateAllStates(StateHandler.NOOP);
+          assertThatThrownBy(result::get)
+              .hasCauseInstanceOf(IllegalStateException.class)
+              .hasMessageContaining("Failed to retrieve required block: " + missingBlock.getRoot());
+        });
+  }
+
+  @Test
+  public void regenerateStateForBlock_failOnMissingBlocks() throws StateTransitionException {
+    testGeneratorWithMissingBlock(
+        (generator, missingBlock) -> {
+          SafeFuture<BeaconState> result =
+              generator.regenerateStateForBlock(missingBlock.getRoot());
+          assertThatThrownBy(result::get)
+              .hasCauseInstanceOf(IllegalStateException.class)
+              .hasMessageContaining("Failed to retrieve blocks: " + missingBlock.getRoot());
+        });
+  }
+
+  @Test
+  public void regenerateStateForBlock_blockPastTargetIsMissing() throws StateTransitionException {
+    testGeneratorWithMissingBlock(
+        (generator, missingBlock) -> {
+          SignedBlockAndState target =
+              chainBuilder.getBlockAndStateAtSlot(missingBlock.getSlot().minus(UnsignedLong.ONE));
+          SafeFuture<BeaconState> result = generator.regenerateStateForBlock(target.getRoot());
+          assertThat(result).isCompletedWithValue(target.getState());
+        });
+  }
+
+  private void testGeneratorWithMissingBlock(
+      BiConsumer<StateGenerator, SignedBeaconBlock> processor) throws StateTransitionException {
+    // Build a small chain
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    chainBuilder.generateBlocksUpToSlot(5);
+    final Map<Bytes32, SignedBeaconBlock> blockMap =
+        chainBuilder
+            .streamBlocksAndStates()
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+
+    final HashTree tree =
+        HashTree.builder().rootHash(genesis.getRoot()).blocks(blockMap.values()).build();
+    // Create block provider that is missing some blocks
+    final SignedBeaconBlock missingBlock =
+        chainBuilder.getBlockAtSlot(genesis.getSlot().plus(UnsignedLong.valueOf(2)));
+    blockMap.remove(missingBlock.getRoot());
+    final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
+
+    final StateGenerator generator = StateGenerator.create(tree, genesis, blockProvider);
+    processor.accept(generator, missingBlock);
   }
 
   private void testRegenerateAllStates(

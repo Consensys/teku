@@ -125,7 +125,12 @@ class AsyncChainStateGenerator {
                       .filter(Objects::nonNull)
                       .collect(Collectors.toList());
               if (chainBlocks.size() < blockRoots.size()) {
-                throw new IllegalStateException("Failed to retrieve some blocks");
+                final String missingBlocks =
+                    blockRoots.stream()
+                        .filter(root -> !blocks.containsKey(root))
+                        .map(Object::toString)
+                        .collect(Collectors.joining(", "));
+                throw new IllegalStateException("Failed to retrieve blocks: " + missingBlocks);
               }
 
               final ChainStateGenerator chainStateGenerator =
