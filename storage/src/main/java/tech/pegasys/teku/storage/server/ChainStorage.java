@@ -13,35 +13,42 @@
 
 package tech.pegasys.teku.storage.server;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.StreamingStateRegenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
+
+  private static final int FINALIZED_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 3;
+
   private final EventBus eventBus;
 
   private final Database database;
+  private final FinalizedStateCache finalizedStateCache;
   private volatile Optional<UpdatableStore> cachedStore = Optional.empty();
 
-  private ChainStorage(final EventBus eventBus, final Database database) {
+  private ChainStorage(
+      final EventBus eventBus,
+      final Database database,
+      final FinalizedStateCache finalizedStateCache) {
     this.eventBus = eventBus;
     this.database = database;
+    this.finalizedStateCache = finalizedStateCache;
   }
 
   public static ChainStorage create(final EventBus eventBus, final Database database) {
-    return new ChainStorage(eventBus, database);
+    return new ChainStorage(
+        eventBus, database, new FinalizedStateCache(database, FINALIZED_STATE_CACHE_SIZE, true));
   }
 
   public void start() {
@@ -119,18 +126,6 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UnsignedLong slot) {
-    return database
-        .getLatestAvailableFinalizedState(slot)
-        .map(state -> regenerateState(slot, state));
-  }
-
-  private BeaconState regenerateState(final UnsignedLong slot, final BeaconState state) {
-    if (state.getSlot().equals(slot)) {
-      return state;
-    }
-    try (final Stream<SignedBeaconBlock> blocks =
-        database.streamFinalizedBlocks(state.getSlot().plus(ONE), slot)) {
-      return StreamingStateRegenerator.regenerate(state, blocks);
-    }
+    return finalizedStateCache.getFinalizedState(slot);
   }
 }
