@@ -35,6 +35,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class PowchainService extends Service {
@@ -47,7 +48,9 @@ public class PowchainService extends Service {
 
     AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
 
-    Web3j web3j = Web3j.build(new HttpService(tekuConfig.getEth1Endpoint()));
+    final HttpService web3jService = new HttpService(tekuConfig.getEth1Endpoint());
+    web3jService.addHeader("User-Agent", VersionProvider.VERSION);
+    Web3j web3j = Web3j.build(web3jService);
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
