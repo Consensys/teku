@@ -58,7 +58,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isFalse();
+    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
   }
 
   @Test
