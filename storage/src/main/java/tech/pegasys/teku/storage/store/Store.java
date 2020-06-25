@@ -684,8 +684,7 @@ class Store implements UpdatableStore {
 
     @Override
     public void updateHead() {
-      final Lock writeLock = Store.this.lock.writeLock();
-      writeLock.lock();
+      readLock.lock();
       try {
         final Checkpoint finalized = getFinalizedCheckpoint();
         final Checkpoint justified = getJustifiedCheckpoint();
@@ -693,7 +692,7 @@ class Store implements UpdatableStore {
         forkChoiceUpdater.updateHead(finalized, justified, justifiedState);
         this.headUpdated = true;
       } finally {
-        writeLock.unlock();
+        readLock.unlock();
       }
     }
 
