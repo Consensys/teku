@@ -94,15 +94,15 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
       final BeaconState justifiedCheckpointState) {
     checkState(headUpdates.isEmpty(), "Head is already updated");
 
-      List<UnsignedLong> oldBalances = forkChoice.balances;
-      List<UnsignedLong> newBalances = justifiedCheckpointState.getBalances().asList();
+    List<UnsignedLong> oldBalances = forkChoice.balances;
+    List<UnsignedLong> newBalances = justifiedCheckpointState.getBalances().asList();
 
-      List<Long> deltas =
-          computeDeltas(votes, forkChoice.protoArray.getIndices(), oldBalances, newBalances);
-      this.headUpdates =
-          Optional.of(
-              new HeadUpdates(
-                  finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState, deltas));
+    List<Long> deltas =
+        computeDeltas(votes, forkChoice.protoArray.getIndices(), oldBalances, newBalances);
+    this.headUpdates =
+        Optional.of(
+            new HeadUpdates(
+                finalizedCheckpoint, justifiedCheckpoint, justifiedCheckpointState, deltas));
   }
 
   @Override
@@ -141,16 +141,16 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
 
   @VisibleForTesting
   void updateForkChoiceWeights(final HeadUpdates headUpdates) {
-      final Checkpoint justifiedCheckpoint = headUpdates.getJustifiedCheckpoint();
-      final Checkpoint finalizedCheckpoint = headUpdates.getFinalizedCheckpoint();
-      final BeaconState justifiedState = headUpdates.getJustifiedCheckpointState();
-      final List<UnsignedLong> newBalances = justifiedState.getBalances().asList();
-      final List<Long> deltas = headUpdates.getWeightChanges();
+    final Checkpoint justifiedCheckpoint = headUpdates.getJustifiedCheckpoint();
+    final Checkpoint finalizedCheckpoint = headUpdates.getFinalizedCheckpoint();
+    final BeaconState justifiedState = headUpdates.getJustifiedCheckpointState();
+    final List<UnsignedLong> newBalances = justifiedState.getBalances().asList();
+    final List<Long> deltas = headUpdates.getWeightChanges();
 
-      forkChoice.justifiedCheckpoint = headUpdates.getJustifiedCheckpoint();
-      forkChoice.protoArray.applyScoreChanges(
-          deltas, justifiedCheckpoint.getEpoch(), finalizedCheckpoint.getEpoch());
-      forkChoice.balances = new ArrayList<>(newBalances);
+    forkChoice.justifiedCheckpoint = headUpdates.getJustifiedCheckpoint();
+    forkChoice.protoArray.applyScoreChanges(
+        deltas, justifiedCheckpoint.getEpoch(), finalizedCheckpoint.getEpoch());
+    forkChoice.balances = new ArrayList<>(newBalances);
   }
 
   @VisibleForTesting
@@ -161,8 +161,8 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
       Bytes32 stateRoot,
       UnsignedLong justifiedEpoch,
       UnsignedLong finalizedEpoch) {
-      forkChoice.protoArray.onBlock(
-          blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
+    forkChoice.protoArray.onBlock(
+        blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
   }
 
   @Override

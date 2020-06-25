@@ -20,8 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.forkchoice.ForkChoiceState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -77,22 +75,22 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceState {
 
   @Override
   public Bytes32 getHead() {
-      // justifiedCheckpoint is guarded by justifiedCheckpoint
-      return protoArray.findHead(justifiedCheckpoint.getRoot());
+    // justifiedCheckpoint is guarded by justifiedCheckpoint
+    return protoArray.findHead(justifiedCheckpoint.getRoot());
   }
 
   @VisibleForTesting
   public void setPruneThreshold(int pruneThreshold) {
-      protoArray.setPruneThreshold(pruneThreshold);
+    protoArray.setPruneThreshold(pruneThreshold);
   }
 
   public int size() {
-      return protoArray.getNodes().size();
+    return protoArray.getNodes().size();
   }
 
   @Override
   public boolean containsBlock(Bytes32 blockRoot) {
-      return protoArray.getIndices().containsKey(blockRoot);
+    return protoArray.getIndices().containsKey(blockRoot);
   }
 
   @Override
@@ -102,7 +100,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceState {
 
   @Override
   public Optional<Bytes32> getBlockParent(Bytes32 blockRoot) {
-      return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
+    return getProtoNode(blockRoot).map(ProtoNode::getParentRoot);
   }
 
   public ProtoArrayForkChoiceStrategyUpdater updater() {
