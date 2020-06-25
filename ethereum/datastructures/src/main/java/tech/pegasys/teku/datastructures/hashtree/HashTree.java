@@ -67,8 +67,6 @@ public class HashTree {
    * @return A new {@code HashTree} containing only nodes that descend from the new root.
    */
   public Builder withRoot(final Bytes32 newRootHash) {
-    checkArgument(contains(newRootHash), "Unknown hash provided");
-
     Builder builder = builder().rootHash(newRootHash);
     preOrderStream(newRootHash)
         .forEach(
