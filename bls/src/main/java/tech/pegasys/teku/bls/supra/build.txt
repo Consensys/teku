@@ -1,0 +1,34 @@
+[Linux]
+swig -java -outcurrentdir -package tech.pegasys.teku.bls.supra ../blst/bindings/blst.swg
+gcc -fPIC -c blst_wrap.c -I/usr/lib/jvm/java-11-openjdk-amd64/include/linux -I/usr/lib/jvm/java-11-openjdk-amd64/include -I ../blst/bindings
+ld -G blst_wrap.o ../blst/libblst.a -o libjblst.so
+
+[Windows]
+
+diff --git a/bindings/blst.swg b/bindings/blst.swg
+index c1de9a7..8786106 100644
+--- a/bindings/blst.swg
++++ b/bindings/blst.swg
+@@ -82,6 +82,9 @@
+ %apply (char *STRING, size_t LENGTH) { (const byte *info, size_t info_len) };
+ %apply const char * { const byte in[ANY] };
+
++%include "arrays_java.i";
++%include "stdint.i"
++
+ %include "blst.h"
+ %include "blst_aux.h"
+ %extend blst_pairing {
+
+
+cygwin
+' install gcc-mingw-w64
+' install perl
+export CC=gcc
+cd /cygdrive/e/ws/blst/
+./build.sh
+mkdir bindings/java
+cd bindings/java
+E:\swigwin-4.0.2\swig.exe  -java -outcurrentdir -DSWIGWORDSIZE64 -package tech.pegasys.teku.bls.supra E:\ws\blst\bindings\blst.swg
+gcc -march=native -fPIC -c blst_wrap.c -I../../../../jdk-11.0.5/include/win32 -I../../../../jdk-11.0.5/include -I..
+gcc -shared blst_wrap.o ../../libblst.a -o jblst.dll
