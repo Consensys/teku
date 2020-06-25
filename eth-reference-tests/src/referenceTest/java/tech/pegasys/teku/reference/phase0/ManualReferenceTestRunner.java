@@ -41,6 +41,9 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    */
   private static final String TEST_TYPE = "";
 
+  /** Filter test to run to those from the specified spec. One of general, minimal or mainnet */
+  private static final String SPEC = "";
+
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")
   void shouldRunReferenceTest(final String name, final TestDefinition testDefinition)
@@ -52,6 +55,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   @MustBeClosed
   static Stream<Arguments> loadReferenceTests() throws IOException {
     return ReferenceTestFinder.findReferenceTests()
+        .filter(testDefinition -> SPEC.isBlank() || testDefinition.getSpec().equalsIgnoreCase(SPEC))
         .filter(testDefinition -> testDefinition.getTestType().startsWith(TEST_TYPE))
         .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
   }

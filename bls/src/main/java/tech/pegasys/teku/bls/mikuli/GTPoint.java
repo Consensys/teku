@@ -20,25 +20,25 @@ import org.apache.milagro.amcl.BLS381.FP12;
  * GT is the object that holds the result of the pairing operation. Points in GT are elements of
  * Fq12.
  */
-final class GTPoint {
+public final class GTPoint {
 
   private final FP12 point;
 
-  GTPoint(FP12 point) {
+  public GTPoint(FP12 point) {
     this.point = point;
   }
 
-  GTPoint mul(GTPoint other) {
+  public GTPoint mul(GTPoint other) {
     FP12 newPoint = new FP12(other.point);
     newPoint.mul(point);
     return new GTPoint(newPoint);
   }
 
-  boolean isunity() {
+  public boolean isunity() {
     return point.isunity();
   }
 
-  FP12 getPoint() {
+  public FP12 getPoint() {
     return point;
   }
 

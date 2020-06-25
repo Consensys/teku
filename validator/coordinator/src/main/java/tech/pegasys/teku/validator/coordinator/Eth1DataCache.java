@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import com.google.common.collect.Maps;
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,7 +63,7 @@ public class Eth1DataCache {
 
   public Eth1Data getEth1Vote(BeaconState state) {
     NavigableMap<UnsignedLong, Eth1Data> votesToConsider =
-        getVotesToConsider(state.getSlot(), state.getGenesis_time());
+        getVotesToConsider(state.getSlot(), state.getGenesis_time(), state.getEth1_data());
     Map<Eth1Data, Eth1Vote> validVotes = new HashMap<>();
 
     int i = 0;
@@ -87,12 +88,14 @@ public class Eth1DataCache {
   }
 
   private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider(
-      final UnsignedLong slot, final UnsignedLong genesisTime) {
-    return eth1ChainCache.subMap(
-        eth1VotingPeriod.getSpecRangeLowerBound(slot, genesisTime),
-        true,
-        eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
-        true);
+      final UnsignedLong slot, final UnsignedLong genesisTime, final Eth1Data dataFromState) {
+    return Maps.filterValues(
+        eth1ChainCache.subMap(
+            eth1VotingPeriod.getSpecRangeLowerBound(slot, genesisTime),
+            true,
+            eth1VotingPeriod.getSpecRangeUpperBound(slot, genesisTime),
+            true),
+        eth1Data -> eth1Data.getDeposit_count().compareTo(dataFromState.getDeposit_count()) >= 0);
   }
 
   private void prune(final UnsignedLong latestBlockTimestamp) {

@@ -61,7 +61,7 @@ public final class G2Point implements Group<G2Point> {
   private static final int fpPointSize = BIG.MODBYTES;
 
   /** Default constructor creates the point at infinity (the zero point) */
-  G2Point() {
+  public G2Point() {
     this(new ECP2());
   }
 
@@ -86,11 +86,11 @@ public final class G2Point implements Group<G2Point> {
     return new G2Point(point.mul(scalar.value()));
   }
 
-  ECP2 getPoint() {
+  public ECP2 getPoint() {
     return point;
   }
 
-  Bytes toBytes() {
+  public Bytes toBytes() {
     byte[] bytes = new byte[4 * fpPointSize];
     point.toBytes(bytes);
     return Bytes.wrap(bytes);
@@ -129,7 +129,7 @@ public final class G2Point implements Group<G2Point> {
     return Bytes.concatenate(Bytes.wrap(xImBytes), Bytes.wrap(xReBytes));
   }
 
-  static G2Point fromBytes(Bytes bytes) {
+  public static G2Point fromBytes(Bytes bytes) {
     checkArgument(
         bytes.size() == 4 * fpPointSize, "Expected 192 bytes, received %s.", bytes.size());
     return new G2Point(ECP2.fromBytes(bytes.toArrayUnsafe()));
@@ -216,11 +216,11 @@ public final class G2Point implements Group<G2Point> {
    * @param point The elliptic curve point
    * @return True if the point is in G2; false otherwise
    */
-  static boolean isInGroup(ECP2 point) {
+  public static boolean isInGroup(ECP2 point) {
     return HashToCurve.isInGroupG2(point);
   }
 
-  ECP2 ecp2Point() {
+  public ECP2 ecp2Point() {
     return point;
   }
 
