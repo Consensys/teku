@@ -38,9 +38,8 @@ public class DataOptions {
 
   @Option(
       names = {"--data-storage-archive-frequency"},
-      hidden = true,
       paramLabel = "<FREQUENCY>",
-      description = "Sets the frequency, in slots, at which to store archived states to disk.",
+      description = "Sets the frequency, in slots, at which to store finalized states to disk.",
       arity = "1")
   private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
