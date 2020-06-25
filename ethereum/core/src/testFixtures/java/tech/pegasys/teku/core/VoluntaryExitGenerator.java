@@ -80,7 +80,7 @@ public class VoluntaryExitGenerator {
             .getValidators()
             .get(validatorIndex)
             .getActivation_epoch()
-            .plus(UnsignedLong.valueOf(Constants.PERSISTENT_COMMITTEE_PERIOD))
+            .plus(Constants.SHARD_COMMITTEE_PERIOD)
             .compareTo(compute_epoch_at_slot(state.getSlot()))
         >= 0) {
       throw new IllegalStateException(
