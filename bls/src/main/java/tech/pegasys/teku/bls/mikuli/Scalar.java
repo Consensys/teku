@@ -17,16 +17,21 @@ import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 
 /** This class represents an ordinary scalar value. */
-final class Scalar {
+public final class Scalar {
 
   private final BIG value;
 
-  Scalar(BIG value) {
+  public Scalar(BIG value) {
     this.value = value;
   }
 
-  BIG value() {
+  public BIG value() {
     return value;
+  }
+
+  /** Overwrites the value with zeros so that it is no longer in memory */
+  public void destroy() {
+    value().imul(0);
   }
 
   @Override

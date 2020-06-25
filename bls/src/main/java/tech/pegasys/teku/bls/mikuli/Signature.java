@@ -15,7 +15,6 @@ package tech.pegasys.teku.bls.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.teku.bls.mikuli.KeyPair.g1Generator;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
@@ -30,27 +29,27 @@ public final class Signature {
 
   private static final int COMPRESSED_SIG_SIZE = 96;
   private static final int UNCOMPRESSED_SIG_SIZE = 192;
-  private static final G1Point g1GeneratorNeg = g1Generator.neg();
+  private static final G1Point g1GeneratorNeg = Util.g1Generator.neg();
 
   /**
-   * Aggregates list of Signature pairs, returns the signature that corresponds to G2 point at
-   * infinity if list is empty
+   * Aggregates a list of Signatures, returning the signature that corresponds to G2 point at
+   * infinity if list is empty.
    *
    * @param signatures The list of signatures to aggregate
    * @return Signature
    */
-  static Signature aggregate(List<Signature> signatures) {
+  public static Signature aggregate(List<Signature> signatures) {
     return aggregate(signatures.stream());
   }
 
   /**
-   * Aggregates a stream of Signature pairs, returns the signature that corresponds to G2 point at
-   * infinity if list is empty
+   * Aggregates a stream of Signatures, returning the signature that corresponds to G2 point at
+   * infinity if list is empty.
    *
    * @param signatures The stream of signatures to aggregate
    * @return Signature
    */
-  static Signature aggregate(Stream<Signature> signatures) {
+  public static Signature aggregate(Stream<Signature> signatures) {
     return signatures.reduce(Signature::combine).orElseGet(() -> new Signature(new G2Point()));
   }
 
@@ -102,7 +101,7 @@ public final class Signature {
    *
    * @param point the G2 point corresponding to the signature
    */
-  Signature(G2Point point) {
+  public Signature(G2Point point) {
     this.rawData = point.toBytes();
     this.point = () -> point;
   }
@@ -112,7 +111,7 @@ public final class Signature {
    *
    * @param rawData Bytes that may or may not correspond to a G2 point
    */
-  Signature(Bytes rawData) {
+  public Signature(Bytes rawData) {
     this.rawData = rawData;
     this.point = Suppliers.memoize(() -> parseSignatureBytes(this.rawData));
   }
@@ -122,7 +121,7 @@ public final class Signature {
    *
    * @param signature the signature to be copied
    */
-  Signature(Signature signature) {
+  public Signature(Signature signature) {
     this.rawData = signature.rawData;
     this.point = signature.point;
   }
@@ -149,7 +148,7 @@ public final class Signature {
    * @param hashInG2 The G2 point corresponding to the message data to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  boolean verify(PublicKey publicKey, G2Point hashInG2) {
+  public boolean verify(PublicKey publicKey, G2Point hashInG2) {
     try {
       GTPoint e = AtePairing.pair2(publicKey.g1Point(), hashInG2, g1GeneratorNeg, point.get());
       return e.isunity();
@@ -165,7 +164,7 @@ public final class Signature {
    * @param hashesInG2 The list of G2 point corresponding to the messages to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  boolean aggregateVerify(List<PublicKey> publicKeys, List<G2Point> hashesInG2) {
+  public boolean aggregateVerify(List<PublicKey> publicKeys, List<G2Point> hashesInG2) {
     checkArgument(
         publicKeys.size() == hashesInG2.size(),
         "List of public keys and list of messages differ in length");
@@ -175,7 +174,7 @@ public final class Signature {
       for (int i = 1; i < publicKeys.size(); i++) {
         gt1 = gt1.mul(AtePairing.pair(publicKeys.get(i).g1Point(), hashesInG2.get(i)));
       }
-      GTPoint gt2 = AtePairing.pair(g1Generator, point.get());
+      GTPoint gt2 = AtePairing.pair(Util.g1Generator, point.get());
       return gt2.equals(gt1);
     } catch (RuntimeException e) {
       return false;
@@ -188,7 +187,7 @@ public final class Signature {
    * @param signature the signature to combine with
    * @return a new signature as combination of both signatures
    */
-  private Signature combine(Signature signature) {
+  public Signature combine(Signature signature) {
     return new Signature(point.get().add(signature.point.get()));
   }
 

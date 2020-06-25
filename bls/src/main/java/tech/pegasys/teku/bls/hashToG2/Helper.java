@@ -13,24 +13,28 @@
 
 package tech.pegasys.teku.bls.hashToG2;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.bls.hashToG2.Chains.expChain;
 import static tech.pegasys.teku.bls.hashToG2.Chains.mxChain;
 import static tech.pegasys.teku.bls.hashToG2.Consts.iwsc;
 import static tech.pegasys.teku.bls.hashToG2.Consts.k_cx;
+import static tech.pegasys.teku.bls.hashToG2.Consts.k_cx_abs;
 import static tech.pegasys.teku.bls.hashToG2.Consts.k_cy;
 import static tech.pegasys.teku.bls.hashToG2.Consts.k_qi_x;
 import static tech.pegasys.teku.bls.hashToG2.Consts.k_qi_y;
 import static tech.pegasys.teku.bls.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.teku.bls.hashToG2.IetfTools.HKDF_Expand;
-import static tech.pegasys.teku.bls.hashToG2.IetfTools.HKDF_Extract;
 import static tech.pegasys.teku.bls.hashToG2.Util.os2ip_modP;
 
-import java.nio.charset.StandardCharsets;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.crypto.Hash;
 
 class Helper {
+
+  private static final int SHA256_HASH_SIZE = 32;
+  private static final int SHA256_BLOCK_SIZE = 64;
 
   /**
    * Tests whether the given point lies on the BLS12-381 curve.
@@ -38,6 +42,7 @@ class Helper {
    * @param p a JacobianPoint
    * @return true if the point is on the curve, false otherwise
    */
+  @VisibleForTesting
   static boolean isOnCurve(JacobianPoint p) {
     if (p.isInfinity()) {
       return true;
@@ -62,65 +67,92 @@ class Helper {
    * @return true if the point is in G2, false otherwise
    */
   static boolean isInG2(JacobianPoint p) {
-    return isOnCurve(p) && g2_map_to_infinity(p).isInfinity();
+    return isOnCurve(p) && mapG2ToInfinity(p).isInfinity();
   }
 
   /**
-   * Apply a transformation that maps G2 elements, and only G2 elements, to infinity
+   * Apply a transformation that maps G2 elements, and only G2 elements, to infinity.
    *
    * <p>Uses the technique from https://eprint.iacr.org/2019/814.pdf section 3.1
    *
-   * @return
+   * @param p the point on the curve to test
+   * @return the point at infinity iff p is in G2, otherwise an arbitrary point
    */
-  static JacobianPoint g2_map_to_infinity(JacobianPoint p) {
-    JacobianPoint psi1 = psi(p);
-    JacobianPoint psi2 = psi(psi1);
-    JacobianPoint psi3 = psi(psi2);
-    return mxChain(psi3).add(psi2).neg().add(p);
+  @VisibleForTesting
+  static JacobianPoint mapG2ToInfinity(JacobianPoint p) {
+    JacobianPoint psi3 = psi2(psi(p));
+    return mxChain(psi3).add(psi2(p)).neg().add(p);
   }
 
   /**
-   * Hashes a string msg of any length into an element of the FP2 field.
+   * Produces a uniformly random byte string of arbitrary length using SHA-256.
    *
-   * <p>As defined at https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-04#section-5.3
-   *
-   * <p>This is hash_to_base() in the reference code.
+   * <p>As defined at https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-5.3.1
    *
    * @param message the message to hash
-   * @param ctr 0, 1, or 2 - used to efficiently create independent instances of hash_to_base
-   * @param salt key for the HMAC base hash
-   * @return an element in FP2
+   * @param dst the domain separation tag for the cipher suite
+   * @param lengthInBytes the number of bytes we want to obtain
+   * @return a uniformly random sequence of Bytes
    */
-  static FP2Immutable hashToBase(Bytes message, byte ctr, Bytes salt) {
+  @VisibleForTesting
+  static Bytes expandMessage(Bytes message, Bytes dst, int lengthInBytes) {
+    checkArgument(dst.size() < 256, "The DST must be 255 bytes or fewer.");
+    checkArgument(lengthInBytes > 0, "Number of bytes requested must be greater than zero.");
 
-    final Bytes h2cBytes = Bytes.wrap("H2C".getBytes(StandardCharsets.US_ASCII));
-    final Bytes ctrBytes = Bytes.of(ctr);
+    final int ell = 1 + (lengthInBytes - 1) / SHA256_HASH_SIZE;
+    checkArgument(ell <= 255, "Too many bytes of output were requested.");
 
-    Bytes info, t;
+    byte[] uniformBytes = new byte[ell * SHA256_HASH_SIZE];
 
-    // Do HKDF-Extract
-    Bytes m_prime = HKDF_Extract(salt, Bytes.concatenate(message, Bytes.of((byte) 0)));
-
-    // Do first HKDF-Expand
-    info = Bytes.concatenate(h2cBytes, ctrBytes, Bytes.of((byte) 1));
-    t = HKDF_Expand(m_prime, info, 64);
-    FP e1 = os2ip_modP(t);
-
-    // Do second HKDF-Expand
-    info = Bytes.concatenate(h2cBytes, ctrBytes, Bytes.of((byte) 2));
-    t = HKDF_Expand(m_prime, info, 64);
-    FP e2 = os2ip_modP(t);
-
-    return new FP2Immutable(e1, e2);
+    Bytes dstPrime = Bytes.concatenate(dst, Bytes.of((byte) dst.size()));
+    Bytes zPad = Bytes.wrap(new byte[SHA256_BLOCK_SIZE]);
+    Bytes libStr = Bytes.ofUnsignedShort(lengthInBytes);
+    Bytes b0 =
+        Hash.sha2_256(Bytes.concatenate(zPad, message, libStr, Bytes.of((byte) 0), dstPrime));
+    Bytes bb = Hash.sha2_256(Bytes.concatenate(b0, Bytes.of((byte) 1), dstPrime));
+    System.arraycopy(bb.toArrayUnsafe(), 0, uniformBytes, 0, SHA256_HASH_SIZE);
+    for (int i = 1; i < ell; i++) {
+      bb = Hash.sha2_256(Bytes.concatenate(b0.xor(bb), Bytes.of((byte) (i + 1)), dstPrime));
+      System.arraycopy(bb.toArrayUnsafe(), 0, uniformBytes, i * SHA256_HASH_SIZE, SHA256_HASH_SIZE);
+    }
+    return Bytes.wrap(uniformBytes, 0, lengthInBytes);
   }
 
   /**
-   * Calculates a point on the elliptic curve E from an element of the finite field FP2.
+   * Hashes a string msg of any length into one or more elements of the FP2 field.
    *
-   * <p>Curve E here is a curve isogenous to the BLS12-381 curve. Points generated by this function
-   * will likely fail the onCurveG2() test.
+   * <p>As defined at https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-5.2
    *
-   * <p>This corresponds to osswu2_help() in the reference code.
+   * @param message the message to hash
+   * @param count the number of field elements to return
+   * @param dst the domain separation tag for the cipher suite
+   * @return an element in FP2
+   */
+  static FP2Immutable[] hashToField(Bytes message, int count, Bytes dst) {
+
+    // See https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-8.8.1
+    final int l = 64;
+    // The extension degree of our field, FP2
+    final int m = 2;
+
+    final int lenInBytes = count * m * l;
+    final Bytes uniformBytes = expandMessage(message, dst, lenInBytes);
+    FP2Immutable[] u = new FP2Immutable[count];
+
+    for (int i = 0; i < count; i++) {
+      FP e0 = os2ip_modP(uniformBytes.slice(l * i * m, l));
+      FP e1 = os2ip_modP(uniformBytes.slice(l * (1 + i * m), l));
+      u[i] = new FP2Immutable(e0, e1);
+    }
+
+    return u;
+  }
+
+  /**
+   * Calculates a point on the elliptic curve E' from an element of the finite field FP2.
+   *
+   * <p>Curve E' here is a curve isogenous to the BLS12-381 curve. The isogenous curve parameters
+   * are here: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-8.8.2
    *
    * @param t the input field point
    * @return a point on the isogenous curve
@@ -189,7 +221,7 @@ class Helper {
   }
 
   /**
-   * Transforms a point on the isogenous curve onto a point on the BLS12-381 curve.
+   * Maps a point on the isogenous curve E' onto a point on the BLS12-381 curve.
    *
    * <p>This function evaluates the isogeny over Jacobian projective coordinates. For details, see
    * Section 4.3 of Wahby and Boneh, "Fast and simple constant-time hashing to the BLS12-381
@@ -199,7 +231,6 @@ class Helper {
    * @return output point on BLS12-381
    */
   static JacobianPoint iso3(JacobianPoint p) {
-
     FP2Immutable x = new FP2Immutable(p.getX());
     FP2Immutable y = new FP2Immutable(p.getY());
     FP2Immutable z = new FP2Immutable(p.getZ());
@@ -241,7 +272,7 @@ class Helper {
     return new JacobianPoint(xx, yy, zz);
   }
 
-  // Shortcut Frobenius evaluation that avoids going all the way to Fq12
+  /** Shortcut Frobenius evaluation that avoids going all the way to Fq12 */
   private static FP2Immutable qi_x(FP2Immutable x) {
     FP a = new FP(x.getFp2().getA());
     FP b = new FP(x.getFp2().getB());
@@ -251,7 +282,7 @@ class Helper {
     return new FP2Immutable(new FP2(a, b));
   }
 
-  // Shortcut Frobenius evaluation that avoids going all the way to Fq12
+  /** Shortcut Frobenius evaluation that avoids going all the way to Fq12 */
   private static FP2Immutable qi_y(FP2Immutable y) {
     FP y0 = new FP(y.getFp2().getA());
     FP y1 = new FP(y.getFp2().getB());
@@ -264,11 +295,12 @@ class Helper {
     return new FP2Immutable(new FP2(a, b));
   }
 
-  // The untwist-Frobenius-twist endomorphism
+  /** The untwist-Frobenius-twist endomorphism */
+  @VisibleForTesting
   static JacobianPoint psi(JacobianPoint p) {
-    FP2Immutable x = new FP2Immutable(p.getX());
-    FP2Immutable y = new FP2Immutable(p.getY());
-    FP2Immutable z = new FP2Immutable(p.getZ());
+    FP2Immutable x = p.getX();
+    FP2Immutable y = p.getY();
+    FP2Immutable z = p.getZ();
 
     FP2Immutable z2 = z.sqr();
     FP2Immutable px = k_cx.mul(qi_x(iwsc.mul(x)));
@@ -283,6 +315,12 @@ class Helper {
     return new JacobianPoint(xOut, yOut, zOut);
   }
 
+  /** Optimised calculation for psi^2(p) */
+  @VisibleForTesting
+  static JacobianPoint psi2(JacobianPoint p) {
+    return new JacobianPoint(p.getX().mul(k_cx_abs), p.getY().neg(), p.getZ());
+  }
+
   /**
    * Cofactor clearing
    *
@@ -290,10 +328,13 @@ class Helper {
    * BLS curves," ePrint 2017/419 https://eprint.iacr.org/2017/419 NOTE: this impl works for
    * Jacobian projective coordinates without computing an inversion.
    *
+   * <p>This is equivalent to multiplying by h_eff from
+   * https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-07#section-8.8.2
+   *
    * @param p the point to be transformed to the G2 group
    * @return a corresponding point in the G2 group
    */
-  static JacobianPoint clear_h2(JacobianPoint p) {
+  static JacobianPoint clearH2(JacobianPoint p) {
     // (-x + 1) P
     JacobianPoint work = mxChain(p).add(p);
     // -psi(P)
@@ -307,7 +348,7 @@ class Helper {
     // (x^2 - x - 1) P + (x - 1) psi(P)
     work = work.add(p.neg());
     // psi(psi(2P))
-    JacobianPoint psi_psi_2p = psi(psi(p.dbl()));
+    JacobianPoint psi_psi_2p = psi2(p.dbl());
     // (x^2 - x - 1) P + (x - 1) psi(P) + psi(psi(2P))
     work = work.add(psi_psi_2p);
 
