@@ -109,6 +109,7 @@ public class RocksDbInstanceFactory {
   private static DBOptions createDBOptions(final RocksDbConfiguration configuration) {
     return new DBOptions()
         .setCreateIfMissing(true)
+        .setDbWriteBufferSize(configuration.getCacheCapacity())
         .setMaxOpenFiles(configuration.getMaxOpenFiles())
         .setMaxBackgroundCompactions(configuration.getMaxBackgroundCompactions())
         .setCreateMissingColumnFamilies(true)
