@@ -28,6 +28,9 @@ import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
+
+  private static final int FINALIZED_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 3;
+
   private final EventBus eventBus;
 
   private final Database database;
@@ -45,7 +48,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
 
   public static ChainStorage create(final EventBus eventBus, final Database database) {
     return new ChainStorage(
-        eventBus, database, new FinalizedStateCache(database, Constants.SLOTS_PER_EPOCH * 3, true));
+        eventBus, database, new FinalizedStateCache(database, FINALIZED_STATE_CACHE_SIZE, true));
   }
 
   public void start() {
