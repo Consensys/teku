@@ -43,7 +43,7 @@ public class RocksDbInstanceFactory {
   public static RocksDbAccessor create(
       final RocksDbConfiguration configuration, final Class<? extends Schema> schema)
       throws DatabaseStorageException {
-    // Track resouces that need to be closed
+    // Track resources that need to be closed
     final List<AutoCloseable> resources = new ArrayList<>();
 
     // Create options
@@ -109,6 +109,9 @@ public class RocksDbInstanceFactory {
   private static DBOptions createDBOptions(final RocksDbConfiguration configuration) {
     return new DBOptions()
         .setCreateIfMissing(true)
+        .setBytesPerSync(1048576L)
+        .setWalBytesPerSync(1048576L)
+        .setMaxBackgroundFlushes(2)
         .setMaxOpenFiles(configuration.getMaxOpenFiles())
         .setMaxBackgroundCompactions(configuration.getMaxBackgroundCompactions())
         .setCreateMissingColumnFamilies(true)
