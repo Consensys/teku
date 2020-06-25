@@ -76,9 +76,13 @@ class StoreTransactionUpdates {
             .filter(c -> c.getEpoch().compareTo(prevFinalizedCheckpoint.getEpoch()) > 0);
 
     // Calculate new tree structure
-    HashTree.Builder blockTreeUpdater = baseStore.blockTree.updater().blocks(hotBlocks.values());
-    newFinalizedCheckpoint.ifPresent(
-        finalized -> blockTreeUpdater.rootHash(finalized.getRoot()).block(finalized.getBlock()));
+    final Bytes32 updatedRoot =
+        newFinalizedCheckpoint
+            .map(CheckpointAndBlock::getRoot)
+            .orElse(baseStore.blockTree.getRootHash());
+    HashTree.Builder blockTreeUpdater =
+        baseStore.blockTree.withRoot(updatedRoot).blocks(hotBlocks.values());
+    newFinalizedCheckpoint.ifPresent(finalized -> blockTreeUpdater.block(finalized.getBlock()));
     final HashTree updatedBlockTree = blockTreeUpdater.build();
 
     // Calculate finalized chain data
@@ -144,10 +148,13 @@ class StoreTransactionUpdates {
       final SignedBeaconBlock newlyFinalizedBlock,
       final Collection<SignedBeaconBlock> newBlocks) {
 
-    final HashTree tree = baseStore.blockTree.updater().blocks(newBlocks).build();
+    final HashTree finalizedTree =
+        baseStore.blockTree.contains(newlyFinalizedBlock.getRoot())
+            ? baseStore.blockTree
+            : baseStore.blockTree.updater().blocks(newBlocks).build();
 
     final HashMap<Bytes32, Bytes32> childToParent = new HashMap<>();
-    tree.processHashesInChain(newlyFinalizedBlock.getRoot(), childToParent::put);
+    finalizedTree.processHashesInChain(newlyFinalizedBlock.getRoot(), childToParent::put);
     return childToParent;
   }
 
