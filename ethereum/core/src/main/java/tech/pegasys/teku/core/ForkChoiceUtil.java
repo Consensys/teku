@@ -456,6 +456,15 @@ public class ForkChoiceUtil {
           "Attestations must not be for blocks in the future. If not, the attestation should not be considered");
     }
 
+    // LMD vote must be consistent with FFG vote target
+    final UnsignedLong target_slot = compute_start_slot_at_epoch(target.getEpoch());
+    if (get_ancestor(forkChoiceStrategy, attestation.getData().getBeacon_block_root(), target_slot)
+        .map(ancestorRoot -> !ancestorRoot.equals(target.getRoot()))
+        .orElse(true)) {
+      return AttestationProcessingResult.invalid(
+          "LMD vote must be consistent with FFG vote target");
+    }
+
     return SUCCESSFUL;
   }
 

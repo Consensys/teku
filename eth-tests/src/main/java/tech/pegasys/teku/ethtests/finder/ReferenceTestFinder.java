@@ -43,8 +43,7 @@ public class ReferenceTestFinder {
             new SszTestFinder("ssz_generic"),
             new SszTestFinder("ssz_static"),
             new ShufflingTestFinder(),
-            new PyspecTestFinder(),
-            new ForkChoiceTestFinder())
+            new PyspecTestFinder())
         .flatMap(unchecked(finder -> finder.findTests(spec, phase0Tests)));
   }
 

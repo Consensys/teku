@@ -31,6 +31,7 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.OptionalInt;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -131,7 +132,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(REJECT);
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -143,7 +144,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(IGNORE);
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -155,7 +156,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(SAVE_FOR_FUTURE);
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -167,7 +168,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedBlockAndState target = beaconChainUtil.createBlockAndStateAtSlot(ONE, true);
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(target.toUnsigned());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(SAVE_FOR_FUTURE);
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -184,7 +185,7 @@ class SignedAggregateAndProofValidatorTest {
             .selectionProof(dataStructureUtil.randomSignature())
             .generate();
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(SAVE_FOR_FUTURE);
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -312,10 +313,16 @@ class SignedAggregateAndProofValidatorTest {
     beaconChainUtil.setSlot(ONE);
     final BeaconBlockAndState chainHead = recentChainData.getBestBlockAndState().orElseThrow();
 
+    // We need a validator that is an aggregator for both epoch 0 and 1. 238 happens to be one.
+    final UnsignedLong aggregatorIndex = UnsignedLong.valueOf(238);
     final SignedAggregateAndProof aggregateAndProof1 =
-        generator.validAggregateAndProof(chainHead, ZERO);
+        generator
+            .generator()
+            .blockAndState(chainHead)
+            .slot(ZERO)
+            .aggregatorIndex(aggregatorIndex)
+            .generate();
 
-    final UnsignedLong aggregatorIndex = aggregateAndProof1.getMessage().getIndex();
     final CommitteeAssignment epochOneCommitteeAssignment =
         getCommitteeAssignment(chainHead, aggregatorIndex.intValue(), ONE);
     final SignedAggregateAndProof aggregateAndProof2 =
@@ -432,7 +439,7 @@ class SignedAggregateAndProofValidatorTest {
 
   private void whenAttestationIsValid(final SignedAggregateAndProof aggregate) {
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            aggregate.getMessage().getAggregate()))
+            aggregate.getMessage().getAggregate(), OptionalInt.empty()))
         .thenReturn(ACCEPT);
   }
 

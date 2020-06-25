@@ -51,7 +51,7 @@ public final class PublicKey {
    * @param keys The list of public keys to aggregate
    * @return PublicKey The public key
    */
-  static PublicKey aggregate(List<PublicKey> keys) {
+  public static PublicKey aggregate(List<PublicKey> keys) {
     return keys.isEmpty()
         ? new PublicKey(new G1Point())
         : keys.stream().reduce(PublicKey::combine).get();
@@ -90,15 +90,15 @@ public final class PublicKey {
    * @param secretKey
    */
   public PublicKey(SecretKey secretKey) {
-    this(KeyPair.g1Generator.mul(secretKey.getScalarValue()));
+    this(Util.g1Generator.mul(secretKey.getScalarValue()));
   }
 
-  PublicKey(G1Point point) {
+  public PublicKey(G1Point point) {
     this.rawData = Suppliers.memoize(point::toBytes);
     this.point = () -> point;
   }
 
-  PublicKey(Bytes rawData) {
+  public PublicKey(Bytes rawData) {
     this.rawData = () -> rawData;
     this.point = Suppliers.memoize(() -> parsePublicKeyBytes(rawData));
   }
@@ -118,7 +118,7 @@ public final class PublicKey {
             + publicKeyBytes.size());
   }
 
-  PublicKey combine(PublicKey pk) {
+  public PublicKey combine(PublicKey pk) {
     return new PublicKey(point.get().add(pk.point.get()));
   }
 
