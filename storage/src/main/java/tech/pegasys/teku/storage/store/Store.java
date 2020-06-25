@@ -457,7 +457,7 @@ class Store implements UpdatableStore {
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
     readLock.lock();
     try {
-      this.blockTree.processHashesInChain(
+      this.blockTree.processHashesInChainWhile(
           blockRoot,
           (root, parent) -> {
             treeBuilder.childAndParentRoots(root, parent);

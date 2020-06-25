@@ -94,7 +94,7 @@ public class HashTree {
    * @param processor The callback to invoke for each child-parent pair
    */
   public void processHashesInChain(final Bytes32 head, NodeProcessor processor) {
-    processHashesInChain(head, HaltableNodeProcessor.fromNodeProcessor(processor));
+    processHashesInChainWhile(head, HaltableNodeProcessor.fromNodeProcessor(processor));
   }
 
   /**
@@ -108,7 +108,7 @@ public class HashTree {
   public List<Bytes32> collectChainRoots(
       final Bytes32 head, Function<Bytes32, Boolean> shouldContinue) {
     final Deque<Bytes32> chain = new ArrayDeque<>();
-    processHashesInChain(
+    processHashesInChainWhile(
         head,
         (child, parent) -> {
           chain.addFirst(child);
@@ -125,7 +125,7 @@ public class HashTree {
    * @param nodeProcessor The callback receiving hashes and determining whether to continue
    *     processing
    */
-  public void processHashesInChain(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
+  public void processHashesInChainWhile(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
     checkArgument(contains(head), "Unknown root supplied: " + head);
 
     Optional<Bytes32> currentRoot = Optional.of(head);
