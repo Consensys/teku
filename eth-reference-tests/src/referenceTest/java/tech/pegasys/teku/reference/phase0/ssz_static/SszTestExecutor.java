@@ -88,7 +88,7 @@ public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
               "ssz_static/SignedBeaconBlockHeader",
               new SszTestExecutor<>(SignedBeaconBlockHeader.class))
           .put("ssz_static/SignedVoluntaryExit", new SszTestExecutor<>(SignedVoluntaryExit.class))
-          .put("ssz_static/SigningRoot", IGNORE_TESTS) // TODO: Should make this work
+          .put("ssz_static/SigningData", IGNORE_TESTS) // TODO: Should make this work
           .put("ssz_static/Validator", new SszTestExecutor<>(Validator.class))
           .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(VoluntaryExit.class))
 

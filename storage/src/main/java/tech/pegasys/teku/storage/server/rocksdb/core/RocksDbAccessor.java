@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.core;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -22,8 +23,6 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 public interface RocksDbAccessor extends AutoCloseable {
 
   <T> Optional<T> get(RocksDbVariable<T> variable);
-
-  <T> T getOrThrow(RocksDbVariable<T> variable);
 
   <K, V> Optional<V> get(RocksDbColumn<K, V> column, K key);
 
@@ -50,7 +49,22 @@ public interface RocksDbAccessor extends AutoCloseable {
    */
   <K, V> Optional<ColumnEntry<K, V>> getLastEntry(RocksDbColumn<K, V> column);
 
+  @MustBeClosed
   <K, V> Stream<ColumnEntry<K, V>> stream(RocksDbColumn<K, V> column);
+
+  /**
+   * Stream entries from a column between keys from and to fully inclusive.
+   *
+   * @param column the column to stream entries from
+   * @param from the first key to return
+   * @param to the last key to return
+   * @param <K> the key type of the column
+   * @param <V> the value type of the column
+   * @return a Stream of entries between from and to (fully inclusive).
+   */
+  @MustBeClosed
+  <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
+      RocksDbColumn<K, V> column, K from, K to);
 
   RocksDbTransaction startTransaction();
 

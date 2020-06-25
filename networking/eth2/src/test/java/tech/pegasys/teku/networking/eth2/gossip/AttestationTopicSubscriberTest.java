@@ -14,40 +14,61 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static com.google.common.primitives.UnsignedLong.valueOf;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForCommittee;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 class AttestationTopicSubscriberTest {
 
   private final Eth2Network eth2Network = mock(Eth2Network.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final BeaconState state = dataStructureUtil.randomBeaconState(ZERO);
 
-  private final AttestationTopicSubscriber subscriber = new AttestationTopicSubscriber(eth2Network);
+  private final AttestationTopicSubscriber subscriber =
+      new AttestationTopicSubscriber(eth2Network, recentChainData);
+
+  @BeforeEach
+  public void setUp() {
+    when(recentChainData.getBestState()).thenReturn(Optional.of(state));
+  }
 
   @Test
   public void shouldSubscribeToSubnet() {
-    final int subnetId = 10;
-    subscriber.subscribeToCommitteeForAggregation(subnetId, ONE);
+    final int committeeId = 10;
+    final int subnetId = computeSubnetForCommittee(state, ONE, valueOf(committeeId));
+    subscriber.subscribeToCommitteeForAggregation(committeeId, ONE);
 
     verify(eth2Network).subscribeToAttestationSubnetId(subnetId);
   }
 
   @Test
   public void shouldUnsubscribeFromSubnetWhenPastSlot() {
-    final int subnetId = 12;
+    final int committeeId = 12;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(10);
+    final int subnetId = computeSubnetForCommittee(state, aggregationSlot, valueOf(committeeId));
 
-    subscriber.subscribeToCommitteeForAggregation(subnetId, aggregationSlot);
+    subscriber.subscribeToCommitteeForAggregation(committeeId, aggregationSlot);
     subscriber.onSlot(aggregationSlot.plus(ONE));
 
     verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
@@ -66,15 +87,19 @@ class AttestationTopicSubscriberTest {
 
   @Test
   public void shouldExtendSubscriptionPeriod() {
-    final int subnetId = 3;
+    final int committeeId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
-    final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
+    final UnsignedLong secondSlot = UnsignedLong.valueOf(18);
+    final int subnetId = computeSubnetForCommittee(state, firstSlot, valueOf(committeeId));
+    // Sanity check second subscription is for the same subnet ID.
+    assertThat(subnetId)
+        .isEqualTo(computeSubnetForCommittee(state, secondSlot, valueOf(committeeId)));
 
-    subscriber.subscribeToCommitteeForAggregation(subnetId, firstSlot);
-    subscriber.subscribeToCommitteeForAggregation(subnetId, secondSlot);
+    subscriber.subscribeToCommitteeForAggregation(committeeId, firstSlot);
+    subscriber.subscribeToCommitteeForAggregation(committeeId, secondSlot);
 
     subscriber.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(anyInt());
 
     subscriber.onSlot(secondSlot.plus(ONE));
     verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
@@ -82,15 +107,19 @@ class AttestationTopicSubscriberTest {
 
   @Test
   public void shouldPreserveLaterSubscriptionPeriodWhenEarlierSlotAdded() {
-    final int subnetId = 3;
+    final int committeeId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
-    final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
+    final UnsignedLong secondSlot = UnsignedLong.valueOf(18);
+    final int subnetId = computeSubnetForCommittee(state, firstSlot, valueOf(committeeId));
+    // Sanity check the two subscriptions are for the same subnet
+    assertThat(computeSubnetForCommittee(state, secondSlot, valueOf(committeeId)))
+        .isEqualTo(subnetId);
 
-    subscriber.subscribeToCommitteeForAggregation(subnetId, secondSlot);
-    subscriber.subscribeToCommitteeForAggregation(subnetId, firstSlot);
+    subscriber.subscribeToCommitteeForAggregation(committeeId, secondSlot);
+    subscriber.subscribeToCommitteeForAggregation(committeeId, firstSlot);
 
     subscriber.onSlot(firstSlot.plus(ONE));
-    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(subnetId);
+    verify(eth2Network, never()).unsubscribeFromAttestationSubnetId(anyInt());
 
     subscriber.onSlot(secondSlot.plus(ONE));
     verify(eth2Network).unsubscribeFromAttestationSubnetId(subnetId);
@@ -119,8 +148,12 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(1, someSlot);
     subscriber.subscribeToCommitteeForAggregation(2, someSlot);
 
-    verify(eth2Network).subscribeToAttestationSubnetId(1);
-    verify(eth2Network).subscribeToAttestationSubnetId(2);
+    verify(eth2Network)
+        .subscribeToAttestationSubnetId(
+            computeSubnetForCommittee(state, someSlot, UnsignedLong.valueOf(1)));
+    verify(eth2Network)
+        .subscribeToAttestationSubnetId(
+            computeSubnetForCommittee(state, someSlot, UnsignedLong.valueOf(2)));
 
     subscriber.subscribeToPersistentSubnets(subnetSubscription);
 
@@ -149,12 +182,13 @@ class AttestationTopicSubscriberTest {
 
   @Test
   public void shouldPreserveLaterSubscription_forPersistentSubscriptions() {
-    final int subnetId = 3;
+    final int committeeId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
+    final int subnetId = computeSubnetForCommittee(state, secondSlot, valueOf(committeeId));
+    subscriber.subscribeToCommitteeForAggregation(committeeId, secondSlot);
     Set<SubnetSubscription> subnetSubscriptions =
         Set.of(new SubnetSubscription(subnetId, firstSlot));
-    subscriber.subscribeToCommitteeForAggregation(subnetId, secondSlot);
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
     subscriber.onSlot(firstSlot.plus(ONE));

@@ -29,6 +29,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -90,7 +91,7 @@ public class SignedAggregateAndProofValidator {
     }
 
     final InternalValidationResult aggregateInternalValidationResult =
-        attestationValidator.singleOrAggregateAttestationChecks(aggregate);
+        attestationValidator.singleOrAggregateAttestationChecks(aggregate, OptionalInt.empty());
     if (aggregateInternalValidationResult == REJECT
         || aggregateInternalValidationResult == IGNORE) {
       LOG.trace("Rejecting aggregate because attestation failed validation");
