@@ -316,28 +316,45 @@ public class RocksDbDatabase implements Database {
     }
 
     try (final FinalizedUpdater updater = finalizedDao.finalizedUpdater()) {
-      // Get previously finalized block to build on top of
-      final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
-
-      final HashTree blockTree =
-          HashTree.builder()
-              .rootHash(baseBlock.getRoot())
-              .childAndParentRoots(finalizedChildToParentMap)
-              .build();
-
       final BlockProvider blockProvider =
           BlockProvider.withKnownBlocks(
               roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
-      final StateGenerator stateGenerator =
-          StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
-      // TODO - don't join, create synchronous API for synchronous blockProvider
-      stateGenerator
-          .regenerateAllStates(
-              (block, state) -> {
-                updater.addFinalizedBlock(block);
-                putFinalizedState(updater, block.getRoot(), state);
-              })
-          .join();
+
+      switch (stateStorageMode) {
+        case ARCHIVE:
+          // Get previously finalized block to build on top of
+          final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
+
+          final HashTree blockTree =
+              HashTree.builder()
+                  .rootHash(baseBlock.getRoot())
+                  .childAndParentRoots(finalizedChildToParentMap)
+                  .build();
+
+          final StateGenerator stateGenerator =
+              StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
+          // TODO - don't join, create synchronous API for synchronous blockProvider
+          stateGenerator
+              .regenerateAllStates(
+                  (block, state) -> {
+                    updater.addFinalizedBlock(block);
+                    updater.addFinalizedState(block.getRoot(), state);
+                  })
+              .join();
+          break;
+        case PRUNE:
+          for (Bytes32 root : finalizedChildToParentMap.keySet()) {
+            SignedBeaconBlock block =
+                blockProvider
+                    .getBlock(root)
+                    .join()
+                    .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
+            updater.addFinalizedBlock(block);
+          }
+          break;
+        default:
+          throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
+      }
 
       updater.commit();
     }
