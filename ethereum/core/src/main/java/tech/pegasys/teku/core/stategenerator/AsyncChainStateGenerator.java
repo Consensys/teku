@@ -55,7 +55,7 @@ class AsyncChainStateGenerator {
   }
 
   public SafeFuture<BeaconState> generateTargetState(final Bytes32 targetRoot) {
-    if (!blockTree.containsBlock(targetRoot)) {
+    if (!blockTree.contains(targetRoot)) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException("Target root is unknown: " + targetRoot));
     }

@@ -140,17 +140,16 @@ class Store implements UpdatableStore {
     // Create state generator
     final StateGenerator stateGenerator =
         StateGenerator.create(blockTree, finalizedBlockAndState, this.blockProvider);
-    if (blockTree.getBlockCount() < childToParentRoot.size()) {
+    if (blockTree.size() < childToParentRoot.size()) {
       // This should be an error, but keeping this as a warning now for backwards-compatibility
       // reasons.  Some existing databases may have unpruned fork blocks, and could become
       // unusable
       // if we throw here.  In the future, we should convert this to an error.
-      LOG.warn(
-          "Ignoring {} non-canonical blocks", childToParentRoot.size() - blockTree.getBlockCount());
+      LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - blockTree.size());
     }
 
     // Process blocks
-    LOG.info("Process {} block(s) to regenerate state", blockTree.getBlockCount());
+    LOG.info("Process {} block(s) to regenerate state", blockTree.size());
     final AtomicInteger processedBlocks = new AtomicInteger(0);
     // TODO - handle future properly
     final ProtoArrayForkChoiceStrategyUpdater forkChoiceUpdater = forkChoiceState.updater();
@@ -167,7 +166,7 @@ class Store implements UpdatableStore {
             })
         .join();
     forkChoiceUpdater.commit();
-    LOG.info("Finished processing {} block(s)", blockTree.getBlockCount());
+    LOG.info("Finished processing {} block(s)", blockTree.size());
   }
 
   /**
@@ -358,7 +357,7 @@ class Store implements UpdatableStore {
   public boolean containsBlock(Bytes32 blockRoot) {
     readLock.lock();
     try {
-      return blockTree.containsBlock(blockRoot);
+      return blockTree.contains(blockRoot);
     } finally {
       readLock.unlock();
     }

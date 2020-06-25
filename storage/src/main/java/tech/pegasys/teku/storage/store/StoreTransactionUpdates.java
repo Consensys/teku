@@ -174,10 +174,10 @@ class StoreTransactionUpdates {
 
     Set<Bytes32> roots =
         baseStore.blockTree.getAllRoots().stream()
-            .filter(root -> !prunedTree.containsBlock(root))
+            .filter(root -> !prunedTree.contains(root))
             .collect(Collectors.toSet());
 
-    tx.getBlockRoots().stream().filter(root -> !prunedTree.containsBlock(root)).forEach(roots::add);
+    tx.getBlockRoots().stream().filter(root -> !prunedTree.contains(root)).forEach(roots::add);
     return roots;
   }
 

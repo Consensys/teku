@@ -17,6 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -28,67 +31,61 @@ public class HashTreeTest {
   @Test
   public void build_singleChain() {
     final SignedBeaconBlock baseBlock = dataStructureUtil.randomSignedBeaconBlock(0);
-    final List<SignedBeaconBlock> chain =
+    final List<SignedBeaconBlock> descendants =
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 5);
+    final List<SignedBeaconBlock> chain = new ArrayList<>();
+    chain.add(baseBlock);
+    chain.addAll(descendants);
 
     final HashTree blockTree =
         HashTree.builder().rootHash(baseBlock.getRoot()).block(baseBlock).blocks(chain).build();
 
-    // All blocks should be available
-    assertThat(blockTree.getBlockCount()).isEqualTo(chain.size() + 1);
-    assertThat(blockTree.containsBlock(baseBlock.getRoot())).isTrue();
-    for (SignedBeaconBlock block : chain) {
-      assertThat(blockTree.containsBlock(block.getRoot())).isTrue();
-    }
+    validateTreeRepresentsChain(blockTree, chain);
   }
 
   @Test
   public void build_ignoreRandomBlock() {
     final SignedBeaconBlock baseBlock = dataStructureUtil.randomSignedBeaconBlock(0);
-    final List<SignedBeaconBlock> chain =
+    final List<SignedBeaconBlock> descendants =
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 5);
     final SignedBeaconBlock randomBlock = dataStructureUtil.randomSignedBeaconBlock(2);
 
+    final List<SignedBeaconBlock> chain = new ArrayList<>();
+    chain.add(baseBlock);
+    chain.addAll(descendants);
+
     final HashTree blockTree =
-        HashTree.builder()
-            .rootHash(baseBlock.getRoot())
-            .block(baseBlock)
-            .blocks(chain)
-            .block(randomBlock)
-            .build();
+        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).block(randomBlock).build();
 
     // Only valid blocks should be available
-    assertThat(blockTree.getBlockCount()).isEqualTo(chain.size() + 1);
-    assertThat(blockTree.containsBlock(baseBlock.getRoot())).isTrue();
-    for (SignedBeaconBlock block : chain) {
-      assertThat(blockTree.containsBlock(block.getRoot())).isTrue();
-    }
+    validateTreeRepresentsChain(blockTree, chain);
   }
 
   @Test
   public void build_withForks() {
     final SignedBeaconBlock baseBlock = dataStructureUtil.randomSignedBeaconBlock(0);
-    final List<SignedBeaconBlock> chain =
+    final List<SignedBeaconBlock> descendantsA =
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 5);
-    final List<SignedBeaconBlock> chain2 =
+    final List<SignedBeaconBlock> descendantsB =
         dataStructureUtil.randomSignedBeaconBlockSequence(baseBlock, 3);
 
-    final HashTree blockTree =
-        HashTree.builder()
-            .rootHash(baseBlock.getRoot())
-            .block(baseBlock)
-            .blocks(chain)
-            .blocks(chain2)
-            .build();
+    final List<SignedBeaconBlock> chainA = new ArrayList<>();
+    chainA.add(baseBlock);
+    chainA.addAll(descendantsA);
 
-    // All blocks should be available
-    final List<SignedBeaconBlock> allBlocks = new ArrayList<>(chain);
-    allBlocks.addAll(chain2);
-    allBlocks.add(baseBlock);
-    assertThat(blockTree.getBlockCount()).isEqualTo(allBlocks.size());
-    for (SignedBeaconBlock block : allBlocks) {
-      assertThat(blockTree.containsBlock(block.getRoot())).isTrue();
-    }
+    final List<SignedBeaconBlock> chainB = new ArrayList<>();
+    chainB.add(baseBlock);
+    chainB.addAll(descendantsB);
+
+    final HashTree tree =
+        HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chainA).blocks(chainB).build();
+
+    validateTreeRepresentsChains(tree, List.of(chainA, chainB));
+
+    // Check child counts
+    validateChildCountsForChain(tree, descendantsA);
+    validateChildCountsForChain(tree, descendantsB);
+    assertThat(tree.countChildren(baseBlock.getRoot())).isEqualTo(2);
   }
 
   @Test
@@ -97,17 +94,14 @@ public class HashTreeTest {
     final List<SignedBeaconBlock> chain =
         dataStructureUtil.randomSignedBeaconBlockSequence(genesis, 8);
     final SignedBeaconBlock baseBlock = chain.get(0);
+
     final List<SignedBeaconBlock> invalidFork =
         dataStructureUtil.randomSignedBeaconBlockSequence(genesis, 3);
 
     final HashTree blockTree =
         HashTree.builder().rootHash(baseBlock.getRoot()).blocks(chain).blocks(invalidFork).build();
 
-    // Only valid blocks should be available
-    assertThat(blockTree.getBlockCount()).isEqualTo(chain.size());
-    for (SignedBeaconBlock block : chain) {
-      assertThat(blockTree.containsBlock(block.getRoot())).isTrue();
-    }
+    validateTreeRepresentsChain(blockTree, chain);
   }
 
   @Test
@@ -117,7 +111,56 @@ public class HashTreeTest {
     final HashTree blockTree =
         HashTree.builder().rootHash(baseBlock.getRoot()).block(baseBlock).build();
 
-    assertThat(blockTree.getBlockCount()).isEqualTo(1);
-    assertThat(blockTree.containsBlock(baseBlock.getRoot())).isTrue();
+    assertThat(blockTree.size()).isEqualTo(1);
+    assertThat(blockTree.contains(baseBlock.getRoot())).isTrue();
+  }
+
+  private void validateTreeRepresentsChain(
+      final HashTree tree, final List<SignedBeaconBlock> chain) {
+    validateTreeRepresentsChains(tree, List.of(chain));
+  }
+
+  private void validateTreeRepresentsChains(
+      final HashTree tree, final List<List<SignedBeaconBlock>> chains) {
+    final Set<SignedBeaconBlock> allBlocks =
+        chains.stream().flatMap(List::stream).collect(Collectors.toSet());
+    assertThat(tree.size()).isEqualTo(allBlocks.size());
+
+    // Check streaming
+    List<Bytes32> expectedHashes =
+        allBlocks.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toList());
+    List<Bytes32> actualHashes = tree.preOrderStream().collect(Collectors.toList());
+    assertThat(actualHashes).containsExactlyInAnyOrderElementsOf(expectedHashes);
+
+    for (List<SignedBeaconBlock> chain : chains) {
+      SignedBeaconBlock lastBlock = chain.get(chain.size() - 1);
+
+      // All blocks should be available
+      for (SignedBeaconBlock block : chain) {
+        assertThat(tree.contains(block.getRoot())).isTrue();
+        assertThat(tree.getParent(block.getRoot())).contains(block.getParent_root());
+      }
+
+      // Validate children for simple case
+      if (chains.size() == 1) {
+        validateChildCountsForChain(tree, chain);
+      }
+
+      // Check chain collection
+      List<Bytes32> chainHashes =
+          chain.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toList());
+      List<Bytes32> result = tree.collectChainRoots(lastBlock.getRoot(), __ -> true);
+      assertThat(result).isEqualTo(chainHashes);
+    }
+  }
+
+  private void validateChildCountsForChain(
+      final HashTree tree, final List<SignedBeaconBlock> chain) {
+    final SignedBeaconBlock lastBlock = chain.get(chain.size() - 1);
+    for (int i = 0; i < chain.size() - 1; i++) {
+      SignedBeaconBlock block = chain.get(i);
+      assertThat(tree.countChildren(block.getRoot())).isEqualTo(1);
+    }
+    assertThat(tree.countChildren(lastBlock.getRoot())).isEqualTo(0);
   }
 }

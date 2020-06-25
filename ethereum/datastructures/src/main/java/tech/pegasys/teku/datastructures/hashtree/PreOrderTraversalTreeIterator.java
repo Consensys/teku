@@ -16,17 +16,21 @@ package tech.pegasys.teku.datastructures.hashtree;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class PreOrderTraversalTreeIterator implements Iterator<Bytes32> {
-  private Deque<HashTreeNode> remainingNodes = new ArrayDeque<>();
+  private final Deque<Bytes32> remainingNodes = new ArrayDeque<>();
+  private final ChildLookup childLookup;
 
-  private PreOrderTraversalTreeIterator(final HashTreeNode rootNode) {
-    remainingNodes.push(rootNode);
+  private PreOrderTraversalTreeIterator(final Bytes32 rootHash, ChildLookup childLookup) {
+    this.childLookup = childLookup;
+    remainingNodes.push(rootHash);
   }
 
-  public static Iterator<Bytes32> create(final HashTreeNode rootNode) {
-    return new PreOrderTraversalTreeIterator(rootNode);
+  public static Iterator<Bytes32> create(final Bytes32 rootNode, ChildLookup childLookup) {
+    return new PreOrderTraversalTreeIterator(rootNode, childLookup);
   }
 
   @Override
@@ -36,8 +40,14 @@ public class PreOrderTraversalTreeIterator implements Iterator<Bytes32> {
 
   @Override
   public Bytes32 next() {
-    final HashTreeNode next = remainingNodes.pop();
-    next.getChildren().forEach(remainingNodes::push);
-    return next.getHash();
+    final Bytes32 next = remainingNodes.pop();
+    Optional.ofNullable(childLookup.getChildren(next))
+        .ifPresent(children -> children.forEach(remainingNodes::push));
+    return next;
+  }
+
+  @FunctionalInterface
+  interface ChildLookup {
+    Set<Bytes32> getChildren(final Bytes32 parent);
   }
 }
