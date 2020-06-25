@@ -94,7 +94,7 @@ public class HashTree {
    * @param processor The callback to invoke for each child-parent pair
    */
   public void processHashesInChain(final Bytes32 head, NodeProcessor processor) {
-    processChainNodes(head, HaltableNodeProcessor.fromNodeProcessor(processor));
+    processHashesInChain(head, HaltableNodeProcessor.fromNodeProcessor(processor));
   }
 
   /**
@@ -108,7 +108,7 @@ public class HashTree {
   public List<Bytes32> collectChainRoots(
       final Bytes32 head, Function<Bytes32, Boolean> shouldContinue) {
     final Deque<Bytes32> chain = new ArrayDeque<>();
-    processChainNodes(
+    processHashesInChain(
         head,
         (child, parent) -> {
           chain.addFirst(child);
@@ -117,7 +117,15 @@ public class HashTree {
     return new ArrayList<>(chain);
   }
 
-  private void processChainNodes(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
+  /**
+   * Process roots in the chain defined by {@code head}. Stops processing when {@code
+   * shouldContinue} returns false.
+   *
+   * @param head The root defining the head of the chain to construct
+   * @param nodeProcessor The callback receiving hashes and determining whether to continue
+   *     processing
+   */
+  public void processHashesInChain(final Bytes32 head, HaltableNodeProcessor nodeProcessor) {
     checkArgument(contains(head), "Unknown root supplied: " + head);
 
     Optional<Bytes32> currentRoot = Optional.of(head);
@@ -206,6 +214,10 @@ public class HashTree {
           childToParentMap.containsKey(rootHash), "Must provide parent information for root");
     }
 
+    public boolean contains(final Bytes32 hash) {
+      return childToParentMap.containsKey(hash);
+    }
+
     public Builder rootHash(final Bytes32 rootBlockHash) {
       checkNotNull(rootBlockHash);
       this.rootHash = rootBlockHash;
@@ -247,7 +259,7 @@ public class HashTree {
     void process(final Bytes32 childRoot, final Bytes32 parentRoot);
   }
 
-  private interface HaltableNodeProcessor {
+  public interface HaltableNodeProcessor {
 
     static HaltableNodeProcessor fromNodeProcessor(final NodeProcessor processor) {
       return (child, parent) -> {

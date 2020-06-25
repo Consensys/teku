@@ -127,30 +127,26 @@ public class RocksDbDatabase implements Database {
   public void storeGenesis(final UpdatableStore store) {
     try (final HotUpdater hotUpdater = hotDao.hotUpdater();
         final FinalizedUpdater finalizedUpdater = finalizedDao.finalizedUpdater()) {
+      // We should only have a single block / state / checkpoint at genesis
+      final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
+      final Bytes32 genesisRoot = genesisCheckpoint.getRoot();
+      final BeaconState genesisState = store.getBlockState(genesisRoot);
+      final SignedBeaconBlock genesisBlock = store.getSignedBlock(genesisRoot);
+
       hotUpdater.setGenesisTime(store.getGenesisTime());
-      hotUpdater.setJustifiedCheckpoint(store.getJustifiedCheckpoint());
-      hotUpdater.setBestJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
-      hotUpdater.setFinalizedCheckpoint(store.getFinalizedCheckpoint());
-
-      // We should only have a single checkpoint state at genesis
-      final BeaconState genesisState =
-          store.getBlockState(store.getFinalizedCheckpoint().getRoot());
-      hotUpdater.addCheckpointState(store.getFinalizedCheckpoint(), genesisState);
+      hotUpdater.setJustifiedCheckpoint(genesisCheckpoint);
+      hotUpdater.setBestJustifiedCheckpoint(genesisCheckpoint);
+      hotUpdater.setFinalizedCheckpoint(genesisCheckpoint);
       hotUpdater.setLatestFinalizedState(genesisState);
+      hotUpdater.addCheckpointState(genesisCheckpoint, genesisState);
 
-      for (Bytes32 root : store.getBlockRoots()) {
-        // Since we're storing genesis, we should only have 1 root here corresponding to genesis
-        final SignedBeaconBlock block = store.getSignedBlock(root);
-        final BeaconState state = store.getBlockState(root);
-
-        // We need to store the genesis block in both hot and cold storage so that on restart
-        // we're guaranteed to have at least one block / state to load into RecentChainData.
-        // Save to hot storage
-        hotUpdater.addHotBlock(block);
-        // Save to cold storage
-        finalizedUpdater.addFinalizedBlock(block);
-        putFinalizedState(finalizedUpdater, root, state);
-      }
+      // We need to store the genesis block in both hot and cold storage so that on restart
+      // we're guaranteed to have at least one block / state to load into RecentChainData.
+      // Save to hot storage
+      hotUpdater.addHotBlock(genesisBlock);
+      // Save to cold storage
+      finalizedUpdater.addFinalizedBlock(genesisBlock);
+      putFinalizedState(finalizedUpdater, genesisRoot, genesisState);
 
       finalizedUpdater.commit();
       hotUpdater.commit();

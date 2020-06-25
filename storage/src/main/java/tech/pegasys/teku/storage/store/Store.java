@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -277,7 +278,7 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       final Checkpoint checkpoint = finalized_checkpoint;
-      final SignedBeaconBlock block = getSignedBlock(checkpoint.getRoot());
+      final SignedBeaconBlock block = finalizedBlockAndState.getBlock();
       return new CheckpointAndBlock(checkpoint, block);
     } finally {
       readLock.unlock();
@@ -441,59 +442,77 @@ class Store implements UpdatableStore {
   }
 
   private SafeFuture<Optional<BeaconState>> getOrGenerateBlockState(final Bytes32 blockRoot) {
-    Optional<BeaconState> state = getBlockStateIfAvailable(blockRoot);
-    if (state.isPresent()) {
-      return SafeFuture.completedFuture(state);
+    Optional<BeaconState> inMemoryState = getBlockStateIfAvailable(blockRoot);
+    if (inMemoryState.isPresent()) {
+      return SafeFuture.completedFuture(inMemoryState);
     }
-    final SignedBeaconBlock blockForState = getSignedBlock(blockRoot);
-    if (blockForState == null) {
+    if (!containsBlock(blockRoot)) {
       // If we don't have the corresponding block, we can't possibly regenerate the state
       return EMPTY_STATE_FUTURE;
     }
 
-    // TODO - leverage blockTree instance var to do this processing
-    // Accumulate blocks until we find our base state to build from
-    SignedBlockAndState baseBlock = null;
-    final Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
-    SignedBeaconBlock block = blockForState;
-    while (block != null) {
-      final Optional<BeaconState> blockState = getBlockStateIfAvailable(block.getRoot());
-      if (blockState.isPresent()) {
-        // We found a base state
-        baseBlock = new SignedBlockAndState(block, blockState.get());
-        break;
-      }
-      blocks.put(block.getRoot(), block);
-      block = getSignedBlock(block.getParent_root());
+    // Accumulate blocks hashes until we find our base state to build from
+    final HashTree.Builder treeBuilder = HashTree.builder();
+    final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
+    final AtomicReference<BeaconState> baseState = new AtomicReference<>();
+    readLock.lock();
+    try {
+      this.blockTree.processHashesInChain(
+          blockRoot,
+          (root, parent) -> {
+            treeBuilder.childAndParentRoots(root, parent);
+            final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
+            blockState.ifPresent(
+                (state) -> {
+                  // We found a base state
+                  treeBuilder.rootHash(root);
+                  baseBlockRoot.set(root);
+                  baseState.set(state);
+                });
+            return blockState.isEmpty();
+          });
+    } finally {
+      readLock.unlock();
     }
 
-    if (baseBlock == null) {
+    final SafeFuture<Optional<SignedBeaconBlock>> baseBlock;
+    if (baseBlockRoot.get() == null) {
       // If we haven't found a base state yet, we must have walked back to the latest finalized
       // block, check here for the base state
-      final SignedBlockAndState finalizedBlock = getLatestFinalizedBlockAndState();
-      if (!blocks.containsKey(finalizedBlock.getRoot())) {
+      final SignedBlockAndState finalized = getLatestFinalizedBlockAndState();
+      if (!treeBuilder.contains(finalized.getRoot())) {
         // We must have finalized a new block while processing and moved past our target root
         return EMPTY_STATE_FUTURE;
       }
-      baseBlock = finalizedBlock;
+      baseBlockRoot.set(finalized.getRoot());
+      baseState.set(finalized.getState());
+      baseBlock = SafeFuture.completedFuture(Optional.of(finalized.getBlock()));
+      treeBuilder.rootHash(finalized.getRoot());
+    } else {
+      baseBlock = retrieveSignedBlock(baseBlockRoot.get());
     }
 
     // Regenerate state
-    final HashTree tree =
-        HashTree.builder()
-            .rootHash(baseBlock.getRoot())
-            .block(baseBlock.getBlock())
-            .blocks(blocks.values())
-            .build();
-    final StateGenerator stateGenerator = StateGenerator.create(tree, baseBlock, blockProvider);
-    return stateGenerator
-        .regenerateStateForBlock(blockRoot)
-        .thenApply(
-            regeneratedState -> {
-              stateRequestRegenerateCounter.inc();
-              putBlockState(blockRoot, regeneratedState);
-              return Optional.of(regeneratedState);
-            });
+    return baseBlock.thenCompose(
+        maybeBlock ->
+            maybeBlock
+                .map(
+                    block -> {
+                      final SignedBlockAndState baseBlockAndState =
+                          new SignedBlockAndState(block, baseState.get());
+                      final HashTree tree = treeBuilder.build();
+                      final StateGenerator stateGenerator =
+                          StateGenerator.create(tree, baseBlockAndState, blockProvider);
+                      return stateGenerator
+                          .regenerateStateForBlock(blockRoot)
+                          .thenApply(
+                              regeneratedState -> {
+                                stateRequestRegenerateCounter.inc();
+                                putBlockState(blockRoot, regeneratedState);
+                                return Optional.of(regeneratedState);
+                              });
+                    })
+                .orElse(EMPTY_STATE_FUTURE));
   }
 
   private void putBlockState(final Bytes32 blockRoot, final BeaconState state) {

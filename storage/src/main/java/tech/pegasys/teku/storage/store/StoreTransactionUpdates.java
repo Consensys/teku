@@ -218,7 +218,7 @@ class StoreTransactionUpdates {
           final Checkpoint finalizedCheckpoint = finalizedData.getFinalizedCheckpoint();
           final Bytes32 finalizedRoot = finalizedCheckpoint.getRoot();
           store.finalized_checkpoint = finalizedCheckpoint;
-          final SignedBeaconBlock finalizedBlock = finalizedData.getBlocks().get(finalizedRoot);
+          final SignedBeaconBlock finalizedBlock = tx.getSignedBlock(finalizedRoot);
           final BeaconState finalizedState = finalizedData.getLatestFinalizedState();
           store.finalizedBlockAndState = new SignedBlockAndState(finalizedBlock, finalizedState);
         });
