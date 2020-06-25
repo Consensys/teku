@@ -145,9 +145,9 @@ final class JacobianPoint {
     FP2Immutable s1 = y1.mul(z2).mul(z2z2);
     FP2Immutable s2 = y2.mul(z1).mul(z1z1);
 
-    // detect exceptional case P == Q
-    if (u1.equals(u2) && s1.equals(s2)) {
-      return dbl();
+    // Shortcut for equal X coordinates case. Either P == Q or P == -Q.
+    if (u1.equals(u2)) {
+      return s1.equals(s2) ? dbl() : INFINITY;
     }
 
     FP2Immutable h = u2.sub(u1);
@@ -159,7 +159,7 @@ final class JacobianPoint {
     FP2Immutable y3 = rr.mul(v.sub(x3)).sub(s1.mul(j).dbl());
     FP2Immutable z3 = z1.mul(z2).mul(h).dbl();
 
-    return z3.iszilch() ? INFINITY : new JacobianPoint(x3, y3, z3);
+    return new JacobianPoint(x3, y3, z3);
   }
 
   /**

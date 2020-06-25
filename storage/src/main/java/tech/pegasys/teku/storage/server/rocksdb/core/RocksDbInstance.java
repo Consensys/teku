@@ -20,6 +20,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.rocksdb.AbstractRocksIterator;
@@ -64,12 +65,6 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <T> T getOrThrow(RocksDbVariable<T> variable) {
-    assertOpen();
-    return get(variable).orElseThrow();
-  }
-
-  @Override
   public <K, V> Optional<V> get(RocksDbColumn<K, V> column, K key) {
     assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
@@ -93,7 +88,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     assertOpen();
     final byte[] keyBytes = column.getKeySerializer().serialize(key);
     final Consumer<RocksIterator> setupIterator = it -> it.seekForPrev(keyBytes);
-    try (final Stream<ColumnEntry<K, V>> stream = stream(column, setupIterator)) {
+    try (final Stream<ColumnEntry<K, V>> stream = createStream(column, setupIterator)) {
       return stream.findFirst();
     }
   }
@@ -102,7 +97,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   public <K, V> Optional<ColumnEntry<K, V>> getLastEntry(RocksDbColumn<K, V> column) {
     assertOpen();
     try (final Stream<ColumnEntry<K, V>> stream =
-        stream(column, AbstractRocksIterator::seekToLast)) {
+        createStream(column, AbstractRocksIterator::seekToLast)) {
       return stream.findFirst();
     }
   }
@@ -110,7 +105,17 @@ public class RocksDbInstance implements RocksDbAccessor {
   @Override
   public <K, V> Stream<ColumnEntry<K, V>> stream(RocksDbColumn<K, V> column) {
     assertOpen();
-    return stream(column, RocksIterator::seekToFirst);
+    return createStream(column, RocksIterator::seekToFirst);
+  }
+
+  @Override
+  public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
+      final RocksDbColumn<K, V> column, final K from, final K to) {
+    assertOpen();
+    return createStream(
+        column,
+        iter -> iter.seek(column.getKeySerializer().serialize(from)),
+        key -> key.compareTo(to) <= 0);
   }
 
   @Override
@@ -119,12 +124,19 @@ public class RocksDbInstance implements RocksDbAccessor {
     return new Transaction(db, defaultHandle, columnHandles);
   }
 
-  private <K, V> Stream<ColumnEntry<K, V>> stream(
+  private <K, V> Stream<ColumnEntry<K, V>> createStream(
       RocksDbColumn<K, V> column, Consumer<RocksIterator> setupIterator) {
+    return createStream(column, setupIterator, key -> true);
+  }
+
+  private <K, V> Stream<ColumnEntry<K, V>> createStream(
+      RocksDbColumn<K, V> column,
+      Consumer<RocksIterator> setupIterator,
+      Predicate<K> continueTest) {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
-    return RocksDbIterator.create(column, rocksDbIterator).toStream();
+    return RocksDbIterator.create(column, rocksDbIterator, continueTest).toStream();
   }
 
   @Override

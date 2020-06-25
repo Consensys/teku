@@ -70,7 +70,7 @@ public final class BLSKeyPair {
    *
    * @param keyPair a Mikuli key pair
    */
-  BLSKeyPair(KeyPair keyPair) {
+  public BLSKeyPair(KeyPair keyPair) {
     this(new BLSPublicKey(keyPair.publicKey()), new BLSSecretKey(keyPair.secretKey()));
   }
 

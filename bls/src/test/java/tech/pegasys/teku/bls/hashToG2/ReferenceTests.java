@@ -14,13 +14,21 @@
 package tech.pegasys.teku.bls.hashToG2;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.teku.bls.hashToG2.Helper.clearH2;
+import static tech.pegasys.teku.bls.hashToG2.Helper.expandMessage;
+import static tech.pegasys.teku.bls.hashToG2.Helper.hashToField;
+import static tech.pegasys.teku.bls.hashToG2.Helper.iso3;
+import static tech.pegasys.teku.bls.hashToG2.Helper.mapToCurve;
 
 import com.google.common.base.Splitter;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,6 +40,11 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -52,24 +65,171 @@ import tech.pegasys.teku.bls.mikuli.G2Point;
  */
 class ReferenceTests {
 
-  private static final Path pathToTests =
-      Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "hashToG2TestVectors");
+  //
+  // Reference tests for expand message from
+  // https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/tree/master/poc/vectors
+  //
+  // These match the test vectors from spec v08:
+  // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-08#appendix-I.1
+  //
+
+  private static final Path pathToExpandMessageTests =
+      Paths.get(
+          System.getProperty("user.dir"),
+          "src",
+          "test",
+          "resources",
+          "expand_message_xmd_SHA256.json");
 
   @ParameterizedTest(name = "{index}. Filename={0} Test={1}")
   @MethodSource({
-    "getTestCase",
+    "getExpandMessageTestCases",
   })
-  void referenceTest(
-      String fileName, int testNumber, Bytes message, Bytes suite, G2Point expected) {
-    G2Point actual = new G2Point(HashToCurve.hashToG2(message, suite));
+  void expandMessageReferenceTests(
+      String filename, int testNumber, Bytes dst, Bytes message, int length, Bytes expected) {
+    Bytes actual = expandMessage(message, dst, length);
     assertEquals(expected, actual);
   }
 
   @MustBeClosed
-  static Stream<Arguments> getTestCase() {
+  static Stream<Arguments> getExpandMessageTestCases() {
+    final JSONParser parser = new JSONParser();
+    final ArrayList<Arguments> argumentsList = new ArrayList<>();
+
+    try {
+      final Reader reader = new FileReader(pathToExpandMessageTests.toFile(), US_ASCII);
+      final JSONObject refTests = (JSONObject) parser.parse(reader);
+
+      final Bytes dst = Bytes.wrap(((String) refTests.get("DST")).getBytes(US_ASCII));
+
+      final JSONArray tests = (JSONArray) refTests.get("tests");
+      int idx = 0;
+      for (Object o : tests) {
+        JSONObject test = (JSONObject) o;
+        Bytes message = Bytes.wrap(((String) test.get("msg")).getBytes(US_ASCII));
+        int length = Integer.parseInt(((String) test.get("len_in_bytes")).substring(2), 16);
+        Bytes uniformBytes = Bytes.fromHexString((String) test.get("uniform_bytes"));
+        argumentsList.add(
+            Arguments.of(
+                pathToExpandMessageTests.toString(), idx++, dst, message, length, uniformBytes));
+      }
+    } catch (IOException | ParseException e) {
+      throw new RuntimeException(e);
+    }
+
+    return argumentsList.stream();
+  }
+
+  //
+  // Reference tests for hash to G2 from
+  // https://github.com/cfrg/draft-irtf-cfrg-hash-to-curve/tree/master/poc/vectors
+  //
+  // These match the test vectors from spec v08:
+  // https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-08#appendix-H.10.1
+  //
+
+  private static final Path pathToHashG2Tests =
+      Paths.get(
+          System.getProperty("user.dir"),
+          "src",
+          "test",
+          "resources",
+          "BLS12381G2_XMD:SHA-256_SSWU_RO_.json");
+
+  @ParameterizedTest(name = "{index}. Filename={0} Test={1}")
+  @MethodSource({
+    "hashG2TestCases",
+  })
+  void hashG2ReferenceTests(
+      String filename,
+      int testNumber,
+      Bytes dst,
+      Bytes message,
+      FP2Immutable[] u,
+      JacobianPoint q0,
+      JacobianPoint q1,
+      JacobianPoint p) {
+    FP2Immutable[] uActual = hashToField(message, 2, dst);
+    assertEquals(u[0], uActual[0]);
+    assertEquals(u[1], uActual[1]);
+
+    JacobianPoint q0Actual = iso3(mapToCurve(uActual[0]));
+    JacobianPoint q1Actual = iso3(mapToCurve(uActual[1]));
+    assertEquals(q0, q0Actual.toAffine());
+    assertEquals(q1, q1Actual.toAffine());
+
+    JacobianPoint pActual = clearH2(q0Actual.add(q1Actual));
+    assertEquals(p, pActual);
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> hashG2TestCases() {
+    final JSONParser parser = new JSONParser();
+    final ArrayList<Arguments> argumentsList = new ArrayList<>();
+
+    try {
+      final Reader reader = new FileReader(pathToHashG2Tests.toFile(), US_ASCII);
+      final JSONObject refTests = (JSONObject) parser.parse(reader);
+
+      final Bytes dst = Bytes.wrap(((String) refTests.get("dst")).getBytes(US_ASCII));
+
+      final JSONArray tests = (JSONArray) refTests.get("vectors");
+      int idx = 0;
+      for (Object o : tests) {
+        JSONObject test = (JSONObject) o;
+        Bytes message = Bytes.wrap(((String) test.get("msg")).getBytes(US_ASCII));
+        JacobianPoint p = getPoint((JSONObject) test.get("P"));
+        JacobianPoint q0 = getPoint((JSONObject) test.get("Q0"));
+        JacobianPoint q1 = getPoint((JSONObject) test.get("Q1"));
+        JSONArray uArray = (JSONArray) test.get("u");
+        FP2Immutable[] u = {
+          getFieldPoint((String) uArray.get(0)), getFieldPoint((String) uArray.get(1))
+        };
+        argumentsList.add(
+            Arguments.of(pathToExpandMessageTests.toString(), idx++, dst, message, u, q0, q1, p));
+      }
+    } catch (IOException | ParseException e) {
+      throw new RuntimeException(e);
+    }
+
+    return argumentsList.stream();
+  }
+
+  private static JacobianPoint getPoint(JSONObject o) {
+    return new JacobianPoint(
+        getFieldPoint((String) o.get("x")),
+        getFieldPoint((String) o.get("y")),
+        new FP2Immutable(1));
+  }
+
+  private static FP2Immutable getFieldPoint(String s) {
+    return new FP2Immutable(s.substring(0, 98), s.substring(99));
+  }
+
+  //
+  // Reference tests for hash to G2 from
+  // https://github.com/algorand/bls_sigs_ref/tree/master/test-vectors/hash_g2
+  //
+
+  private static final Path pathToFipsTests =
+      Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "hashToG2TestVectors");
+
+  @Disabled // TODO re-enable once test vectors for draft 07 are available
+  @ParameterizedTest(name = "{index}. Filename={0} Test={1}")
+  @MethodSource({
+    "getFipsTestCases",
+  })
+  void fipsReferenceTest(
+      String fileName, int testNumber, Bytes message, Bytes suite, G2Point expected) {
+    final G2Point actual = new G2Point(HashToCurve.hashToG2(message, suite));
+    assertEquals(expected, actual);
+  }
+
+  @MustBeClosed
+  static Stream<Arguments> getFipsTestCases() {
     Scanner sc;
     List<String> fileNames;
-    try (Stream<Path> walk = Files.walk(pathToTests)) {
+    try (Stream<Path> walk = Files.walk(pathToFipsTests)) {
 
       fileNames =
           walk.filter(Files::isRegularFile).map(Path::toString).collect(Collectors.toList());

@@ -5,10 +5,21 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
+ - The `master` branch will be moving to support the 0.12.1 beacon chain spec and will no longer be 
+   compatible with Schlesi or Witti testnets.  Use the v0.11.5 release for compatibility with beacon chain spec 0.11.4.
  - Anyone using `/node/version` should switch to use
    the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
  - `--metrics-host-whitelist` CLI option will be renamed `--metrics-host-allowlist` (currently both are supported)
  - `--rest-api-host-whitelist` CLI option will be renamed `--rest-api-host-allowlist` (currently both are supported)
+
+## 0.11.5
+
+### Additions and Improvements
+
+- Reduced disk space required to store finalized data
+- Improved performance when states need to be regenerated during periods of non-finalization
+- Reduced on-heap memory usage
+- Reduced startup time, particularly during periods of non-finalization 
 
 ## 0.11.4
 

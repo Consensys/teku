@@ -14,7 +14,9 @@
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -25,15 +27,20 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
  */
 public interface RocksDbFinalizedDao extends AutoCloseable {
 
-  Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot);
-
-  Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot);
-
   Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root);
 
-  Optional<BeaconState> getFinalizedState(final Bytes32 root);
-
   FinalizedUpdater finalizedUpdater();
+
+  Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UnsignedLong slot);
+
+  Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UnsignedLong slot);
+
+  Optional<BeaconState> getLatestAvailableFinalizedState(UnsignedLong maxSlot);
+
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamFinalizedBlocks(UnsignedLong startSlot, UnsignedLong endSlot);
+
+  Optional<UnsignedLong> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
   interface FinalizedUpdater extends AutoCloseable {
 

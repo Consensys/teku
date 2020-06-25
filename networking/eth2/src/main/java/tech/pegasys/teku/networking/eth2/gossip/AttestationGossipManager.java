@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,15 +40,14 @@ public class AttestationGossipManager {
       return;
     }
     final Attestation attestation = validateableAttestation.getAttestation();
-    final int subnetId = committeeIndexToSubnetId(attestation.getData().getIndex());
     subnetSubscriptions
-        .getChannel(subnetId)
+        .getChannel(attestation)
         .ifPresentOrElse(
             channel -> channel.gossip(gossipEncoding.encode(attestation)),
             () ->
                 LOG.trace(
-                    "Ignoring attestation for subnet id {}, which does not correspond to any currently assigned subnet ids.",
-                    subnetId));
+                    "Not broadcasting attestation for slot {} because the subnet is not available or could not be calculated",
+                    attestation.getData().getSlot()));
   }
 
   public void subscribeToSubnetId(final int subnetId) {

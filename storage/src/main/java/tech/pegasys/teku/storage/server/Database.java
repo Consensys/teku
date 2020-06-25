@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,34 +33,41 @@ public interface Database extends AutoCloseable {
 
   Optional<UpdatableStore> createMemoryStore();
 
-  /**
-   * Return the root of the finalized block at this slot if such a block exists.
-   *
-   * @param slot The slot to query
-   * @return Returns the root of the finalized block proposed at this slot, if such a block exists
-   */
-  Optional<Bytes32> getFinalizedRootAtSlot(UnsignedLong slot);
+  Optional<UnsignedLong> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
   /**
-   * Returns the latest finalized root at or prior to the given slot
+   * Return the finalized block at this slot if such a block exists.
    *
    * @param slot The slot to query
-   * @return Returns the root of the latest finalized block proposed at or prior to the given slot
+   * @return Returns the finalized block proposed at this slot, if such a block exists
    */
-  Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot);
+  Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UnsignedLong slot);
+
+  /**
+   * Returns the latest finalized block at or prior to the given slot
+   *
+   * @param slot The slot to query
+   * @return Returns the latest finalized block proposed at or prior to the given slot
+   */
+  Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UnsignedLong slot);
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
   /**
-   * Given a block root, returns the corresponding finalized state, if this state is available.
+   * Return a {@link Stream} of blocks beginning at startSlot and ending at endSlot, both inclusive.
    *
-   * @param root A block root.
-   * @return The finalized state corresponding to the given block root.
+   * @param startSlot the slot of the first block to return
+   * @param endSlot the slot of the last block to return
+   * @return a Stream of blocks in the range startSlot to endSlot (both inclusive).
    */
-  Optional<BeaconState> getFinalizedState(Bytes32 root);
+  @MustBeClosed
+  Stream<SignedBeaconBlock> streamFinalizedBlocks(UnsignedLong startSlot, UnsignedLong endSlot);
+
+  Optional<BeaconState> getLatestAvailableFinalizedState(UnsignedLong maxSlot);
 
   Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock();
 
+  @MustBeClosed
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
 
   void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);

@@ -84,12 +84,6 @@ public class MockRocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public <T> T getOrThrow(final RocksDbVariable<T> variable) {
-    assertOpen();
-    return get(variable).orElseThrow();
-  }
-
-  @Override
   public <K, V> Optional<V> get(final RocksDbColumn<K, V> column, final K key) {
     assertOpen();
     assertValidColumn(column);
@@ -127,6 +121,15 @@ public class MockRocksDbInstance implements RocksDbAccessor {
     assertOpen();
     assertValidColumn(column);
     return columnData.get(column).entrySet().stream().map(e -> columnEntry(column, e));
+  }
+
+  @Override
+  public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
+      final RocksDbColumn<K, V> column, final K from, final K to) {
+    assertOpen();
+    return columnData.get(column)
+        .subMap(keyToBytes(column, from), true, keyToBytes(column, to), true).entrySet().stream()
+        .map(e -> columnEntry(column, e));
   }
 
   @Override

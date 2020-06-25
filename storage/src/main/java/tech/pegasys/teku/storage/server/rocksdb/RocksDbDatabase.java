@@ -196,13 +196,23 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot) {
-    return finalizedDao.getFinalizedRootAtSlot(slot);
+  public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
+    return finalizedDao.getSlotForFinalizedBlockRoot(blockRoot);
   }
 
   @Override
-  public Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot) {
-    return finalizedDao.getLatestFinalizedRootAtSlot(slot);
+  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+    return finalizedDao.getFinalizedBlockAtSlot(slot);
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
+    return finalizedDao.getLatestFinalizedBlockAtSlot(slot);
+  }
+
+  @Override
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+    return finalizedDao.getLatestAvailableFinalizedState(maxSlot);
   }
 
   @Override
@@ -211,8 +221,10 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public Optional<BeaconState> getFinalizedState(final Bytes32 root) {
-    return finalizedDao.getFinalizedState(root);
+  @MustBeClosed
+  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
+      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+    return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
   }
 
   @Override
