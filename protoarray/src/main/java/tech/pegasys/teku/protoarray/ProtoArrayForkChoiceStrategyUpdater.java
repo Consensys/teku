@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.protoarray;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
@@ -106,6 +107,9 @@ public class ProtoArrayForkChoiceStrategyUpdater implements MutableForkChoiceSta
       final Checkpoint justifiedCheckpoint,
       final BeaconState justifiedCheckpointState) {
     checkState(headUpdates.isEmpty(), "Head is already updated");
+    checkNotNull(finalizedCheckpoint, "Finalized checkpoint is required");
+    checkNotNull(justifiedCheckpoint, "Justified checkpoint is required");
+    checkNotNull(justifiedCheckpointState, "Justified checkpoint state is required");
 
     forkChoice.protoArrayLock.readLock().lock();
     forkChoice.balancesLock.readLock().lock();
