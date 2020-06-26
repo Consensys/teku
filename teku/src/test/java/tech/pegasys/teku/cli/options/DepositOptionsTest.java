@@ -60,7 +60,9 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void eth1Deposit_requiredIfEth1Endpoint() {
-    final String[] args = {"--eth1-endpoint", "http://example.com:1234/path/"};
+    final String[] args = {
+      "--network", "minimal", "--eth1-endpoint", "http://example.com:1234/path/"
+    };
 
     beaconNodeCommand.parse(args);
     final String str = getCommandLineOutput();
