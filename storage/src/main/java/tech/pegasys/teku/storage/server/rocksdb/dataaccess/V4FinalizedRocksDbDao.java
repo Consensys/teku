@@ -87,7 +87,8 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
     V4FinalizedUpdater(final RocksDbAccessor db, final UnsignedLong stateStorageFrequency) {
       this.transaction = db.startTransaction();
       this.stateStorageFrequency = stateStorageFrequency;
-      lastStateStoredSlot = db.getLastEntry(V4SchemaFinalized.FINALIZED_STATES_BY_SLOT).map(ColumnEntry::getKey);
+      lastStateStoredSlot =
+          db.getLastEntry(V4SchemaFinalized.FINALIZED_STATES_BY_SLOT).map(ColumnEntry::getKey);
     }
 
     @Override
@@ -103,7 +104,7 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
         if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
           addFinalizedState(state);
         }
-      } else if (state.getSlot().compareTo(stateStorageFrequency) >= 0) {
+      } else {
         addFinalizedState(state);
       }
     }
