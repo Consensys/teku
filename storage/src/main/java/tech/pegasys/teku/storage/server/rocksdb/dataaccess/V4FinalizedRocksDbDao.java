@@ -82,10 +82,13 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   private static class V4FinalizedUpdater implements FinalizedUpdater {
     private final RocksDbAccessor.RocksDbTransaction transaction;
     private final UnsignedLong stateStorageFrequency;
+    private Optional<UnsignedLong> lastStateStoredSlot;
 
     V4FinalizedUpdater(final RocksDbAccessor db, final UnsignedLong stateStorageFrequency) {
       this.transaction = db.startTransaction();
       this.stateStorageFrequency = stateStorageFrequency;
+      lastStateStoredSlot =
+          db.getLastEntry(V4SchemaFinalized.FINALIZED_STATES_BY_SLOT).map(ColumnEntry::getKey);
     }
 
     @Override
@@ -96,9 +99,19 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
 
     @Override
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
-      if (state.getSlot().mod(stateStorageFrequency).equals(UnsignedLong.ZERO)) {
-        transaction.put(V4SchemaFinalized.FINALIZED_STATES_BY_SLOT, state.getSlot(), state);
+      if (lastStateStoredSlot.isPresent()) {
+        UnsignedLong nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
+        if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
+          addFinalizedState(state);
+        }
+      } else {
+        addFinalizedState(state);
       }
+    }
+
+    private void addFinalizedState(final BeaconState state) {
+      transaction.put(V4SchemaFinalized.FINALIZED_STATES_BY_SLOT, state.getSlot(), state);
+      lastStateStoredSlot = Optional.of(state.getSlot());
     }
 
     @Override
