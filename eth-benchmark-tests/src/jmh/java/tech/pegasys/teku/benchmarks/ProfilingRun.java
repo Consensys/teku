@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import com.google.common.eventbus.EventBus;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -169,7 +170,9 @@ public class ProfilingRun {
             // blackHole.accept(v));
 
             System.out.println("Press enter: ");
-            String line = new BufferedReader(new InputStreamReader(System.in)).readLine();
+            String line =
+                new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8))
+                    .readLine();
             try {
               counter = Integer.parseInt(line);
             } catch (NumberFormatException e) {
