@@ -46,7 +46,7 @@ public class DataOptions {
   @Option(
       names = {"--Xdata-storage-create-db-version"},
       paramLabel = "<VERSION>",
-      description = "Database version to create (3.0 or 4)",
+      description = "Database version to create",
       arity = "1",
       hidden = true)
   private String createDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();

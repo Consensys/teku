@@ -45,6 +45,7 @@ import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
+import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
@@ -68,7 +69,8 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
       PeerCommand.class,
       DepositCommand.class,
       GenesisCommand.class,
-      DebugCommand.class
+      DebugCommand.class,
+      UnstableOptionsCommand.class
     },
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -118,31 +120,35 @@ public class BeaconNodeCommand implements Callable<Integer> {
       arity = "1")
   private File configFile;
 
-  @Option(
-      names = {"--Xstartup-target-peer-count"},
-      paramLabel = "<NUMBER>",
-      description = "Number of peers to wait for before considering the node in sync.",
-      hidden = true)
-  private Integer startupTargetPeerCount;
+  @Mixin(name = "Network")
+  private NetworkOptions networkOptions;
 
-  @Option(
-      names = {"--Xstartup-timeout-seconds"},
-      paramLabel = "<NUMBER>",
-      description =
-          "Timeout in seconds to allow the node to be in sync even if startup target peer count has not yet been reached.",
-      hidden = true)
-  private Integer startupTimeoutSeconds;
+  @Mixin(name = "P2P")
+  private P2POptions p2POptions;
 
-  @Mixin private NetworkOptions networkOptions;
-  @Mixin private P2POptions p2POptions;
-  @Mixin private InteropOptions interopOptions;
-  @Mixin private ValidatorOptions validatorOptions;
-  @Mixin private DepositOptions depositOptions;
-  @Mixin private LoggingOptions loggingOptions;
-  @Mixin private OutputOptions outputOptions;
-  @Mixin private MetricsOptions metricsOptions;
-  @Mixin private DataOptions dataOptions;
-  @Mixin private BeaconRestApiOptions beaconRestApiOptions;
+  @Mixin(name = "Interop")
+  private InteropOptions interopOptions;
+
+  @Mixin(name = "Validator")
+  private ValidatorOptions validatorOptions;
+
+  @Mixin(name = "Deposit")
+  private DepositOptions depositOptions;
+
+  @Mixin(name = "Logging")
+  private LoggingOptions loggingOptions;
+
+  @Mixin(name = "Output")
+  private OutputOptions outputOptions;
+
+  @Mixin(name = "Metrics")
+  private MetricsOptions metricsOptions;
+
+  @Mixin(name = "Data")
+  private DataOptions dataOptions;
+
+  @Mixin(name = "REST API")
+  private BeaconRestApiOptions beaconRestApiOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -289,8 +295,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
     // TODO: validate option dependencies
     return TekuConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
-        .setStartupTargetPeerCount(startupTargetPeerCount)
-        .setStartupTimeoutSeconds(startupTimeoutSeconds)
+        .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
+        .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
