@@ -11,19 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.core.stategenerator;
 
-import java.util.Optional;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.storage.store.UpdatableStore;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 
-public interface StorageUpdateChannel {
+public interface StateHandler {
+  StateHandler NOOP = (block, state) -> {};
 
-  SafeFuture<Optional<StoreBuilder>> onStoreRequest();
-
-  SafeFuture<Void> onStorageUpdate(StorageUpdate event);
-
-  void onGenesis(UpdatableStore store);
+  void handle(final SignedBeaconBlock block, final BeaconState state);
 }
