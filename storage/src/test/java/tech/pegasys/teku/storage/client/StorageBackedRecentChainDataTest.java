@@ -31,14 +31,16 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
+import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
-import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
@@ -48,6 +50,7 @@ public class StorageBackedRecentChainDataTest {
   private static final BeaconState INITIAL_STATE =
       ChainBuilder.create(VALIDATOR_KEYS).generateGenesis().getState();
 
+  private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final FinalizedCheckpointChannel finalizedCheckpointChannel =
       new StubFinalizedCheckpointChannel();
@@ -62,7 +65,7 @@ public class StorageBackedRecentChainDataTest {
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<UpdatableStore>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
     when(storageUpdateChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
@@ -70,6 +73,7 @@ public class StorageBackedRecentChainDataTest {
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
             asyncRunner,
+            storageQueryChannel,
             storageUpdateChannel,
             finalizedCheckpointChannel,
             reorgEventChannel,
@@ -82,19 +86,20 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isNotDone();
 
     // Post a store response to complete initialization
-    final UpdatableStore genesisStore =
-        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), INITIAL_STATE);
-    storeRequestFuture.complete(Optional.of(genesisStore));
+    final StoreBuilder genesisStoreBuilder =
+        StoreBuilder.forkChoiceStoreBuilder(
+            new StubMetricsSystem(), BlockProvider.NOOP, INITIAL_STATE);
+    storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStore);
+    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build());
   }
 
   @Test
   public void storageBackedClient_storeInitializeViaNewGenesisState()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<UpdatableStore>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
     when(storageUpdateChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
@@ -102,6 +107,7 @@ public class StorageBackedRecentChainDataTest {
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
             asyncRunner,
+            storageQueryChannel,
             storageUpdateChannel,
             finalizedCheckpointChannel,
             reorgEventChannel,
@@ -120,7 +126,8 @@ public class StorageBackedRecentChainDataTest {
 
     // Now set the genesis state
     final UpdatableStore genesisStore =
-        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), INITIAL_STATE);
+        StoreBuilder.buildForkChoiceStore(
+            new StubMetricsSystem(), BlockProvider.NOOP, INITIAL_STATE);
     client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -130,7 +137,7 @@ public class StorageBackedRecentChainDataTest {
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequestAfterTimeout()
       throws ExecutionException, InterruptedException {
-    SafeFuture<Optional<UpdatableStore>> storeRequestFuture = new SafeFuture<>();
+    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
     when(storageUpdateChannel.onStoreRequest())
         .thenReturn(SafeFuture.failedFuture(new TimeoutException()))
         .thenReturn(storeRequestFuture);
@@ -140,6 +147,7 @@ public class StorageBackedRecentChainDataTest {
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
             asyncRunner,
+            storageQueryChannel,
             storageUpdateChannel,
             finalizedCheckpointChannel,
             reorgEventChannel,
@@ -154,13 +162,14 @@ public class StorageBackedRecentChainDataTest {
     asyncRunner.executeQueuedActions();
 
     // Now set the genesis state
-    final UpdatableStore genesisStore =
-        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), INITIAL_STATE);
-    storeRequestFuture.complete(Optional.of(genesisStore));
+    final StoreBuilder genesisStoreBuilder =
+        StoreBuilder.forkChoiceStoreBuilder(
+            new StubMetricsSystem(), BlockProvider.NOOP, INITIAL_STATE);
+    storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStore);
+    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build());
   }
 
   private void assertStoreInitialized(final RecentChainData client) {
