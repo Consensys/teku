@@ -32,8 +32,6 @@ public interface StorageSystem extends AutoCloseable {
 
   StorageSystem restarted(StateStorageMode storageMode);
 
-  StorageSystem restarted();
-
   RecentChainData recentChainData();
 
   CombinedChainDataClient combinedChainDataClient();

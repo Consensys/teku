@@ -64,12 +64,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao {
   }
 
   @Override
-  @MustBeClosed
-  public Stream<SignedBeaconBlock> streamHotBlocks() {
-    return db.stream(V4SchemaHot.HOT_BLOCKS_BY_ROOT).map(ColumnEntry::getValue);
-  }
-
-  @Override
   public Optional<BeaconState> getLatestFinalizedState() {
     return db.get(V4SchemaHot.LATEST_FINALIZED_STATE);
   }

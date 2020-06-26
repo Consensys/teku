@@ -20,41 +20,33 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
-  private final BlockProvider blockProvider;
-
   public StorageBackedRecentChainData(
       final MetricsSystem metricsSystem,
-      final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
     super(
         metricsSystem,
-        storageQueryChannel::getHotBlocksByRoot,
         storageUpdateChannel,
         finalizedCheckpointChannel,
         reorgEventChannel,
         eventBus);
-    this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     eventBus.register(this);
   }
 
   public static SafeFuture<RecentChainData> create(
       final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
-      final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
@@ -62,7 +54,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             metricsSystem,
-            storageQueryChannel,
             storageUpdateChannel,
             finalizedCheckpointChannel,
             reorgEventChannel,
@@ -74,7 +65,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
   @VisibleForTesting
   public static RecentChainData createImmediately(
       final MetricsSystem metricsSystem,
-      final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
@@ -82,7 +72,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             metricsSystem,
-            storageQueryChannel,
             storageUpdateChannel,
             finalizedCheckpointChannel,
             reorgEventChannel,
@@ -93,34 +82,34 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   private SafeFuture<RecentChainData> initializeFromStorage() {
     STATUS_LOG.beginInitializingChainData();
-    return processStoreFuture(requestInitialStore());
+    return requestInitialStore()
+        .thenApply(
+            maybeStore -> {
+              maybeStore.ifPresent(this::setStore);
+              STATUS_LOG.finishInitializingChainData();
+              return this;
+            });
   }
 
   private SafeFuture<RecentChainData> initializeFromStorageWithRetry(
       final AsyncRunner asyncRunner) {
     STATUS_LOG.beginInitializingChainData();
-    return processStoreFuture(requestInitialStoreWithRetry(asyncRunner));
+    return requestInitialStoreWithRetry(asyncRunner)
+        .thenApply(
+            maybeStore -> {
+              maybeStore.ifPresent(this::setStore);
+              STATUS_LOG.finishInitializingChainData();
+              return this;
+            });
   }
 
-  private SafeFuture<RecentChainData> processStoreFuture(
-      SafeFuture<Optional<StoreBuilder>> storeFuture) {
-    return storeFuture.thenApply(
-        maybeStore -> {
-          maybeStore
-              .map(builder -> builder.blockProvider(blockProvider).build())
-              .ifPresent(this::setStore);
-          STATUS_LOG.finishInitializingChainData();
-          return this;
-        });
-  }
-
-  private SafeFuture<Optional<StoreBuilder>> requestInitialStore() {
+  private SafeFuture<Optional<UpdatableStore>> requestInitialStore() {
     return storageUpdateChannel
         .onStoreRequest()
         .orTimeout(Constants.STORAGE_REQUEST_TIMEOUT, TimeUnit.SECONDS);
   }
 
-  private SafeFuture<Optional<StoreBuilder>> requestInitialStoreWithRetry(
+  private SafeFuture<Optional<UpdatableStore>> requestInitialStoreWithRetry(
       final AsyncRunner asyncRunner) {
     return requestInitialStore()
         .exceptionallyCompose(
