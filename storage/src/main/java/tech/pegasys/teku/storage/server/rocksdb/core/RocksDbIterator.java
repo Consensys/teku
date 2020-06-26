@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.core;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
@@ -76,6 +77,7 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
     return entry;
   }
 
+  @MustBeClosed
   public Stream<ColumnEntry<TKey, TValue>> toStream() {
     assertOpen();
     final Spliterator<ColumnEntry<TKey, TValue>> split =
