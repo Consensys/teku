@@ -13,9 +13,18 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+import picocli.AutoComplete;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Spec;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+import tech.pegasys.teku.util.cli.VersionProvider;
 
 @Command(
     name = "debug",
@@ -24,6 +33,7 @@ import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
+    addMethodSubcommands = true,
     versionProvider = PicoCliVersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
@@ -31,8 +41,46 @@ import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class DebugCommand implements Runnable {
+  @Spec private CommandSpec commandSpec;
+
   @Override
   public void run() {
     CommandLine.usage(this, System.out);
+  }
+
+  @Command(
+      name = "generate-autocomplete",
+      description = "Generate a bash/zsh autocomplete file",
+      subcommands = {DebugDbCommand.class},
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      mixinStandardHelpOptions = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int autocomplete(
+      @Option(
+              names = {"--output", "-o"},
+              description = "File to output to, default is System.out")
+          final File output) {
+    try (final PrintStream out = outputStream(output)) {
+      out.println(
+          AutoComplete.bash(VersionProvider.CLIENT_IDENTITY, commandSpec.parent().commandLine()));
+      return 0;
+    } catch (final IOException e) {
+      System.err.println("Failed to write autocomplete script: " + e.getMessage());
+      return 1;
+    }
+  }
+
+  private PrintStream outputStream(final File output) throws IOException {
+    if (output != null) {
+      return new PrintStream(output, StandardCharsets.UTF_8);
+    } else {
+      return System.out;
+    }
   }
 }
