@@ -111,6 +111,7 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   }
 
   @Override
+  @MustBeClosed
   public Stream<SignedBeaconBlock> streamHotBlocks() {
     return db.stream(V3Schema.HOT_BLOCKS_BY_ROOT).map(ColumnEntry::getValue);
   }
