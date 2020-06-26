@@ -37,7 +37,6 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
   private final TrackingReorgEventChannel reorgEventChannel;
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
-  private final StateStorageMode storageMode;
   private final CombinedChainDataClient combinedChainDataClient;
   private final Database database;
   private final RestartedStorageSupplier restartedSupplier;
@@ -45,7 +44,6 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
   public FileBackedStorageSystem(
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
-      final StateStorageMode storageMode,
       final Database database,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
@@ -54,7 +52,6 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
 
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
-    this.storageMode = storageMode;
     this.database = database;
     this.combinedChainDataClient = combinedChainDataClient;
     this.restartedSupplier = restartedSupplier;
@@ -73,9 +70,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
             storageMode,
             stateStorageFrequency);
     return create(
-        database,
-        (mode) -> createV4StorageSystem(hotDir, archiveDir, mode, stateStorageFrequency),
-        storageMode);
+        database, (mode) -> createV4StorageSystem(hotDir, archiveDir, mode, stateStorageFrequency));
   }
 
   public static StorageSystem createV3StorageSystem(
@@ -84,13 +79,11 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
         RocksDbConfiguration.withDataDirectory(dataPath);
     final Database database =
         RocksDbDatabase.createV3(new StubMetricsSystem(), rocksDbConfiguration, storageMode);
-    return create(database, (mode) -> createV3StorageSystem(dataPath, mode), storageMode);
+    return create(database, (mode) -> createV3StorageSystem(dataPath, mode));
   }
 
   private static StorageSystem create(
-      final Database database,
-      final RestartedStorageSupplier restartedSupplier,
-      final StateStorageMode storageMode) {
+      final Database database, final RestartedStorageSupplier restartedSupplier) {
     final EventBus eventBus = new EventBus();
 
     // Create and start storage server
@@ -105,7 +98,6 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
         StorageBackedRecentChainData.createImmediately(
             new NoOpMetricsSystem(),
             chainStorageServer,
-            chainStorageServer,
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
@@ -118,7 +110,6 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
     return new FileBackedStorageSystem(
         eventBus,
         reorgEventChannel,
-        storageMode,
         database,
         recentChainData,
         combinedChainDataClient,
@@ -133,11 +124,6 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
   @Override
   public Database getDatabase() {
     return database;
-  }
-
-  @Override
-  public StorageSystem restarted() {
-    return restarted(storageMode);
   }
 
   @Override

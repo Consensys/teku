@@ -31,7 +31,6 @@ import java.util.TreeMap;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
@@ -54,8 +53,6 @@ import tech.pegasys.teku.util.config.Constants;
 
 /** A utility for building small, valid chains of blocks with states for testing */
 public class ChainBuilder {
-  private static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
-      BLSKeyGenerator.generateKeyPairs(3);
 
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;
@@ -70,10 +67,6 @@ public class ChainBuilder {
 
     attestationGenerator = new AttestationGenerator(validatorKeys);
     blocks.putAll(existingBlocks);
-  }
-
-  public static ChainBuilder createDefault() {
-    return ChainBuilder.create(DEFAULT_VALIDATOR_KEYS);
   }
 
   public static ChainBuilder create(final List<BLSKeyPair> validatorKeys) {
