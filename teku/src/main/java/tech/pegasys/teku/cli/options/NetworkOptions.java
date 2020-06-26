@@ -22,7 +22,7 @@ public class NetworkOptions {
       paramLabel = "<NETWORK>",
       description = "Represents which network to use.",
       arity = "1")
-  private String network = "minimal";
+  private String network = "altona";
 
   @Option(
       names = {"--initial-state"},
