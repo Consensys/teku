@@ -79,10 +79,7 @@ public class RocksDbConfiguration {
   }
 
   public static RocksDbConfiguration v5ArchiveDefaults() {
-    final RocksDbConfiguration config = new RocksDbConfiguration();
-    config.compressionType = CompressionType.ZLIB_COMPRESSION;
-    config.bottomMostCompressionType = CompressionType.ZLIB_COMPRESSION;
-    return config;
+    return new RocksDbConfiguration();
   }
 
   public RocksDbConfiguration withDatabaseDir(final Path databaseDir) {
