@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -65,22 +65,19 @@ public class DebugCommand implements Runnable {
       @Option(
               names = {"--output", "-o"},
               description = "File to output to, default is System.out")
-          final File output) {
-    try (final PrintStream out = outputStream(output)) {
-      out.println(
-          AutoComplete.bash(VersionProvider.CLIENT_IDENTITY, commandSpec.parent().commandLine()));
+          final Path output) {
+    try {
+      final String autocompleteScript =
+          AutoComplete.bash(VersionProvider.CLIENT_IDENTITY, commandSpec.parent().commandLine());
+      if (output != null) {
+        Files.writeString(output, autocompleteScript, StandardCharsets.UTF_8);
+      } else {
+        System.out.println(autocompleteScript);
+      }
       return 0;
     } catch (final IOException e) {
       System.err.println("Failed to write autocomplete script: " + e.getMessage());
       return 1;
-    }
-  }
-
-  private PrintStream outputStream(final File output) throws IOException {
-    if (output != null) {
-      return new PrintStream(output, StandardCharsets.UTF_8);
-    } else {
-      return System.out;
     }
   }
 }
