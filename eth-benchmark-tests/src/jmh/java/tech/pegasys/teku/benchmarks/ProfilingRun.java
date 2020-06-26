@@ -165,7 +165,8 @@ public class ProfilingRun {
             statesList.add(result.getBlockProcessingRecord().get().getPostState());
 
             // recreate View validator caches for older state
-//            traverseViewHierarchy(statesList.get(statesList.size() - 2), v -> blackHole.accept(v));
+            //            traverseViewHierarchy(statesList.get(statesList.size() - 2), v ->
+            // blackHole.accept(v));
 
             System.out.println("Press enter: ");
             String line = new BufferedReader(new InputStreamReader(System.in)).readLine();
