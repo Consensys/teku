@@ -56,6 +56,12 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
     this.restartedStorageSupplier = restartedStorageSupplier;
   }
 
+  // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version
+  public static StorageSystem createEmptyV5StorageSystem(
+      final StateStorageMode storageMode, final long stateStorageFrequency) {
+    return createEmptyV4StorageSystem(storageMode, stateStorageFrequency);
+  }
+
   public static StorageSystem createEmptyV4StorageSystem(
       final StateStorageMode storageMode, final long stateStorageFrequency) {
 

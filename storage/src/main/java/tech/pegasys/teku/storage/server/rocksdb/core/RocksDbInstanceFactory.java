@@ -44,13 +44,13 @@ public class RocksDbInstanceFactory {
       final RocksDbConfiguration configuration, final Class<? extends Schema> schema)
       throws DatabaseStorageException {
     // Track resources that need to be closed
-    final List<AutoCloseable> resources = new ArrayList<>();
 
     // Create options
     final TransactionDBOptions txOptions = new TransactionDBOptions();
     final DBOptions dbOptions = createDBOptions(configuration);
     final ColumnFamilyOptions columnFamilyOptions = createColumnFamilyOptions(configuration);
-    resources.addAll(List.of(txOptions, dbOptions, columnFamilyOptions));
+    final List<AutoCloseable> resources =
+        new ArrayList<>(List.of(txOptions, dbOptions, columnFamilyOptions));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
         createColumnFamilyDescriptors(schema, columnFamilyOptions);
@@ -121,6 +121,8 @@ public class RocksDbInstanceFactory {
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final RocksDbConfiguration configuration) {
     return new ColumnFamilyOptions()
+        .setCompressionType(configuration.getCompressionType())
+        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
         .setTableFormatConfig(createBlockBasedTableConfig(configuration));
   }
 

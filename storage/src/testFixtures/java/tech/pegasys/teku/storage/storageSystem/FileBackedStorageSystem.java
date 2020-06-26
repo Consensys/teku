@@ -57,6 +57,22 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
     this.restartedSupplier = restartedSupplier;
   }
 
+  public static StorageSystem createV5StorageSystem(
+      final Path hotDir,
+      final Path archiveDir,
+      final StateStorageMode storageMode,
+      final long stateStorageFrequency) {
+    final Database database =
+        RocksDbDatabase.createV4(
+            new StubMetricsSystem(),
+            RocksDbConfiguration.v5HotDefaults().withDatabaseDir(hotDir),
+            RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir),
+            storageMode,
+            stateStorageFrequency);
+    return create(
+        database, (mode) -> createV5StorageSystem(hotDir, archiveDir, mode, stateStorageFrequency));
+  }
+
   public static StorageSystem createV4StorageSystem(
       final Path hotDir,
       final Path archiveDir,
@@ -65,8 +81,8 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
     final Database database =
         RocksDbDatabase.createV4(
             new StubMetricsSystem(),
-            RocksDbConfiguration.withDataDirectory(hotDir),
-            RocksDbConfiguration.withDataDirectory(archiveDir),
+            RocksDbConfiguration.v3And4Settings(hotDir),
+            RocksDbConfiguration.v3And4Settings(archiveDir),
             storageMode,
             stateStorageFrequency);
     return create(
@@ -75,8 +91,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
 
   public static StorageSystem createV3StorageSystem(
       final Path dataPath, final StateStorageMode storageMode) {
-    final RocksDbConfiguration rocksDbConfiguration =
-        RocksDbConfiguration.withDataDirectory(dataPath);
+    final RocksDbConfiguration rocksDbConfiguration = RocksDbConfiguration.v3And4Settings(dataPath);
     final Database database =
         RocksDbDatabase.createV3(new StubMetricsSystem(), rocksDbConfiguration, storageMode);
     return create(database, (mode) -> createV3StorageSystem(dataPath, mode));

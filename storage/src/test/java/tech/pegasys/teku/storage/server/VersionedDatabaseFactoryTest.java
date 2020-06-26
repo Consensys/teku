@@ -68,13 +68,28 @@ public class VersionedDatabaseFactoryTest {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V4);
     }
-    final File dbDirectory =
-        Paths.get(dataDir.toAbsolutePath().toString(), VersionedDatabaseFactory.DB_PATH).toFile();
-    final File archiveDirectory =
-        Paths.get(dataDir.toAbsolutePath().toString(), VersionedDatabaseFactory.ARCHIVE_PATH)
-            .toFile();
+    final File dbDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.DB_PATH);
+    final File archiveDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.ARCHIVE_PATH);
     assertThat(dbDirectory).exists();
     assertThat(archiveDirectory).exists();
+  }
+
+  @Test
+  public void createDatabase_asV5Database() throws Exception {
+    final DatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "5", 1L);
+    try (final Database db = dbFactory.createDatabase()) {
+      assertThat(db).isNotNull();
+      assertDbVersionSaved(dataDir, DatabaseVersion.V5);
+    }
+    final File dbDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.DB_PATH);
+    final File archiveDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.ARCHIVE_PATH);
+    final File metadataFile =
+        new File(dataDir.toFile(), VersionedDatabaseFactory.METADATA_FILENAME);
+    assertThat(dbDirectory).exists();
+    assertThat(archiveDirectory).exists();
+    assertThat(metadataFile).exists();
   }
 
   @Test
