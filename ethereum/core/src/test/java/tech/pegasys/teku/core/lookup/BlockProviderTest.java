@@ -15,8 +15,11 @@ package tech.pegasys.teku.core.lookup;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -102,5 +105,31 @@ public class BlockProviderTest {
     for (Bytes32 root : allBlocks.keySet()) {
       assertThat(provider.getBlock(root).get()).contains(allBlocks.get(root));
     }
+  }
+
+  @Test
+  void fromDynamicMap() throws StateTransitionException {
+    chainBuilder.generateGenesis();
+    SignedBlockAndState blockA = chainBuilder.generateNextBlock();
+    SignedBlockAndState blockB = chainBuilder.generateNextBlock();
+
+    final AtomicReference<Map<Bytes32, SignedBeaconBlock>> mapSupplier =
+        new AtomicReference<>(Collections.emptyMap());
+    final BlockProvider provider = BlockProvider.fromDynamicMap(mapSupplier::get);
+
+    assertThat(provider.getBlock(blockA.getRoot())).isCompletedWithValue(Optional.empty());
+    assertThat(provider.getBlock(blockB.getRoot())).isCompletedWithValue(Optional.empty());
+
+    mapSupplier.set(Map.of(blockA.getRoot(), blockA.getBlock()));
+
+    assertThat(provider.getBlock(blockA.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA.getBlock()));
+    assertThat(provider.getBlock(blockB.getRoot())).isCompletedWithValue(Optional.empty());
+
+    mapSupplier.set(Map.of(blockB.getRoot(), blockB.getBlock()));
+
+    assertThat(provider.getBlock(blockA.getRoot())).isCompletedWithValue(Optional.empty());
+    assertThat(provider.getBlock(blockB.getRoot()))
+        .isCompletedWithValue(Optional.of(blockB.getBlock()));
   }
 }

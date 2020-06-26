@@ -233,8 +233,7 @@ public class RocksDbDatabase implements Database {
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
-        .map(root -> hotDao.getHotBlock(root).orElse(null))
-        .filter(Objects::nonNull)
+        .flatMap(root -> hotDao.getHotBlock(root).stream())
         .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
   }
 

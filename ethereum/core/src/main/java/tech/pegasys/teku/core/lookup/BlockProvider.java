@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -31,6 +32,10 @@ import tech.pegasys.teku.util.async.SafeFuture;
 public interface BlockProvider {
 
   BlockProvider NOOP = (roots) -> SafeFuture.completedFuture(Collections.emptyMap());
+
+  static BlockProvider fromDynamicMap(Supplier<Map<Bytes32, SignedBeaconBlock>> mapSupplier) {
+    return (roots) -> fromMap(mapSupplier.get()).getBlocks(roots);
+  }
 
   static BlockProvider fromMap(final Map<Bytes32, SignedBeaconBlock> blockMap) {
     return (roots) ->

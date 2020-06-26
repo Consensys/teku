@@ -20,16 +20,13 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 class BlockProcessor {
+  private final StateTransition stateTransition = new StateTransition(new NopBlockValidator());
 
   public BeaconState process(final BeaconState preState, final SignedBeaconBlock block) {
-    StateTransition stateTransition = new StateTransition(new NopBlockValidator());
+
     try {
       final BeaconState postState = stateTransition.initiate(preState, block);
       assertBlockAndStateMatch(block, postState);
-      // Validate that state matches expectation
-      if (!block.getMessage().getState_root().equals(postState.hash_tree_root())) {
-        throw new IllegalStateException(getFailedStateGenerationError(block));
-      }
       return postState;
     } catch (StateTransitionException e) {
       throw new IllegalStateException(getFailedStateGenerationError(block), e);

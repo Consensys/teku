@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 
 import com.google.common.collect.Sets;
@@ -124,12 +125,6 @@ class Store implements UpdatableStore {
             pruningOptions.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     this.checkpoint_states = new HashMap<>(checkpoint_states);
 
-    this.blockProvider =
-        BlockProvider.combined(
-            fromMap(Map.of(finalizedBlockAndState.getRoot(), finalizedBlockAndState.getBlock())),
-            fromMap(this.blocks),
-            blockProvider);
-
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
     childToParentRoot.forEach(treeBuilder::childAndParentRoots);
@@ -141,6 +136,16 @@ class Store implements UpdatableStore {
 
     forkChoiceState =
         ProtoArrayForkChoiceStrategy.create(votes, finalized_checkpoint, justified_checkpoint);
+
+    this.blockProvider =
+        BlockProvider.combined(
+            fromDynamicMap(
+                () -> {
+                  SignedBlockAndState finalized = this.getLatestFinalizedBlockAndState();
+                  return Map.of(finalized.getRoot(), finalized.getBlock());
+                }),
+            fromMap(this.blocks),
+            blockProvider);
 
     // Create state generator
     final StateGenerator stateGenerator =
