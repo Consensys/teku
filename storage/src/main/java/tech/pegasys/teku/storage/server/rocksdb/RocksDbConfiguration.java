@@ -80,8 +80,8 @@ public class RocksDbConfiguration {
 
   public static RocksDbConfiguration v5ArchiveDefaults() {
     final RocksDbConfiguration config = new RocksDbConfiguration();
-    config.compressionType = CompressionType.LZ4_COMPRESSION;
-    config.bottomMostCompressionType = CompressionType.ZSTD_COMPRESSION;
+    config.compressionType = CompressionType.ZLIB_COMPRESSION;
+    config.bottomMostCompressionType = CompressionType.ZLIB_COMPRESSION;
     return config;
   }
 
