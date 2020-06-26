@@ -20,19 +20,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import java.io.File;
 import java.io.IOException;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 
 /**
- * Defines the configuration for a RocksDB database. The configuration used when a database is
- * created is written to a metadata.yaml file and reloaded to ensure we continue using compatible
- * values for the lifetime of that database.
+ * Defines the configuration for a database. The configuration used when a database is created is
+ * written to a metadata.yaml file and reloaded to ensure we continue using compatible values for
+ * the lifetime of that database.
  *
  * <p>To preserve backwards compatibility always ensure that the value assigned in field
  * declarations is compatible with existing databases. These values will be used if the field didn't
- * exist at the time the database was created, so typically should match the RocksDB default.
+ * exist at the time the database was created, so typically should match the default.
  *
  * <p>If the value to use for new databases, differs from the original, set it in a factory function
  * e.g. {@link #v5Defaults()}.
@@ -45,7 +46,7 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DatabaseMetadata {
 
-  static final String HOT_DB_CONFIGURATION_KEY = "hotDbConfiguration";
+  @VisibleForTesting static final String HOT_DB_CONFIGURATION_KEY = "hotDbConfiguration";
 
   @JsonProperty(HOT_DB_CONFIGURATION_KEY)
   private RocksDbConfiguration hotDbConfiguration = new RocksDbConfiguration();
