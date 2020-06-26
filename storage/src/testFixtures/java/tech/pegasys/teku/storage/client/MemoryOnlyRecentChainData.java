@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -36,6 +37,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final ReorgEventChannel reorgEventChannel) {
     super(
         metricsSystem,
+        BlockProvider.NOOP,
         storageUpdateChannel,
         finalizedCheckpointChannel,
         reorgEventChannel,
