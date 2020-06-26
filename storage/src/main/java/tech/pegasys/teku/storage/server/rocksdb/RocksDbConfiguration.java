@@ -22,25 +22,29 @@ public class RocksDbConfiguration {
   public static final int DEFAULT_MAX_OPEN_FILES = 1024;
   public static final int DEFAULT_MAX_BACKGROUND_COMPACTIONS = 4;
   public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 4;
-  public static final long DEFAULT_CACHE_CAPACITY = 8388608;
+  public static final long DEFAULT_CACHE_CAPACITY = 8 << 20;
+  public static final long DEFAULT_WRITE_BUFFER_CAPACITY = 256 << 20;
 
   private final Path databaseDir;
   private final int maxOpenFiles;
   private final int maxBackgroundCompactions;
   private final int backgroundThreadCount;
   private final long cacheCapacity;
+  private final long writeBufferCapacity;
 
-  private RocksDbConfiguration(
-      final Path databaseDir,
-      final int maxOpenFiles,
-      final int maxBackgroundCompactions,
-      final int backgroundThreadCount,
-      final long cacheCapacity) {
+  public RocksDbConfiguration(
+      Path databaseDir,
+      int maxOpenFiles,
+      int maxBackgroundCompactions,
+      int backgroundThreadCount,
+      long cacheCapacity,
+      long writeBufferCapacity) {
+    this.databaseDir = databaseDir;
     this.maxOpenFiles = maxOpenFiles;
     this.maxBackgroundCompactions = maxBackgroundCompactions;
     this.backgroundThreadCount = backgroundThreadCount;
-    this.databaseDir = databaseDir;
     this.cacheCapacity = cacheCapacity;
+    this.writeBufferCapacity = writeBufferCapacity;
   }
 
   public static RocksDbConfiguration withDataDirectory(final Path path) {
@@ -71,11 +75,16 @@ public class RocksDbConfiguration {
     return cacheCapacity;
   }
 
+  public long getWriteBufferCapacity() {
+    return writeBufferCapacity;
+  }
+
   public static class Builder {
     private int maxOpenFiles = DEFAULT_MAX_OPEN_FILES;
     private int maxBackgroundCompactions = DEFAULT_MAX_BACKGROUND_COMPACTIONS;
     private int backgroundThreadCount = DEFAULT_BACKGROUND_THREAD_COUNT;
     private long cacheCapacity = DEFAULT_CACHE_CAPACITY;
+    private long writeBufferCapacity = DEFAULT_WRITE_BUFFER_CAPACITY;
 
     private Path databaseDir;
 
@@ -86,7 +95,8 @@ public class RocksDbConfiguration {
           maxOpenFiles,
           maxBackgroundCompactions,
           backgroundThreadCount,
-          cacheCapacity);
+          cacheCapacity,
+          writeBufferCapacity);
     }
 
     public Builder maxOpenFiles(final int maxOpenFiles) {
@@ -106,6 +116,11 @@ public class RocksDbConfiguration {
 
     public Builder cacheCapacity(final long cacheCapacity) {
       this.cacheCapacity = cacheCapacity;
+      return this;
+    }
+
+    public Builder writeBufferCapacity(long writeBufferCapacity) {
+      this.writeBufferCapacity = writeBufferCapacity;
       return this;
     }
 

@@ -112,7 +112,7 @@ public class RocksDbInstanceFactory {
         .setBytesPerSync(1048576L)
         .setWalBytesPerSync(1048576L)
         .setMaxBackgroundFlushes(2)
-        .setDbWriteBufferSize(configuration.getCacheCapacity())
+        .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
         .setMaxOpenFiles(configuration.getMaxOpenFiles())
         .setMaxBackgroundCompactions(configuration.getMaxBackgroundCompactions())
         .setCreateMissingColumnFamilies(true)
