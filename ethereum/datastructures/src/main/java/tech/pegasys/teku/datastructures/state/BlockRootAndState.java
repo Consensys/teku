@@ -11,19 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.datastructures.state;
 
-import java.util.Optional;
-import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.storage.store.UpdatableStore;
-import tech.pegasys.teku.util.async.SafeFuture;
+import org.apache.tuweni.bytes.Bytes32;
 
-public interface StorageUpdateChannel {
+/** Holds a block root and the state corresponding to this block's post-state */
+public class BlockRootAndState {
+  private final Bytes32 blockRoot;
+  private final BeaconState state;
 
-  SafeFuture<Optional<StoreBuilder>> onStoreRequest();
+  public BlockRootAndState(final Bytes32 blockRoot, final BeaconState state) {
+    this.blockRoot = blockRoot;
+    this.state = state;
+  }
 
-  SafeFuture<Void> onStorageUpdate(StorageUpdate event);
+  public BeaconState getState() {
+    return state;
+  }
 
-  void onGenesis(UpdatableStore store);
+  public Bytes32 getBlockRoot() {
+    return blockRoot;
+  }
 }
