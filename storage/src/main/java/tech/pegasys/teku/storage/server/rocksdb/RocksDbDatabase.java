@@ -21,7 +21,6 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -179,7 +178,9 @@ public class RocksDbDatabase implements Database {
 
     // Build child-parent lookup
     final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
-    hotDao.streamHotBlocks().forEach(b -> childToParentLookup.put(b.getRoot(), b.getParent_root()));
+    try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
+      hotBlocks.forEach(b -> childToParentLookup.put(b.getRoot(), b.getParent_root()));
+    }
 
     // Validate finalized data is consistent and available
     final SignedBeaconBlock finalizedBlock =
