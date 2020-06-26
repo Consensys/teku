@@ -31,6 +31,8 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.ssz.backing.CompositeViewRead;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
@@ -52,6 +54,7 @@ public class ProfilingRun {
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     int validatorsCount = 32 * 1024;
+    int iterationBlockLimit = Integer.MAX_VALUE;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -78,10 +81,11 @@ public class ProfilingRun {
 
       System.out.println("Start blocks import from " + blocksFile);
       int blockCount = 0;
+
       long totalS = 0;
       try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
         for (SignedBeaconBlock block : blockReader) {
-          if (block.getSlot().intValue() > 65) {
+          if (block.getSlot().intValue() == 65) {
             totalS = System.currentTimeMillis();
             blockCount = 0;
           }
@@ -96,11 +100,16 @@ public class ProfilingRun {
                   + " ms: "
                   + result);
           blockCount++;
+          if (blockCount > iterationBlockLimit) break;
         }
       }
       long totalT = System.currentTimeMillis() - totalS;
       System.out.printf("############# Total: %f.2 blocks/sec\n", blockCount / (totalT / 1000.0));
     }
+  }
+
+  public static void main(String[] args) throws Exception {
+    new ProfilingRun().importBlocksMemProfiling();
   }
 
   @Disabled
@@ -155,8 +164,9 @@ public class ProfilingRun {
           if (--counter == 0) {
             statesList.add(result.getBlockProcessingRecord().get().getPostState());
 
-//            //
-//            statesList.get(statesList.size() - 2).getValidators().forEach(blackHole);
+            // recreate View validator caches for older state
+//            traverseViewHierarchy(statesList.get(statesList.size() - 2), v -> blackHole.accept(v));
+
             System.out.println("Press enter: ");
             String line = new BufferedReader(new InputStreamReader(System.in)).readLine();
             try {
@@ -165,6 +175,19 @@ public class ProfilingRun {
               counter = 1;
             }
           }
+        }
+      }
+    }
+  }
+
+  private static void traverseViewHierarchy(Object view, Consumer<ViewRead> visitor) {
+    if (view instanceof ViewRead) {
+      visitor.accept((ViewRead) view);
+      if (view instanceof CompositeViewRead) {
+        CompositeViewRead<?> cView = (CompositeViewRead<?>) view;
+
+        for (int i = 0; i < cView.size(); i++) {
+          traverseViewHierarchy(cView.get(i), visitor);
         }
       }
     }
