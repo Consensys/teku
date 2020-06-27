@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.core;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -80,7 +81,9 @@ public class RocksDbInstance implements RocksDbAccessor {
   @Override
   public <K, V> Map<K, V> getAll(RocksDbColumn<K, V> column) {
     assertOpen();
-    return stream(column).collect(Collectors.toMap(ColumnEntry::getKey, ColumnEntry::getValue));
+    try (final Stream<ColumnEntry<K, V>> stream = stream(column)) {
+      return stream.collect(Collectors.toMap(ColumnEntry::getKey, ColumnEntry::getValue));
+    }
   }
 
   @Override
@@ -103,12 +106,14 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
+  @MustBeClosed
   public <K, V> Stream<ColumnEntry<K, V>> stream(RocksDbColumn<K, V> column) {
     assertOpen();
     return createStream(column, RocksIterator::seekToFirst);
   }
 
   @Override
+  @MustBeClosed
   public <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       final RocksDbColumn<K, V> column, final K from, final K to) {
     assertOpen();
@@ -124,11 +129,13 @@ public class RocksDbInstance implements RocksDbAccessor {
     return new Transaction(db, defaultHandle, columnHandles);
   }
 
+  @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
       RocksDbColumn<K, V> column, Consumer<RocksIterator> setupIterator) {
     return createStream(column, setupIterator, key -> true);
   }
 
+  @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
       RocksDbColumn<K, V> column,
       Consumer<RocksIterator> setupIterator,

@@ -44,7 +44,8 @@ public class RocksDbConfiguration {
   public static final int DEFAULT_MAX_OPEN_FILES = 1024;
   public static final int DEFAULT_MAX_BACKGROUND_COMPACTIONS = 4;
   public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 4;
-  public static final long DEFAULT_CACHE_CAPACITY = 8388608;
+  public static final long DEFAULT_CACHE_CAPACITY = 8 << 20;
+  public static final long DEFAULT_WRITE_BUFFER_CAPACITY = 128 << 20;
 
   /* --------------- Safe to Change Properties ------------ */
 
@@ -59,6 +60,9 @@ public class RocksDbConfiguration {
 
   @JsonProperty(value = "cacheCapacity", access = Access.WRITE_ONLY)
   private long cacheCapacity = DEFAULT_CACHE_CAPACITY;
+
+  @JsonProperty(value = "writeBufferCapacity", access = Access.WRITE_ONLY)
+  private long writeBufferCapacity = DEFAULT_WRITE_BUFFER_CAPACITY;
 
   /* ---------------     Fixed Properties     ------------ */
 
@@ -107,6 +111,10 @@ public class RocksDbConfiguration {
     return cacheCapacity;
   }
 
+  public long getWriteBufferCapacity() {
+    return writeBufferCapacity;
+  }
+
   public CompressionType getCompressionType() {
     return compressionType;
   }
@@ -122,6 +130,7 @@ public class RocksDbConfiguration {
         .add("maxBackgroundCompactions", maxBackgroundCompactions)
         .add("backgroundThreadCount", backgroundThreadCount)
         .add("cacheCapacity", cacheCapacity)
+        .add("writeBufferCapacity", writeBufferCapacity)
         .add("compressionType", compressionType)
         .add("bottomMostCompressionType", bottomMostCompressionType)
         .add("databaseDir", databaseDir)
