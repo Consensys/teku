@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.forkchoice;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +25,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
@@ -60,6 +58,7 @@ public class TestStoreFactory {
         null,
         new HashMap<>(),
         new HashMap<>(),
+        new HashMap<>(),
         new HashMap<>());
   }
 
@@ -75,6 +74,7 @@ public class TestStoreFactory {
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
 
     blocks.put(anchorRoot, signedAnchorBlock);
     block_states.put(anchorRoot, anchorState);
@@ -90,7 +90,8 @@ public class TestStoreFactory {
         anchorCheckpoint,
         blocks,
         block_states,
-        checkpoint_states);
+        checkpoint_states,
+        votes);
   }
 
   private BeaconState createRandomGenesisState() {
@@ -106,6 +107,7 @@ public class TestStoreFactory {
     protected Map<Bytes32, SignedBeaconBlock> blocks;
     protected Map<Bytes32, BeaconState> block_states;
     protected Map<Checkpoint, BeaconState> checkpoint_states;
+    protected Map<UnsignedLong, VoteTracker> votes;
 
     StoreImpl(
         final UnsignedLong time,
@@ -115,7 +117,8 @@ public class TestStoreFactory {
         final Checkpoint best_justified_checkpoint,
         final Map<Bytes32, SignedBeaconBlock> blocks,
         final Map<Bytes32, BeaconState> block_states,
-        final Map<Checkpoint, BeaconState> checkpoint_states) {
+        final Map<Checkpoint, BeaconState> checkpoint_states,
+        final Map<UnsignedLong, VoteTracker> votes) {
       this.time = time;
       this.genesis_time = genesis_time;
       this.justified_checkpoint = justified_checkpoint;
@@ -124,6 +127,7 @@ public class TestStoreFactory {
       this.blocks = blocks;
       this.block_states = block_states;
       this.checkpoint_states = checkpoint_states;
+      this.votes = votes;
     }
 
     @Override
@@ -195,26 +199,6 @@ public class TestStoreFactory {
     }
 
     @Override
-    public Bytes32 getHead() {
-      // Just return a block with the highest slot
-      return blocks.values().stream()
-          .sorted(Comparator.comparing(SignedBeaconBlock::getSlot).reversed())
-          .findFirst()
-          .map(SignedBeaconBlock::getRoot)
-          .orElseThrow();
-    }
-
-    @Override
-    public Optional<UnsignedLong> getBlockSlot(final Bytes32 blockRoot) {
-      return Optional.ofNullable(blocks.get(blockRoot)).map(SignedBeaconBlock::getSlot);
-    }
-
-    @Override
-    public Optional<Bytes32> getBlockParent(final Bytes32 blockRoot) {
-      return Optional.ofNullable(blocks.get(blockRoot)).map(SignedBeaconBlock::getParent_root);
-    }
-
-    @Override
     public Set<Bytes32> getBlockRoots() {
       return blocks.keySet();
     }
@@ -233,6 +217,11 @@ public class TestStoreFactory {
     public boolean containsCheckpointState(final Checkpoint checkpoint) {
       return checkpoint_states.containsKey(checkpoint);
     }
+
+    @Override
+    public Set<UnsignedLong> getVotedValidatorIndices() {
+      return votes.keySet();
+    }
   }
 
   private static class MutableStoreImpl extends StoreImpl implements MutableStore {
@@ -245,7 +234,8 @@ public class TestStoreFactory {
         final Checkpoint best_justified_checkpoint,
         final Map<Bytes32, SignedBeaconBlock> blocks,
         final Map<Bytes32, BeaconState> block_states,
-        final Map<Checkpoint, BeaconState> checkpoint_states) {
+        final Map<Checkpoint, BeaconState> checkpoint_states,
+        final Map<UnsignedLong, VoteTracker> votes) {
       super(
           time,
           genesis_time,
@@ -254,7 +244,8 @@ public class TestStoreFactory {
           best_justified_checkpoint,
           blocks,
           block_states,
-          checkpoint_states);
+          checkpoint_states,
+          votes);
     }
 
     @Override
@@ -300,13 +291,13 @@ public class TestStoreFactory {
     }
 
     @Override
-    public void updateHead() {
-      // No-op
-    }
-
-    @Override
-    public void processAttestation(final IndexedAttestation attestation) {
-      // No-op
+    public VoteTracker getVote(final UnsignedLong validatorIndex) {
+      VoteTracker vote = votes.get(validatorIndex);
+      if (vote == null) {
+        vote = VoteTracker.Default();
+      }
+      this.votes.put(validatorIndex, vote);
+      return vote;
     }
   }
 
@@ -320,6 +311,7 @@ public class TestStoreFactory {
         final Checkpoint best_justified_checkpoint,
         final Map<Bytes32, SignedBeaconBlock> blocks,
         final Map<Bytes32, BeaconState> block_states,
-        final Map<Checkpoint, BeaconState> checkpoint_states);
+        final Map<Checkpoint, BeaconState> checkpoint_states,
+        final Map<UnsignedLong, VoteTracker> votes);
   }
 }
