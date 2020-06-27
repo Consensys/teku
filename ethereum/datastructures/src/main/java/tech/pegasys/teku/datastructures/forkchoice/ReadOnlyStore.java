@@ -24,7 +24,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 
-public interface ReadOnlyStore extends ForkChoiceState {
+public interface ReadOnlyStore {
 
   UnsignedLong getTime();
 
@@ -54,6 +54,8 @@ public interface ReadOnlyStore extends ForkChoiceState {
 
   Optional<SignedBlockAndState> getBlockAndState(Bytes32 blockRoot);
 
+  boolean containsBlock(Bytes32 blockRoot);
+
   Set<Bytes32> getBlockRoots();
 
   BeaconState getBlockState(Bytes32 blockRoot);
@@ -61,4 +63,6 @@ public interface ReadOnlyStore extends ForkChoiceState {
   BeaconState getCheckpointState(Checkpoint checkpoint);
 
   boolean containsCheckpointState(Checkpoint checkpoint);
+
+  Set<UnsignedLong> getVotedValidatorIndices();
 }
