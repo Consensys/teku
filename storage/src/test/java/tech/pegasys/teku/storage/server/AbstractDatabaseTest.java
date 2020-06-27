@@ -831,6 +831,10 @@ public abstract class AbstractDatabaseTest {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     for (SignedBlockAndState block : blocks) {
       transaction.putBlockAndState(block);
+      recentChainData
+          .getForkChoiceStrategy()
+          .orElseThrow()
+          .onBlock(block.getBlock().getMessage(), block.getState());
     }
     commit(transaction);
   }
@@ -845,6 +849,10 @@ public abstract class AbstractDatabaseTest {
       final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
     for (SignedBlockAndState blockAndState : blocksAndStates) {
       transaction.putBlockAndState(blockAndState);
+      recentChainData
+          .getForkChoiceStrategy()
+          .orElseThrow()
+          .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
     }
   }
 

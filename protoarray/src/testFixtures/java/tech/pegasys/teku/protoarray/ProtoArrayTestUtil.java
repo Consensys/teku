@@ -16,7 +16,6 @@ package tech.pegasys.teku.protoarray;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes32;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
@@ -39,19 +38,15 @@ public class ProtoArrayTestUtil {
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        ProtoArrayForkChoiceStrategy.create(
-            new HashMap<>(), store.getFinalizedCheckpoint(), store.getJustifiedCheckpoint());
+    ProtoArrayForkChoiceStrategy forkChoice = ProtoArrayForkChoiceStrategy.create(store);
 
-    ProtoArrayForkChoiceStrategyUpdater updater = forkChoice.updater();
-    updater.processBlock(
+    forkChoice.processBlock(
         finalizedBlockSlot,
         finalizedBlockRoot,
         Bytes32.ZERO,
         Bytes32.ZERO,
         justifiedCheckpointEpoch,
         finalizedCheckpointEpoch);
-    updater.commit();
 
     return forkChoice;
   }

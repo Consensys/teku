@@ -125,7 +125,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
     // Save new blocks and finalized checkpoint
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    chainBuilder.streamBlocksAndStates(1).forEach(tx::putBlockAndState);
+    chainBuilder.streamBlocksAndStates(1).forEach(b -> add(tx, List.of(b)));
     justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock, tx);
     tx.commit().join();
 
