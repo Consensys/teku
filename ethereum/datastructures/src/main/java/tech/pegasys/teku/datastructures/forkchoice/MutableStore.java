@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.forkchoice;
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
@@ -40,9 +39,5 @@ public interface MutableStore extends ReadOnlyStore {
 
   void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint);
 
-  // Fork-choice updates
-
-  void updateHead();
-
-  void processAttestation(IndexedAttestation attestation);
+  VoteTracker getVote(UnsignedLong validatorIndex);
 }

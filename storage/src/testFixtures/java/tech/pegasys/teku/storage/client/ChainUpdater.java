@@ -61,16 +61,6 @@ public class ChainUpdater {
 
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(checkpoint);
-    tx.putCheckpointState(checkpoint, blockAndState.getState());
-    if (recentChainData
-            .getStore()
-            .getJustifiedCheckpoint()
-            .getEpoch()
-            .compareTo(checkpoint.getEpoch())
-        < 0) {
-      // Justified checkpoint must be at or beyond finalized checkpoint
-      tx.setJustifiedCheckpoint(checkpoint);
-    }
     tx.commit().reportExceptions();
 
     return blockAndState;
@@ -110,5 +100,9 @@ public class ChainUpdater {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(block.getBlock(), block.getState());
     assertThat(tx.commit()).isCompleted();
+    recentChainData
+        .getForkChoiceStrategy()
+        .orElseThrow()
+        .onBlock(block.getBlock().getMessage(), block.getState());
   }
 }

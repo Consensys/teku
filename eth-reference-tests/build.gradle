@@ -5,7 +5,6 @@ dependencies {
   referenceTestImplementation project(':data')
   referenceTestImplementation project(':ethereum:core')
   referenceTestImplementation project(':ethereum:datastructures')
-  referenceTestImplementation project(':ethereum:statetransition')
   referenceTestImplementation project(':eth-tests')
   referenceTestImplementation project(':protoarray')
   referenceTestImplementation project(':ssz')
