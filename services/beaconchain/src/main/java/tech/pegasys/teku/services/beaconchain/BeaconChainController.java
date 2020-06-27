@@ -173,7 +173,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return StorageBackedRecentChainData.create(
             metricsSystem,
             asyncRunner,
-            eventChannels.getPublisher(StorageQueryChannel.class),
             eventChannels.getPublisher(StorageUpdateChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
             eventChannels.getPublisher(ReorgEventChannel.class),
