@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.ForkChoiceUtil;
-import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -40,7 +39,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.StoreFactory;
 import tech.pegasys.teku.storage.store.StoreUpdateHandler;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -51,7 +50,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final BlockProvider blockProvider;
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
@@ -68,13 +66,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   RecentChainData(
       final MetricsSystem metricsSystem,
-      final BlockProvider blockProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
     this.metricsSystem = metricsSystem;
-    this.blockProvider = blockProvider;
     this.reorgEventChannel = reorgEventChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -90,8 +86,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
-    final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, genesisState);
+    final UpdatableStore store = StoreFactory.getForkChoiceStore(metricsSystem, genesisState);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(

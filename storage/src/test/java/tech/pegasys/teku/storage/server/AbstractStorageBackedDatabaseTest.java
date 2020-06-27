@@ -84,7 +84,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     // Shutdown and restart
     restartStorage();
 
-    final UpdatableStore memoryStore = recreateStore();
+    final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
     assertStoresMatch(memoryStore, store);
   }
 
@@ -132,7 +132,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     // Shutdown and restart
     restartStorage();
 
-    final UpdatableStore memoryStore = recreateStore();
+    final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
     assertStoresMatch(memoryStore, store);
   }
 

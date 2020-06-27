@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.StateTransitionException;
@@ -47,15 +48,18 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 class RecentChainDataTest {
+  private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(2);
+
+  private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+
+  private final BeaconState genesisState = genesis.getState();
+  private final BeaconBlock genesisBlock = genesis.getBlock().getMessage();
+
   private final StorageSystem storageSystem =
       InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.PRUNE);
   private final StorageSystem preGenesisStorageSystem =
       InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.PRUNE);
-
-  private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
-  private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-  private final BeaconState genesisState = genesis.getState();
-  private final BeaconBlock genesisBlock = genesis.getBlock().getMessage();
 
   private final RecentChainData storageClient = storageSystem.recentChainData();
   private final RecentChainData preGenesisStorageClient = preGenesisStorageSystem.recentChainData();

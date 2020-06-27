@@ -146,7 +146,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
   private boolean blockIsKnown(final SignedBeaconBlock block) {
     return pendingBlocks.contains(block)
         || futureBlocks.contains(block)
-        || recentChainData.containsBlock(block.getMessage().hash_tree_root());
+        || recentChainData.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent();
   }
 
   private boolean blockIsInvalid(final SignedBeaconBlock block) {
