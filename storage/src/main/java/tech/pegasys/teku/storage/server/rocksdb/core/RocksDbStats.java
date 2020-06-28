@@ -25,6 +25,10 @@ import org.rocksdb.HistogramType;
 import org.rocksdb.Statistics;
 import org.rocksdb.TickerType;
 
+/**
+ * Taken from
+ * https://github.com/hyperledger/besu/blob/3d867532deb893fd267fcd5d4e6bf0d42a76e59b/metrics/rocksdb/src/main/java/org/hyperledger/besu/metrics/rocksdb/RocksDBStats.java#L137
+ */
 public class RocksDbStats {
 
   static final List<String> LABELS = Collections.singletonList("quantile");
