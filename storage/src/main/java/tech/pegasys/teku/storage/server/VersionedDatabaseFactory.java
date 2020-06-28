@@ -22,6 +22,7 @@ import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.storage.server.metadata.DatabaseMetadata;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -33,6 +34,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   @VisibleForTesting static final String DB_PATH = "db";
   @VisibleForTesting static final String ARCHIVE_PATH = "archive";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
+  @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
 
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
@@ -99,6 +101,17 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             dbVersion.getValue(),
             archiveDirectory.getAbsolutePath());
         break;
+      case V5:
+        database = createV5Database();
+        LOG.trace(
+            "Created V5 Hot database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
+        LOG.trace(
+            "Created V5 Finalized database ({}) at {}",
+            dbVersion.getValue(),
+            archiveDirectory.getAbsolutePath());
+        break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
@@ -107,17 +120,41 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private Database createV3Database() {
     final RocksDbConfiguration rocksDbConfiguration =
-        RocksDbConfiguration.withDataDirectory(dbDirectory.toPath());
+        RocksDbConfiguration.v3And4Settings(dbDirectory.toPath());
     return RocksDbDatabase.createV3(metricsSystem, rocksDbConfiguration, stateStorageMode);
   }
 
   private Database createV4Database() {
     return RocksDbDatabase.createV4(
         metricsSystem,
-        RocksDbConfiguration.withDataDirectory(dbDirectory.toPath()),
-        RocksDbConfiguration.withDataDirectory(archiveDirectory.toPath()),
+        RocksDbConfiguration.v3And4Settings(dbDirectory.toPath()),
+        RocksDbConfiguration.v3And4Settings(archiveDirectory.toPath()),
         stateStorageMode,
         stateStorageFrequency);
+  }
+
+  /**
+   * V5 database is identical to V4 except for the RocksDB configuration
+   *
+   * @return the created database
+   */
+  private Database createV5Database() {
+    try {
+      final DatabaseMetadata metaData =
+          DatabaseMetadata.init(getMetadataFile(), DatabaseMetadata.v5Defaults());
+      return RocksDbDatabase.createV4(
+          metricsSystem,
+          metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
+          metaData.getArchiveDbConfiguration().withDatabaseDir(archiveDirectory.toPath()),
+          stateStorageMode,
+          stateStorageFrequency);
+    } catch (final IOException e) {
+      throw new DatabaseStorageException("Failed to read metadata", e);
+    }
+  }
+
+  private File getMetadataFile() {
+    return dataDirectory.toPath().resolve(METADATA_FILENAME).toFile();
   }
 
   private void validateDataPaths() {
