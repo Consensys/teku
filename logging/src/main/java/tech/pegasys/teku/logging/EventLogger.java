@@ -18,6 +18,11 @@ import static tech.pegasys.teku.logging.LogFormatter.formatHashRoot;
 import static tech.pegasys.teku.logging.LoggingConfigurator.EVENT_LOGGER_NAME;
 
 import com.google.common.primitives.UnsignedLong;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.util.Locale;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,11 +38,27 @@ public class EventLogger {
     this.log = LogManager.getLogger(name);
   }
 
-  public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
+  public void genesisEvent(
+      final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot, final UnsignedLong genesisTime) {
+    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    final ZoneId systemDefaultZoneId = ZoneId.systemDefault();
+    final String formattedGenesisTime =
+        Instant.ofEpochSecond(genesisTime.longValue())
+            .atZone(systemDefaultZoneId)
+            .format(formatter);
+
+    System.out.println(formattedGenesisTime);
     final String genesisEventLog =
         String.format(
-            "Genesis Event *** Initial state root: %s, Genesis block root: %s",
-            hashTreeRoot.toHexString(), genesisBlockRoot.toHexString());
+            "Genesis Event *** \n"
+                + "Genesis state root: %s \n"
+                + "Genesis block root: %s \n"
+                + "Genesis time: %s %s",
+            hashTreeRoot.toHexString(),
+            genesisBlockRoot.toHexString(),
+            formattedGenesisTime,
+            systemDefaultZoneId.getDisplayName(TextStyle.FULL, Locale.ENGLISH));
     info(genesisEventLog, Color.CYAN);
   }
 
