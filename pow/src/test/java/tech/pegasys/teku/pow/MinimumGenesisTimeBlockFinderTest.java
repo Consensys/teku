@@ -82,7 +82,8 @@ public class MinimumGenesisTimeBlockFinderTest {
       final Block[] blocks, final long minGenesisTime, final Block expectedMinGenesisTimeBlock) {
     Constants.MIN_GENESIS_TIME = UnsignedLong.valueOf(minGenesisTime);
     final SafeFuture<Block> result =
-        minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(blocks[blocks.length - 1]);
+        minimumGenesisTimeBlockFinder.findMinGenesisTimeBlockInHistory(
+            blocks[blocks.length - 1].getNumber());
     assertThat(result).isCompletedWithValue(expectedMinGenesisTimeBlock);
   }
 
