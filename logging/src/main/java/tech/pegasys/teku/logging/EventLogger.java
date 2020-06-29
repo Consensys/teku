@@ -21,8 +21,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.TextStyle;
-import java.util.Locale;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -42,23 +40,16 @@ public class EventLogger {
       final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot, final UnsignedLong genesisTime) {
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    final ZoneId systemDefaultZoneId = ZoneId.systemDefault();
     final String formattedGenesisTime =
-        Instant.ofEpochSecond(genesisTime.longValue())
-            .atZone(systemDefaultZoneId)
-            .format(formatter);
+        Instant.ofEpochSecond(genesisTime.longValue()).atZone(ZoneId.of("GMT")).format(formatter);
 
-    System.out.println(formattedGenesisTime);
     final String genesisEventLog =
         String.format(
             "Genesis Event *** \n"
                 + "Genesis state root: %s \n"
                 + "Genesis block root: %s \n"
-                + "Genesis time: %s %s",
-            hashTreeRoot.toHexString(),
-            genesisBlockRoot.toHexString(),
-            formattedGenesisTime,
-            systemDefaultZoneId.getDisplayName(TextStyle.FULL, Locale.ENGLISH));
+                + "Genesis time: %s GMT",
+            hashTreeRoot.toHexString(), genesisBlockRoot.toHexString(), formattedGenesisTime);
     info(genesisEventLog, Color.CYAN);
   }
 
