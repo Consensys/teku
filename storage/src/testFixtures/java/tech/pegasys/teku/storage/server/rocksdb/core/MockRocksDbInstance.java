@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 import tech.pegasys.teku.storage.server.rocksdb.schema.Schema;
@@ -120,7 +121,9 @@ public class MockRocksDbInstance implements RocksDbAccessor {
   public <K, V> Stream<ColumnEntry<K, V>> stream(final RocksDbColumn<K, V> column) {
     assertOpen();
     assertValidColumn(column);
-    return columnData.get(column).entrySet().stream().map(e -> columnEntry(column, e));
+    return columnData.get(column).entrySet().stream()
+        .peek(value -> assertOpen())
+        .map(e -> columnEntry(column, e));
   }
 
   @Override
@@ -129,6 +132,7 @@ public class MockRocksDbInstance implements RocksDbAccessor {
     assertOpen();
     return columnData.get(column)
         .subMap(keyToBytes(column, from), true, keyToBytes(column, to), true).entrySet().stream()
+        .peek(value -> assertOpen())
         .map(e -> columnEntry(column, e));
   }
 
@@ -177,7 +181,9 @@ public class MockRocksDbInstance implements RocksDbAccessor {
   }
 
   private void assertOpen() {
-    checkState(!closed.get(), "Attempt to modify a closed database");
+    if (closed.get()) {
+      throw new ShuttingDownException();
+    }
   }
 
   private static class MockRocksDbTransaction implements RocksDbTransaction {
