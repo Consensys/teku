@@ -22,6 +22,9 @@ import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.deposit.GenerateAction.WithdrawalPasswordOptions;
+import tech.pegasys.teku.logging.SubCommandLogger;
+
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 public class GenerateParams {
 
@@ -80,10 +83,10 @@ public class GenerateParams {
         encryptKeys,
         validatorPasswordOptions,
         withdrawalPasswordOptions,
-        displayConfirmation,
         consoleAdapter,
         spec,
-        envSupplier);
+        envSupplier,
+        displayConfirmation ? SUB_COMMAND_LOG::display : SUB_COMMAND_LOG::noOp);
   }
 
   public int getValidatorCount() {

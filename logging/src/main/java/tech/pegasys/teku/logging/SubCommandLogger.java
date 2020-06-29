@@ -30,6 +30,10 @@ public class SubCommandLogger {
     System.out.println(message);
   }
 
+  public void noOp(final String message) {
+    // do nothing
+  }
+
   public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
     System.out.printf(
         "Generating mock genesis state for %s validators at genesis time %s %n",

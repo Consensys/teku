@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,9 +44,9 @@ public class GenerateAction {
   private final WithdrawalPasswordOptions withdrawalPasswordOptions;
   private final SecureRandom srng;
   private final ConsoleAdapter consoleAdapter;
-  private final boolean displayConfirmation;
   private final CommandSpec commandSpec;
   private final Function<String, String> envSupplier;
+  private final Consumer<String> log;
 
   public GenerateAction(
       final int validatorCount,
@@ -53,19 +54,19 @@ public class GenerateAction {
       final boolean encryptKeys,
       final ValidatorPasswordOptions validatorPasswordOptions,
       final WithdrawalPasswordOptions withdrawalPasswordOptions,
-      final boolean displayConfirmation,
       final ConsoleAdapter consoleAdapter,
       final CommandSpec commandSpec,
-      final Function<String, String> envSupplier) {
+      final Function<String, String> envSupplier,
+      final Consumer<String> log) {
     this.validatorCount = validatorCount;
     this.outputPath = outputPath;
     this.encryptKeys = encryptKeys;
     this.validatorPasswordOptions = validatorPasswordOptions;
     this.withdrawalPasswordOptions = withdrawalPasswordOptions;
     this.consoleAdapter = consoleAdapter;
-    this.displayConfirmation = displayConfirmation;
     this.commandSpec = commandSpec;
     this.envSupplier = envSupplier;
+    this.log = log;
     this.srng = SecureRandomProvider.createSecureRandom();
   }
 
@@ -96,12 +97,11 @@ public class GenerateAction {
       final Path keystoreDir = getKeystoreOutputDir();
       keysWriter =
           new EncryptedKeystoreWriter(
-              secureRandom, validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
+              secureRandom, validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir, log);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
-      if (consoleAdapter.isConsoleAvailable() && isBlank(outputPath) && displayConfirmation) {
-        SUB_COMMAND_LOG.display(
-            "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
+      if (consoleAdapter.isConsoleAvailable() && isBlank(outputPath)) {
+        log.accept("NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
       }
     }
     return keysWriter;

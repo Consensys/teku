@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import java.io.File;
@@ -37,6 +38,7 @@ import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.deposit.GenerateAction.WithdrawalPasswordOptions;
+import tech.pegasys.teku.logging.SubCommandLogger;
 
 class GenerateActionTest {
 
@@ -46,7 +48,6 @@ class GenerateActionTest {
   private static final Function<String, String> envSupplier =
       s -> EXPECTED_ENV_VARIABLE.equals(s) ? EXPECTED_PASSWORD : null;
   private static final boolean ENCRYPTED_KEYSTORE_ENABLED = true;
-  private static final boolean DISPLAY_CONFIRMATION_ENABLED = true;
   private ConsoleAdapter consoleAdapter;
   private CommandSpec commandSpec;
 
@@ -182,10 +183,10 @@ class GenerateActionTest {
             ENCRYPTED_KEYSTORE_ENABLED,
             validatorPasswordOptions,
             withdrawalPasswordOptions,
-            DISPLAY_CONFIRMATION_ENABLED,
             consoleAdapter,
             commandSpec,
-            envSupplier);
+            envSupplier,
+                SUB_COMMAND_LOG::display);
     generateAction.generateKeys();
 
     // assert that files exist: 2 per validator

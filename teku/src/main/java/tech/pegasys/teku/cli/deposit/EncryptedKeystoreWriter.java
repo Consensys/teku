@@ -21,6 +21,9 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.signers.bls.keystore.KeyStore;
@@ -39,16 +42,19 @@ public class EncryptedKeystoreWriter implements KeysWriter {
   private final String validatorKeyPassword;
   private final String withdrawalKeyPassword;
   private final Path outputPath;
+  private final Consumer<String> log;
 
   public EncryptedKeystoreWriter(
       final SecureRandom secureRandom,
       final String validatorKeyPassword,
       final String withdrawalKeyPassword,
-      final Path outputPath) {
+      final Path outputPath,
+      final Consumer<String> log) {
     this.secureRandom = secureRandom;
     this.validatorKeyPassword = validatorKeyPassword;
     this.withdrawalKeyPassword = withdrawalKeyPassword;
     this.outputPath = outputPath;
+    this.log = log;
     createKeystoreDirectory();
   }
 
@@ -67,7 +73,9 @@ public class EncryptedKeystoreWriter implements KeysWriter {
         shortPublicKey(validatorKey.getPublicKey()) + "_withdrawal.json";
 
     saveKeyStore(outputPath.resolve(validatorFileName), validatorKeyStoreData);
+    log.accept(outputPath.resolve(validatorFileName) + " saved successfully.");
     saveKeyStore(outputPath.resolve(withdrawalFileName), withdrawalKeyStoreData);
+    log.accept(outputPath.resolve(withdrawalFileName) + " saved successfully.");
   }
 
   private void createKeystoreDirectory() {
