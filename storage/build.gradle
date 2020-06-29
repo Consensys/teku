@@ -10,9 +10,13 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
 
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'io.prometheus:simpleclient'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-ssz'
+  implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.mapdb:mapdb'
   implementation 'org.rocksdb:rocksdbjni'

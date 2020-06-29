@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -83,7 +85,8 @@ public class SyncingNodeManager {
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
 
-    BlockImporter blockImporter = new BlockImporter(recentChainData, eventBus);
+    ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+    BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         new FutureItems<>(SignedBeaconBlock::getSlot);

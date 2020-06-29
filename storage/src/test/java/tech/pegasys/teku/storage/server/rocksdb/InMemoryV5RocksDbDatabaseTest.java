@@ -11,22 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.store;
+package tech.pegasys.teku.storage.server.rocksdb;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
+import java.io.File;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
-public interface StoreUpdateHandler {
-  StoreUpdateHandler NOOP =
-      new StoreUpdateHandler() {
-        @Override
-        public void onNewHeadBlock(final Bytes32 headRoot) {}
+public class InMemoryV5RocksDbDatabaseTest extends V4RocksDbDatabaseTest {
 
-        @Override
-        public void onNewFinalizedCheckpoint(final Checkpoint finalizedCheckpoint) {}
-      };
-
-  void onNewHeadBlock(final Bytes32 headRoot);
-
-  void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint);
+  @Override
+  protected StorageSystem createStorageSystem(
+      final File tempDir, final StateStorageMode storageMode) {
+    return InMemoryStorageSystem.createEmptyV5StorageSystem(storageMode, 1L);
+  }
 }
