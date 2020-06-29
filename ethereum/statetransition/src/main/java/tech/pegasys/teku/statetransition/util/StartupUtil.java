@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.util;
 
+import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.primitives.UnsignedLong;
@@ -80,6 +81,7 @@ public final class StartupUtil {
       try {
         STATUS_LOG.loadingGenesisFile(startState);
         initialState = StartupUtil.loadBeaconState(startState);
+
       } catch (final IOException e) {
         throw new IllegalStateException("Failed to load initial state", e);
       }
@@ -91,5 +93,9 @@ public final class StartupUtil {
     }
 
     recentChainData.initializeFromGenesis(initialState);
+    EVENT_LOG.genesisEvent(
+        initialState.hashTreeRoot(),
+        recentChainData.getBestBlockRoot().orElseThrow(),
+        initialState.getGenesis_time());
   }
 }
