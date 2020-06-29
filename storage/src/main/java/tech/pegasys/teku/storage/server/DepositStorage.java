@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.common.base.Suppliers;
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -27,9 +26,11 @@ import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChannel {
+
+  private static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1L);
   private final Database database;
   private final Eth1EventsChannel eth1EventsChannel;
-  private volatile Optional<BigInteger> startingBlock = Optional.empty();
+  private volatile Optional<BigInteger> lastReplayedBlock = Optional.empty();
   private final Supplier<SafeFuture<ReplayDepositsResult>> replayResult;
   private final boolean eth1DepositsFromStorageEnabled;
 
@@ -61,8 +62,8 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
 
   private ReplayDepositsResult replayDeposits() {
     if (!eth1DepositsFromStorageEnabled) {
-      startingBlock = Optional.of(BigInteger.valueOf(-1L));
-      return new ReplayDepositsResult(BigInteger.ZERO, false);
+      lastReplayedBlock = Optional.of(NEGATIVE_ONE);
+      return new ReplayDepositsResult(NEGATIVE_ONE, false);
     }
 
     final DepositSequencer depositSequencer =
@@ -71,19 +72,12 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
       eventStream.forEach(depositSequencer::depositEvent);
     }
     ReplayDepositsResult result = depositSequencer.depositsComplete();
-    startingBlock = Optional.of(getStartingBlockFromDepositsResult(result));
+    lastReplayedBlock = Optional.of(result.getLastProcessedBlockNumber());
     return result;
   }
 
-  private BigInteger getStartingBlockFromDepositsResult(
-      final ReplayDepositsResult replayDepositsResult) {
-    return replayDepositsResult.getBlockNumber().equals(BigInteger.ZERO)
-        ? BigInteger.valueOf(-1L)
-        : replayDepositsResult.getBlockNumber().add(BigInteger.ONE);
-  }
-
   private boolean shouldProcessEvent(final BigInteger blockNumber) {
-    return startingBlock.map(block -> block.compareTo(blockNumber) < 0).orElse(false);
+    return lastReplayedBlock.map(startBlock -> startBlock.compareTo(blockNumber) < 0).orElse(false);
   }
 
   @Override
@@ -104,14 +98,14 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     private final Eth1EventsChannel eth1EventsChannel;
     private final Optional<MinGenesisTimeBlockEvent> genesis;
     private boolean isGenesisDone;
-    private UnsignedLong lastDeposit;
+    private BigInteger lastDeposit;
 
     public DepositSequencer(
         final Eth1EventsChannel eventChannel, final Optional<MinGenesisTimeBlockEvent> genesis) {
       this.eth1EventsChannel = eventChannel;
       this.genesis = genesis;
       this.isGenesisDone = false;
-      this.lastDeposit = UnsignedLong.ZERO;
+      this.lastDeposit = NEGATIVE_ONE;
     }
 
     public void depositEvent(final DepositsFromBlockEvent event) {
@@ -122,16 +116,16 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
         isGenesisDone = true;
       }
       eth1EventsChannel.onDepositsFromBlock(event);
-      lastDeposit = event.getBlockNumber();
+      lastDeposit = event.getBlockNumber().bigIntegerValue();
     }
 
     public ReplayDepositsResult depositsComplete() {
       if (genesis.isPresent() && !isGenesisDone) {
         this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
-        lastDeposit = genesis.get().getBlockNumber();
+        lastDeposit = genesis.get().getBlockNumber().bigIntegerValue();
         isGenesisDone = true;
       }
-      return new ReplayDepositsResult(lastDeposit.bigIntegerValue(), isGenesisDone);
+      return new ReplayDepositsResult(lastDeposit, isGenesisDone);
     }
   }
 }
