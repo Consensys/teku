@@ -2,7 +2,7 @@
 
  [![Build Status](https://circleci.com/gh/PegaSysEng/teku.svg?style=svg)](https://circleci.com/gh/PegaSysEng/workflows/teku)
  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/teku/blob/master/LICENSE)
- [![Gitter chat](https://badges.gitter.im/PegaSysEng/teku.png)](https://gitter.im/PegaSysEng/teku)
+ [![Discord](https://img.shields.io/badge/Chat-on%20Discord-blue)](https://discord.gg/7hPv2T6)
 
 Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. Teku is changing rapidly hence we recommend building from the latest master. See the [Changelog](CHANGELOG.md) for known issues and breaking changes.
 
@@ -19,8 +19,8 @@ Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. Teku is changing
 
 See our [user documentation](https://docs.teku.pegasys.tech/). 
 
-Raise a [documentation issue](https://github.com/PegaSysEng/doc.teku/issues) or get in touch on 
-[Gitter](https://gitter.im/PegaSysEng/teku) if you've got questions or feedback. 
+Raise a [documentation issue](https://github.com/PegaSysEng/doc.teku/issues) or get in touch in 
+the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questions or feedback. 
 
 ## Teku developers 
 
