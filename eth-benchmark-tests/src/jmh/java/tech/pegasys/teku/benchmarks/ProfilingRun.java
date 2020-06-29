@@ -148,7 +148,8 @@ public class ProfilingRun {
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState);
       initialState = null;
-      BlockImporter blockImporter = new BlockImporter(recentChainData, localEventBus);
+      ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+      BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
 
       System.out.println("Start blocks import from " + blocksFile);
       int counter = 1;
