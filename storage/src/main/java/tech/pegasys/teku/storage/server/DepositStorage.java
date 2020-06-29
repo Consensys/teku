@@ -105,7 +105,7 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
       this.eth1EventsChannel = eventChannel;
       this.genesis = genesis;
       this.isGenesisDone = false;
-      this.lastDeposit = BigInteger.valueOf(-1);
+      this.lastDeposit = NEGATIVE_ONE;
     }
 
     public void depositEvent(final DepositsFromBlockEvent event) {
