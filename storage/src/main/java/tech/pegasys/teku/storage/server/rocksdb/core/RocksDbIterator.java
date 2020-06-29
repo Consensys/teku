@@ -104,7 +104,8 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
       throw new ShuttingDownException();
     }
     if (closed.get()) {
-      throw new IllegalStateException("Attempt to update a closed transaction");
+      throw new IllegalStateException(
+          "Attempt to update a closed " + this.getClass().getSimpleName());
     }
   }
 
