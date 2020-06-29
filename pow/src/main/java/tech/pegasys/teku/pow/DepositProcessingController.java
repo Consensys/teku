@@ -78,11 +78,6 @@ public class DepositProcessingController {
     headTracker.unsubscribe(newBlockSubscription);
   }
 
-  // Inclusive
-  public synchronized SafeFuture<Void> fetchDepositsFromGenesisTo(BigInteger toBlockNumber) {
-    return depositFetcher.fetchDepositsInRange(BigInteger.ZERO, toBlockNumber);
-  }
-
   // inclusive
   public synchronized SafeFuture<Void> fetchDepositsInRange(
       final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {

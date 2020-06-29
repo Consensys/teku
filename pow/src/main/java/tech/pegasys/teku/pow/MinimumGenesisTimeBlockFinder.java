@@ -42,11 +42,12 @@ public class MinimumGenesisTimeBlockFinder {
   /**
    * Find first block in history that has timestamp greater than MIN_GENESIS_TIME
    *
-   * @param headBlock block at current chain head
+   * @param headBlockNumber block number at current chain head (respecting follow distance)
    * @return min genesis time block
    */
-  public SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(EthBlock.Block headBlock) {
-    return binarySearchLoop(new SearchContext(headBlock));
+  public SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(
+      final BigInteger headBlockNumber) {
+    return binarySearchLoop(new SearchContext(headBlockNumber));
   }
 
   private SafeFuture<EthBlock.Block> binarySearchLoop(final SearchContext searchContext) {
@@ -113,8 +114,8 @@ public class MinimumGenesisTimeBlockFinder {
     private UnsignedLong low = UnsignedLong.ZERO;
     private UnsignedLong high;
 
-    public SearchContext(final EthBlock.Block chainHead) {
-      this.high = UnsignedLong.valueOf(chainHead.getNumber());
+    public SearchContext(final BigInteger headBlockNumber) {
+      this.high = UnsignedLong.valueOf(headBlockNumber);
     }
   }
 }
