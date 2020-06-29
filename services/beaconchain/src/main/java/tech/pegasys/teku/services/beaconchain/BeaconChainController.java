@@ -427,7 +427,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         throw new RuntimeException("p2p private key file not found - " + p2pPrivateKeyFile);
       }
     } else {
-      LOG.info("Private key file not supplied. A private key will be generated");
+      LOG.info("ENR key file not found. A new ENR will be generated.");
       bytes = Optional.empty();
     }
     return bytes;
