@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
@@ -53,8 +54,13 @@ public class RpcRequestDecoder<T extends RpcRequest> {
     return request;
   }
 
-  public void complete() throws RpcException {
+  public Optional<T> complete() throws RpcException {
+    Optional<T> maybeRequest = Optional.empty();
+    if (!complete) {
+      maybeRequest = decodeRequest(Unpooled.EMPTY_BUFFER);
+    }
     decoder.complete();
     if (!complete) throw RpcException.PAYLOAD_TRUNCATED;
+    return maybeRequest;
   }
 }
