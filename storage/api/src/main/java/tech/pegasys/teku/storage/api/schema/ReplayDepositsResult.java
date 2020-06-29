@@ -24,8 +24,12 @@ public class ReplayDepositsResult {
     this.pastMinGenesisBlock = pastMinGenesisBlock;
   }
 
-  public BigInteger getBlockNumber() {
+  public BigInteger getLastProcessedBlockNumber() {
     return blockNumber;
+  }
+
+  public BigInteger getFirstUnprocessedBlockNumber() {
+    return blockNumber.add(BigInteger.ONE);
   }
 
   public boolean isPastMinGenesisBlock() {
