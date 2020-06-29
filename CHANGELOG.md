@@ -26,6 +26,8 @@ we recommend most users use the latest `master` branch of Teku.
 - Update the private key message at startup to more clearly indicate it is referring to the ENR.
 - The rest-api-interface configuration attribute is now set on the HTTP server, it no longer listens on all interfaces.
 
+### Known Issues
+
 ## 0.11.5
 
 ### Additions and Improvements
