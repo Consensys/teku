@@ -69,7 +69,8 @@ class Eth1DepositManagerTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.MIN_GENESIS_TIME = UnsignedLong.valueOf(10_000).plus(Constants.GENESIS_DELAY);
+    Constants.MIN_GENESIS_DELAY = 1;
+    Constants.MIN_GENESIS_TIME = UnsignedLong.valueOf(10_000).plus(UnsignedLong.valueOf(2));
   }
 
   @AfterAll
