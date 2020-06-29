@@ -39,6 +39,7 @@ public class RegisterAction implements AutoCloseable {
   private final Credentials eth1Credentials;
   private final String eth1NodeUrl;
   private final Eth1Address contractAddress;
+  private final String network;
   private final boolean displayConfirmation;
   private final UnsignedLong amount;
   private final DepositTransactionSender sender;
@@ -50,6 +51,7 @@ public class RegisterAction implements AutoCloseable {
       final String eth1NodeUrl,
       final Credentials eth1Credentials,
       final Eth1Address contractAddress,
+      final String network,
       final boolean displayConfirmation,
       final UnsignedLong amount,
       final IntConsumer shutdownFunction,
@@ -57,6 +59,7 @@ public class RegisterAction implements AutoCloseable {
     this.eth1NodeUrl = eth1NodeUrl;
     this.eth1Credentials = eth1Credentials;
     this.contractAddress = contractAddress;
+    this.network = network;
     this.displayConfirmation = displayConfirmation;
     this.amount = amount;
     this.shutdownFunction = shutdownFunction;
@@ -100,8 +103,10 @@ public class RegisterAction implements AutoCloseable {
         consoleAdapter.readLine(
             "You are about to submit "
                 + transactionPart
-                + " of %s Eth. This is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
-            eth);
+                + " of %s Eth to contract address [%s] on network [%s].\nThis is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
+            eth,
+            contractAddress,
+            network);
     if ("y".equalsIgnoreCase(reply)) {
       return;
     }

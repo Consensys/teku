@@ -99,6 +99,7 @@ public class RegisterParams {
         eth1NodeUrl,
         getEth1Credentials(),
         getContractAddress(networkDefinition),
+        network,
         displayConfirmation,
         getAmount(),
         shutdownFunction,
