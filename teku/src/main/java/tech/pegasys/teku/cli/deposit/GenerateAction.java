@@ -16,7 +16,6 @@ package tech.pegasys.teku.cli.deposit;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static tech.pegasys.teku.cli.deposit.KeystorePasswordOptions.readFromEnvironmentVariable;
 import static tech.pegasys.teku.cli.deposit.KeystorePasswordOptions.readFromFile;
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -97,11 +96,16 @@ public class GenerateAction {
       final Path keystoreDir = getKeystoreOutputDir();
       keysWriter =
           new EncryptedKeystoreWriter(
-              secureRandom, validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir, log);
+              secureRandom,
+              validatorKeystorePassword,
+              withdrawalKeystorePassword,
+              keystoreDir,
+              log);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
       if (consoleAdapter.isConsoleAvailable() && isBlank(outputPath)) {
-        log.accept("NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
+        log.accept(
+            "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
       }
     }
     return keysWriter;

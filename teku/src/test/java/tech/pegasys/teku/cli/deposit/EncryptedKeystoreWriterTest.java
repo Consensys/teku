@@ -53,7 +53,11 @@ class EncryptedKeystoreWriterTest {
   void keysAreWrittenToEncryptedKeystores(@TempDir final Path tempDir) {
     final KeysWriter keysWriter =
         new EncryptedKeystoreWriter(
-            SecureRandomProvider.createSecureRandom(), PASSWORD, PASSWORD, tempDir, System.out::println);
+            SecureRandomProvider.createSecureRandom(),
+            PASSWORD,
+            PASSWORD,
+            tempDir,
+            System.out::println);
     keysWriter.writeKeys(new BLSKeyPair(validator1SecretKey), new BLSKeyPair(withdrawal1SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(

@@ -38,7 +38,6 @@ import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.deposit.GenerateAction.WithdrawalPasswordOptions;
-import tech.pegasys.teku.logging.SubCommandLogger;
 
 class GenerateActionTest {
 
@@ -186,7 +185,7 @@ class GenerateActionTest {
             consoleAdapter,
             commandSpec,
             envSupplier,
-                SUB_COMMAND_LOG::display);
+            SUB_COMMAND_LOG::display);
     generateAction.generateKeys();
 
     // assert that files exist: 2 per validator
