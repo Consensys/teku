@@ -20,12 +20,14 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 
 class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue>>, AutoCloseable {
@@ -35,21 +37,26 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   private final RocksIterator rocksIterator;
   private final AtomicBoolean closed = new AtomicBoolean(false);
   private final Predicate<TKey> continueTest;
+  private final Supplier<Boolean> isDatabaseClosed;
 
   private RocksDbIterator(
       final RocksDbColumn<TKey, TValue> column,
       final RocksIterator rocksIterator,
-      final Predicate<TKey> continueTest) {
+      final Predicate<TKey> continueTest,
+      final Supplier<Boolean> isDatabaseClosed) {
     this.column = column;
     this.rocksIterator = rocksIterator;
     this.continueTest = continueTest;
+    this.isDatabaseClosed = isDatabaseClosed;
   }
 
+  @MustBeClosed
   public static <K, V> RocksDbIterator<K, V> create(
       final RocksDbColumn<K, V> column,
       final RocksIterator rocksIt,
-      final Predicate<K> continueTest) {
-    return new RocksDbIterator<>(column, rocksIt, continueTest);
+      final Predicate<K> continueTest,
+      final Supplier<Boolean> isDatabaseClosed) {
+    return new RocksDbIterator<>(column, rocksIt, continueTest, isDatabaseClosed);
   }
 
   @Override
@@ -93,6 +100,9 @@ class RocksDbIterator<TKey, TValue> implements Iterator<ColumnEntry<TKey, TValue
   }
 
   private void assertOpen() {
+    if (this.isDatabaseClosed.get()) {
+      throw new ShuttingDownException();
+    }
     if (closed.get()) {
       throw new IllegalStateException("Attempt to update a closed transaction");
     }

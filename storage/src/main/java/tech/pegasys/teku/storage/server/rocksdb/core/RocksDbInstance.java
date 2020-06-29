@@ -31,6 +31,7 @@ import org.rocksdb.RocksIterator;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.WriteOptions;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
 
@@ -135,6 +136,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     return createStream(column, setupIterator, key -> true);
   }
 
+  @SuppressWarnings("MustBeClosedChecker")
   @MustBeClosed
   private <K, V> Stream<ColumnEntry<K, V>> createStream(
       RocksDbColumn<K, V> column,
@@ -143,7 +145,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     final ColumnFamilyHandle handle = columnHandles.get(column);
     final RocksIterator rocksDbIterator = db.newIterator(handle);
     setupIterator.accept(rocksDbIterator);
-    return RocksDbIterator.create(column, rocksDbIterator, continueTest).toStream();
+    return RocksDbIterator.create(column, rocksDbIterator, continueTest, closed::get).toStream();
   }
 
   @Override
@@ -157,7 +159,7 @@ public class RocksDbInstance implements RocksDbAccessor {
 
   private void assertOpen() {
     if (closed.get()) {
-      throw new IllegalStateException("Attempt to update a closed transaction");
+      throw new ShuttingDownException();
     }
   }
 
