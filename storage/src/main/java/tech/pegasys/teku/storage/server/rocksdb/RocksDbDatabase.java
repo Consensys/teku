@@ -15,6 +15,8 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
+import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -65,7 +67,8 @@ public class RocksDbDatabase implements Database {
       final MetricsSystem metricsSystem,
       final RocksDbConfiguration configuration,
       final StateStorageMode stateStorageMode) {
-    final RocksDbAccessor db = RocksDbInstanceFactory.create(configuration, V3Schema.class);
+    final RocksDbAccessor db =
+        RocksDbInstanceFactory.create(metricsSystem, STORAGE_HOT_DB, configuration, V3Schema.class);
     return createV3(metricsSystem, db, stateStorageMode);
   }
 
@@ -76,9 +79,11 @@ public class RocksDbDatabase implements Database {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency) {
     final RocksDbAccessor hotDb =
-        RocksDbInstanceFactory.create(hotConfiguration, V4SchemaHot.class);
+        RocksDbInstanceFactory.create(
+            metricsSystem, STORAGE_HOT_DB, hotConfiguration, V4SchemaHot.class);
     final RocksDbAccessor finalizedDb =
-        RocksDbInstanceFactory.create(finalizedConfiguration, V4SchemaFinalized.class);
+        RocksDbInstanceFactory.create(
+            metricsSystem, STORAGE_FINALIZED_DB, finalizedConfiguration, V4SchemaFinalized.class);
     return createV4(metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency);
   }
 
