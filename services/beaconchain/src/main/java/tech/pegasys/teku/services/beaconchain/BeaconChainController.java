@@ -130,6 +130,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
 
   private SyncStateTracker syncStateTracker;
+  private UnsignedLong genesisTimeTracker = ZERO;
 
   public BeaconChainController(final ServiceConfig serviceConfig) {
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
@@ -501,7 +502,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
-      LOG.info("{} seconds until genesis.", timeUntilGenesis);
+      genesisTimeTracker = currentTime;
+      STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue());
     }
     slotProcessor.setCurrentSlot(currentSlot);
   }
@@ -516,6 +518,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     on_tick(transaction, currentTime);
     transaction.commit().join();
+
+    final UnsignedLong genesisTime = recentChainData.getGenesisTime();
+    if (genesisTime.compareTo(currentTime) > 0) {
+      // notify every 10 minutes
+      if (genesisTimeTracker.plus(UnsignedLong.valueOf(600L)).compareTo(currentTime) <= 0) {
+        genesisTimeTracker = currentTime;
+        STATUS_LOG.timeUntilGenesis(genesisTime.minus(currentTime).longValue());
+      }
+    }
 
     slotProcessor.onTick(currentTime);
   }
