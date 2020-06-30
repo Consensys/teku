@@ -17,6 +17,7 @@ import io.prometheus.client.Collector;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -29,7 +30,7 @@ import org.rocksdb.TickerType;
  * Taken from
  * https://github.com/hyperledger/besu/blob/3d867532deb893fd267fcd5d4e6bf0d42a76e59b/metrics/rocksdb/src/main/java/org/hyperledger/besu/metrics/rocksdb/RocksDBStats.java#L137
  */
-public class RocksDbStats {
+public class RocksDbStats implements AutoCloseable {
 
   static final List<String> LABELS = Collections.singletonList("quantile");
   static final List<String> LABEL_50 = Collections.singletonList("0.5");
@@ -169,15 +170,29 @@ public class RocksDbStats {
     HistogramType.READ_NUM_MERGE_OPERANDS,
   };
 
-  public static void registerRocksDBMetrics(
-      final Statistics stats, final MetricsSystem metricsSystem, final MetricCategory category) {
+  private boolean closed = false;
+  private final Statistics stats;
+  private final MetricsSystem metricsSystem;
+  private final MetricCategory category;
+
+  public RocksDbStats(final MetricsSystem metricsSystem, final MetricCategory category) {
+    this.stats = new Statistics();
+    this.metricsSystem = metricsSystem;
+    this.category = category;
+  }
+
+  public Statistics getStats() {
+    return stats;
+  }
+
+  public void registerMetrics() {
     for (final TickerType ticker : TICKERS) {
       final String promCounterName = ticker.name().toLowerCase();
       metricsSystem.createLongGauge(
           category,
           promCounterName,
           "RocksDB reported statistics for " + ticker.name(),
-          () -> stats.getTickerCount(ticker));
+          () -> ifOpen(() -> stats.getTickerCount(ticker), 0L));
     }
 
     if (metricsSystem instanceof PrometheusMetricsSystem) {
@@ -188,7 +203,7 @@ public class RocksDbStats {
     }
   }
 
-  private static Collector histogramToCollector(
+  private Collector histogramToCollector(
       final MetricCategory metricCategory, final Statistics stats, final HistogramType histogram) {
     return new Collector() {
       final String metricName =
@@ -199,19 +214,40 @@ public class RocksDbStats {
 
       @Override
       public List<MetricFamilySamples> collect() {
-        final HistogramData data = stats.getHistogramData(histogram);
-        return Collections.singletonList(
-            new MetricFamilySamples(
-                metricName,
-                Type.SUMMARY,
-                "RocksDB histogram for " + metricName,
-                Arrays.asList(
-                    new MetricFamilySamples.Sample(metricName, LABELS, LABEL_50, data.getMedian()),
-                    new MetricFamilySamples.Sample(
-                        metricName, LABELS, LABEL_95, data.getPercentile95()),
-                    new MetricFamilySamples.Sample(
-                        metricName, LABELS, LABEL_99, data.getPercentile99()))));
+        return ifOpen(
+            () -> {
+              final HistogramData data = stats.getHistogramData(histogram);
+              return Collections.singletonList(
+                  new MetricFamilySamples(
+                      metricName,
+                      Type.SUMMARY,
+                      "RocksDB histogram for " + metricName,
+                      Arrays.asList(
+                          new MetricFamilySamples.Sample(
+                              metricName, LABELS, LABEL_50, data.getMedian()),
+                          new MetricFamilySamples.Sample(
+                              metricName, LABELS, LABEL_95, data.getPercentile95()),
+                          new MetricFamilySamples.Sample(
+                              metricName, LABELS, LABEL_99, data.getPercentile99()))));
+            },
+            Collections.emptyList());
       }
     };
+  }
+
+  @Override
+  public synchronized void close() {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    stats.close();
+  }
+
+  private synchronized <T> T ifOpen(final Supplier<T> supplier, final T defaultValue) {
+    if (closed) {
+      return defaultValue;
+    }
+    return supplier.get();
   }
 }
