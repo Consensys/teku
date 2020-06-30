@@ -12,6 +12,8 @@ we recommend most users use the latest `master` branch of Teku.
 
 ### Additions and Improvements
 
+ - The time to genesis being reached is now output every 10 minutes, so that it's visibly apparent that teku is still running.
+
 ### Breaking Changes
 
  - `--metrics-host-whitelist` CLI option will be renamed `--metrics-host-allowlist` (currently both are supported)
