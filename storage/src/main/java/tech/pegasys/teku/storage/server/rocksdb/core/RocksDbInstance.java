@@ -15,10 +15,12 @@ package tech.pegasys.teku.storage.server.rocksdb.core;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -41,6 +43,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   private final ColumnFamilyHandle defaultHandle;
   private final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles;
   private final List<AutoCloseable> resources;
+  private final Set<Transaction> openTransactions = new HashSet<>();
 
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -125,9 +128,11 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public RocksDbTransaction startTransaction() {
+  public synchronized RocksDbTransaction startTransaction() {
     assertOpen();
-    return new Transaction(db, defaultHandle, columnHandles);
+    Transaction tx = new Transaction(db, defaultHandle, columnHandles, openTransactions::remove);
+    openTransactions.add(tx);
+    return tx;
   }
 
   @MustBeClosed
@@ -149,8 +154,11 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public void close() throws Exception {
+  public synchronized void close() throws Exception {
     if (closed.compareAndSet(false, true)) {
+      for (Transaction openTransaction : openTransactions) {
+        openTransaction.closeViaDatabase();
+      }
       for (final AutoCloseable resource : resources) {
         resource.close();
       }
@@ -170,15 +178,19 @@ public class RocksDbInstance implements RocksDbAccessor {
     private final WriteOptions writeOptions;
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final AtomicBoolean closedViaDatabase = new AtomicBoolean(false);
+    private final Consumer<Transaction> onClosed;
 
     private Transaction(
         final TransactionDB db,
         final ColumnFamilyHandle defaultHandle,
-        final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles) {
+        final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles,
+        final Consumer<Transaction> onClosed) {
       this.defaultHandle = defaultHandle;
       this.columnHandles = columnHandles;
       this.writeOptions = new WriteOptions();
       this.rocksDbTx = db.beginTransaction(writeOptions);
+      this.onClosed = onClosed;
     }
 
     @Override
@@ -257,13 +269,23 @@ public class RocksDbInstance implements RocksDbAccessor {
 
     private void assertOpen() {
       if (closed.get()) {
-        throw new IllegalStateException("Attempt to update a closed transaction");
+        if (closedViaDatabase.get()) {
+          throw new ShuttingDownException();
+        } else {
+          throw new IllegalStateException("Attempt to update a closed transaction");
+        }
       }
+    }
+
+    private void closeViaDatabase() {
+      closedViaDatabase.set(true);
+      close();
     }
 
     @Override
     public void close() {
       if (closed.compareAndSet(false, true)) {
+        onClosed.accept(this);
         writeOptions.close();
         rocksDbTx.close();
       }
