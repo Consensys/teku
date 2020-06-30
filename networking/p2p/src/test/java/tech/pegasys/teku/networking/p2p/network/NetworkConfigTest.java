@@ -30,9 +30,16 @@ class NetworkConfigTest {
   private String listenIp = "0.0.0.0";
 
   @Test
-  void getAdvertisedIp_shouldNotChangeSpecificallySetAdvertisedAddress() {
-    final String expected = "0.0.0.0";
+  void getAdvertisedIp_shouldUseAdvertisedAddressWhenSet() {
+    final String expected = "1.2.3.4";
     advertisedIp = Optional.of(expected);
+    assertThat(createConfig().getAdvertisedIp()).isEqualTo(expected);
+  }
+
+  @Test
+  void getAdvertisedIp_shouldResolveAnyLocalAdvertisedAddress() throws Exception {
+    advertisedIp = Optional.of("0.0.0.0");
+    final String expected = InetAddress.getLocalHost().getHostAddress();
     assertThat(createConfig().getAdvertisedIp()).isEqualTo(expected);
   }
 

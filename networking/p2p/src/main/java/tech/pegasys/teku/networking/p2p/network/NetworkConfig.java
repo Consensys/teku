@@ -104,7 +104,7 @@ public class NetworkConfig {
   }
 
   public String getAdvertisedIp() {
-    return advertisedIp.orElseGet(() -> resolveAnyLocalAddress(networkInterface));
+    return resolveAnyLocalAddress(advertisedIp.orElse(networkInterface));
   }
 
   public int getListenPort() {
