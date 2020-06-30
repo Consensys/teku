@@ -15,11 +15,14 @@ package tech.pegasys.teku.storage.server.rocksdb.core;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -41,6 +44,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   private final ColumnFamilyHandle defaultHandle;
   private final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles;
   private final List<AutoCloseable> resources;
+  private final Set<Transaction> openTransactions = new HashSet<>();
 
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -125,9 +129,11 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public RocksDbTransaction startTransaction() {
+  public synchronized RocksDbTransaction startTransaction() {
     assertOpen();
-    return new Transaction(db, defaultHandle, columnHandles);
+    Transaction tx = new Transaction(db, defaultHandle, columnHandles, openTransactions::remove);
+    openTransactions.add(tx);
+    return tx;
   }
 
   @MustBeClosed
@@ -149,8 +155,11 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
-  public void close() throws Exception {
+  public synchronized void close() throws Exception {
     if (closed.compareAndSet(false, true)) {
+      for (Transaction openTransaction : openTransactions) {
+        openTransaction.closeViaDatabase();
+      }
       for (final AutoCloseable resource : resources) {
         resource.close();
       }
@@ -169,103 +178,146 @@ public class RocksDbInstance implements RocksDbAccessor {
     private final org.rocksdb.Transaction rocksDbTx;
     private final WriteOptions writeOptions;
 
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final ReentrantLock lock = new ReentrantLock();
+    private final AtomicBoolean closedViaDatabase = new AtomicBoolean(false);
+    private final Consumer<Transaction> onClosed;
+    private boolean closed = false;
 
     private Transaction(
         final TransactionDB db,
         final ColumnFamilyHandle defaultHandle,
-        final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles) {
+        final ImmutableMap<RocksDbColumn<?, ?>, ColumnFamilyHandle> columnHandles,
+        final Consumer<Transaction> onClosed) {
       this.defaultHandle = defaultHandle;
       this.columnHandles = columnHandles;
       this.writeOptions = new WriteOptions();
       this.rocksDbTx = db.beginTransaction(writeOptions);
+      this.onClosed = onClosed;
     }
 
     @Override
     public <T> void put(RocksDbVariable<T> variable, T value) {
-      assertOpen();
-      final byte[] serialized = variable.getSerializer().serialize(value);
-      try {
-        rocksDbTx.put(defaultHandle, variable.getId().toArrayUnsafe(), serialized);
-      } catch (RocksDBException e) {
-        throw new DatabaseStorageException("Failed to put variable", e);
-      }
+      applyUpdate(
+          () -> {
+            final byte[] serialized = variable.getSerializer().serialize(value);
+            try {
+              rocksDbTx.put(defaultHandle, variable.getId().toArrayUnsafe(), serialized);
+            } catch (RocksDBException e) {
+              throw new DatabaseStorageException("Failed to put variable", e);
+            }
+          });
     }
 
     @Override
     public <K, V> void put(RocksDbColumn<K, V> column, K key, V value) {
-      assertOpen();
-      final byte[] keyBytes = column.getKeySerializer().serialize(key);
-      final byte[] valueBytes = column.getValueSerializer().serialize(value);
-      final ColumnFamilyHandle handle = columnHandles.get(column);
-      try {
-        rocksDbTx.put(handle, keyBytes, valueBytes);
-      } catch (RocksDBException e) {
-        throw new DatabaseStorageException("Failed to put column data", e);
-      }
+      applyUpdate(
+          () -> {
+            final byte[] keyBytes = column.getKeySerializer().serialize(key);
+            final byte[] valueBytes = column.getValueSerializer().serialize(value);
+            final ColumnFamilyHandle handle = columnHandles.get(column);
+            try {
+              rocksDbTx.put(handle, keyBytes, valueBytes);
+            } catch (RocksDBException e) {
+              throw new DatabaseStorageException("Failed to put column data", e);
+            }
+          });
     }
 
     @Override
     public <K, V> void put(RocksDbColumn<K, V> column, Map<K, V> data) {
-      assertOpen();
-      final ColumnFamilyHandle handle = columnHandles.get(column);
-      for (Entry<K, V> kvEntry : data.entrySet()) {
-        final byte[] key = column.getKeySerializer().serialize(kvEntry.getKey());
-        final byte[] value = column.getValueSerializer().serialize(kvEntry.getValue());
-        try {
-          rocksDbTx.put(handle, key, value);
-        } catch (RocksDBException e) {
-          throw new DatabaseStorageException("Failed to put column data", e);
-        }
-      }
+      applyUpdate(
+          () -> {
+            final ColumnFamilyHandle handle = columnHandles.get(column);
+            for (Entry<K, V> kvEntry : data.entrySet()) {
+              final byte[] key = column.getKeySerializer().serialize(kvEntry.getKey());
+              final byte[] value = column.getValueSerializer().serialize(kvEntry.getValue());
+              try {
+                rocksDbTx.put(handle, key, value);
+              } catch (RocksDBException e) {
+                throw new DatabaseStorageException("Failed to put column data", e);
+              }
+            }
+          });
     }
 
     @Override
     public <K, V> void delete(RocksDbColumn<K, V> column, K key) {
-      assertOpen();
-      final ColumnFamilyHandle handle = columnHandles.get(column);
-      try {
-        rocksDbTx.delete(handle, column.getKeySerializer().serialize(key));
-      } catch (RocksDBException e) {
-        throw new DatabaseStorageException("Failed to delete key", e);
-      }
+      applyUpdate(
+          () -> {
+            final ColumnFamilyHandle handle = columnHandles.get(column);
+            try {
+              rocksDbTx.delete(handle, column.getKeySerializer().serialize(key));
+            } catch (RocksDBException e) {
+              throw new DatabaseStorageException("Failed to delete key", e);
+            }
+          });
     }
 
     @Override
     public void commit() {
-      assertOpen();
-      try {
-        this.rocksDbTx.commit();
-      } catch (RocksDBException e) {
-        throw new DatabaseStorageException("Failed to commit transaction", e);
-      } finally {
-        close();
-      }
+      applyUpdate(
+          () -> {
+            try {
+              this.rocksDbTx.commit();
+            } catch (RocksDBException e) {
+              throw new DatabaseStorageException("Failed to commit transaction", e);
+            } finally {
+              close();
+            }
+          });
     }
 
     @Override
     public void rollback() {
-      assertOpen();
+      applyUpdate(
+          () -> {
+            try {
+              this.rocksDbTx.commit();
+            } catch (RocksDBException e) {
+              throw new DatabaseStorageException("Failed to commit transaction", e);
+            } finally {
+              close();
+            }
+          });
+    }
+
+    private void applyUpdate(final Runnable operation) {
+      lock.lock();
       try {
-        this.rocksDbTx.rollback();
-      } catch (RocksDBException e) {
-        throw new DatabaseStorageException("Failed to rollback transaction", e);
+        assertOpen();
+        operation.run();
       } finally {
-        close();
+        lock.unlock();
       }
     }
 
     private void assertOpen() {
-      if (closed.get()) {
-        throw new IllegalStateException("Attempt to update a closed transaction");
+      if (closed) {
+        if (closedViaDatabase.get()) {
+          throw new ShuttingDownException();
+        } else {
+          throw new IllegalStateException("Attempt to update a closed transaction");
+        }
       }
+    }
+
+    private void closeViaDatabase() {
+      closedViaDatabase.set(true);
+      close();
     }
 
     @Override
     public void close() {
-      if (closed.compareAndSet(false, true)) {
-        writeOptions.close();
-        rocksDbTx.close();
+      lock.lock();
+      try {
+        if (!closed) {
+          closed = true;
+          onClosed.accept(this);
+          writeOptions.close();
+          rocksDbTx.close();
+        }
+      } finally {
+        lock.unlock();
       }
     }
   }
