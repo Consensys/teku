@@ -26,6 +26,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorKeys;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
@@ -96,8 +97,34 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   @NotNull
   private Function<ValidatorKeys, SafeFuture<TransactionReceipt>> registerValidator(
       final RegisterAction registerAction) {
-    return validatorKey ->
-        registerAction.sendDeposit(
-            validatorKey.getValidatorKey(), validatorKey.getWithdrawalKey().getPublicKey());
+    return validatorKey -> {
+      final BLSKeyPair validatorKeyPair = validatorKey.getValidatorKey();
+      final BLSKeyPair withdrawalKeyPair = validatorKey.getWithdrawalKey();
+      if (displayConfirmation) {
+        SUB_COMMAND_LOG.display(
+            String.format(
+                "%nSending deposit for Validator Key [%s].%n",
+                validatorKeyPair.getPublicKey().toString()));
+      }
+
+      final SafeFuture<TransactionReceipt> transactionReceiptSafeFuture =
+          registerAction.sendDeposit(validatorKeyPair, withdrawalKeyPair.getPublicKey());
+
+      if (displayConfirmation) {
+        transactionReceiptSafeFuture.finish(
+            transactionReceipt ->
+                SUB_COMMAND_LOG.display(
+                    String.format(
+                        "Transaction for Validator Key [%s] Completed. Transaction Hash: [%s]%n",
+                        validatorKeyPair.getPublicKey().toString(),
+                        transactionReceipt.getTransactionHash())),
+            exception ->
+                SUB_COMMAND_LOG.error(
+                    String.format(
+                        "Transaction for Validator Key [%s] Failed: Message: [%s]%n",
+                        validatorKeyPair.getPublicKey().toString(), exception.getMessage())));
+      }
+      return transactionReceiptSafeFuture;
+    };
   }
 }
