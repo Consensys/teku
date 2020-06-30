@@ -117,7 +117,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile BlockImporter blockImporter;
   private volatile RecentChainData recentChainData;
   private volatile Eth2Network p2pNetwork;
-  private volatile Optional<BeaconRestApi> beaconRestAPI;
+  private volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
   private volatile AggregatingAttestationPool attestationPool;
   private volatile DepositProvider depositProvider;
   private volatile SyncService syncService;
