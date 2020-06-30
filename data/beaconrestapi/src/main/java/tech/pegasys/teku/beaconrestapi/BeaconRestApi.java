@@ -74,6 +74,7 @@ public class BeaconRestApi {
   public static final String FILE_NOT_FOUND_HTML = "404.html";
 
   private void initialize(final DataProvider dataProvider, final TekuConfiguration configuration) {
+    app.server().setServerHost(configuration.getRestApiInterface());
     app.server().setServerPort(configuration.getRestApiPort());
 
     addHostAllowlistHandler(configuration);
