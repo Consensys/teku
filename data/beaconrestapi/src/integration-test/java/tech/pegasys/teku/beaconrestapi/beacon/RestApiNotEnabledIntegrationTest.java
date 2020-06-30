@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.beacon;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.io.IOException;
 import java.net.ConnectException;
-
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -26,10 +26,7 @@ public class RestApiNotEnabledIntegrationTest extends AbstractDataBackedRestAPII
   @Test
   public void shouldGetConnectExceptionIfRestApiDisabled() throws Exception {
     final TekuConfiguration config =
-        TekuConfiguration.builder()
-            .setRestApiPort(5051)
-            .setRestApiEnabled(false)
-            .build();
+        TekuConfiguration.builder().setRestApiPort(5051).setRestApiEnabled(false).build();
     startPreGenesisRestAPIWithConfig(config);
 
     assertThrows(ConnectException.class, this::getLatest);
