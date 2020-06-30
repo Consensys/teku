@@ -41,7 +41,7 @@ issues and PRs assigned to them.
     - Authoring or reviewing PRs on GitHub
     - Filing or commenting on issues on GitHub
     - Contributing to community discussions (e.g. meetings, Slack, email discussion forums, Stack Overflow)
-- Joined [Teku Gitter]
+- Joined [Teku Discord]
 - Have read the [contributor guide]
 - Signed ICLA, as described in [CLA.md]
 
@@ -128,4 +128,4 @@ This document is adapted from the following sources:
 [contributor guide]: /CONTRIBUTING.md
 [New contributors]: /CONTRIBUTING.md
 [two-factor authentication]: https://help.github.com/articles/about-two-factor-authentication
-[Teku Gitter]: https://gitter.im/PegaSysEng/teku
+[Teku Discord]: https://discord.gg/7hPv2T6
