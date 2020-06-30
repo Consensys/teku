@@ -25,10 +25,12 @@ public class ProtoArrayStorage implements ProtoArrayStorageChannel {
     this.database = database;
   }
 
+  @Override
   public void updateProtoArrayOnDisk(ProtoArray protoArray) {
     database.updateProtoArrayOnDisk(protoArray);
   }
 
+  @Override
   public SafeFuture<Optional<ProtoArray>> getProtoArrayFromDisk() {
     return SafeFuture.completedFuture(database.getProtoArrayFromDisk());
   }
