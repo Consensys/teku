@@ -72,7 +72,6 @@ public class BeaconRestApi {
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final Logger LOG = LogManager.getLogger();
   public static final String FILE_NOT_FOUND_HTML = "404.html";
-  public final boolean restApiEnabled;
 
   private void initialize(final DataProvider dataProvider, final TekuConfiguration configuration) {
     app.server().setServerHost(configuration.getRestApiInterface());
@@ -145,23 +144,17 @@ public class BeaconRestApi {
               config.logIfServerNotStarted = false;
               config.showJavalinBanner = false;
             });
-    restApiEnabled = configuration.isRestApiEnabled();
     initialize(dataProvider, configuration);
   }
 
   BeaconRestApi(
       final DataProvider dataProvider, final TekuConfiguration configuration, final Javalin app) {
     this.app = app;
-    this.restApiEnabled = configuration.isRestApiEnabled();
     initialize(dataProvider, configuration);
   }
 
   public void start() {
-    if (restApiEnabled) {
-      app.start();
-    } else {
-      LOG.info("rest-api-enabled is false, not starting rest api.");
-    }
+    app.start();
   }
 
   public int getListenPort() {
@@ -248,8 +241,6 @@ public class BeaconRestApi {
   }
 
   public void stop() {
-    if (restApiEnabled) {
-      app.stop();
-    }
+    app.stop();
   }
 }
