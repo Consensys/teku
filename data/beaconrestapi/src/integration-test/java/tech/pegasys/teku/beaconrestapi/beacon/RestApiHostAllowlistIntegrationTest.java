@@ -28,6 +28,7 @@ public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestA
     final TekuConfiguration config =
         TekuConfiguration.builder()
             .setRestApiPort(0)
+            .setRestApiEnabled(true)
             .setRestApiDocsEnabled(false)
             .setRestApiHostAllowlist(List.of("not.authorized.host"))
             .build();

@@ -117,7 +117,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile BlockImporter blockImporter;
   private volatile RecentChainData recentChainData;
   private volatile Eth2Network p2pNetwork;
-  private volatile BeaconRestApi beaconRestAPI;
+  private volatile Optional<BeaconRestApi> beaconRestAPI = Optional.empty();
   private volatile AggregatingAttestationPool attestationPool;
   private volatile DepositProvider depositProvider;
   private volatile SyncService syncService;
@@ -148,7 +148,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   protected SafeFuture<?> doStart() {
     this.eventBus.register(this);
     LOG.debug("Starting {}", this.getClass().getSimpleName());
-    return initialize().thenCompose((__) -> SafeFuture.fromRunnable(beaconRestAPI::start));
+    return initialize()
+        .thenCompose(
+            (__) -> SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::start)));
   }
 
   private void startServices() {
@@ -165,7 +167,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("Stopping {}", this.getClass().getSimpleName());
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
-        SafeFuture.fromRunnable(beaconRestAPI::stop),
+        SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
         syncStateTracker.stop(),
         syncService.stop(),
         attestationManager.stop(),
@@ -450,7 +452,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class),
             blockImporter);
-    beaconRestAPI = new BeaconRestApi(dataProvider, config);
+    if (config.isRestApiEnabled()) {
+      beaconRestAPI = Optional.of(new BeaconRestApi(dataProvider, config));
+    } else {
+      LOG.info("rest-api-enabled is false, not starting rest api.");
+    }
   }
 
   public void initBlockImporter() {
