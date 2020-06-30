@@ -41,9 +41,7 @@ import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +102,9 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
     this.config = config;
 
-    advertisedAddr = getAdvertisedAddr(config, nodeId);
+    advertisedAddr =
+        MultiaddrUtil.fromInetSocketAddress(
+            new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort()), nodeId);
     this.listenPort = config.getListenPort();
 
     // Setup gossip
@@ -213,24 +213,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               STATUS_LOG.listeningForLibP2P(getNodeAddress());
               return null;
             });
-  }
-
-  private Multiaddr getAdvertisedAddr(NetworkConfig config, final NodeId nodeId) {
-    try {
-      final InetSocketAddress advertisedAddress =
-          new InetSocketAddress(config.getAdvertisedIp(), config.getAdvertisedPort());
-      final InetSocketAddress resolvedAddress;
-      if (advertisedAddress.getAddress().isAnyLocalAddress()) {
-        resolvedAddress =
-            new InetSocketAddress(InetAddress.getLocalHost(), advertisedAddress.getPort());
-      } else {
-        resolvedAddress = advertisedAddress;
-      }
-      return MultiaddrUtil.fromInetSocketAddress(resolvedAddress, nodeId);
-    } catch (UnknownHostException err) {
-      throw new RuntimeException(
-          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
-    }
   }
 
   @Override
