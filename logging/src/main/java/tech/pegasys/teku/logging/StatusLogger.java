@@ -90,6 +90,12 @@ public class StatusLogger {
         () -> size);
   }
 
+  public void timeUntilGenesis(final long timeToGenesis) {
+    log.info(
+        "{} until genesis time is reached",
+        () -> DateFormatUtils.format(timeToGenesis * 1000, "hh:mm:ss"));
+  }
+
   public void loadingGenesisFile(final String genesisFile) {
     log.info("Loading genesis from {}", genesisFile);
   }
