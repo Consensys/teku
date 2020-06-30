@@ -5,12 +5,28 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
- - The `master` branch will be moving to support the 0.12.1 beacon chain spec and will no longer be 
-   compatible with Schlesi or Witti testnets.  Use the v0.11.5 release for compatibility with beacon chain spec 0.11.4.
  - Anyone using `/node/version` should switch to use
    the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
+
+## 0.12.0
+
+### Additions and Improvements
+
+### Breaking Changes
+
  - `--metrics-host-whitelist` CLI option will be renamed `--metrics-host-allowlist` (currently both are supported)
  - `--rest-api-host-whitelist` CLI option will be renamed `--rest-api-host-allowlist` (currently both are supported)
+ - Support the 0.12.1 beacon chain spec, which is not 
+    compatible with Schlesi or Witti testnets.  Use the v0.11.5 release for compatibility with beacon chain spec 0.11.4.
+ - The Rest interface is now correctly set from `--rest-api-interface`, so will need to be correctly configured to ensure
+    that hosts specified in the `--rest-api-host-allowlist` are able to access that interface.
+
+### Bug Fixes
+
+- Update the private key message at startup to more clearly indicate it is referring to the ENR.
+- The rest-api-interface configuration attribute is now set on the HTTP server, it no longer listens on all interfaces.
+
+### Known Issues
 
 ## 0.11.5
 
