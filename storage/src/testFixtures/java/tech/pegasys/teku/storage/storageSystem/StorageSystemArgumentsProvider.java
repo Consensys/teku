@@ -39,23 +39,27 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
           (dataPath) -> FileBackedStorageSystem.createV3StorageSystem(dataPath, mode));
       for (Long storageFrequency : stateStorageFrequencyOptions) {
         storageSystems.put(
-            "v4 (in-memory)",
+            describeStorage("v4 (in-memory)", storageFrequency),
             (dataPath) -> InMemoryStorageSystem.createEmptyV4StorageSystem(mode, storageFrequency));
         storageSystems.put(
-            "v5 (in-memory)",
+            describeStorage("v5 (in-memory)", storageFrequency),
             (dataPath) -> InMemoryStorageSystem.createEmptyV5StorageSystem(mode, storageFrequency));
         storageSystems.put(
-            "v4 (file-backed)",
+            describeStorage("v4 (file-backed)", storageFrequency),
             (dataPath) ->
                 FileBackedStorageSystem.createV4StorageSystem(dataPath, mode, storageFrequency));
         storageSystems.put(
-            "v5 (file-backed)",
+            describeStorage("v5 (file-backed)", storageFrequency),
             (dataPath) ->
                 FileBackedStorageSystem.createV5StorageSystem(dataPath, mode, storageFrequency));
       }
     }
     return storageSystems.entrySet().stream()
         .map((entry) -> Arguments.of("storage type: " + entry.getKey(), entry.getValue()));
+  }
+
+  private String describeStorage(final String baseName, final long storageFrequency) {
+    return String.format("%s (storage freq %s)", baseName, storageFrequency);
   }
 
   @FunctionalInterface
