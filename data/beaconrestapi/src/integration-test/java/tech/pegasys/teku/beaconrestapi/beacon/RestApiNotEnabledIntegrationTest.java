@@ -14,31 +14,28 @@
 package tech.pegasys.teku.beaconrestapi.beacon;
 
 import java.io.IOException;
-import java.util.List;
-import okhttp3.Response;
+import java.net.ConnectException;
+
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
-public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-
+public class RestApiNotEnabledIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   @Test
-  public void shouldReturnForbiddenIfHostNotAuthorized() throws Exception {
+  public void shouldGetConnectExceptionIfRestApiDisabled() throws Exception {
     final TekuConfiguration config =
         TekuConfiguration.builder()
-            .setRestApiPort(0)
-            .setRestApiEnabled(true)
-            .setRestApiDocsEnabled(false)
-            .setRestApiHostAllowlist(List.of("not.authorized.host"))
+            .setRestApiPort(5051)
+            .setRestApiEnabled(false)
             .build();
     startPreGenesisRestAPIWithConfig(config);
 
-    final Response response = getLatest();
-    assertForbidden(response);
+    assertThrows(ConnectException.class, this::getLatest);
   }
 
-  private Response getLatest() throws IOException {
-    return getResponse(GetVersion.ROUTE);
+  private void getLatest() throws IOException {
+    getResponse(GetVersion.ROUTE);
   }
 }
