@@ -53,11 +53,11 @@ public class RocksDbInstanceFactory {
 
     // Create options
     final TransactionDBOptions txOptions = new TransactionDBOptions();
-    final Statistics stats = new Statistics();
-    final DBOptions dbOptions = createDBOptions(configuration, stats);
+    final RocksDbStats rocksDbStats = new RocksDbStats(metricsSystem, metricCategory);
+    final DBOptions dbOptions = createDBOptions(configuration, rocksDbStats.getStats());
     final ColumnFamilyOptions columnFamilyOptions = createColumnFamilyOptions(configuration);
     final List<AutoCloseable> resources =
-        new ArrayList<>(List.of(txOptions, dbOptions, columnFamilyOptions, stats));
+        new ArrayList<>(List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
         createColumnFamilyDescriptors(schema, columnFamilyOptions);
@@ -92,7 +92,7 @@ public class RocksDbInstanceFactory {
       final ColumnFamilyHandle defaultHandle = getDefaultHandle(columnHandles);
       resources.add(db);
 
-      RocksDbStats.registerRocksDBMetrics(stats, metricsSystem, metricCategory);
+      rocksDbStats.registerMetrics();
 
       return new RocksDbInstance(db, defaultHandle, columnHandlesMap, resources);
     } catch (RocksDBException e) {
