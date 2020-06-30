@@ -29,14 +29,15 @@ import tech.pegasys.teku.logging.EventLogger;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SlotProcessor {
   private final RecentChainData recentChainData;
   private final SyncService syncService;
+  private final ForkChoice forkChoice;
   private final Eth2Network p2pNetwork;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final EventBus eventBus;
@@ -52,12 +53,14 @@ public class SlotProcessor {
   SlotProcessor(
       final RecentChainData recentChainData,
       final SyncService syncService,
+      final ForkChoice forkChoice,
       final Eth2Network p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EventBus eventBus,
       final EventLogger eventLogger) {
     this.recentChainData = recentChainData;
     this.syncService = syncService;
+    this.forkChoice = forkChoice;
     this.p2pNetwork = p2pNetwork;
     this.slotEventsChannelPublisher = slotEventsChannelPublisher;
     this.eventBus = eventBus;
@@ -67,12 +70,14 @@ public class SlotProcessor {
   public SlotProcessor(
       final RecentChainData recentChainData,
       final SyncService syncService,
+      final ForkChoice forkChoice,
       final Eth2Network p2pNetwork,
       final SlotEventsChannel slotEventsChannelPublisher,
       final EventBus eventBus) {
     this(
         recentChainData,
         syncService,
+        forkChoice,
         p2pNetwork,
         slotEventsChannelPublisher,
         eventBus,
@@ -121,10 +126,7 @@ public class SlotProcessor {
   }
 
   private void processSlotWhileSyncing() {
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.updateHead();
-    tx.commit().reportExceptions();
-
+    this.forkChoice.processHead();
     eventLog.syncEvent(
         nodeSlot.getValue(), recentChainData.getBestSlot(), p2pNetwork.getPeerCount());
     slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
@@ -184,12 +186,7 @@ public class SlotProcessor {
 
   private void processSlotAttestation(final UnsignedLong nodeEpoch) {
     onTickSlotAttestation = nodeSlot.getValue();
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.updateHead();
-    tx.commit().reportExceptions();
-
-    Bytes32 headBlockRoot = recentChainData.getStore().getHead();
-
+    Bytes32 headBlockRoot = this.forkChoice.processHead();
     eventLog.slotEvent(
         nodeSlot.getValue(),
         recentChainData.getBestSlot(),

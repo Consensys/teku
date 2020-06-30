@@ -64,6 +64,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -111,6 +112,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final AsyncRunner networkAsyncRunner;
 
+  private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
   private volatile BlockImporter blockImporter;
   private volatile RecentChainData recentChainData;
@@ -202,6 +204,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAll() {
     initStateTransition();
+    initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
     initAttestationPool();
@@ -252,6 +255,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initStateTransition() {
     LOG.debug("BeaconChainController.initStateTransition()");
     stateTransition = new StateTransition();
+  }
+
+  private void initForkChoice() {
+    LOG.debug("BeaconChainController.initForkChoice()");
+    forkChoice = new ForkChoice(recentChainData, stateTransition);
   }
 
   public void initMetrics() {
@@ -329,7 +337,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final FutureItems<ValidateableAttestation> futureAttestations =
         new FutureItems<>(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
     final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
-        new ForkChoiceAttestationProcessor(recentChainData);
+        new ForkChoiceAttestationProcessor(recentChainData, forkChoice);
     attestationManager =
         AttestationManager.create(
             eventBus,
@@ -401,7 +409,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initSlotProcessor() {
     slotProcessor =
         new SlotProcessor(
-            recentChainData, syncService, p2pNetwork, slotEventsChannelPublisher, eventBus);
+            recentChainData,
+            syncService,
+            forkChoice,
+            p2pNetwork,
+            slotEventsChannelPublisher,
+            eventBus);
   }
 
   private Optional<Bytes> getP2pPrivateKeyBytes() {
@@ -414,7 +427,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         throw new RuntimeException("p2p private key file not found - " + p2pPrivateKeyFile);
       }
     } else {
-      LOG.info("Private key file not supplied. A private key will be generated");
+      LOG.info("ENR key file not found. A new ENR will be generated.");
       bytes = Optional.empty();
     }
     return bytes;
@@ -441,7 +454,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initBlockImporter() {
     LOG.debug("BeaconChainController.initBlockImporter()");
-    blockImporter = new BlockImporter(recentChainData, eventBus);
+    blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
   }
 
   public void initSyncManager() {

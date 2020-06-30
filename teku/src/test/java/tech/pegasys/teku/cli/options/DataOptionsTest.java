@@ -71,7 +71,7 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataStorageCreateDbVersion_shouldDefault() {
     final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo("4");
+    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo("5");
   }
 
   @Test

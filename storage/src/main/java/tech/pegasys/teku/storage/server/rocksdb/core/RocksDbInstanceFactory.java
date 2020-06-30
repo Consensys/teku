@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
@@ -28,6 +30,7 @@ import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.Statistics;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -41,16 +44,20 @@ public class RocksDbInstanceFactory {
   }
 
   public static RocksDbAccessor create(
-      final RocksDbConfiguration configuration, final Class<? extends Schema> schema)
+      final MetricsSystem metricsSystem,
+      final MetricCategory metricCategory,
+      final RocksDbConfiguration configuration,
+      final Class<? extends Schema> schema)
       throws DatabaseStorageException {
     // Track resources that need to be closed
-    final List<AutoCloseable> resources = new ArrayList<>();
 
     // Create options
     final TransactionDBOptions txOptions = new TransactionDBOptions();
-    final DBOptions dbOptions = createDBOptions(configuration);
+    final Statistics stats = new Statistics();
+    final DBOptions dbOptions = createDBOptions(configuration, stats);
     final ColumnFamilyOptions columnFamilyOptions = createColumnFamilyOptions(configuration);
-    resources.addAll(List.of(txOptions, dbOptions, columnFamilyOptions));
+    final List<AutoCloseable> resources =
+        new ArrayList<>(List.of(txOptions, dbOptions, columnFamilyOptions, stats));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
         createColumnFamilyDescriptors(schema, columnFamilyOptions);
@@ -85,6 +92,8 @@ public class RocksDbInstanceFactory {
       final ColumnFamilyHandle defaultHandle = getDefaultHandle(columnHandles);
       resources.add(db);
 
+      RocksDbStats.registerRocksDBMetrics(stats, metricsSystem, metricCategory);
+
       return new RocksDbInstance(db, defaultHandle, columnHandlesMap, resources);
     } catch (RocksDBException e) {
       throw new DatabaseStorageException(
@@ -106,7 +115,8 @@ public class RocksDbInstanceFactory {
         .orElseThrow(() -> new DatabaseStorageException("No default column defined"));
   }
 
-  private static DBOptions createDBOptions(final RocksDbConfiguration configuration) {
+  private static DBOptions createDBOptions(
+      final RocksDbConfiguration configuration, final Statistics stats) {
     return new DBOptions()
         .setCreateIfMissing(true)
         .setBytesPerSync(1048576L)
@@ -116,12 +126,15 @@ public class RocksDbInstanceFactory {
         .setMaxOpenFiles(configuration.getMaxOpenFiles())
         .setMaxBackgroundCompactions(configuration.getMaxBackgroundCompactions())
         .setCreateMissingColumnFamilies(true)
-        .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()));
+        .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
+        .setStatistics(stats);
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
       final RocksDbConfiguration configuration) {
     return new ColumnFamilyOptions()
+        .setCompressionType(configuration.getCompressionType())
+        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
         .setTableFormatConfig(createBlockBasedTableConfig(configuration));
   }
 

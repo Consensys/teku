@@ -19,6 +19,8 @@ import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -32,7 +34,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GenesisHandler implements Eth1EventsChannel {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
 
@@ -46,6 +48,8 @@ public class GenesisHandler implements Eth1EventsChannel {
       return;
     }
 
+    LOG.trace(
+        "Processing {} deposits from block {}", event.getDeposits().size(), event.getBlockNumber());
     final List<DepositWithIndex> deposits =
         event.getDeposits().stream()
             .map(DepositUtil::convertDepositEventToOperationDeposit)
@@ -86,6 +90,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   private void eth2Genesis(BeaconState genesisState) {
     recentChainData.initializeFromGenesis(genesisState);
     Bytes32 genesisBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
-    EVENT_LOG.genesisEvent(genesisState.hash_tree_root(), genesisBlockRoot);
+    EVENT_LOG.genesisEvent(
+        genesisState.hash_tree_root(), genesisBlockRoot, genesisState.getGenesis_time());
   }
 }
