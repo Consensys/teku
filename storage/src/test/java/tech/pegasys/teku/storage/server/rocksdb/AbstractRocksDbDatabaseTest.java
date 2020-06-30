@@ -23,8 +23,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbEth1Dao;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -95,6 +100,50 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
         database.streamFinalizedBlocks(UnsignedLong.ZERO, UnsignedLong.valueOf(1000L))) {
       database.close();
       assertThatThrownBy(stream::findAny).isInstanceOf(ShuttingDownException.class);
+    }
+  }
+
+  @Test
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateHotDao()
+      throws Exception {
+    database.storeGenesis(store);
+
+    try (final RocksDbHotDao.HotUpdater updater =
+        ((RocksDbDatabase) database).hotDao.hotUpdater()) {
+      SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+      database.close();
+      assertThatThrownBy(() -> updater.addHotBlock(newBlock.getBlock()))
+          .isInstanceOf(ShuttingDownException.class);
+    }
+  }
+
+  @Test
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao()
+      throws Exception {
+    database.storeGenesis(store);
+
+    try (final RocksDbFinalizedDao.FinalizedUpdater updater =
+        ((RocksDbDatabase) database).finalizedDao.finalizedUpdater()) {
+      SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
+      database.close();
+      assertThatThrownBy(() -> updater.addFinalizedBlock(newBlock.getBlock()))
+          .isInstanceOf(ShuttingDownException.class);
+    }
+  }
+
+  @Test
+  public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateEth1Dao()
+      throws Exception {
+    database.storeGenesis(store);
+
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    try (final RocksDbEth1Dao.Eth1Updater updater =
+        ((RocksDbDatabase) database).eth1Dao.eth1Updater()) {
+      final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
+          dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
+      database.close();
+      assertThatThrownBy(() -> updater.addMinGenesisTimeBlock(genesisTimeBlockEvent))
+          .isInstanceOf(ShuttingDownException.class);
     }
   }
 
