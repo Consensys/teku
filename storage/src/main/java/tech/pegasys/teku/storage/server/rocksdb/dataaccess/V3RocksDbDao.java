@@ -25,12 +25,15 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArray;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 
-public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDbEth1Dao {
+public class V3RocksDbDao
+    implements RocksDbHotDao, RocksDbFinalizedDao, RocksDbEth1Dao, RocksDbProtoArrayDao {
+
   private final RocksDbAccessor db;
 
   public V3RocksDbDao(final RocksDbAccessor db) {
@@ -132,6 +135,11 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   }
 
   @Override
+  public Optional<ProtoArray> getProtoArrayFromDisk() {
+    return db.get(V3Schema.PROTO_ARRAY);
+  }
+
+  @Override
   public HotUpdater hotUpdater() {
     return new V3Updater(db);
   }
@@ -147,11 +155,17 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   }
 
   @Override
+  public ProtoArrayUpdater protoArrayUpdater() {
+    return new V3Updater(db);
+  }
+
+  @Override
   public void close() throws Exception {
     db.close();
   }
 
-  private static class V3Updater implements HotUpdater, FinalizedUpdater, Eth1Updater {
+  private static class V3Updater
+      implements HotUpdater, FinalizedUpdater, Eth1Updater, ProtoArrayUpdater {
 
     private final RocksDbTransaction transaction;
 
@@ -241,6 +255,11 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       transaction.put(V3Schema.DEPOSITS_FROM_BLOCK_EVENTS, event.getBlockNumber(), event);
+    }
+
+    @Override
+    public void updateProtoArrayOnDisk(ProtoArray newProtoAray) {
+      transaction.put(V3Schema.PROTO_ARRAY, newProtoAray);
     }
 
     @Override

@@ -22,6 +22,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArray;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -70,7 +71,11 @@ public interface Database extends AutoCloseable {
   @MustBeClosed
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
 
+  Optional<ProtoArray> getProtoArrayFromDisk();
+
   void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
 
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
+
+  void updateProtoArrayOnDisk(final ProtoArray protoArray);
 }

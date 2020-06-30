@@ -39,6 +39,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':pow'))
   testFixturesImplementation project(':protoarray')
+  testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'

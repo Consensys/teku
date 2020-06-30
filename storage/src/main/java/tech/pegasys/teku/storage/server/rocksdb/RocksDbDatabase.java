@@ -34,6 +34,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArray;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao.FinalizedUpdater;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao.HotUpdater;
+import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbProtoArrayDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4FinalizedRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
@@ -62,6 +64,7 @@ public class RocksDbDatabase implements Database {
   private final RocksDbHotDao hotDao;
   private final RocksDbFinalizedDao finalizedDao;
   private final RocksDbEth1Dao eth1Dao;
+  private final RocksDbProtoArrayDao protoArrayDao;
 
   public static Database createV3(
       final MetricsSystem metricsSystem,
@@ -92,7 +95,7 @@ public class RocksDbDatabase implements Database {
       final RocksDbAccessor db,
       final StateStorageMode stateStorageMode) {
     final V3RocksDbDao dao = new V3RocksDbDao(db);
-    return new RocksDbDatabase(metricsSystem, dao, dao, dao, stateStorageMode);
+    return new RocksDbDatabase(metricsSystem, dao, dao, dao, dao, stateStorageMode);
   }
 
   static Database createV4(
@@ -104,7 +107,7 @@ public class RocksDbDatabase implements Database {
     final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb);
     final V4FinalizedRocksDbDao finalizedDbDao =
         new V4FinalizedRocksDbDao(finalizedDb, stateStorageFrequency);
-    return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, stateStorageMode);
+    return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode);
   }
 
   private RocksDbDatabase(
@@ -112,10 +115,12 @@ public class RocksDbDatabase implements Database {
       final RocksDbHotDao hotDao,
       final RocksDbFinalizedDao finalizedDao,
       final RocksDbEth1Dao eth1Dao,
+      final RocksDbProtoArrayDao protoArrayDao,
       final StateStorageMode stateStorageMode) {
     this.metricsSystem = metricsSystem;
     this.finalizedDao = finalizedDao;
     this.eth1Dao = eth1Dao;
+    this.protoArrayDao = protoArrayDao;
     this.stateStorageMode = stateStorageMode;
     this.hotDao = hotDao;
   }
@@ -244,6 +249,11 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Optional<ProtoArray> getProtoArrayFromDisk() {
+    return protoArrayDao.getProtoArrayFromDisk();
+  }
+
+  @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
     try (final Eth1Updater updater = eth1Dao.eth1Updater()) {
       updater.addMinGenesisTimeBlock(event);
@@ -255,6 +265,14 @@ public class RocksDbDatabase implements Database {
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
     try (final Eth1Updater updater = eth1Dao.eth1Updater()) {
       updater.addDepositsFromBlockEvent(event);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void updateProtoArrayOnDisk(final ProtoArray newProtoArray) {
+    try (final RocksDbProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
+      updater.updateProtoArrayOnDisk(newProtoArray);
       updater.commit();
     }
   }
