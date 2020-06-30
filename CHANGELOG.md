@@ -22,11 +22,13 @@ we recommend most users use the latest `master` branch of Teku.
     compatible with Schlesi or Witti testnets.  Use the v0.11.5 release for compatibility with beacon chain spec 0.11.4.
  - The Rest interface is now correctly set from `--rest-api-interface`, so will need to be correctly configured to ensure
     that hosts specified in the `--rest-api-host-allowlist` are able to access that interface.
-
+ - `--rest-api-enabled` is now correctly used to determine whether to start the rest api. Ensure it is set if using the rest api.
+ 
 ### Bug Fixes
 
 - Update the private key message at startup to more clearly indicate it is referring to the ENR.
-- The rest-api-interface configuration attribute is now set on the HTTP server, it no longer listens on all interfaces.
+- The `--rest-api-interface` configuration attribute is now set on the HTTP server, it no longer listens on all interfaces.
+- The `--rest-api-enabled` flag will determine whether the http server actually starts and binds to a port now.
 
 ### Known Issues
 
