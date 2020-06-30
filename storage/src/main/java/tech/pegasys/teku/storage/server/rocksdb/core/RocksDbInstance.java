@@ -179,9 +179,9 @@ public class RocksDbInstance implements RocksDbAccessor {
     private final WriteOptions writeOptions;
 
     private final ReentrantLock lock = new ReentrantLock();
-    private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicBoolean closedViaDatabase = new AtomicBoolean(false);
     private final Consumer<Transaction> onClosed;
+    private boolean closed = false;
 
     private Transaction(
         final TransactionDB db,
@@ -292,7 +292,7 @@ public class RocksDbInstance implements RocksDbAccessor {
     }
 
     private void assertOpen() {
-      if (closed.get()) {
+      if (closed) {
         if (closedViaDatabase.get()) {
           throw new ShuttingDownException();
         } else {
@@ -310,7 +310,8 @@ public class RocksDbInstance implements RocksDbAccessor {
     public void close() {
       lock.lock();
       try {
-        if (closed.compareAndSet(false, true)) {
+        if (!closed) {
+          closed = true;
           onClosed.accept(this);
           writeOptions.close();
           rocksDbTx.close();
