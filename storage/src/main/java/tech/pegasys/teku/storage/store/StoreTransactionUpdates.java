@@ -42,7 +42,7 @@ class StoreTransactionUpdates {
   private final Set<Bytes32> prunedHotBlockRoots;
   private final Map<Checkpoint, BeaconState> checkpointStates;
   private final Set<Checkpoint> prunedCheckpointStates;
-  private final HashTree updatedBlockTree;
+  private final Optional<HashTree> updatedBlockTree;
 
   private StoreTransactionUpdates(
       final Transaction tx,
@@ -52,7 +52,7 @@ class StoreTransactionUpdates {
       final Set<Bytes32> prunedHotBlockRoots,
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Set<Checkpoint> prunedCheckpointStates,
-      final HashTree updatedBlockTree) {
+      final Optional<HashTree> updatedBlockTree) {
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
     this.hotBlocks = hotBlocks;
@@ -76,14 +76,19 @@ class StoreTransactionUpdates {
             .filter(c -> c.getEpoch().compareTo(prevFinalizedCheckpoint.getEpoch()) > 0);
 
     // Calculate new tree structure
-    final Bytes32 updatedRoot =
-        newFinalizedCheckpoint
-            .map(CheckpointAndBlock::getRoot)
-            .orElse(baseStore.blockTree.getRootHash());
-    HashTree.Builder blockTreeUpdater =
-        baseStore.blockTree.withRoot(updatedRoot).blocks(hotBlocks.values());
-    newFinalizedCheckpoint.ifPresent(finalized -> blockTreeUpdater.block(finalized.getBlock()));
-    final HashTree updatedBlockTree = blockTreeUpdater.build();
+    final Optional<HashTree> updatedBlockTree;
+    if (newFinalizedCheckpoint.isPresent() || hotBlocks.size() > 0) {
+      final Bytes32 updatedRoot =
+          newFinalizedCheckpoint
+              .map(CheckpointAndBlock::getRoot)
+              .orElse(baseStore.blockTree.getRootHash());
+      HashTree.Builder blockTreeUpdater =
+          baseStore.blockTree.withRoot(updatedRoot).blocks(hotBlocks.values());
+      newFinalizedCheckpoint.ifPresent(finalized -> blockTreeUpdater.block(finalized.getBlock()));
+      updatedBlockTree = Optional.of(blockTreeUpdater.build());
+    } else {
+      updatedBlockTree = Optional.empty();
+    }
 
     // Calculate finalized chain data
     final Optional<FinalizedChainData> finalizedChainData;
@@ -109,7 +114,8 @@ class StoreTransactionUpdates {
                   .finalizedStates(finalizedStates)
                   .build());
 
-      prunedHotBlockRoots = calculatePrunedHotBlockRoots(baseStore, tx, updatedBlockTree);
+      prunedHotBlockRoots =
+          calculatePrunedHotBlockRoots(baseStore, tx, updatedBlockTree.orElseThrow());
       prunedCheckpoints =
           calculatePrunedCheckpoints(baseStore, tx, finalizedCheckpoint.getCheckpoint());
 
@@ -210,7 +216,7 @@ class StoreTransactionUpdates {
     store.blocks.putAll(hotBlocks);
     store.block_states.putAll(hotStates);
     store.checkpoint_states.putAll(checkpointStates);
-    store.blockTree = updatedBlockTree;
+    updatedBlockTree.ifPresent(updated -> store.blockTree = updated);
     store.votes.putAll(tx.votes);
 
     // Update finalized data
