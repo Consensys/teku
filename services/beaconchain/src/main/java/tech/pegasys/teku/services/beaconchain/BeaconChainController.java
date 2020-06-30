@@ -497,7 +497,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     UnsignedLong genesisTime = recentChainData.getGenesisTime();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong currentSlot = ZERO;
-    if (currentTime.compareTo(genesisTime) > 0) {
+    if (currentTime.compareTo(genesisTime) >= 0) {
       UnsignedLong deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
