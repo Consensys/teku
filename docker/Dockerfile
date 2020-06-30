@@ -9,6 +9,9 @@ WORKDIR /opt/teku
 # copy application (with libraries inside)
 COPY --chown=teku:teku teku /opt/teku/
 
+ENV TEKU_REST_API_INTERFACE="0.0.0.0"
+ENV TEKU_METRICS_INTERFACE="0.0.0.0"
+
 # List Exposed Ports
 EXPOSE 8008 8084 8545 30303 30303/udp
 
