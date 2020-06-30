@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -25,8 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
@@ -38,8 +36,6 @@ import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
 
 public class ValidatorLoader {
 
-  private static final Logger LOG = LogManager.getLogger();
-
   public static Map<BLSPublicKey, Validator> initializeValidators(TekuConfiguration config) {
     // Get validator connection info and create a new Validator object and put it into the
     // Validators map
@@ -48,25 +44,11 @@ public class ValidatorLoader {
     validators.putAll(createLocalSignerValidator(config));
     validators.putAll(createExternalSignerValidator(config));
 
-    if (validators.size() > 100) {
-      LOG.info("Loaded {} validators", validators.size());
-      LOG.debug(
-          "validators: {}",
-          () ->
-              validators.values().stream()
-                  .map(Validator::getPublicKey)
-                  .map(KeyFormatter::shortPublicKey)
-                  .collect(joining(", ")));
-    } else {
-      LOG.info(
-          "Loaded {} Validators: {}",
-          validators::size,
-          () ->
-              validators.values().stream()
-                  .map(Validator::getPublicKey)
-                  .map(KeyFormatter::shortPublicKey)
-                  .collect(joining(", ")));
-    }
+    STATUS_LOG.validatorsInitialised(
+        validators.values().stream()
+            .map(Validator::getPublicKey)
+            .map(KeyFormatter::shortPublicKey)
+            .collect(Collectors.toList()));
     return validators;
   }
 
