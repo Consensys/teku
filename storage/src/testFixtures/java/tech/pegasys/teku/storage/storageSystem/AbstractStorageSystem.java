@@ -13,16 +13,12 @@
 
 package tech.pegasys.teku.storage.storageSystem;
 
-import java.util.List;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractStorageSystem implements StorageSystem {
-  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  protected final ChainBuilder chainBuilder = ChainBuilder.createDefault();
   protected final ChainUpdater chainUpdater;
 
   protected final RecentChainData recentChainData;
