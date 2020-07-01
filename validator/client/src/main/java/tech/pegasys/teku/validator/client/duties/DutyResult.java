@@ -97,4 +97,18 @@ public class DutyResult {
     }
     errors.forEach(error -> logger.dutyFailed(producedType, slot, error));
   }
+
+  @Override
+  public String toString() {
+    return "DutyResult{"
+        + "successCount="
+        + successCount
+        + ", nodeSyncingCount="
+        + nodeSyncingCount
+        + ", roots="
+        + roots
+        + ", errors="
+        + errors
+        + '}';
+  }
 }
