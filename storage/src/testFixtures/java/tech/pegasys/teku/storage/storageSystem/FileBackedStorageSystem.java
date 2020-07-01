@@ -61,6 +61,12 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
   }
 
   public static StorageSystem createV5StorageSystem(
+      final Path dataDir, final StateStorageMode storageMode, final long stateStorageFrequency) {
+    return createV5StorageSystem(
+        dataDir.resolve("hot"), dataDir.resolve("archive"), storageMode, stateStorageFrequency);
+  }
+
+  public static StorageSystem createV5StorageSystem(
       final Path hotDir,
       final Path archiveDir,
       final StateStorageMode storageMode,
@@ -76,6 +82,12 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
         database,
         (mode) -> createV5StorageSystem(hotDir, archiveDir, mode, stateStorageFrequency),
         storageMode);
+  }
+
+  public static StorageSystem createV4StorageSystem(
+      final Path dataDir, final StateStorageMode storageMode, final long stateStorageFrequency) {
+    return createV4StorageSystem(
+        dataDir.resolve("hot"), dataDir.resolve("archive"), storageMode, stateStorageFrequency);
   }
 
   public static StorageSystem createV4StorageSystem(
