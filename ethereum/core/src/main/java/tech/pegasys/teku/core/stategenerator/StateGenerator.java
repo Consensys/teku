@@ -127,7 +127,6 @@ public class StateGenerator {
     }
 
     // Break up blocks into batches
-    // TODO - is there a way to partition the stream directly?
     final List<List<Bytes32>> blockBatches = Lists.partition(blockRoots, blockBatchSize);
     // Request and process each batch of blocks in order
     final Bytes32 rootHash = blockTree.getRootHash();

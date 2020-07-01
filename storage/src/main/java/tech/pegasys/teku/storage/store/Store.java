@@ -156,7 +156,7 @@ class Store implements UpdatableStore {
     // Process blocks
     LOG.info("Process {} block(s) to regenerate state", blockTree.size());
     final AtomicInteger processedBlocks = new AtomicInteger(0);
-    // TODO - handle future properly
+    // TODO(#2291) - handle future properly
     stateGenerator
         .regenerateAllStates(
             (block, state) -> {
@@ -324,7 +324,7 @@ class Store implements UpdatableStore {
 
   @Override
   public SignedBeaconBlock getSignedBlock(Bytes32 blockRoot) {
-    // TODO - handle future
+    // TODO(#2291) - handle future
     return retrieveSignedBlock(blockRoot).join().orElse(null);
   }
 
@@ -334,7 +334,7 @@ class Store implements UpdatableStore {
     if (block == null) {
       return Optional.empty();
     }
-    // TODO - handle future properly
+    // TODO(#2291) - handle future properly
     return getOrGenerateBlockState(blockRoot)
         .join()
         .map((state) -> new SignedBlockAndState(block, state));
@@ -362,7 +362,7 @@ class Store implements UpdatableStore {
 
   @Override
   public BeaconState getBlockState(Bytes32 blockRoot) {
-    // TODO - handle future properly
+    // TODO(#2291) - handle future properly
     return getOrGenerateBlockState(blockRoot).join().orElse(null);
   }
 
