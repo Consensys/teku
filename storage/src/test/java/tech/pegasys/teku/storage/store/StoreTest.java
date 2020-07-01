@@ -14,9 +14,6 @@
 package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
@@ -36,8 +33,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -72,6 +69,17 @@ class StoreTest {
 
   @Test
   public void shouldApplyChangesWhenTransactionCommits() throws StateTransitionException {
+    testApplyChangesWhenTransactionCommits(false);
+  }
+
+  @Test
+  public void shouldApplyChangesWhenTransactionCommits_withInterleavedTx()
+      throws StateTransitionException {
+    testApplyChangesWhenTransactionCommits(true);
+  }
+
+  public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction)
+      throws StateTransitionException {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
     final UnsignedLong epoch3Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(4));
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
@@ -92,9 +100,9 @@ class StoreTest {
         chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.valueOf(3));
 
     // Start transaction
-    StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
-    when(storageUpdateChannel.onStorageUpdate(any())).thenReturn(SafeFuture.COMPLETE);
-    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    final StubStorageUpdateChannelWithDelays updateChannel =
+        new StubStorageUpdateChannelWithDelays();
+    final StoreTransaction tx = store.startTransaction(updateChannel);
     // Add blocks
     chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
     // Update checkpoints
@@ -149,7 +157,23 @@ class StoreTest {
     assertThat(tx.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
 
     // Commit transaction
-    assertThat(tx.commit()).isCompleted();
+    final SafeFuture<Void> txResult = tx.commit();
+
+    final SafeFuture<Void> txResult2;
+    if (withInterleavedTransaction) {
+      UnsignedLong time = store.getTime().plus(UnsignedLong.ONE);
+      StoreTransaction tx2 = store.startTransaction(updateChannel);
+      tx2.setTime(time);
+      txResult2 = tx2.commit();
+    } else {
+      txResult2 = SafeFuture.COMPLETE;
+    }
+
+    // Complete transactions
+    assertThat(updateChannel.getAsyncRunner().countDelayedActions()).isLessThanOrEqualTo(2);
+    updateChannel.getAsyncRunner().executeUntilDone();
+    assertThat(txResult).isCompleted();
+    assertThat(txResult2).isCompleted();
 
     // Check store is updated
     chainBuilder
@@ -176,7 +200,7 @@ class StoreTest {
     // Create a new store with a small state cache
     final StorePruningOptions pruningOptions = StorePruningOptions.create(cacheSize, cacheSize);
 
-    final Store store = createStoreFromGenesis(pruningOptions);
+    final Store store = createGenesisStore(pruningOptions);
     final List<SignedBlockAndState> blocks =
         chainBuilder.generateBlocksUpToSlot(cacheMultiplier * cacheSize);
 
@@ -197,7 +221,7 @@ class StoreTest {
     assertThat(tx.commit()).isCompletedWithValue(null);
   }
 
-  private Store createStoreFromGenesis(final StorePruningOptions pruningOptions) {
+  private Store createGenesisStore(final StorePruningOptions pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
     return new Store(
