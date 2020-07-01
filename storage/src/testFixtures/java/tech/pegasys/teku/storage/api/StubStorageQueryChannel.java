@@ -14,7 +14,10 @@
 package tech.pegasys.teku.storage.api;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -35,6 +38,12 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(Bytes32 blockRoot) {
     return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(
+      final Set<Bytes32> blockRoots) {
+    return SafeFuture.completedFuture(Collections.emptyMap());
   }
 
   @Override

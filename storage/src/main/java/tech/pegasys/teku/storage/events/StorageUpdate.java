@@ -93,6 +93,12 @@ public class StorageUpdate {
     return deletedHotBlocks;
   }
 
+  public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
+    return finalizedChainData
+        .map(FinalizedChainData::getFinalizedChildToParentMap)
+        .orElse(Collections.emptyMap());
+  }
+
   public Map<Bytes32, SignedBeaconBlock> getFinalizedBlocks() {
     return finalizedChainData.map(FinalizedChainData::getBlocks).orElse(Collections.emptyMap());
   }
