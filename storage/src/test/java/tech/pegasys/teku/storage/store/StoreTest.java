@@ -25,11 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -44,8 +42,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class StoreTest {
-  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-  private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
 
   @Test
   public void getSignedBlock_withLimitedCache() throws StateTransitionException {
@@ -78,12 +75,7 @@ class StoreTest {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
     final UnsignedLong epoch3Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(4));
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
-    final BlockProvider blockProvider =
-        BlockProvider.fromMap(
-            chainBuilder
-                .streamBlocksAndStates()
-                .collect(
-                    Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock)));
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
 
     final UpdatableStore store =
         StoreBuilder.buildForkChoiceStore(
@@ -181,30 +173,12 @@ class StoreTest {
     final int cacheSize = 10;
     final int cacheMultiplier = 3;
 
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    final List<SignedBlockAndState> blocks =
-        chainBuilder.generateBlocksUpToSlot(cacheMultiplier * cacheSize);
-    final Map<Bytes32, SignedBeaconBlock> blockLookup =
-        blocks.stream()
-            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
-
     // Create a new store with a small state cache
     final StorePruningOptions pruningOptions = StorePruningOptions.create(cacheSize, cacheSize);
-    final Store store =
-        new Store(
-            new StubMetricsSystem(),
-            BlockProvider.fromMap(blockLookup),
-            genesis.getState().getGenesis_time(),
-            genesis.getState().getGenesis_time(),
-            genesisCheckpoint,
-            genesisCheckpoint,
-            genesisCheckpoint,
-            Map.of(genesis.getRoot(), genesis.getParentRoot()),
-            Map.of(genesisCheckpoint, genesis.getState()),
-            genesis,
-            Collections.emptyMap(),
-            pruningOptions);
+
+    final Store store = createStoreFromGenesis(pruningOptions);
+    final List<SignedBlockAndState> blocks =
+        chainBuilder.generateBlocksUpToSlot(cacheMultiplier * cacheSize);
 
     // Generate enough blocks to exceed our cache limit
     addBlocks(store, blocks);
@@ -221,5 +195,32 @@ class StoreTest {
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
     blocks.forEach(tx::putBlockAndState);
     assertThat(tx.commit()).isCompletedWithValue(null);
+  }
+
+  private Store createStoreFromGenesis(final StorePruningOptions pruningOptions) {
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    return new Store(
+        new StubMetricsSystem(),
+        blockProviderFromChainBuilder(),
+        genesis.getState().getGenesis_time(),
+        genesis.getState().getGenesis_time(),
+        genesisCheckpoint,
+        genesisCheckpoint,
+        genesisCheckpoint,
+        Map.of(genesis.getRoot(), genesis.getParentRoot()),
+        Map.of(genesisCheckpoint, genesis.getState()),
+        genesis,
+        Collections.emptyMap(),
+        pruningOptions);
+  }
+
+  private BlockProvider blockProviderFromChainBuilder() {
+    return (roots) ->
+        SafeFuture.completedFuture(
+            roots.stream()
+                .map(chainBuilder::getBlock)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
   }
 }

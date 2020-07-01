@@ -21,6 +21,7 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,6 +61,7 @@ public class ChainBuilder {
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;
   private final NavigableMap<UnsignedLong, SignedBlockAndState> blocks = new TreeMap<>();
+  private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
 
   private BlockProposalTestUtil blockProposalTestUtil = new BlockProposalTestUtil();
 
@@ -70,6 +72,7 @@ public class ChainBuilder {
 
     attestationGenerator = new AttestationGenerator(validatorKeys);
     blocks.putAll(existingBlocks);
+    existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
   }
 
   public static ChainBuilder createDefault() {
@@ -78,6 +81,10 @@ public class ChainBuilder {
 
   public static ChainBuilder create(final List<BLSKeyPair> validatorKeys) {
     return new ChainBuilder(validatorKeys, Collections.emptyMap());
+  }
+
+  public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blocksByHash.get(blockRoot)).map(SignedBlockAndState::getBlock);
   }
 
   /**
@@ -194,7 +201,6 @@ public class ChainBuilder {
 
   public SignedBlockAndState generateGenesis() {
     checkState(blocks.isEmpty(), "Genesis already created");
-    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
     // Generate genesis state
     final List<DepositData> initialDepositData =
@@ -208,7 +214,7 @@ public class ChainBuilder {
     final SignedBeaconBlock signedBlock = new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
-    blocks.put(genesisSlot, blockAndState);
+    trackBlock(blockAndState);
     return blockAndState;
   }
 
@@ -309,6 +315,11 @@ public class ChainBuilder {
     checkState(!blocks.isEmpty(), "Genesis block must be created before blocks can be added.");
   }
 
+  private void trackBlock(final SignedBlockAndState block) {
+    blocks.put(block.getSlot(), block);
+    blocksByHash.put(block.getRoot(), block);
+  }
+
   private SignedBlockAndState appendNewBlockToChain(
       final UnsignedLong slot, final BlockOptions options) throws StateTransitionException {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
@@ -328,7 +339,7 @@ public class ChainBuilder {
             Optional.empty(),
             options.getEth1Data());
 
-    blocks.put(slot, nextBlockAndState);
+    trackBlock(nextBlockAndState);
     return nextBlockAndState;
   }
 
