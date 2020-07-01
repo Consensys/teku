@@ -18,7 +18,7 @@ import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface ProtoArrayStorageChannel {
 
-  void updateProtoArrayOnDisk(ProtoArray protoArray);
+  void onProtoArrayUpdate(ProtoArray protoArray);
 
   SafeFuture<Optional<ProtoArray>> getProtoArrayFromDisk();
 }

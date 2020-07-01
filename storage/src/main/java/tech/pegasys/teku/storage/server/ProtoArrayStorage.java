@@ -26,7 +26,7 @@ public class ProtoArrayStorage implements ProtoArrayStorageChannel {
   }
 
   @Override
-  public void updateProtoArrayOnDisk(ProtoArray protoArray) {
+  public void onProtoArrayUpdate(ProtoArray protoArray) {
     database.updateProtoArrayOnDisk(protoArray);
   }
 

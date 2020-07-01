@@ -78,12 +78,12 @@ public class ProtoArraySerializer implements RocksDbSerializer<ProtoArray> {
     private final UnsignedLong finalizedEpoch;
 
     private BlockInformation(
-        UnsignedLong blockSlot,
-        Bytes32 blockRoot,
-        Bytes32 parentRoot,
-        Bytes32 stateRoot,
-        UnsignedLong justifiedEpoch,
-        UnsignedLong finalizedEpoch) {
+        final UnsignedLong blockSlot,
+        final Bytes32 blockRoot,
+        final Bytes32 parentRoot,
+        final Bytes32 stateRoot,
+        final UnsignedLong justifiedEpoch,
+        final UnsignedLong finalizedEpoch) {
       this.blockSlot = blockSlot;
       this.blockRoot = blockRoot;
       this.parentRoot = parentRoot;
@@ -92,7 +92,7 @@ public class ProtoArraySerializer implements RocksDbSerializer<ProtoArray> {
       this.finalizedEpoch = finalizedEpoch;
     }
 
-    public static Bytes toBytes(ProtoNode node) {
+    public static Bytes toBytes(final ProtoNode node) {
       return SSZ.encode(
           writer -> {
             writer.writeUInt64(node.getBlockSlot().longValue());
@@ -104,7 +104,7 @@ public class ProtoArraySerializer implements RocksDbSerializer<ProtoArray> {
           });
     }
 
-    public static BlockInformation fromBytes(Bytes data) {
+    public static BlockInformation fromBytes(final Bytes data) {
       return SSZ.decode(
           data,
           reader -> {

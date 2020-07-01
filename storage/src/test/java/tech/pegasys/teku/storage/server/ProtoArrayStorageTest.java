@@ -20,13 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.protoarray.ProtoArray;
 import tech.pegasys.teku.protoarray.ProtoNode;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
@@ -35,32 +33,25 @@ import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class ProtoArrayStorageTest {
-  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
   private ProtoArrayStorage protoArrayStorage;
 
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
-
-  private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyV4StorageSystem(StateStorageMode.ARCHIVE, 1);
-
-  @BeforeEach
-  public void beforeEach() {
-    // Initialize db
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    storageSystem.recentChainData().initializeFromGenesis(genesis.getState());
-
+  @ParameterizedTest
+  @MethodSource("getStorageSystems")
+  public void shouldReturnEmptyIfThereIsNoProtoArrayOnDisk(StorageSystem storageSystem)
+      throws Exception {
+    storageSystem.chainUpdater().initializeGenesis();
     protoArrayStorage = storageSystem.createProtoArrayStorage();
-  }
-
-  @Test
-  public void shouldReturnEmptyIfThereIsNoProtoArrayOnDisk() throws Exception {
     SafeFuture<Optional<ProtoArray>> future = protoArrayStorage.getProtoArrayFromDisk();
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().isPresent()).isFalse();
   }
 
-  @Test
-  public void shouldReturnSameSetOfNodes() throws Exception {
+  @ParameterizedTest
+  @MethodSource("getStorageSystems")
+  public void shouldReturnSameSetOfNodes(StorageSystem storageSystem) throws Exception {
+    storageSystem.chainUpdater().initializeGenesis();
+    protoArrayStorage = storageSystem.createProtoArrayStorage();
+
     // init ProtoArray
     ProtoArray protoArray =
         new ProtoArray(
@@ -88,7 +79,7 @@ public class ProtoArrayStorageTest {
         UnsignedLong.valueOf(101),
         UnsignedLong.valueOf(100));
 
-    protoArrayStorage.updateProtoArrayOnDisk(protoArray);
+    protoArrayStorage.onProtoArrayUpdate(protoArray);
     SafeFuture<Optional<ProtoArray>> future = protoArrayStorage.getProtoArrayFromDisk();
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().isPresent()).isTrue();
@@ -97,8 +88,12 @@ public class ProtoArrayStorageTest {
     assertThatProtoArrayMatches(protoArray, protoArrayFromDisk);
   }
 
-  @Test
-  public void shouldOverwriteTheProtoArray() throws Exception {
+  @ParameterizedTest
+  @MethodSource("getStorageSystems")
+  public void shouldOverwriteTheProtoArray(StorageSystem storageSystem) throws Exception {
+    storageSystem.chainUpdater().initializeGenesis();
+    protoArrayStorage = storageSystem.createProtoArrayStorage();
+
     // init ProtoArray
     ProtoArray protoArray1 =
         new ProtoArray(
@@ -108,7 +103,7 @@ public class ProtoArrayStorageTest {
             new ArrayList<>(),
             new HashMap<>());
 
-    protoArrayStorage.updateProtoArrayOnDisk(protoArray1);
+    protoArrayStorage.onProtoArrayUpdate(protoArray1);
 
     ProtoArray protoArray2 =
         new ProtoArray(
@@ -136,7 +131,7 @@ public class ProtoArrayStorageTest {
         UnsignedLong.valueOf(101),
         UnsignedLong.valueOf(100));
 
-    protoArrayStorage.updateProtoArrayOnDisk(protoArray2);
+    protoArrayStorage.onProtoArrayUpdate(protoArray2);
     ProtoArray protoArrayFromDisk = protoArrayStorage.getProtoArrayFromDisk().get().get();
     assertThatProtoArrayMatches(protoArray2, protoArrayFromDisk);
   }
@@ -157,5 +152,14 @@ public class ProtoArrayStorageTest {
     for (int i = 0; i < array1.getNodes().size(); i++) {
       assertThatBlockInformationMatches(array1.getNodes().get(i), array2.getNodes().get(i));
     }
+  }
+
+  public static Stream<Arguments> getStorageSystems() {
+    final StorageSystem storageSystemV3 =
+        InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
+    final StorageSystem storageSystemV4 =
+        InMemoryStorageSystem.createEmptyV4StorageSystem(StateStorageMode.ARCHIVE, 1);
+    final List<StorageSystem> encodings = List.of(storageSystemV3, storageSystemV4);
+    return encodings.stream().map(Arguments::of);
   }
 }
