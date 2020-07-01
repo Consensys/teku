@@ -41,4 +41,9 @@ public class Validator {
   public Optional<Bytes32> getGraffiti() {
     return graffiti;
   }
+
+  @Override
+  public String toString() {
+    return "Validator{" + "publicKey=" + publicKey + '}';
+  }
 }
