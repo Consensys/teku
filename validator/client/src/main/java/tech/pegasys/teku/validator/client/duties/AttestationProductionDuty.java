@@ -160,6 +160,11 @@ public class AttestationProductionDuty implements Duty {
         final Function<ValidatorWithCommitteePositionAndIndex, SafeFuture<T>> action) {
       return validators.stream().map(action).collect(toList());
     }
+
+    @Override
+    public String toString() {
+      return "Committee{" + validators + '}';
+    }
   }
 
   private static class ValidatorWithCommitteePositionAndIndex {
@@ -184,6 +189,18 @@ public class AttestationProductionDuty implements Duty {
 
     public int getValidatorIndex() {
       return validatorIndex;
+    }
+
+    @Override
+    public String toString() {
+      return "ValidatorWithCommitteePositionAndIndex{"
+          + "validator="
+          + validator
+          + ", committeePosition="
+          + committeePosition
+          + ", validatorIndex="
+          + validatorIndex
+          + '}';
     }
   }
 }
