@@ -61,9 +61,9 @@ public class RocksDbDatabase implements Database {
   private final MetricsSystem metricsSystem;
   private final StateStorageMode stateStorageMode;
 
-  private final RocksDbHotDao hotDao;
-  private final RocksDbFinalizedDao finalizedDao;
-  private final RocksDbEth1Dao eth1Dao;
+  final RocksDbHotDao hotDao;
+  final RocksDbFinalizedDao finalizedDao;
+  final RocksDbEth1Dao eth1Dao;
   private final RocksDbProtoArrayDao protoArrayDao;
 
   public static Database createV3(
