@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.util.async.SafeFuture;
 
 public class StateGenerator {
   public static final int DEFAULT_STATE_CACHE_SIZE = 50;
+  private static final Logger LOG = LogManager.getLogger();
 
   private final BlockProcessor blockProcessor = new BlockProcessor();
   private final HashTree blockTree;
@@ -104,10 +107,15 @@ public class StateGenerator {
   }
 
   public SafeFuture<BeaconState> regenerateStateForBlock(final Bytes32 blockRoot) {
+    LOG.debug("Regenerate state for block {}", blockRoot);
     return chainStateGenerator.generateTargetState(blockRoot);
   }
 
   public SafeFuture<Void> regenerateAllStates(final StateHandler stateHandler) {
+    LOG.debug(
+        "Regenerate all states for block tree of size {} rooted at block {}",
+        blockTree.size(),
+        blockTree.getRootHash());
     return regenerateAllStatesInternal(stateHandler).thenAccept(__ -> stateCache.clear());
   }
 
@@ -151,13 +159,16 @@ public class StateGenerator {
         .getBlocks(blockRoots)
         .thenCompose(
             (blocks) -> {
+              LOG.debug("Process {} blocks", blocks.size());
               BlockRootAndState currentState = lastProcessedState;
               for (int i = 0; i < blockRoots.size(); i++) {
                 final Bytes32 blockRoot = blockRoots.get(i);
                 final SignedBeaconBlock currentBlock = blocks.get(blockRoot);
                 if (currentBlock == null) {
                   throw new IllegalStateException(
-                      "Failed to retrieve required block: " + blockRoot);
+                      String.format(
+                          "Failed to retrieve required block %s. Last processed block was at slot %s.",
+                          blockRoot, lastProcessedState.getState().getSlot()));
                 }
 
                 BeaconState postState = stateCache.get(currentBlock.getRoot()).orElse(null);
@@ -173,6 +184,7 @@ public class StateGenerator {
                     if (maybePreState.isPresent()) {
                       preState = maybePreState.get();
                     } else {
+                      LOG.debug("Regenerate missing state for block {}", parentRoot);
                       final List<Bytes32> remainingRoots = blockRoots.subList(i, blockRoots.size());
                       return chainStateGenerator
                           .generateTargetState(parentRoot)

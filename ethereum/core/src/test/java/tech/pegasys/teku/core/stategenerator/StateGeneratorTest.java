@@ -192,7 +192,10 @@ public class StateGeneratorTest {
           SafeFuture<Void> result = generator.regenerateAllStates(StateHandler.NOOP);
           assertThatThrownBy(result::get)
               .hasCauseInstanceOf(IllegalStateException.class)
-              .hasMessageContaining("Failed to retrieve required block: " + missingBlock.getRoot());
+              .hasMessageContaining(
+                  "Failed to retrieve required block "
+                      + missingBlock.getRoot()
+                      + ". Last processed block was at slot 0.");
         });
   }
 
@@ -204,7 +207,9 @@ public class StateGeneratorTest {
               generator.regenerateStateForBlock(missingBlock.getRoot());
           assertThatThrownBy(result::get)
               .hasCauseInstanceOf(IllegalStateException.class)
-              .hasMessageContaining("Failed to retrieve blocks: " + missingBlock.getRoot());
+              .hasMessageContaining(
+                  "Failed to retrieve 1 / 3 blocks building on state at slot 0: "
+                      + missingBlock.getRoot());
         });
   }
 

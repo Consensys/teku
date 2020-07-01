@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -28,6 +30,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class AsyncChainStateGenerator {
+  private static final Logger LOG = LogManager.getLogger();
   public static final int DEFAULT_BLOCK_BATCH_SIZE = 250;
 
   private final HashTree blockTree;
@@ -99,6 +102,13 @@ class AsyncChainStateGenerator {
             throw new IllegalStateException("Failed to retrieve chain");
           }
 
+          LOG.debug(
+              "Regenerate state at {}, processing {} blocks on top of slot {} (root: {})",
+              targetRoot,
+              chain.size(),
+              baseState.get().getSlot(),
+              chain.get(0));
+
           // Process chain in batches
           final List<List<Bytes32>> blockBatches = Lists.partition(chain, blockBatchSize);
           // Request and process each batch of blocks in order
@@ -115,6 +125,7 @@ class AsyncChainStateGenerator {
   private SafeFuture<BeaconState> processBlockBatch(
       final List<Bytes32> blockRoots, final BeaconState startState, final StateHandler handler) {
     checkArgument(startState != null, "Must provide start state");
+    LOG.debug("Retrieve and process {} blocks", blockRoots.size());
     return blockProvider
         .getBlocks(blockRoots)
         .thenApply(
@@ -130,7 +141,11 @@ class AsyncChainStateGenerator {
                         .filter(root -> !blocks.containsKey(root))
                         .map(Object::toString)
                         .collect(Collectors.joining(", "));
-                throw new IllegalStateException("Failed to retrieve blocks: " + missingBlocks);
+                final int missingCount = blockRoots.size() - chainBlocks.size();
+                throw new IllegalStateException(
+                    String.format(
+                        "Failed to retrieve %d / %d blocks building on state at slot %s: %s",
+                        missingCount, blockRoots.size(), startState.getSlot(), missingBlocks));
               }
 
               final ChainStateGenerator chainStateGenerator =
