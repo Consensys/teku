@@ -59,19 +59,17 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   }
 
   @Override
-  public void onDepositsFromBlock(DepositsFromBlockEvent event) {
+  public synchronized void onDepositsFromBlock(DepositsFromBlockEvent event) {
     event.getDeposits().stream()
         .map(DepositUtil::convertDepositEventToOperationDeposit)
         .forEach(
             deposit -> {
-              synchronized (DepositProvider.this) {
-                if (!recentChainData.isPreGenesis()) {
-                  LOG.debug("About to process deposit: {}", deposit.getIndex());
-                }
-
-                depositNavigableMap.put(deposit.getIndex(), deposit);
-                depositMerkleTree.add(deposit.getData().hash_tree_root());
+              if (!recentChainData.isPreGenesis()) {
+                LOG.debug("About to process deposit: {}", deposit.getIndex());
               }
+
+              depositNavigableMap.put(deposit.getIndex(), deposit);
+              depositMerkleTree.add(deposit.getData().hash_tree_root());
             });
     eth1DataCache.onBlockWithDeposit(
         event.getBlockTimestamp(),
@@ -100,7 +98,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
 
-  public SSZList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
+  public synchronized SSZList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
     UnsignedLong eth1DepositCount;
     if (isEnoughVotesToUpdateEth1Data(getVoteCount(state, eth1Data) + 1)) {
       eth1DepositCount = eth1Data.getDeposit_count();
@@ -140,7 +138,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     }
   }
 
-  public int getDepositMapSize() {
+  public synchronized int getDepositMapSize() {
     return depositNavigableMap.size();
   }
 
@@ -152,7 +150,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
    * @param eth1DepositCount number of deposits in the merkle tree according to Eth1Data in state
    * @return
    */
-  private synchronized List<Deposit> getDepositsWithProof(
+  private List<Deposit> getDepositsWithProof(
       UnsignedLong fromDepositIndex, UnsignedLong toDepositIndex, UnsignedLong eth1DepositCount) {
     return depositNavigableMap.subMap(fromDepositIndex, toDepositIndex).values().stream()
         .map(
