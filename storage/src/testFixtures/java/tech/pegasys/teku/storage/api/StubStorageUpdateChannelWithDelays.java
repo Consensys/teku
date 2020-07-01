@@ -15,30 +15,28 @@ package tech.pegasys.teku.storage.api;
 
 import java.util.Optional;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.StubAsyncRunner;
 
-public class DatabaseBackedStorageUpdateChannel implements StorageUpdateChannel {
-  private final Database database;
+public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel {
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
-  public DatabaseBackedStorageUpdateChannel(final Database database) {
-    this.database = database;
+  public StubAsyncRunner getAsyncRunner() {
+    return asyncRunner;
   }
 
   @Override
   public SafeFuture<Optional<StoreBuilder>> onStoreRequest() {
-    return SafeFuture.completedFuture(database.createMemoryStore());
+    return SafeFuture.failedFuture(new IllegalStateException("Storage is unavailable."));
   }
 
   @Override
   public SafeFuture<Void> onStorageUpdate(StorageUpdate event) {
-    return SafeFuture.fromRunnable(() -> database.update(event));
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
   }
 
   @Override
-  public void onGenesis(UpdatableStore store) {
-    database.storeGenesis(store);
-  }
+  public void onGenesis(UpdatableStore store) {}
 }
