@@ -1,13 +1,52 @@
 # Teku Bug Triage Process
 
-In Teku, we have a well-defined policy regarding bug categorization. In a nutshell, our bugs are categorized into 5 priorities. 
+In Teku, we have a well-defined policy regarding bug categorization. 
 
-#### Bug Priorities
+#### Deciding Priority
+When deciding how to respond to a bug, consider the two variables of probability and severity, and apply them to a risk matrix to determine the priority and corresponding action.
+
+#### Probability
+How often actual customers are likely to encounter the issue during their use of the product?
+
+A feature rarely used, with a high likelihood of failure, may have a lower overall probability than a popular feature with a low likelihood of failure (due to a high number of customers affected).
+
+| Frequent   | Will occur several times in the lifetime of the product.          |
+|------------|-------------------------------------------------------------------|
+| Probable   | Likely to occur often in the lifetime of the product.             |
+| Occasional | Likely to occur some time in the lifetime of the product.         |
+| Remote     | Unlikely but possible to occur in the lifetime of the product.    |
+| Improbable | So unlikely, it can be assumed occurrence may not be experienced. |
+
+#### Severity
+
+How bad is the problem when it is encountered?
+
+An issue that causes data loss/corruption is automatically classed as Catastrophic.
+
+| Catastrophic  | Detrimental risk for the product as a whole.                             |
+|---------------|--------------------------------------------------------------------------|
+| Critical      | Jeopardises feature(s) of the product, not ruining the product entirely. |
+| Moderate      | Jeopardises aspects of a feature, not ruining the feature entirely.      |
+| Marginal      | Causes an inconvenience when using a feature of the product.             |
+| Insignificant | No significant threat posed and can be left unmediated.                  |
+
+#### Risk Matrix
+
+|            | Catastrophic | Critical | Moderate | Marginal | Insignificant |
+|------------|:------------:|:--------:|:--------:|:--------:|---------------|
+|   Frequent |   Very High  |   High   |   High   |  Medium  | Very Low      |
+| Improbable |    Medium    |    Low   |    Low   | Very Low | Very Low      |
+| Occasional |     High     |  Medium  |  Medium  |    Low   | Very Low      |
+|   Probable |     High     |   High   |  Medium  |  Medium  | Very Low      |
+|     Remote |    Medium    |  Medium  |    Low   |    Low   | Very Low      |
+
+#### Examples 
+In a nutshell, our bugs are categorized into 5 priorities: 
 
 | Priority | Examples |
 |-|-|
 | Very High (P1) | <ul><li>Affects consensus</li> <li>Breaks sync</li><li>Security issue</li></ul> |
-| High (P2) | <ul><li> Degrades validator rewards</li> <li>Unexpected behaviour of core features</li></ul>|
+| High (P2) | <ul><li> Degrades validator rewards</li> <li>Incurs penalties</li> <li>Significant performance regression</li> <li>Unexpected behaviour of core features</li></ul>|
 | Medium (P3) | <ul><li>Feature not working with a specific client library</li></ul>|
 | Low (P4) | <ul><li>Node doesn't start up when the configuration file has unexpected "end-of-line" character</li></ul> |
 | Very Low (P5)  | <ul><li>Typo on a CLI command description</li> <li>An inconsequential issue gets logged on ERROR level</li></ul>|
@@ -40,4 +79,6 @@ That's ok! Deeper understanding of the impact of a bug will come from the people
 
 
 
-_Mostly taken from Besu Docs_: [Besu Bug Triage Process](https://wiki.hyperledger.org/display/BESU/Bug+Triage+Process)
+_Mostly taken from Besu Docs_: 
+[Besu Bug Triage Process](https://wiki.hyperledger.org/display/BESU/Bug+Triage+Process)
+[Besu Defect Prioritisation Policy](https://wiki.hyperledger.org/display/BESU/Defect+Prioritisation+Policy)
