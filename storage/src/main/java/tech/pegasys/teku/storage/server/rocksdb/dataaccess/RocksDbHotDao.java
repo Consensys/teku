@@ -76,7 +76,7 @@ public interface RocksDbHotDao extends AutoCloseable {
 
     void deleteHotBlock(final Bytes32 blockRoot);
 
-    void updateProtoArrayOnDisk(final ProtoArray newProtoAray);
+    void putProtoArray(final ProtoArray newProtoAray);
 
     void commit();
 

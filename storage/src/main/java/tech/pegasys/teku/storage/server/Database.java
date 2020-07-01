@@ -77,5 +77,5 @@ public interface Database extends AutoCloseable {
 
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
-  void updateProtoArrayOnDisk(final ProtoArray protoArray);
+  void putProtoArray(final ProtoArray protoArray);
 }

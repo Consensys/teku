@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.assertThatProtoArrayMatches;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoNode;
+import tech.pegasys.teku.protoarray.ProtoArraySnaphot;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -41,7 +42,7 @@ public class ProtoArrayStorageTest {
       throws Exception {
     storageSystem.chainUpdater().initializeGenesis();
     protoArrayStorage = storageSystem.createProtoArrayStorage();
-    SafeFuture<Optional<ProtoArray>> future = protoArrayStorage.getProtoArrayFromDisk();
+    SafeFuture<Optional<ProtoArray>> future = protoArrayStorage.getProtoArray();
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().isPresent()).isFalse();
   }
@@ -79,12 +80,14 @@ public class ProtoArrayStorageTest {
         UnsignedLong.valueOf(101),
         UnsignedLong.valueOf(100));
 
-    protoArrayStorage.onProtoArrayUpdate(protoArray);
-    SafeFuture<Optional<ProtoArray>> future = protoArrayStorage.getProtoArrayFromDisk();
+    ProtoArraySnaphot protoArraySnaphot = ProtoArraySnaphot.save(protoArray);
+    protoArrayStorage.onProtoArrayUpdate(protoArraySnaphot);
+
+    SafeFuture<Optional<ProtoArray>> future = protoArrayStorage.getProtoArray();
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().isPresent()).isTrue();
 
-    ProtoArray protoArrayFromDisk = protoArrayStorage.getProtoArrayFromDisk().get().get();
+    ProtoArray protoArrayFromDisk = protoArrayStorage.getProtoArray().get().get();
     assertThatProtoArrayMatches(protoArray, protoArrayFromDisk);
   }
 
@@ -103,7 +106,8 @@ public class ProtoArrayStorageTest {
             new ArrayList<>(),
             new HashMap<>());
 
-    protoArrayStorage.onProtoArrayUpdate(protoArray1);
+    ProtoArraySnaphot protoArraySnaphot1 = ProtoArraySnaphot.save(protoArray1);
+    protoArrayStorage.onProtoArrayUpdate(protoArraySnaphot1);
 
     ProtoArray protoArray2 =
         new ProtoArray(
@@ -131,27 +135,11 @@ public class ProtoArrayStorageTest {
         UnsignedLong.valueOf(101),
         UnsignedLong.valueOf(100));
 
-    protoArrayStorage.onProtoArrayUpdate(protoArray2);
-    ProtoArray protoArrayFromDisk = protoArrayStorage.getProtoArrayFromDisk().get().get();
+    ProtoArraySnaphot protoArraySnaphot2 = ProtoArraySnaphot.save(protoArray2);
+    protoArrayStorage.onProtoArrayUpdate(protoArraySnaphot2);
+
+    ProtoArray protoArrayFromDisk = protoArrayStorage.getProtoArray().get().get();
     assertThatProtoArrayMatches(protoArray2, protoArrayFromDisk);
-  }
-
-  public static void assertThatBlockInformationMatches(ProtoNode node1, ProtoNode node2) {
-    assertThat(node1.getBlockSlot()).isEqualTo(node2.getBlockSlot());
-    assertThat(node1.getStateRoot()).isEqualTo(node2.getStateRoot());
-    assertThat(node1.getBlockRoot()).isEqualTo(node2.getBlockRoot());
-    assertThat(node1.getParentRoot()).isEqualTo(node2.getParentRoot());
-    assertThat(node1.getJustifiedEpoch()).isEqualTo(node2.getJustifiedEpoch());
-    assertThat(node1.getFinalizedEpoch()).isEqualTo(node2.getFinalizedEpoch());
-  }
-
-  public static void assertThatProtoArrayMatches(ProtoArray array1, ProtoArray array2) {
-    assertThat(array1.getNodes().size()).isEqualTo(array2.getNodes().size());
-    assertThat(array1.getJustifiedEpoch()).isEqualTo(array2.getJustifiedEpoch());
-    assertThat(array1.getFinalizedEpoch()).isEqualTo(array2.getFinalizedEpoch());
-    for (int i = 0; i < array1.getNodes().size(); i++) {
-      assertThatBlockInformationMatches(array1.getNodes().get(i), array2.getNodes().get(i));
-    }
   }
 
   public static Stream<Arguments> getStorageSystems() {

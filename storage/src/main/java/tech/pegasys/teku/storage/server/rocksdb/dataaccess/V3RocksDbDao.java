@@ -258,8 +258,8 @@ public class V3RocksDbDao
     }
 
     @Override
-    public void updateProtoArrayOnDisk(ProtoArray newProtoAray) {
-      transaction.put(V3Schema.PROTO_ARRAY, newProtoAray);
+    public void putProtoArray(ProtoArray newProtoArray) {
+      transaction.put(V3Schema.PROTO_ARRAY, newProtoArray);
     }
 
     @Override

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
-import static tech.pegasys.teku.storage.server.ProtoArrayStorageTest.assertThatProtoArrayMatches;
+import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.assertThatProtoArrayMatches;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;

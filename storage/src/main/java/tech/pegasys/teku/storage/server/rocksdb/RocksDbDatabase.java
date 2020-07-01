@@ -270,9 +270,9 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void updateProtoArrayOnDisk(final ProtoArray newProtoArray) {
+  public void putProtoArray(final ProtoArray newProtoArray) {
     try (final RocksDbProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
-      updater.updateProtoArrayOnDisk(newProtoArray);
+      updater.putProtoArray(newProtoArray);
       updater.commit();
     }
   }
