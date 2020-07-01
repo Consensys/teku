@@ -80,5 +80,5 @@ That's ok! Deeper understanding of the impact of a bug will come from the people
 
 
 _Mostly taken from Besu Docs_: 
-[Besu Bug Triage Process](https://wiki.hyperledger.org/display/BESU/Bug+Triage+Process)
-[Besu Defect Prioritisation Policy](https://wiki.hyperledger.org/display/BESU/Defect+Prioritisation+Policy)
+* [Besu Bug Triage Process](https://wiki.hyperledger.org/display/BESU/Bug+Triage+Process)
+* [Besu Defect Prioritisation Policy](https://wiki.hyperledger.org/display/BESU/Defect+Prioritisation+Policy)
