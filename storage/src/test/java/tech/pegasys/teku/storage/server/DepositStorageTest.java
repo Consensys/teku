@@ -16,29 +16,22 @@ package tech.pegasys.teku.storage.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigInteger;
-import java.util.List;
+import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class DepositStorageTest {
-  protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
-
-  protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private DepositStorage depositStorage;
 
@@ -51,24 +44,29 @@ public class DepositStorageTest {
   private final DepositsFromBlockEvent block_101 =
       dataStructureUtil.randomDepositsFromBlockEvent(101L, 10);
 
-  private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
-  private final Database database = storageSystem.getDatabase();
-  private final TrackingEth1EventsChannel eventsChannel = storageSystem.eth1EventsChannel();
+  @TempDir Path dataDirectory;
+  private StorageSystem storageSystem;
+  private Database database;
+  private TrackingEth1EventsChannel eventsChannel;
 
-  @BeforeEach
-  public void beforeEach() {
-    // Initialize db
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    storageSystem.recentChainData().initializeFromGenesis(genesis.getState());
+  private void setup(
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    storageSystem = storageSystemSupplier.get(dataDirectory);
+    database = storageSystem.getDatabase();
+    eventsChannel = storageSystem.eth1EventsChannel();
 
+    storageSystem.chainUpdater().initializeGenesis();
     depositStorage = storageSystem.createDepositStorage(true);
     depositStorage.start();
   }
 
-  @Test
-  public void shouldSendGenesisBeforeFirstDeposit()
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldSendGenesisBeforeFirstDeposit(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     database.addMinGenesisTimeBlock(genesis_100);
     database.addDepositsFromBlockEvent(block_101);
 
@@ -82,8 +80,13 @@ public class DepositStorageTest {
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
-  @Test
-  public void shouldNotLoadFromStorageIfDisabled() throws ExecutionException, InterruptedException {
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldNotLoadFromStorageIfDisabled(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     depositStorage = DepositStorage.create(eventsChannel, database, false);
     depositStorage.start();
 
@@ -97,9 +100,13 @@ public class DepositStorageTest {
     assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
-  @Test
-  public void shouldReplayDepositsWhenDatabaseIsEmpty()
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldReplayDepositsWhenDatabaseIsEmpty(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     depositStorage.start();
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
@@ -111,8 +118,13 @@ public class DepositStorageTest {
     assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
-  @Test
-  public void shouldStoreDepositsFromBlockImmediatelyAfterReplay() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldStoreDepositsFromBlockImmediatelyAfterReplay(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     database.addDepositsFromBlockEvent(block_100);
     depositStorage.start();
 
@@ -131,8 +143,13 @@ public class DepositStorageTest {
     }
   }
 
-  @Test
-  void shouldNotReplayMoreThanOnce() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  void shouldNotReplayMoreThanOnce(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     database.addDepositsFromBlockEvent(block_100);
     depositStorage.start();
 
@@ -146,8 +163,13 @@ public class DepositStorageTest {
     assertThat(eventsChannel.getOrderedList()).containsExactly(block_100);
   }
 
-  @Test
-  public void shouldSendGenesisAfterFirstDeposit() throws ExecutionException, InterruptedException {
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldSendGenesisAfterFirstDeposit(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     database.addDepositsFromBlockEvent(block_99);
     database.addMinGenesisTimeBlock(genesis_100);
     database.addDepositsFromBlockEvent(block_101);
@@ -162,8 +184,13 @@ public class DepositStorageTest {
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
-  @Test
-  public void shouldReplayMultipleDeposits() throws ExecutionException, InterruptedException {
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldReplayMultipleDeposits(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     database.addDepositsFromBlockEvent(block_100);
     database.addDepositsFromBlockEvent(block_101);
 
@@ -176,9 +203,13 @@ public class DepositStorageTest {
     assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
-  @Test
-  public void shouldSendBlockThenGenesisWhenBlockNumberIsTheSame()
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldSendBlockThenGenesisWhenBlockNumberIsTheSame(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     database.addDepositsFromBlockEvent(block_100);
     database.addMinGenesisTimeBlock(genesis_100);
 
@@ -192,8 +223,13 @@ public class DepositStorageTest {
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
-  @Test
-  public void shouldJustSendGenesis() throws ExecutionException, InterruptedException {
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldJustSendGenesis(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     database.addMinGenesisTimeBlock(genesis_100);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
@@ -206,8 +242,13 @@ public class DepositStorageTest {
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
-  @Test
-  public void shouldSendDepositsThenGenesis() throws ExecutionException, InterruptedException {
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldSendDepositsThenGenesis(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws ExecutionException, InterruptedException {
+    setup(storageSystemSupplier);
     database.addDepositsFromBlockEvent(block_99);
     database.addMinGenesisTimeBlock(genesis_100);
 
