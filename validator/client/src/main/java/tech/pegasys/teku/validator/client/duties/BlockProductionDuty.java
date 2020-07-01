@@ -90,10 +90,13 @@ public class BlockProductionDuty implements Duty {
 
   @Override
   public String toString() {
-    return "BlockProductionDuty{" +
-        "validator=" + validator +
-        ", slot=" + slot +
-        ", forkProvider=" + forkProvider +
-        '}';
+    return "BlockProductionDuty{"
+        + "validator="
+        + validator
+        + ", slot="
+        + slot
+        + ", forkProvider="
+        + forkProvider
+        + '}';
   }
 }

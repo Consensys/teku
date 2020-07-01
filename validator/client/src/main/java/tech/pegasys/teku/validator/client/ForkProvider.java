@@ -75,8 +75,6 @@ public class ForkProvider {
 
   @Override
   public String toString() {
-    return "ForkProvider{" +
-        "currentFork=" + currentFork +
-        '}';
+    return "ForkProvider{" + "currentFork=" + currentFork + '}';
   }
 }

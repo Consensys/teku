@@ -100,11 +100,15 @@ public class DutyResult {
 
   @Override
   public String toString() {
-    return "DutyResult{" +
-        "successCount=" + successCount +
-        ", nodeSyncingCount=" + nodeSyncingCount +
-        ", roots=" + roots +
-        ", errors=" + errors +
-        '}';
+    return "DutyResult{"
+        + "successCount="
+        + successCount
+        + ", nodeSyncingCount="
+        + nodeSyncingCount
+        + ", roots="
+        + roots
+        + ", errors="
+        + errors
+        + '}';
   }
 }

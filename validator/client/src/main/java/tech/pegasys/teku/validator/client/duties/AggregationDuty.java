@@ -157,11 +157,14 @@ public class AggregationDuty implements Duty {
 
     @Override
     public String toString() {
-      return "CommitteeAggregator{" +
-          "validator=" + validator +
-          ", validatorIndex=" + validatorIndex +
-          ", proof=" + proof +
-          '}';
+      return "CommitteeAggregator{"
+          + "validator="
+          + validator
+          + ", validatorIndex="
+          + validatorIndex
+          + ", proof="
+          + proof
+          + '}';
     }
   }
 }
