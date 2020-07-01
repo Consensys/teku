@@ -72,4 +72,9 @@ public class ForkProvider {
               return SafeFuture.completedFuture(forkInfo);
             });
   }
+
+  @Override
+  public String toString() {
+    return "ForkProvider{" + "currentFork=" + currentFork + '}';
+  }
 }

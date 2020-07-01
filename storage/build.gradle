@@ -40,6 +40,8 @@ dependencies {
   testFixturesImplementation testFixtures(project(':pow'))
   testFixturesImplementation project(':protoarray')
   testFixturesImplementation testFixtures(project(':util'))
+  testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testFixturesImplementation 'org.junit.jupiter:junit-jupiter-params'
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
