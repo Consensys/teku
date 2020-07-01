@@ -15,14 +15,23 @@ package tech.pegasys.teku.datastructures.forkchoice;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public interface PrunableStore extends ReadOnlyStore {
   /**
-   * Returns a block state only if this state is immediately available (not pruned).
+   * Returns a block state only if it is immediately available (not pruned).
    *
    * @param blockRoot The block root corresponding to the state to retrieve
    * @return The block state if available.
    */
   Optional<BeaconState> getBlockStateIfAvailable(Bytes32 blockRoot);
+
+  /**
+   * Returns a block only if it is immediately available (not pruned).
+   *
+   * @param blockRoot The block root of the block to retrieve
+   * @return The block if available.
+   */
+  Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot);
 }
