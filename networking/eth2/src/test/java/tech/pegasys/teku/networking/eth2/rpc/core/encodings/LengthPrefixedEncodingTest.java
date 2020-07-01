@@ -137,20 +137,21 @@ class LengthPrefixedEncodingTest {
   @Test
   public void decodePayload_shouldRejectMessagesThatAreTooLong() {
     // We should reject the message based on the length prefix and skip reading the data entirely
-    List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH);
+    List<List<ByteBuf>> testByteBufSlices =
+        Utils.generateTestSlices(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH);
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
       RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
       List<ByteBuf> usedBufs = new ArrayList<>();
       assertThatThrownBy(
-          () -> {
-            for (ByteBuf bufSlice : bufSlices) {
-              assertThat(decoder.decodeOneMessage(bufSlice)).isEmpty();
-              bufSlice.release();
-              usedBufs.add(bufSlice);
-            }
-            decoder.complete();
-          })
+              () -> {
+                for (ByteBuf bufSlice : bufSlices) {
+                  assertThat(decoder.decodeOneMessage(bufSlice)).isEmpty();
+                  bufSlice.release();
+                  usedBufs.add(bufSlice);
+                }
+                decoder.complete();
+              })
           .isEqualTo(RpcException.CHUNK_TOO_LONG);
       assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
     }
