@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -34,6 +35,7 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
@@ -103,12 +105,43 @@ public class DepositRegisterCommand implements Runnable {
       final BLSPublicKey withdrawalPublicKey =
           BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(this.withdrawalKey));
       registerAction.displayConfirmation(1);
-      registerAction.sendDeposit(validatorKey, withdrawalPublicKey).get();
+
+      sendDeposit(validatorKey, withdrawalPublicKey, registerAction).get();
     } catch (final Throwable t) {
       SUB_COMMAND_LOG.sendDepositFailure(t);
       shutdownFunction.accept(1);
     }
     shutdownFunction.accept(0);
+  }
+
+  private SafeFuture<TransactionReceipt> sendDeposit(
+      final BLSKeyPair validatorKey,
+      final BLSPublicKey withdrawalPublicKey,
+      final RegisterAction registerAction) {
+    if (displayConfirmation) {
+      SUB_COMMAND_LOG.display(
+          String.format(
+              "%nSending deposit for Validator Key [%s].%n",
+              validatorKey.getPublicKey().toString()));
+    }
+    final SafeFuture<TransactionReceipt> transactionReceiptSafeFuture =
+        registerAction.sendDeposit(validatorKey, withdrawalPublicKey);
+
+    if (displayConfirmation) {
+      transactionReceiptSafeFuture.finish(
+          transactionReceipt ->
+              SUB_COMMAND_LOG.display(
+                  String.format(
+                      "Transaction for Validator Key [%s] Completed. Transaction Hash: [%s]%n",
+                      validatorKey.getPublicKey().toString(),
+                      transactionReceipt.getTransactionHash())),
+          exception ->
+              SUB_COMMAND_LOG.error(
+                  String.format(
+                      "Transaction for Validator Key [%s] Failed: Message: [%s]%n",
+                      validatorKey.getPublicKey().toString(), exception.getMessage())));
+    }
+    return transactionReceiptSafeFuture;
   }
 
   private BLSKeyPair getValidatorKey() {
