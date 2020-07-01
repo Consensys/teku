@@ -87,4 +87,13 @@ public class BlockProductionDuty implements Duty {
             forkInfo)
         .thenApply(signature -> new SignedBeaconBlock(unsignedBlock.orElseThrow(), signature));
   }
+
+  @Override
+  public String toString() {
+    return "BlockProductionDuty{" +
+        "validator=" + validator +
+        ", slot=" + slot +
+        ", forkProvider=" + forkProvider +
+        '}';
+  }
 }

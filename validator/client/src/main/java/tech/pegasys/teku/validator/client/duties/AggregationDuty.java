@@ -154,5 +154,14 @@ public class AggregationDuty implements Duty {
       this.proof = proof;
       this.unsignedAttestationFuture = unsignedAttestationFuture;
     }
+
+    @Override
+    public String toString() {
+      return "CommitteeAggregator{" +
+          "validator=" + validator +
+          ", validatorIndex=" + validatorIndex +
+          ", proof=" + proof +
+          '}';
+    }
   }
 }
