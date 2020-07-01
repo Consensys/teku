@@ -14,41 +14,36 @@
 package tech.pegasys.teku.storage.server;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.assertThatProtoArrayMatches;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoArraySnaphot;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class ProtoArrayStorageTest {
   private ProtoArrayStorage protoArrayStorage;
 
   @ParameterizedTest
-  @MethodSource("getStorageSystems")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
   public void shouldReturnEmptyIfThereIsNoProtoArrayOnDisk(StorageSystem storageSystem)
       throws Exception {
     storageSystem.chainUpdater().initializeGenesis();
     protoArrayStorage = storageSystem.createProtoArrayStorage();
-    SafeFuture<Optional<ProtoArray>> future = protoArrayStorage.getProtoArray();
+    SafeFuture<Optional<ProtoArraySnapshot>> future = protoArrayStorage.getProtoArraySnapshot();
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().isPresent()).isFalse();
   }
 
   @ParameterizedTest
-  @MethodSource("getStorageSystems")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
   public void shouldReturnSameSetOfNodes(StorageSystem storageSystem) throws Exception {
     storageSystem.chainUpdater().initializeGenesis();
     protoArrayStorage = storageSystem.createProtoArrayStorage();
@@ -80,19 +75,20 @@ public class ProtoArrayStorageTest {
         UnsignedLong.valueOf(101),
         UnsignedLong.valueOf(100));
 
-    ProtoArraySnaphot protoArraySnaphot = ProtoArraySnaphot.save(protoArray);
-    protoArrayStorage.onProtoArrayUpdate(protoArraySnaphot);
+    ProtoArraySnapshot protoArraySnapshot = ProtoArraySnapshot.create(protoArray);
+    protoArrayStorage.onProtoArrayUpdate(protoArraySnapshot);
 
-    SafeFuture<Optional<ProtoArray>> future = protoArrayStorage.getProtoArray();
+    SafeFuture<Optional<ProtoArraySnapshot>> future = protoArrayStorage.getProtoArraySnapshot();
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().isPresent()).isTrue();
 
-    ProtoArray protoArrayFromDisk = protoArrayStorage.getProtoArray().get().get();
-    assertThatProtoArrayMatches(protoArray, protoArrayFromDisk);
+    ProtoArraySnapshot protoArraySnapshotFromDisk =
+        protoArrayStorage.getProtoArraySnapshot().get().get();
+    assertThat(protoArraySnapshot).isEqualToComparingFieldByField(protoArraySnapshotFromDisk);
   }
 
   @ParameterizedTest
-  @MethodSource("getStorageSystems")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
   public void shouldOverwriteTheProtoArray(StorageSystem storageSystem) throws Exception {
     storageSystem.chainUpdater().initializeGenesis();
     protoArrayStorage = storageSystem.createProtoArrayStorage();
@@ -106,8 +102,8 @@ public class ProtoArrayStorageTest {
             new ArrayList<>(),
             new HashMap<>());
 
-    ProtoArraySnaphot protoArraySnaphot1 = ProtoArraySnaphot.save(protoArray1);
-    protoArrayStorage.onProtoArrayUpdate(protoArraySnaphot1);
+    ProtoArraySnapshot protoArraySnapshot1 = ProtoArraySnapshot.create(protoArray1);
+    protoArrayStorage.onProtoArrayUpdate(protoArraySnapshot1);
 
     ProtoArray protoArray2 =
         new ProtoArray(
@@ -135,19 +131,11 @@ public class ProtoArrayStorageTest {
         UnsignedLong.valueOf(101),
         UnsignedLong.valueOf(100));
 
-    ProtoArraySnaphot protoArraySnaphot2 = ProtoArraySnaphot.save(protoArray2);
-    protoArrayStorage.onProtoArrayUpdate(protoArraySnaphot2);
+    ProtoArraySnapshot protoArraySnapshot2 = ProtoArraySnapshot.create(protoArray2);
+    protoArrayStorage.onProtoArrayUpdate(protoArraySnapshot2);
 
-    ProtoArray protoArrayFromDisk = protoArrayStorage.getProtoArray().get().get();
-    assertThatProtoArrayMatches(protoArray2, protoArrayFromDisk);
-  }
-
-  public static Stream<Arguments> getStorageSystems() {
-    final StorageSystem storageSystemV3 =
-        InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
-    final StorageSystem storageSystemV4 =
-        InMemoryStorageSystem.createEmptyV4StorageSystem(StateStorageMode.ARCHIVE, 1);
-    final List<StorageSystem> encodings = List.of(storageSystemV3, storageSystemV4);
-    return encodings.stream().map(Arguments::of);
+    ProtoArraySnapshot protoArraySnapshotFromDisk =
+        protoArrayStorage.getProtoArraySnapshot().get().get();
+    assertThat(protoArraySnapshotFromDisk).isEqualToComparingFieldByField(protoArraySnapshot2);
   }
 }

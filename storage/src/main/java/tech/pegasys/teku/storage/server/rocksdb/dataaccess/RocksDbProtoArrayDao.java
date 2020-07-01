@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import java.util.Optional;
-import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
 /**
  * Provides an abstract "data access object" interface for working with ETH1 data from the
@@ -22,12 +22,12 @@ import tech.pegasys.teku.protoarray.ProtoArray;
  */
 public interface RocksDbProtoArrayDao extends AutoCloseable {
 
-  Optional<ProtoArray> getProtoArrayFromDisk();
+  Optional<ProtoArraySnapshot> getProtoArraySnapshot();
 
   ProtoArrayUpdater protoArrayUpdater();
 
   interface ProtoArrayUpdater extends AutoCloseable {
-    void putProtoArray(final ProtoArray newProtoArray);
+    void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot);
 
     void commit();
 

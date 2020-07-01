@@ -25,7 +25,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
@@ -96,8 +96,8 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
-  public Optional<ProtoArray> getProtoArrayFromDisk() {
-    return db.get(V4SchemaHot.PROTO_ARRAY);
+  public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
+    return db.get(V4SchemaHot.PROTO_ARRAY_SNAPSHOT);
   }
 
   @Override
@@ -201,8 +201,8 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
-    public void putProtoArray(ProtoArray newProtoArray) {
-      transaction.put(V4SchemaHot.PROTO_ARRAY, newProtoArray);
+    public void putProtoArraySnapshot(ProtoArraySnapshot newProtoArray) {
+      transaction.put(V4SchemaHot.PROTO_ARRAY_SNAPSHOT, newProtoArray);
     }
 
     @Override

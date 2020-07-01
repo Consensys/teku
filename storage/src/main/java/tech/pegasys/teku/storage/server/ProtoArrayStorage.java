@@ -14,8 +14,7 @@
 package tech.pegasys.teku.storage.server;
 
 import java.util.Optional;
-import tech.pegasys.teku.protoarray.ProtoArray;
-import tech.pegasys.teku.protoarray.ProtoArraySnaphot;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -27,12 +26,12 @@ public class ProtoArrayStorage implements ProtoArrayStorageChannel {
   }
 
   @Override
-  public void onProtoArrayUpdate(ProtoArraySnaphot protoArraySnaphot) {
-    database.putProtoArray(protoArraySnaphot.toProtoArray());
+  public void onProtoArrayUpdate(ProtoArraySnapshot protoArraySnapshot) {
+    database.putProtoArraySnapshot(protoArraySnapshot);
   }
 
   @Override
-  public SafeFuture<Optional<ProtoArray>> getProtoArray() {
-    return SafeFuture.completedFuture(database.getProtoArrayFromDisk());
+  public SafeFuture<Optional<ProtoArraySnapshot>> getProtoArraySnapshot() {
+    return SafeFuture.completedFuture(database.getProtoArraySnapshot());
   }
 }

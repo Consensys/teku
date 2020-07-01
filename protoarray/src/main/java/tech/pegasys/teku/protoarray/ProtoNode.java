@@ -124,18 +124,9 @@ public class ProtoNode {
     this.bestDescendantIndex = bestDescendantIndex;
   }
 
-  public ProtoNode cloneForSaving() {
-    return new ProtoNode(
-        blockSlot,
-        stateRoot,
-        blockRoot,
-        parentRoot,
-        Optional.empty(),
-        justifiedEpoch,
-        finalizedEpoch,
-        UnsignedLong.ZERO,
-        Optional.empty(),
-        Optional.empty());
+  public BlockInformation createBlockInformation() {
+    return new BlockInformation(
+        blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
   }
 
   @Override

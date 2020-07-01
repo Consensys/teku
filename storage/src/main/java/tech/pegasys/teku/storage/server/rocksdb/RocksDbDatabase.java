@@ -34,7 +34,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.protoarray.ProtoArray;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -249,8 +249,8 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public Optional<ProtoArray> getProtoArrayFromDisk() {
-    return protoArrayDao.getProtoArrayFromDisk();
+  public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
+    return protoArrayDao.getProtoArraySnapshot();
   }
 
   @Override
@@ -270,9 +270,9 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void putProtoArray(final ProtoArray newProtoArray) {
+  public void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot) {
     try (final RocksDbProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
-      updater.putProtoArray(newProtoArray);
+      updater.putProtoArraySnapshot(protoArraySnapshot);
       updater.commit();
     }
   }

@@ -29,6 +29,47 @@ import tech.pegasys.teku.util.config.Constants;
 public class ProtoArraySnapshotTest {
 
   @Test
+  void shouldProduceEqualProtoArray() {
+    List<ProtoNode> nodes = new ArrayList<>();
+    ProtoArray protoArray1 =
+        new ProtoArray(
+            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+            UnsignedLong.valueOf(10),
+            UnsignedLong.valueOf(9),
+            nodes,
+            new HashMap<>());
+
+    ProtoNode protoNode1 =
+        new ProtoNode(
+            UnsignedLong.valueOf(10000),
+            Bytes32.ZERO,
+            Bytes32.fromHexString("0xdeadbeef"),
+            Bytes32.ZERO,
+            Optional.empty(),
+            UnsignedLong.valueOf(10),
+            UnsignedLong.valueOf(9),
+            UnsignedLong.ZERO,
+            Optional.empty(),
+            Optional.empty());
+
+    protoArray1.onBlock(
+        protoNode1.getBlockSlot(),
+        protoNode1.getBlockRoot(),
+        protoNode1.getParentRoot(),
+        protoNode1.getStateRoot(),
+        protoNode1.getJustifiedEpoch(),
+        protoNode1.getFinalizedEpoch());
+
+    // sanity check
+    assertThat(nodes.get(0)).isEqualTo(protoNode1);
+
+    ProtoArraySnapshot snaphot = ProtoArraySnapshot.create(protoArray1);
+    ProtoArray protoArray2 = snaphot.toProtoArray();
+
+    assertThatProtoArrayMatches(protoArray1, protoArray2);
+  }
+
+  @Test
   void shouldNotBeAlteredByChangesToOriginalProtoArray() {
     List<ProtoNode> nodes = new ArrayList<>();
     ProtoArray protoArray1 =
@@ -73,10 +114,18 @@ public class ProtoArraySnapshotTest {
         protoNode1.getJustifiedEpoch(),
         protoNode1.getFinalizedEpoch());
 
+    protoArray1.onBlock(
+        protoNode1.getBlockSlot(),
+        protoNode1.getBlockRoot(),
+        protoNode1.getParentRoot(),
+        protoNode1.getStateRoot(),
+        protoNode1.getJustifiedEpoch(),
+        protoNode1.getFinalizedEpoch());
+
     // sanity check
     assertThat(nodes.get(0)).isEqualTo(protoNode1);
 
-    ProtoArraySnaphot snaphot = ProtoArraySnaphot.save(protoArray1);
+    ProtoArraySnapshot snaphot = ProtoArraySnapshot.create(protoArray1);
     ProtoArray protoArray2 = snaphot.toProtoArray();
 
     assertThatProtoArrayMatches(protoArray1, protoArray2);
