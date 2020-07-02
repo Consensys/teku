@@ -186,7 +186,7 @@ All of our bugs are reported on GitHub issues. They are identified by the BUG la
 1) Identify that a bug doesn't have a priority (no Px label).
 2) Use the bug categorization policy to determine the final priority of the bug.
 3) Based on your assessment, add the corresponding label to the bug.
-(optional) Add a comment to the issue explaining the rationale (justifying the severity and probability analysis).
+4) (optional) Add a comment to the issue explaining the rationale (justifying the severity and probability analysis).
 
 #### FAQ
 ##### What if I don't agree with the priority of a bug?
