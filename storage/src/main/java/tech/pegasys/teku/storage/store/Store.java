@@ -380,18 +380,24 @@ class Store implements UpdatableStore {
   @Override
   public BeaconState getCheckpointState(Checkpoint checkpoint) {
     return getCheckpointStateIfAvailable(checkpoint)
-        .orElseGet(
-            () -> {
-              final BeaconState checkpointState =
-                  regenerateCheckpointState(checkpoint, this::getBlockState);
-              lock.writeLock().lock();
-              try {
-                checkpoint_states.put(checkpoint, checkpointState);
-              } finally {
-                lock.writeLock().unlock();
-              }
-              return checkpointState;
-            });
+        .or(() -> regenerateAndStoreCheckpointState(checkpoint))
+        .orElse(null);
+  }
+
+  private Optional<? extends BeaconState> regenerateAndStoreCheckpointState(
+      final Checkpoint checkpoint) {
+    final Optional<BeaconState> checkpointState =
+        regenerateCheckpointState(checkpoint, this::getBlockState);
+    checkpointState.ifPresent(
+        state -> {
+          lock.writeLock().lock();
+          try {
+            checkpoint_states.put(checkpoint, state);
+          } finally {
+            lock.writeLock().unlock();
+          }
+        });
+    return checkpointState;
   }
 
   private Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
@@ -410,16 +416,17 @@ class Store implements UpdatableStore {
     }
   }
 
-  private BeaconState regenerateCheckpointState(
+  private Optional<BeaconState> regenerateCheckpointState(
       final Checkpoint checkpoint, Function<Bytes32, BeaconState> getBlockState) {
     try {
       final BeaconState baseState = getBlockState.apply(checkpoint.getRoot());
       if (baseState == null || baseState.getSlot().equals(checkpoint.getEpochStartSlot())) {
-        return baseState;
+        return Optional.ofNullable(baseState);
       }
 
       checkpointStateRequestRegenerateCounter.inc();
-      return new StateTransition().process_slots(baseState, checkpoint.getEpochStartSlot());
+      return Optional.of(
+          new StateTransition().process_slots(baseState, checkpoint.getEpochStartSlot()));
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       throw new InvalidCheckpointException(e);
     }
@@ -795,8 +802,9 @@ class Store implements UpdatableStore {
       }
       final Optional<BeaconState> checkpointFromStore =
           Store.this.getCheckpointStateIfAvailable(checkpoint);
-      return checkpointFromStore.orElseGet(
-          () -> regenerateCheckpointState(checkpoint, this::getBlockState));
+      return checkpointFromStore
+          .or(() -> regenerateCheckpointState(checkpoint, this::getBlockState))
+          .orElse(null);
     }
   }
 
