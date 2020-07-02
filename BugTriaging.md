@@ -108,15 +108,6 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
 
 #### Risk Matrix
 
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
-.tg .tg-7btt{border-color:inherit;font-weight:bold;text-align:center;vertical-align:top}
-</style>
 <table class="tg">
 <thead>
   <tr>
@@ -130,7 +121,7 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
 </thead>
 <tbody>
   <tr>
-    <td class="tg-7btt">Frequent</td>
+    <td class="tg-7btt"><b>Frequent</b></td>
     <td class="tg-c3ow">Very High</td>
     <td class="tg-c3ow">High</td>
     <td class="tg-c3ow">High</td>
@@ -138,7 +129,7 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
     <td class="tg-c3ow">Very Low</td>
   </tr>
   <tr>
-    <td class="tg-7btt">Improbable</td>
+    <td class="tg-7btt"><b>Improbable</b></td>
     <td class="tg-c3ow">Medium</td>
     <td class="tg-c3ow">Low</td>
     <td class="tg-c3ow">Low</td>
@@ -146,7 +137,7 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
     <td class="tg-c3ow">Very Low</td>
   </tr>
   <tr>
-    <td class="tg-7btt">Occasional</td>
+    <td class="tg-7btt"><b>Occasional</b></td>
     <td class="tg-c3ow">High</td>
     <td class="tg-c3ow">Medium</td>
     <td class="tg-c3ow">Medium</td>
@@ -154,7 +145,7 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
     <td class="tg-c3ow">Very Low</td>
   </tr>
   <tr>
-    <td class="tg-7btt">Probable</td>
+    <td class="tg-7btt"><b>Probable</b></td>
     <td class="tg-c3ow">High</td>
     <td class="tg-c3ow">High</td>
     <td class="tg-c3ow">Medium</td>
@@ -162,7 +153,7 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
     <td class="tg-c3ow">Very Low</td>
   </tr>
   <tr>
-    <td class="tg-7btt">Remote</td>
+    <td class="tg-7btt"><b>Remote</b></td>
     <td class="tg-c3ow">Medium</td>
     <td class="tg-c3ow">Medium</td>
     <td class="tg-c3ow">Low</td>
