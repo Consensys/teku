@@ -40,4 +40,16 @@ public class CommitteeAssignment {
   public UnsignedLong getSlot() {
     return slot;
   }
+
+  @Override
+  public String toString() {
+    return "CommitteeAssignment{"
+        + "committee="
+        + committee
+        + ", committeeIndex="
+        + committeeIndex
+        + ", slot="
+        + slot
+        + '}';
+  }
 }

@@ -178,6 +178,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return StorageBackedRecentChainData.create(
             metricsSystem,
             asyncRunner,
+            eventChannels.getPublisher(StorageQueryChannel.class),
             eventChannels.getPublisher(StorageUpdateChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
             eventChannels.getPublisher(ReorgEventChannel.class),
@@ -269,7 +270,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initMetrics()");
     eventChannels.subscribe(
         SlotEventsChannel.class,
-        new BeaconChainMetrics(recentChainData, slotProcessor.getNodeSlot(), metricsSystem));
+        new BeaconChainMetrics(
+            recentChainData, slotProcessor.getNodeSlot(), metricsSystem, p2pNetwork));
   }
 
   public void initDepositProvider() {

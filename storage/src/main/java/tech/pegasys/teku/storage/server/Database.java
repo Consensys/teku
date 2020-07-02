@@ -15,14 +15,18 @@ package tech.pegasys.teku.storage.server;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public interface Database extends AutoCloseable {
@@ -31,7 +35,7 @@ public interface Database extends AutoCloseable {
 
   void update(StorageUpdate event);
 
-  Optional<UpdatableStore> createMemoryStore();
+  Optional<StoreBuilder> createMemoryStore();
 
   Optional<UnsignedLong> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
@@ -54,6 +58,14 @@ public interface Database extends AutoCloseable {
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
   /**
+   * Returns latest finalized block or any known blocks that descend from the latest finalized block
+   *
+   * @param blockRoots The roots of blocks to look up
+   * @return A map from root too block of any found blocks
+   */
+  Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots);
+
+  /**
    * Return a {@link Stream} of blocks beginning at startSlot and ending at endSlot, both inclusive.
    *
    * @param startSlot the slot of the first block to return
@@ -70,7 +82,11 @@ public interface Database extends AutoCloseable {
   @MustBeClosed
   Stream<DepositsFromBlockEvent> streamDepositsFromBlocks();
 
+  Optional<ProtoArraySnapshot> getProtoArraySnapshot();
+
   void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event);
 
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
+
+  void putProtoArraySnapshot(final ProtoArraySnapshot protoArray);
 }

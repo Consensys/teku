@@ -13,31 +13,25 @@
 
 package tech.pegasys.teku.storage.store;
 
-import static tech.pegasys.teku.storage.store.Store.indexBlockRootsBySlot;
-import static tech.pegasys.teku.storage.store.Store.removeBlockRootFromSlotIndex;
-
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.store.Store.Transaction;
-import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StoreTransactionUpdates {
   private final Store.Transaction tx;
@@ -45,18 +39,20 @@ class StoreTransactionUpdates {
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
-  private final Map<UnsignedLong, Set<Bytes32>> prunedHotBlockRoots;
+  private final Set<Bytes32> prunedHotBlockRoots;
   private final Map<Checkpoint, BeaconState> checkpointStates;
   private final Set<Checkpoint> prunedCheckpointStates;
+  private final Optional<HashTree> updatedBlockTree;
 
   private StoreTransactionUpdates(
       final Transaction tx,
       final Optional<FinalizedChainData> finalizedChainData,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
-      final Map<UnsignedLong, Set<Bytes32>> prunedHotBlockRoots,
+      final Set<Bytes32> prunedHotBlockRoots,
       final Map<Checkpoint, BeaconState> checkpointStates,
-      final Set<Checkpoint> prunedCheckpointStates) {
+      final Set<Checkpoint> prunedCheckpointStates,
+      final Optional<HashTree> updatedBlockTree) {
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
     this.hotBlocks = hotBlocks;
@@ -64,6 +60,7 @@ class StoreTransactionUpdates {
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.checkpointStates = checkpointStates;
     this.prunedCheckpointStates = prunedCheckpointStates;
+    this.updatedBlockTree = updatedBlockTree;
   }
 
   public static StoreTransactionUpdates calculate(final Store baseStore, final Transaction tx) {
@@ -78,40 +75,57 @@ class StoreTransactionUpdates {
         Optional.of(tx.getFinalizedCheckpointAndBlock())
             .filter(c -> c.getEpoch().compareTo(prevFinalizedCheckpoint.getEpoch()) > 0);
 
+    // Calculate new tree structure
+    final Optional<HashTree> updatedBlockTree;
+    if (newFinalizedCheckpoint.isPresent() || hotBlocks.size() > 0) {
+      final Bytes32 updatedRoot =
+          newFinalizedCheckpoint
+              .map(CheckpointAndBlock::getRoot)
+              .orElse(baseStore.blockTree.getRootHash());
+      HashTree.Builder blockTreeUpdater =
+          baseStore.blockTree.withRoot(updatedRoot).blocks(hotBlocks.values());
+      newFinalizedCheckpoint.ifPresent(finalized -> blockTreeUpdater.block(finalized.getBlock()));
+      updatedBlockTree = Optional.of(blockTreeUpdater.build());
+    } else {
+      updatedBlockTree = Optional.empty();
+    }
+
     // Calculate finalized chain data
     final Optional<FinalizedChainData> finalizedChainData;
-    final Map<UnsignedLong, Set<Bytes32>> prunedHotBlockRoots;
+    final Set<Bytes32> prunedHotBlockRoots;
     final Set<Checkpoint> prunedCheckpoints;
     if (newFinalizedCheckpoint.isPresent()) {
       final CheckpointAndBlock finalizedCheckpoint = newFinalizedCheckpoint.get();
       final SignedBeaconBlock finalizedBlock = finalizedCheckpoint.getBlock();
-      Set<SignedBeaconBlock> finalizedBlocks =
-          collectFinalizedBlocks(tx, prevFinalizedCheckpoint, finalizedBlock);
-      Map<Bytes32, BeaconState> finalizedStates = collectFinalizedStates(tx, finalizedBlocks);
+      final Map<Bytes32, Bytes32> finalizedChildToParent =
+          collectFinalizedRoots(baseStore, finalizedBlock, hotBlocks.values());
+      Set<SignedBeaconBlock> finalizedBlocks = collectFinalizedBlocks(tx, finalizedChildToParent);
+      Map<Bytes32, BeaconState> finalizedStates =
+          collectFinalizedStates(tx, finalizedChildToParent);
 
       finalizedChainData =
           Optional.of(
               FinalizedChainData.builder()
                   .finalizedCheckpoint(finalizedCheckpoint.getCheckpoint())
-                  .latestFinalizedState(tx.getBlockState(finalizedBlock.getRoot()))
                   .finalizedBlock(finalizedCheckpoint.getBlock())
+                  .latestFinalizedState(tx.getBlockState(finalizedBlock.getRoot()))
+                  .finalizedChildAndParent(finalizedChildToParent)
                   .finalizedBlocks(finalizedBlocks)
                   .finalizedStates(finalizedStates)
                   .build());
 
       prunedHotBlockRoots =
-          calculatePrunedHotBlockRoots(
-              baseStore, tx, finalizedCheckpoint, finalizedBlock, hotBlocks);
+          calculatePrunedHotBlockRoots(baseStore, tx, updatedBlockTree.orElseThrow());
       prunedCheckpoints =
           calculatePrunedCheckpoints(baseStore, tx, finalizedCheckpoint.getCheckpoint());
 
       // Prune transaction collections
       prunedCheckpoints.forEach(checkpointStates::remove);
-      prunedHotBlockRoots.forEach((slot, roots) -> roots.forEach(hotBlocks::remove));
-      prunedHotBlockRoots.forEach((slot, roots) -> roots.forEach(hotStates::remove));
+      prunedHotBlockRoots.forEach(hotBlocks::remove);
+      prunedHotBlockRoots.forEach(hotStates::remove);
     } else {
       finalizedChainData = Optional.empty();
-      prunedHotBlockRoots = Collections.emptyMap();
+      prunedHotBlockRoots = Collections.emptySet();
       prunedCheckpoints = Collections.emptySet();
     }
 
@@ -122,7 +136,8 @@ class StoreTransactionUpdates {
         hotStates,
         prunedHotBlockRoots,
         checkpointStates,
-        prunedCheckpoints);
+        prunedCheckpoints,
+        updatedBlockTree);
   }
 
   private static Set<Checkpoint> calculatePrunedCheckpoints(
@@ -134,86 +149,49 @@ class StoreTransactionUpdates {
         .collect(Collectors.toSet());
   }
 
+  private static Map<Bytes32, Bytes32> collectFinalizedRoots(
+      final Store baseStore,
+      final SignedBeaconBlock newlyFinalizedBlock,
+      final Collection<SignedBeaconBlock> newBlocks) {
+
+    final HashTree finalizedTree =
+        baseStore.blockTree.contains(newlyFinalizedBlock.getRoot())
+            ? baseStore.blockTree
+            : baseStore.blockTree.updater().blocks(newBlocks).build();
+
+    final HashMap<Bytes32, Bytes32> childToParent = new HashMap<>();
+    finalizedTree.processHashesInChain(newlyFinalizedBlock.getRoot(), childToParent::put);
+    return childToParent;
+  }
+
   private static Set<SignedBeaconBlock> collectFinalizedBlocks(
-      final StoreTransaction tx,
-      final CheckpointAndBlock prevFinalizedCheckpoint,
-      final SignedBeaconBlock newlyFinalizedBlock) {
-    // Collect blocks
-    final Set<SignedBeaconBlock> blocks = new HashSet<>();
-    SignedBeaconBlock oldestFinalizedBlock = newlyFinalizedBlock;
-    SignedBeaconBlock currentBlock = newlyFinalizedBlock;
-    while (currentBlock != null
-        && currentBlock.getSlot().compareTo(prevFinalizedCheckpoint.getBlockSlot()) > 0) {
-      blocks.add(currentBlock);
-      oldestFinalizedBlock = currentBlock;
-      currentBlock = tx.getSignedBlock(currentBlock.getParent_root());
-    }
-
-    // Make sure we capture all finalized blocks
-    if (!oldestFinalizedBlock.getParent_root().equals(prevFinalizedCheckpoint.getRoot())) {
-      throw new IllegalStateException("Unable to retrieve all finalized blocks");
-    }
-
-    return blocks;
+      final Store.Transaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
+    return finalizedChildToParent.keySet().stream()
+        .map(root -> tx.getBlockIfAvailable(root).orElse(null))
+        .filter(Objects::nonNull)
+        .collect(Collectors.toSet());
   }
 
   private static Map<Bytes32, BeaconState> collectFinalizedStates(
-      final Store.Transaction tx, final Set<SignedBeaconBlock> finalizedBlocks) {
+      final Store.Transaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
     final Map<Bytes32, BeaconState> states = new HashMap<>();
-    for (SignedBeaconBlock finalizedBlock : finalizedBlocks) {
-      final Bytes32 blockRoot = finalizedBlock.getRoot();
-      tx.getBlockStateIfAvailable(finalizedBlock.getRoot())
-          .ifPresent(state -> states.put(blockRoot, state));
+    for (Bytes32 finalizedRoot : finalizedChildToParent.keySet()) {
+      tx.getBlockStateIfAvailable(finalizedRoot)
+          .ifPresent(state -> states.put(finalizedRoot, state));
     }
     return states;
   }
 
-  private static Map<UnsignedLong, Set<Bytes32>> calculatePrunedHotBlockRoots(
-      final Store baseStore,
-      final StoreTransaction tx,
-      final CheckpointAndBlock newFinalizedCheckpoint,
-      final SignedBeaconBlock finalizedBlock,
-      final Map<Bytes32, SignedBeaconBlock> newBlocks) {
-    final UnsignedLong finalizedSlot = newFinalizedCheckpoint.getEpochStartSlot();
-    Map<UnsignedLong, Set<Bytes32>> prunedBlockRoots = new HashMap<>();
+  private static Set<Bytes32> calculatePrunedHotBlockRoots(
+      final Store baseStore, Transaction tx, final HashTree prunedTree) {
 
-    // Build combined index from slot to block root for new and existing blocks
-    final NavigableMap<UnsignedLong, Set<Bytes32>> slotToHotBlockRootIndex =
-        new TreeMap<>(baseStore.rootsBySlotLookup);
-    indexBlockRootsBySlot(slotToHotBlockRootIndex, newBlocks.values());
+    Set<Bytes32> roots =
+        baseStore.blockTree.getAllRoots().stream()
+            .filter(root -> !prunedTree.contains(root))
+            .collect(Collectors.toSet());
 
-    // Prune historical blocks
-    slotToHotBlockRootIndex
-        .headMap(finalizedSlot, true)
-        .forEach(
-            (slot, roots) ->
-                prunedBlockRoots.computeIfAbsent(slot, __ -> new HashSet<>()).addAll(roots));
-
-    // Prune any hot blocks that do not descend from the latest finalized block
-    final Set<Bytes32> canonicalBlocks = new HashSet<>();
-    canonicalBlocks.add(finalizedBlock.getRoot());
-    slotToHotBlockRootIndex
-        .tailMap(finalizedSlot, true)
-        .forEach(
-            (slot, roots) -> {
-              for (Bytes32 root : roots) {
-                final BeaconBlock block = tx.getBlock(root);
-                final Bytes32 blockRoot = block.hash_tree_root();
-                if (canonicalBlocks.contains(block.getParent_root())) {
-                  canonicalBlocks.add(blockRoot);
-                } else {
-                  // Prune block
-                  prunedBlockRoots
-                      .computeIfAbsent(block.getSlot(), __ -> new HashSet<>())
-                      .add(blockRoot);
-                }
-              }
-            });
-
-    // Don't prune the latest finalized block
-    removeBlockRootFromSlotIndex(prunedBlockRoots, finalizedBlock);
-
-    return prunedBlockRoots;
+    tx.getBlockRoots().stream().filter(root -> !prunedTree.contains(root)).forEach(roots::add);
+    return roots;
   }
 
   public StorageUpdate createStorageUpdate() {
@@ -223,7 +201,7 @@ class StoreTransactionUpdates {
         tx.justified_checkpoint,
         tx.best_justified_checkpoint,
         hotBlocks,
-        getPrunedRoots(),
+        prunedHotBlockRoots,
         checkpointStates,
         prunedCheckpointStates,
         tx.votes);
@@ -238,6 +216,7 @@ class StoreTransactionUpdates {
     store.blocks.putAll(hotBlocks);
     store.block_states.putAll(hotStates);
     store.checkpoint_states.putAll(checkpointStates);
+    updatedBlockTree.ifPresent(updated -> store.blockTree = updated);
     store.votes.putAll(tx.votes);
 
     // Update finalized data
@@ -246,31 +225,18 @@ class StoreTransactionUpdates {
           final Checkpoint finalizedCheckpoint = finalizedData.getFinalizedCheckpoint();
           final Bytes32 finalizedRoot = finalizedCheckpoint.getRoot();
           store.finalized_checkpoint = finalizedCheckpoint;
-          final SignedBeaconBlock finalizedBlock = finalizedData.getBlocks().get(finalizedRoot);
+          final SignedBeaconBlock finalizedBlock = tx.getSignedBlock(finalizedRoot);
           final BeaconState finalizedState = finalizedData.getLatestFinalizedState();
           store.finalizedBlockAndState = new SignedBlockAndState(finalizedBlock, finalizedState);
         });
-
-    // Track roots by slot
-    indexBlockRootsBySlot(store.rootsBySlotLookup, hotBlocks.values());
 
     // Prune stale checkpoint states
     prunedCheckpointStates.forEach(store.checkpoint_states::remove);
     // Prune blocks and states
     prunedHotBlockRoots.forEach(
-        (slot, roots) -> {
-          roots.forEach(
-              (root) -> {
-                store.blocks.remove(root);
-                store.block_states.remove(root);
-                removeBlockRootFromSlotIndex(store.rootsBySlotLookup, slot, root);
-              });
+        (root) -> {
+          store.blocks.remove(root);
+          store.block_states.remove(root);
         });
-  }
-
-  private Set<Bytes32> getPrunedRoots() {
-    return prunedHotBlockRoots.values().stream()
-        .flatMap(Collection::stream)
-        .collect(Collectors.toSet());
   }
 }
