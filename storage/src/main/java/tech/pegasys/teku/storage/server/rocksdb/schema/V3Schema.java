@@ -42,6 +42,7 @@ public interface V3Schema extends Schema {
       RocksDbColumn.create(3, BYTES32_SERIALIZER, STATE_SERIALIZER);
   RocksDbColumn<Bytes32, SignedBeaconBlock> HOT_BLOCKS_BY_ROOT =
       RocksDbColumn.create(4, BYTES32_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
+  // We no longer store checkpoint states, keeping only for backwards compatibility
   RocksDbColumn<Checkpoint, BeaconState> CHECKPOINT_STATES =
       RocksDbColumn.create(5, CHECKPOINT_SERIALIZER, STATE_SERIALIZER);
   RocksDbColumn<UnsignedLong, VoteTracker> VOTES =

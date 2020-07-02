@@ -48,8 +48,6 @@ public interface RocksDbHotDao extends AutoCloseable {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
 
-  Map<Checkpoint, BeaconState> getCheckpointStates();
-
   Map<UnsignedLong, VoteTracker> getVotes();
 
   HotUpdater hotUpdater();

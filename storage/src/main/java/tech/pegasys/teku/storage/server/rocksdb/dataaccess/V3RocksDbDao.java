@@ -117,11 +117,6 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   }
 
   @Override
-  public Map<Checkpoint, BeaconState> getCheckpointStates() {
-    return db.getAll(V3Schema.CHECKPOINT_STATES);
-  }
-
-  @Override
   public Map<UnsignedLong, VoteTracker> getVotes() {
     return db.getAll(V3Schema.VOTES);
   }

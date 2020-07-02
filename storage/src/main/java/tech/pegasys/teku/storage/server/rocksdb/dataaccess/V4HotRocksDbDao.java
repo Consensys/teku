@@ -80,11 +80,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao {
   }
 
   @Override
-  public Map<Checkpoint, BeaconState> getCheckpointStates() {
-    return db.getAll(V4SchemaHot.CHECKPOINT_STATES);
-  }
-
-  @Override
   public Map<UnsignedLong, VoteTracker> getVotes() {
     return db.getAll(V4SchemaHot.VOTES);
   }
