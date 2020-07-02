@@ -22,11 +22,14 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
+import tech.pegasys.teku.storage.server.ProtoArrayStorage;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public interface StorageSystem extends AutoCloseable {
 
   DepositStorage createDepositStorage(final boolean eth1DepositsFromStorageEnabled);
+
+  ProtoArrayStorage createProtoArrayStorage();
 
   Database getDatabase();
 
