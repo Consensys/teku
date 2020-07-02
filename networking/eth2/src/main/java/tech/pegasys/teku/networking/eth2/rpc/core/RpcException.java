@@ -13,13 +13,19 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SERVER_ERROR_CODE;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 
 public class RpcException extends Exception {
 
+  private static final Logger LOG = LogManager.getLogger();
   // Server errors
   public static class ServerErrorException extends RpcException {
     public ServerErrorException() {
@@ -75,12 +81,33 @@ public class RpcException extends Exception {
     this.errorMessage = errorMessage;
   }
 
+  public RpcException(final byte responseCode, final Bytes errorMessageBytes) {
+    this.responseCode = responseCode;
+    String err;
+    try {
+      err = new String(errorMessageBytes.toArray(), StandardCharsets.UTF_8);
+    } catch (IllegalArgumentException ex) {
+      err = errorMessageBytes.toHexString().toLowerCase();
+      LOG.trace("Error message could not be read as UTF-8: {} ", err);
+    }
+    this.errorMessage = err;
+  }
+
   public byte getResponseCode() {
     return responseCode;
   }
 
   public String getErrorMessage() {
     return errorMessage;
+  }
+
+  public Bytes getErrorMessageBytes() {
+    Bytes bytes = Bytes.wrap(errorMessage.getBytes(UTF_8));
+    if (bytes.size() > 256) {
+      LOG.debug("Message {} was longer than 256 bytes", errorMessage);
+      return bytes.slice(0, 256);
+    }
+    return bytes;
   }
 
   @Override

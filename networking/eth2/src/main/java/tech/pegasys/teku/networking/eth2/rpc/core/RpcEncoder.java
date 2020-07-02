@@ -41,6 +41,6 @@ public final class RpcEncoder {
 
   public Bytes encodeErrorResponse(RpcException error) {
     return Bytes.concatenate(
-        Bytes.of(error.getResponseCode()), encoding.encodePayload(error.getErrorMessage()));
+        Bytes.of(error.getResponseCode()), encoding.encodePayload(error.getErrorMessageBytes()));
   }
 }

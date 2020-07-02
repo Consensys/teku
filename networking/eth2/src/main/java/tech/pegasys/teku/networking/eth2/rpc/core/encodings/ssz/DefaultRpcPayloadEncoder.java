@@ -23,22 +23,28 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFa
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public class SimpleOffsetSszEncoder<T> implements RpcPayloadEncoder<T> {
+public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();
   private final Class<T> clazz;
 
-  public SimpleOffsetSszEncoder(final Class<T> clazz) {
+  public DefaultRpcPayloadEncoder(final Class<T> clazz) {
     this.clazz = clazz;
   }
 
   @Override
   public Bytes encode(final T message) {
-    return SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) message);
+    return message instanceof Bytes
+        ? (Bytes) message
+        : SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) message);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public T decode(final Bytes message) throws RpcException {
     try {
+      if (clazz.equals(Bytes.class)) {
+        return (T) message;
+      }
       return SimpleOffsetSerializer.deserialize(message, clazz);
     } catch (final InvalidSSZTypeException e) {
       if (LOG.isTraceEnabled()) {
