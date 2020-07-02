@@ -111,7 +111,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     metricsSystem.createGauge(
         TekuMetricCategory.BEACON,
         "peer_count",
-        "Tracks number of connected peers",
+        "Tracks number of connected peers, verified to be on the same chain",
         p2pNetwork::getPeerCount);
 
     previousLiveValidators =
