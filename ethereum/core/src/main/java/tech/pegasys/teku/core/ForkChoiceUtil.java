@@ -32,8 +32,6 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -232,29 +230,18 @@ public class ForkChoiceUtil {
     // Update justified checkpoint
     final Checkpoint justifiedCheckpoint = state.getCurrent_justified_checkpoint();
     if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
-      try {
-        if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
-            > 0) {
-          storeCheckpointState(store, st, justifiedCheckpoint);
-          store.setBestJustifiedCheckpoint(justifiedCheckpoint);
-        }
-        if (should_update_justified_checkpoint(store, justifiedCheckpoint, forkChoiceStrategy)) {
-          storeCheckpointState(store, st, justifiedCheckpoint);
-          store.setJustifiedCheckpoint(justifiedCheckpoint);
-        }
-      } catch (SlotProcessingException | EpochProcessingException e) {
-        return BlockImportResult.failedStateTransition(e);
+      if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
+          > 0) {
+        store.setBestJustifiedCheckpoint(justifiedCheckpoint);
+      }
+      if (should_update_justified_checkpoint(store, justifiedCheckpoint, forkChoiceStrategy)) {
+        store.setJustifiedCheckpoint(justifiedCheckpoint);
       }
     }
 
     // Update finalized checkpoint
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
-      try {
-        storeCheckpointState(store, st, finalizedCheckpoint);
-      } catch (SlotProcessingException | EpochProcessingException e) {
-        return BlockImportResult.failedStateTransition(e);
-      }
       store.setFinalizedCheckpoint(finalizedCheckpoint);
       // Update justified if new justified is later than store justified
       // or if store justified is not in chain with finalized checkpoint
@@ -264,12 +251,7 @@ public class ForkChoiceUtil {
                   .compareTo(store.getJustifiedCheckpoint().getEpoch())
               > 0
           || !isFinalizedAncestorOfJustified(forkChoiceStrategy, store)) {
-        try {
-          storeCheckpointState(store, st, finalizedCheckpoint);
-          store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
-        } catch (SlotProcessingException | EpochProcessingException e) {
-          return BlockImportResult.failedStateTransition(e);
-        }
+        store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
       }
     }
 
@@ -366,7 +348,6 @@ public class ForkChoiceUtil {
     Checkpoint target = attestation.getData().getTarget();
 
     return validateOnAttestation(store, attestation, forkChoiceStrategy)
-        .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
         .ifSuccessful(() -> indexAndValidateAttestation(store, validateableAttestation, target))
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(
@@ -404,20 +385,6 @@ public class ForkChoiceUtil {
               attestation.setIndexedAttestation(indexed_attestation);
               return SUCCESSFUL;
             });
-  }
-
-  private static AttestationProcessingResult storeTargetCheckpointState(
-      final MutableStore store, final StateTransition stateTransition, final Checkpoint target) {
-    // Store target checkpoint state if not yet seen
-    try {
-      storeCheckpointState(store, stateTransition, target);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      LOG.error(
-          "on_attestation: Unexpected state transition error when computing checkpoint state. ", e);
-      return AttestationProcessingResult.invalid(
-          "Attestation failed state transition: " + e.getMessage());
-    }
-    return SUCCESSFUL;
   }
 
   private static AttestationProcessingResult validateOnAttestation(
@@ -489,21 +456,5 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.SAVED_FOR_FUTURE;
     }
     return SUCCESSFUL;
-  }
-
-  private static void storeCheckpointState(
-      final MutableStore store, final StateTransition stateTransition, final Checkpoint checkpoint)
-      throws SlotProcessingException, EpochProcessingException {
-    if (!store.containsCheckpointState(checkpoint)) {
-      final BeaconState checkpointBlockState = store.getBlockState(checkpoint.getRoot());
-      final BeaconState checkpointState;
-      if (checkpoint.getEpochStartSlot().equals(checkpointBlockState.getSlot())) {
-        checkpointState = checkpointBlockState;
-      } else {
-        checkpointState =
-            stateTransition.process_slots(checkpointBlockState, checkpoint.getEpochStartSlot());
-      }
-      store.putCheckpointState(checkpoint, checkpointState);
-    }
   }
 }

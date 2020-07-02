@@ -214,11 +214,6 @@ public class TestStoreFactory {
     }
 
     @Override
-    public boolean containsCheckpointState(final Checkpoint checkpoint) {
-      return checkpoint_states.containsKey(checkpoint);
-    }
-
-    @Override
     public Set<UnsignedLong> getVotedValidatorIndices() {
       return votes.keySet();
     }
@@ -246,11 +241,6 @@ public class TestStoreFactory {
           block_states,
           checkpoint_states,
           votes);
-    }
-
-    @Override
-    public void putCheckpointState(final Checkpoint checkpoint, final BeaconState state) {
-      checkpoint_states.put(checkpoint, state);
     }
 
     @Override

@@ -191,16 +191,6 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
     }
 
     @Override
-    public void addCheckpointState(final Checkpoint checkpoint, final BeaconState state) {
-      transaction.put(V3Schema.CHECKPOINT_STATES, checkpoint, state);
-    }
-
-    @Override
-    public void addCheckpointStates(final Map<Checkpoint, BeaconState> checkpointStates) {
-      checkpointStates.forEach(this::addCheckpointState);
-    }
-
-    @Override
     public void addHotBlock(final SignedBeaconBlock block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot, block);
@@ -227,11 +217,6 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
     public void addVotes(final Map<UnsignedLong, VoteTracker> votes) {
       votes.forEach(
           (validatorIndex, vote) -> transaction.put(V3Schema.VOTES, validatorIndex, vote));
-    }
-
-    @Override
-    public void deleteCheckpointState(final Checkpoint checkpoint) {
-      transaction.delete(V3Schema.CHECKPOINT_STATES, checkpoint);
     }
 
     @Override

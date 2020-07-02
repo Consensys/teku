@@ -109,13 +109,6 @@ class StoreTest {
     tx.setFinalizedCheckpoint(checkpoint1);
     tx.setJustifiedCheckpoint(checkpoint2);
     tx.setBestJustifiedCheckpoint(checkpoint3);
-    // Update checkpoint states
-    tx.putCheckpointState(
-        checkpoint1, chainBuilder.getStateAtSlot(checkpoint1.getEpochStartSlot()));
-    tx.putCheckpointState(
-        checkpoint2, chainBuilder.getStateAtSlot(checkpoint2.getEpochStartSlot()));
-    tx.putCheckpointState(
-        checkpoint3, chainBuilder.getStateAtSlot(checkpoint3.getEpochStartSlot()));
     // Update time
     tx.setTime(initialTime.plus(UnsignedLong.ONE));
     tx.setGenesis_time(genesisTime.plus(UnsignedLong.ONE));
@@ -132,10 +125,6 @@ class StoreTest {
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(genesisCheckpoint);
     assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(genesisCheckpoint);
     assertThat(store.getFinalizedCheckpoint()).isEqualTo(genesisCheckpoint);
-    // Check checkpoint states
-    assertThat(store.containsCheckpointState(checkpoint1)).isFalse();
-    assertThat(store.containsCheckpointState(checkpoint2)).isFalse();
-    assertThat(store.containsCheckpointState(checkpoint3)).isFalse();
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime);
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime);
@@ -148,10 +137,6 @@ class StoreTest {
     assertThat(tx.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
     assertThat(tx.getBestJustifiedCheckpoint()).isEqualTo(checkpoint3);
-    // Check checkpoint states
-    assertThat(tx.containsCheckpointState(checkpoint1)).isTrue();
-    assertThat(tx.containsCheckpointState(checkpoint2)).isTrue();
-    assertThat(tx.containsCheckpointState(checkpoint3)).isTrue();
     // Check time
     assertThat(tx.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(tx.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
@@ -183,10 +168,6 @@ class StoreTest {
     assertThat(store.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
     assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(checkpoint3);
-    // Check checkpoint states
-    assertThat(store.containsCheckpointState(checkpoint1)).isTrue();
-    assertThat(store.containsCheckpointState(checkpoint2)).isTrue();
-    assertThat(store.containsCheckpointState(checkpoint3)).isTrue();
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
@@ -233,7 +214,6 @@ class StoreTest {
         genesisCheckpoint,
         genesisCheckpoint,
         Map.of(genesis.getRoot(), genesis.getParentRoot()),
-        Map.of(genesisCheckpoint, genesis.getState()),
         genesis,
         Collections.emptyMap(),
         pruningOptions);
