@@ -43,9 +43,16 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
 
   @Override
   public Optional<T> decodeOneMessage(final ByteBuf in) throws RpcException {
-    if (decoded || disposed) {
-      throw new IllegalStateException("Trying to reuse disposable LengthPrefixedPayloadDecoder");
+    if (disposed) {
+      throw new IllegalStateException("Trying to reuse disposed LengthPrefixedPayloadDecoder");
     }
+    if (!in.isReadable()) {
+      return Optional.empty();
+    }
+    if (decoded) {
+      throw RpcException.EXTRA_DATA_APPENDED;
+    }
+
     if (decompressor.isEmpty()) {
       readLengthPrefixHeader(in)
           .ifPresent(len -> decompressor = Optional.of(compressor.createDecompressor(len)));
