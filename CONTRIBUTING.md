@@ -24,7 +24,7 @@ This project and everyone participating in it is governed by the [Teku Code of C
 
 ## I just have a quick question
 
-You'll find us on [Gitter] and that's the fastest way to get an answer. 
+You'll find us on [Discord] and that's the fastest way to get an answer. 
 
 ## How To Contribute
 
@@ -123,5 +123,5 @@ We have a set of [coding conventions](https://wiki.hyperledger.org/display/BESU/
 * Reference issues and pull requests liberally
 
 [private@pegasys.tech]: mailto:private@pegasys.tech
-[Gitter]: https://gitter.im/PegaSysEng/teku
+[Discord]: https://discord.gg/7hPv2T6
 [CLA.md]: /CLA.md

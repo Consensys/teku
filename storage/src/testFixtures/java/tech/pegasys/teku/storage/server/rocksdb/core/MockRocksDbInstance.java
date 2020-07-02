@@ -258,6 +258,9 @@ public class MockRocksDbInstance implements RocksDbAccessor {
 
     private void assertOpen() {
       checkState(!closed, "Attempt to modify a closed transaction");
+      if (dbInstance.closed.get()) {
+        throw new ShuttingDownException();
+      }
     }
 
     @Override
