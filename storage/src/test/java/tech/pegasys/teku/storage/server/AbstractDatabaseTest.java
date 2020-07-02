@@ -726,9 +726,6 @@ public abstract class AbstractDatabaseTest {
       assertThat(store.getBlock(prunedBlock)).isNull();
       assertThat(store.getBlockState(prunedBlock)).isNull();
     }
-    for (Checkpoint prunedCheckpoint : prunedCheckpoints) {
-      assertThat(store.getCheckpointState(prunedCheckpoint)).isNull();
-    }
   }
 
   protected void addBlocks(final SignedBlockAndState... blocks) {
