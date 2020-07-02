@@ -27,10 +27,14 @@ public class StoreAssertions {
             "readLock",
             "blockProvider",
             "block_states",
+            "checkpoint_states",
             "blocks",
             "stateRequestCachedCounter",
             "stateRequestRegenerateCounter",
             "stateRequestMissCounter",
+            "checkpointStateRequestCachedCounter",
+            "checkpointStateRequestRegenerateCounter",
+            "checkpointStateRequestMissCounter",
             "metricsSystem");
   }
 }
