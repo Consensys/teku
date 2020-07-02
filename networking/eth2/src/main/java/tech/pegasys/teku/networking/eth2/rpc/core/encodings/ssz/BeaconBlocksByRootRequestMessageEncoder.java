@@ -22,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 
 public class BeaconBlocksByRootRequestMessageEncoder
@@ -37,7 +38,7 @@ public class BeaconBlocksByRootRequestMessageEncoder
   public BeaconBlocksByRootRequestMessage decode(final Bytes message) throws RpcException {
     if (message.size() % Bytes32.SIZE != 0) {
       LOG.trace("Cannot split message into Bytes32 chunks {}", message);
-      throw RpcException.DESERIALIZATION_FAILED;
+      throw new DeserializationFailedException();
     }
     final List<Bytes32> blockRoots = new ArrayList<>();
     for (int i = 0; i < message.size(); i += Bytes32.SIZE) {
