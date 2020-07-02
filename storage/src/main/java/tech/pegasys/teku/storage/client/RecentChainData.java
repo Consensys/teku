@@ -182,7 +182,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         return;
       }
       final SignedBlockAndStateAndSlot newChainHead =
-              new SignedBlockAndStateAndSlot(newBestBlock, newBestState, slot);
+          new SignedBlockAndStateAndSlot(newBestBlock, newBestState, slot);
 
       final Optional<Bytes32> originalBestRoot = chainHead.map(SignedBlockAndState::getRoot);
       final UnsignedLong originalBestSlot =
@@ -358,12 +358,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     forkChoiceStrategy.ifPresent(strategy -> strategy.maybePrune(finalizedCheckpoint.getRoot()));
   }
 
-  private class SignedBlockAndStateAndSlot extends SignedBlockAndState {
+  private static class SignedBlockAndStateAndSlot extends SignedBlockAndState {
     private final UnsignedLong headSlot;
 
-    public SignedBlockAndStateAndSlot(SignedBeaconBlock block,
-                                      BeaconState state,
-                                      UnsignedLong headSlot) {
+    public SignedBlockAndStateAndSlot(
+        SignedBeaconBlock block, BeaconState state, UnsignedLong headSlot) {
       super(block, state);
       this.headSlot = headSlot;
     }
