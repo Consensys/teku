@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 
 class RpcRequestDecoderTest extends RpcDecoderTestBase {
 
@@ -64,7 +65,7 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
                 }
                 decoder.complete();
               })
-          .isEqualTo(RpcException.EXTRA_DATA_APPENDED);
+          .isInstanceOf(ExtraDataAppendedException.class);
     }
   }
 

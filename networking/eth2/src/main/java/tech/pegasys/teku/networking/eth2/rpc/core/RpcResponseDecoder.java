@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
@@ -101,7 +102,7 @@ public class RpcResponseDecoder<T> {
       errorDecoder.get().complete();
     }
     if (respCodeMaybe.isPresent()) {
-      throw RpcException.PAYLOAD_TRUNCATED;
+      throw new PayloadTruncatedException();
     }
   }
 
