@@ -27,6 +27,7 @@ import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
+import tech.pegasys.teku.storage.server.ProtoArrayStorage;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -157,6 +158,11 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
   @Override
   public DepositStorage createDepositStorage(final boolean eth1DepositsFromStorageEnabled) {
     return DepositStorage.create(eth1EventsChannel, database, eth1DepositsFromStorageEnabled);
+  }
+
+  @Override
+  public ProtoArrayStorage createProtoArrayStorage() {
+    return new ProtoArrayStorage(database);
   }
 
   @Override
