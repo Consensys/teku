@@ -61,7 +61,7 @@ public class ErrorConditionsIntegrationTest {
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
         .isInstanceOf(ExecutionException.class)
         .extracting(Throwable::getCause)
-        .isInstanceOf(DeserializationFailedException.class);
+        .isEqualToComparingFieldByField(new DeserializationFailedException());
   }
 
   public static Stream<Arguments> getEncodings() {
