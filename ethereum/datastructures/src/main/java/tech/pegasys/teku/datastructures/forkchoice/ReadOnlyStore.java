@@ -63,4 +63,5 @@ public interface ReadOnlyStore {
   BeaconState getCheckpointState(Checkpoint checkpoint);
 
   Set<UnsignedLong> getVotedValidatorIndices();
+
 }

@@ -45,6 +45,7 @@ import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -419,8 +420,8 @@ class Store implements UpdatableStore {
 
       checkpointStateRequestRegenerateCounter.inc();
       return new StateTransition().process_slots(baseState, checkpoint.getEpochStartSlot());
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      throw new IllegalStateException("Unable to regenerate checkpoint state", e);
+    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
+      throw new InvalidCheckpointException(e);
     }
   }
 

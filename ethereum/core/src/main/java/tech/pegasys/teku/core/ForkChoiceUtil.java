@@ -39,6 +39,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -369,7 +370,13 @@ public class ForkChoiceUtil {
    */
   private static AttestationProcessingResult indexAndValidateAttestation(
       MutableStore store, ValidateableAttestation attestation, Checkpoint target) {
-    BeaconState target_state = store.getCheckpointState(target);
+    BeaconState target_state;
+    try {
+      target_state = store.getCheckpointState(target);
+    } catch (final InvalidCheckpointException e) {
+      LOG.debug("on_attestation: Attestation target checkpoint is invalid", e);
+      return AttestationProcessingResult.invalid("Invalid target checkpoint: " + e.getMessage());
+    }
 
     // Get state at the `target` to validate attestation and calculate the committees
     IndexedAttestation indexed_attestation;

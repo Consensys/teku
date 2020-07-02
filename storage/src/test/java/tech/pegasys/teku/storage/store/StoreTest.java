@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
@@ -24,12 +25,14 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
@@ -79,7 +82,7 @@ class StoreTest {
   }
 
   @Test
-  public void shouldGenerateCheckpointStates() {
+  public void getCheckpointState_shouldGenerateCheckpointStates() {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
     final BlockProvider blockProvider = blockProviderFromChainBuilder();
 
@@ -92,6 +95,29 @@ class StoreTest {
     assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
     assertThat(checkpointState.getLatest_block_header().hash_tree_root())
         .isEqualTo(checkpoint.getRoot());
+  }
+
+  @Test
+  public void getCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot()
+      throws Exception {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+    final Bytes32 futureRoot =
+        chainBuilder
+            .generateBlockAtSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)))
+            .getRoot();
+
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(
+            new StubMetricsSystem(), blockProvider, genesisBlockAndState.getState());
+    // Add blocks
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
+    tx.commit().join();
+
+    final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, futureRoot);
+    assertThatThrownBy(() -> store.getCheckpointState(checkpoint))
+        .isInstanceOf(InvalidCheckpointException.class);
   }
 
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction)
