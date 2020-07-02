@@ -31,6 +31,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.metrics.SettableGauge;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -47,7 +48,10 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   private final SettableGauge currentLiveValidators;
 
   public BeaconChainMetrics(
-      final RecentChainData recentChainData, NodeSlot nodeSlot, final MetricsSystem metricsSystem) {
+      final RecentChainData recentChainData,
+      final NodeSlot nodeSlot,
+      final MetricsSystem metricsSystem,
+      final Eth2Network p2pNetwork) {
     this.recentChainData = recentChainData;
     this.nodeSlot = nodeSlot;
 
@@ -104,6 +108,11 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         "previous_justified_root",
         "Current previously justified root",
         this::getPreviousJustifiedRootValue);
+    metricsSystem.createGauge(
+        TekuMetricCategory.BEACON,
+        "peer_count",
+        "Tracks number of connected peers, verified to be on the same chain",
+        p2pNetwork::getPeerCount);
 
     previousLiveValidators =
         SettableGauge.create(
