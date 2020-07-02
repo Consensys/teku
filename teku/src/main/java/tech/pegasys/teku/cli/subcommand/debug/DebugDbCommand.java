@@ -25,6 +25,7 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
+import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.storage.server.Database;
@@ -134,6 +135,7 @@ public class DebugDbCommand implements Runnable {
       final Optional<BeaconState> state =
           database
               .createMemoryStore()
+              .map(builder -> builder.blockProvider(BlockProvider.NOOP).build())
               .map(store -> store.getLatestFinalizedBlockAndState().getState());
       return writeState(outputFile, state);
     }
