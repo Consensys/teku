@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
+import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -44,17 +46,27 @@ public class ForkChoice {
   }
 
   public synchronized Bytes32 processHead() {
+    return processHead(Optional.empty());
+  }
+
+  public synchronized Bytes32 processHead(UnsignedLong nodeSlot) {
+    return processHead(Optional.of(nodeSlot));
+  }
+
+  public synchronized Bytes32 processHead(Optional<UnsignedLong> nodeSlot) {
     StoreTransaction transaction = recentChainData.startStoreTransaction();
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     Bytes32 headBlockRoot = forkChoiceStrategy.findHead(transaction);
     transaction.commit(() -> {}, "Failed to persist validator vote changes.");
     recentChainData.updateBestBlock(
         headBlockRoot,
-        forkChoiceStrategy
-            .blockSlot(headBlockRoot)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException("Unable to retrieve the slot of fork choice head")));
+        nodeSlot.orElse(
+            forkChoiceStrategy
+                .blockSlot(headBlockRoot)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Unable to retrieve the slot of fork choice head"))));
     return headBlockRoot;
   }
 
