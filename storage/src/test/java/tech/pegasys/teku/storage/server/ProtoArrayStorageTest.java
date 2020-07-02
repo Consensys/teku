@@ -16,10 +16,12 @@ package tech.pegasys.teku.storage.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import tech.pegasys.teku.protoarray.ProtoArray;
@@ -29,24 +31,37 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystemArgumentsProvider;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ProtoArrayStorageTest {
+
+  @TempDir Path dataDirectory;
+  private StorageSystem storageSystem;
   private ProtoArrayStorage protoArrayStorage;
 
-  @ParameterizedTest
-  @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void shouldReturnEmptyIfThereIsNoProtoArrayOnDisk(StorageSystem storageSystem)
-      throws Exception {
+  private void setup(
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    storageSystem = storageSystemSupplier.get(dataDirectory);
     storageSystem.chainUpdater().initializeGenesis();
     protoArrayStorage = storageSystem.createProtoArrayStorage();
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldReturnEmptyIfThereIsNoProtoArrayOnDisk(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws Exception {
+    setup(storageSystemSupplier);
     SafeFuture<Optional<ProtoArraySnapshot>> future = protoArrayStorage.getProtoArraySnapshot();
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().isPresent()).isFalse();
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void shouldReturnSameSetOfNodes(StorageSystem storageSystem) throws Exception {
-    storageSystem.chainUpdater().initializeGenesis();
-    protoArrayStorage = storageSystem.createProtoArrayStorage();
+  public void shouldReturnSameSetOfNodes(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws Exception {
+    setup(storageSystemSupplier);
 
     // init ProtoArray
     ProtoArray protoArray =
@@ -87,11 +102,13 @@ public class ProtoArrayStorageTest {
     assertThat(protoArraySnapshot).isEqualToComparingFieldByField(protoArraySnapshotFromDisk);
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void shouldOverwriteTheProtoArray(StorageSystem storageSystem) throws Exception {
-    storageSystem.chainUpdater().initializeGenesis();
-    protoArrayStorage = storageSystem.createProtoArrayStorage();
+  public void shouldOverwriteTheProtoArray(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
+      throws Exception {
+    setup(storageSystemSupplier);
 
     // init ProtoArray
     ProtoArray protoArray1 =
