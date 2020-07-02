@@ -25,12 +25,13 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 
-public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao {
+public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbProtoArrayDao {
   // Persistent data
   private final RocksDbAccessor db;
 
@@ -96,6 +97,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao {
   }
 
   @Override
+  public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
+    return db.get(V4SchemaHot.PROTO_ARRAY_SNAPSHOT);
+  }
+
+  @Override
   public HotUpdater hotUpdater() {
     return new V4HotUpdater(db);
   }
@@ -106,11 +112,16 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao {
   }
 
   @Override
+  public ProtoArrayUpdater protoArrayUpdater() {
+    return new V4HotUpdater(db);
+  }
+
+  @Override
   public void close() throws Exception {
     db.close();
   }
 
-  private static class V4HotUpdater implements HotUpdater, Eth1Updater {
+  private static class V4HotUpdater implements HotUpdater, Eth1Updater, ProtoArrayUpdater {
 
     private final RocksDbTransaction transaction;
 
@@ -173,6 +184,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao {
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       transaction.put(V4SchemaHot.DEPOSITS_FROM_BLOCK_EVENTS, event.getBlockNumber(), event);
+    }
+
+    @Override
+    public void putProtoArraySnapshot(ProtoArraySnapshot newProtoArray) {
+      transaction.put(V4SchemaHot.PROTO_ARRAY_SNAPSHOT, newProtoArray);
     }
 
     @Override

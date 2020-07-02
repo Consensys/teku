@@ -21,28 +21,50 @@ import java.util.Objects;
 public class RpcException extends Exception {
 
   // Server errors
-  public static final RpcException SERVER_ERROR =
-      new RpcException(SERVER_ERROR_CODE, "Unexpected error");
+  public static class ServerErrorException extends RpcException {
+    public ServerErrorException() {
+      super(SERVER_ERROR_CODE, "Unexpected error");
+    }
+  }
 
   // Malformed data
-  public static final RpcException DESERIALIZATION_FAILED =
-      new RpcException(INVALID_REQUEST_CODE, "Failed to deserialize payload");
-  public static final RpcException MALFORMED_MESSAGE_LENGTH =
-      new RpcException(INVALID_REQUEST_CODE, "Message length was invalid");
-  public static final RpcException FAILED_TO_UNCOMPRESS_MESSAGE =
-      new RpcException(INVALID_REQUEST_CODE, "Failed to uncompress message");
+  public static class DeserializationFailedException extends RpcException {
+    public DeserializationFailedException() {
+      super(INVALID_REQUEST_CODE, "Failed to deserialize payload");
+    }
+  }
+
+  public static class DecompressFailedException extends RpcException {
+    public DecompressFailedException() {
+      super(INVALID_REQUEST_CODE, "Failed to uncompress message");
+    }
+  }
 
   // Unexpected message length
-  public static final RpcException EXTRA_DATA_APPENDED =
-      new RpcException(INVALID_REQUEST_CODE, "Extra data appended to end of message");
-  public static final RpcException MESSAGE_TRUNCATED =
-      new RpcException(INVALID_REQUEST_CODE, "Message was truncated");
-  public static final RpcException PAYLOAD_TRUNCATED =
-      new RpcException(INVALID_REQUEST_CODE, "Message payload smaller than expected");
+  public static class ExtraDataAppendedException extends RpcException {
+    public ExtraDataAppendedException() {
+      super(INVALID_REQUEST_CODE, "Extra data appended to end of message");
+    }
+  }
+
+  public static class MessageTruncatedException extends RpcException {
+    public MessageTruncatedException() {
+      super(INVALID_REQUEST_CODE, "Message was truncated");
+    }
+  }
+
+  public static class PayloadTruncatedException extends RpcException {
+    public PayloadTruncatedException() {
+      super(INVALID_REQUEST_CODE, "Message payload smaller than expected");
+    }
+  }
 
   // Constraint violation
-  public static final RpcException CHUNK_TOO_LONG =
-      new RpcException(INVALID_REQUEST_CODE, "Chunk exceeds maximum allowed length");
+  public static class ChunkTooLongException extends RpcException {
+    public ChunkTooLongException() {
+      super(INVALID_REQUEST_CODE, "Chunk exceeds maximum allowed length");
+    }
+  }
 
   private final byte responseCode;
   private final String errorMessage;

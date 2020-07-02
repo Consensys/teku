@@ -23,6 +23,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
 /**
  * Provides an abstract "data access object" interface for working with hot data (non-finalized)
@@ -71,6 +72,8 @@ public interface RocksDbHotDao extends AutoCloseable {
     void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
 
     void deleteHotBlock(final Bytes32 blockRoot);
+
+    void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot);
 
     void commit();
 

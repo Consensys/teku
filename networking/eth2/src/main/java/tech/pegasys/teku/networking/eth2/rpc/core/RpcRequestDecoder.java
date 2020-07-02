@@ -17,6 +17,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
@@ -36,7 +38,7 @@ public class RpcRequestDecoder<T extends RpcRequest> {
   public Optional<T> decodeRequest(final ByteBuf input) throws RpcException {
     if (complete) {
       if (input.isReadable()) {
-        throw RpcException.EXTRA_DATA_APPENDED;
+        throw new ExtraDataAppendedException();
       } else {
         return Optional.empty();
       }
@@ -46,7 +48,7 @@ public class RpcRequestDecoder<T extends RpcRequest> {
     if (request.isPresent()) {
       // Check for extra bytes remaining
       if (input.readableBytes() != 0) {
-        throw RpcException.EXTRA_DATA_APPENDED;
+        throw new ExtraDataAppendedException();
       }
       complete = true;
     }
@@ -57,10 +59,12 @@ public class RpcRequestDecoder<T extends RpcRequest> {
   public Optional<T> complete() throws RpcException {
     Optional<T> maybeRequest = Optional.empty();
     if (!complete) {
+      // complete() might be the only event on empty request
+      // so we might need to produce a message with decodeRequest(EMPTY_BUFFER)
       maybeRequest = decodeRequest(Unpooled.EMPTY_BUFFER);
     }
     decoder.complete();
-    if (!complete) throw RpcException.PAYLOAD_TRUNCATED;
+    if (!complete) throw new PayloadTruncatedException();
     return maybeRequest;
   }
 }
