@@ -55,7 +55,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
       return Optional.empty();
     }
     if (decoded) {
-      throw RpcException.EXTRA_DATA_APPENDED;
+      throw new RpcException.ExtraDataAppendedException();
     }
 
     if (decompressor.isEmpty()) {
