@@ -8,6 +8,20 @@ we recommend most users use the latest `master` branch of Teku.
  - Anyone using `/node/version` should switch to use
    the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
 
+## 0.12.1
+
+### Breaking Changes
+ 
+### Additions and Improvements
+
+ - added a metric `beacon_peer_count` that tracks the same counter used for `/network/peer_count` and console `Peers:` output.
+
+### Bug Fixes
+
+### Known Issues
+
+- Validator may produce attestations in the incorrect slot or committee resulting in `Produced invalid attestation` messages ([#2179](https://github.com/PegaSysEng/teku/issues/2179))
+
 ## 0.12.0
 
 ### Additions and Improvements
