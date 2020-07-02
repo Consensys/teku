@@ -18,12 +18,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.SimpleOffsetSszEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
 
-public class SimpleOffsetSszEncoderTest {
-  final SimpleOffsetSszEncoder<StatusMessage> statusMessageEncoder =
-      new SimpleOffsetSszEncoder<>(StatusMessage.class);
+public class DefaultRpcPayloadEncoderTest {
+  final DefaultRpcPayloadEncoder<StatusMessage> statusMessageEncoder =
+      new DefaultRpcPayloadEncoder<>(StatusMessage.class);
 
   @Test
   public void decode_truncatedMessage() {
@@ -33,7 +33,7 @@ public class SimpleOffsetSszEncoderTest {
     for (int i = 0; i < encoded.size(); i++) {
       final Bytes truncated = encoded.slice(0, encoded.size() - 1);
       assertThatThrownBy(() -> statusMessageEncoder.decode(truncated))
-          .isEqualTo(RpcException.DESERIALIZATION_FAILED);
+          .isInstanceOf(DeserializationFailedException.class);
     }
   }
 }

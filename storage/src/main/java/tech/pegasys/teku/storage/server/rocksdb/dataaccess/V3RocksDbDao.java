@@ -120,11 +120,6 @@ public class V3RocksDbDao
   }
 
   @Override
-  public Map<Checkpoint, BeaconState> getCheckpointStates() {
-    return db.getAll(V3Schema.CHECKPOINT_STATES);
-  }
-
-  @Override
   public Map<UnsignedLong, VoteTracker> getVotes() {
     return db.getAll(V3Schema.VOTES);
   }
@@ -205,16 +200,6 @@ public class V3RocksDbDao
     }
 
     @Override
-    public void addCheckpointState(final Checkpoint checkpoint, final BeaconState state) {
-      transaction.put(V3Schema.CHECKPOINT_STATES, checkpoint, state);
-    }
-
-    @Override
-    public void addCheckpointStates(final Map<Checkpoint, BeaconState> checkpointStates) {
-      checkpointStates.forEach(this::addCheckpointState);
-    }
-
-    @Override
     public void addHotBlock(final SignedBeaconBlock block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot, block);
@@ -241,11 +226,6 @@ public class V3RocksDbDao
     public void addVotes(final Map<UnsignedLong, VoteTracker> votes) {
       votes.forEach(
           (validatorIndex, vote) -> transaction.put(V3Schema.VOTES, validatorIndex, vote));
-    }
-
-    @Override
-    public void deleteCheckpointState(final Checkpoint checkpoint) {
-      transaction.delete(V3Schema.CHECKPOINT_STATES, checkpoint);
     }
 
     @Override

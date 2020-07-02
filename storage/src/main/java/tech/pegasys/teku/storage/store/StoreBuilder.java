@@ -42,7 +42,6 @@ public class StoreBuilder {
   Checkpoint justifiedCheckpoint;
   Checkpoint finalizedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
-  Map<Checkpoint, BeaconState> checkpointStates;
   SignedBlockAndState latestFinalized;
   Map<UnsignedLong, VoteTracker> votes;
 
@@ -75,11 +74,9 @@ public class StoreBuilder {
     final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
 
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
-    Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
     Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
 
     childToParentMap.put(anchorRoot, anchorBlock.getParent_root());
-    checkpointStates.put(anchorCheckpoint, anchorState);
 
     return create()
         .metricsSystem(metricsSystem)
@@ -90,7 +87,6 @@ public class StoreBuilder {
         .justifiedCheckpoint(anchorCheckpoint)
         .bestJustifiedCheckpoint(anchorCheckpoint)
         .childToParentMap(childToParentMap)
-        .checkpointStates(checkpointStates)
         .latestFinalized(new SignedBlockAndState(signedAnchorBlock, anchorState))
         .votes(votes);
   }
@@ -106,7 +102,6 @@ public class StoreBuilder {
         finalizedCheckpoint,
         bestJustifiedCheckpoint,
         childToParentRoot,
-        checkpointStates,
         latestFinalized,
         votes,
         StorePruningOptions.createDefault());
@@ -121,7 +116,6 @@ public class StoreBuilder {
     checkState(finalizedCheckpoint != null, "Finalized checkpoint must be defined");
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
     checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
-    checkState(checkpointStates != null, "Checkpoint states must be defined");
     checkState(latestFinalized != null, "Latest finalized block state must be defined");
     checkState(votes != null, "Votes must be defined");
   }
@@ -171,12 +165,6 @@ public class StoreBuilder {
   public StoreBuilder childToParentMap(final Map<Bytes32, Bytes32> childToParent) {
     checkNotNull(childToParent);
     this.childToParentRoot.putAll(childToParent);
-    return this;
-  }
-
-  public StoreBuilder checkpointStates(final Map<Checkpoint, BeaconState> checkpointStates) {
-    checkNotNull(checkpointStates);
-    this.checkpointStates = checkpointStates;
     return this;
   }
 
