@@ -10,26 +10,103 @@ How often actual customers are likely to encounter the issue during their use of
 
 A feature rarely used, with a high likelihood of failure, may have a lower overall probability than a popular feature with a low likelihood of failure (due to a high number of customers affected).
 
-| Frequent   | Will occur several times in the lifetime of the product.          |
-|------------|-------------------------------------------------------------------|
-| Probable   | Likely to occur often in the lifetime of the product.             |
-| Occasional | Likely to occur some time in the lifetime of the product.         |
-| Remote     | Unlikely but possible to occur in the lifetime of the product.    |
-| Improbable | So unlikely, it can be assumed occurrence may not be experienced. |
+<table>
+  <tbody>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Frequent</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p title=""><span>Will occur several times in the lifetime of the product.</span></p>
+      </td>
+    </tr>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Probable</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>Likely to occur often in the lifetime of the product.</span></p>
+      </td>
+    </tr>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Occasional</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>Likely to occur some time in the lifetime of the product.</span></p>
+      </td>
+    </tr>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Remote</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>Unlikely but possible to occur in the lifetime of the product.</span></p>
+      </td>
+    </tr>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Improbable</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>So unlikely, it can be assumed occurrence may not be experienced.</span></p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
 
 #### Severity
+
 
 How bad is the problem when it is encountered?
 
 An issue that causes data loss/corruption is automatically classed as Catastrophic.
 
-| Catastrophic  | Detrimental risk for the product as a whole.                             |
-|---------------|--------------------------------------------------------------------------|
-| Critical      | Jeopardises feature(s) of the product, not ruining the product entirely. |
-| Moderate      | Jeopardises aspects of a feature, not ruining the feature entirely.      |
-| Marginal      | Causes an inconvenience when using a feature of the product.             |
-| Insignificant | No significant threat posed and can be left unmediated.                  |
-
+<table>
+  <tbody>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Catastrophic</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>Detrimental risk for the product as a whole.</span></p>
+      </td>
+    </tr>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Critical</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>Jeopardises feature(s) of the product, not ruining the product entirely.</span></p>
+      </td>
+    </tr>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Moderate</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>Jeopardises aspects of a feature, not ruining the feature entirely.</span></p>
+      </td>
+    </tr>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Marginal</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>Causes an inconvenience when using a feature of the product.</span></p>
+      </td>
+    </tr>
+    <tr>
+      <th class="confluenceTh">
+        <p><strong>Insignificant</strong></p>
+      </th>
+      <td class="confluenceTd">
+        <p><span>No significant threat posed and can be left unmediated.&nbsp;</span></p>
+      </td>
+    </tr>
+  </tbody>
+</table>
 #### Risk Matrix
 
 |            | Catastrophic | Critical | Moderate | Marginal | Insignificant |
