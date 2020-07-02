@@ -78,6 +78,22 @@ class StoreTest {
     testApplyChangesWhenTransactionCommits(true);
   }
 
+  @Test
+  public void shouldGenerateCheckpointStates() {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(
+            new StubMetricsSystem(), blockProvider, genesisBlockAndState.getState());
+    final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, genesisBlockAndState.getRoot());
+    final BeaconState checkpointState = store.getCheckpointState(checkpoint);
+    assertThat(checkpointState).isNotNull();
+    assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
+    assertThat(checkpointState.getLatest_block_header().hash_tree_root())
+        .isEqualTo(checkpoint.getRoot());
+  }
+
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction)
       throws StateTransitionException {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
@@ -117,10 +133,7 @@ class StoreTest {
     // Check blocks
     chainBuilder
         .streamBlocksAndStates(1, chainBuilder.getLatestSlot().longValue())
-        .forEach(
-            b -> {
-              assertThat(store.containsBlock(b.getRoot())).isFalse();
-            });
+        .forEach(b -> assertThat(store.containsBlock(b.getRoot())).isFalse());
     // Check checkpoints
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(genesisCheckpoint);
     assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(genesisCheckpoint);
@@ -179,7 +192,8 @@ class StoreTest {
     final int cacheMultiplier = 3;
 
     // Create a new store with a small state cache
-    final StorePruningOptions pruningOptions = StorePruningOptions.create(cacheSize, cacheSize);
+    final StorePruningOptions pruningOptions =
+        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
 
     final Store store = createGenesisStore(pruningOptions);
     final List<SignedBlockAndState> blocks =

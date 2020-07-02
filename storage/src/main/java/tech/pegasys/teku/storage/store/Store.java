@@ -132,7 +132,10 @@ class Store implements UpdatableStore {
     this.block_states =
         LimitedMap.create(
             pruningOptions.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    this.checkpoint_states = LimitedMap.create(50, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    this.checkpoint_states =
+        LimitedMap.create(
+            pruningOptions.getCheckpointStateCacheSize(),
+            LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     this.votes = new ConcurrentHashMap<>(votes);
 
     // Build block tree structure
@@ -375,24 +378,19 @@ class Store implements UpdatableStore {
 
   @Override
   public BeaconState getCheckpointState(Checkpoint checkpoint) {
-    readLock.lock();
-    try {
-      return getCheckpointStateIfAvailable(checkpoint)
-          .orElseGet(
-              () -> {
-                final BeaconState checkpointState =
-                    regnerateCheckpointState(checkpoint, this::getBlockState);
-                lock.writeLock().lock();
-                try {
-                  checkpoint_states.put(checkpoint, checkpointState);
-                } finally {
-                  lock.writeLock().unlock();
-                }
-                return checkpointState;
-              });
-    } finally {
-      readLock.unlock();
-    }
+    return getCheckpointStateIfAvailable(checkpoint)
+        .orElseGet(
+            () -> {
+              final BeaconState checkpointState =
+                  regenerateCheckpointState(checkpoint, this::getBlockState);
+              lock.writeLock().lock();
+              try {
+                checkpoint_states.put(checkpoint, checkpointState);
+              } finally {
+                lock.writeLock().unlock();
+              }
+              return checkpointState;
+            });
   }
 
   private Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
@@ -411,12 +409,11 @@ class Store implements UpdatableStore {
     }
   }
 
-  private BeaconState regnerateCheckpointState(
+  private BeaconState regenerateCheckpointState(
       final Checkpoint checkpoint, Function<Bytes32, BeaconState> getBlockState) {
     try {
       final BeaconState baseState = getBlockState.apply(checkpoint.getRoot());
       if (baseState == null || baseState.getSlot().equals(checkpoint.getEpochStartSlot())) {
-        checkpointStateRequestCachedCounter.inc();
         return baseState;
       }
 
@@ -798,7 +795,7 @@ class Store implements UpdatableStore {
       final Optional<BeaconState> checkpointFromStore =
           Store.this.getCheckpointStateIfAvailable(checkpoint);
       return checkpointFromStore.orElseGet(
-          () -> regnerateCheckpointState(checkpoint, this::getBlockState));
+          () -> regenerateCheckpointState(checkpoint, this::getBlockState));
     }
   }
 
