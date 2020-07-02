@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
@@ -43,7 +44,7 @@ public class SimpleOffsetSszEncoder<T> implements RpcPayloadEncoder<T> {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Failed to parse network message: " + message, e);
       }
-      throw RpcException.DESERIALIZATION_FAILED;
+      throw new DeserializationFailedException();
     }
   }
 }

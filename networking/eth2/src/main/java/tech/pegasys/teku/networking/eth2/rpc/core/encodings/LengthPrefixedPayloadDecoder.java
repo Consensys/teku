@@ -20,6 +20,11 @@ import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ChunkTooLongException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor.Decompressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
@@ -55,11 +60,11 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
       try {
         ret = decompressor.get().decodeOneMessage(in);
       } catch (PayloadSmallerThanExpectedException e) {
-        throw RpcException.PAYLOAD_TRUNCATED;
+        throw new PayloadTruncatedException();
       } catch (PayloadLargerThanExpectedException e) {
-        throw RpcException.EXTRA_DATA_APPENDED;
+        throw new ExtraDataAppendedException();
       } catch (CompressionException e) {
-        throw RpcException.FAILED_TO_UNCOMPRESS_MESSAGE;
+        throw new DecompressFailedException();
       }
 
       if (ret.isPresent()) {
@@ -97,7 +102,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
         // ignore any exception, call complete() just to release resources
       }
       // if varIntDecoder exists then payload length was not read completely
-      err = RpcException.MESSAGE_TRUNCATED;
+      err = new MessageTruncatedException();
     }
     if (decompressor.isPresent()) {
       try {
@@ -106,10 +111,10 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
         // ignore any exception, call complete() just to release resources
       }
       // if decompressor still exists then not enough data was fed to it
-      err = RpcException.PAYLOAD_TRUNCATED;
+      err = new PayloadTruncatedException();
     }
     if (!decoded && err == null) {
-      err = RpcException.MESSAGE_TRUNCATED;
+      err = new MessageTruncatedException();
     }
 
     if (err != null) {
@@ -129,7 +134,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
       lengthMaybe = varIntDecoder.get().decodeOneMessage(in);
     } catch (IllegalStateException e) {
       // varint overflow
-      throw RpcException.CHUNK_TOO_LONG;
+      throw new ChunkTooLongException();
     }
     if (lengthMaybe.isEmpty()) {
       // wait for more byte to read length field
@@ -140,7 +145,7 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
 
     long length = lengthMaybe.get();
     if (length > MAX_CHUNK_SIZE) {
-      throw RpcException.CHUNK_TOO_LONG;
+      throw new ChunkTooLongException();
     }
     return Optional.of((int) length);
   }
