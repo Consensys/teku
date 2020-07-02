@@ -32,6 +32,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream.ResponseListener;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.util.Waiter;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -170,7 +172,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     assertThat(blocks.size()).isEqualTo(2);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
     assertThatThrownBy(finishedProcessingFuture::get)
-        .hasRootCause(RpcException.EXTRA_DATA_APPENDED);
+        .hasRootCause(new ExtraDataAppendedException());
   }
 
   @Test
@@ -266,12 +268,12 @@ public abstract class Eth2OutgoingRequestHandlerTest
     return rpcEncoder.encodeSuccessfulResponse(block);
   }
 
-  private void deliverError() throws IOException {
-    final Bytes errorChunk = rpcEncoder.encodeErrorResponse(RpcException.SERVER_ERROR);
+  private void deliverError() {
+    final Bytes errorChunk = rpcEncoder.encodeErrorResponse(new ServerErrorException());
     deliverBytes(errorChunk);
   }
 
-  private void deliverChunk(final int chunk) throws IOException {
+  private void deliverChunk(final int chunk) {
     final Bytes chunkBytes = chunks.get(chunk);
     deliverBytes(chunkBytes);
   }

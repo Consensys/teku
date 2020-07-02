@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.util.Waiter;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -61,7 +61,7 @@ public class ErrorConditionsIntegrationTest {
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
         .isInstanceOf(ExecutionException.class)
         .extracting(Throwable::getCause)
-        .isEqualToComparingFieldByField(RpcException.DESERIALIZATION_FAILED);
+        .isEqualToComparingFieldByField(new DeserializationFailedException());
   }
 
   public static Stream<Arguments> getEncodings() {
