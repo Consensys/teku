@@ -96,19 +96,7 @@ class DepositGenerateAndRegisterCommandTest {
   }
 
   @Test
-  public void generatesAndRegistersWithoutDisplayConfirmation() {
-    final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
-        new DepositGenerateAndRegisterCommand(
-            shutdownFunction, registerParams, generateParams, false);
-
-    depositGenerateAndRegisterCommand.run();
-    verify(generateParams).createGenerateAction(false);
-    verify(registerParams).createRegisterAction(false);
-    verify(generateAction).generateKeysStream();
-  }
-
-  @Test
-  public void generatesAndRegistersWithDisplayConfirmation() {
+  public void generatesAndRegistersWithQuietOutputMode() {
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
         new DepositGenerateAndRegisterCommand(
             shutdownFunction, registerParams, generateParams, true);
@@ -116,6 +104,18 @@ class DepositGenerateAndRegisterCommandTest {
     depositGenerateAndRegisterCommand.run();
     verify(generateParams).createGenerateAction(true);
     verify(registerParams).createRegisterAction(true);
+    verify(generateAction).generateKeysStream();
+  }
+
+  @Test
+  public void generatesAndRegistersWithDefaultOutputMode() {
+    final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
+        new DepositGenerateAndRegisterCommand(
+            shutdownFunction, registerParams, generateParams, false);
+
+    depositGenerateAndRegisterCommand.run();
+    verify(generateParams).createGenerateAction(false);
+    verify(registerParams).createRegisterAction(false);
     verify(generateAction).generateKeysStream();
   }
 

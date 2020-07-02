@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
@@ -40,19 +43,21 @@ public class RegisterAction implements AutoCloseable {
   private final String eth1NodeUrl;
   private final Eth1Address contractAddress;
   private final String network;
-  private final boolean displayConfirmation;
+  private final boolean quietStdOutput;
   private final UnsignedLong amount;
   private final DepositTransactionSender sender;
   private OkHttpClient httpClient;
   private ScheduledExecutorService executorService;
   private Web3j web3j;
+  private final Consumer<String> commandStdOutput;
+  private final Consumer<String> commandErrorOutput;
 
   public RegisterAction(
       final String eth1NodeUrl,
       final Credentials eth1Credentials,
       final Eth1Address contractAddress,
       final String network,
-      final boolean displayConfirmation,
+      final boolean quietStdOutput,
       final UnsignedLong amount,
       final IntConsumer shutdownFunction,
       final ConsoleAdapter consoleAdapter) {
@@ -60,7 +65,9 @@ public class RegisterAction implements AutoCloseable {
     this.eth1Credentials = eth1Credentials;
     this.contractAddress = contractAddress;
     this.network = network;
-    this.displayConfirmation = displayConfirmation;
+    this.quietStdOutput = quietStdOutput;
+    this.commandStdOutput = quietStdOutput ? s -> {} : SUB_COMMAND_LOG::display;
+    this.commandErrorOutput = SUB_COMMAND_LOG::error;
     this.amount = amount;
     this.shutdownFunction = shutdownFunction;
     this.consoleAdapter = consoleAdapter;
@@ -87,7 +94,7 @@ public class RegisterAction implements AutoCloseable {
   }
 
   public void displayConfirmation(final int totalNumberOfDeposits) {
-    if (!displayConfirmation || !consoleAdapter.isConsoleAvailable()) {
+    if (quietStdOutput || !consoleAdapter.isConsoleAvailable()) {
       return;
     }
 
@@ -116,6 +123,7 @@ public class RegisterAction implements AutoCloseable {
 
   public SafeFuture<TransactionReceipt> sendDeposit(
       final BLSKeyPair validatorKey, final BLSPublicKey withdrawalKey) {
-    return sender.sendDepositTransaction(validatorKey, withdrawalKey, amount);
+    return sender.sendDepositTransaction(
+        validatorKey, withdrawalKey, amount, commandStdOutput, commandErrorOutput);
   }
 }

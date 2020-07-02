@@ -75,7 +75,7 @@ public class GenerateParams {
     this.consoleAdapter = consoleAdapter;
   }
 
-  public GenerateAction createGenerateAction(final boolean displayConfirmation) {
+  public GenerateAction createGenerateAction(final boolean quietStdOutput) {
     return new GenerateAction(
         validatorCount,
         outputPath,
@@ -85,7 +85,7 @@ public class GenerateParams {
         consoleAdapter,
         spec,
         envSupplier,
-        displayConfirmation ? SUB_COMMAND_LOG::display : SUB_COMMAND_LOG::noOp);
+        quietStdOutput ? s -> {} : SUB_COMMAND_LOG::display);
   }
 
   public int getValidatorCount() {

@@ -26,7 +26,6 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorKeys;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
@@ -51,11 +50,9 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   @Mixin private GenerateParams generateParams;
 
   @Option(
-      names = {"--Xconfirm-enabled"},
-      arity = "1",
-      defaultValue = "true",
+      names = {"--Xquiet"},
       hidden = true)
-  private boolean displayConfirmation = true;
+  private boolean quietStdOutput;
 
   public DepositGenerateAndRegisterCommand() {
     this.shutdownFunction =
@@ -67,19 +64,19 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
       final Consumer<Integer> shutdownFunction,
       final RegisterParams registerParams,
       final GenerateParams generateParams,
-      final boolean displayConfirmation) {
+      final boolean quietStdOutput) {
     this.shutdownFunction = shutdownFunction;
     this.registerParams = registerParams;
     this.generateParams = generateParams;
-    this.displayConfirmation = displayConfirmation;
+    this.quietStdOutput = quietStdOutput;
   }
 
   @Override
   public void run() {
-    final GenerateAction generateAction = generateParams.createGenerateAction(displayConfirmation);
+    final GenerateAction generateAction = generateParams.createGenerateAction(quietStdOutput);
 
     try (final RegisterAction registerAction =
-        registerParams.createRegisterAction(displayConfirmation)) {
+        registerParams.createRegisterAction(quietStdOutput)) {
       registerAction.displayConfirmation(generateParams.getValidatorCount());
       final List<SafeFuture<TransactionReceipt>> transactionReceipts =
           generateAction
@@ -97,34 +94,8 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   @NotNull
   private Function<ValidatorKeys, SafeFuture<TransactionReceipt>> registerValidator(
       final RegisterAction registerAction) {
-    return validatorKey -> {
-      final BLSKeyPair validatorKeyPair = validatorKey.getValidatorKey();
-      final BLSKeyPair withdrawalKeyPair = validatorKey.getWithdrawalKey();
-      if (displayConfirmation) {
-        SUB_COMMAND_LOG.display(
-            String.format(
-                "%nSending deposit for Validator Key [%s].%n",
-                validatorKeyPair.getPublicKey().toString()));
-      }
-
-      final SafeFuture<TransactionReceipt> transactionReceiptSafeFuture =
-          registerAction.sendDeposit(validatorKeyPair, withdrawalKeyPair.getPublicKey());
-
-      if (displayConfirmation) {
-        transactionReceiptSafeFuture.finish(
-            transactionReceipt ->
-                SUB_COMMAND_LOG.display(
-                    String.format(
-                        "Transaction for Validator Key [%s] Completed. Transaction Hash: [%s]%n",
-                        validatorKeyPair.getPublicKey().toString(),
-                        transactionReceipt.getTransactionHash())),
-            exception ->
-                SUB_COMMAND_LOG.error(
-                    String.format(
-                        "Transaction for Validator Key [%s] Failed: Message: [%s]%n",
-                        validatorKeyPair.getPublicKey().toString(), exception.getMessage())));
-      }
-      return transactionReceiptSafeFuture;
-    };
+    return validatorKey ->
+        registerAction.sendDeposit(
+            validatorKey.getValidatorKey(), validatorKey.getWithdrawalKey().getPublicKey());
   }
 }

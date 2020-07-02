@@ -45,7 +45,7 @@ public class GenerateAction {
   private final ConsoleAdapter consoleAdapter;
   private final CommandSpec commandSpec;
   private final Function<String, String> envSupplier;
-  private final Consumer<String> log;
+  private final Consumer<String> commandOutput;
 
   public GenerateAction(
       final int validatorCount,
@@ -56,7 +56,7 @@ public class GenerateAction {
       final ConsoleAdapter consoleAdapter,
       final CommandSpec commandSpec,
       final Function<String, String> envSupplier,
-      final Consumer<String> log) {
+      final Consumer<String> commandOutput) {
     this.validatorCount = validatorCount;
     this.outputPath = outputPath;
     this.encryptKeys = encryptKeys;
@@ -65,7 +65,7 @@ public class GenerateAction {
     this.consoleAdapter = consoleAdapter;
     this.commandSpec = commandSpec;
     this.envSupplier = envSupplier;
-    this.log = log;
+    this.commandOutput = commandOutput;
     this.srng = SecureRandomProvider.createSecureRandom();
   }
 
@@ -100,11 +100,11 @@ public class GenerateAction {
               validatorKeystorePassword,
               withdrawalKeystorePassword,
               keystoreDir,
-              log);
+              commandOutput);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
       if (consoleAdapter.isConsoleAvailable() && isBlank(outputPath)) {
-        log.accept(
+        commandOutput.accept(
             "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
       }
     }

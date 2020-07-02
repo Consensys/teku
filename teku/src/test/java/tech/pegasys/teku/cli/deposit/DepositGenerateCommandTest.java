@@ -35,22 +35,22 @@ class DepositGenerateCommandTest {
   }
 
   @Test
-  public void generatesKeysWithDisplayConfirmation() {
-    final DepositGenerateCommand depositGenerateCommand =
-        new DepositGenerateCommand(shutdownFunction, generateParams, true);
-
-    depositGenerateCommand.run();
-    verify(generateParams).createGenerateAction(true);
-    verify(generateAction).generateKeys();
-  }
-
-  @Test
-  public void generatesKeysWithoutDisplayConfirmation() {
+  public void generatesKeysWithDefaultOutputMode() {
     final DepositGenerateCommand depositGenerateCommand =
         new DepositGenerateCommand(shutdownFunction, generateParams, false);
 
     depositGenerateCommand.run();
     verify(generateParams).createGenerateAction(false);
+    verify(generateAction).generateKeys();
+  }
+
+  @Test
+  public void generatesKeysWithQuietOutputMode() {
+    final DepositGenerateCommand depositGenerateCommand =
+        new DepositGenerateCommand(shutdownFunction, generateParams, true);
+
+    depositGenerateCommand.run();
+    verify(generateParams).createGenerateAction(true);
     verify(generateAction).generateKeys();
   }
 }

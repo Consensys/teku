@@ -40,19 +40,19 @@ public class EncryptedKeystoreWriter implements KeysWriter {
   private final String validatorKeyPassword;
   private final String withdrawalKeyPassword;
   private final Path outputPath;
-  private final Consumer<String> log;
+  private final Consumer<String> commandOutput;
 
   public EncryptedKeystoreWriter(
       final SecureRandom secureRandom,
       final String validatorKeyPassword,
       final String withdrawalKeyPassword,
       final Path outputPath,
-      final Consumer<String> log) {
+      final Consumer<String> commandOutput) {
     this.secureRandom = secureRandom;
     this.validatorKeyPassword = validatorKeyPassword;
     this.withdrawalKeyPassword = withdrawalKeyPassword;
     this.outputPath = outputPath;
-    this.log = log;
+    this.commandOutput = commandOutput;
     createKeystoreDirectory();
   }
 
@@ -60,8 +60,17 @@ public class EncryptedKeystoreWriter implements KeysWriter {
   public void writeKeys(final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey)
       throws UncheckedIOException, KeyStoreValidationException {
 
+    commandOutput.accept(
+        "Generating encrypted keystore for validator key ["
+            + validatorKey.getPublicKey().toString()
+            + "]");
     final KeyStoreData validatorKeyStoreData =
         generateKeystoreData(validatorKey, validatorKeyPassword);
+
+    commandOutput.accept(
+        "Generating encrypted keystore for withdrawal key ["
+            + withdrawalKey.getPublicKey().toString()
+            + "]");
     final KeyStoreData withdrawalKeyStoreData =
         generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
 
@@ -71,9 +80,12 @@ public class EncryptedKeystoreWriter implements KeysWriter {
         shortPublicKey(validatorKey.getPublicKey()) + "_withdrawal.json";
 
     saveKeyStore(outputPath.resolve(validatorFileName), validatorKeyStoreData);
-    log.accept(outputPath.resolve(validatorFileName) + " saved successfully.");
+    commandOutput.accept(
+        "Withdrawal keystore [" + outputPath.resolve(validatorFileName) + "] saved successfully.");
+
     saveKeyStore(outputPath.resolve(withdrawalFileName), withdrawalKeyStoreData);
-    log.accept(outputPath.resolve(withdrawalFileName) + " saved successfully.");
+    commandOutput.accept(
+        "Validator keystore [" + outputPath.resolve(withdrawalFileName) + "] saved successfully.");
   }
 
   private void createKeystoreDirectory() {

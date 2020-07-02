@@ -38,11 +38,9 @@ public class DepositGenerateCommand implements Runnable {
   @Mixin private GenerateParams generateParams;
 
   @Option(
-      names = {"--Xconfirm-enabled"},
-      arity = "1",
-      defaultValue = "true",
+      names = {"--Xquiet"},
       hidden = true)
-  private boolean displayConfirmation = true;
+  private boolean quietStdOutput;
 
   public DepositGenerateCommand() {
     this.shutdownFunction =
@@ -53,15 +51,15 @@ public class DepositGenerateCommand implements Runnable {
   DepositGenerateCommand(
       final Consumer<Integer> shutdownFunction,
       final GenerateParams generateParams,
-      final boolean displayConfirmation) {
+      final boolean quietStdOutput) {
     this.shutdownFunction = shutdownFunction;
     this.generateParams = generateParams;
-    this.displayConfirmation = displayConfirmation;
+    this.quietStdOutput = quietStdOutput;
   }
 
   @Override
   public void run() {
-    final GenerateAction generateAction = generateParams.createGenerateAction(displayConfirmation);
+    final GenerateAction generateAction = generateParams.createGenerateAction(quietStdOutput);
     generateAction.generateKeys();
     shutdownFunction.accept(0);
   }
