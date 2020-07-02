@@ -190,7 +190,7 @@ All of our bugs are reported on GitHub issues. They are identified by the BUG la
 
 #### FAQ
 ##### What if I don't agree with the priority of a bug?
-We try to be deterministic on our assessments, and most of the time it will involve some discussion. However, if you feel like the assessment on a bug priority is wrong, you can always add a comment on the issue and start a discussion. There is also the option of starting a conversation on Rocket Chat.
+We try to be deterministic on our assessments, and most of the time it will involve some discussion. However, if you feel like the assessment on a bug priority is wrong, you can always add a comment on the issue and start a discussion.
 
 ##### Can I change the priority of a bug?
 You can. However, if another person was responsible for the initial assessment it is expected that you will contact that person to share your thoughts before changing it.
