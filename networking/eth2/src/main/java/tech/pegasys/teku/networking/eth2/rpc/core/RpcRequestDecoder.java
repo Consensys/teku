@@ -57,6 +57,8 @@ public class RpcRequestDecoder<T extends RpcRequest> {
   public Optional<T> complete() throws RpcException {
     Optional<T> maybeRequest = Optional.empty();
     if (!complete) {
+      // complete() might be the only event on empty request
+      // so we might need to produce a message with decodeRequest(EMPTY_BUFFER)
       maybeRequest = decodeRequest(Unpooled.EMPTY_BUFFER);
     }
     decoder.complete();
