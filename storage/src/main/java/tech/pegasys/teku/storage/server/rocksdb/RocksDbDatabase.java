@@ -147,7 +147,6 @@ public class RocksDbDatabase implements Database {
       hotUpdater.setBestJustifiedCheckpoint(genesisCheckpoint);
       hotUpdater.setFinalizedCheckpoint(genesisCheckpoint);
       hotUpdater.setLatestFinalizedState(genesisState);
-      hotUpdater.addCheckpointState(genesisCheckpoint, genesisState);
 
       // We need to store the genesis block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
@@ -183,7 +182,6 @@ public class RocksDbDatabase implements Database {
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = hotDao.getLatestFinalizedState().orElseThrow();
 
-    final Map<Checkpoint, BeaconState> checkpointStates = hotDao.getCheckpointStates();
     final Map<UnsignedLong, VoteTracker> votes = hotDao.getVotes();
 
     // Build child-parent lookup
@@ -211,7 +209,6 @@ public class RocksDbDatabase implements Database {
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
             .childToParentMap(childToParentLookup)
-            .checkpointStates(checkpointStates)
             .latestFinalized(latestFinalized)
             .votes(votes));
   }
@@ -317,12 +314,10 @@ public class RocksDbDatabase implements Database {
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
-      updater.addCheckpointStates(update.getCheckpointStates());
       updater.addHotBlocks(update.getHotBlocks());
       updater.addVotes(update.getVotes());
 
       // Delete finalized data from hot db
-      update.getDeletedCheckpointStates().forEach(updater::deleteCheckpointState);
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
 
       updater.commit();

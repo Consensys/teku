@@ -81,11 +81,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
-  public Map<Checkpoint, BeaconState> getCheckpointStates() {
-    return db.getAll(V4SchemaHot.CHECKPOINT_STATES);
-  }
-
-  @Override
   public Map<UnsignedLong, VoteTracker> getVotes() {
     return db.getAll(V4SchemaHot.VOTES);
   }
@@ -160,16 +155,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
-    public void addCheckpointState(final Checkpoint checkpoint, final BeaconState state) {
-      transaction.put(V4SchemaHot.CHECKPOINT_STATES, checkpoint, state);
-    }
-
-    @Override
-    public void addCheckpointStates(final Map<Checkpoint, BeaconState> checkpointStates) {
-      checkpointStates.forEach(this::addCheckpointState);
-    }
-
-    @Override
     public void addHotBlock(final SignedBeaconBlock block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(V4SchemaHot.HOT_BLOCKS_BY_ROOT, blockRoot, block);
@@ -184,11 +169,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     public void addVotes(final Map<UnsignedLong, VoteTracker> votes) {
       votes.forEach(
           (validatorIndex, vote) -> transaction.put(V4SchemaHot.VOTES, validatorIndex, vote));
-    }
-
-    @Override
-    public void deleteCheckpointState(final Checkpoint checkpoint) {
-      transaction.delete(V4SchemaHot.CHECKPOINT_STATES, checkpoint);
     }
 
     @Override
