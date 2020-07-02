@@ -49,8 +49,6 @@ public interface RocksDbHotDao extends AutoCloseable {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
 
-  Map<Checkpoint, BeaconState> getCheckpointStates();
-
   Map<UnsignedLong, VoteTracker> getVotes();
 
   HotUpdater hotUpdater();
@@ -67,17 +65,11 @@ public interface RocksDbHotDao extends AutoCloseable {
 
     void setLatestFinalizedState(final BeaconState state);
 
-    void addCheckpointState(final Checkpoint checkpoint, final BeaconState state);
-
-    void addCheckpointStates(Map<Checkpoint, BeaconState> checkpointStates);
-
     void addHotBlock(final SignedBeaconBlock block);
 
     void addVotes(final Map<UnsignedLong, VoteTracker> states);
 
     void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
-
-    void deleteCheckpointState(final Checkpoint checkpoint);
 
     void deleteHotBlock(final Bytes32 blockRoot);
 
