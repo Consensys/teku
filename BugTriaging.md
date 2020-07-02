@@ -55,9 +55,7 @@ A feature rarely used, with a high likelihood of failure, may have a lower overa
   </tbody>
 </table>
 
-
 #### Severity
-
 
 How bad is the problem when it is encountered?
 
@@ -107,15 +105,141 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
     </tr>
   </tbody>
 </table>
+
 #### Risk Matrix
 
-|            | Catastrophic | Critical | Moderate | Marginal | Insignificant |
-|------------|:------------:|:--------:|:--------:|:--------:|---------------|
-|   Frequent |   Very High  |   High   |   High   |  Medium  | Very Low      |
-| Improbable |    Medium    |    Low   |    Low   | Very Low | Very Low      |
-| Occasional |     High     |  Medium  |  Medium  |    Low   | Very Low      |
-|   Probable |     High     |   High   |  Medium  |  Medium  | Very Low      |
-|     Remote |    Medium    |  Medium  |    Low   |    Low   | Very Low      |
+<table class="wrapped confluenceTable tablesorter tablesorter-default" role="grid" resolved="">
+  <colgroup>
+    <col>
+    <col>
+    <col>
+    <col>
+    <col>
+    <col>
+  </colgroup>
+  <thead>
+    <tr role="row" class="tablesorter-headerRow">
+      <th class="confluenceTh tablesorter-header sortableHeader tablesorter-headerAsc" data-column="0" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" aria-sort="ascending" aria-label=": Ascending sort applied, activate to apply a descending sort" style="user-select: none;">
+        <div class="tablesorter-header-inner"><br></div>
+      </th>
+      <th style="text-align: center; user-select: none;" class="confluenceTh tablesorter-header sortableHeader tablesorter-headerUnSorted" data-column="1" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" aria-sort="none" aria-label="Catastrophic: No sort applied, activate to apply an ascending sort">
+        <div class="tablesorter-header-inner">
+          <p><strong>Catastrophic</strong></p>
+        </div>
+      </th>
+      <th style="text-align: center; user-select: none;" class="confluenceTh tablesorter-header sortableHeader tablesorter-headerUnSorted" data-column="2" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" aria-sort="none" aria-label="Critical: No sort applied, activate to apply an ascending sort">
+        <div class="tablesorter-header-inner">
+          <p><strong>Critical</strong></p>
+        </div>
+      </th>
+      <th style="text-align: center; user-select: none;" class="confluenceTh tablesorter-header sortableHeader tablesorter-headerUnSorted" data-column="3" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" aria-sort="none" aria-label="Moderate: No sort applied, activate to apply an ascending sort">
+        <div class="tablesorter-header-inner">
+          <p><strong>Moderate</strong></p>
+        </div>
+      </th>
+      <th style="text-align: center; user-select: none;" class="confluenceTh tablesorter-header sortableHeader tablesorter-headerUnSorted" data-column="4" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" aria-sort="none" aria-label="Marginal: No sort applied, activate to apply an ascending sort">
+        <div class="tablesorter-header-inner">
+          <p><strong>Marginal</strong></p>
+        </div>
+      </th>
+      <th colspan="1" class="confluenceTh tablesorter-header sortableHeader tablesorter-headerUnSorted" data-column="5" tabindex="0" scope="col" role="columnheader" aria-disabled="false" unselectable="on" aria-sort="none" aria-label="Insignificant: No sort applied, activate to apply a descending sort" style="user-select: none;">
+        <div class="tablesorter-header-inner">Insignificant</div>
+      </th>
+    </tr>
+  </thead>
+  <tbody aria-live="polite" aria-relevant="all">
+    <tr role="row">
+      <th style="text-align: right;" class="confluenceTh">
+        <p><strong>Frequent</strong></p>
+      </th>
+      <td class="highlight-blue confluenceTd" style="text-align: center;" title="Background colour : Blue" data-highlight-colour="blue">
+        <p title=""><span>Very High</span></p>
+      </td>
+      <td class="highlight-red confluenceTd" style="text-align: center;" title="Background colour : Red" data-highlight-colour="red">
+        <p title=""><span>High</span></p>
+      </td>
+      <td class="highlight-red confluenceTd" style="text-align: center;" title="Background colour : Red" data-highlight-colour="red">
+        <p title=""><span>High</span></p>
+      </td>
+      <td class="highlight-yellow confluenceTd" style="text-align: center;" title="Background colour : Yellow" data-highlight-colour="yellow">
+        <p title=""><span>Medium</span></p>
+      </td>
+      <td colspan="1" class="confluenceTd"><span>Very Low</span></td>
+    </tr>
+    <tr role="row">
+      <th style="text-align: right;" class="confluenceTh">
+        <p><strong>Improbable</strong></p>
+      </th>
+      <td class="highlight-yellow confluenceTd" style="text-align: center;" title="Background colour : Yellow" data-highlight-colour="yellow">
+        <p title=""><span>Medium</span></p>
+      </td>
+      <td class="highlight-green confluenceTd" style="text-align: center;" title="Background colour : Green" data-highlight-colour="green">
+        <p title=""><span>Low</span></p>
+      </td>
+      <td class="highlight-green confluenceTd" style="text-align: center;" title="Background colour : Green" data-highlight-colour="green">
+        <p title=""><span>Low</span></p>
+      </td>
+      <td style="text-align: center;" class="confluenceTd">
+        <p title=""><span>Very Low</span></p>
+      </td>
+      <td colspan="1" class="confluenceTd"><span>Very Low</span></td>
+    </tr>
+    <tr role="row">
+      <th style="text-align: right;" class="confluenceTh">
+        <p><strong>Occasional</strong></p>
+      </th>
+      <td class="highlight-red confluenceTd" style="text-align: center;" title="Background colour : Red" data-highlight-colour="red">
+        <p title=""><span>High</span></p>
+      </td>
+      <td class="highlight-yellow confluenceTd" style="text-align: center;" title="Background colour : Yellow" data-highlight-colour="yellow">
+        <p title=""><span>Medium</span></p>
+      </td>
+      <td class="highlight-yellow confluenceTd" style="text-align: center;" title="Background colour : Yellow" data-highlight-colour="yellow">
+        <p title=""><span>Medium</span></p>
+      </td>
+      <td class="highlight-green confluenceTd" style="text-align: center;" title="Background colour : Green" data-highlight-colour="green">
+        <p title=""><span>Low</span></p>
+      </td>
+      <td colspan="1" class="confluenceTd"><span>Very Low</span></td>
+    </tr>
+    <tr role="row">
+      <th style="text-align: right;" class="confluenceTh">
+        <p><strong>Probable</strong></p>
+      </th>
+      <td class="highlight-red confluenceTd" style="text-align: center;" title="Background colour : Red" data-highlight-colour="red">
+        <p title=""><span>High</span></p>
+      </td>
+      <td class="highlight-red confluenceTd" style="text-align: center;" title="Background colour : Red" data-highlight-colour="red">
+        <p title=""><span>High</span></p>
+      </td>
+      <td class="highlight-yellow confluenceTd" style="text-align: center;" title="Background colour : Yellow" data-highlight-colour="yellow">
+        <p title=""><span>Medium</span></p>
+      </td>
+      <td class="highlight-yellow confluenceTd" style="text-align: center;" title="Background colour : Yellow" data-highlight-colour="yellow">
+        <p title=""><span>Medium</span></p>
+      </td>
+      <td colspan="1" class="confluenceTd"><span>Very Low</span></td>
+    </tr>
+    <tr role="row">
+      <th style="text-align: right;" class="confluenceTh">
+        <p><strong>Remote</strong></p>
+      </th>
+      <td class="highlight-yellow confluenceTd" style="text-align: center;" title="Background colour : Yellow" data-highlight-colour="yellow">
+        <p title=""><span>Medium</span></p>
+      </td>
+      <td class="highlight-yellow confluenceTd" style="text-align: center;" title="Background colour : Yellow" data-highlight-colour="yellow">
+        <p title=""><span>Medium</span></p>
+      </td>
+      <td class="highlight-green confluenceTd" style="text-align: center;" title="Background colour : Green" data-highlight-colour="green">
+        <p title=""><span>Low</span></p>
+      </td>
+      <td class="highlight-green confluenceTd" style="text-align: center;" title="Background colour : Green" data-highlight-colour="green">
+        <p title=""><span>Low</span></p>
+      </td>
+      <td colspan="1" class="confluenceTd"><span>Very Low</span></td>
+    </tr>
+  </tbody>
+</table>
 
 #### Examples 
 In a nutshell, our bugs are categorized into 5 priorities: 
