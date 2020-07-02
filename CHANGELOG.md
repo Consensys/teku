@@ -8,29 +8,69 @@ we recommend most users use the latest `master` branch of Teku.
  - Anyone using `/node/version` should switch to use
    the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
 
-## 0.12.0
+## 0.12.1
 
+### Breaking Changes
+ 
 ### Additions and Improvements
 
- - The time to genesis being reached is now output every 10 minutes, so that it's visibly apparent that teku is still running.
+ - added a metric `beacon_peer_count` that tracks the same counter used for `/network/peer_count` and console `Peers:` output.
+
+### Bug Fixes
+
+### Known Issues
+
+- Validator may produce attestations in the incorrect slot or committee resulting in `Produced invalid attestation` messages ([#2179](https://github.com/PegaSysEng/teku/issues/2179))
+
+## 0.12.0
 
 ### Breaking Changes
 
- - `--metrics-host-whitelist` CLI option will be renamed `--metrics-host-allowlist` (currently both are supported)
- - `--rest-api-host-whitelist` CLI option will be renamed `--rest-api-host-allowlist` (currently both are supported)
- - Support the 0.12.1 beacon chain spec, which is not 
-    compatible with Schlesi or Witti testnets.  Use the v0.11.5 release for compatibility with beacon chain spec 0.11.4.
- - The Rest interface is now correctly set from `--rest-api-interface`, so will need to be correctly configured to ensure
-    that hosts specified in the `--rest-api-host-allowlist` are able to access that interface.
- - `--rest-api-enabled` is now correctly used to determine whether to start the rest api. Ensure it is set if using the rest api.
+- Upgraded to v0.12.1 of the beacon chain spec. This is compatible with the Altona and Onyx testnets.  For the Witti testnet use the 0.11.5 release.
+- `--metrics-host-whitelist` CLI option has been renamed `--metrics-host-allowlist`
+- `--rest-api-host-whitelist` CLI option has been renamed `--rest-api-host-allowlist`
+- The Rest interface is now correctly set from `--rest-api-interface`, so will need to be correctly configured to ensure
+   that hosts specified in the `--rest-api-host-allowlist` are able to access that interface. Note that the default is to listen on localhost only.
+- `--rest-api-enabled` is now correctly used to determine whether to start the rest api. Ensure it is set if using the rest api. Note that the default is disabled.
+
+### Additions and Improvements
+
+- Support beacon chain spec v0.12.1.
+- The `--network` option now includes support for `altona` and `onyx`. The default network is now `altona`
+- Disk space requirements have been very significantly reduced, particularly when using archive storage mode
+  - Finalized states are now stored in a separate database to non-finalized data. 
+    CLI options to store these under different directories are not yet available but will be considered in the future
+  - Snapshots of finalized states are stored periodically. The `data-storage-archive-frequency` option controls how frequent these snapshots are.
+    More frequent snapshots result in greater disk usage but improve the performance of API requests that access finalized state.
+  - Due to the way regenerated states are cached, iterating through slots in increasing order is significantly faster than iterating in decreasing order
+- Teku now exposes RocksDB metrics to prometheus
+- The genesis state root, block root and time are now printed at startup
+- The time to genesis being reached is now output every 10 minutes, so that it's visibly apparent that teku is still running
+- Requests made to ETH1 nodes now include the Teku version as the user agent
+- Unstable options can now be listed with `teku -X`. These options may be changed at any time without warning and are generally not required, but can be useful in some situations.
+- Added a bash/zsh autocomplete script for Teku options and subcommands
+- Reduced memory usage of state caches
+- The list of validators being run is now printed to the console instead of just the log file
+ 
  
 ### Bug Fixes
 
+- Fixed a very common error message while handling received attestations from peers
+- Reduced log level of `Connection reset` log messages from `NoiseXXSecureChannel`.
+- Fixed an issue where the last ETH1 block with deposits was processed twice when Teku was restarted pre-genesis. This resulted in an incorrect genesis state being generated.
 - Update the private key message at startup to more clearly indicate it is referring to the ENR.
 - The `--rest-api-interface` configuration attribute is now set on the HTTP server, it no longer listens on all interfaces.
 - The `--rest-api-enabled` flag will determine whether the http server actually starts and binds to a port now.
+- Fixed minor memory leak in storage
+- Fixed potential crashes in RocksDB while shutting down Teku.
+- Fixed an incompatibility with other clients due to Teku incorrectly expecting a length prefix for metadata requests
+- When no advertised IP is specified and the p2p-interface is set to `0.0.0.0` or some other "any local" address, 
+    Teku will now resolve the IP for localhost instead of using the "any local" address in it's initial ENR.
 
 ### Known Issues
+
+- Validator may produce attestations in the incorrect slot or committee resulting in `Produced invalid attestation` messages ([#2179](https://github.com/PegaSysEng/teku/issues/2179))
+
 
 ## 0.11.5
 
