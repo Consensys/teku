@@ -413,13 +413,14 @@ class Store implements UpdatableStore {
 
   private BeaconState regnerateCheckpointState(
       final Checkpoint checkpoint, Function<Bytes32, BeaconState> getBlockState) {
-    checkpointStateRequestRegenerateCounter.inc();
     try {
       final BeaconState baseState = getBlockState.apply(checkpoint.getRoot());
       if (baseState == null || baseState.getSlot().equals(checkpoint.getEpochStartSlot())) {
+        checkpointStateRequestCachedCounter.inc();
         return baseState;
       }
 
+      checkpointStateRequestRegenerateCounter.inc();
       return new StateTransition().process_slots(baseState, checkpoint.getEpochStartSlot());
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new IllegalStateException("Unable to regenerate checkpoint state", e);
