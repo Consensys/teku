@@ -36,6 +36,7 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 public interface V4SchemaHot extends Schema {
   RocksDbColumn<Bytes32, SignedBeaconBlock> HOT_BLOCKS_BY_ROOT =
       RocksDbColumn.create(1, BYTES32_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
+  // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   RocksDbColumn<Checkpoint, BeaconState> CHECKPOINT_STATES =
       RocksDbColumn.create(2, CHECKPOINT_SERIALIZER, STATE_SERIALIZER);
   RocksDbColumn<UnsignedLong, VoteTracker> VOTES =
