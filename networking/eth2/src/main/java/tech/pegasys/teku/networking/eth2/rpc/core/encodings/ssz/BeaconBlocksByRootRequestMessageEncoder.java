@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -44,6 +46,10 @@ public class BeaconBlocksByRootRequestMessageEncoder
     for (int i = 0; i < message.size(); i += Bytes32.SIZE) {
       blockRoots.add(Bytes32.wrap(message.slice(i, Bytes32.SIZE)));
     }
-    return new BeaconBlocksByRootRequestMessage(blockRoots);
+    try {
+      return new BeaconBlocksByRootRequestMessage(blockRoots);
+    } catch (IllegalArgumentException ex) {
+      throw new RpcException(INVALID_REQUEST_CODE, ex.getMessage());
+    }
   }
 }

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler.INVALID_STEP;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -161,7 +162,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @Test
   public void shouldStopAtBestSlot() {
     final int startBlock = 15;
-    final UnsignedLong count = UnsignedLong.MAX_VALUE;
+    final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 5;
 
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
@@ -183,7 +184,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @Test
   public void shouldRejectRequestWhenStepIsZero() {
     final int startBlock = 15;
-    final UnsignedLong count = UnsignedLong.MAX_VALUE;
+    final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 0;
 
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
