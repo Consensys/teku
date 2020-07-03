@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.MoreObjects;
@@ -30,7 +29,6 @@ public class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContaine
       SSZList.createMutable(Bytes32.class, MAX_REQUEST_BLOCKS);
 
   public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
-    checkArgument(blockRoots.size() <= MAX_REQUEST_BLOCKS);
     this.blockRoots.addAll(blockRoots);
   }
 

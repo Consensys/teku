@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -32,7 +29,6 @@ public final class BeaconBlocksByRangeRequestMessage
 
   public BeaconBlocksByRangeRequestMessage(
       final UnsignedLong startSlot, final UnsignedLong count, final UnsignedLong step) {
-    checkArgument(count.compareTo(UnsignedLong.valueOf(MAX_REQUEST_BLOCKS)) <= 0);
     this.startSlot = startSlot;
     this.count = count;
     this.step = step;
