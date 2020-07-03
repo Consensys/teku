@@ -73,8 +73,10 @@ public class BeaconBlocksByRangeMessageHandler
     if (message.getStep().compareTo(ONE) < 0) {
       callback.completeWithErrorResponse(INVALID_STEP);
       return;
-    } else if (message.getCount().compareTo(UnsignedLong.valueOf(MAX_REQUEST_BLOCKS)) > 0) {
+    }
+    if (message.getCount().compareTo(UnsignedLong.valueOf(MAX_REQUEST_BLOCKS)) > 0) {
       callback.completeWithErrorResponse(TOO_MANY_BLOCKS);
+      return;
     }
     sendMatchingBlocks(message, callback)
         .finish(
