@@ -24,9 +24,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
@@ -46,16 +49,31 @@ public class PeerSync {
   private final BlockImporter blockImporter;
 
   private final AsyncRunner asyncRunner;
+  private final Counter blockImportSuccessResult;
+  private final Counter blockImportFailureResult;
 
   private volatile UnsignedLong startingSlot = UnsignedLong.valueOf(0);
 
   public PeerSync(
       final AsyncRunner asyncRunner,
       final RecentChainData storageClient,
-      final BlockImporter blockImporter) {
+      final BlockImporter blockImporter,
+      final MetricsSystem metricsSystem) {
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
+
+    this.blockImportSuccessResult =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "block_import_success_result",
+            "The number of block imports that have been successfully completed");
+
+    this.blockImportFailureResult =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "block_import_failure_result",
+            "The number of block imports that have failed");
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
@@ -181,7 +199,10 @@ public class PeerSync {
     final BlockImportResult result = blockImporter.importBlock(block);
     LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
     if (!result.isSuccessful()) {
+      this.blockImportFailureResult.inc();
       throw new FailedBlockImportException(block, result);
+    } else {
+      this.blockImportSuccessResult.inc();
     }
   }
 
