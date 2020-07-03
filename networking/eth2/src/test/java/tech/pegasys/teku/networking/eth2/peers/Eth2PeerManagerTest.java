@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +39,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -196,6 +198,41 @@ public class Eth2PeerManagerTest {
     peerManager.onConnect(peer);
 
     verify(eth2Peer).disconnectImmediately();
+  }
+
+  @Test
+  void onConnect_shouldDisconnectIfIncomingPeerDoesNotSendStatusMessage() {
+    final Peer peer = createPeer(1);
+    final Eth2Peer eth2Peer = getEth2Peer(peer);
+    when(eth2Peer.hasStatus()).thenReturn(false);
+    when(peer.connectionInitiatedLocally()).thenReturn(false);
+
+    peerManager.onConnect(peer);
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+
+    // Didn't receive a status message in time, so disconnect.
+    verify(eth2Peer).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+  }
+
+  @Test
+  void onConnect_shouldNotDisconnectIncomingPeerWhenStatusMessageSent() {
+    final Peer peer = createPeer(1);
+    final Eth2Peer eth2Peer = getEth2Peer(peer);
+    when(eth2Peer.hasStatus()).thenReturn(true);
+    when(peer.connectionInitiatedLocally()).thenReturn(false);
+
+    peerManager.onConnect(peer);
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+
+    // We receive peer status before the timeout
+    setInitialPeerStatus(peer);
+    asyncRunner.executeQueuedActions();
+
+    // So don't disconnect
+    verify(eth2Peer, never()).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
   }
 
   private Peer createPeer(final int id) {

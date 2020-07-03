@@ -43,6 +43,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.Cancellable;
 import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
@@ -191,6 +192,15 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                         LOG.debug("Failed to send status to {}: {}", peer.getId(), err);
                         eth2Peer.disconnectImmediately();
                       }));
+    } else {
+      asyncRunner.runAfterDelay(
+          () -> {
+            if (!eth2Peer.hasStatus()) {
+              eth2Peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+            }
+          },
+          Constants.RESP_TIMEOUT,
+          TimeUnit.SECONDS);
     }
 
     eth2Peer.subscribeInitialStatus(
