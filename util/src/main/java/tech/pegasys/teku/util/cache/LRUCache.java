@@ -93,4 +93,9 @@ public class LRUCache<K, V> implements Cache<K, V> {
   public void clear() {
     cacheData.clear();
   }
+
+  @Override
+  public int size() {
+    return cacheData.size();
+  }
 }
