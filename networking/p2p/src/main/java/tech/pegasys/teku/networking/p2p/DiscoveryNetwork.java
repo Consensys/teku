@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -80,6 +81,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
+      final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
       final P2PNetwork<P> p2pNetwork,
       final ReputationManager reputationManager,
@@ -87,6 +89,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     final DiscoveryService discoveryService = createDiscoveryService(p2pConfig);
     final ConnectionManager connectionManager =
         new ConnectionManager(
+            metricsSystem,
             discoveryService,
             reputationManager,
             asyncRunner,

@@ -107,7 +107,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       Duration eth2StatusUpdateInterval) {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
-            PeerChainValidator.create(storageClient, historicalChainData, peer, status);
+            PeerChainValidator.create(
+                metricsSystem, storageClient, historicalChainData, peer, status);
     return new Eth2PeerManager(
         asyncRunner,
         new CombinedChainDataClient(storageClient, historicalChainData),
