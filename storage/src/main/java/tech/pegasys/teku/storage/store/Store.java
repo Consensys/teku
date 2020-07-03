@@ -795,7 +795,7 @@ class Store implements UpdatableStore {
 
     @Override
     public Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
-      return Optional.of(checkpointStateCache.get(checkpoint))
+      return Optional.ofNullable(checkpointStateCache.get(checkpoint))
           .or(() -> Store.this.getCheckpointStateIfAvailable(checkpoint))
           .or(() -> regenerateCheckpointState(checkpoint, this::getBlockState));
     }
