@@ -102,7 +102,8 @@ public class SyncingNodeManager {
             blockImporter);
 
     SyncManager syncManager =
-        SyncManager.create(asyncRunner, eth2Network, recentChainData, blockImporter);
+        SyncManager.create(
+            asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
     SyncService syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
 
     eventChannels
