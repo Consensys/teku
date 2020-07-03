@@ -193,14 +193,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                         eth2Peer.disconnectImmediately();
                       }));
     } else {
-      asyncRunner.runAfterDelay(
-          () -> {
-            if (!eth2Peer.hasStatus()) {
-              eth2Peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
-            }
-          },
-          Constants.RESP_TIMEOUT,
-          TimeUnit.SECONDS);
+      ensureStatusReceived(eth2Peer);
     }
 
     eth2Peer.subscribeInitialStatus(
@@ -216,6 +209,28 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                       }
                     },
                     error -> LOG.debug("Error while validating peer", error)));
+  }
+
+  private void ensureStatusReceived(final Eth2Peer peer) {
+    asyncRunner
+        .runAfterDelay(
+            () -> {
+              if (!peer.hasStatus()) {
+                LOG.trace(
+                    "Disconnecting peer {} because initial status was not received", peer.getId());
+                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+              }
+            },
+            Constants.RESP_TIMEOUT,
+            TimeUnit.SECONDS)
+        .finish(
+            () -> {},
+            error -> {
+              LOG.error(
+                  "Error while waiting for peer {} to exchange status. Disconnecting",
+                  peer.getId());
+              peer.disconnectImmediately();
+            });
   }
 
   @VisibleForTesting
