@@ -56,4 +56,7 @@ public interface Cache<K, V> {
 
   /** Clears all cached values */
   void clear();
+
+  /** Returns the current number of items in the cache */
+  int size();
 }

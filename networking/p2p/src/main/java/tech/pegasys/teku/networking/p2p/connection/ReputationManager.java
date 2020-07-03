@@ -15,6 +15,8 @@ package tech.pegasys.teku.networking.p2p.connection;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.util.cache.Cache;
 import tech.pegasys.teku.util.cache.LRUCache;
@@ -24,9 +26,15 @@ public class ReputationManager {
   private final TimeProvider timeProvider;
   private final Cache<PeerAddress, Reputation> peerReputations;
 
-  public ReputationManager(final TimeProvider timeProvider, final int capacity) {
+  public ReputationManager(
+      final MetricsSystem metricsSystem, final TimeProvider timeProvider, final int capacity) {
     this.timeProvider = timeProvider;
     this.peerReputations = new LRUCache<>(capacity);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.NETWORK,
+        "peer_reputation_cache_size",
+        "Total number of peer reputations tracked",
+        peerReputations::size);
   }
 
   public void reportInitiatedConnectionFailed(final PeerAddress peerAddress) {

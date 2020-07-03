@@ -62,4 +62,9 @@ public class NoOpCache<K, V> implements Cache<K, V> {
 
   @Override
   public void clear() {}
+
+  @Override
+  public int size() {
+    return 0;
+  }
 }
