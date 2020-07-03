@@ -78,7 +78,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         store.getFinalizedCheckpoint().getEpoch(),
-        store.getCheckpointState(justifiedCheckpoint).getBalances().asList());
+        store.getCheckpointState(justifiedCheckpoint).orElseThrow().getBalances().asList());
   }
 
   @Override
