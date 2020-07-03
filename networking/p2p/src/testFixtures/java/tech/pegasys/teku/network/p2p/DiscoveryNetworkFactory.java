@@ -87,11 +87,15 @@ public class DiscoveryNetworkFactory {
                 true,
                 bootnodes,
                 new TargetPeerRange(20, 30));
+        final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
-                StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
+                metricsSystem,
+                StubTimeProvider.withTimeInSeconds(1000),
+                Constants.REPUTATION_MANAGER_CAPACITY);
         final DiscoveryNetwork<Peer> network =
             DiscoveryNetwork.create(
+                metricsSystem,
                 DelayedExecutorAsyncRunner.create(),
                 new LibP2PNetwork(
                     DelayedExecutorAsyncRunner.create(),

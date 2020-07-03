@@ -24,6 +24,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -229,7 +230,8 @@ public class PeerChainValidatorTest {
     // Setup peer to report a pre-genesis status
     remoteStatus = PeerStatus.createPreGenesisStatus();
     peerChainValidator =
-        PeerChainValidator.create(recentChainData, historicalChainData, peer, remoteStatus);
+        PeerChainValidator.create(
+            new NoOpMetricsSystem(), recentChainData, historicalChainData, peer, remoteStatus);
 
     // Setup mocks
     forksMatch();
@@ -409,6 +411,7 @@ public class PeerChainValidatorTest {
 
     remoteStatus = status;
     peerChainValidator =
-        PeerChainValidator.create(recentChainData, historicalChainData, peer, status);
+        PeerChainValidator.create(
+            new NoOpMetricsSystem(), recentChainData, historicalChainData, peer, status);
   }
 }
