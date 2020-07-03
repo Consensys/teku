@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -62,18 +63,14 @@ public class PeerSync {
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
-
-    this.blockImportSuccessResult =
-        metricsSystem.createCounter(
+    final LabelledMetric<Counter> blockImportCounter =
+        metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            "block_import_success_result",
-            "The number of block imports that have been successfully completed");
-
-    this.blockImportFailureResult =
-        metricsSystem.createCounter(
-            TekuMetricCategory.BEACON,
-            "block_import_failure_result",
-            "The number of block imports that have failed");
+            "block_import_total",
+            "The number of block imports performed",
+            "result");
+    this.blockImportSuccessResult = blockImportCounter.labels("imported");
+    this.blockImportFailureResult = blockImportCounter.labels("rejected");
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
