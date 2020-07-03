@@ -14,21 +14,31 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.InitialStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -41,22 +51,28 @@ public class Eth2PeerManagerTest {
   private final PeerStatusFactory statusFactory = PeerStatusFactory.create(1L);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final RecentChainData storageClient = mock(RecentChainData.class);
-  private final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(storageClient);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final Eth2PeerFactory eth2PeerFactory = mock(Eth2PeerFactory.class);
+  private final StatusMessageFactory statusMessageFactory =
+      new StatusMessageFactory(recentChainData);
 
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
   private final PeerValidatorFactory peerValidatorFactory = (peer, status) -> peerChainValidator;
   private final SafeFuture<Boolean> peerValidationResult = new SafeFuture<>();
+
+  private final Map<Peer, Eth2Peer> eth2Peers = new HashMap<>();
 
   private final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(
           asyncRunner,
           combinedChainDataClient,
-          storageClient,
+          recentChainData,
           new NoOpMetricsSystem(),
+          eth2PeerFactory,
           peerValidatorFactory,
-          new AttestationSubnetService(),
+          statusMessageFactory,
+          new MetadataMessagesFactory(),
           rpcEncoding,
           Eth2NetworkBuilder.DEFAULT_ETH2_RPC_PING_INTERVAL,
           Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,
@@ -79,15 +95,14 @@ public class Eth2PeerManagerTest {
 
     // Add a peer
     final Peer peer = createPeer(1);
-    final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
 
     // Connect event should not broadcast until status is set
     assertThat(connectedPeers).isEmpty();
 
     // Set status and check event was broadcast
-    setInitialPeerStatus(eth2Peer);
-    assertThat(connectedPeers).containsExactly(eth2Peer);
+    setInitialPeerStatus(peer);
+    assertThat(connectedPeers).containsExactly(getEth2Peer(peer));
   }
 
   @Test
@@ -102,14 +117,13 @@ public class Eth2PeerManagerTest {
 
     // Add a peer
     final Peer peer = createPeer(1);
-    final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
 
     // Connect event should not broadcast until status is set
     assertThat(connectedPeers).isEmpty();
 
     // Set status, which should trigger peerValidation to fail
-    setInitialPeerStatus(eth2Peer);
+    setInitialPeerStatus(peer);
     assertThat(connectedPeers).isEmpty();
   }
 
@@ -125,17 +139,15 @@ public class Eth2PeerManagerTest {
 
     // Add a peer
     final Peer peer = createPeer(1);
-    final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
-    setInitialPeerStatus(eth2Peer);
-    assertThat(connectedPeers).containsExactly(eth2Peer);
+    setInitialPeerStatus(peer);
+    assertThat(connectedPeers).containsExactly(getEth2Peer(peer));
 
     // Add another peer
     final Peer peerB = createPeer(2);
-    final Eth2Peer eth2PeerB = createEth2Peer(peerB);
     peerManager.onConnect(peerB);
-    setInitialPeerStatus(eth2PeerB);
-    assertThat(connectedPeers).containsExactly(eth2Peer, eth2PeerB);
+    setInitialPeerStatus(peerB);
+    assertThat(connectedPeers).containsExactly(getEth2Peer(peer), getEth2Peer(peerB));
   }
 
   @Test
@@ -151,33 +163,67 @@ public class Eth2PeerManagerTest {
     assertThat(connectedPeers).isEmpty();
 
     final Peer peer = createPeer(1);
-    final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
-    setInitialPeerStatus(eth2Peer);
+    setInitialPeerStatus(peer);
 
-    assertThat(connectedPeers).containsExactly(eth2Peer);
-    assertThat(connectedPeersB).containsExactly(eth2Peer);
+    assertThat(connectedPeers).containsExactly(getEth2Peer(peer));
+    assertThat(connectedPeersB).containsExactly(getEth2Peer(peer));
+  }
+
+  @Test
+  void onConnect_shouldDisconnectIfPeerReturnsErrorResponseToStatusMessage() {
+    final Peer peer = createPeer(1);
+    final Eth2Peer eth2Peer = getEth2Peer(peer);
+    when(peer.connectionInitiatedLocally()).thenReturn(true);
+    when(eth2Peer.sendStatus())
+        .thenReturn(
+            SafeFuture.failedFuture(
+                new RpcException(RpcResponseStatus.SERVER_ERROR_CODE, "It went boom")));
+
+    peerManager.onConnect(peer);
+
+    verify(eth2Peer).disconnectImmediately();
+  }
+
+  @Test
+  void onConnect_shouldDisconnectIfStatusMessageFailsToSend() {
+    final Peer peer = createPeer(1);
+    final Eth2Peer eth2Peer = getEth2Peer(peer);
+    when(peer.connectionInitiatedLocally()).thenReturn(true);
+    when(eth2Peer.sendStatus())
+        .thenReturn(SafeFuture.failedFuture(new IOException("Failed to send")));
+
+    peerManager.onConnect(peer);
+
+    verify(eth2Peer).disconnectImmediately();
   }
 
   private Peer createPeer(final int id) {
     final Peer peer = mock(Peer.class);
+    final Eth2Peer eth2Peer = createEth2Peer(peer);
+    eth2Peers.put(peer, eth2Peer);
     when(peer.getId()).thenReturn(new MockNodeId(id));
+    when(eth2PeerFactory.create(same(peer), any())).thenReturn(eth2Peer);
     return peer;
   }
 
-  private void setInitialPeerStatus(final Eth2Peer peer) {
-    final PeerStatus status = statusFactory.random();
-    peerManager.getConnectedPeer(peer.getId()).orElseThrow().updateStatus(status);
+  private Eth2Peer getEth2Peer(final Peer peer) {
+    return eth2Peers.get(peer);
   }
 
   private Eth2Peer createEth2Peer(final Peer peer) {
-    final Eth2Peer eth2Peer =
-        new Eth2Peer(
-            peer,
-            peerManager.getBeaconChainMethods(),
-            statusMessageFactory,
-            new MetadataMessagesFactory());
+    final Eth2Peer eth2Peer = mock(Eth2Peer.class);
+    when(eth2Peer.idMatches(peer)).thenReturn(true);
     when(peer.idMatches(eth2Peer)).thenReturn(true);
+    final NodeId peerId = peer.getId();
+    when(eth2Peer.getId()).thenReturn(peerId);
     return eth2Peer;
+  }
+
+  private void setInitialPeerStatus(final Peer peer) {
+    final ArgumentCaptor<InitialStatusSubscriber> subscriberArgumentCaptor =
+        ArgumentCaptor.forClass(InitialStatusSubscriber.class);
+    verify(getEth2Peer(peer)).subscribeInitialStatus(subscriberArgumentCaptor.capture());
+    subscriberArgumentCaptor.getValue().onInitialStatus(statusFactory.random());
   }
 }
