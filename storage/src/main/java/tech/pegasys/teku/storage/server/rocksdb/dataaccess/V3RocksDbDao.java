@@ -25,12 +25,15 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 
-public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDbEth1Dao {
+public class V3RocksDbDao
+    implements RocksDbHotDao, RocksDbFinalizedDao, RocksDbEth1Dao, RocksDbProtoArrayDao {
+
   private final RocksDbAccessor db;
 
   public V3RocksDbDao(final RocksDbAccessor db) {
@@ -117,11 +120,6 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   }
 
   @Override
-  public Map<Checkpoint, BeaconState> getCheckpointStates() {
-    return db.getAll(V3Schema.CHECKPOINT_STATES);
-  }
-
-  @Override
   public Map<UnsignedLong, VoteTracker> getVotes() {
     return db.getAll(V3Schema.VOTES);
   }
@@ -135,6 +133,11 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
     return db.get(V3Schema.MIN_GENESIS_TIME_BLOCK);
+  }
+
+  @Override
+  public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
+    return db.get(V3Schema.PROTO_ARRAY_SNAPSHOT);
   }
 
   @Override
@@ -153,11 +156,17 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
   }
 
   @Override
+  public ProtoArrayUpdater protoArrayUpdater() {
+    return new V3Updater(db);
+  }
+
+  @Override
   public void close() throws Exception {
     db.close();
   }
 
-  private static class V3Updater implements HotUpdater, FinalizedUpdater, Eth1Updater {
+  private static class V3Updater
+      implements HotUpdater, FinalizedUpdater, Eth1Updater, ProtoArrayUpdater {
 
     private final RocksDbTransaction transaction;
 
@@ -191,16 +200,6 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
     }
 
     @Override
-    public void addCheckpointState(final Checkpoint checkpoint, final BeaconState state) {
-      transaction.put(V3Schema.CHECKPOINT_STATES, checkpoint, state);
-    }
-
-    @Override
-    public void addCheckpointStates(final Map<Checkpoint, BeaconState> checkpointStates) {
-      checkpointStates.forEach(this::addCheckpointState);
-    }
-
-    @Override
     public void addHotBlock(final SignedBeaconBlock block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot, block);
@@ -230,11 +229,6 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
     }
 
     @Override
-    public void deleteCheckpointState(final Checkpoint checkpoint) {
-      transaction.delete(V3Schema.CHECKPOINT_STATES, checkpoint);
-    }
-
-    @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
       transaction.delete(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot);
     }
@@ -247,6 +241,11 @@ public class V3RocksDbDao implements RocksDbHotDao, RocksDbFinalizedDao, RocksDb
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       transaction.put(V3Schema.DEPOSITS_FROM_BLOCK_EVENTS, event.getBlockNumber(), event);
+    }
+
+    @Override
+    public void putProtoArraySnapshot(ProtoArraySnapshot newProtoArray) {
+      transaction.put(V3Schema.PROTO_ARRAY_SNAPSHOT, newProtoArray);
     }
 
     @Override

@@ -193,7 +193,7 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-    forkChoice.processHead();
+    forkChoice.processHead(slot);
     return importResult.getBlock();
   }
 

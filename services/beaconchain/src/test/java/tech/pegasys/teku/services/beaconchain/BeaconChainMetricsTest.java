@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
+import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -63,10 +64,11 @@ class BeaconChainMetricsTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final RecentChainData preGenesisChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
+  private final Eth2Network eth2Network = mock(Eth2Network.class);
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BeaconChainMetrics beaconChainMetrics =
-      new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem);
+      new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem, eth2Network);
 
   @Test
   void getLongFromRoot_shouldParseNegativeOne() {
@@ -117,6 +119,12 @@ class BeaconChainMetricsTest {
     when(recentChainData.getFinalizedEpoch()).thenReturn(ONE);
 
     assertThat(metricsSystem.getGauge(BEACON, "finalized_epoch").getValue()).isEqualTo(1);
+  }
+
+  @Test
+  void getPeerCount_shouldSupplyValue() {
+    when(eth2Network.getPeerCount()).thenReturn(1);
+    assertThat(metricsSystem.getGauge(BEACON, "peer_count").getValue()).isEqualTo(1);
   }
 
   @Test

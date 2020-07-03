@@ -22,6 +22,7 @@ import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
 public interface RocksDbSerializer<T> {
   RocksDbSerializer<UnsignedLong> UNSIGNED_LONG_SERIALIZER = new UnsignedLongSerializer();
@@ -35,6 +36,8 @@ public interface RocksDbSerializer<T> {
       new DepositsFromBlockEventSerializer();
   RocksDbSerializer<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER =
       new MinGenesisTimeBlockEventSerializer();
+  RocksDbSerializer<ProtoArraySnapshot> PROTO_ARRAY_SNAPSHOT_SERIALIZER =
+      new ProtoArraySnapshotSerializer();
 
   T deserialize(final byte[] data);
 
