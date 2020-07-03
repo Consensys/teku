@@ -34,6 +34,7 @@ import java.util.OptionalInt;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -142,6 +143,7 @@ class DiscoveryNetworkTest {
   public void shouldNotEnableDiscoveryWhenDiscoveryIsDisabled() {
     final DiscoveryNetwork<Peer> network =
         DiscoveryNetwork.create(
+            new NoOpMetricsSystem(),
             DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
             reputationManager,

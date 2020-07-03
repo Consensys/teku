@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -474,6 +475,7 @@ class ConnectionManagerTest {
   private ConnectionManager createManager(
       final TargetPeerRange targetPeerCount, final PeerAddress... peers) {
     return new ConnectionManager(
+        new NoOpMetricsSystem(),
         discoveryService,
         reputationManager,
         asyncRunner,
