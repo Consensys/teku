@@ -21,20 +21,24 @@ import org.junit.jupiter.api.Test;
 public class DatabaseVersionTest {
   @Test
   public void defaultVersion() {
-    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V3);
+    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V5);
+  }
+
+  @Test
+  public void shouldAcceptV5FromString() {
+    Optional<DatabaseVersion> data = DatabaseVersion.fromString("5");
+    assertThat(data).contains(DatabaseVersion.V5);
   }
 
   @Test
   public void shouldAcceptV4FromString() {
     Optional<DatabaseVersion> data = DatabaseVersion.fromString("4");
-    assertThat(data.isPresent()).isTrue();
-    assertThat(data.get()).isEqualTo(DatabaseVersion.V4);
+    assertThat(data).contains(DatabaseVersion.V4);
   }
 
   @Test
   public void shouldAcceptV3FromString() {
     Optional<DatabaseVersion> data = DatabaseVersion.fromString("3.0");
-    assertThat(data.isPresent()).isTrue();
-    assertThat(data.get()).isEqualTo(DatabaseVersion.V3);
+    assertThat(data).contains(DatabaseVersion.V3);
   }
 }

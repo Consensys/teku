@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.protoarray;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes32;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
@@ -39,24 +39,38 @@ public class ProtoArrayTestUtil {
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
-    ProtoArrayForkChoiceStrategy forkChoice =
-        ProtoArrayForkChoiceStrategy.create(
-            new HashMap<>(), store.getFinalizedCheckpoint(), store.getJustifiedCheckpoint());
+    ProtoArrayForkChoiceStrategy forkChoice = ProtoArrayForkChoiceStrategy.create(store);
 
-    ProtoArrayForkChoiceStrategyUpdater updater = forkChoice.updater();
-    updater.processBlock(
+    forkChoice.processBlock(
         finalizedBlockSlot,
         finalizedBlockRoot,
         Bytes32.ZERO,
         Bytes32.ZERO,
         justifiedCheckpointEpoch,
         finalizedCheckpointEpoch);
-    updater.commit();
 
     return forkChoice;
   }
 
   public static MutableStore createStoreToManipulateVotes() {
     return STORE_FACTORY.createMutableGenesisStore();
+  }
+
+  public static void assertThatBlockInformationMatches(ProtoNode node1, ProtoNode node2) {
+    assertThat(node1.getBlockSlot()).isEqualTo(node2.getBlockSlot());
+    assertThat(node1.getStateRoot()).isEqualTo(node2.getStateRoot());
+    assertThat(node1.getBlockRoot()).isEqualTo(node2.getBlockRoot());
+    assertThat(node1.getParentRoot()).isEqualTo(node2.getParentRoot());
+    assertThat(node1.getJustifiedEpoch()).isEqualTo(node2.getJustifiedEpoch());
+    assertThat(node1.getFinalizedEpoch()).isEqualTo(node2.getFinalizedEpoch());
+  }
+
+  public static void assertThatProtoArrayMatches(ProtoArray array1, ProtoArray array2) {
+    assertThat(array1.getNodes().size()).isEqualTo(array2.getNodes().size());
+    assertThat(array1.getJustifiedEpoch()).isEqualTo(array2.getJustifiedEpoch());
+    assertThat(array1.getFinalizedEpoch()).isEqualTo(array2.getFinalizedEpoch());
+    for (int i = 0; i < array1.getNodes().size(); i++) {
+      assertThatBlockInformationMatches(array1.getNodes().get(i), array2.getNodes().get(i));
+    }
   }
 }

@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.events.ChannelExceptionHandler;
 import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public final class TekuDefaultExceptionHandler
     implements SubscriberExceptionHandler,
@@ -84,6 +85,8 @@ public final class TekuDefaultExceptionHandler
     if (exception instanceof OutOfMemoryError) {
       statusLog.fatalError(subscriberDescription, exception);
       System.exit(2);
+    } else if (exception instanceof ShuttingDownException) {
+      LOG.debug("Shutting down", exception);
     } else if (isExpectedNettyError(exception)) {
       LOG.debug("Channel unexpectedly closed", exception);
     } else if (isSpecFailure(exception)) {

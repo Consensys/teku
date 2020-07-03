@@ -31,9 +31,7 @@ public class StorageUpdate {
   private final Optional<Checkpoint> justifiedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
-  private final Map<Checkpoint, BeaconState> checkpointStates;
   private final Map<UnsignedLong, VoteTracker> votes;
-  private final Set<Checkpoint> deletedCheckpointStates;
   private final Set<Bytes32> deletedHotBlocks;
 
   public StorageUpdate(
@@ -43,8 +41,6 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
       final Set<Bytes32> deletedHotBlocks,
-      final Map<Checkpoint, BeaconState> checkpointStates,
-      final Set<Checkpoint> deletedCheckpointStates,
       final Map<UnsignedLong, VoteTracker> votes) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
@@ -52,8 +48,6 @@ public class StorageUpdate {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
     this.deletedHotBlocks = deletedHotBlocks;
-    this.checkpointStates = checkpointStates;
-    this.deletedCheckpointStates = deletedCheckpointStates;
     this.votes = votes;
   }
 
@@ -64,8 +58,6 @@ public class StorageUpdate {
         && bestJustifiedCheckpoint.isEmpty()
         && hotBlocks.isEmpty()
         && deletedHotBlocks.isEmpty()
-        && checkpointStates.isEmpty()
-        && deletedCheckpointStates.isEmpty()
         && votes.isEmpty();
   }
 
@@ -93,6 +85,12 @@ public class StorageUpdate {
     return deletedHotBlocks;
   }
 
+  public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
+    return finalizedChainData
+        .map(FinalizedChainData::getFinalizedChildToParentMap)
+        .orElse(Collections.emptyMap());
+  }
+
   public Map<Bytes32, SignedBeaconBlock> getFinalizedBlocks() {
     return finalizedChainData.map(FinalizedChainData::getBlocks).orElse(Collections.emptyMap());
   }
@@ -103,14 +101,6 @@ public class StorageUpdate {
 
   public Optional<BeaconState> getLatestFinalizedState() {
     return finalizedChainData.map(FinalizedChainData::getLatestFinalizedState);
-  }
-
-  public Map<Checkpoint, BeaconState> getCheckpointStates() {
-    return checkpointStates;
-  }
-
-  public Set<Checkpoint> getDeletedCheckpointStates() {
-    return deletedCheckpointStates;
   }
 
   public Map<UnsignedLong, VoteTracker> getVotes() {

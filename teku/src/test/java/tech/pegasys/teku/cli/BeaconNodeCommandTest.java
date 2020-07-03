@@ -243,6 +243,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
+        .setNetwork(NetworkDefinition.fromCliArg("altona"))
         .setEth1DepositContractAddress(null)
         .setEth1Endpoint(null)
         .setMetricsCategories(
@@ -275,7 +276,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pInterface("1.2.3.4")
         .setP2pPort(1234)
         .setP2pDiscoveryEnabled(false)
-        .setP2pDiscoveryBootnodes(Collections.emptyList())
         .setP2pAdvertisedPort(OptionalInt.of(9000))
         .setP2pAdvertisedIp(Optional.empty())
         .setP2pPrivateKeyFile("path/to/file")
@@ -283,7 +283,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPeerUpperBound(30)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
-        .setInitialState("")
         .setInteropOwnedValidatorStartIndex(0)
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)

@@ -20,8 +20,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler.INVALID_STEP;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRang
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -161,7 +163,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @Test
   public void shouldStopAtBestSlot() {
     final int startBlock = 15;
-    final UnsignedLong count = UnsignedLong.MAX_VALUE;
+    final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 5;
 
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
@@ -183,7 +185,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @Test
   public void shouldRejectRequestWhenStepIsZero() {
     final int startBlock = 15;
-    final UnsignedLong count = UnsignedLong.MAX_VALUE;
+    final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 0;
 
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
@@ -196,7 +198,9 @@ class BeaconBlocksByRangeMessageHandlerTest {
             UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
         listener);
 
-    verify(listener).completeWithErrorResponse(INVALID_STEP);
+    verify(listener)
+        .completeWithErrorResponse(
+            new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
     verifyNoMoreInteractions(listener);
     verifyNoMoreInteractions(combinedChainDataClient);
   }

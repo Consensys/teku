@@ -44,6 +44,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -61,6 +62,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   private static final TekuConfiguration CONFIG =
       TekuConfiguration.builder()
           .setRestApiPort(0)
+          .setRestApiEnabled(true)
           .setRestApiDocsEnabled(false)
           .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
@@ -106,7 +108,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   private void setupAndStartRestAPI(TekuConfiguration config) {
-    blockImporter = new BlockImporter(recentChainData, storageSystem.eventBus());
+    blockImporter =
+        new BlockImporter(recentChainData, mock(ForkChoice.class), storageSystem.eventBus());
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
@@ -129,11 +132,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     // Initialize genesis
     setupStorage(StateStorageMode.ARCHIVE);
     chainUpdater.initializeGenesis();
-    // Setup finalized checkpoint without any attestations
-    // Making protoarray fork-choice incompatible with the Store's justified checkpoint
-    // and preventing the chainhead from being set
-    chainUpdater.advanceChain();
-    chainUpdater.finalizeEpoch(UnsignedLong.ONE);
     // Restart storage system without running fork choice
     storageSystem = storageSystem.restarted(StateStorageMode.ARCHIVE);
     setupStorage(storageSystem);

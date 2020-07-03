@@ -10,9 +10,13 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
 
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'io.prometheus:simpleclient'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-ssz'
+  implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.mapdb:mapdb'
   implementation 'org.rocksdb:rocksdbjni'
@@ -21,6 +25,7 @@ dependencies {
   testImplementation testFixtures(project(':data:metrics'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':protoarray'))
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':pow'))
   testImplementation testFixtures(project(':storage'))
@@ -35,7 +40,10 @@ dependencies {
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':pow'))
   testFixturesImplementation project(':protoarray')
+  testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':util'))
+  testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testFixturesImplementation 'org.junit.jupiter:junit-jupiter-params'
   testFixturesImplementation 'com.google.guava:guava'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'

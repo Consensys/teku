@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.logging;
 
+import static java.util.stream.Collectors.joining;
 import static tech.pegasys.teku.logging.LoggingConfigurator.STATUS_LOGGER_NAME;
 
 import java.nio.file.Path;
+import java.util.List;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,6 +77,18 @@ public class StatusLogger {
     log.error(message, file.toString(), cause);
   }
 
+  public void validatorsInitialised(final List<String> validators) {
+    if (validators.size() > 100) {
+      log.info("Loaded {} validators", validators.size());
+      log.debug("validators: {}", () -> validators.stream().collect(joining(", ")));
+    } else {
+      log.info(
+          "Loaded {} Validators: {}",
+          validators::size,
+          () -> validators.stream().collect(joining(", ")));
+    }
+  }
+
   public void beginInitializingChainData() {
     log.info("Initializing storage");
   }
@@ -88,6 +102,12 @@ public class StatusLogger {
         "Starting with mocked start interoperability mode with genesis time {} and {} validators",
         () -> DateFormatUtils.format(genesisTime * 1000, "yyyy-MM-dd hh:mm:ss"),
         () -> size);
+  }
+
+  public void timeUntilGenesis(final long timeToGenesis) {
+    log.info(
+        "{} until genesis time is reached",
+        () -> DateFormatUtils.format(timeToGenesis * 1000, "hh:mm:ss"));
   }
 
   public void loadingGenesisFile(final String genesisFile) {

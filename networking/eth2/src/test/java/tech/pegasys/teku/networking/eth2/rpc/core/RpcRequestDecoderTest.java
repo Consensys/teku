@@ -22,6 +22,8 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 
 class RpcRequestDecoderTest extends RpcDecoderTestBase {
 
@@ -37,7 +39,7 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
         decoder.decodeRequest(bufSlice).ifPresent(msgs::add);
         bufSlice.release();
       }
-      decoder.complete();
+      assertThat(decoder.complete()).isEmpty();
       for (ByteBuf bufSlice : bufSlices) {
         assertThat(bufSlice.refCnt()).isEqualTo(0);
       }
@@ -63,7 +65,13 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
                 }
                 decoder.complete();
               })
-          .isEqualTo(RpcException.EXTRA_DATA_APPENDED);
+          .isInstanceOf(ExtraDataAppendedException.class);
     }
+  }
+
+  @Test
+  public void shouldProcessEmptyMessage() throws Exception {
+    RpcRequestDecoder<EmptyMessage> decoder = new RpcRequestDecoder<>(EmptyMessage.class, ENCODING);
+    assertThat(decoder.complete()).isNotEmpty().contains(EmptyMessage.EMPTY_MESSAGE);
   }
 }

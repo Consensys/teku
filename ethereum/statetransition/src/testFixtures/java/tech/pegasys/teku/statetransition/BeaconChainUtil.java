@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
+import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.TestMessageSignerService;
@@ -38,7 +38,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -48,18 +48,19 @@ public class BeaconChainUtil {
 
   private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil();
   private final RecentChainData recentChainData;
+  private final ForkChoice forkChoice;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;
-  private final BlockImporter blockImporter;
 
   private BeaconChainUtil(
       final List<BLSKeyPair> validatorKeys,
       final RecentChainData recentChainData,
+      final ForkChoice forkChoice,
       boolean signDeposits) {
     this.validatorKeys = validatorKeys;
     this.recentChainData = recentChainData;
     this.signDeposits = signDeposits;
-    this.blockImporter = new BlockImporter(recentChainData, new EventBus());
+    this.forkChoice = forkChoice;
   }
 
   public static BeaconChainUtil create(
@@ -71,14 +72,27 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-    return create(storageClient, validatorKeys, true);
+    return create(
+        storageClient, validatorKeys, new ForkChoice(storageClient, new StateTransition()), true);
   }
 
   public static BeaconChainUtil create(
       final RecentChainData storageClient,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
-    return new BeaconChainUtil(validatorKeys, storageClient, signDeposits);
+    return new BeaconChainUtil(
+        validatorKeys,
+        storageClient,
+        new ForkChoice(storageClient, new StateTransition()),
+        signDeposits);
+  }
+
+  public static BeaconChainUtil create(
+      final RecentChainData storageClient,
+      final List<BLSKeyPair> validatorKeys,
+      final ForkChoice forkChoice,
+      final boolean signDeposits) {
+    return new BeaconChainUtil(validatorKeys, storageClient, forkChoice, signDeposits);
   }
 
   public static void initializeStorage(
@@ -169,7 +183,7 @@ public class BeaconChainUtil {
     final SignedBeaconBlock block =
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
-    final BlockImportResult importResult = blockImporter.importBlock(block);
+    final BlockImportResult importResult = forkChoice.onBlock(block);
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "
@@ -179,11 +193,7 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-
-    final StoreTransaction tx = recentChainData.startStoreTransaction();
-    tx.updateHead();
-    tx.commit().join();
-
+    forkChoice.processHead(slot);
     return importResult.getBlock();
   }
 

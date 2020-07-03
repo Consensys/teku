@@ -52,9 +52,9 @@ public class BLSSignature implements SimpleOffsetSerializable {
   }
 
   /**
-   * Creates an empty signature (all zero bytes).
+   * Creates an empty signature (all zero bytes). Note that this is not a valid signature.
    *
-   * @return the empty signature as per the Eth2 spec
+   * @return the empty signature
    */
   public static BLSSignature empty() {
     return BLSSignature.fromBytes(Bytes.wrap(new byte[BLS_SIGNATURE_SIZE]));
@@ -98,7 +98,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    *
    * @param signature A Mikuli Signature
    */
-  BLSSignature(Signature signature) {
+  public BLSSignature(Signature signature) {
     this.signature = signature;
   }
 

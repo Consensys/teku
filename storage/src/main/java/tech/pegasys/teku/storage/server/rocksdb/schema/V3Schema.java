@@ -17,6 +17,7 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.CHECKPOINT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.PROTO_ARRAY_SNAPSHOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_BLOCK_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.STATE_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UNSIGNED_LONG_SERIALIZER;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
 public interface V3Schema extends Schema {
 
@@ -42,6 +44,7 @@ public interface V3Schema extends Schema {
       RocksDbColumn.create(3, BYTES32_SERIALIZER, STATE_SERIALIZER);
   RocksDbColumn<Bytes32, SignedBeaconBlock> HOT_BLOCKS_BY_ROOT =
       RocksDbColumn.create(4, BYTES32_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
+  // We no longer store checkpoint states, keeping only for backwards compatibility
   RocksDbColumn<Checkpoint, BeaconState> CHECKPOINT_STATES =
       RocksDbColumn.create(5, CHECKPOINT_SERIALIZER, STATE_SERIALIZER);
   RocksDbColumn<UnsignedLong, VoteTracker> VOTES =
@@ -60,4 +63,6 @@ public interface V3Schema extends Schema {
   RocksDbVariable<BeaconState> LATEST_FINALIZED_STATE = RocksDbVariable.create(5, STATE_SERIALIZER);
   RocksDbVariable<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK =
       RocksDbVariable.create(6, MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER);
+  RocksDbVariable<ProtoArraySnapshot> PROTO_ARRAY_SNAPSHOT =
+      RocksDbVariable.create(7, PROTO_ARRAY_SNAPSHOT_SERIALIZER);
 }

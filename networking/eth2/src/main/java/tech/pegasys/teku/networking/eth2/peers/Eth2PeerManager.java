@@ -43,13 +43,14 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.Cancellable;
 import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AsyncRunner asyncRunner;
-  private final StatusMessageFactory statusMessageFactory;
+  private final Eth2PeerFactory eth2PeerFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
 
   private final Subscribers<PeerConnectedSubscriber<Eth2Peer>> connectSubscribers =
@@ -69,17 +70,18 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final CombinedChainDataClient combinedChainDataClient,
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
+      final Eth2PeerFactory eth2PeerFactory,
       final PeerValidatorFactory peerValidatorFactory,
-      final AttestationSubnetService attestationSubnetService,
+      final StatusMessageFactory statusMessageFactory,
+      final MetadataMessagesFactory metadataMessagesFactory,
       final RpcEncoding rpcEncoding,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
       Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
-    this.statusMessageFactory = new StatusMessageFactory(storageClient);
-    metadataMessagesFactory = new MetadataMessagesFactory();
-    attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
+    this.eth2PeerFactory = eth2PeerFactory;
     this.peerValidatorFactory = peerValidatorFactory;
+    this.metadataMessagesFactory = metadataMessagesFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
             asyncRunner,
@@ -97,7 +99,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   public static Eth2PeerManager create(
       final AsyncRunner asyncRunner,
-      final RecentChainData storageClient,
+      final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
       final AttestationSubnetService attestationSubnetService,
@@ -105,16 +107,23 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
       Duration eth2StatusUpdateInterval) {
+
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
-            PeerChainValidator.create(storageClient, historicalChainData, peer, status);
+            PeerChainValidator.create(
+                metricsSystem, recentChainData, historicalChainData, peer, status);
+    final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
+    final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
+    attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
     return new Eth2PeerManager(
         asyncRunner,
-        new CombinedChainDataClient(storageClient, historicalChainData),
-        storageClient,
+        new CombinedChainDataClient(recentChainData, historicalChainData),
+        recentChainData,
         metricsSystem,
+        new Eth2PeerFactory(statusMessageFactory, metadataMessagesFactory),
         peerValidatorFactory,
-        attestationSubnetService,
+        statusMessageFactory,
+        metadataMessagesFactory,
         rpcEncoding,
         eth2RpcPingInterval,
         eth2RpcOutstandingPingThreshold,
@@ -157,8 +166,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   @Override
   public void onConnect(final Peer peer) {
-    Eth2Peer eth2Peer =
-        new Eth2Peer(peer, rpcMethods, statusMessageFactory, metadataMessagesFactory);
+    Eth2Peer eth2Peer = eth2PeerFactory.create(peer, rpcMethods);
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), eth2Peer) == null;
     if (!wasAdded) {
       LOG.warn("Duplicate peer connection detected. Ignoring peer.");
@@ -175,9 +183,17 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               RootCauseExceptionHandler.builder()
                   .addCatch(
                       RpcException.class,
-                      err -> LOG.trace("Status message rejected by {}: {}", peer.getId(), err))
+                      err -> {
+                        LOG.trace("Status message rejected by {}: {}", peer.getId(), err);
+                        eth2Peer.disconnectImmediately();
+                      })
                   .defaultCatch(
-                      err -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err)));
+                      err -> {
+                        LOG.debug("Failed to send status to {}: {}", peer.getId(), err);
+                        eth2Peer.disconnectImmediately();
+                      }));
+    } else {
+      ensureStatusReceived(eth2Peer);
     }
 
     eth2Peer.subscribeInitialStatus(
@@ -193,6 +209,28 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                       }
                     },
                     error -> LOG.debug("Error while validating peer", error)));
+  }
+
+  private void ensureStatusReceived(final Eth2Peer peer) {
+    asyncRunner
+        .runAfterDelay(
+            () -> {
+              if (!peer.hasStatus()) {
+                LOG.trace(
+                    "Disconnecting peer {} because initial status was not received", peer.getId());
+                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+              }
+            },
+            Constants.RESP_TIMEOUT,
+            TimeUnit.SECONDS)
+        .finish(
+            () -> {},
+            error -> {
+              LOG.error(
+                  "Error while waiting for peer {} to exchange status. Disconnecting",
+                  peer.getId());
+              peer.disconnectImmediately();
+            });
   }
 
   @VisibleForTesting

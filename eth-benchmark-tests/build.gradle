@@ -10,6 +10,7 @@ dependencies {
   implementation project(':eth-tests')
   implementation project(':storage')
   implementation project(':util')
+  implementation project(':data')
 
   implementation testFixtures(project(':ethereum:core'))
   implementation testFixtures(project(':ethereum:datastructures'))

@@ -33,6 +33,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.cache.IntCache;
+import tech.pegasys.teku.ssz.backing.cache.SoftRefIntCache;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.CompositeViewType;
 import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
@@ -393,6 +394,11 @@ public class BeaconStateImpl extends ContainerViewReadImpl
         .add("current_justified_checkpoint", state.getCurrent_justified_checkpoint())
         .add("finalized_checkpoint", state.getFinalized_checkpoint())
         .toString();
+  }
+
+  @Override
+  protected IntCache<ViewRead> createCache() {
+    return new SoftRefIntCache<>(super::createCache);
   }
 
   @Override

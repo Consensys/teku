@@ -49,6 +49,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final TekuConfiguration config =
       TekuConfiguration.builder()
           .setRestApiPort(0)
+          .setRestApiEnabled(true)
           .setRestApiDocsEnabled(false)
           .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();

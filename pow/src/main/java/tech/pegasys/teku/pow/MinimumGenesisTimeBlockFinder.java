@@ -42,11 +42,12 @@ public class MinimumGenesisTimeBlockFinder {
   /**
    * Find first block in history that has timestamp greater than MIN_GENESIS_TIME
    *
-   * @param headBlock block at current chain head
+   * @param headBlockNumber block number at current chain head (respecting follow distance)
    * @return min genesis time block
    */
-  public SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(EthBlock.Block headBlock) {
-    return binarySearchLoop(new SearchContext(headBlock));
+  public SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(
+      final BigInteger headBlockNumber) {
+    return binarySearchLoop(new SearchContext(headBlockNumber));
   }
 
   private SafeFuture<EthBlock.Block> binarySearchLoop(final SearchContext searchContext) {
@@ -78,12 +79,8 @@ public class MinimumGenesisTimeBlockFinder {
     }
   }
 
-  // eth1_timestamp - eth1_timestamp % MIN_GENESIS_DELAY + 2 * MIN_GENESIS_DELAY,
   static UnsignedLong calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
-    UnsignedLong timestamp = UnsignedLong.valueOf(eth1Timestamp);
-    return timestamp
-        .minus(timestamp.mod(UnsignedLong.valueOf(Constants.MIN_GENESIS_DELAY)))
-        .plus(UnsignedLong.valueOf(2 * Constants.MIN_GENESIS_DELAY));
+    return UnsignedLong.valueOf(eth1Timestamp).plus(Constants.GENESIS_DELAY);
   }
 
   static int compareBlockTimestampToMinGenesisTime(EthBlock.Block block) {
@@ -113,8 +110,8 @@ public class MinimumGenesisTimeBlockFinder {
     private UnsignedLong low = UnsignedLong.ZERO;
     private UnsignedLong high;
 
-    public SearchContext(final EthBlock.Block chainHead) {
-      this.high = UnsignedLong.valueOf(chainHead.getNumber());
+    public SearchContext(final BigInteger headBlockNumber) {
+      this.high = UnsignedLong.valueOf(headBlockNumber);
     }
   }
 }

@@ -38,16 +38,15 @@ public class DataOptions {
 
   @Option(
       names = {"--data-storage-archive-frequency"},
-      hidden = true,
       paramLabel = "<FREQUENCY>",
-      description = "Sets the frequency, in slots, at which to store archived states to disk.",
+      description = "Sets the frequency, in slots, at which to store finalized states to disk.",
       arity = "1")
   private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
 
   @Option(
       names = {"--Xdata-storage-create-db-version"},
       paramLabel = "<VERSION>",
-      description = "Database version to create (3.0 or 4)",
+      description = "Database version to create",
       arity = "1",
       hidden = true)
   private String createDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();

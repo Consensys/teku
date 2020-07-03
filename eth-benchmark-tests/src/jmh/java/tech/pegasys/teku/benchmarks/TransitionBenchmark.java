@@ -33,11 +33,13 @@ import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
@@ -55,7 +57,7 @@ public abstract class TransitionBenchmark {
   BlockImportResult lastResult;
   SignedBeaconBlock prefetchedBlock;
 
-  @Param({"16384", "32768"})
+  @Param({"32768"})
   int validatorsCount;
 
   @Setup(Level.Trial)
@@ -80,7 +82,8 @@ public abstract class TransitionBenchmark {
     localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
-    blockImporter = new BlockImporter(recentChainData, localEventBus);
+    ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+    blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
     blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);
   }

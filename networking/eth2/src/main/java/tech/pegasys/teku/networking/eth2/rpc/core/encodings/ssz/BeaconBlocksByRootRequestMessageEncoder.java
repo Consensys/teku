@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 
 public class BeaconBlocksByRootRequestMessageEncoder
@@ -37,12 +41,17 @@ public class BeaconBlocksByRootRequestMessageEncoder
   public BeaconBlocksByRootRequestMessage decode(final Bytes message) throws RpcException {
     if (message.size() % Bytes32.SIZE != 0) {
       LOG.trace("Cannot split message into Bytes32 chunks {}", message);
-      throw RpcException.DESERIALIZATION_FAILED;
+      throw new DeserializationFailedException();
     }
     final List<Bytes32> blockRoots = new ArrayList<>();
     for (int i = 0; i < message.size(); i += Bytes32.SIZE) {
       blockRoots.add(Bytes32.wrap(message.slice(i, Bytes32.SIZE)));
     }
+    if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
+      throw new RpcException(
+          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " can per request");
+    }
+
     return new BeaconBlocksByRootRequestMessage(blockRoots);
   }
 }

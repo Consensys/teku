@@ -212,7 +212,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v0.11.3'
+def refTestVersion = 'v0.12.1'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -259,11 +259,34 @@ task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, clean
 
 task deploy() {}
 
+application {
+  applicationName = "teku"
+  mainClassName = "tech.pegasys.teku.Teku"
+  applicationDefaultJvmArgs = [
+      "-Dvertx.disableFileCPResolving=true",
+      "-Dteku.home=TEKU_HOME",
+      // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
+      // happens during shutdown is not logged.
+      "-Dlog4j.shutdownHookEnabled=false",
+      "-XX:+HeapDumpOnOutOfMemoryError",
+      // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
+      "-XX:NativeMemoryTracking=summary"
+  ]
+}
+
+task autocomplete(type: JavaExec) {
+  dependsOn compileJava
+  outputs.file "build/teku.autocomplete.sh"
+
+  main = application.mainClassName
+  args "debug", "generate-autocomplete", "--output", "build/teku.autocomplete.sh"
+  classpath sourceSets.main.runtimeClasspath
+}
 
 installDist { }
 
 distTar {
-  dependsOn checkLicenses
+  dependsOn checkLicenses, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -272,24 +295,10 @@ distTar {
 }
 
 distZip {
-  dependsOn checkLicenses
+  dependsOn checkLicenses, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
-}
-
-application {
-  applicationName = "teku"
-  mainClassName = "tech.pegasys.teku.Teku"
-  applicationDefaultJvmArgs = [
-      "-Djava.library.path=TEKU_HOME/native",
-      "-Dvertx.disableFileCPResolving=true",
-      "-Dteku.home=TEKU_HOME",
-      // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
-      // happens during shutdown is not logged.
-      "-Dlog4j.shutdownHookEnabled=false",
-      "-XX:+HeapDumpOnOutOfMemoryError"
-  ]
 }
 
 startScripts {
@@ -579,6 +588,7 @@ distributions {
       from("./LICENSE") { into "." }
       from("build/reports/license/license-dependency.html") { into "." }
       from("libs") { into "native" }
+      from("build/teku.autocomplete.sh") { into "." }
     }
   }
 }
