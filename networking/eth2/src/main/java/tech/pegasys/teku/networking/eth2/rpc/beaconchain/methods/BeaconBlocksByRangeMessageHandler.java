@@ -20,7 +20,6 @@ import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.min;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
@@ -41,14 +40,6 @@ import tech.pegasys.teku.util.async.SafeFuture;
 public class BeaconBlocksByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
-
-  @VisibleForTesting
-  static final RpcException INVALID_STEP =
-      new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero");
-
-  private static final RpcException TOO_MANY_BLOCKS =
-      new RpcException(
-          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " can per request");
 
   private final CombinedChainDataClient combinedChainDataClient;
   private final UnsignedLong maxRequestSize;
@@ -71,11 +62,15 @@ public class BeaconBlocksByRangeMessageHandler
         message.getStartSlot(),
         message.getStep());
     if (message.getStep().compareTo(ONE) < 0) {
-      callback.completeWithErrorResponse(INVALID_STEP);
+      callback.completeWithErrorResponse(
+          new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
       return;
     }
     if (message.getCount().compareTo(UnsignedLong.valueOf(MAX_REQUEST_BLOCKS)) > 0) {
-      callback.completeWithErrorResponse(TOO_MANY_BLOCKS);
+      callback.completeWithErrorResponse(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request"));
       return;
     }
     sendMatchingBlocks(message, callback)
