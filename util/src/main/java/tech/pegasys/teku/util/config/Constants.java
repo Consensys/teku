@@ -116,7 +116,7 @@ public class Constants {
   public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
   // Sync
-  public static final UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(1024);
+  public static final UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
 
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
