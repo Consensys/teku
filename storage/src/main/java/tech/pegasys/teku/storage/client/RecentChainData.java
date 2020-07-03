@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -63,6 +65,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
+  private final Counter reorgCounter;
 
   private volatile UpdatableStore store;
   private volatile Optional<ProtoArrayForkChoiceStrategy> forkChoiceStrategy;
@@ -82,6 +85,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
+    reorgCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "reorgs_total",
+            "Total occurrences of reorganizations of the chain");
   }
 
   public void subscribeStoreInitialized(Runnable runnable) {
@@ -166,8 +174,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   /**
    * Update Best Block
    *
-   * @param root
-   * @param slot
+   * @param root the new best block root
+   * @param slot the new best slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
     synchronized (this) {
@@ -192,6 +200,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       if (originalBestRoot
           .map(original -> hasReorgedFrom(original, originalBestSlot))
           .orElse(false)) {
+        reorgCounter.inc();
         reorgEventChannel.reorgOccurred(root, newChainHead.getSlot());
       }
     }
