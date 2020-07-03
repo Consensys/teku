@@ -373,6 +373,9 @@ public class ForkChoiceUtil {
     BeaconState target_state;
     try {
       target_state = store.getCheckpointState(target);
+      if (target_state == null) {
+        return AttestationProcessingResult.UNKNOWN_BLOCK;
+      }
     } catch (final InvalidCheckpointException e) {
       LOG.debug("on_attestation: Attestation target checkpoint is invalid", e);
       return AttestationProcessingResult.invalid("Invalid target checkpoint: " + e.getMessage());
