@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
+
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
@@ -24,7 +26,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 public class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContainer {
 
   private final SSZMutableList<Bytes32> blockRoots =
-      SSZList.createMutable(Bytes32.class, Integer.MAX_VALUE);
+      SSZList.createMutable(Bytes32.class, MAX_REQUEST_BLOCKS);
 
   public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
     this.blockRoots.addAll(blockRoots);

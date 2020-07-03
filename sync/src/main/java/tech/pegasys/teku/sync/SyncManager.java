@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -71,12 +72,13 @@ public class SyncManager extends Service {
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
       final RecentChainData storageClient,
-      final BlockImporter blockImporter) {
+      final BlockImporter blockImporter,
+      final MetricsSystem metricsSystem) {
     return new SyncManager(
         asyncRunner,
         network,
         storageClient,
-        new PeerSync(asyncRunner, storageClient, blockImporter));
+        new PeerSync(asyncRunner, storageClient, blockImporter, metricsSystem));
   }
 
   @Override
