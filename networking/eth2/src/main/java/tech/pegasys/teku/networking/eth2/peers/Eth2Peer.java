@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -41,6 +44,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
@@ -144,7 +148,12 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<Void> requestBlocksByRoot(
-      final List<Bytes32> blockRoots, final ResponseListener<SignedBeaconBlock> listener) {
+      final List<Bytes32> blockRoots, final ResponseListener<SignedBeaconBlock> listener)
+      throws RpcException {
+    if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
+      throw new RpcException(
+          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " can per request");
+    }
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
