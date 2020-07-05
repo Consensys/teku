@@ -209,7 +209,7 @@ class ConnectionManagerTest {
 
     connectionFuture.completeExceptionally(new RuntimeException("Failed"));
 
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    asyncRunner.executeQueuedActions();
     verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }
 
@@ -227,7 +227,7 @@ class ConnectionManagerTest {
     connectionFuture.complete(peer);
 
     peer.disconnectImmediately();
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    asyncRunner.executeQueuedActions();
     verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }
 
