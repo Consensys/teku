@@ -13,7 +13,8 @@ ENV TEKU_REST_API_INTERFACE="0.0.0.0"
 ENV TEKU_METRICS_INTERFACE="0.0.0.0"
 
 # List Exposed Ports
-EXPOSE 8008 8084 8545 30303 30303/udp
+# Metrics, Rest API, LibP2P, Discv5
+EXPOSE 8008 5051 9000 9000/udp
 
 # specify default command
 ENTRYPOINT ["/opt/teku/bin/teku"]
