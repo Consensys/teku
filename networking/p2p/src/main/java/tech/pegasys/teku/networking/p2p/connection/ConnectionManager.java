@@ -84,6 +84,7 @@ public class ConnectionManager extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
+    LOG.trace("Starting discovery manager");
     synchronized (this) {
       staticPeers.forEach(this::createPersistentConnection);
     }
@@ -101,6 +102,7 @@ public class ConnectionManager extends Service {
 
   private void connectToKnownPeers() {
     final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
+    LOG.trace("Connecting to up to {} known peers", maxAttempts);
     discoveryService
         .streamKnownPeers()
         .filter(this::isPeerValid)
@@ -113,8 +115,10 @@ public class ConnectionManager extends Service {
 
   private void searchForPeers() {
     if (!isRunning()) {
+      LOG.trace("Not running so not searching for peers");
       return;
     }
+    LOG.trace("Searching for peers");
     discoveryService
         .searchForPeers()
         .orTimeout(10, TimeUnit.SECONDS)
@@ -127,6 +131,7 @@ public class ConnectionManager extends Service {
   }
 
   private void attemptConnection(final PeerAddress discoveryPeer) {
+    LOG.trace("Attempting to connect to {}", discoveryPeer.getId());
     attemptedConnectionCounter.inc();
     network
         .connect(discoveryPeer)
