@@ -19,6 +19,8 @@ import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -33,12 +35,14 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final MetricsSystem metricsSystem,
       final EventBus eventBus,
       final StorageUpdateChannel storageUpdateChannel,
+      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel) {
     super(
         metricsSystem,
         BlockProvider.NOOP,
         storageUpdateChannel,
+        protoArrayStorageChannel,
         finalizedCheckpointChannel,
         reorgEventChannel,
         eventBus);
@@ -71,6 +75,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
   public static class Builder {
     EventBus eventBus = new EventBus();
     StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
+    ProtoArrayStorageChannel protoArrayStorageChannel = new StubProtoArrayStorageChannel();
     FinalizedCheckpointChannel finalizedCheckpointChannel = new StubFinalizedCheckpointChannel();
     ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
 
@@ -79,6 +84,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           new NoOpMetricsSystem(),
           eventBus,
           storageUpdateChannel,
+          protoArrayStorageChannel,
           finalizedCheckpointChannel,
           reorgEventChannel);
     }

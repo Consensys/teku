@@ -34,4 +34,6 @@ public interface ForkChoiceStrategy {
   Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
 
   boolean contains(Bytes32 blockRoot);
+
+  void save();
 }

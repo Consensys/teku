@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
@@ -136,6 +137,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
             new NoOpMetricsSystem(),
             chainStorageServer,
             chainStorageServer,
+            new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
