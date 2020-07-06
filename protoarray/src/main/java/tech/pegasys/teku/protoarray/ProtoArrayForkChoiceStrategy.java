@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,27 +49,35 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   private final ProtoArray protoArray;
+  private final ProtoArrayStorageChannel storageChannel;
 
   private List<UnsignedLong> balances;
 
-  private ProtoArrayForkChoiceStrategy(ProtoArray protoArray, List<UnsignedLong> balances) {
+  private ProtoArrayForkChoiceStrategy(
+          ProtoArray protoArray,
+          List<UnsignedLong> balances,
+          ProtoArrayStorageChannel protoArrayStorageChannel) {
     this.protoArray = protoArray;
     this.balances = balances;
+    this.storageChannel = protoArrayStorageChannel;
   }
 
   // Public
-  public static ProtoArrayForkChoiceStrategy create(ReadOnlyStore store) {
-    ProtoArray protoArray =
-        new ProtoArray(
-            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            store.getJustifiedCheckpoint().getEpoch(),
-            store.getFinalizedCheckpoint().getEpoch(),
-            new ArrayList<>(),
-            new HashMap<>());
+  public static ProtoArrayForkChoiceStrategy initialize(ReadOnlyStore store,
+                                                        ProtoArrayStorageChannel storageChannel) {
+    ProtoArray protoArray = storageChannel.getProtoArraySnapshot()
+            .join()
+            .map(ProtoArraySnapshot::toProtoArray)
+            .orElse(new ProtoArray(
+                    Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+                    store.getJustifiedCheckpoint().getEpoch(),
+                    store.getFinalizedCheckpoint().getEpoch(),
+                    new ArrayList<>(),
+                    new HashMap<>()));
 
     processBlocksInStoreAtStartup(store, protoArray);
 
-    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>());
+    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), storageChannel);
   }
 
   @Override
@@ -112,6 +122,16 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         state.getFinalized_checkpoint().getEpoch());
   }
 
+  @Override
+  public void save() {
+    protoArrayLock.readLock().lock();
+    try {
+      storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray));
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   public void maybePrune(Bytes32 finalizedRoot) {
     protoArrayLock.writeLock().lock();
     try {
@@ -123,10 +143,14 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   // Internal
   private static void processBlocksInStoreAtStartup(ReadOnlyStore store, ProtoArray protoArray) {
+    List<Bytes32> alreadyIncludedBlockRoots = protoArray.getNodes().stream().map(ProtoNode::getBlockRoot)
+            .collect(Collectors.toList());
+
     store.getBlockRoots().stream()
-        .map(store::getBlock)
-        .sorted(Comparator.comparing(BeaconBlock::getSlot))
-        .forEach(block -> processBlockAtStartup(store, protoArray, block));
+            .filter(root -> !alreadyIncludedBlockRoots.contains(root))
+            .map(store::getBlock)
+            .sorted(Comparator.comparing(BeaconBlock::getSlot))
+            .forEach(block -> processBlockAtStartup(store, protoArray, block));
   }
 
   private static void processBlockAtStartup(

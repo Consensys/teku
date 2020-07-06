@@ -43,20 +43,6 @@ public class BlockInformation {
     this.finalizedEpoch = finalizedEpoch;
   }
 
-  public ProtoNode toProtoNode() {
-    return new ProtoNode(
-        blockSlot,
-        stateRoot,
-        blockRoot,
-        parentRoot,
-        Optional.empty(),
-        justifiedEpoch,
-        finalizedEpoch,
-        UnsignedLong.ZERO,
-        Optional.empty(),
-        Optional.empty());
-  }
-
   public static Bytes toBytes(final BlockInformation blockInformation) {
     return SSZ.encode(
         writer -> {
