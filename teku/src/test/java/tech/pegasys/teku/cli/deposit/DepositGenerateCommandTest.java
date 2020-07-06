@@ -37,7 +37,7 @@ class DepositGenerateCommandTest {
   @Test
   public void generatesKeysWithDisplayConfirmation() {
     final DepositGenerateCommand depositGenerateCommand =
-        new DepositGenerateCommand(shutdownFunction, generateParams, true);
+        new DepositGenerateCommand(shutdownFunction, generateParams, new VerboseOutputParam(true));
 
     depositGenerateCommand.run();
     verify(generateParams).createGenerateAction(true);
@@ -47,7 +47,7 @@ class DepositGenerateCommandTest {
   @Test
   public void generatesKeysWithoutDisplayConfirmation() {
     final DepositGenerateCommand depositGenerateCommand =
-        new DepositGenerateCommand(shutdownFunction, generateParams, false);
+        new DepositGenerateCommand(shutdownFunction, generateParams, new VerboseOutputParam(false));
 
     depositGenerateCommand.run();
     verify(generateParams).createGenerateAction(false);
