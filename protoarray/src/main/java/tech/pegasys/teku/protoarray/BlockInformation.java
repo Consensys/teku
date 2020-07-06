@@ -15,7 +15,6 @@ package tech.pegasys.teku.protoarray;
 
 import com.google.common.base.Objects;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;

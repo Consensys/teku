@@ -15,7 +15,6 @@ package tech.pegasys.teku.protoarray;
 
 import com.google.common.base.Objects;
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,21 +47,23 @@ public class ProtoArraySnapshot {
   }
 
   public ProtoArray toProtoArray() {
-    ProtoArray protoArray = new ProtoArray(
+    ProtoArray protoArray =
+        new ProtoArray(
             Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
             justifiedEpoch,
             finalizedEpoch,
             new ArrayList<>(),
             new HashMap<>());
 
-    blockInformationList.forEach(blockInformation -> protoArray.onBlock(
-            blockInformation.getBlockSlot(),
-            blockInformation.getBlockRoot(),
-            blockInformation.getParentRoot(),
-            blockInformation.getStateRoot(),
-            blockInformation.getJustifiedEpoch(),
-            blockInformation.getFinalizedEpoch()
-    ));
+    blockInformationList.forEach(
+        blockInformation ->
+            protoArray.onBlock(
+                blockInformation.getBlockSlot(),
+                blockInformation.getBlockRoot(),
+                blockInformation.getParentRoot(),
+                blockInformation.getStateRoot(),
+                blockInformation.getJustifiedEpoch(),
+                blockInformation.getFinalizedEpoch()));
     return protoArray;
   }
 
