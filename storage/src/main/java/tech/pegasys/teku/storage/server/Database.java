@@ -25,13 +25,13 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.events.GenesisEvent;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public interface Database extends AutoCloseable {
 
-  void storeGenesis(UpdatableStore store);
+  void storeGenesis(GenesisEvent genesis);
 
   void update(StorageUpdate event);
 

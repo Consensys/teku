@@ -41,6 +41,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.events.GenesisEvent;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -59,7 +60,6 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -133,16 +133,16 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void storeGenesis(final UpdatableStore store) {
+  public void storeGenesis(final GenesisEvent genesis) {
     try (final HotUpdater hotUpdater = hotDao.hotUpdater();
         final FinalizedUpdater finalizedUpdater = finalizedDao.finalizedUpdater()) {
       // We should only have a single block / state / checkpoint at genesis
-      final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
+      final Checkpoint genesisCheckpoint = genesis.getCheckpoint();
       final Bytes32 genesisRoot = genesisCheckpoint.getRoot();
-      final BeaconState genesisState = store.getBlockState(genesisRoot);
-      final SignedBeaconBlock genesisBlock = store.getSignedBlock(genesisRoot);
+      final BeaconState genesisState = genesis.getState();
+      final SignedBeaconBlock genesisBlock = genesis.getBlock();
 
-      hotUpdater.setGenesisTime(store.getGenesisTime());
+      hotUpdater.setGenesisTime(genesisState.getGenesis_time());
       hotUpdater.setJustifiedCheckpoint(genesisCheckpoint);
       hotUpdater.setBestJustifiedCheckpoint(genesisCheckpoint);
       hotUpdater.setFinalizedCheckpoint(genesisCheckpoint);

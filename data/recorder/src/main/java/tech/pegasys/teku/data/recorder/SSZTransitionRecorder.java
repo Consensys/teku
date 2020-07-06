@@ -22,12 +22,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.storage.events.GenesisEvent;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SSZTransitionRecorder {
@@ -41,13 +40,12 @@ public class SSZTransitionRecorder {
   }
 
   @Subscribe
-  public void onGenesis(final UpdatableStore store) {
-    final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
+  public void onGenesis(final GenesisEvent genesis) {
+    final Checkpoint finalizedCheckpoint = genesis.getCheckpoint();
     if (isNotGenesis(finalizedCheckpoint)) {
       return;
     }
-    final Bytes32 genesisRoot = finalizedCheckpoint.getRoot();
-    final BeaconState genesisState = store.getBlockState(genesisRoot);
+    final BeaconState genesisState = genesis.getState();
     store(outputDirectory.resolve("genesis.ssz"), genesisState);
   }
 

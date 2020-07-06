@@ -42,6 +42,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.events.GenesisEvent;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -93,16 +94,17 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
+    final GenesisEvent genesis = GenesisEvent.fromGenesisState(genesisState);
     final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, genesisState);
+        StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, genesis);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
           "Failed to set genesis state: store has already been initialized");
     }
 
-    storageUpdateChannel.onGenesis(store);
-    eventBus.post(store);
+    storageUpdateChannel.onGenesis(genesis);
+    eventBus.post(genesis);
 
     // The genesis state is by definition finalized so just get the root from there.
     Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();

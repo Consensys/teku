@@ -22,15 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.storage.events.GenesisEvent;
 
 public class StoreBuilder {
   MetricsSystem metricsSystem;
@@ -54,40 +51,49 @@ public class StoreBuilder {
   public static UpdatableStore buildForkChoiceStore(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final BeaconState anchorState) {
-    return forkChoiceStoreBuilder(metricsSystem, blockProvider, anchorState).build();
+      final BeaconState genesisState) {
+    return forkChoiceStoreBuilder(metricsSystem, blockProvider, genesisState).build();
+  }
+
+  public static UpdatableStore buildForkChoiceStore(
+      final MetricsSystem metricsSystem,
+      final BlockProvider blockProvider,
+      final GenesisEvent genesis) {
+    return forkChoiceStoreBuilder(metricsSystem, blockProvider, genesis).build();
   }
 
   public static StoreBuilder forkChoiceStoreBuilder(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final BeaconState anchorState) {
+      final BeaconState genesisState) {
+    return forkChoiceStoreBuilder(
+        metricsSystem, blockProvider, GenesisEvent.fromGenesisState(genesisState));
+  }
+
+  public static StoreBuilder forkChoiceStoreBuilder(
+      final MetricsSystem metricsSystem,
+      final BlockProvider blockProvider,
+      final GenesisEvent genesis) {
+    final UnsignedLong genesisTime = genesis.getState().getGenesis_time();
     final UnsignedLong time =
-        anchorState
-            .getGenesis_time()
-            .plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(anchorState.getSlot()));
-    final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
-    final SignedBeaconBlock signedAnchorBlock =
-        new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
-    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
-    final UnsignedLong anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
-    final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
+        genesisTime.plus(
+            UnsignedLong.valueOf(SECONDS_PER_SLOT).times(genesis.getState().getSlot()));
 
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
     Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
 
-    childToParentMap.put(anchorRoot, anchorBlock.getParent_root());
+    childToParentMap.put(genesis.getRoot(), genesis.getParentRoot());
 
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
         .time(time)
-        .genesisTime(anchorState.getGenesis_time())
-        .finalizedCheckpoint(anchorCheckpoint)
-        .justifiedCheckpoint(anchorCheckpoint)
-        .bestJustifiedCheckpoint(anchorCheckpoint)
+        .genesisTime(genesisTime)
+        .finalizedCheckpoint(genesis.getCheckpoint())
+        .justifiedCheckpoint(genesis.getCheckpoint())
+        .bestJustifiedCheckpoint(genesis.getCheckpoint())
         .childToParentMap(childToParentMap)
-        .latestFinalized(new SignedBlockAndState(signedAnchorBlock, anchorState))
+        .latestFinalized(genesis.toSignedBlockAndState())
         .votes(votes);
   }
 

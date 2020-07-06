@@ -53,6 +53,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.events.GenesisEvent;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StorePruningOptions;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -66,6 +67,7 @@ public abstract class AbstractDatabaseTest {
 
   protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
+  protected GenesisEvent genesisEvent;
   protected SignedBlockAndState genesisBlockAndState;
   protected SignedBlockAndState checkpoint1BlockAndState;
   protected SignedBlockAndState checkpoint2BlockAndState;
@@ -92,6 +94,7 @@ public abstract class AbstractDatabaseTest {
 
     genesisBlockAndState = chainBuilder.generateGenesis();
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
+    genesisEvent = GenesisEvent.fromGenesisState(genesisBlockAndState.getState());
 
     // Initialize genesis store
     initGenesis();
