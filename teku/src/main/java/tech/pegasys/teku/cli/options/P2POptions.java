@@ -90,14 +90,14 @@ public class P2POptions {
       paramLabel = "<INTEGER>",
       description = "Lower bound on the target number of peers",
       arity = "1")
-  private int p2pLowerBound = 20;
+  private int p2pLowerBound = 64;
 
   @Option(
       names = {"--p2p-peer-upper-bound"},
       paramLabel = "<INTEGER>",
       description = "Upper bound on the target number of peers",
       arity = "1")
-  private int p2pUpperBound = 30;
+  private int p2pUpperBound = 74;
 
   @Option(
       names = {"--p2p-static-peers"},
