@@ -21,7 +21,6 @@ import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -92,7 +91,9 @@ class NodeRecordConverterTest {
     assertThat(
             convertNodeRecordWithFields(
                 new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP, 30303)))
-        .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 30303), ENR_FORK_ID, PERSISTENT_SUBNETS));
+        .contains(
+            new DiscoveryPeer(
+                PUB_KEY, new InetSocketAddress("::1", 30303), ENR_FORK_ID, PERSISTENT_SUBNETS));
   }
 
   @Test
@@ -117,7 +118,11 @@ class NodeRecordConverterTest {
             new EnrField(EnrField.TCP, 1234));
     assertThat(result)
         .contains(
-            new DiscoveryPeer(PUB_KEY, new InetSocketAddress("129.24.31.22", 1234), ENR_FORK_ID, PERSISTENT_SUBNETS));
+            new DiscoveryPeer(
+                PUB_KEY,
+                new InetSocketAddress("129.24.31.22", 1234),
+                ENR_FORK_ID,
+                PERSISTENT_SUBNETS));
   }
 
   @Test
@@ -126,20 +131,28 @@ class NodeRecordConverterTest {
         convertNodeRecordWithFields(
             new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V6, 1234));
     assertThat(result)
-        .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID, PERSISTENT_SUBNETS));
+        .contains(
+            new DiscoveryPeer(
+                PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID, PERSISTENT_SUBNETS));
   }
 
   @Test
   public void shouldConvertPersistentSubnetsList() {
     List<Integer> persistentSubnets = List.of(1, 10, 22, 34);
-    Bytes encodedPersistentSubnets = new Bitvector(persistentSubnets, ATTESTATION_SUBNET_COUNT).serialize();
+    Bytes encodedPersistentSubnets =
+        new Bitvector(persistentSubnets, ATTESTATION_SUBNET_COUNT).serialize();
     final Optional<DiscoveryPeer> result =
-            convertNodeRecordWithFields(
-                    new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
-                    new EnrField(EnrField.TCP_V6, 1234),
-                    new EnrField(ATTESTATION_SUBNET_ENR_FIELD, encodedPersistentSubnets));
+        convertNodeRecordWithFields(
+            new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
+            new EnrField(EnrField.TCP_V6, 1234),
+            new EnrField(ATTESTATION_SUBNET_ENR_FIELD, encodedPersistentSubnets));
     assertThat(result)
-            .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID, Optional.of(persistentSubnets)));
+        .contains(
+            new DiscoveryPeer(
+                PUB_KEY,
+                new InetSocketAddress("::1", 1234),
+                ENR_FORK_ID,
+                Optional.of(persistentSubnets)));
   }
 
   @Test
@@ -147,12 +160,17 @@ class NodeRecordConverterTest {
     EnrForkId enrForkId = new DataStructureUtil().randomEnrForkId();
     Bytes encodedForkId = SimpleOffsetSerializer.serialize(enrForkId);
     final Optional<DiscoveryPeer> result =
-            convertNodeRecordWithFields(
-                    new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
-                    new EnrField(EnrField.TCP_V6, 1234),
-                    new EnrField(ETH2_ENR_FIELD, encodedForkId));
+        convertNodeRecordWithFields(
+            new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
+            new EnrField(EnrField.TCP_V6, 1234),
+            new EnrField(ETH2_ENR_FIELD, encodedForkId));
     assertThat(result)
-            .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 1234), Optional.of(enrForkId), PERSISTENT_SUBNETS));
+        .contains(
+            new DiscoveryPeer(
+                PUB_KEY,
+                new InetSocketAddress("::1", 1234),
+                Optional.of(enrForkId),
+                PERSISTENT_SUBNETS));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(final EnrField... fields) {

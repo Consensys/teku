@@ -184,13 +184,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   private boolean dontConnectPeersWithDifferentForkDigests(DiscoveryPeer peer) {
     return enrForkId
-            .map(EnrForkId::getForkDigest)
-            .flatMap(
-                    localForkDigest ->
-                            peer.getEnrForkId()
-                                    .map(EnrForkId::getForkDigest)
-                                    .map(peerForkDigest -> peerForkDigest.equals(localForkDigest)))
-            .orElse(false);
+        .map(EnrForkId::getForkDigest)
+        .flatMap(
+            localForkDigest ->
+                peer.getEnrForkId()
+                    .map(EnrForkId::getForkDigest)
+                    .map(peerForkDigest -> peerForkDigest.equals(localForkDigest)))
+        .orElse(false);
   }
 
   @Override

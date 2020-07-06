@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 class MultiaddrUtilTest {
   private static final Bytes PUB_KEY =
@@ -69,7 +68,10 @@ class MultiaddrUtilTest {
     final int port = 5883;
     final DiscoveryPeer peer =
         new DiscoveryPeer(
-            PUB_KEY, new InetSocketAddress(InetAddress.getByAddress(ipAddress), port), ENR_FORK_ID, PERSISTENT_SUBNETS);
+            PUB_KEY,
+            new InetSocketAddress(InetAddress.getByAddress(ipAddress), port),
+            ENR_FORK_ID,
+            PERSISTENT_SUBNETS);
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/p2p/" + PEER_ID));
     assertThat(result.getComponent(Protocol.IP4)).isEqualTo(ipAddress);
@@ -83,7 +85,10 @@ class MultiaddrUtilTest {
     final int port = 5883;
     final DiscoveryPeer peer =
         new DiscoveryPeer(
-            PUB_KEY, new InetSocketAddress(InetAddress.getByAddress(ipAddress), port), ENR_FORK_ID, PERSISTENT_SUBNETS);
+            PUB_KEY,
+            new InetSocketAddress(InetAddress.getByAddress(ipAddress), port),
+            ENR_FORK_ID,
+            PERSISTENT_SUBNETS);
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result)
         .isEqualTo(Multiaddr.fromString("/ip6/3300:4:5000:780:0:12:0:1/tcp/5883/p2p/" + PEER_ID));
@@ -99,7 +104,8 @@ class MultiaddrUtilTest {
             Bytes.fromHexString(
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
-            ENR_FORK_ID, PERSISTENT_SUBNETS);
+            ENR_FORK_ID,
+            PERSISTENT_SUBNETS);
     final Multiaddr expectedMultiAddr =
         Multiaddr.fromString(
             "/ip4/127.0.0.1/tcp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");
@@ -113,7 +119,8 @@ class MultiaddrUtilTest {
             Bytes.fromHexString(
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
-            ENR_FORK_ID, PERSISTENT_SUBNETS);
+            ENR_FORK_ID,
+            PERSISTENT_SUBNETS);
     final Multiaddr expectedMultiAddr =
         Multiaddr.fromString(
             "/ip4/127.0.0.1/udp/9000/p2p/16Uiu2HAmR4wQRGWgCNy5uzx7HfuV59Q6X1MVzBRmvreuHgEQcCnF");

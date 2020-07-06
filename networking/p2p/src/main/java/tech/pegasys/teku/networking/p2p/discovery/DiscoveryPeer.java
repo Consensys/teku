@@ -14,14 +14,12 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Optional;
-
-import com.google.common.base.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 public class DiscoveryPeer {
   private final Bytes publicKey;
@@ -61,15 +59,16 @@ public class DiscoveryPeer {
     if (this == o) return true;
     if (!(o instanceof DiscoveryPeer)) return false;
     DiscoveryPeer that = (DiscoveryPeer) o;
-    return Objects.equal(getPublicKey(), that.getPublicKey()) &&
-            Objects.equal(getNodeAddress(), that.getNodeAddress()) &&
-            Objects.equal(getEnrForkId(), that.getEnrForkId()) &&
-            Objects.equal(getPersistentSubnets(), that.getPersistentSubnets());
+    return Objects.equal(getPublicKey(), that.getPublicKey())
+        && Objects.equal(getNodeAddress(), that.getNodeAddress())
+        && Objects.equal(getEnrForkId(), that.getEnrForkId())
+        && Objects.equal(getPersistentSubnets(), that.getPersistentSubnets());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(getPublicKey(), getNodeAddress(), getEnrForkId(), getPersistentSubnets());
+    return Objects.hashCode(
+        getPublicKey(), getNodeAddress(), getEnrForkId(), getPersistentSubnets());
   }
 
   @Override
