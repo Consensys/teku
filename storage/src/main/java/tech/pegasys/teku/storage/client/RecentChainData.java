@@ -39,6 +39,7 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -58,6 +59,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
+  protected final ProtoArrayStorageChannel protoArrayStorageChannel;
   private final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
 
@@ -74,6 +76,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final StorageUpdateChannel storageUpdateChannel,
+      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
@@ -82,6 +85,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.reorgEventChannel = reorgEventChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
+    this.protoArrayStorageChannel = protoArrayStorageChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
   }
 
@@ -136,7 +140,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.store = store;
     this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
-    forkChoiceStrategy = Optional.of(ProtoArrayForkChoiceStrategy.create(this.store));
+    forkChoiceStrategy =
+        Optional.of(ProtoArrayForkChoiceStrategy.initialize(this.store, protoArrayStorageChannel));
     storeInitializedFuture.complete(null);
     return true;
   }

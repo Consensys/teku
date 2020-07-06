@@ -57,6 +57,7 @@ import tech.pegasys.teku.networking.p2p.network.GossipConfig;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.WireLogsConfig;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -180,6 +181,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             asyncRunner,
             eventChannels.getPublisher(StorageQueryChannel.class),
             eventChannels.getPublisher(StorageUpdateChannel.class),
+            eventChannels.getPublisher(ProtoArrayStorageChannel.class),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class),
             eventChannels.getPublisher(ReorgEventChannel.class),
             eventBus)
