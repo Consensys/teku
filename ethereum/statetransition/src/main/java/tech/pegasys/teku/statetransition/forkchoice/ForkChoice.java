@@ -93,7 +93,7 @@ public class ForkChoice {
     return on_attestation(store, attestation, stateTransition, getForkChoiceStrategy());
   }
 
-  public void saveToStorage() {
+  public void save() {
     getForkChoiceStrategy().save();
   }
 
