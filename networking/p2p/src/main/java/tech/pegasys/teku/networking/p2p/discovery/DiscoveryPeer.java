@@ -15,20 +15,29 @@ package tech.pegasys.teku.networking.p2p.discovery;
 
 import com.google.common.base.MoreObjects;
 import java.net.InetSocketAddress;
-import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
+
+import com.google.common.base.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 public class DiscoveryPeer {
   private final Bytes publicKey;
   private final InetSocketAddress nodeAddress;
-  private final Optional<Bytes> enrForkId;
+  private final Optional<EnrForkId> enrForkId;
+  private final Optional<List<Integer>> persistentSubnets;
 
   public DiscoveryPeer(
-      final Bytes publicKey, final InetSocketAddress nodeAddress, final Optional<Bytes> enrForkId) {
+      final Bytes publicKey,
+      final InetSocketAddress nodeAddress,
+      final Optional<EnrForkId> enrForkId,
+      final Optional<List<Integer>> persistentSubnets) {
     this.publicKey = publicKey;
     this.nodeAddress = nodeAddress;
     this.enrForkId = enrForkId;
+    this.persistentSubnets = persistentSubnets;
   }
 
   public Bytes getPublicKey() {
@@ -39,26 +48,28 @@ public class DiscoveryPeer {
     return nodeAddress;
   }
 
-  public Optional<Bytes> getEnrForkId() {
+  public Optional<EnrForkId> getEnrForkId() {
     return enrForkId;
   }
 
+  public Optional<List<Integer>> getPersistentSubnets() {
+    return persistentSubnets;
+  }
+
   @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final DiscoveryPeer that = (DiscoveryPeer) o;
-    return Objects.equals(publicKey, that.publicKey)
-        && Objects.equals(nodeAddress, that.nodeAddress);
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof DiscoveryPeer)) return false;
+    DiscoveryPeer that = (DiscoveryPeer) o;
+    return Objects.equal(getPublicKey(), that.getPublicKey()) &&
+            Objects.equal(getNodeAddress(), that.getNodeAddress()) &&
+            Objects.equal(getEnrForkId(), that.getEnrForkId()) &&
+            Objects.equal(getPersistentSubnets(), that.getPersistentSubnets());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(publicKey, nodeAddress);
+    return Objects.hashCode(getPublicKey(), getNodeAddress(), getEnrForkId(), getPersistentSubnets());
   }
 
   @Override

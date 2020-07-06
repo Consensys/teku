@@ -14,11 +14,19 @@
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+
+import static tech.pegasys.teku.networking.p2p.DiscoveryNetwork.ATTESTATION_SUBNET_ENR_FIELD;
+import static tech.pegasys.teku.networking.p2p.DiscoveryNetwork.ETH2_ENR_FIELD;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 public class NodeRecordConverter {
   static Optional<DiscoveryPeer> convertToDiscoveryPeer(final NodeRecord nodeRecord) {
@@ -29,9 +37,17 @@ public class NodeRecordConverter {
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
       final NodeRecord nodeRecord, final InetSocketAddress address) {
+
+    Optional<EnrForkId> enrForkId = Optional.ofNullable((Bytes) nodeRecord.get(ETH2_ENR_FIELD))
+            .map(enrField -> SimpleOffsetSerializer.deserialize(enrField, EnrForkId.class));
+
+    Optional<List<Integer>> persistentSubnets = Optional.ofNullable((Bytes) nodeRecord.get(ATTESTATION_SUBNET_ENR_FIELD))
+            .map(attestionSubnetsField -> Bitvector.fromBytes(attestionSubnetsField, ATTESTATION_SUBNET_COUNT).getSetBitIndexes());
+
     return new DiscoveryPeer(
-        ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
-        address,
-        Optional.ofNullable((Bytes) nodeRecord.get("eth2")));
+            ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
+            address,
+            enrForkId,
+            persistentSubnets);
   }
 }

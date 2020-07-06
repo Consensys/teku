@@ -50,8 +50,8 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
-  private static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
-  private static final String ETH2_ENR_FIELD = "eth2";
+  public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
+  public static final String ETH2_ENR_FIELD = "eth2";
   private static final Logger LOG = LogManager.getLogger();
 
   private final P2PNetwork<P> p2pNetwork;
@@ -184,16 +184,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   private boolean dontConnectPeersWithDifferentForkDigests(DiscoveryPeer peer) {
     return enrForkId
-        .map(EnrForkId::getForkDigest)
-        .flatMap(
-            forkDigest ->
-                peer.getEnrForkId()
-                    .map(
-                        peerEnrForkId ->
-                            SimpleOffsetSerializer.deserialize(peerEnrForkId, EnrForkId.class)
-                                .getForkDigest()
-                                .equals(forkDigest)))
-        .orElse(false);
+            .map(EnrForkId::getForkDigest)
+            .flatMap(
+                    localForkDigest ->
+                            peer.getEnrForkId()
+                                    .map(EnrForkId::getForkDigest)
+                                    .map(peerForkDigest -> peerForkDigest.equals(localForkDigest)))
+            .orElse(false);
   }
 
   @Override
