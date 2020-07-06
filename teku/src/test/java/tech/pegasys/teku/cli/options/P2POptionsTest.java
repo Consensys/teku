@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,8 +25,8 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
-  public void shouldReadFromConfigurationFile() {
-    final TekuConfiguration config = getTekuConfigurationFromFile("P2POptions_config.yaml");
+  public void shouldReadFromConfigurationFile1() {
+    final TekuConfiguration config = getTekuConfigurationFromFile("P2POptions_config1.yaml");
 
     assertThat(config.getP2pAdvertisedIp()).isEqualTo(Optional.of("127.200.0.1"));
     assertThat(config.getP2pInterface()).isEqualTo("127.100.0.1");
@@ -34,8 +35,23 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getP2pPort()).isEqualTo(4321);
     assertThat(config.getP2pPrivateKeyFile()).isEqualTo("/the/file");
     assertThat(config.getP2pStaticPeers()).isEqualTo(List.of("127.1.0.1", "127.1.1.1"));
-    assertThat(config.getP2pPeerLowerBound()).isEqualTo(11);
-    assertThat(config.getP2pPeerUpperBound()).isEqualTo(12);
+    assertThat(config.getP2pPeerLowerBound()).isEqualTo(ATTESTATION_SUBNET_COUNT);
+    assertThat(config.getP2pPeerUpperBound()).isEqualTo(ATTESTATION_SUBNET_COUNT + 10);
+  }
+
+  @Test
+  public void shouldReadFromConfigurationFile2() {
+    final TekuConfiguration config = getTekuConfigurationFromFile("P2POptions_config2.yaml");
+
+    assertThat(config.getP2pAdvertisedIp()).isEqualTo(Optional.of("127.200.0.1"));
+    assertThat(config.getP2pInterface()).isEqualTo("127.100.0.1");
+    assertThat(config.isP2pEnabled()).isTrue();
+    assertThat(config.isP2pDiscoveryEnabled()).isTrue();
+    assertThat(config.getP2pPort()).isEqualTo(4321);
+    assertThat(config.getP2pPrivateKeyFile()).isEqualTo("/the/file");
+    assertThat(config.getP2pStaticPeers()).isEqualTo(List.of("127.1.0.1", "127.1.1.1"));
+    assertThat(config.getP2pPeerLowerBound()).isEqualTo(70);
+    assertThat(config.getP2pPeerUpperBound()).isEqualTo(85);
   }
 
   @Test
