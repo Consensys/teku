@@ -36,7 +36,7 @@ public class TekuDepositSender extends Node {
         "generate-and-register",
         "--network",
         "minimal",
-        "--Xconfirm-enabled",
+        "--verbose-output-enabled",
         "false",
         "--encrypted-keystore-enabled",
         ENCRYPTED_KEYSTORE_ENABLED,
