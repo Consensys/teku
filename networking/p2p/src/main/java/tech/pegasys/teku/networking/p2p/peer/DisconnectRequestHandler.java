@@ -18,12 +18,4 @@ import tech.pegasys.teku.util.async.SafeFuture;
 public interface DisconnectRequestHandler {
 
   SafeFuture<Void> requestDisconnect(DisconnectReason reason);
-
-  enum DisconnectReason {
-    IRRELEVANT_NETWORK,
-    UNABLE_TO_VERIFY_NETWORK,
-    TOO_MANY_PEERS,
-    REMOTE_FAULT,
-    SHUTTING_DOWN
-  }
 }

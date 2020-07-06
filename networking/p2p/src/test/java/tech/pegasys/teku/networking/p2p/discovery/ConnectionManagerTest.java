@@ -21,6 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Optional;
@@ -37,7 +38,7 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -51,13 +52,17 @@ class ConnectionManagerTest {
   private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));
   private static final PeerAddress PEER4 = new PeerAddress(new MockNodeId(4));
   private static final DiscoveryPeer DISCOVERY_PEER1 =
-      new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1), ENR_FORK_ID);
+      new DiscoveryPeer(
+          Bytes.of(1), new InetSocketAddress(InetAddress.getLoopbackAddress(), 1), ENR_FORK_ID);
   private static final DiscoveryPeer DISCOVERY_PEER2 =
-      new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2), ENR_FORK_ID);
+      new DiscoveryPeer(
+          Bytes.of(2), new InetSocketAddress(InetAddress.getLoopbackAddress(), 2), ENR_FORK_ID);
   private static final DiscoveryPeer DISCOVERY_PEER3 =
-      new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3), ENR_FORK_ID);
+      new DiscoveryPeer(
+          Bytes.of(3), new InetSocketAddress(InetAddress.getLoopbackAddress(), 3), ENR_FORK_ID);
   private static final DiscoveryPeer DISCOVERY_PEER4 =
-      new DiscoveryPeer(Bytes.of(4), new InetSocketAddress(4), ENR_FORK_ID);
+      new DiscoveryPeer(
+          Bytes.of(4), new InetSocketAddress(InetAddress.getLoopbackAddress(), 4), ENR_FORK_ID);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
@@ -122,7 +127,7 @@ class ConnectionManagerTest {
     asyncRunner.executeQueuedActions();
     verify(network, times(2)).connect(PEER1);
 
-    peer.disconnectImmediately();
+    peer.disconnectImmediately(Optional.empty(), true);
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
     verify(network, times(3)).connect(PEER1);
@@ -139,7 +144,7 @@ class ConnectionManagerTest {
         .thenReturn(new SafeFuture<>());
     manager.start().join();
     verify(network).connect(PEER1);
-    peer.disconnectImmediately();
+    peer.disconnectImmediately(Optional.empty(), true);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -159,7 +164,7 @@ class ConnectionManagerTest {
 
     manager.addStaticPeer(PEER1);
     verify(network).connect(PEER1);
-    peer.disconnectImmediately();
+    peer.disconnectImmediately(Optional.empty(), true);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -226,7 +231,7 @@ class ConnectionManagerTest {
     final StubPeer peer = new StubPeer(new MockNodeId(DISCOVERY_PEER1.getPublicKey()));
     connectionFuture.complete(peer);
 
-    peer.disconnectImmediately();
+    peer.disconnectImmediately(Optional.empty(), true);
     asyncRunner.executeQueuedActions();
     verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }

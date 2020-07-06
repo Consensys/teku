@@ -31,7 +31,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.util.async.AsyncRunner;
@@ -125,7 +125,7 @@ public class ConnectionManager extends Service {
         .finish(
             this::connectToKnownPeers,
             error -> {
-              LOG.warn("Discovery failed", error);
+              LOG.debug("Discovery failed", error);
               connectToKnownPeers();
             });
   }
@@ -190,7 +190,7 @@ public class ConnectionManager extends Service {
               LOG.debug("Connection to peer {} was successful", peer.getId());
               successfulConnectionCounter.inc();
               peer.subscribeDisconnect(
-                  () -> {
+                  (reason, locallyInitiated) -> {
                     LOG.debug(
                         "Peer {} disconnected. Will try to reconnect in {} sec",
                         peerAddress,
@@ -224,6 +224,7 @@ public class ConnectionManager extends Service {
   }
 
   private boolean isPeerValid(DiscoveryPeer peer) {
-    return peerPredicates.stream().allMatch(predicate -> predicate.test(peer));
+    return !peer.getNodeAddress().getAddress().isAnyLocalAddress()
+        && peerPredicates.stream().allMatch(predicate -> predicate.test(peer));
   }
 }
