@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.storageSystem;
 
 import com.google.common.eventbus.EventBus;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -34,6 +34,7 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryStorageSystem extends AbstractStorageSystem {
+
   private final EventBus eventBus;
   private final TrackingReorgEventChannel reorgEventChannel;
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
@@ -44,6 +45,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
   private final RestartedStorageSupplier restartedStorageSupplier;
 
   public InMemoryStorageSystem(
+      final StubMetricsSystem metricsSystem,
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
       final StateStorageMode storageMode,
@@ -51,7 +53,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final RestartedStorageSupplier restartedStorageSupplier) {
-    super(recentChainData);
+    super(metricsSystem, recentChainData);
 
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
@@ -59,6 +61,17 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
     this.database = database;
     this.combinedChainDataClient = combinedChainDataClient;
     this.restartedStorageSupplier = restartedStorageSupplier;
+  }
+
+  /**
+   * Create an in memory version of the latest storage system. Designed for tests that need a
+   * storage system but aren't likely to be affected by the version used.
+   *
+   * @param storageMode storage mode to use
+   * @return the new storage system
+   */
+  public static StorageSystem createEmptyLatestStorageSystem(final StateStorageMode storageMode) {
+    return createEmptyV5StorageSystem(storageMode, 1);
   }
 
   // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version
@@ -105,6 +118,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
       final Database database,
       final RestartedStorageSupplier restartedStorageSupplier,
       final StateStorageMode storageMode) {
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     final EventBus eventBus = new EventBus();
 
     // Create and start storage server
@@ -117,7 +131,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
     final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
     final RecentChainData recentChainData =
         StorageBackedRecentChainData.createImmediately(
-            new NoOpMetricsSystem(),
+            metricsSystem,
             chainStorageServer,
             chainStorageServer,
             new StubProtoArrayStorageChannel(),
@@ -131,6 +145,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
 
     // Return storage system
     return new InMemoryStorageSystem(
+        metricsSystem,
         eventBus,
         reorgEventChannel,
         storageMode,
