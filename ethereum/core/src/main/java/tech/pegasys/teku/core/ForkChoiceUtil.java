@@ -382,7 +382,6 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.invalid("Invalid target checkpoint: " + e.getMessage());
     }
 
-
     IndexedAttestation indexedAttestation;
     try {
       indexedAttestation = get_indexed_attestation(targetState, attestation.getAttestation());
