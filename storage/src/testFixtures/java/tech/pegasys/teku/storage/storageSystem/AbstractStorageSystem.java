@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.storageSystem;
 
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -21,11 +22,19 @@ public abstract class AbstractStorageSystem implements StorageSystem {
   protected final ChainBuilder chainBuilder = ChainBuilder.createDefault();
   protected final ChainUpdater chainUpdater;
 
+  private final StubMetricsSystem metricsSystem;
   protected final RecentChainData recentChainData;
 
-  protected AbstractStorageSystem(RecentChainData recentChainData) {
+  protected AbstractStorageSystem(
+      final StubMetricsSystem metricsSystem, RecentChainData recentChainData) {
+    this.metricsSystem = metricsSystem;
     this.recentChainData = recentChainData;
     chainUpdater = new ChainUpdater(this.recentChainData, chainBuilder);
+  }
+
+  @Override
+  public StubMetricsSystem getMetricsSystem() {
+    return metricsSystem;
   }
 
   @Override

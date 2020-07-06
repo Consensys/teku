@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
@@ -39,25 +42,29 @@ public class RegisterAction implements AutoCloseable {
   private final Credentials eth1Credentials;
   private final String eth1NodeUrl;
   private final Eth1Address contractAddress;
-  private final boolean displayConfirmation;
+  private final boolean verboseOutputEnabled;
   private final UnsignedLong amount;
   private final DepositTransactionSender sender;
   private OkHttpClient httpClient;
   private ScheduledExecutorService executorService;
   private Web3j web3j;
+  private final Consumer<String> commandStdOutput;
+  private final Consumer<String> commandErrorOutput;
 
   public RegisterAction(
       final String eth1NodeUrl,
       final Credentials eth1Credentials,
       final Eth1Address contractAddress,
-      final boolean displayConfirmation,
+      final boolean verboseOutputEnabled,
       final UnsignedLong amount,
       final IntConsumer shutdownFunction,
       final ConsoleAdapter consoleAdapter) {
     this.eth1NodeUrl = eth1NodeUrl;
     this.eth1Credentials = eth1Credentials;
     this.contractAddress = contractAddress;
-    this.displayConfirmation = displayConfirmation;
+    this.verboseOutputEnabled = verboseOutputEnabled;
+    this.commandStdOutput = verboseOutputEnabled ? SUB_COMMAND_LOG::display : s -> {};
+    this.commandErrorOutput = SUB_COMMAND_LOG::error;
     this.amount = amount;
     this.shutdownFunction = shutdownFunction;
     this.consoleAdapter = consoleAdapter;
@@ -84,7 +91,7 @@ public class RegisterAction implements AutoCloseable {
   }
 
   public void displayConfirmation(final int totalNumberOfDeposits) {
-    if (!displayConfirmation || !consoleAdapter.isConsoleAvailable()) {
+    if (!verboseOutputEnabled || !consoleAdapter.isConsoleAvailable()) {
       return;
     }
 
@@ -100,8 +107,9 @@ public class RegisterAction implements AutoCloseable {
         consoleAdapter.readLine(
             "You are about to submit "
                 + transactionPart
-                + " of %s Eth. This is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
-            eth);
+                + " of %s Eth to contract address [%s].\nThis is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
+            eth,
+            contractAddress);
     if ("y".equalsIgnoreCase(reply)) {
       return;
     }
@@ -111,6 +119,7 @@ public class RegisterAction implements AutoCloseable {
 
   public SafeFuture<TransactionReceipt> sendDeposit(
       final BLSKeyPair validatorKey, final BLSPublicKey withdrawalKey) {
-    return sender.sendDepositTransaction(validatorKey, withdrawalKey, amount);
+    return sender.sendDepositTransaction(
+        validatorKey, withdrawalKey, amount, commandStdOutput, commandErrorOutput);
   }
 }

@@ -93,6 +93,10 @@ public class ForkChoice {
     return on_attestation(store, attestation, stateTransition, getForkChoiceStrategy());
   }
 
+  public void save() {
+    getForkChoiceStrategy().save();
+  }
+
   public void applyIndexedAttestation(
       final MutableStore store, final IndexedAttestation indexedAttestation) {
     getForkChoiceStrategy().onAttestation(store, indexedAttestation);
