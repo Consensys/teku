@@ -30,6 +30,7 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -66,6 +67,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
@@ -100,6 +102,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
@@ -140,6 +143,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);

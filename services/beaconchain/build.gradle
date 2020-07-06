@@ -10,6 +10,7 @@ dependencies {
   implementation project(':networking:eth2')
   implementation project(':logging')
   implementation project(':pow')
+  implementation project(':protoarray')
   implementation project(':services:serviceutils')
   implementation project(':services:powchain')
   implementation project(':ssz')
